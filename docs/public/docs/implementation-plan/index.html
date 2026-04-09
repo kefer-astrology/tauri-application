@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation plan | Kefer docs</title>
+    <meta name="description" content="Historical implementation notes and migration planning context." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Implementation plan</h1>
+      <p class="lede">Historical implementation notes and migration planning context.</p>
+    </header>
+    <div class="prose">
+      <h1 id="implementation-plan---ready-to-start">Implementation Plan - Ready to Start</h1>
+<blockquote>
+<p><strong>Note:</strong> The desktop shell is now <strong>React</strong> (<code>../frontend-react/</code>). File paths and Svelte references below are historical planning notes.</p>
+</blockquote>
+<h2 id="summary-of-updates">Summary of Updates</h2>
+<p>Based on your requirements, I&rsquo;ve updated the architecture to:</p>
+<h3 id="-preserved-existing-functionality">✅ Preserved Existing Functionality</h3>
+<ul>
+<li><strong>i18n</strong>: Kept existing i18n system (en, cz, es, fr) - no changes needed</li>
+<li><strong>Theming</strong>: Kept existing theming system (light/dark, presets) - no changes needed</li>
+<li><strong>Canvas Rendering</strong>: MiddleContent.svelte will support multiple views (radix, table, statistics, interpretations)</li>
+</ul>
+<h3 id="-enhanced-for-jpl-precision">✅ Enhanced for JPL Precision</h3>
+<ul>
+<li><strong>Microsecond Precision</strong>: TIMESTAMP supports microseconds for exact timing</li>
+<li><strong>Optional Columns</strong>: Declination, right ascension, distance stored when available (JPL only)</li>
+<li><strong>Storage Strategy</strong>: NULL for missing columns, efficient queries with WHERE clauses</li>
+</ul>
+<h3 id="-time-navigation">✅ Time Navigation</h3>
+<ul>
+<li><strong>High Precision</strong>: Seconds-level stepping (default: 1 hour, adjustable to minutes/seconds)</li>
+<li><strong>Quick Navigation</strong>: First, Prev, Next, Last, Now buttons</li>
+<li><strong>Time Shift</strong>: Astrolab-style shift (years, months, days, hours, minutes, seconds)</li>
+<li><strong>Time Range</strong>: Start/end datetime pickers with presets</li>
+</ul>
+<h2 id="architecture-files">Architecture Files</h2>
+<ol>
+<li>
+<p><strong>ARCHITECTURE_PROPOSAL.md</strong> - Updated with:</p>
+<ul>
+<li>Optional JPL columns (declination, RA, distance)</li>
+<li>Microsecond precision support</li>
+<li>Time granularity options</li>
+</ul>
+</li>
+<li>
+<p><strong>TIME_NAVIGATION.md</strong> - New document with:</p>
+<ul>
+<li>Complete time navigation UI design</li>
+<li>Svelte store implementation</li>
+<li>Component code examples</li>
+<li>Keyboard shortcuts</li>
+</ul>
+</li>
+<li>
+<p><strong>INTEGRATION_EXAMPLES.md</strong> - Updated with:</p>
+<ul>
+<li>Python CLI supporting second-level precision</li>
+<li>Rust storage with optional columns</li>
+<li>Time step parsing (seconds to days)</li>
+</ul>
+</li>
+<li>
+<p><strong>UPDATED_ARCHITECTURE.md</strong> - Summary of all changes</p>
+</li>
+</ol>
+<h2 id="next-steps---ready-to-iterate">Next Steps - Ready to Iterate</h2>
+<h3 id="step-1-create-time-navigation-store">Step 1: Create Time Navigation Store</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create the store file</span>
+</span></span><span style="display:flex;"><span>touch src/lib/stores/timeNavigation.ts
+</span></span></code></pre></div><h3 id="step-2-create-time-navigation-component">Step 2: Create Time Navigation Component</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create the component</span>
+</span></span><span style="display:flex;"><span>touch src/lib/components/TimeNavigationPanel.svelte
+</span></span></code></pre></div><h3 id="step-3-integrate-into-left-sidebar">Step 3: Integrate into Left Sidebar</h3>
+<ul>
+<li>Add TimeNavigationPanel to App.svelte left column</li>
+<li>Connect to existing ExpandablePanel structure</li>
+</ul>
+<h3 id="step-4-update-duckdb-schema">Step 4: Update DuckDB Schema</h3>
+<ul>
+<li>Add optional columns to computed_positions table</li>
+<li>Update Rust storage functions</li>
+</ul>
+<h3 id="step-5-extend-python-cli">Step 5: Extend Python CLI</h3>
+<ul>
+<li>Add time step parsing (seconds support)</li>
+<li>Add optional column computation (declination, RA, distance)</li>
+</ul>
+<h3 id="step-6-create-data-table-component">Step 6: Create Data Table Component</h3>
+<ul>
+<li>Support optional columns (show/hide based on availability)</li>
+<li>Connect to time navigation store</li>
+</ul>
+<h2 id="key-design-decisions">Key Design Decisions</h2>
+<ol>
+<li><strong>Time Precision</strong>: Store at microsecond level, step at user-selected granularity</li>
+<li><strong>Optional Columns</strong>: Only compute/store when engine supports (JPL = declination/RA/distance)</li>
+<li><strong>Backward Compatibility</strong>: Existing data remains valid (NULL for optional columns)</li>
+<li><strong>No Breaking Changes</strong>: i18n/theming preserved exactly as-is</li>
+</ol>
+<h2 id="questions-resolved">Questions Resolved</h2>
+<p>✅ <strong>i18n/Theming</strong>: Preserved - no changes needed<br>
+✅ <strong>JPL Declination</strong>: Supported as optional column<br>
+✅ <strong>Time Precision</strong>: Microsecond storage, second-level stepping<br>
+✅ <strong>Time Navigation</strong>: Full implementation with Astrolab-style shift<br>
+✅ <strong>Canvas Views</strong>: Radix, Table, Statistics, Interpretations supported</p>
+<h2 id="ready-to-start">Ready to Start?</h2>
+<p>The architecture is now complete and ready for implementation. We can start with:</p>
+<ol>
+<li><strong>Phase 1</strong>: Time navigation store + component (preserves existing UI)</li>
+<li><strong>Phase 2</strong>: DuckDB schema updates (adds optional columns)</li>
+<li><strong>Phase 3</strong>: Python CLI extensions (adds precision + optional columns)</li>
+<li><strong>Phase 4</strong>: Data table component (displays optional columns)</li>
+<li><strong>Phase 5</strong>: Integration and testing</li>
+</ol>
+<p>Would you like me to start implementing Phase 1 (time navigation)?</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

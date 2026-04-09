@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Time navigation | Kefer docs</title>
+    <meta name="description" content="Reference design for time navigation behavior and state." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Time navigation</h1>
+      <p class="lede">Reference design for time navigation behavior and state.</p>
+    </header>
+    <div class="prose">
+      <h1 id="time-navigation-architecture">Time Navigation Architecture</h1>
+<blockquote>
+<p><strong>Note:</strong> Code samples use Svelte; implement the same behavior with React state/hooks. See <a href="./frontend-react/">frontend-react</a>.</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>The application needs to support precise time navigation for browsing computed astrological data, with support for:</p>
+<ul>
+<li><strong>High precision</strong>: Seconds-level granularity (JPL precision)</li>
+<li><strong>Flexible stepping</strong>: User-selectable time steps (seconds, minutes, hours, days)</li>
+<li><strong>Quick navigation</strong>: Jump forward/backward by selected step</li>
+<li><strong>Time range selection</strong>: Define start/end times for computation</li>
+<li><strong>Current time tracking</strong>: Track current position in time series</li>
+</ul>
+<h2 id="ui-components">UI Components</h2>
+<h3 id="time-navigation-panel">Time Navigation Panel</h3>
+<p>Located in the left sidebar (similar to Streamlit&rsquo;s Astrolab), provides:</p>
+<ol>
+<li>
+<p><strong>Current Time Display</strong></p>
+<ul>
+<li>Shows current datetime being viewed</li>
+<li>Format: <code>YYYY-MM-DD HH:MM:SS</code></li>
+<li>Timezone-aware display</li>
+</ul>
+</li>
+<li>
+<p><strong>Time Step Selector</strong></p>
+<ul>
+<li>Dropdown/buttons for step size:
+<ul>
+<li>Seconds (1s, 5s, 10s, 30s, 60s)</li>
+<li>Minutes (1m, 5m, 15m, 30m)</li>
+<li>Hours (1h, 6h, 12h, 24h)</li>
+<li>Days (1d, 7d, 30d)</li>
+</ul>
+</li>
+<li>Default: 1 hour</li>
+</ul>
+</li>
+<li>
+<p><strong>Navigation Controls</strong></p>
+<ul>
+<li><code>⏮ First</code>: Jump to start of time range</li>
+<li><code>⏪ Previous</code>: Step backward by selected step</li>
+<li><code>⏩ Next</code>: Step forward by selected step</li>
+<li><code>⏭ Last</code>: Jump to end of time range</li>
+<li><code>📍 Now</code>: Jump to current real-time</li>
+</ul>
+</li>
+<li>
+<p><strong>Time Range Selector</strong></p>
+<ul>
+<li>Start datetime picker</li>
+<li>End datetime picker</li>
+<li>Quick presets:
+<ul>
+<li>&ldquo;Today&rdquo;</li>
+<li>&ldquo;This Week&rdquo;</li>
+<li>&ldquo;This Month&rdquo;</li>
+<li>&ldquo;This Year&rdquo;</li>
+<li>&ldquo;Custom Range&rdquo;</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Time Shift (Astrolab)</strong></p>
+<ul>
+<li>Years, Months, Days inputs</li>
+<li>Hours, Minutes, Seconds inputs</li>
+<li>&ldquo;Apply Shift&rdquo; button</li>
+<li>&ldquo;Reset&rdquo; button</li>
+</ul>
+</li>
+</ol>
+<h2 id="state-management">State Management</h2>
+<h3 id="svelte-store-structure">Svelte Store Structure</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#75715e">// src/lib/stores/timeNavigation.ts
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">writable</span>, <span style="color:#a6e22e">derived</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;svelte/store&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TimeStep</span> <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">|</span> { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;seconds&#39;</span>; <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">number</span> }
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">|</span> { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;minutes&#39;</span>; <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">number</span> }
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">|</span> { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;hours&#39;</span>; <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">number</span> }
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">|</span> { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;days&#39;</span>; <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">number</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">TimeNavigationState</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Current time being viewed
+</span></span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">currentTime</span>: <span style="color:#66d9ef">Date</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Time range for computation
+</span></span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">startTime</span>: <span style="color:#66d9ef">Date</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">endTime</span>: <span style="color:#66d9ef">Date</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Current step size
+</span></span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">step</span>: <span style="color:#66d9ef">TimeStep</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Time shift (Astrolab)
+</span></span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">shift</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">years</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">months</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">days</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">hours</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">minutes</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">seconds</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>	};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Whether shift is active
+</span></span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">shiftActive</span>: <span style="color:#66d9ef">boolean</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">timeNavigation</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">writable</span>&lt;<span style="color:#f92672">TimeNavigationState</span>&gt;({
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">currentTime</span>: <span style="color:#66d9ef">new</span> Date(),
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">startTime</span>: <span style="color:#66d9ef">new</span> Date(Date.<span style="color:#a6e22e">now</span>() <span style="color:#f92672">-</span> <span style="color:#ae81ff">7</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">24</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">60</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">60</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1000</span>), <span style="color:#75715e">// 7 days ago
+</span></span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">endTime</span>: <span style="color:#66d9ef">new</span> Date(),
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">step</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;hours&#39;</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">1</span> },
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">shift</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">years</span>: <span style="color:#66d9ef">0</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">months</span>: <span style="color:#66d9ef">0</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">days</span>: <span style="color:#66d9ef">0</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">hours</span>: <span style="color:#66d9ef">0</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">minutes</span>: <span style="color:#66d9ef">0</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">seconds</span>: <span style="color:#66d9ef">0</span>
+</span></span><span style="display:flex;"><span>	},
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">shiftActive</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>});
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Derived: Effective time (current + shift)
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">effectiveTime</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">derived</span>(<span style="color:#a6e22e">timeNavigation</span>, (<span style="color:#a6e22e">$nav</span>) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">shiftActive</span>) <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">currentTime</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Date(<span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">currentTime</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setFullYear</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getFullYear</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">years</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setMonth</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getMonth</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">months</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setDate</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getDate</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">days</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setHours</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getHours</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">hours</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setMinutes</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getMinutes</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">minutes</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setSeconds</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getSeconds</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">$nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">seconds</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>;
+</span></span><span style="display:flex;"><span>});
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Helper functions
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">stepForward() {</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>((<span style="color:#a6e22e">nav</span>) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">newTime</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">addTimeStep</span>(<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">currentTime</span>, <span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">step</span>);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">newTime</span> <span style="color:#f92672">&lt;=</span> <span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">endTime</span>) {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> { ...<span style="color:#a6e22e">nav</span>, <span style="color:#a6e22e">currentTime</span>: <span style="color:#66d9ef">newTime</span> };
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">nav</span>;
+</span></span><span style="display:flex;"><span>	});
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">stepBackward() {</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>((<span style="color:#a6e22e">nav</span>) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">newTime</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">subtractTimeStep</span>(<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">currentTime</span>, <span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">step</span>);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">newTime</span> <span style="color:#f92672">&gt;=</span> <span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">startTime</span>) {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> { ...<span style="color:#a6e22e">nav</span>, <span style="color:#a6e22e">currentTime</span>: <span style="color:#66d9ef">newTime</span> };
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">nav</span>;
+</span></span><span style="display:flex;"><span>	});
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">jumpToStart() {</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>((<span style="color:#a6e22e">nav</span>) <span style="color:#f92672">=&gt;</span> ({
+</span></span><span style="display:flex;"><span>		...<span style="color:#a6e22e">nav</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">currentTime</span>: <span style="color:#66d9ef">new</span> Date(<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">startTime</span>)
+</span></span><span style="display:flex;"><span>	}));
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">jumpToEnd() {</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>((<span style="color:#a6e22e">nav</span>) <span style="color:#f92672">=&gt;</span> ({
+</span></span><span style="display:flex;"><span>		...<span style="color:#a6e22e">nav</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">currentTime</span>: <span style="color:#66d9ef">new</span> Date(<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">endTime</span>)
+</span></span><span style="display:flex;"><span>	}));
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">jumpToNow() {</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>((<span style="color:#a6e22e">nav</span>) <span style="color:#f92672">=&gt;</span> ({
+</span></span><span style="display:flex;"><span>		...<span style="color:#a6e22e">nav</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">currentTime</span>: <span style="color:#66d9ef">new</span> Date()
+</span></span><span style="display:flex;"><span>	}));
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">addTimeStep</span>(<span style="color:#a6e22e">date</span>: <span style="color:#66d9ef">Date</span>, <span style="color:#a6e22e">step</span>: <span style="color:#66d9ef">TimeStep</span>)<span style="color:#f92672">:</span> Date {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Date(<span style="color:#a6e22e">date</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">switch</span> (<span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">unit</span>) {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;seconds&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setSeconds</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getSeconds</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;minutes&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setMinutes</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getMinutes</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;hours&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setHours</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getHours</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;days&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setDate</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getDate</span>() <span style="color:#f92672">+</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">subtractTimeStep</span>(<span style="color:#a6e22e">date</span>: <span style="color:#66d9ef">Date</span>, <span style="color:#a6e22e">step</span>: <span style="color:#66d9ef">TimeStep</span>)<span style="color:#f92672">:</span> Date {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">result</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> Date(<span style="color:#a6e22e">date</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">switch</span> (<span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">unit</span>) {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;seconds&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setSeconds</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getSeconds</span>() <span style="color:#f92672">-</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;minutes&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setMinutes</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getMinutes</span>() <span style="color:#f92672">-</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;hours&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setHours</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getHours</span>() <span style="color:#f92672">-</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;days&#39;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">setDate</span>(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">getDate</span>() <span style="color:#f92672">-</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="component-implementation">Component Implementation</h2>
+<h3 id="timenavigationpanelsvelte">TimeNavigationPanel.svelte</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-svelte" data-lang="svelte"><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">lang</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;ts&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">timeNavigation</span>, <span style="color:#a6e22e">effectiveTime</span>, <span style="color:#a6e22e">stepForward</span>, <span style="color:#a6e22e">stepBackward</span>, <span style="color:#a6e22e">jumpToStart</span>, <span style="color:#a6e22e">jumpToEnd</span>, <span style="color:#a6e22e">jumpToNow</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;$lib/stores/timeNavigation&#39;</span>;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">t</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;$lib/i18n/index.svelte&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">nav</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$derived</span>.<span style="color:#a6e22e">by</span>(() <span style="color:#f92672">=&gt;</span> <span style="color:#a6e22e">$timeNavigation</span>);
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">effective</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$derived</span>(<span style="color:#a6e22e">$effectiveTime</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Format time for display
+</span></span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">formatTime</span>(<span style="color:#a6e22e">date</span>: <span style="color:#66d9ef">Date</span>)<span style="color:#f92672">:</span> <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">date</span>.<span style="color:#a6e22e">toISOString</span>().<span style="color:#a6e22e">slice</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">19</span>).<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;T&#39;</span>, <span style="color:#e6db74">&#39; &#39;</span>);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">// Step options
+</span></span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">stepOptions</span> <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;seconds&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">1</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 second&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;seconds&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">5</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;5 seconds&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;seconds&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">10</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;10 seconds&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;seconds&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">30</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;30 seconds&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;seconds&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">60</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 minute&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;minutes&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">1</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 minute&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;minutes&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">5</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;5 minutes&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;minutes&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">15</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;15 minutes&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;minutes&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">30</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;30 minutes&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;hours&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">1</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 hour&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;hours&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">6</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;6 hours&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;hours&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">12</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;12 hours&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;hours&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">24</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 day&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;days&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">1</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 day&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;days&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">7</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 week&#39;</span> },
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;days&#39;</span> <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">const</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">30</span>, <span style="color:#a6e22e">label</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;1 month&#39;</span> },
+</span></span><span style="display:flex;"><span>  ];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">updateStep</span>(<span style="color:#a6e22e">unit</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;seconds&#39;</span> <span style="color:#f92672">|</span> <span style="color:#e6db74">&#39;minutes&#39;</span> <span style="color:#f92672">|</span> <span style="color:#e6db74">&#39;hours&#39;</span> <span style="color:#f92672">|</span> <span style="color:#e6db74">&#39;days&#39;</span>, <span style="color:#a6e22e">value</span>: <span style="color:#66d9ef">number</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">=&gt;</span> ({ ...<span style="color:#a6e22e">n</span>, <span style="color:#a6e22e">step</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">unit</span>, <span style="color:#a6e22e">value</span> } }));
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">applyShift() {</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">=&gt;</span> ({ ...<span style="color:#a6e22e">n</span>, <span style="color:#a6e22e">shiftActive</span>: <span style="color:#66d9ef">true</span> }));
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">resetShift() {</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">timeNavigation</span>.<span style="color:#a6e22e">update</span>(<span style="color:#a6e22e">n</span> <span style="color:#f92672">=&gt;</span> ({
+</span></span><span style="display:flex;"><span>      ...<span style="color:#a6e22e">n</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">shift</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">years</span>: <span style="color:#66d9ef">0</span>, <span style="color:#a6e22e">months</span>: <span style="color:#66d9ef">0</span>, <span style="color:#a6e22e">days</span>: <span style="color:#66d9ef">0</span>, <span style="color:#a6e22e">hours</span>: <span style="color:#66d9ef">0</span>, <span style="color:#a6e22e">minutes</span>: <span style="color:#66d9ef">0</span>, <span style="color:#a6e22e">seconds</span>: <span style="color:#66d9ef">0</span> },
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">shiftActive</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>    }));
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;space-y-4 p-4&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">h3</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-lg font-semibold&#34;</span>&gt;{<span style="color:#a6e22e">t</span>(<span style="color:#e6db74">&#39;time_navigation.title&#39;</span>, {}, <span style="color:#e6db74">&#39;Time Navigation&#39;</span>)}&lt;/<span style="color:#f92672">h3</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">&lt;!-- Current Time Display --&gt;</span>
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;space-y-1&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">label</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-sm font-medium&#34;</span>&gt;{<span style="color:#a6e22e">t</span>(<span style="color:#e6db74">&#39;time_navigation.current_time&#39;</span>, {}, <span style="color:#e6db74">&#39;Current Time&#39;</span>)}&lt;/<span style="color:#f92672">label</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-2 bg-muted rounded text-sm font-mono&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>      {<span style="color:#a6e22e">formatTime</span>(<span style="color:#a6e22e">effective</span>)}
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>    {<span style="color:#66d9ef">#if</span> <span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shiftActive</span>}
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-xs text-muted-foreground&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>        Base: {<span style="color:#a6e22e">formatTime</span>(<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">currentTime</span>)} + Shift
+</span></span><span style="display:flex;"><span>      &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>    {<span style="color:#66d9ef">/if</span>}
+</span></span><span style="display:flex;"><span>  &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">&lt;!-- Time Step Selector --&gt;</span>
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;space-y-1&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">label</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-sm font-medium&#34;</span>&gt;{<span style="color:#a6e22e">t</span>(<span style="color:#e6db74">&#39;time_navigation.step_size&#39;</span>, {}, <span style="color:#e6db74">&#39;Step Size&#39;</span>)}&lt;/<span style="color:#f92672">label</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">select</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;w-full p-2 border rounded&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">onchange</span><span style="color:#f92672">=</span>{(<span style="color:#a6e22e">e</span>) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">selected</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">stepOptions</span>[parseInt(<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">target</span>.<span style="color:#a6e22e">value</span>)];
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">updateStep</span>(<span style="color:#a6e22e">selected</span>.<span style="color:#a6e22e">unit</span>, <span style="color:#a6e22e">selected</span>.<span style="color:#a6e22e">value</span>);
+</span></span><span style="display:flex;"><span>      }}
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>      {<span style="color:#66d9ef">#each</span> <span style="color:#a6e22e">stepOptions</span> <span style="color:#66d9ef">as</span> <span style="color:#a6e22e">opt</span>, <span style="color:#a6e22e">i</span>}
+</span></span><span style="display:flex;"><span>        &lt;<span style="color:#f92672">option</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">i</span>}
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">selected=</span>{<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">unit</span> <span style="color:#f92672">===</span> <span style="color:#a6e22e">opt</span>.<span style="color:#a6e22e">unit</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">value</span> <span style="color:#f92672">===</span> <span style="color:#a6e22e">opt</span>.<span style="color:#a6e22e">value</span>}
+</span></span><span style="display:flex;"><span>        &gt;
+</span></span><span style="display:flex;"><span>          {<span style="color:#a6e22e">opt</span>.<span style="color:#a6e22e">label</span>}
+</span></span><span style="display:flex;"><span>        &lt;/<span style="color:#f92672">option</span>&gt;
+</span></span><span style="display:flex;"><span>      {<span style="color:#66d9ef">/each</span>}
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">select</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">&lt;!-- Navigation Controls --&gt;</span>
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;grid grid-cols-3 gap-2&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;px-2 py-1 text-xs border rounded hover:bg-muted&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">jumpToStart</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>      ⏮ First
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;px-2 py-1 text-xs border rounded hover:bg-muted&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">stepBackward</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>      ⏪ Prev
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;px-2 py-1 text-xs border rounded hover:bg-muted&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">stepForward</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>      ⏩ Next
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;px-2 py-1 text-xs border rounded hover:bg-muted&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">jumpToEnd</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>      ⏭ Last
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;px-2 py-1 text-xs border rounded hover:bg-muted col-span-2&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">jumpToNow</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>      📍 Now
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">&lt;!-- Time Shift (Astrolab) --&gt;</span>
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;space-y-2 border-t pt-4&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">h4</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-sm font-medium&#34;</span>&gt;{<span style="color:#a6e22e">t</span>(<span style="color:#e6db74">&#39;time_navigation.shift&#39;</span>, {}, <span style="color:#e6db74">&#39;Time Shift&#39;</span>)}&lt;/<span style="color:#f92672">h4</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;grid grid-cols-3 gap-2&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">input</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;number&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-1 border rounded text-sm&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">placeholder</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Years&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">years</span>}
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">/</span>&gt;
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">input</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;number&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-1 border rounded text-sm&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">placeholder</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Months&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">months</span>}
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">/</span>&gt;
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">input</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;number&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-1 border rounded text-sm&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">placeholder</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Days&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">days</span>}
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">/</span>&gt;
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">input</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;number&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-1 border rounded text-sm&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">placeholder</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Hours&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">hours</span>}
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">/</span>&gt;
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">input</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;number&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-1 border rounded text-sm&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">placeholder</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Minutes&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">minutes</span>}
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">/</span>&gt;
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">input</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;number&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-1 border rounded text-sm&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">placeholder</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Seconds&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shift</span>.<span style="color:#a6e22e">seconds</span>}
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">/</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;flex gap-2&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>      &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;flex-1 px-2 py-1 text-sm border rounded hover:bg-muted&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">applyShift</span>}
+</span></span><span style="display:flex;"><span>      <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>        {<span style="color:#a6e22e">t</span>(<span style="color:#e6db74">&#39;time_navigation.apply_shift&#39;</span>, {}, <span style="color:#e6db74">&#39;Apply Shift&#39;</span>)}
+</span></span><span style="display:flex;"><span>      &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>      {<span style="color:#66d9ef">#if</span> <span style="color:#a6e22e">nav</span>.<span style="color:#a6e22e">shiftActive</span>}
+</span></span><span style="display:flex;"><span>        &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;flex-1 px-2 py-1 text-sm border rounded hover:bg-muted&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">resetShift</span>}
+</span></span><span style="display:flex;"><span>        <span style="color:#960050;background-color:#1e0010">&gt;</span>
+</span></span><span style="display:flex;"><span>          {<span style="color:#a6e22e">t</span>(<span style="color:#e6db74">&#39;time_navigation.reset&#39;</span>, {}, <span style="color:#e6db74">&#39;Reset&#39;</span>)}
+</span></span><span style="display:flex;"><span>        &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>      {<span style="color:#66d9ef">/if</span>}
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">div</span>&gt;
+</span></span></code></pre></div><h2 id="integration-with-data-queries">Integration with Data Queries</h2>
+<p>When querying positions/aspects, use the effective time:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#75715e">// In data query functions
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">effectiveTime</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;$lib/stores/timeNavigation&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">queryPositionsForCurrentTime</span>(<span style="color:#a6e22e">chartId</span>: <span style="color:#66d9ef">string</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">time</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$effectiveTime</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">isoString</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">toISOString</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>(<span style="color:#e6db74">&#39;query_positions&#39;</span>, {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">chartId</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">datetime</span>: <span style="color:#66d9ef">isoString</span>
+</span></span><span style="display:flex;"><span>	});
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="keyboard-shortcuts">Keyboard Shortcuts</h2>
+<ul>
+<li><code>←</code> / <code>→</code>: Step backward/forward</li>
+<li><code>Home</code> / <code>End</code>: Jump to start/end</li>
+<li><code>N</code>: Jump to now</li>
+<li><code>+</code> / <code>-</code>: Increase/decrease step size</li>
+<li><code>S</code>: Toggle shift mode</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

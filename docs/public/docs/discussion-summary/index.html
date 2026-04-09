@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Discussion summary | Kefer docs</title>
+    <meta name="description" content="Historical architecture discussion notes from the earlier UI phase." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Discussion summary</h1>
+      <p class="lede">Historical architecture discussion notes from the earlier UI phase.</p>
+    </header>
+    <div class="prose">
+      <h1 id="architecture-discussion-summary">Architecture Discussion Summary</h1>
+<blockquote>
+<p><strong>Note:</strong> Written for the earlier Svelte UI. For the current React + Tauri frontend, see <a href="./frontend-react/">frontend-react</a>.</p>
+</blockquote>
+<h2 id="your-key-requirements">Your Key Requirements</h2>
+<ol>
+<li>✅ <strong>User defines initial conditions</strong> → Svelte UI forms → Tauri commands → Python computation</li>
+<li>✅ <strong>Python handles computation</strong> → Python sidecar with CLI interface</li>
+<li>✅ <strong>Persistent local storage</strong> → DuckDB + Parquet for time series</li>
+<li>✅ <strong>YAML compatibility</strong> → Keep workspace/charts in YAML (same as Python package)</li>
+<li>✅ <strong>2-chart relations</strong> → Primary use case (transits, synastry)</li>
+<li>✅ <strong>3-body relations</strong> → Future-proof schema design</li>
+<li>✅ <strong>Query-optimized</strong> → DuckDB indexes and Parquet partitioning</li>
+</ol>
+<h2 id="architecture-decisions">Architecture Decisions</h2>
+<h3 id="storage-strategy-hybrid-yaml--duckdb">Storage Strategy: Hybrid YAML + DuckDB</h3>
+<p><strong>Why this approach:</strong></p>
+<ul>
+<li><strong>YAML for metadata</strong>: Charts, subjects, workspace config are human-readable and match Python package</li>
+<li><strong>DuckDB for computed data</strong>: Fast queries on time series, efficient storage, SQL interface</li>
+<li><strong>Parquet for archival</strong>: Long-term storage, columnar format, compression</li>
+</ul>
+<p><strong>Structure:</strong></p>
+<pre tabindex="0"><code>workspace/
+├── workspace.yaml          # Metadata (compatible with Python)
+├── charts/*.yaml          # Chart definitions
+└── data/
+    ├── workspace.db      # DuckDB (positions, relations)
+    └── positions/*.parquet  # Partitioned time series
+</code></pre><h3 id="python-sidecar-performance">Python Sidecar Performance</h3>
+<p><strong>Performance considerations:</strong></p>
+<ul>
+<li><strong>Async communication</strong>: Tauri commands are async, Python runs in background</li>
+<li><strong>Minimal overhead</strong>: Only serialization/deserialization cost</li>
+<li><strong>Background processing</strong>: Long computations don&rsquo;t block UI</li>
+<li><strong>Caching</strong>: Store results in DuckDB, avoid recomputation</li>
+</ul>
+<p><strong>When to consider Rust port:</strong></p>
+<ul>
+<li>If computation becomes bottleneck (&gt;100ms per chart)</li>
+<li>If you need real-time updates (every second)</li>
+<li>If binary size is critical</li>
+</ul>
+<p><strong>Recommendation</strong>: Start with Python sidecar, measure performance, port only if needed.</p>
+<h3 id="relation-structure">Relation Structure</h3>
+<p><strong>2-Chart Relations (Primary):</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>relations <span style="color:#66d9ef">table</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">-</span> source_chart_id: Base chart (natal<span style="color:#f92672">/</span>event)
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">-</span> target_chart_id: Transit chart (<span style="color:#66d9ef">current</span> time)
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">-</span> relation_type: <span style="color:#e6db74">&#39;transit&#39;</span>, <span style="color:#e6db74">&#39;synastry&#39;</span>, <span style="color:#e6db74">&#39;progression&#39;</span>
+</span></span></code></pre></div><p><strong>3-Body Relations (Future):</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>relations <span style="color:#66d9ef">table</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">-</span> source_chart_id: Chart <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">-</span> target_chart_id: Chart <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">-</span> third_chart_id: Chart <span style="color:#ae81ff">3</span> (optional)
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">-</span> relation_type: <span style="color:#e6db74">&#39;composite_transit&#39;</span>, <span style="color:#e6db74">&#39;triple_synastry&#39;</span>, etc.
+</span></span></code></pre></div><p><strong>Aspect Computation:</strong></p>
+<ul>
+<li>Aspects are computed on demand from stored positions</li>
+<li>No aspect tables or Parquet files are persisted</li>
+</ul>
+<h3 id="main-date-table-structure">Main Date Table Structure</h3>
+<p><strong>Core table: <code>computed_positions</code></strong></p>
+<ul>
+<li>Primary key: <code>(chart_id, datetime, object_id)</code></li>
+<li>Indexes: <code>(chart_id, datetime)</code>, <code>(object_id)</code></li>
+<li>Stores: longitude, latitude, distance, speed, retrograde</li>
+</ul>
+<p><strong>Relation table: <code>relations</code></strong></p>
+<ul>
+<li>Links charts together</li>
+<li>Stores configuration snapshots (JSONB)</li>
+<li>Tracks computation settings (engine, ephemeris file)</li>
+</ul>
+<p><strong>Aspect data</strong></p>
+<ul>
+<li>Derived at query time from <code>computed_positions</code></li>
+</ul>
+<h3 id="date-format-handling">Date Format Handling</h3>
+<p><strong>Storage:</strong></p>
+<ul>
+<li>All dates stored as ISO 8601 strings or TIMESTAMP in DuckDB</li>
+<li>Original format preserved in chart YAML</li>
+</ul>
+<p><strong>Query:</strong></p>
+<ul>
+<li>DuckDB handles timezone conversions</li>
+<li>Can query by any time format (converted to TIMESTAMP)</li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Store with original format metadata
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> relations (..., original_date_format)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">VALUES</span> (..., <span style="color:#e6db74">&#39;julian_day&#39;</span>, <span style="color:#ae81ff">2459845</span>.<span style="color:#ae81ff">5</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Query converts automatically
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> computed_positions
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> datetime <span style="color:#f92672">&gt;=</span> <span style="color:#e6db74">&#39;2024-01-01&#39;</span>::<span style="color:#66d9ef">TIMESTAMP</span>;
+</span></span></code></pre></div><h3 id="source-file-set-jplswisseph">Source File Set (JPL/swisseph)</h3>
+<p><strong>Storage:</strong></p>
+<ul>
+<li><code>engine</code> column: &lsquo;jpl&rsquo;, &lsquo;swisseph&rsquo;, &lsquo;jyotish&rsquo;, &lsquo;custom&rsquo;</li>
+<li><code>ephemeris_file</code> column: Path to BSP file (for JPL)</li>
+<li>Stored per relation (can mix engines in same workspace)</li>
+</ul>
+<p><strong>Query:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Find all computations using de421.bsp
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> relations
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> engine <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;jpl&#39;</span> <span style="color:#66d9ef">AND</span> ephemeris_file <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;%de421%&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Get positions computed with specific engine
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> computed_positions
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> chart_id <span style="color:#66d9ef">IN</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">SELECT</span> chart_id <span style="color:#66d9ef">FROM</span> relations <span style="color:#66d9ef">WHERE</span> engine <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;jpl&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><h2 id="implementation-phases">Implementation Phases</h2>
+<h3 id="phase-1-basic-chart-creation-week-1-2">Phase 1: Basic Chart Creation (Week 1-2)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Tauri command: <code>create_chart()</code></li>
+<li><input disabled="" type="checkbox"> Python CLI: <code>compute_positions</code></li>
+<li><input disabled="" type="checkbox"> DuckDB schema setup</li>
+<li><input disabled="" type="checkbox"> Store single-timepoint positions</li>
+<li><input disabled="" type="checkbox"> Svelte UI: Chart creation form</li>
+</ul>
+<h3 id="phase-2-transit-computation-week-3-4">Phase 2: Transit Computation (Week 3-4)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Tauri command: <code>compute_transit_series()</code></li>
+<li><input disabled="" type="checkbox"> Python CLI: <code>compute_transit_series</code></li>
+<li><input disabled="" type="checkbox"> Background job tracking</li>
+<li><input disabled="" type="checkbox"> Store time series in DuckDB</li>
+<li><input disabled="" type="checkbox"> Svelte UI: Transit computation panel</li>
+</ul>
+<h3 id="phase-3-data-browsing-week-5-6">Phase 3: Data Browsing (Week 5-6)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Tauri commands: <code>query_positions()</code>, <code>query_aspects()</code> (derived from positions)</li>
+<li><input disabled="" type="checkbox"> DuckDB query optimization</li>
+<li><input disabled="" type="checkbox"> Svelte UI: Data tables, charts, filters</li>
+<li><input disabled="" type="checkbox"> Export functionality</li>
+</ul>
+<h3 id="phase-4-background-service-week-7-8">Phase 4: Background Service (Week 7-8)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Tauri background task system</li>
+<li><input disabled="" type="checkbox"> Job queue management</li>
+<li><input disabled="" type="checkbox"> Progress tracking</li>
+<li><input disabled="" type="checkbox"> Error handling and retry</li>
+</ul>
+<h3 id="phase-5-advanced-features-week-9">Phase 5: Advanced Features (Week 9+)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> 3-body relations</li>
+<li><input disabled="" type="checkbox"> Parquet archival</li>
+<li><input disabled="" type="checkbox"> Performance optimization</li>
+<li><input disabled="" type="checkbox"> Rust porting (if needed)</li>
+</ul>
+<h2 id="open-questions">Open Questions</h2>
+<h3 id="1-time-granularity">1. Time Granularity</h3>
+<p><strong>Question</strong>: What&rsquo;s the minimum time step for transit computations?</p>
+<p><strong>Options:</strong></p>
+<ul>
+<li><strong>Hourly</strong>: Good for short-term transits (days/weeks)</li>
+<li><strong>Daily</strong>: Good for long-term transits (months/years)</li>
+<li><strong>Adaptive</strong>: Hourly for near-future, daily for far-future</li>
+</ul>
+<p><strong>Recommendation</strong>: Start with daily, add hourly option later.</p>
+<h3 id="2-storage-limits">2. Storage Limits</h3>
+<p><strong>Question</strong>: How much historical data to keep?</p>
+<p><strong>Options:</strong></p>
+<ul>
+<li><strong>Unlimited</strong>: Store everything (requires good partitioning)</li>
+<li><strong>Time-based</strong>: Keep last N years, archive older</li>
+<li><strong>Size-based</strong>: Keep until database reaches X GB</li>
+</ul>
+<p><strong>Recommendation</strong>: Start unlimited, add archival later if needed.</p>
+<h3 id="3-real-time-updates">3. Real-time Updates</h3>
+<p><strong>Question</strong>: Should transits update in real-time or on-demand?</p>
+<p><strong>Options:</strong></p>
+<ul>
+<li><strong>On-demand</strong>: Compute when user requests</li>
+<li><strong>Scheduled</strong>: Background service computes daily/hourly</li>
+<li><strong>Hybrid</strong>: On-demand for new ranges, scheduled for updates</li>
+</ul>
+<p><strong>Recommendation</strong>: On-demand initially, add scheduled updates later.</p>
+<h3 id="4-multi-workspace">4. Multi-workspace</h3>
+<p><strong>Question</strong>: Support multiple workspaces simultaneously?</p>
+<p><strong>Options:</strong></p>
+<ul>
+<li><strong>Single</strong>: One workspace at a time (simpler)</li>
+<li><strong>Multiple</strong>: Switch between workspaces (more complex)</li>
+</ul>
+<p><strong>Recommendation</strong>: Single workspace initially, add multi-workspace later.</p>
+<h3 id="5-export-formats">5. Export Formats</h3>
+<p><strong>Question</strong>: What formats for exporting computed data?</p>
+<p><strong>Options:</strong></p>
+<ul>
+<li><strong>CSV</strong>: Simple, universal</li>
+<li><strong>JSON</strong>: Structured, easy to parse</li>
+<li><strong>Parquet</strong>: Efficient, preserves types</li>
+<li><strong>PDF</strong>: Human-readable reports</li>
+</ul>
+<p><strong>Recommendation</strong>: Start with CSV and JSON, add others as needed.</p>
+<h2 id="next-steps">Next Steps</h2>
+<ol>
+<li><strong>Review this architecture</strong> - Does it match your vision?</li>
+<li><strong>Answer open questions</strong> - Make decisions on granularity, storage, etc.</li>
+<li><strong>Start Phase 1</strong> - Implement basic chart creation</li>
+<li><strong>Iterate</strong> - Build incrementally, test with real data</li>
+</ol>
+<h2 id="key-files-to-create">Key Files to Create</h2>
+<h3 id="rust-tauri">Rust (Tauri)</h3>
+<ul>
+<li><code>src-tauri/src/commands/compute.rs</code> - Computation commands</li>
+<li><code>src-tauri/src/commands/workspace.rs</code> - Workspace management</li>
+<li><code>src-tauri/src/storage/duckdb.rs</code> - DuckDB integration</li>
+<li><code>src-tauri/src/storage/parquet.rs</code> - Parquet file handling</li>
+</ul>
+<h3 id="python">Python</h3>
+<ul>
+<li><code>external_package/module/cli.py</code> - CLI interface for Tauri</li>
+<li><code>external_package/module/storage.py</code> - DuckDB helpers (optional)</li>
+</ul>
+<h3 id="typescriptsvelte">TypeScript/Svelte</h3>
+<ul>
+<li><code>src/lib/stores/computations.ts</code> - Computation state</li>
+<li><code>src/lib/stores/data.ts</code> - Data querying</li>
+<li><code>src/lib/components/TransitComputation.svelte</code> - UI component</li>
+<li><code>src/lib/components/DataBrowser.svelte</code> - Data browsing UI</li>
+</ul>
+<h2 id="questions-for-you">Questions for You</h2>
+<ol>
+<li><strong>Time granularity preference?</strong> (hourly, daily, adaptive)</li>
+<li><strong>Storage limits?</strong> (unlimited, time-based, size-based)</li>
+<li><strong>Real-time vs on-demand?</strong> (preference for transit updates)</li>
+<li><strong>Multi-workspace needed?</strong> (now or later)</li>
+<li><strong>Export format priority?</strong> (CSV, JSON, PDF, Parquet)</li>
+</ol>
+<p>Once you answer these, we can finalize the architecture and start implementation!</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

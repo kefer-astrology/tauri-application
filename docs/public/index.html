@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+	<meta name="generator" content="Hugo 0.157.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kefer docs | Kefer docs</title>
+    <meta name="description" content="Main documentation hub, published frontend builds, and LLM continuation context." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow"></p>
+      <h1>Kefer docs</h1>
+      <p class="lede">Main documentation hub, published frontend builds, and LLM continuation context.</p>
+    </header>
+    <div class="prose">
+      <p>The <code>docs/</code> directory is now the shared source for three things:</p>
+<ol>
+<li>Human-readable project documentation.</li>
+<li>A Hugo site that can publish to GitHub Pages.</li>
+<li>LLM handoff material for future contributors and agents.</li>
+</ol>
+<h2 id="start-here">Start here</h2>
+<ul>
+<li><a href="./docs/">Project docs</a> for architecture, frontend, Python, integration, and planning notes.</li>
+<li><a href="./llm/">LLM handoff</a> for concise project context and continuation guidance.</li>
+<li><a href="#frontend-builds">Published frontends</a> for static builds copied from workspace apps during <code>npm run docs:prepare</code>.</li>
+</ul>
+<h2 id="local-docs-workflow">Local docs workflow</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm run docs:prepare
+</span></span><span style="display:flex;"><span>npm run docs:dev
+</span></span><span style="display:flex;"><span>npm run docs:build
+</span></span></code></pre></div><p><code>docs:prepare</code> rebuilds frontend workspaces and copies any <code>apps/*/dist/</code> output into the docs site under <code>/apps/&lt;workspace&gt;/</code>.</p>
+
+    </div>
+    
+      <section class="card-grid">
+        
+          <a class="card" href="/llm/">
+            <h2>LLM handoff</h2>
+            <p>High-signal context for future coding sessions.</p>
+          </a>
+        
+          <a class="card" href="/docs/">
+            <h2>Project docs</h2>
+            <p>Core architecture, frontend, Python, integration, and planning notes.</p>
+          </a>
+        
+      </section>
+    
+    
+      <section id="frontend-builds" class="frontend-section">
+        <div class="section-heading">
+          <p class="eyebrow">Static frontends</p>
+          <h2>Published frontend builds</h2>
+        </div>
+        <div class="card-grid">
+          
+            <a class="card" href="/apps/web-react/">
+              <h3>web-react</h3>
+              <p>Kefer astrology React &#43; Vite UI (Tauri shell at repo root).</p>
+              <p class="meta">apps/web-react</p>
+            </a>
+          
+        </div>
+      </section>
+    
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

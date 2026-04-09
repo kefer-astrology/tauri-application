@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Integration examples | Kefer docs</title>
+    <meta name="description" content="Examples for Tauri command usage and Python-side integration." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Integration examples</h1>
+      <p class="lede">Examples for Tauri command usage and Python-side integration.</p>
+    </header>
+    <div class="prose">
+      <h1 id="integration-examples">Integration Examples</h1>
+<blockquote>
+<p><strong>Note:</strong> Some sections show Svelte; <code>invoke()</code> usage is identical from React (<code>@tauri-apps/api/core</code>). See <a href="./frontend-react/">frontend-react</a>.</p>
+</blockquote>
+<h2 id="python-sidecar-integration">Python Sidecar Integration</h2>
+<h3 id="1-python-command-interface">1. Python Command Interface</h3>
+<p>Create a CLI interface in the Python package:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># external_package/module/cli.py</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> sys
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> json
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> pathlib <span style="color:#f92672">import</span> Path
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> module.services <span style="color:#f92672">import</span> compute_positions, build_chart_instance
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> module.workspace <span style="color:#f92672">import</span> load_workspace, add_or_update_chart, save_workspace_modular
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> module.models <span style="color:#f92672">import</span> ChartMode, EngineType
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">cmd_compute_positions</span>(args):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Compute positions for a chart.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        args: dict with keys: chart_id, workspace_path, datetime, location, engine, ephemeris_path
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    workspace_path <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;workspace_path&#39;</span>)
+</span></span><span style="display:flex;"><span>    chart_id <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;chart_id&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Load workspace</span>
+</span></span><span style="display:flex;"><span>    ws <span style="color:#f92672">=</span> load_workspace(workspace_path)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Find chart</span>
+</span></span><span style="display:flex;"><span>    chart <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> c <span style="color:#f92672">in</span> ws<span style="color:#f92672">.</span>charts:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> getattr(c, <span style="color:#e6db74">&#39;id&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span>) <span style="color:#f92672">==</span> chart_id:
+</span></span><span style="display:flex;"><span>            chart <span style="color:#f92672">=</span> c
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> chart:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> {<span style="color:#e6db74">&#39;error&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Chart </span><span style="color:#e6db74">{</span>chart_id<span style="color:#e6db74">}</span><span style="color:#e6db74"> not found&#39;</span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Compute positions</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">from</span> module.services <span style="color:#f92672">import</span> compute_positions_for_chart
+</span></span><span style="display:flex;"><span>    positions <span style="color:#f92672">=</span> compute_positions_for_chart(chart, ws<span style="color:#f92672">=</span>ws)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> {<span style="color:#e6db74">&#39;positions&#39;</span>: positions, <span style="color:#e6db74">&#39;chart_id&#39;</span>: chart_id}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">cmd_compute_transit_series</span>(args):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Compute transit series for a time range.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Args:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        args: dict with keys:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - source_chart_id: Base chart ID
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - workspace_path: Path to workspace
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - start_datetime: Start time (ISO format, supports microseconds)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - end_datetime: End time (ISO format, supports microseconds)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - time_step: Step size (e.g., &#39;1 second&#39;, &#39;1 minute&#39;, &#39;1 hour&#39;, &#39;1 day&#39;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - objects: List of objects to compute
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - aspects: List of aspects to compute
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - engine: Engine type
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - ephemeris_path: Optional ephemeris file
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - include_physical: Whether to include all physical properties (JPL only)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              (distance, declination, RA are always included for JPL)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - include_topocentric: Whether to include altitude/azimuth (JPL with location)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            - include_extended: Whether to include magnitude/phase/elongation (JPL for planets)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">from</span> datetime <span style="color:#f92672">import</span> datetime, timedelta
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">from</span> dateutil.parser <span style="color:#f92672">import</span> parse
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    workspace_path <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;workspace_path&#39;</span>)
+</span></span><span style="display:flex;"><span>    source_chart_id <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;source_chart_id&#39;</span>)
+</span></span><span style="display:flex;"><span>    start_str <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;start_datetime&#39;</span>)
+</span></span><span style="display:flex;"><span>    end_str <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;end_datetime&#39;</span>)
+</span></span><span style="display:flex;"><span>    time_step <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;time_step&#39;</span>, <span style="color:#e6db74">&#39;1 hour&#39;</span>)  <span style="color:#75715e"># Default to 1 hour</span>
+</span></span><span style="display:flex;"><span>    objects <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;objects&#39;</span>, [])
+</span></span><span style="display:flex;"><span>    aspects <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;aspects&#39;</span>, [])
+</span></span><span style="display:flex;"><span>    include_physical <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;include_physical&#39;</span>, <span style="color:#66d9ef">True</span>)  <span style="color:#75715e"># Default: include all physical data</span>
+</span></span><span style="display:flex;"><span>    include_topocentric <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;include_topocentric&#39;</span>, <span style="color:#66d9ef">True</span>)  <span style="color:#75715e"># Default: include alt/az if location available</span>
+</span></span><span style="display:flex;"><span>    include_extended <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;include_extended&#39;</span>, <span style="color:#66d9ef">False</span>)  <span style="color:#75715e"># Default: don&#39;t include magnitude/phase (can be heavy)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Load workspace and source chart</span>
+</span></span><span style="display:flex;"><span>    ws <span style="color:#f92672">=</span> load_workspace(workspace_path)
+</span></span><span style="display:flex;"><span>    source_chart <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> c <span style="color:#f92672">in</span> ws<span style="color:#f92672">.</span>charts:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> getattr(c, <span style="color:#e6db74">&#39;id&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span>) <span style="color:#f92672">==</span> source_chart_id:
+</span></span><span style="display:flex;"><span>            source_chart <span style="color:#f92672">=</span> c
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> source_chart:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> {<span style="color:#e6db74">&#39;error&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Source chart </span><span style="color:#e6db74">{</span>source_chart_id<span style="color:#e6db74">}</span><span style="color:#e6db74"> not found&#39;</span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Parse time range (supports microseconds for high precision)</span>
+</span></span><span style="display:flex;"><span>    start_dt <span style="color:#f92672">=</span> parse(start_str)
+</span></span><span style="display:flex;"><span>    end_dt <span style="color:#f92672">=</span> parse(end_str)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Generate time points with high precision support</span>
+</span></span><span style="display:flex;"><span>    time_points <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>    current <span style="color:#f92672">=</span> start_dt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Parse time_step with support for seconds, minutes, hours, days</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">parse_time_step</span>(step_str):
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;&#34;&#34;Parse time step string like &#39;1 second&#39;, &#39;30 seconds&#39;, &#39;1 minute&#39;, etc.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>        parts <span style="color:#f92672">=</span> step_str<span style="color:#f92672">.</span>lower()<span style="color:#f92672">.</span>strip()<span style="color:#f92672">.</span>split()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> len(parts) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">2</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> timedelta(hours<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)  <span style="color:#75715e"># Default to 1 hour</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        value <span style="color:#f92672">=</span> int(parts[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>        unit <span style="color:#f92672">=</span> parts[<span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;second&#39;</span> <span style="color:#f92672">in</span> unit:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> timedelta(seconds<span style="color:#f92672">=</span>value)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> <span style="color:#e6db74">&#39;minute&#39;</span> <span style="color:#f92672">in</span> unit:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> timedelta(minutes<span style="color:#f92672">=</span>value)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> <span style="color:#e6db74">&#39;hour&#39;</span> <span style="color:#f92672">in</span> unit:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> timedelta(hours<span style="color:#f92672">=</span>value)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> <span style="color:#e6db74">&#39;day&#39;</span> <span style="color:#f92672">in</span> unit:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> timedelta(days<span style="color:#f92672">=</span>value)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> timedelta(hours<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)  <span style="color:#75715e"># Default</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    step_delta <span style="color:#f92672">=</span> parse_time_step(time_step)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> current <span style="color:#f92672">&lt;=</span> end_dt:
+</span></span><span style="display:flex;"><span>        time_points<span style="color:#f92672">.</span>append(current)
+</span></span><span style="display:flex;"><span>        current <span style="color:#f92672">+=</span> step_delta
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Compute positions for each timepoint</span>
+</span></span><span style="display:flex;"><span>    results <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> tp <span style="color:#f92672">in</span> time_points:
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Create temporary transit chart</span>
+</span></span><span style="display:flex;"><span>        transit_chart <span style="color:#f92672">=</span> build_chart_instance(
+</span></span><span style="display:flex;"><span>            name<span style="color:#f92672">=</span><span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;transit_</span><span style="color:#e6db74">{</span>source_chart_id<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,
+</span></span><span style="display:flex;"><span>            dt_str<span style="color:#f92672">=</span>tp<span style="color:#f92672">.</span>isoformat(),
+</span></span><span style="display:flex;"><span>            loc_text<span style="color:#f92672">=</span>getattr(getattr(source_chart, <span style="color:#e6db74">&#39;subject&#39;</span>, <span style="color:#66d9ef">None</span>), <span style="color:#e6db74">&#39;location&#39;</span>, {})<span style="color:#f92672">.</span>get(<span style="color:#e6db74">&#39;name&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span>),
+</span></span><span style="display:flex;"><span>            mode<span style="color:#f92672">=</span>ChartMode<span style="color:#f92672">.</span>EVENT,
+</span></span><span style="display:flex;"><span>            ws<span style="color:#f92672">=</span>ws
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Compute positions (JPL always includes distance, declination, RA)</span>
+</span></span><span style="display:flex;"><span>        transit_positions <span style="color:#f92672">=</span> compute_positions_for_chart(transit_chart, ws<span style="color:#f92672">=</span>ws)
+</span></span><span style="display:flex;"><span>        source_positions <span style="color:#f92672">=</span> compute_positions_for_chart(source_chart, ws<span style="color:#f92672">=</span>ws)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># For JPL engine, compute all physical properties</span>
+</span></span><span style="display:flex;"><span>        transit_physical <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>        source_physical <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> getattr(transit_chart<span style="color:#f92672">.</span>config, <span style="color:#e6db74">&#39;engine&#39;</span>, <span style="color:#66d9ef">None</span>) <span style="color:#f92672">==</span> EngineType<span style="color:#f92672">.</span>JPL:
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># Extended computation: distance, declination, RA are always computed</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># Optionally compute: altitude, azimuth, magnitude, phase, elongation</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># This requires extending compute_positions to return extended dict</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># Structure: {</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;longitude&#39;: float,</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;distance&#39;: float,  # Always present for JPL</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;declination&#39;: float,  # Always present for JPL</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;right_ascension&#39;: float,  # Always present for JPL</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;altitude&#39;: float,  # If include_topocentric</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;azimuth&#39;: float,  # If include_topocentric</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;apparent_magnitude&#39;: float,  # If include_extended</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;phase_angle&#39;: float,  # If include_extended</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">#   &#39;elongation&#39;: float,  # If include_extended</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e"># }</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">pass</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Compute aspects (simplified - you&#39;d use your aspect computation logic)</span>
+</span></span><span style="display:flex;"><span>        aspects_found <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> obj1 <span style="color:#f92672">in</span> objects:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> obj1 <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> source_positions:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> obj2 <span style="color:#f92672">in</span> objects:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> obj2 <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> transit_positions:
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e"># Compute angle between objects</span>
+</span></span><span style="display:flex;"><span>                angle <span style="color:#f92672">=</span> abs(transit_positions[obj2] <span style="color:#f92672">-</span> source_positions[obj1])
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> angle <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">180</span>:
+</span></span><span style="display:flex;"><span>                    angle <span style="color:#f92672">=</span> <span style="color:#ae81ff">360</span> <span style="color:#f92672">-</span> angle
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e"># Check for aspects</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">for</span> aspect_type, aspect_angle <span style="color:#f92672">in</span> [(<span style="color:#e6db74">&#39;conjunction&#39;</span>, <span style="color:#ae81ff">0</span>), (<span style="color:#e6db74">&#39;opposition&#39;</span>, <span style="color:#ae81ff">180</span>), (<span style="color:#e6db74">&#39;trine&#39;</span>, <span style="color:#ae81ff">120</span>), (<span style="color:#e6db74">&#39;square&#39;</span>, <span style="color:#ae81ff">90</span>)]:
+</span></span><span style="display:flex;"><span>                    orb <span style="color:#f92672">=</span> abs(angle <span style="color:#f92672">-</span> aspect_angle)
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">if</span> orb <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">8.0</span>:  <span style="color:#75715e"># 8 degree orb</span>
+</span></span><span style="display:flex;"><span>                        aspects_found<span style="color:#f92672">.</span>append({
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#39;source&#39;</span>: obj1,
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#39;target&#39;</span>: obj2,
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#39;type&#39;</span>: aspect_type,
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#39;angle&#39;</span>: angle,
+</span></span><span style="display:flex;"><span>                            <span style="color:#e6db74">&#39;orb&#39;</span>: orb
+</span></span><span style="display:flex;"><span>                        })
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result_entry <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;datetime&#39;</span>: tp<span style="color:#f92672">.</span>isoformat(),  <span style="color:#75715e"># ISO format with microseconds</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;positions&#39;</span>: transit_positions,  <span style="color:#75715e"># Always includes longitude</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;aspects&#39;</span>: aspects_found
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># For JPL engine, physical properties are always included in positions dict</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Structure: positions[object_id] = {</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;longitude&#39;: float,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;distance&#39;: float,  # Always present for JPL</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;declination&#39;: float,  # Always present for JPL</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;right_ascension&#39;: float,  # Always present for JPL</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;altitude&#39;: float,  # If include_topocentric and location available</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;azimuth&#39;: float,  # If include_topocentric and location available</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;apparent_magnitude&#39;: float,  # If include_extended</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;phase_angle&#39;: float,  # If include_extended</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">#   &#39;elongation&#39;: float,  # If include_extended</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># }</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        results<span style="color:#f92672">.</span>append(result_entry)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;source_chart_id&#39;</span>: source_chart_id,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;time_range&#39;</span>: {<span style="color:#e6db74">&#39;start&#39;</span>: start_str, <span style="color:#e6db74">&#39;end&#39;</span>: end_str},
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;results&#39;</span>: results
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">main</span>():
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Main CLI entry point.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(sys<span style="color:#f92672">.</span>argv) <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">2</span>:
+</span></span><span style="display:flex;"><span>        print(json<span style="color:#f92672">.</span>dumps({<span style="color:#e6db74">&#39;error&#39;</span>: <span style="color:#e6db74">&#39;No command specified&#39;</span>}), file<span style="color:#f92672">=</span>sys<span style="color:#f92672">.</span>stderr)
+</span></span><span style="display:flex;"><span>        sys<span style="color:#f92672">.</span>exit(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    command <span style="color:#f92672">=</span> sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>    args_json <span style="color:#f92672">=</span> sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">2</span>] <span style="color:#66d9ef">if</span> len(sys<span style="color:#f92672">.</span>argv) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">2</span> <span style="color:#66d9ef">else</span> <span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#39;</span>
+</span></span><span style="display:flex;"><span>    args <span style="color:#f92672">=</span> json<span style="color:#f92672">.</span>loads(args_json)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> command <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;compute_positions&#39;</span>:
+</span></span><span style="display:flex;"><span>            result <span style="color:#f92672">=</span> cmd_compute_positions(args)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> command <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;compute_transit_series&#39;</span>:
+</span></span><span style="display:flex;"><span>            result <span style="color:#f92672">=</span> cmd_compute_transit_series(args)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            result <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#39;error&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Unknown command: </span><span style="color:#e6db74">{</span>command<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        print(json<span style="color:#f92672">.</span>dumps(result))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">except</span> <span style="color:#a6e22e">Exception</span> <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>        print(json<span style="color:#f92672">.</span>dumps({<span style="color:#e6db74">&#39;error&#39;</span>: str(e), <span style="color:#e6db74">&#39;type&#39;</span>: type(e)<span style="color:#f92672">.</span>__name__}), file<span style="color:#f92672">=</span>sys<span style="color:#f92672">.</span>stderr)
+</span></span><span style="display:flex;"><span>        sys<span style="color:#f92672">.</span>exit(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;__main__&#39;</span>:
+</span></span><span style="display:flex;"><span>    main()
+</span></span></code></pre></div><h3 id="2-rust-tauri-command">2. Rust Tauri Command</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">// src-tauri/src/commands/compute.rs
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> serde::{Deserialize, Serialize};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::collections::HashMap;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::process::Command;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::path::PathBuf;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> tauri::State;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Debug, Serialize, Deserialize)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ComputePositionsArgs</span> {
+</span></span><span style="display:flex;"><span>    chart_id: String,
+</span></span><span style="display:flex;"><span>    workspace_path: String,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Debug, Serialize, Deserialize)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ComputeTransitSeriesArgs</span> {
+</span></span><span style="display:flex;"><span>    source_chart_id: String,
+</span></span><span style="display:flex;"><span>    workspace_path: String,
+</span></span><span style="display:flex;"><span>    start_datetime: String,
+</span></span><span style="display:flex;"><span>    end_datetime: String,
+</span></span><span style="display:flex;"><span>    time_step: Option<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    objects: Option<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;&gt;</span>,
+</span></span><span style="display:flex;"><span>    aspects: Option<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;&gt;</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[tauri::command]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">compute_chart_positions</span>(
+</span></span><span style="display:flex;"><span>    args: <span style="color:#a6e22e">ComputePositionsArgs</span>,
+</span></span><span style="display:flex;"><span>) -&gt; Result<span style="color:#f92672">&lt;</span>HashMap<span style="color:#f92672">&lt;</span>String, <span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>, String<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get Python executable path
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> python_exe <span style="color:#f92672">=</span> find_python_executable()<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get module path
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> module_path <span style="color:#f92672">=</span> get_module_path()<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Build command
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> args_json <span style="color:#f92672">=</span> serde_json::to_string(<span style="color:#f92672">&amp;</span>args)
+</span></span><span style="display:flex;"><span>        .map_err(<span style="color:#f92672">|</span>e<span style="color:#f92672">|</span> <span style="color:#a6e22e">format!</span>(<span style="color:#e6db74">&#34;Failed to serialize args: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, e))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> output <span style="color:#f92672">=</span> Command::new(python_exe)
+</span></span><span style="display:flex;"><span>        .arg(<span style="color:#e6db74">&#34;-m&#34;</span>)
+</span></span><span style="display:flex;"><span>        .arg(<span style="color:#e6db74">&#34;module.cli&#34;</span>)
+</span></span><span style="display:flex;"><span>        .arg(<span style="color:#e6db74">&#34;compute_positions&#34;</span>)
+</span></span><span style="display:flex;"><span>        .arg(<span style="color:#f92672">&amp;</span>args_json)
+</span></span><span style="display:flex;"><span>        .current_dir(<span style="color:#f92672">&amp;</span>module_path)
+</span></span><span style="display:flex;"><span>        .output()
+</span></span><span style="display:flex;"><span>        .map_err(<span style="color:#f92672">|</span>e<span style="color:#f92672">|</span> <span style="color:#a6e22e">format!</span>(<span style="color:#e6db74">&#34;Failed to execute Python: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, e))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">!</span>output.status.success() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> error <span style="color:#f92672">=</span> String::from_utf8_lossy(<span style="color:#f92672">&amp;</span>output.stderr);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> Err(<span style="color:#a6e22e">format!</span>(<span style="color:#e6db74">&#34;Python error: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, error));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> result: <span style="color:#a6e22e">serde_json</span>::Value <span style="color:#f92672">=</span> serde_json::from_slice(<span style="color:#f92672">&amp;</span>output.stdout)
+</span></span><span style="display:flex;"><span>        .map_err(<span style="color:#f92672">|</span>e<span style="color:#f92672">|</span> <span style="color:#a6e22e">format!</span>(<span style="color:#e6db74">&#34;Failed to parse Python output: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, e))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Some(error) <span style="color:#f92672">=</span> result.get(<span style="color:#e6db74">&#34;error&#34;</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> Err(error.as_str().unwrap().to_string());
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> positions: <span style="color:#a6e22e">HashMap</span><span style="color:#f92672">&lt;</span>String, <span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> serde_json::from_value(
+</span></span><span style="display:flex;"><span>        result.get(<span style="color:#e6db74">&#34;positions&#34;</span>).ok_or(<span style="color:#e6db74">&#34;No positions in response&#34;</span>)<span style="color:#f92672">?</span>.clone()
+</span></span><span style="display:flex;"><span>    ).map_err(<span style="color:#f92672">|</span>e<span style="color:#f92672">|</span> <span style="color:#a6e22e">format!</span>(<span style="color:#e6db74">&#34;Failed to parse positions: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, e))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(positions)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[tauri::command]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">compute_transit_series</span>(
+</span></span><span style="display:flex;"><span>    args: <span style="color:#a6e22e">ComputeTransitSeriesArgs</span>,
+</span></span><span style="display:flex;"><span>) -&gt; Result<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Similar implementation for transit series
+</span></span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Returns relation_id for tracking
+</span></span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">todo!</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">find_python_executable</span>() -&gt; Result<span style="color:#f92672">&lt;</span>PathBuf, String<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Try common Python paths
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> candidates <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec!</span>[<span style="color:#e6db74">&#34;python3&#34;</span>, <span style="color:#e6db74">&#34;python&#34;</span>, <span style="color:#e6db74">&#34;py&#34;</span>];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> cmd <span style="color:#66d9ef">in</span> candidates {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> Command::new(cmd)
+</span></span><span style="display:flex;"><span>            .arg(<span style="color:#e6db74">&#34;--version&#34;</span>)
+</span></span><span style="display:flex;"><span>            .output()
+</span></span><span style="display:flex;"><span>            .is_ok()
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> Ok(PathBuf::from(cmd));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Err(<span style="color:#e6db74">&#34;Python executable not found&#34;</span>.to_string())
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_module_path</span>() -&gt; Result<span style="color:#f92672">&lt;</span>PathBuf, String<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get path to external_package/module
+</span></span></span><span style="display:flex;"><span>    <span style="color:#75715e">// In production, this would be relative to the Tauri app
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> current_dir <span style="color:#f92672">=</span> std::env::current_dir()
+</span></span><span style="display:flex;"><span>        .map_err(<span style="color:#f92672">|</span>e<span style="color:#f92672">|</span> <span style="color:#a6e22e">format!</span>(<span style="color:#e6db74">&#34;Failed to get current directory: </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, e))<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Ok(current_dir.join(<span style="color:#e6db74">&#34;external_package&#34;</span>))
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="3-duckdb-storage-integration">3. DuckDB Storage Integration</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">// src-tauri/src/storage/duckdb.rs
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> duckdb::{Connection, Result};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> serde::{Deserialize, Serialize};
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">use</span> std::collections::HashMap;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">DuckDBStorage</span> {
+</span></span><span style="display:flex;"><span>    conn: <span style="color:#a6e22e">Connection</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> DuckDBStorage {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">new</span>(db_path: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Result<span style="color:#f92672">&lt;</span>Self<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> conn <span style="color:#f92672">=</span> Connection::open(db_path)<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Initialize schema
+</span></span></span><span style="display:flex;"><span>        conn.execute_batch(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">r</span><span style="color:#e6db74">#&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            CREATE TABLE IF NOT EXISTS computed_positions (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                chart_id TEXT NOT NULL,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                datetime TIMESTAMP NOT NULL,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                object_id TEXT NOT NULL,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                longitude REAL NOT NULL,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                latitude REAL,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                distance REAL,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                speed REAL,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                retrograde BOOLEAN,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                engine TEXT,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                ephemeris_file TEXT,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                PRIMARY KEY (chart_id, datetime, object_id)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            );
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            CREATE INDEX IF NOT EXISTS idx_positions_chart_datetime
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                ON computed_positions(chart_id, datetime);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#34;#</span>,
+</span></span><span style="display:flex;"><span>        )<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Ok(Self { conn })
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">store_positions</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&amp;</span>self,
+</span></span><span style="display:flex;"><span>        chart_id: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>        datetime: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>        positions: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">HashMap</span><span style="color:#f92672">&lt;</span>String, PositionData<span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>        engine: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>    ) -&gt; Result<span style="color:#f92672">&lt;</span>()<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// PositionData is a struct containing all physical properties
+</span></span></span><span style="display:flex;"><span>        <span style="color:#75715e">// For JPL: distance, declination, RA are always present
+</span></span></span><span style="display:flex;"><span>        <span style="color:#75715e">// For other engines: only longitude may be present
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> stmt <span style="color:#f92672">=</span> self.conn.prepare(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;INSERT OR REPLACE INTO computed_positions
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             (chart_id, datetime, object_id, longitude, latitude,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              declination, right_ascension, distance,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              altitude, azimuth,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              apparent_magnitude, phase_angle, elongation, light_time,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              speed, retrograde,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              has_equatorial, has_topocentric, has_physical, engine)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)&#34;</span>
+</span></span><span style="display:flex;"><span>        )<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> (object_id, pos_data) <span style="color:#66d9ef">in</span> positions {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> has_equatorial <span style="color:#f92672">=</span> pos_data.declination.is_some()
+</span></span><span style="display:flex;"><span>                              <span style="color:#f92672">&amp;&amp;</span> pos_data.right_ascension.is_some()
+</span></span><span style="display:flex;"><span>                              <span style="color:#f92672">&amp;&amp;</span> pos_data.distance.is_some();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> has_topocentric <span style="color:#f92672">=</span> pos_data.altitude.is_some()
+</span></span><span style="display:flex;"><span>                               <span style="color:#f92672">&amp;&amp;</span> pos_data.azimuth.is_some();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> has_physical <span style="color:#f92672">=</span> pos_data.apparent_magnitude.is_some()
+</span></span><span style="display:flex;"><span>                           <span style="color:#f92672">||</span> pos_data.phase_angle.is_some()
+</span></span><span style="display:flex;"><span>                           <span style="color:#f92672">||</span> pos_data.elongation.is_some();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            stmt.execute(<span style="color:#a6e22e">params!</span>[
+</span></span><span style="display:flex;"><span>                chart_id,
+</span></span><span style="display:flex;"><span>                datetime,
+</span></span><span style="display:flex;"><span>                object_id,
+</span></span><span style="display:flex;"><span>                pos_data.longitude,
+</span></span><span style="display:flex;"><span>                pos_data.latitude,
+</span></span><span style="display:flex;"><span>                pos_data.declination,
+</span></span><span style="display:flex;"><span>                pos_data.right_ascension,
+</span></span><span style="display:flex;"><span>                pos_data.distance,  <span style="color:#75715e">// Always Some(f64) for JPL, None for others
+</span></span></span><span style="display:flex;"><span>                pos_data.altitude,
+</span></span><span style="display:flex;"><span>                pos_data.azimuth,
+</span></span><span style="display:flex;"><span>                pos_data.apparent_magnitude,
+</span></span><span style="display:flex;"><span>                pos_data.phase_angle,
+</span></span><span style="display:flex;"><span>                pos_data.elongation,
+</span></span><span style="display:flex;"><span>                pos_data.light_time,
+</span></span><span style="display:flex;"><span>                pos_data.speed,
+</span></span><span style="display:flex;"><span>                pos_data.retrograde,
+</span></span><span style="display:flex;"><span>                has_equatorial,
+</span></span><span style="display:flex;"><span>                has_topocentric,
+</span></span><span style="display:flex;"><span>                has_physical,
+</span></span><span style="display:flex;"><span>                engine
+</span></span><span style="display:flex;"><span>            ])<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Ok(())
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">query_positions</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&amp;</span>self,
+</span></span><span style="display:flex;"><span>        chart_id: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>        start: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>        end: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>    ) -&gt; Result<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>PositionRow<span style="color:#f92672">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> stmt <span style="color:#f92672">=</span> self.conn.prepare(
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;SELECT datetime, object_id, longitude
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             FROM computed_positions
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             WHERE chart_id = ? AND datetime &gt;= ? AND datetime &lt;= ?
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             ORDER BY datetime, object_id&#34;</span>
+</span></span><span style="display:flex;"><span>        )<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> rows <span style="color:#f92672">=</span> stmt.query_map(<span style="color:#a6e22e">params!</span>[chart_id, start, end], <span style="color:#f92672">|</span>row<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>            Ok(PositionRow {
+</span></span><span style="display:flex;"><span>                datetime: <span style="color:#a6e22e">row</span>.get(<span style="color:#ae81ff">0</span>)<span style="color:#f92672">?</span>,
+</span></span><span style="display:flex;"><span>                object_id: <span style="color:#a6e22e">row</span>.get(<span style="color:#ae81ff">1</span>)<span style="color:#f92672">?</span>,
+</span></span><span style="display:flex;"><span>                longitude: <span style="color:#a6e22e">row</span>.get(<span style="color:#ae81ff">2</span>)<span style="color:#f92672">?</span>,
+</span></span><span style="display:flex;"><span>            })
+</span></span><span style="display:flex;"><span>        })<span style="color:#f92672">?</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        rows.collect()
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Debug, Serialize, Deserialize)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">PositionData</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> longitude: <span style="color:#66d9ef">f64</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> latitude: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Equatorial coordinates (always present for JPL)
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> declination: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,      <span style="color:#75715e">// Always Some for JPL
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> right_ascension: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>, <span style="color:#75715e">// Always Some for JPL
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> distance: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,        <span style="color:#75715e">// Always Some for JPL (NOT optional - always computed)
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Topocentric coordinates (JPL with location)
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> altitude: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> azimuth: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Physical properties (JPL for planets)
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> apparent_magnitude: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> phase_angle: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> elongation: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> light_time: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,  <span style="color:#75715e">// Light time in seconds
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Motion properties
+</span></span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> speed: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">f64</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> retrograde: Option<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">bool</span><span style="color:#f92672">&gt;</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Debug, Serialize, Deserialize)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">PositionRow</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> datetime: String,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> object_id: String,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> data: <span style="color:#a6e22e">PositionData</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="4-svelte-frontend-integration">4. Svelte Frontend Integration</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#75715e">// src/lib/stores/computations.ts
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">writable</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;svelte/store&#39;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">invoke</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;@tauri-apps/api/core&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">ComputationJob</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">job_id</span>: <span style="color:#66d9ef">string</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">relation_id</span>: <span style="color:#66d9ef">string</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">status</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;pending&#39;</span> <span style="color:#f92672">|</span> <span style="color:#e6db74">&#39;running&#39;</span> <span style="color:#f92672">|</span> <span style="color:#e6db74">&#39;completed&#39;</span> <span style="color:#f92672">|</span> <span style="color:#e6db74">&#39;failed&#39;</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">progress</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">computationJobs</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">writable</span>&lt;<span style="color:#f92672">ComputationJob</span><span style="color:#960050;background-color:#1e0010">[]</span>&gt;([]);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">computeChartPositions</span>(
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">chartId</span>: <span style="color:#66d9ef">string</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">workspacePath</span>: <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>)<span style="color:#f92672">:</span> <span style="color:#a6e22e">Promise</span>&lt;<span style="color:#f92672">Record</span>&lt;<span style="color:#f92672">string</span>, <span style="color:#a6e22e">number</span>&gt;&gt; {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">positions</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>&lt;<span style="color:#f92672">Record</span>&lt;<span style="color:#f92672">string</span>, <span style="color:#a6e22e">number</span>&gt;&gt;(<span style="color:#e6db74">&#39;compute_chart_positions&#39;</span>, {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">args</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">chart_id</span>: <span style="color:#66d9ef">chartId</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">workspace_path</span>: <span style="color:#66d9ef">workspacePath</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	});
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">positions</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">computeTransitSeries</span>(
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">sourceChartId</span>: <span style="color:#66d9ef">string</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">workspacePath</span>: <span style="color:#66d9ef">string</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">startDatetime</span>: <span style="color:#66d9ef">string</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">endDatetime</span>: <span style="color:#66d9ef">string</span>,
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">timeStep</span>: <span style="color:#66d9ef">string</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;1 day&#39;</span>
+</span></span><span style="display:flex;"><span>)<span style="color:#f92672">:</span> <span style="color:#a6e22e">Promise</span>&lt;<span style="color:#f92672">string</span>&gt; {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">relationId</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>&lt;<span style="color:#f92672">string</span>&gt;(<span style="color:#e6db74">&#39;compute_transit_series&#39;</span>, {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">args</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">source_chart_id</span>: <span style="color:#66d9ef">sourceChartId</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">workspace_path</span>: <span style="color:#66d9ef">workspacePath</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">start_datetime</span>: <span style="color:#66d9ef">startDatetime</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">end_datetime</span>: <span style="color:#66d9ef">endDatetime</span>,
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">time_step</span>: <span style="color:#66d9ef">timeStep</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	});
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">relationId</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-svelte" data-lang="svelte"><span style="display:flex;"><span><span style="color:#75715e">&lt;!-- src/lib/components/TransitComputation.svelte --&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">lang</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;ts&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">computeTransitSeries</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;$lib/stores/computations&#39;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">workspace</span> } <span style="color:#66d9ef">from</span> <span style="color:#e6db74">&#39;$lib/stores/workspace&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">sourceChartId</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$state</span>(<span style="color:#e6db74">&#39;&#39;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">startDate</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$state</span>(<span style="color:#e6db74">&#39;&#39;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">endDate</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$state</span>(<span style="color:#e6db74">&#39;&#39;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">computing</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$state</span>(<span style="color:#66d9ef">false</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">relationId</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$state</span>&lt;<span style="color:#f92672">string</span> <span style="color:#960050;background-color:#1e0010">|</span> <span style="color:#a6e22e">null</span>&gt;(<span style="color:#66d9ef">null</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">function</span> <span style="color:#a6e22e">handleCompute() {</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">sourceChartId</span> <span style="color:#f92672">||</span> <span style="color:#f92672">!</span><span style="color:#a6e22e">startDate</span> <span style="color:#f92672">||</span> <span style="color:#f92672">!</span><span style="color:#a6e22e">endDate</span>) <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">computing</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">ws</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">$workspace</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">ws</span>) <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> Error(<span style="color:#e6db74">&#39;No workspace loaded&#39;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">relationId</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">computeTransitSeries</span>(
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">sourceChartId</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">ws</span>.<span style="color:#a6e22e">path</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">startDate</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">endDate</span>
+</span></span><span style="display:flex;"><span>            );
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">catch</span> (<span style="color:#a6e22e">error</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">error</span>(<span style="color:#e6db74">&#39;Computation failed:&#39;</span>, <span style="color:#a6e22e">error</span>);
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">finally</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">computing</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-4 space-y-4&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">h3</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-lg font-semibold&#34;</span>&gt;Compute Transit Series&lt;/<span style="color:#f92672">h3</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;space-y-2&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>        &lt;<span style="color:#f92672">label</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;block text-sm&#34;</span>&gt;Source Chart&lt;/<span style="color:#f92672">label</span>&gt;
+</span></span><span style="display:flex;"><span>        &lt;<span style="color:#f92672">select</span> <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">sourceChartId</span>} <span style="color:#e6db74">class=&#34;w-full</span> <span style="color:#a6e22e">p-2</span> <span style="color:#a6e22e">border</span> <span style="color:#a6e22e">rounded</span><span style="color:#960050;background-color:#1e0010">&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">&lt;!-- Populate from workspace charts --&gt;</span>
+</span></span><span style="display:flex;"><span>        &lt;/<span style="color:#f92672">select</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;grid grid-cols-2 gap-2&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>        &lt;<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>            &lt;<span style="color:#f92672">label</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;block text-sm&#34;</span>&gt;Start Date&lt;/<span style="color:#f92672">label</span>&gt;
+</span></span><span style="display:flex;"><span>            &lt;<span style="color:#f92672">input</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;datetime-local&#34;</span> <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">startDate</span>} <span style="color:#e6db74">class=&#34;w-full</span> <span style="color:#a6e22e">p-2</span> <span style="color:#a6e22e">border</span> <span style="color:#a6e22e">rounded</span><span style="color:#960050;background-color:#1e0010">&#34;</span> /&gt;
+</span></span><span style="display:flex;"><span>        &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>        &lt;<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>            &lt;<span style="color:#f92672">label</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;block text-sm&#34;</span>&gt;End Date&lt;/<span style="color:#f92672">label</span>&gt;
+</span></span><span style="display:flex;"><span>            &lt;<span style="color:#f92672">input</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;datetime-local&#34;</span> <span style="color:#a6e22e">bind:value</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">endDate</span>} <span style="color:#e6db74">class=&#34;w-full</span> <span style="color:#a6e22e">p-2</span> <span style="color:#a6e22e">border</span> <span style="color:#a6e22e">rounded</span><span style="color:#960050;background-color:#1e0010">&#34;</span> /&gt;
+</span></span><span style="display:flex;"><span>        &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    &lt;<span style="color:#f92672">button</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">onclick</span><span style="color:#f92672">=</span>{<span style="color:#a6e22e">handleCompute</span>}
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">disabled=</span>{<span style="color:#a6e22e">computing</span>}
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;w-full p-2 bg-primary text-primary-foreground rounded disabled:opacity-50&#34;</span>
+</span></span><span style="display:flex;"><span>    &gt;
+</span></span><span style="display:flex;"><span>        {<span style="color:#a6e22e">computing</span> <span style="color:#f92672">?</span> <span style="color:#e6db74">&#39;Computing...&#39;</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;Compute Transit Series&#39;</span>}
+</span></span><span style="display:flex;"><span>    &lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    {<span style="color:#66d9ef">#if</span> <span style="color:#a6e22e">relationId</span>}
+</span></span><span style="display:flex;"><span>        &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">class</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;p-2 bg-success/10 text-success rounded&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>            Computation started. Relation ID: {<span style="color:#a6e22e">relationId</span>}
+</span></span><span style="display:flex;"><span>        &lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>    {<span style="color:#66d9ef">/if</span>}
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">div</span>&gt;
+</span></span></code></pre></div>
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

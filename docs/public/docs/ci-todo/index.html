@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CI todo | Kefer docs</title>
+    <meta name="description" content="Planned automation and CI follow-up work." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>CI todo</h1>
+      <p class="lede">Planned automation and CI follow-up work.</p>
+    </header>
+    <div class="prose">
+      <h1 id="ci--github-actions---planned-work">CI / GitHub Actions - planned work</h1>
+<p>Tracking items for automation; not implemented yet.</p>
+<h2 id="1-translations-csv--locale-json">1. Translations (CSV → locale JSON)</h2>
+<p><strong>Goal:</strong> Keep <code>translations.csv</code> and generated <code>**/locales/*.json</code> in sync without manual mistakes.</p>
+<p><strong>Sketch:</strong></p>
+<ul>
+<li>Trigger on pull requests (and/or pushes to <code>main</code>) when <code>translations.csv</code> or <code>scripts/csv-to-locales.mjs</code> changes.</li>
+<li>Job steps: <code>actions/checkout</code>, setup Node (see <code>package.json</code> engines if you add them), <code>npm ci</code>, <code>npm run i18n:sync</code>.</li>
+<li><strong>Verify:</strong> <code>git diff --exit-code</code> on tracked locale files — fail the job if the repo would change (forces commit of regenerated JSON).</li>
+<li><strong>Alternative:</strong> auto-commit from a bot account (team policy); only use if you trust branch protections.</li>
+</ul>
+<p><strong>Related:</strong> <code>localeOutputDirs</code> in <code>scripts/csv-to-locales.mjs</code> — extend when new frontends (e.g. Svelte) are added so one workflow still covers all outputs.</p>
+<hr>
+<h2 id="2-rust--tauri-builds-per-platform">2. Rust / Tauri builds (per platform)</h2>
+<p><strong>Goal:</strong> Reproducible desktop builds in CI.</p>
+<p><strong>Sketch:</strong></p>
+<ul>
+<li>Use a <strong>matrix</strong> of runners: e.g. <code>ubuntu-latest</code>, <code>macos-latest</code>, <code>windows-latest</code> (trim to what you actually ship).</li>
+<li>On each runner, install <strong>Rust</strong> via <code>dtolnay/rust-toolchain@stable</code> (or match <code>rust-toolchain.toml</code> / <code>src-tauri/Cargo.toml</code> <code>rust-version</code>).</li>
+<li>Install <strong>Tauri v2 prerequisites</strong> per OS (<a href="https://tauri.app/start/prerequisites/">Linux deps</a>, MSVC on Windows if building there).</li>
+<li>Cache <code>~/.cargo</code> and <code>src-tauri/target</code> where it helps.</li>
+<li>Build: <code>npm ci</code>, <code>npm run build -w web-react</code>, <code>npm run tauri build</code> (or <code>cargo build</code> only for a faster smoke test).</li>
+</ul>
+<p><strong>Note on wording “compiler for each chart”:</strong> If this meant <strong>one Rust toolchain per CI job / per OS target</strong>, the matrix above is the usual pattern (each runner has its own <code>rustc</code> for that platform). If it meant <strong>astrological chart</strong> workloads compiled or validated in Rust per chart, that is <strong>application logic</strong> — track separately (e.g. tests under <code>src-tauri/</code>, not this doc).</p>
+<hr>
+<h2 id="3-optional-follow-ups">3. Optional follow-ups</h2>
+<ul>
+<li>Python sidecar: build <code>kefer-backend</code> (or your binary name) in CI and attach as artifact, or document “bring your own binary” for PRs.</li>
+<li>Code signing / notarization secrets (Windows, macOS) — only when you are ready to release.</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>React frontend | Kefer docs</title>
+    <meta name="description" content="Operational guide for the React &#43; Vite &#43; Tauri UI workspace." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>React frontend</h1>
+      <p class="lede">Operational guide for the React &#43; Vite &#43; Tauri UI workspace.</p>
+    </header>
+    <div class="prose">
+      <h1 id="react-frontend-tauri-2">React frontend (Tauri 2)</h1>
+<p>Operational guide for the Kefer desktop UI (React + Vite + Tauri).</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Node.js (see team <code>.nvmrc</code> or local convention).</li>
+<li>Rust toolchain for <code>cargo tauri build</code> / <code>cargo tauri dev</code>.</li>
+<li>Python sidecar: built binary expected at <code>src-tauri/binaries/kefer-backend</code> (see Tauri <code>bundle.resources</code> in <code>src-tauri/tauri.conf.json</code>).</li>
+</ul>
+<h3 id="workspace-duckdb-storage-currently-off">Workspace DuckDB storage (currently off)</h3>
+<p>The <code>duckdb</code> crate and <code>src-tauri/src/storage/duckdb.rs</code> were removed to avoid heavy native builds during UI work. <strong><code>src-tauri/src/commands/storage.rs</code></strong> still exposes the same Tauri commands (<code>init_storage</code>, <code>query_positions</code>, etc.); they are <strong>no-ops</strong> or return <strong>empty lists</strong> (see file header). Chart data still flows through YAML + Python compute; only the DuckDB time-series layer is inactive. To restore, re-add the <code>duckdb</code> dependency, bring back <code>storage/duckdb.rs</code> from version control history, and wire <code>commands/storage.rs</code> to <code>DuckDBStorage</code> again.</p>
+<h2 id="commands">Commands</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm install
+</span></span><span style="display:flex;"><span>npm run dev              <span style="color:#75715e"># Vite only, http://localhost:1420</span>
+</span></span><span style="display:flex;"><span>npm run tauri dev        <span style="color:#75715e"># Desktop app with hot reload</span>
+</span></span><span style="display:flex;"><span>npm run build            <span style="color:#75715e"># Frontend → apps/web-react/dist/</span>
+</span></span><span style="display:flex;"><span>npm run tauri build      <span style="color:#75715e"># Full app bundle</span>
+</span></span><span style="display:flex;"><span>npm run check            <span style="color:#75715e"># TypeScript (app + vite config)</span>
+</span></span><span style="display:flex;"><span>npm run lint             <span style="color:#75715e"># Prettier + ESLint</span>
+</span></span><span style="display:flex;"><span>npm run i18n:sync        <span style="color:#75715e"># Regenerate `apps/web-react/src/locales/*.json` from `translations.csv`</span>
+</span></span></code></pre></div><h2 id="layout">Layout</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Path</th>
+          <th>Purpose</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>apps/web-react/src/main.tsx</code></td>
+          <td>React root; mounts <code>&lt;App /&gt;</code> and <code>&lt;Toaster /&gt;</code> (sonner).</td>
+      </tr>
+      <tr>
+          <td><code>apps/web-react/src/app/App.tsx</code></td>
+          <td>Main shell: sidebar, views, <strong>workspace open/save</strong> handlers.</td>
+      </tr>
+      <tr>
+          <td><code>apps/web-react/src/app/components/</code></td>
+          <td>Feature and UI components (Radix/shadcn-style under <code>ui/</code>).</td>
+      </tr>
+      <tr>
+          <td><code>apps/web-react/src/styles/</code></td>
+          <td><code>index.css</code> → Tailwind 4, theme tokens, fonts.</td>
+      </tr>
+      <tr>
+          <td><code>apps/web-react/src/lib/tauri/</code></td>
+          <td><strong>Tauri bridge</strong>: types, chart payloads, workspace helpers.</td>
+      </tr>
+      <tr>
+          <td><code>static/</code> (repo root)</td>
+          <td><strong>Shared public assets</strong>: <code>glyphs/**</code>, <code>favicon.png</code>. Used by Vite <code>publicDir</code>; served at <code>/glyphs/...</code> in dev and copied into <code>dist/</code> on build.</td>
+      </tr>
+      <tr>
+          <td><code>apps/web-react/src/locales/</code></td>
+          <td><strong>i18n JSON</strong> (<code>cs</code>, <code>en</code>, <code>fr</code>, <code>es</code>) — generated from <code>translations.csv</code>; imported by the app (not served from <code>static/</code>).</td>
+      </tr>
+      <tr>
+          <td><code>apps/web-react/src/lib/i18n/</code></td>
+          <td><strong>i18next</strong> init, <code>LANGUAGE_STORAGE_KEY</code> (<code>kefer-language</code> in <code>localStorage</code>).</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="internationalization-i18n">Internationalization (i18n)</h2>
+<p><strong>Do you need JSON under <code>static/</code>?</strong> No. Locale files live in <strong><code>apps/web-react/src/locales/</code></strong> and are bundled by Vite, which works offline in Tauri and avoids extra <code>fetch</code> / CSP concerns. Reserve <strong>repo root <code>static/</code></strong> (shared across frontends) for assets you reference by URL (glyphs, favicon).</p>
+<ul>
+<li><strong>Source of truth</strong>: repo root <strong><code>translations.csv</code></strong> (columns <code>internal_name</code>, <code>czech</code>, <code>english</code>, <code>french</code>, <code>spanish</code>). In a collaborative setup, maintain the sheet in <strong>Google Sheets</strong>, then <strong>File → Download → CSV</strong> (or a scheduled export) and replace <code>translations.csv</code> in the repo.</li>
+<li><strong>Regenerate JSON</strong>: <code>npm run i18n:sync</code> runs <code>scripts/csv-to-locales.mjs</code>, which writes the same four locale files to <strong>every</strong> path listed in <code>localeOutputDirs</code> (React today; add Svelte paths when that app exists). One command keeps all frontends on the same keys and strings.</li>
+<li><strong>Staying in sync</strong>: After updating the CSV, run <code>npm run i18n:sync</code> and commit <strong>both</strong> <code>translations.csv</code> and the generated <code>**/locales/*.json</code>. Optionally add CI that fails if someone edits JSON by hand without syncing, or that runs the script and checks for a clean <code>git diff</code>.</li>
+<li><strong>Runtime</strong>: <code>react-i18next</code> + <code>i18next</code>; wrap is in <strong><code>apps/web-react/src/main.tsx</code></strong> (<code>I18nextProvider</code>). Use <code>useTranslation()</code> and <code>t('key')</code> where <code>key</code> is <code>internal_name</code> from the CSV.</li>
+<li><strong>Settings UI</strong>: <strong><code>apps/web-react/src/app/components/settings-view.tsx</code></strong> — language, location, house system, aspects, appearance, manual, plus <strong>Cancel / Confirm</strong> footer. Language is stored under <strong><code>kefer-language</code></strong>; glyph set choice writes <strong><code>glyph_set</code></strong> in <code>localStorage</code>. Other fields are UI state until workspace/theme hooks are ported. Open settings from the sidebar’s <strong>last main nav item</strong> (translated <code>settings</code>).</li>
+<li><strong>Conventions</strong>: See <strong><a href="./ui-conventions/">ui-conventions</a></strong> for the full i18n workflow and transits/settings layout notes.</li>
+</ul>
+<h2 id="tauri-bridge-appsweb-reactsrclibtauri">Tauri bridge (<code>apps/web-react/src/lib/tauri/</code>)</h2>
+<ul>
+<li><strong><code>types.ts</code></strong> — TypeScript shapes aligned with common <code>invoke</code> responses (workspace, chart details, compute result).</li>
+<li><strong><code>chartPayload.ts</code></strong> — <code>AppChart</code>, workspace defaults, <code>chartDataToComputePayload()</code> (JSON shape expected by <code>save_workspace</code>).</li>
+<li><strong><code>workspace.ts</code></strong> — <code>openFolderDialog</code>, <code>loadWorkspace</code>, <code>initStorage</code>, <code>getWorkspaceDefaults</code>, <code>getChartDetails</code>, <code>computeChart</code>, <code>saveWorkspace</code>, and <strong><code>openWorkspaceFolder()</code></strong> (full open flow: load charts, init storage, compute each chart).</li>
+</ul>
+<h3 id="wired-in-the-ui">Wired in the UI</h3>
+<p>In <strong><code>App.tsx</code></strong>, sidebar actions:</p>
+<ul>
+<li><strong>Otevřít</strong> (<code>otevrit</code>) — runs <code>openWorkspaceFolder()</code> after <code>open_folder_dialog</code>; merges workspace defaults; stores charts in React state; toasts success/failure.</li>
+<li><strong>Uložit</strong> (<code>ulozit</code>) — if there are in-memory charts, saves via <code>save_workspace</code> + <code>init_storage</code>; prompts for folder when no <code>workspacePath</code> yet.</li>
+</ul>
+<p>Other views (horoscope dashboard, transits, aspectarium) are still mostly presentational until you thread <code>charts</code> / <code>computed</code> state into them.</p>
+<h2 id="glyphs-svg">Glyphs (SVG)</h2>
+<p>Keep source glyphs under <strong><code>static/glyphs/</code></strong> (repo root). <code>apps/web-react</code> sets Vite <code>publicDir</code> to that folder, so in components you can use absolute URLs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-tsx" data-lang="tsx"><span style="display:flex;"><span>&lt;<span style="color:#f92672">img</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/glyphs/planets/sun.svg&#34;</span> <span style="color:#a6e22e">alt</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span> /&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">img</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/glyphs/sets/classic/zodiac/aries.svg&#34;</span> <span style="color:#a6e22e">alt</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span> /&gt;
+</span></span></code></pre></div><p>Do not rely on old <code>dist/</code> copies for source of truth; <code>dist/</code> is build output and is gitignored.</p>
+<h2 id="theming">Theming</h2>
+<ul>
+<li><strong>App-level themes</strong> (<code>sunrise</code> | <code>noon</code> | <code>twilight</code> | <code>midnight</code>) are local React state in <code>App.tsx</code> and the sidebar. Main content backgrounds (including twilight image and midnight radial) live in <strong><code>App.tsx</code></strong>; <strong>sidebar and secondary rails</strong> share <strong><code>sidebarThemeStyles</code></strong> exported from <strong><code>apps/web-react/src/app/components/astrology-sidebar.tsx</code></strong> (see <strong><a href="./ui-conventions/">ui-conventions</a></strong>).</li>
+<li><strong><code>apps/web-react/src/styles/theme.css</code></strong> holds CSS variables for shadcn-style components. <code>apps/web-react/index.html</code> includes a small script to set <code>dark</code> on <code>&lt;html&gt;</code> from <code>localStorage</code> / <code>prefers-color-scheme</code> for future use.</li>
+<li><strong><code>sonner</code></strong>: <code>apps/web-react/src/app/components/ui/sonner.tsx</code> does <strong>not</strong> use <code>next-themes</code>; it uses the <code>dark</code> class on <code>&lt;html&gt;</code> for toast theme.</li>
+</ul>
+<h2 id="figma--make-export-fixes">Figma / Make export fixes</h2>
+<p><code>figma:asset/....png</code> style imports are replaced with <strong><code>@/assets/....png</code></strong> (Vite resolves <code>@</code> → <code>apps/web-react/src/</code>). PNG files live in <code>apps/web-react/src/assets/</code>.</p>
+<h2 id="typescript-strictness">TypeScript strictness</h2>
+<p><code>apps/web-react/tsconfig.app.json</code> uses <code>noUnusedLocals: false</code> and <code>noUnusedParameters: false</code> to keep the large UI tree building cleanly. Tighten these when you refactor unused Figma placeholders.</p>
+<h2 id="related-backend-docs">Related backend docs</h2>
+<ul>
+<li><strong><a href="./architecture/">architecture</a></strong> — workspace YAML, DuckDB, command responsibilities.</li>
+<li><strong><a href="./integration-examples/">integration-examples</a></strong> — <code>invoke</code> examples (<code>@tauri-apps/api/core</code>; same from React).</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

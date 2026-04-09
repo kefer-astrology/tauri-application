@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture | Kefer docs</title>
+    <meta name="description" content="Cross-layer architecture for the Tauri, React, and Python stack." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Architecture</h1>
+      <p class="lede">Cross-layer architecture for the Tauri, React, and Python stack.</p>
+    </header>
+    <div class="prose">
+      <h1 id="architecture">Architecture</h1>
+<p>Consolidated architecture reference for the Tauri + Python astrology browser.</p>
+<h2 id="overview">Overview</h2>
+<ul>
+<li><strong>Frontend</strong>: React UI (<code>apps/web-react/src/app/</code>) calling Tauri via <code>apps/web-react/src/lib/tauri/</code> (see <a href="./frontend-react/">frontend-react</a>). UI themes and i18n workflow: <a href="./ui-conventions/">ui-conventions</a>.</li>
+<li><strong>Backend</strong>: Tauri (Rust) commands orchestrate workspace and computation.</li>
+<li><strong>Compute</strong>: Python sidecar (CLI) performs astrology calculations.</li>
+<li><strong>Storage</strong>: YAML for metadata + DuckDB/Parquet for positions-only data.</li>
+<li><strong>Aspects</strong>: Computed on demand from stored positions (not persisted).</li>
+</ul>
+<h2 id="core-principles">Core Principles</h2>
+<ol>
+<li><strong>YAML Compatibility</strong>: Workspace/charts remain compatible with the Python package.</li>
+<li><strong>Hybrid Storage</strong>: YAML for metadata; DuckDB + Parquet for positions.</li>
+<li><strong>Python Sidecar</strong>: Heavy computation stays in Python; async from Tauri.</li>
+<li><strong>Query-Optimized</strong>: Structure for fast position queries; derive aspects at query time.</li>
+<li><strong>Precision Support</strong>: JPL supports seconds/microseconds as needed.</li>
+</ol>
+<h2 id="workspace-layout">Workspace Layout</h2>
+<pre tabindex="0"><code>workspace/
+├── workspace.yaml              # Workspace metadata
+├── charts/                     # Chart definitions
+│   ├── chart_001.yaml
+│   └── chart_002.yaml
+├── subjects/                   # Subject definitions
+│   └── subject_001.yaml
+└── data/
+    ├── workspace.db            # DuckDB (positions, relations, metadata)
+    └── positions/              # Parquet files for positions
+        ├── chart_001/
+        └── chart_002/
+</code></pre><h2 id="storage-model-positions-only">Storage Model (Positions-Only)</h2>
+<ul>
+<li><strong>Positions</strong> are the single source of truth.</li>
+<li><strong>Aspects</strong> are derived on demand in the query layer (Rust/Python).</li>
+<li><strong>Parquet</strong> is used for large time ranges; <strong>DuckDB</strong> for active queries.</li>
+</ul>
+<h3 id="duckdb-core-table">DuckDB Core Table</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> computed_positions (
+</span></span><span style="display:flex;"><span>    chart_id TEXT <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    datetime <span style="color:#66d9ef">TIMESTAMP</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,   <span style="color:#75715e">-- Microsecond precision supported
+</span></span></span><span style="display:flex;"><span>    object_id TEXT <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Ecliptic coordinates (always available)
+</span></span></span><span style="display:flex;"><span>    longitude REAL <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    latitude REAL,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Equatorial (JPL: always computed)
+</span></span></span><span style="display:flex;"><span>    declination REAL,
+</span></span><span style="display:flex;"><span>    right_ascension REAL,
+</span></span><span style="display:flex;"><span>    distance REAL,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Topocentric (JPL with location)
+</span></span></span><span style="display:flex;"><span>    altitude REAL,
+</span></span><span style="display:flex;"><span>    azimuth REAL,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Physical (JPL for planets)
+</span></span></span><span style="display:flex;"><span>    apparent_magnitude REAL,
+</span></span><span style="display:flex;"><span>    phase_angle REAL,
+</span></span><span style="display:flex;"><span>    elongation REAL,
+</span></span><span style="display:flex;"><span>    light_time REAL,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Motion
+</span></span></span><span style="display:flex;"><span>    speed REAL,
+</span></span><span style="display:flex;"><span>    retrograde BOOLEAN,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Engine metadata
+</span></span></span><span style="display:flex;"><span>    engine TEXT,
+</span></span><span style="display:flex;"><span>    ephemeris_file TEXT,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Flags for populated columns
+</span></span></span><span style="display:flex;"><span>    has_equatorial BOOLEAN <span style="color:#66d9ef">DEFAULT</span> <span style="color:#66d9ef">FALSE</span>,
+</span></span><span style="display:flex;"><span>    has_topocentric BOOLEAN <span style="color:#66d9ef">DEFAULT</span> <span style="color:#66d9ef">FALSE</span>,
+</span></span><span style="display:flex;"><span>    has_physical BOOLEAN <span style="color:#66d9ef">DEFAULT</span> <span style="color:#66d9ef">FALSE</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (chart_id, datetime, object_id)
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><h3 id="jpl-column-rules">JPL Column Rules</h3>
+<ul>
+<li>For JPL: <code>declination</code>, <code>right_ascension</code>, <code>distance</code> are <strong>always</strong> computed.</li>
+<li>For non‑JPL: those columns are <code>NULL</code>.</li>
+<li>Use <code>has_equatorial</code>, <code>has_topocentric</code>, <code>has_physical</code> to filter.</li>
+</ul>
+<h2 id="backend-routing-rust--python--rust">Backend routing (Rust → Python / Rust)</h2>
+<ul>
+<li><strong>All frontend actions</strong> go through Tauri: the UI only calls <code>invoke('&lt;command&gt;', ...)</code>. There is no direct frontend → Python path.</li>
+<li><strong>Compute router</strong> (env <code>KEFER_COMPUTE_BACKEND</code>):
+<ul>
+<li><code>Auto</code> (default): <strong>Python primary</strong>, <strong>Rust fallback</strong>. Try Python first; on failure, fall back to Rust when <code>KEFER_PYTHON_FALLBACK</code> is not disabled.</li>
+<li><code>Python</code>: use Python only.</li>
+<li><code>Rust</code>: use Rust only (no fallback).</li>
+</ul>
+</li>
+<li><strong>Rust</strong> implements workspace I/O, storage (DuckDB), and in-memory chart building; <strong>Python</strong> is used for Swiss Ephemeris / JPL when available.</li>
+</ul>
+<h2 id="data-flows">Data Flows</h2>
+<h3 id="chart-creation">Chart Creation</h3>
+<pre tabindex="0"><code>React UI → Tauri command → write YAML → Python compute_positions → store DuckDB
+</code></pre><h3 id="transit-computation">Transit Computation</h3>
+<pre tabindex="0"><code>React UI → Tauri command → Python compute positions over range → store DuckDB
+UI derives aspects from loaded positions when needed
+</code></pre><h2 id="integration-points-frontend">Integration Points (frontend)</h2>
+<p><strong>Current:</strong></p>
+<ul>
+<li><code>apps/web-react/src/lib/tauri/</code> — types and <code>invoke</code> helpers (<code>openWorkspaceFolder</code>, <code>saveWorkspace</code>, etc.).</li>
+<li><code>apps/web-react/src/app/App.tsx</code> — workspace open/save from the sidebar; extend with chart editors and data views.</li>
+</ul>
+<p><strong>To add (React):</strong></p>
+<ul>
+<li>Time navigation state/hooks and panels (see <a href="./time-navigation/">time-navigation</a> for design).</li>
+<li>Tables, radix chart canvas, and aspect grids as React components; use <code>/glyphs/...</code> from repo root <code>static/</code> (shared).</li>
+</ul>
+<h2 id="tauri-commands-high-level">Tauri Commands (High-Level)</h2>
+<p><strong>Invoked from frontend today:</strong><br>
+<code>read</code>, <code>write</code>, <code>open_folder_dialog</code>, <code>load_workspace</code>, <code>save_workspace</code>, <code>get_workspace_defaults</code>, <code>get_chart_details</code>, <code>init_storage</code>, <code>compute_chart</code>, <code>compute_chart_from_data</code>, <code>compute_transit_series</code>, <code>create_chart</code>, <code>update_chart</code>, <code>query_positions</code>, <code>compute_aspects</code>, <code>query_radix_relative</code>.</p>
+<p><strong>Registered but not yet used from UI (reserved for future wiring):</strong><br>
+<code>store_positions</code>, <code>store_relation</code>, <code>query_timestamps</code>, <code>create_workspace</code>, <code>delete_workspace</code>, <code>delete_chart</code>.</p>
+<h2 id="time-navigation">Time Navigation</h2>
+<ul>
+<li>Seconds/minutes/hours/days stepping (default 1 hour).</li>
+<li>Quick navigation: first, prev, next, last, now.</li>
+<li>Time shift (Astrolab): years/months/days/hours/minutes/seconds.</li>
+</ul>
+<h2 id="ui-view-modes">UI View Modes</h2>
+<ul>
+<li><strong>Radix View</strong>: circular chart, houses, aspects (derived).</li>
+<li><strong>Table View</strong>: positions table with optional JPL columns.</li>
+<li><strong>Statistics View</strong>: aggregated counts.</li>
+<li><strong>Interpretations View</strong>: text-based meanings.</li>
+</ul>
+<h2 id="performance-notes">Performance Notes</h2>
+<ul>
+<li>Batch computation with pre‑initialized engines.</li>
+<li>DuckDB for hot data; Parquet partitioned by date for long ranges.</li>
+<li>Cache recent computations in memory for UI responsiveness.</li>
+</ul>
+<h2 id="implementation-checklist">Implementation Checklist</h2>
+<ol>
+<li>Preserve i18n/theming.</li>
+<li>Add time navigation store + UI.</li>
+<li>Update DuckDB schema for optional JPL columns + flags.</li>
+<li>Ensure Python CLI returns JPL columns.</li>
+<li>Wire UI views to position queries; derive aspects on demand.</li>
+</ol>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

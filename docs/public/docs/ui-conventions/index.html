@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UI conventions | Kefer docs</title>
+    <meta name="description" content="Theme, layout, and i18n rules for the React shell." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>UI conventions</h1>
+      <p class="lede">Theme, layout, and i18n rules for the React shell.</p>
+    </header>
+    <div class="prose">
+      <h1 id="ui-conventions-react-shell">UI conventions (React shell)</h1>
+<p>Crisp reference for <strong>themes</strong>, <strong>secondary navigation</strong>, and <strong>i18n</strong> so new work stays aligned with the four app themes and a single source of styling truth.</p>
+<h2 id="four-app-themes">Four app themes</h2>
+<p>The product uses exactly four named themes (no ad‑hoc palettes in feature code):</p>
+<table>
+  <thead>
+      <tr>
+          <th>Theme</th>
+          <th>Role (typical)</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>sunrise</code></td>
+          <td>Light, cool sky gradient</td>
+      </tr>
+      <tr>
+          <td><code>noon</code></td>
+          <td>Neutral light</td>
+      </tr>
+      <tr>
+          <td><code>twilight</code></td>
+          <td>Dark blue glass (photo background in main area)</td>
+      </tr>
+      <tr>
+          <td><code>midnight</code></td>
+          <td>Dark radial / slate glass</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Type:</strong> <code>Theme</code> in <code>src/app/components/astrology-sidebar.tsx</code>.</p>
+<p><strong>Where they apply</strong></p>
+<ol>
+<li><strong>Main window background</strong> — <code>src/app/App.tsx</code> maps each theme to Tailwind classes and, for <code>twilight</code> / <code>midnight</code>, to <strong>document-level</strong> background (<code>backgroundImage</code> or radial gradient). Those are intentional “scene” backgrounds for the content area.</li>
+<li><strong>Chrome (sidebars and rails)</strong> — <strong><code>sidebarThemeStyles</code></strong> in the same file: exported <code>Record&lt;Theme, SidebarThemeBlock&gt;</code> with <code>bg</code>, <code>border</code>, <code>text</code>, <code>hover</code>, <code>active</code>, <code>separator</code>, etc. For <code>twilight</code> and <code>midnight</code>, <strong><code>customStyle</code></strong> adds gradient, blur, and border color so the rail matches the main sidebar.</li>
+</ol>
+<p><strong>Rule:</strong> Do not introduce one-off hex colors or <code>isDark ? … : …</code> forks for rails or primary navigation. Use <code>sidebarThemeStyles[theme]</code> (or extend that object if a new surface is needed).</p>
+<h2 id="secondary-navigation-secondarynavpanel">Secondary navigation (<code>SecondaryNavPanel</code>)</h2>
+<p><strong>File:</strong> <code>src/app/components/secondary-nav-panel.tsx</code></p>
+<p>Used for:</p>
+<ul>
+<li><strong>Transits</strong> — <code>TransitsSecondarySidebar</code> wraps it (section titles from i18n).</li>
+<li><strong>Settings</strong> — <code>SettingsView</code> places it in a <strong>grid</strong> next to the settings card: <code>lg:grid-cols-[14rem_minmax(0,1fr)]</code>, <code>gap-6</code>, <code>items-stretch</code>.</li>
+</ul>
+<p>The panel consumes <strong><code>sidebarThemeStyles[theme]</code></strong> for surface, borders, text, hover, and active button states. <strong>Twilight / midnight</strong> reuse the same <strong><code>customStyle</code></strong> as the main sidebar (not separate inline colors in this component).</p>
+<p>Optional <strong><code>className</code></strong> on the panel (e.g. max-height + scroll on the settings rail) is for layout only, not alternate palettes.</p>
+<h2 id="transits-layout-shell">Transits layout (shell)</h2>
+<p>In <strong><code>App.tsx</code></strong>, when <code>activeView === 'tranzity'</code>, the transits <strong>secondary</strong> rail is a sibling of the main content column (same flex row as <code>AstrologySidebar</code>). Content is <strong><code>TransitsContent</code></strong> with a <code>section</code> driven by the rail.</p>
+<p>Adding another “second column” view should follow the same pattern: sibling rail + main, theme passed through.</p>
+<h2 id="internationalization-i18n">Internationalization (i18n)</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Item</th>
+          <th>Location</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Source of truth</td>
+          <td>Repo root <strong><code>translations.csv</code></strong> (<code>internal_name</code> + <code>czech</code>, <code>english</code>, <code>french</code>, <code>spanish</code>)</td>
+      </tr>
+      <tr>
+          <td>Generated bundles</td>
+          <td><strong><code>src/locales/*.json</code></strong> — <strong>do not edit by hand</strong> for routine changes</td>
+      </tr>
+      <tr>
+          <td>Sync command</td>
+          <td><strong><code>npm run i18n:sync</code></strong> (runs <code>scripts/csv-to-locales.mjs</code>)</td>
+      </tr>
+      <tr>
+          <td>Runtime</td>
+          <td><code>react-i18next</code>; keys are CSV <code>internal_name</code> values</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Workflow for new copy:</strong> add or edit a row in <strong><code>translations.csv</code></strong>, run <strong><code>npm run i18n:sync</code></strong>, then use <strong><code>t('internal_name')</code></strong> in components.</p>
+<p>Transits-related keys use the <code>transits_*</code> prefix where grouped; shared labels reuse global keys (e.g. <code>planet_*</code>, <code>aspect_*</code>, <code>button_*</code>).</p>
+<h2 id="form-fields-shared-theme-helper">Form fields (shared theme helper)</h2>
+<p><strong><code>src/app/components/form-field-theme.ts</code></strong> exports <code>getAppFormFieldTheme(theme)</code> — labels, inputs, selects, date-picker surfaces, advanced panel, switches, and footer actions (rounded-lg, blue glass on twilight/midnight, indigo primaries).</p>
+<p><strong>Create new chart</strong> (<code>new-horoscope.tsx</code>) and <strong>Settings</strong> both use this helper on top of shadcn <strong><code>Card</code></strong>, <strong><code>Input</code></strong>, <strong><code>Label</code></strong>, <strong><code>Select</code></strong>, <strong><code>Switch</code></strong>, and native **<code>&lt;button&gt;</code>**s for the wide footer actions (same pattern as settings).</p>
+<h2 id="related-docs">Related docs</h2>
+<ul>
+<li><strong><a href="./frontend-react/">frontend-react</a></strong> — Commands, folder layout, Tauri bridge, glyphs.</li>
+<li><strong><a href="./architecture/">architecture</a></strong> — Workspace and storage (backend-oriented).</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

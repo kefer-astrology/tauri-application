@@ -1,0 +1,13 @@
+Kefer Astrology repository documentation
+
+Primary entrypoints:
+- /llm/project-context/
+- /llm/continuation-guide/
+- /docs/
+- /docs/frontend-react/
+- /docs/architecture/
+
+Notes:
+- The docs site is generated from the repository docs/ directory with Hugo.
+- Frontend builds are copied into /apps/<workspace>/ during npm run docs:prepare.
+- Generated frontend copies under docs/static/apps/ are build artifacts, not source of truth.

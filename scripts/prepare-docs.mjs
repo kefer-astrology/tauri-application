@@ -60,7 +60,7 @@ async function collectFrontends() {
 			name: pkg.name ?? entry.name,
 			title: pkg.description ?? pkg.name ?? entry.name,
 			source: `apps/${entry.name}`,
-			output: `/apps/${entry.name}/`,
+			output: `apps/${entry.name}/`,
 		});
 
 		await cp(distDir, path.join(generatedAppsDir, entry.name), {

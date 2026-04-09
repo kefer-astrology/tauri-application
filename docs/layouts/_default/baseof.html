@@ -11,11 +11,11 @@
   <body>
     <div class="shell">
       <header class="site-header">
-        <a class="brand" href="{{ "/" | relURL }}">Kefer docs</a>
+        <a class="brand" href="{{ site.Home.RelPermalink }}">Kefer docs</a>
         <nav class="top-nav" aria-label="Primary">
-          <a href="{{ "/docs/" | relURL }}">Docs</a>
-          <a href="{{ "/llm/" | relURL }}">LLM handoff</a>
-          <a href="{{ "/" | relURL }}#frontend-builds">Frontend builds</a>
+          <a href="{{ "docs/" | relURL }}">Docs</a>
+          <a href="{{ "llm/" | relURL }}">LLM handoff</a>
+          <a href="{{ site.Home.RelPermalink }}#frontend-builds">Frontend builds</a>
         </nav>
       </header>
       <main>

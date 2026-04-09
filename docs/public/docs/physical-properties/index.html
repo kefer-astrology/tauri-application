@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Physical properties | Kefer docs</title>
+    <meta name="description" content="Reference notes for JPL-derived physical fields and support." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Physical properties</h1>
+      <p class="lede">Reference notes for JPL-derived physical fields and support.</p>
+    </header>
+    <div class="prose">
+      <h1 id="physical-properties-in-data-structure">Physical Properties in Data Structure</h1>
+<h2 id="overview">Overview</h2>
+<p>The data structure is designed to capture <strong>all physical/astronomical properties</strong> available from JPL/Skyfield computations, ensuring complete physical context for astrological analysis.</p>
+<h2 id="always-computed-for-jpl">Always Computed for JPL</h2>
+<p>These properties are <strong>always</strong> computed and stored when using JPL engine:</p>
+<ol>
+<li>
+<p><strong>Distance</strong> (AU) - Distance from Earth</p>
+<ul>
+<li><strong>NOT optional</strong> - always computed for JPL</li>
+<li>Essential for understanding planetary proximity</li>
+<li>Used in various astrological calculations</li>
+</ul>
+</li>
+<li>
+<p><strong>Declination</strong> (degrees) - Celestial latitude</p>
+<ul>
+<li>Always computed for JPL</li>
+<li>Important for understanding planetary position relative to celestial equator</li>
+<li>Used in declination aspects and parallel calculations</li>
+</ul>
+</li>
+<li>
+<p><strong>Right Ascension</strong> (degrees) - Celestial longitude</p>
+<ul>
+<li>Always computed for JPL</li>
+<li>Fundamental equatorial coordinate</li>
+<li>Used in coordinate transformations</li>
+</ul>
+</li>
+</ol>
+<h2 id="computed-when-location-available">Computed When Location Available</h2>
+<p>These properties require observer location (topocentric):</p>
+<ol start="4">
+<li>
+<p><strong>Altitude</strong> (degrees) - Height above horizon</p>
+<ul>
+<li>Computed when location is provided</li>
+<li>Important for visibility and house calculations</li>
+<li>Used in local horizon-based astrology</li>
+</ul>
+</li>
+<li>
+<p><strong>Azimuth</strong> (degrees) - Direction from north</p>
+<ul>
+<li>Computed when location is provided</li>
+<li>Used in directional astrology</li>
+<li>Important for house cusp calculations</li>
+</ul>
+</li>
+</ol>
+<h2 id="optional-extended-properties">Optional Extended Properties</h2>
+<p>These can be computed for planets when requested:</p>
+<ol start="6">
+<li>
+<p><strong>Apparent Magnitude</strong> - Brightness as seen from Earth</p>
+<ul>
+<li>Useful for understanding planetary visibility</li>
+<li>Important for observational astrology</li>
+</ul>
+</li>
+<li>
+<p><strong>Phase Angle</strong> (degrees) - Angle between Sun, planet, and Earth</p>
+<ul>
+<li>Important for understanding planetary phases</li>
+<li>Used in planetary phase analysis</li>
+</ul>
+</li>
+<li>
+<p><strong>Elongation</strong> (degrees) - Angular distance from Sun</p>
+<ul>
+<li>Important for understanding planetary visibility</li>
+<li>Used in heliacal rise/set calculations</li>
+</ul>
+</li>
+<li>
+<p><strong>Light Time</strong> (seconds) - Time for light to travel from object to Earth</p>
+<ul>
+<li>Important for understanding apparent vs. true positions</li>
+<li>Used in high-precision calculations</li>
+</ul>
+</li>
+</ol>
+<h2 id="data-structure">Data Structure</h2>
+<h3 id="database-schema">Database Schema</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> computed_positions (
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Core identifiers
+</span></span></span><span style="display:flex;"><span>    chart_id TEXT <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    datetime <span style="color:#66d9ef">TIMESTAMP</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    object_id TEXT <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Ecliptic coordinates (always)
+</span></span></span><span style="display:flex;"><span>    longitude REAL <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    latitude REAL,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Equatorial coordinates (JPL - always computed)
+</span></span></span><span style="display:flex;"><span>    declination REAL,           <span style="color:#75715e">-- Always present for JPL
+</span></span></span><span style="display:flex;"><span>    right_ascension REAL,       <span style="color:#75715e">-- Always present for JPL
+</span></span></span><span style="display:flex;"><span>    distance REAL <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,     <span style="color:#75715e">-- Always present for JPL (NOT NULL constraint)
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Topocentric (JPL with location)
+</span></span></span><span style="display:flex;"><span>    altitude REAL,
+</span></span><span style="display:flex;"><span>    azimuth REAL,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Physical properties (JPL optional)
+</span></span></span><span style="display:flex;"><span>    apparent_magnitude REAL,
+</span></span><span style="display:flex;"><span>    phase_angle REAL,
+</span></span><span style="display:flex;"><span>    elongation REAL,
+</span></span><span style="display:flex;"><span>    light_time REAL,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Motion
+</span></span></span><span style="display:flex;"><span>    speed REAL,
+</span></span><span style="display:flex;"><span>    retrograde BOOLEAN,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">-- Flags
+</span></span></span><span style="display:flex;"><span>    has_equatorial BOOLEAN,     <span style="color:#75715e">-- TRUE if RA/Dec/Distance available
+</span></span></span><span style="display:flex;"><span>    has_topocentric BOOLEAN,    <span style="color:#75715e">-- TRUE if Alt/Az available
+</span></span></span><span style="display:flex;"><span>    has_physical BOOLEAN,       <span style="color:#75715e">-- TRUE if magnitude/phase/elongation available
+</span></span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><h3 id="python-data-structure">Python Data Structure</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#a6e22e">@dataclass</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PositionData</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Complete physical position data for an astronomical object.&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Ecliptic coordinates</span>
+</span></span><span style="display:flex;"><span>    longitude: float
+</span></span><span style="display:flex;"><span>    latitude: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Equatorial coordinates (always for JPL)</span>
+</span></span><span style="display:flex;"><span>    declination: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>      <span style="color:#75715e"># Always Some for JPL</span>
+</span></span><span style="display:flex;"><span>    right_ascension: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>   <span style="color:#75715e"># Always Some for JPL</span>
+</span></span><span style="display:flex;"><span>    distance: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>         <span style="color:#75715e"># Always Some for JPL (NOT optional)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Topocentric (when location available)</span>
+</span></span><span style="display:flex;"><span>    altitude: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    azimuth: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Physical properties (optional)</span>
+</span></span><span style="display:flex;"><span>    apparent_magnitude: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    phase_angle: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    elongation: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    light_time: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>  <span style="color:#75715e"># seconds</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Motion</span>
+</span></span><span style="display:flex;"><span>    speed: Optional[float] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    retrograde: Optional[bool] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span></code></pre></div><h2 id="query-patterns">Query Patterns</h2>
+<h3 id="get-all-physical-properties-for-an-object">Get all physical properties for an object</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span>
+</span></span><span style="display:flex;"><span>    datetime,
+</span></span><span style="display:flex;"><span>    longitude,
+</span></span><span style="display:flex;"><span>    latitude,
+</span></span><span style="display:flex;"><span>    declination,
+</span></span><span style="display:flex;"><span>    right_ascension,
+</span></span><span style="display:flex;"><span>    distance,
+</span></span><span style="display:flex;"><span>    altitude,
+</span></span><span style="display:flex;"><span>    azimuth,
+</span></span><span style="display:flex;"><span>    apparent_magnitude,
+</span></span><span style="display:flex;"><span>    phase_angle,
+</span></span><span style="display:flex;"><span>    elongation
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> computed_positions
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> chart_id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;chart_001&#39;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">AND</span> object_id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;mars&#39;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">AND</span> datetime <span style="color:#f92672">&gt;=</span> <span style="color:#e6db74">&#39;2024-01-01&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> datetime;
+</span></span></code></pre></div><h3 id="find-objects-by-distance">Find objects by distance</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> object_id, datetime, distance
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> computed_positions
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> chart_id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;chart_001&#39;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">AND</span> distance <span style="color:#66d9ef">IS</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">AND</span> distance <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">1</span>.<span style="color:#ae81ff">0</span>  <span style="color:#75715e">-- Within 1 AU
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> distance;
+</span></span></code></pre></div><h3 id="find-objects-by-declination">Find objects by declination</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> object_id, datetime, declination
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> computed_positions
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> chart_id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;chart_001&#39;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">AND</span> has_equatorial <span style="color:#f92672">=</span> <span style="color:#66d9ef">TRUE</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">ABS</span>(declination) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">20</span>  <span style="color:#75715e">-- High declination
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> <span style="color:#66d9ef">ABS</span>(declination) <span style="color:#66d9ef">DESC</span>;
+</span></span></code></pre></div><h2 id="implementation-notes">Implementation Notes</h2>
+<ol>
+<li><strong>Distance is NOT optional for JPL</strong> - Always compute and store</li>
+<li><strong>Use NULL for missing values</strong> - Efficient storage, clear semantics</li>
+<li><strong>Use flags for querying</strong> - <code>has_equatorial</code>, <code>has_topocentric</code>, <code>has_physical</code></li>
+<li><strong>Compute all available properties</strong> - Don&rsquo;t skip physical data</li>
+<li><strong>Store in structured format</strong> - Makes querying and analysis easier</li>
+</ol>
+<h2 id="benefits">Benefits</h2>
+<ul>
+<li><strong>Complete physical context</strong> - All astronomical data available</li>
+<li><strong>Flexible analysis</strong> - Can analyze by distance, declination, magnitude, etc.</li>
+<li><strong>Future-proof</strong> - Structure supports additional properties</li>
+<li><strong>Efficient storage</strong> - NULL for missing values, flags for querying</li>
+<li><strong>Astrological accuracy</strong> - Full physical context improves calculations</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

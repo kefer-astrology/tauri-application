@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Continuation guide | Kefer docs</title>
+    <meta name="description" content="Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">llm</p>
+      <h1>Continuation guide</h1>
+      
+    </header>
+    <div class="prose">
+      <h2 id="safe-continuation-loop">Safe continuation loop</h2>
+<ol>
+<li>Read <code>/llm/project-context/</code>.</li>
+<li>Read <code>/docs/</code> and then the most relevant guide for the task area.</li>
+<li>Inspect current uncommitted changes before editing.</li>
+<li>Rebuild generated docs assets with <code>npm run docs:prepare</code> when frontend build output changes.</li>
+<li>Avoid editing copied frontend files in <code>docs/static/apps/</code>; change the source app instead.</li>
+</ol>
+<h2 id="docs-publishing-contract">Docs publishing contract</h2>
+<ul>
+<li>Hugo source lives in <code>docs/</code>.</li>
+<li>Frontend artifacts are copied into <code>docs/static/apps/&lt;app&gt;/</code>.</li>
+<li>GitHub Pages should publish the Hugo output, not the raw source directory.</li>
+<li>Lowercase filenames are preferred for docs content and URLs.</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

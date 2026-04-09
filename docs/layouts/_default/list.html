@@ -26,7 +26,7 @@
         </div>
         <div class="card-grid">
           {{ range site.Data.generated.frontends.frontends }}
-            <a class="card" href="{{ .output }}">
+            <a class="card" href="{{ .output | relURL }}">
               <h3>{{ .id }}</h3>
               <p>{{ .title }}</p>
               <p class="meta">{{ .source }}</p>

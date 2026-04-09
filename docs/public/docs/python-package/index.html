@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Python package | Kefer docs</title>
+    <meta name="description" content="Notes on the Python backend package, CLI, and app integration." />
+    
+    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Python package</h1>
+      <p class="lede">Notes on the Python backend package, CLI, and app integration.</p>
+    </header>
+    <div class="prose">
+      <h1 id="python-package-integration">Python Package Integration</h1>
+<p>Consolidated reference for implementing the Python functions called from the Tauri app.</p>
+<h2 id="overview">Overview</h2>
+<p>The Python package is the computation engine for astrological calculations. Tauri calls
+Python via a subprocess and expects JSON on stdout.</p>
+<h2 id="current-integration-status">Current Integration Status</h2>
+<h3 id="-implemented">✅ Implemented</h3>
+<ul>
+<li><code>compute_positions_for_chart(chart: ChartInstance, ws: Optional[Workspace] = None) -&gt; Dict[str, float]</code>
+<ul>
+<li>Called from Rust: <code>compute_chart</code> command</li>
+<li>Returns: object IDs mapped to longitude values (degrees)</li>
+</ul>
+</li>
+</ul>
+<h3 id="-needs-enhancement">⚠️ Needs Enhancement</h3>
+<ul>
+<li>Aspect computation (currently returns empty list)</li>
+<li>JPL-specific properties (declination, RA, distance) computed but not returned</li>
+</ul>
+<h3 id="-not-yet-implemented">❌ Not Yet Implemented</h3>
+<ul>
+<li>Transit series computation</li>
+<li>Revolution computation</li>
+<li>Extended physical properties (magnitude, phase, elongation)</li>
+<li>Topocentric coordinates (altitude, azimuth)</li>
+</ul>
+<h2 id="required-functions">Required Functions</h2>
+<h3 id="1-enhanced-compute_positions_for_chart">1. Enhanced <code>compute_positions_for_chart</code></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">compute_positions_for_chart</span>(
+</span></span><span style="display:flex;"><span>    chart: ChartInstance,
+</span></span><span style="display:flex;"><span>    ws: Optional[Workspace] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>,
+</span></span><span style="display:flex;"><span>    include_physical: bool <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>,
+</span></span><span style="display:flex;"><span>    include_topocentric: bool <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>) <span style="color:#f92672">-&gt;</span> Dict[str, Union[float, Dict[str, float]]]:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Returns:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        - Non-JPL: float (longitude in degrees)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        - JPL: dict with extended properties
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span></code></pre></div><p><strong>JPL Required Keys (always present):</strong></p>
+<ul>
+<li><code>distance</code> (AU)</li>
+<li><code>declination</code> (degrees)</li>
+<li><code>right_ascension</code> (degrees)</li>
+</ul>
+<p><strong>Non-JPL Behavior:</strong></p>
+<ul>
+<li>Return only longitude as float for backward compatibility.</li>
+</ul>
+<h3 id="2-compute_aspects_for_chart">2. <code>compute_aspects_for_chart</code></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">compute_aspects_for_chart</span>(
+</span></span><span style="display:flex;"><span>    chart: ChartInstance,
+</span></span><span style="display:flex;"><span>    aspect_definitions: Optional[List[AspectDefinition]] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>,
+</span></span><span style="display:flex;"><span>    ws: Optional[Workspace] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>) <span style="color:#f92672">-&gt;</span> List[Dict[str, Any]]:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Returns list of aspect dictionaries.&#34;&#34;&#34;</span>
+</span></span></code></pre></div><p><strong>Implementation Notes:</strong></p>
+<ul>
+<li>Use existing <code>compute_aspects</code> logic.</li>
+<li>Convert <code>Aspect</code> objects to dictionaries.</li>
+<li>Include applying/separating flags.</li>
+</ul>
+<h3 id="3-compute_transit_series">3. <code>compute_transit_series</code></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">compute_transit_series</span>(
+</span></span><span style="display:flex;"><span>    source_chart: ChartInstance,
+</span></span><span style="display:flex;"><span>    start_datetime: datetime,
+</span></span><span style="display:flex;"><span>    end_datetime: datetime,
+</span></span><span style="display:flex;"><span>    time_step: timedelta,
+</span></span><span style="display:flex;"><span>    transiting_objects: Optional[List[str]] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>,
+</span></span><span style="display:flex;"><span>    transited_objects: Optional[List[str]] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>,
+</span></span><span style="display:flex;"><span>    aspect_types: Optional[List[str]] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>,
+</span></span><span style="display:flex;"><span>    ws: Optional[Workspace] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>,
+</span></span><span style="display:flex;"><span>    include_physical: bool <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>,
+</span></span><span style="display:flex;"><span>    include_topocentric: bool <span style="color:#f92672">=</span> <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>) <span style="color:#f92672">-&gt;</span> Dict[str, Any]:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Returns transit series results.&#34;&#34;&#34;</span>
+</span></span></code></pre></div><h3 id="4-compute_revolution_series">4. <code>compute_revolution_series</code></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">compute_revolution_series</span>(
+</span></span><span style="display:flex;"><span>    source_chart: ChartInstance,
+</span></span><span style="display:flex;"><span>    start_year: int,
+</span></span><span style="display:flex;"><span>    end_year: int,
+</span></span><span style="display:flex;"><span>    revolution_type: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;solar&#39;</span>,
+</span></span><span style="display:flex;"><span>    ws: Optional[Workspace] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>) <span style="color:#f92672">-&gt;</span> Dict[str, Any]:
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;Returns revolution charts with computed positions/aspects.&#34;&#34;&#34;</span>
+</span></span></code></pre></div><h2 id="return-format-standards">Return Format Standards</h2>
+<h3 id="positions-non-jpl">Positions (Non-JPL)</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;sun&#39;</span>: <span style="color:#ae81ff">45.5</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;moon&#39;</span>: <span style="color:#ae81ff">120.3</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;mars&#39;</span>: <span style="color:#ae81ff">200.7</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="positions-jpl">Positions (JPL)</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;sun&#39;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;longitude&#39;</span>: <span style="color:#ae81ff">45.5</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;latitude&#39;</span>: <span style="color:#ae81ff">0.0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;distance&#39;</span>: <span style="color:#ae81ff">0.985</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;declination&#39;</span>: <span style="color:#ae81ff">15.2</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;right_ascension&#39;</span>: <span style="color:#ae81ff">45.8</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;speed&#39;</span>: <span style="color:#ae81ff">0.985</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;retrograde&#39;</span>: <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="aspects">Aspects</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;from&#39;</span>: <span style="color:#e6db74">&#39;sun&#39;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;to&#39;</span>: <span style="color:#e6db74">&#39;moon&#39;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;type&#39;</span>: <span style="color:#e6db74">&#39;trine&#39;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;angle&#39;</span>: <span style="color:#ae81ff">119.5</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;orb&#39;</span>: <span style="color:#ae81ff">0.5</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;exact_angle&#39;</span>: <span style="color:#ae81ff">120.0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;applying&#39;</span>: <span style="color:#66d9ef">True</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;separating&#39;</span>: <span style="color:#66d9ef">False</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><h2 id="data-format-standards">Data Format Standards</h2>
+<h3 id="object-ids">Object IDs</h3>
+<p>Use frontend-compatible IDs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>STANDARD_OBJECTS <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;sun&#39;</span>, <span style="color:#e6db74">&#39;moon&#39;</span>, <span style="color:#e6db74">&#39;mercury&#39;</span>, <span style="color:#e6db74">&#39;venus&#39;</span>, <span style="color:#e6db74">&#39;mars&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;jupiter&#39;</span>, <span style="color:#e6db74">&#39;saturn&#39;</span>, <span style="color:#e6db74">&#39;uranus&#39;</span>, <span style="color:#e6db74">&#39;neptune&#39;</span>, <span style="color:#e6db74">&#39;pluto&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;asc&#39;</span>, <span style="color:#e6db74">&#39;desc&#39;</span>, <span style="color:#e6db74">&#39;mc&#39;</span>, <span style="color:#e6db74">&#39;ic&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;north_node&#39;</span>, <span style="color:#e6db74">&#39;south_node&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;true_north_node&#39;</span>, <span style="color:#e6db74">&#39;true_south_node&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;lilith&#39;</span>, <span style="color:#e6db74">&#39;chiron&#39;</span>
+</span></span><span style="display:flex;"><span>]
+</span></span></code></pre></div><h3 id="units">Units</h3>
+<ul>
+<li>Angles in degrees (0-360 longitude, -90 to +90 latitude/declination)</li>
+<li>Right ascension in degrees (not hours)</li>
+<li>Distance in AU</li>
+<li>Light time in seconds</li>
+</ul>
+<h3 id="datetime">Datetime</h3>
+<ul>
+<li>Input: ISO 8601 or datetime objects (timezone-aware)</li>
+<li>Output: ISO 8601 with microseconds</li>
+</ul>
+<h2 id="rust--python-integration">Rust ↔ Python Integration</h2>
+<h3 id="call-pattern">Call Pattern</h3>
+<p>Python must:</p>
+<ol>
+<li>Print JSON to stdout</li>
+<li>Print errors to stderr</li>
+<li>Exit with code 0 on success</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>    result <span style="color:#f92672">=</span> compute_positions_for_chart(chart)
+</span></span><span style="display:flex;"><span>    print(json<span style="color:#f92672">.</span>dumps(result))
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">except</span> <span style="color:#a6e22e">Exception</span> <span style="color:#66d9ef">as</span> e:
+</span></span><span style="display:flex;"><span>    print(json<span style="color:#f92672">.</span>dumps({<span style="color:#e6db74">&#39;error&#39;</span>: str(e)}), file<span style="color:#f92672">=</span>sys<span style="color:#f92672">.</span>stderr)
+</span></span><span style="display:flex;"><span>    sys<span style="color:#f92672">.</span>exit(<span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><h3 id="json-serialization">JSON Serialization</h3>
+<ul>
+<li>Convert datetime to ISO strings</li>
+<li>Convert numpy types to native Python types</li>
+<li>Ensure all outputs are JSON-serializable</li>
+</ul>
+<h2 id="error-handling">Error Handling</h2>
+<p>Recommended error types:</p>
+<ul>
+<li><code>ChartNotFound</code></li>
+<li><code>InvalidDatetime</code></li>
+<li><code>InvalidLocation</code></li>
+<li><code>EngineNotAvailable</code></li>
+<li><code>EphemerisNotFound</code></li>
+<li><code>ComputationError</code></li>
+</ul>
+<h2 id="testing">Testing</h2>
+<h3 id="quick-test-script">Quick Test Script</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> module.workspace <span style="color:#f92672">import</span> load_workspace
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> module.services <span style="color:#f92672">import</span> compute_positions_for_chart, compute_aspects_for_chart
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ws <span style="color:#f92672">=</span> load_workspace(<span style="color:#e6db74">&#39;path/to/workspace&#39;</span>)
+</span></span><span style="display:flex;"><span>chart <span style="color:#f92672">=</span> ws<span style="color:#f92672">.</span>charts[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>positions <span style="color:#f92672">=</span> compute_positions_for_chart(chart, ws<span style="color:#f92672">=</span>ws)
+</span></span><span style="display:flex;"><span>aspects <span style="color:#f92672">=</span> compute_aspects_for_chart(chart, ws<span style="color:#f92672">=</span>ws)
+</span></span></code></pre></div><h3 id="unit-tests">Unit Tests</h3>
+<ul>
+<li>Validate swisseph (float positions)</li>
+<li>Validate JPL (dict positions with required keys)</li>
+<li>Validate aspects shape and required keys</li>
+</ul>
+<h2 id="performance-notes">Performance Notes</h2>
+<ul>
+<li>Cache repeated computations where possible.</li>
+<li>Batch transit series computations to avoid memory spikes.</li>
+</ul>
+<h2 id="implementation-checklist">Implementation Checklist</h2>
+<h3 id="phase-1-core-fixes">Phase 1: Core Fixes</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Implement <code>compute_aspects_for_chart</code></li>
+<li><input disabled="" type="checkbox"> Update Rust to call aspect computation</li>
+<li><input disabled="" type="checkbox"> Enhance <code>compute_positions_for_chart</code> for JPL</li>
+<li><input disabled="" type="checkbox"> Test swisseph + JPL formats</li>
+</ul>
+<h3 id="phase-2-transit-computation">Phase 2: Transit Computation</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Implement <code>compute_transit_series</code></li>
+<li><input disabled="" type="checkbox"> Add Rust command for transit computation</li>
+</ul>
+<h3 id="phase-3-extended-features">Phase 3: Extended Features</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Add topocentric coordinates</li>
+<li><input disabled="" type="checkbox"> Add extended physical properties</li>
+<li><input disabled="" type="checkbox"> Implement <code>compute_revolution_series</code></li>
+<li><input disabled="" type="checkbox"> Add caching for performance</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>
