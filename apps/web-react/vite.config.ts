@@ -6,7 +6,8 @@ import { defineConfig } from 'vite';
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
-	publicDir: 'static',
+	// Shared public assets for all frontends (glyphs, favicon, …) — repo root `static/`
+	publicDir: path.resolve(__dirname, '../../static'),
 	plugins: [react(), tailwindcss()],
 	resolve: {
 		alias: {
@@ -20,7 +21,7 @@ export default defineConfig({
 		host: host || false,
 		hmr: host ? { protocol: 'ws', host, port: 1421 } : undefined,
 		watch: {
-			ignored: ['**/src-tauri/**']
+			ignored: ['../../src-tauri/**']
 		}
 	},
 	envPrefix: ['VITE_', 'TAURI_ENV_*'],

@@ -11,9 +11,9 @@ export default ts.config(
 	{
 		ignores: [
 			'dist/**',
+			'apps/**/dist/**',
 			'node_modules/**',
 			'src-tauri/**',
-			'transplant_react/**',
 			'backend-python/**',
 			'.codex/**'
 		]

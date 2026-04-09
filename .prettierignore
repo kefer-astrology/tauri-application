@@ -1,8 +1,8 @@
 dist
+apps/**/dist
 node_modules
 src-tauri/target
 src-tauri/gen
-transplant_react
 backend-python
 .codex
 *.lock
