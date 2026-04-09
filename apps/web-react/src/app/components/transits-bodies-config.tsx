@@ -17,7 +17,7 @@ export function TransitsBodiesConfig({ theme, titleKey, subtitleKey }: TransitsB
 	return (
 		<div className="h-full min-h-0 w-full overflow-y-auto">
 			<div
-				className={cn('mx-auto w-full max-w-6xl rounded-xl border p-8 shadow-lg', ft.settingsCard)}
+				className={cn('mx-auto w-full max-w-6xl rounded-xl p-8', ft.settingsCard, 'border-0 shadow-none')}
 			>
 				<div className="mb-8">
 					<h1 className={cn('mb-2 text-2xl font-semibold', ft.title)}>{t(titleKey)}</h1>
@@ -351,9 +351,7 @@ export function TransitsBodiesConfig({ theme, titleKey, subtitleKey }: TransitsB
 					</div>
 				</div>
 
-				<div
-					className={cn('flex items-center justify-center gap-4 border-t pt-6', ft.footerBorder)}
-				>
+				<div className="flex items-center justify-center gap-4 pt-6">
 					<button type="button" className={cn(ft.footerCancel, '!flex-none text-sm')}>
 						{t('button_close')}
 					</button>

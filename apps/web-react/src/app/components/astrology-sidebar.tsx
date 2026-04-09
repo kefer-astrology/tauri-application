@@ -39,16 +39,19 @@ const menuItemDefs = [
 	{ id: 'export', labelKey: 'export', icon: Upload }
 ] as const;
 
-const exportSectionDefs = [
+/** Horoskop → Synastrie (below first separator, after Export block). */
+const appSectionDefs = [
 	{ id: 'horoskop', labelKey: 'sidebar_horoscope', icon: HoroskopeIcon },
 	{ id: 'aspektarium', labelKey: 'aspects_aspects', icon: Grid3x3 },
 	{ id: 'informace', labelKey: 'sidebar_information', icon: Info },
 	{ id: 'tranzity', labelKey: 'sidebar_transits', icon: TranzityIcon },
 	{ id: 'dynamika', labelKey: 'sidebar_dynamics', icon: RefreshCw },
 	{ id: 'revoluce', labelKey: 'revolution', icon: RotateCcw },
-	{ id: 'synastrie', labelKey: 'sidebar_synastry', icon: Users },
-	{ id: 'nastaveni', labelKey: 'settings', icon: Settings }
+	{ id: 'synastrie', labelKey: 'sidebar_synastry', icon: Users }
 ] as const;
+
+/** Second separator (Synastrie / Nastavení), same rule as Export / Horoskop. */
+const settingsNavDefs = [{ id: 'nastaveni', labelKey: 'settings', icon: Settings }] as const;
 
 const themeIconConfig = {
 	sunrise: { icon: Sunrise },
@@ -96,14 +99,14 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 	},
 	twilight: {
 		bg: 'bg-gradient-to-b from-indigo-100 to-indigo-200',
-		border: 'border-indigo-300',
-		text: 'text-indigo-900',
-		hover: 'hover:bg-indigo-200',
+		border: 'border-white/20',
+		text: 'text-white',
+		hover: 'hover:bg-white/10',
 		active: 'bg-indigo-600 text-white',
 		activeIndicator: 'bg-indigo-600',
-		separator: 'bg-indigo-300',
+		separator: 'bg-white/25',
 		logoGradient: 'from-indigo-600 to-purple-600',
-		themeIconColor: '#4f46e5',
+		themeIconColor: '#ffffff',
 		customStyle: {
 			background:
 				'linear-gradient(to bottom, rgba(30, 64, 175, 0.9) 0%, rgba(37, 99, 235, 0.9) 50%, rgba(29, 78, 216, 0.85) 100%)',
@@ -237,8 +240,36 @@ export function AstrologySidebar({
 					<div className={cn('h-px', themeStyle.separator)} />
 				</div>
 
-				{/* Export Section */}
-				{exportSectionDefs.map((item) => {
+				{/* App sections (Horoskop … Synastrie) */}
+				{appSectionDefs.map((item) => {
+					const Icon = item.icon;
+					const isActive = currentActiveItem === item.id;
+
+					return (
+						<button
+							key={item.id}
+							onClick={() => {
+								onMenuItemClick?.(item.id);
+							}}
+							className={cn(
+								'flex w-full items-center gap-3 rounded-xl px-3 py-2 transition-all duration-200',
+								isActive ? themeStyle.active : cn(themeStyle.text, themeStyle.hover),
+								isExpanded ? 'justify-start' : 'justify-center'
+							)}
+						>
+							<Icon className="h-5 w-5 flex-shrink-0" strokeWidth={1.5} />
+							{isExpanded && <span className="text-sm font-medium">{t(item.labelKey)}</span>}
+						</button>
+					);
+				})}
+
+				{/* Separator — same as between Export / Horoskop */}
+				<div className="py-1.5">
+					<div className={cn('h-px', themeStyle.separator)} />
+				</div>
+
+				{/* Nastavení */}
+				{settingsNavDefs.map((item) => {
 					const Icon = item.icon;
 					const isActive = currentActiveItem === item.id;
 
@@ -275,7 +306,9 @@ export function AstrologySidebar({
 							className="bg-opacity-50 flex items-center justify-between gap-1 rounded-xl px-2 py-2"
 							style={{
 								backgroundColor:
-									currentTheme === 'midnight' ? 'rgba(51, 65, 85, 0.5)' : 'rgba(243, 244, 246, 0.5)'
+									currentTheme === 'midnight' || currentTheme === 'twilight'
+										? 'rgba(51, 65, 85, 0.5)'
+										: 'rgba(243, 244, 246, 0.5)'
 							}}
 						>
 							{(Object.keys(themeIconConfig) as Theme[]).map((themeKey) => {

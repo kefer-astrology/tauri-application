@@ -181,8 +181,9 @@ export function SettingsView({ theme }: SettingsViewProps) {
 
 				<Card
 					className={cn(
-						'flex min-h-[min(70vh,520px)] min-w-0 flex-col gap-0 rounded-xl border p-0 shadow-lg',
-						ft.settingsCard
+						'flex min-h-[min(70vh,520px)] min-w-0 flex-col gap-0 rounded-xl p-0 shadow-none',
+						ft.settingsCard,
+						'border-0 shadow-none'
 					)}
 				>
 					<CardContent className="min-h-0 flex-1 overflow-y-auto px-6 pt-6 pb-2">
@@ -192,7 +193,7 @@ export function SettingsView({ theme }: SettingsViewProps) {
 									<Languages
 										className={cn(
 											'h-6 w-6 shrink-0',
-											ft.isDark || ft.isTwilight ? 'text-blue-400' : 'text-indigo-600'
+											ft.isTwilight ? 'text-white' : ft.isDark ? 'text-blue-400' : 'text-indigo-600'
 										)}
 										aria-hidden
 									/>
@@ -420,13 +421,7 @@ export function SettingsView({ theme }: SettingsViewProps) {
 						)}
 					</CardContent>
 
-					<CardFooter
-						className={cn(
-							'shrink-0 flex-col gap-2 border-t px-4 py-4 sm:flex-row sm:px-6',
-							ft.footerBorder,
-							'bg-transparent'
-						)}
-					>
+					<CardFooter className="shrink-0 flex-col gap-2 bg-transparent px-4 py-4 sm:flex-row sm:px-6">
 						<button type="button" className={ft.footerCancel} onClick={handleCancel}>
 							{t('cancel')}
 						</button>

@@ -66,8 +66,9 @@ function CustomDropdown({ label, value, options, onChange, ft }: CustomDropdownP
 			{isOpen && (
 				<div
 					className={cn(
-						'animate-dropdown-slide-in mt-2 overflow-hidden rounded-lg border shadow-lg',
-						ft.dropdown
+						'animate-dropdown-slide-in mt-2 overflow-hidden rounded-lg shadow-xl ring-1 ring-black/5 dark:ring-white/10',
+						ft.dropdown,
+						'border-0'
 					)}
 				>
 					{options.map((option, index) => (
@@ -148,7 +149,11 @@ export function TransitsContent({ section, theme }: TransitsContentProps) {
 				return (
 					<div className="flex h-full items-center justify-center p-8">
 						<div
-							className={cn('w-full max-w-3xl rounded-xl border p-8 shadow-lg', ft.settingsCard)}
+							className={cn(
+								'w-full max-w-3xl rounded-xl p-8',
+								ft.settingsCard,
+								'border-0 shadow-none'
+							)}
 						>
 							<div className="mb-6">
 								<h1 className={cn('mb-2 text-2xl font-semibold', ft.title)}>
@@ -374,12 +379,7 @@ export function TransitsContent({ section, theme }: TransitsContentProps) {
 								</div>
 							</div>
 
-							<div
-								className={cn(
-									'flex items-center justify-center gap-4 border-t pt-6',
-									ft.footerBorder
-								)}
-							>
+							<div className="flex items-center justify-center gap-4 pt-6">
 								<button type="button" className={cn(ft.footerCancel, '!flex-none')}>
 									{t('button_close')}
 								</button>
@@ -419,7 +419,7 @@ export function TransitsContent({ section, theme }: TransitsContentProps) {
 							<p className={cn('text-sm', ft.muted)}>{t('transits_aspects_subtitle')}</p>
 						</div>
 
-						<div className={cn('rounded-xl border p-6 shadow-sm', ft.settingsCard)}>
+						<div className={cn('rounded-xl p-6', ft.settingsCard, 'border-0 shadow-none')}>
 							<h3 className={cn('mb-4 text-lg font-semibold', ft.title)}>
 								{t('transits_aspects_major')}
 							</h3>
@@ -450,7 +450,7 @@ export function TransitsContent({ section, theme }: TransitsContentProps) {
 							</div>
 						</div>
 
-						<div className={cn('rounded-xl border p-6 shadow-sm', ft.settingsCard)}>
+						<div className={cn('rounded-xl p-6', ft.settingsCard, 'border-0 shadow-none')}>
 							<h3 className={cn('mb-4 text-lg font-semibold', ft.title)}>
 								{t('transits_aspects_minor')}
 							</h3>

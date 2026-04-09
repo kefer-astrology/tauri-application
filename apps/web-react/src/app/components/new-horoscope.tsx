@@ -1,10 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { Calendar, ChevronDown, Clock } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { format } from 'date-fns';
+import { cs, enUS, es, fr } from 'date-fns/locale';
+import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Calendar } from './ui/calendar';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
 import { cn } from './ui/utils';
@@ -21,12 +25,170 @@ type ChartKind = 'radix' | 'event' | 'horary';
 type LatDir = 'north' | 'south';
 type LonDir = 'east' | 'west';
 
-function chartLocaleTag(lng: string): string {
-	const base = lng.split('-')[0]?.toLowerCase() ?? 'en';
-	if (base === 'cs') return 'cs-CZ';
-	if (base === 'fr') return 'fr-FR';
-	if (base === 'es') return 'es-ES';
-	return 'en-US';
+function formatDdMmYyyy(d: Date): string {
+	return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+type TimeSeg = 'h' | 'm' | 's';
+
+const TIME_SEGS: TimeSeg[] = ['h', 'm', 's'];
+
+function rollParts(parts: { h: number; m: number; s: number }, seg: TimeSeg, delta: number) {
+	let sec = parts.h * 3600 + parts.m * 60 + parts.s;
+	if (seg === 'h') sec += delta * 3600;
+	else if (seg === 'm') sec += delta * 60;
+	else sec += delta;
+	sec = ((sec % 86400) + 86400) % 86400;
+	return {
+		h: Math.floor(sec / 3600),
+		m: Math.floor((sec % 3600) / 60),
+		s: sec % 60
+	};
+}
+
+function rollingTimeInteract(
+	prev: { h: number; m: number; s: number } | null,
+	seg: TimeSeg,
+	delta: number
+) {
+	const base = prev ?? { h: 0, m: 0, s: 0 };
+	return rollParts(base, seg, delta);
+}
+
+function nextTimeSeg(seg: TimeSeg, dir: 1 | -1): TimeSeg {
+	const i = TIME_SEGS.indexOf(seg);
+	return TIME_SEGS[(i + dir + 3) % 3];
+}
+
+function RollingTimeField({
+	value,
+	onChange,
+	id,
+	'aria-label': ariaLabel,
+	ft
+}: {
+	value: { h: number; m: number; s: number } | null;
+	onChange: (v: { h: number; m: number; s: number }) => void;
+	id: string;
+	'aria-label': string;
+	ft: ReturnType<typeof getAppFormFieldTheme>;
+}) {
+	const [active, setActive] = useState<TimeSeg>('h');
+	const fieldRef = useRef<HTMLDivElement>(null);
+
+	const segActive = cn(
+		'rounded px-0.5',
+		ft.isDark || ft.isTwilight
+			? 'bg-blue-900/55 ring-1 ring-inset ring-blue-400/60'
+			: ft.isSunrise
+				? 'bg-sky-200/90 ring-1 ring-inset ring-sky-500/45'
+				: 'bg-muted ring-1 ring-inset ring-border'
+	);
+
+	const displaySeg = (n: number | null) => (n === null ? '--' : String(n).padStart(2, '0'));
+
+	const h = value?.h ?? null;
+	const m = value?.m ?? null;
+	const s = value?.s ?? null;
+
+	const applyRoll = useCallback(
+		(delta: number) => {
+			onChange(rollingTimeInteract(value, active, delta));
+		},
+		[value, active, onChange]
+	);
+
+	useEffect(() => {
+		const el = fieldRef.current;
+		if (!el) return;
+		const onWheel = (e: WheelEvent) => {
+			if (e.ctrlKey || e.deltaX !== 0 || e.deltaY === 0) return;
+			e.preventDefault();
+			e.stopPropagation();
+			applyRoll(e.deltaY < 0 ? 1 : -1);
+		};
+		el.addEventListener('wheel', onWheel, { passive: false });
+		return () => el.removeEventListener('wheel', onWheel);
+	}, [applyRoll]);
+
+	return (
+		<div className="relative w-full">
+			<div
+				ref={fieldRef}
+				id={id}
+				role="group"
+				aria-label={ariaLabel}
+				tabIndex={0}
+				className={cn(
+					ft.input,
+					'flex w-full items-center justify-center gap-0 pr-11 font-mono text-base tabular-nums shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:text-sm',
+					!value && ft.muted
+				)}
+				onKeyDown={(e) => {
+					if (e.key === 'ArrowRight') {
+						e.preventDefault();
+						setActive((cur) => nextTimeSeg(cur, 1));
+					} else if (e.key === 'ArrowLeft') {
+						e.preventDefault();
+						setActive((cur) => nextTimeSeg(cur, -1));
+					} else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+						e.preventDefault();
+						applyRoll(1);
+					} else if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+						e.preventDefault();
+						applyRoll(-1);
+					}
+				}}
+			>
+				<span
+					className={cn(
+						'inline-block min-w-[2.25rem] cursor-pointer text-center',
+						active === 'h' && segActive
+					)}
+					onClick={(ev) => {
+						ev.stopPropagation();
+						setActive('h');
+					}}
+				>
+					{displaySeg(h)}
+				</span>
+				<span className={cn('select-none px-0.5', ft.muted)} aria-hidden>
+					:
+				</span>
+				<span
+					className={cn(
+						'inline-block min-w-[2.25rem] cursor-pointer text-center',
+						active === 'm' && segActive
+					)}
+					onClick={(ev) => {
+						ev.stopPropagation();
+						setActive('m');
+					}}
+				>
+					{displaySeg(m)}
+				</span>
+				<span className={cn('select-none px-0.5', ft.muted)} aria-hidden>
+					:
+				</span>
+				<span
+					className={cn(
+						'inline-block min-w-[2.25rem] cursor-pointer text-center',
+						active === 's' && segActive
+					)}
+					onClick={(ev) => {
+						ev.stopPropagation();
+						setActive('s');
+					}}
+				>
+					{displaySeg(s)}
+				</span>
+			</div>
+			<Clock
+				className={cn('pointer-events-none absolute top-1/2 right-3 h-5 w-5 -translate-y-1/2', ft.iconColor)}
+				aria-hidden
+			/>
+		</div>
+	);
 }
 
 const CHART_TYPE_ORDER: { id: ChartKind; labelKey: string }[] = [
@@ -69,8 +231,8 @@ export function NewHoroscope({
 	const [location, setLocation] = useState('');
 	const [advancedLocation, setAdvancedLocation] = useState('');
 	const [tags, setTags] = useState('');
-	const [date, setDate] = useState('');
-	const [time, setTime] = useState('');
+	const [pickedDate, setPickedDate] = useState<Date | undefined>(undefined);
+	const [timeParts, setTimeParts] = useState<{ h: number; m: number; s: number } | null>(null);
 	const [chartKind, setChartKind] = useState<ChartKind>('radix');
 	const [advancedMode, setAdvancedMode] = useState(false);
 	const [latitude, setLatitude] = useState('');
@@ -79,9 +241,27 @@ export function NewHoroscope({
 	const [latitudeDir, setLatitudeDir] = useState<LatDir>('north');
 	const [longitudeDir, setLongitudeDir] = useState<LonDir>('east');
 
-	const [datePickerOpen, setDatePickerOpen] = useState(false);
+	const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 
-	const localeTag = chartLocaleTag(i18n.language);
+	const dateFnsLocale = useMemo(() => {
+		const base = i18n.language.split('-')[0]?.toLowerCase() ?? 'en';
+		if (base === 'cs') return cs;
+		if (base === 'fr') return fr;
+		if (base === 'es') return es;
+		return enUS;
+	}, [i18n.language]);
+
+	const dateStr = useMemo(
+		() => (pickedDate ? formatDdMmYyyy(pickedDate) : ''),
+		[pickedDate]
+	);
+
+	const timeStr = useMemo(() => {
+		if (timeParts === null) return '';
+		return [timeParts.h, timeParts.m, timeParts.s]
+			.map((n) => String(n).padStart(2, '0'))
+			.join(':');
+	}, [timeParts]);
 
 	const handleCreate = async () => {
 		const name = locationName.trim();
@@ -92,8 +272,8 @@ export function NewHoroscope({
 		const chart = appChartFromNewHoroscopeInput({
 			locationName,
 			chartKind,
-			date,
-			time,
+			date: dateStr,
+			time: timeStr,
 			location,
 			advancedLocation,
 			tags,
@@ -106,47 +286,6 @@ export function NewHoroscope({
 		});
 		await onCreated?.(chart);
 	};
-
-	const monthNames = useMemo(
-		() =>
-			Array.from({ length: 12 }, (_, monthIndex) =>
-				new Intl.DateTimeFormat(localeTag, { month: 'long' }).format(new Date(2000, monthIndex, 1))
-			),
-		[localeTag]
-	);
-
-	const weekdayShort = useMemo(() => {
-		const monday = new Date(2024, 0, 1);
-		return Array.from({ length: 7 }, (_, i) => {
-			const d = new Date(monday);
-			d.setDate(monday.getDate() + i);
-			return new Intl.DateTimeFormat(localeTag, { weekday: 'short' }).format(d);
-		});
-	}, [localeTag]);
-
-	const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-	const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-	const [selectedDay, setSelectedDay] = useState<number | null>(null);
-
-	const getDaysInMonth = (year: number, month: number) => {
-		return new Date(year, month + 1, 0).getDate();
-	};
-
-	const getFirstDayOfMonth = (year: number, month: number) => {
-		return new Date(year, month, 1).getDay();
-	};
-
-	const handleDateSelect = (day: number) => {
-		setSelectedDay(day);
-		const formattedDate = `${String(day).padStart(2, '0')}/${String(selectedMonth + 1).padStart(2, '0')}/${selectedYear}`;
-		setDate(formattedDate);
-		setDatePickerOpen(false);
-	};
-
-	const yearOptions = useMemo(
-		() => Array.from({ length: 150 }, (_, i) => selectedYear - 75 + i),
-		[selectedYear]
-	);
 
 	const bgStyle =
 		theme === 'midnight'
@@ -169,8 +308,7 @@ export function NewHoroscope({
 			<div className="mx-auto max-w-2xl">
 				<h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>{t('new_radix_title')}</h1>
 
-				<Card className={cn('gap-0 border p-0 shadow-lg', ft.settingsCard)}>
-					<CardContent className="space-y-4 p-6">
+				<div className="space-y-4">
 						<div>
 							<Label htmlFor="locationName" className={cn('mb-1.5 block', ft.label)}>
 								{t('new_name')}
@@ -202,153 +340,57 @@ export function NewHoroscope({
 						</div>
 
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							<div className="relative">
-								<Label htmlFor="date" className={cn('mb-1.5 block', ft.label)}>
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
 									{t('new_date')}
 								</Label>
-								<div className="relative">
-									<Input
-										type="text"
-										id="date"
-										value={date}
-										onChange={(e) => setDate(e.target.value)}
-										placeholder={t('new_date_placeholder')}
-										className={cn(ft.input, 'pr-12 shadow-inner')}
-									/>
-									<button
-										type="button"
-										onClick={() => setDatePickerOpen(!datePickerOpen)}
-										className={cn(
-											'absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 transition-colors',
-											ft.datePickerButton
-										)}
-									>
-										<Calendar className={cn('h-5 w-5', ft.iconColor)} />
-									</button>
-								</div>
-
-								{datePickerOpen && (
-									<div className={cn('absolute z-20 mt-2', ft.datePicker)}>
-										<div className="mb-4 flex items-center justify-between">
-											<button
-												type="button"
-												onClick={() =>
-													setSelectedMonth(selectedMonth === 0 ? 11 : selectedMonth - 1)
-												}
-												className={cn('rounded p-1 transition-colors', ft.datePickerButton)}
-											>
-												<ChevronDown className={cn('h-5 w-5 rotate-90', ft.iconColor)} />
-											</button>
-											<div className="flex gap-2">
-												<Select
-													value={String(selectedMonth)}
-													onValueChange={(v) => setSelectedMonth(Number(v))}
-												>
-													<SelectTrigger
-														size="sm"
-														className={cn(ft.inputCompact, 'h-8 min-h-8 w-[min(11rem,42vw)]')}
-													>
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent className={ft.selectContent}>
-														{monthNames.map((month, idx) => (
-															<SelectItem key={idx} value={String(idx)} className={ft.selectItem}>
-																{month}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<Select
-													value={String(selectedYear)}
-													onValueChange={(v) => setSelectedYear(Number(v))}
-												>
-													<SelectTrigger
-														size="sm"
-														className={cn(ft.inputCompact, 'h-8 min-h-8 w-[5.5rem]')}
-													>
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent className={cn(ft.selectContent, 'max-h-60')}>
-														{yearOptions.map((year) => (
-															<SelectItem key={year} value={String(year)} className={ft.selectItem}>
-																{year}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</div>
-											<button
-												type="button"
-												onClick={() =>
-													setSelectedMonth(selectedMonth === 11 ? 0 : selectedMonth + 1)
-												}
-												className={cn('rounded p-1 transition-colors', ft.datePickerButton)}
-											>
-												<ChevronDown className={cn('h-5 w-5 -rotate-90', ft.iconColor)} />
-											</button>
-										</div>
-
-										<div className="mb-2 grid grid-cols-7 gap-1">
-											{weekdayShort.map((day) => (
-												<div
-													key={day}
-													className={cn(
-														'py-1 text-center text-xs font-medium',
-														ft.datePickerHeader
-													)}
-												>
-													{day}
-												</div>
-											))}
-										</div>
-
-										<div className="grid grid-cols-7 gap-1">
-											{Array.from({
-												length: (getFirstDayOfMonth(selectedYear, selectedMonth) + 6) % 7
-											}).map((_, idx) => (
-												<div key={`empty-${idx}`} />
-											))}
-											{Array.from(
-												{ length: getDaysInMonth(selectedYear, selectedMonth) },
-												(_, i) => i + 1
-											).map((day) => (
-												<button
-													key={day}
-													type="button"
-													onClick={() => handleDateSelect(day)}
-													className={cn(
-														'flex aspect-square items-center justify-center rounded text-sm transition-colors',
-														ft.datePickerDay,
-														selectedDay === day && ft.datePickerDayActive
-													)}
-												>
-													{day}
-												</button>
-											))}
-										</div>
-									</div>
-								)}
+								<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+									<PopoverTrigger asChild>
+										<Button
+											type="button"
+											id="new-chart-date"
+											variant="outline"
+											className={cn(
+												'h-10 w-full justify-start text-left font-normal shadow-inner',
+												ft.selectTrigger,
+												!pickedDate && cn(ft.muted)
+											)}
+										>
+											<CalendarIcon className={cn('mr-2 h-4 w-4 shrink-0', ft.iconColor)} />
+											{pickedDate ? (
+												format(pickedDate, 'P', { locale: dateFnsLocale })
+											) : (
+												<span>{t('new_date_placeholder')}</span>
+											)}
+										</Button>
+									</PopoverTrigger>
+									<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="start">
+										<Calendar
+											mode="single"
+											selected={pickedDate}
+											onSelect={(d) => {
+												setPickedDate(d);
+												setDatePopoverOpen(false);
+											}}
+											locale={dateFnsLocale}
+											initialFocus
+											defaultMonth={pickedDate ?? new Date()}
+										/>
+									</PopoverContent>
+								</Popover>
 							</div>
 
-							<div className="relative">
-								<Label htmlFor="time" className={cn('mb-1.5 block', ft.label)}>
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="new-chart-time" className={cn('mb-1.5 block', ft.label)}>
 									{t('new_time')}
 								</Label>
-								<div className="relative">
-									<Input
-										type="time"
-										id="time"
-										value={time}
-										onChange={(e) => setTime(e.target.value)}
-										className={cn(
-											ft.input,
-											'pr-10 shadow-inner [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0'
-										)}
-									/>
-									<div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
-										<Clock className={cn('h-5 w-5', ft.iconColor)} />
-									</div>
-								</div>
+								<RollingTimeField
+									id="new-chart-time"
+									aria-label={t('new_time')}
+									value={timeParts}
+									onChange={setTimeParts}
+									ft={ft}
+								/>
 							</div>
 						</div>
 
@@ -511,8 +553,9 @@ export function NewHoroscope({
 											</Label>
 											<div
 												className={cn(
-													'w-full rounded-lg border px-4 py-2.5 text-base md:text-sm',
-													ft.inputDisabled
+													'w-full rounded-lg px-4 py-2.5 text-base md:text-sm',
+													ft.inputDisabled,
+													'border-0'
 												)}
 											>
 												{t('new_engine_swiss')}
@@ -524,19 +567,24 @@ export function NewHoroscope({
 						)}
 
 						<div className="flex gap-4 pt-4">
-							<button type="button" className={ft.footerCancel} onClick={() => onBack?.()}>
-								{t('new_back')}
-							</button>
-							<button
+							<Button
 								type="button"
+								variant="ghost"
+								className={ft.footerCancel}
+								onClick={() => onBack?.()}
+							>
+								{t('new_back')}
+							</Button>
+							<Button
+								type="button"
+								variant="ghost"
 								className={ft.footerPrimary}
 								onClick={() => void handleCreate()}
 							>
 								{t('new_create_submit')}
-							</button>
+							</Button>
 						</div>
-					</CardContent>
-				</Card>
+				</div>
 			</div>
 		</div>
 	);
