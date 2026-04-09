@@ -24,3 +24,17 @@ dist-ssr
 # lock files
 bun.lockb
 /src-tauri/Cargo.lock
+
+# Python (backend-python, tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
