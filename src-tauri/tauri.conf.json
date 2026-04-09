@@ -1,0 +1,43 @@
+{
+	"$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+	"productName": "Kefer",
+	"version": "2.0.0",
+	"identifier": "dev.kefer.astrology",
+	"build": {
+		"frontendDist": "../apps/web-react/dist",
+		"devUrl": "http://localhost:1420",
+		"beforeDevCommand": "cd .. && npm run dev -w web-react",
+		"beforeBuildCommand": "cd .. && npm run build -w web-react"
+	},
+	"app": {
+		"windows": [
+			{
+				"title": "Kefer",
+				"width": 800,
+				"height": 600,
+				"resizable": true,
+				"fullscreen": false
+			}
+		],
+		"security": {
+			"csp": null
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": "all",
+		"resources": ["binaries/kefer-backend"],
+		"windows": {
+			"certificateThumbprint": null,
+			"digestAlgorithm": "sha256",
+			"timestampUrl": "http://timestamp.digicert.com"
+		},
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		]
+	}
+}

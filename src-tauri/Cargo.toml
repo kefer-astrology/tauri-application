@@ -1,0 +1,29 @@
+[package]
+name = "app"
+version = "1.0.0"
+description = "Kefer astrology desktop application (Tauri 2, React UI, Python sidecar)."
+authors = ["Alysonhower Veras Vieira"]
+license = "MIT"
+repository = "https://github.com/kefer-astrology/tauri-application-react"
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.5.6", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+log = "0.4"
+tauri = { version = "2.10.3", features = [] }
+tauri-plugin-log = "2.8.0"
+thiserror = "2.0.18"
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.12.22", default-features = false, features = ["json", "default-tls"] }
