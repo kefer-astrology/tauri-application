@@ -4,9 +4,17 @@ description: "Theme, layout, and i18n rules for the React shell."
 weight: 30
 ---
 
-# UI conventions (React shell)
+# UI conventions
 
-Crisp reference for **themes**, **secondary navigation**, and **i18n** so new work stays aligned with the four app themes and a single source of styling truth.
+Crisp reference for **themes**, **secondary navigation**, **shared component strategy**, and **i18n** so new work stays aligned with the app themes and a single source of styling truth.
+
+## Component baseline
+
+- Prefer the repo’s existing shadcn-style component systems before building bespoke controls.
+- In React, start with `src/app/components/ui/`.
+- In Svelte, start with `src/lib/components/ui/`.
+- Treat those as the default styling surface for forms, overlays, panels, selectors, and interactive controls.
+- When visuals need tuning, prefer variants, theme tokens, spacing, and composition over isolated per-component CSS forks.
 
 ## Four app themes
 
@@ -54,7 +62,7 @@ Adding another “second column” view should follow the same pattern: sibling 
 | Source of truth   | Repo root **`translations.csv`** (`internal_name` + `czech`, `english`, `french`, `spanish`) |
 | Generated bundles | **`src/locales/*.json`** — **do not edit by hand** for routine changes                       |
 | Sync command      | **`npm run i18n:sync`** (runs `scripts/csv-to-locales.mjs`)                                  |
-| Runtime           | `react-i18next`; keys are CSV `internal_name` values                                         |
+| Runtime           | React and Svelte both consume generated locale packs; keys are CSV `internal_name` values    |
 
 **Workflow for new copy:** add or edit a row in **`translations.csv`**, run **`npm run i18n:sync`**, then use **`t('internal_name')`** in components.
 

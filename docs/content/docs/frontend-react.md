@@ -37,19 +37,24 @@ npm run i18n:sync        # Regenerate `apps/web-react/src/locales/*.json` from `
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `apps/web-react/src/main.tsx`        | React root; mounts `<App />` and `<Toaster />` (sonner).                                                                                         |
 | `apps/web-react/src/app/App.tsx`     | Main shell: sidebar, views, **workspace open/save** handlers.                                                                                    |
-| `apps/web-react/src/app/components/` | Feature and UI components (Radix/shadcn-style under `ui/`).                                                                                      |
+| `apps/web-react/src/app/components/` | Feature components and the shared React UI layer. Prefer the Radix/shadcn-style primitives under `ui/`.                                         |
 | `apps/web-react/src/styles/`         | `index.css` → Tailwind 4, theme tokens, fonts.                                                                                                   |
 | `apps/web-react/src/lib/tauri/`      | **Tauri bridge**: types, chart payloads, workspace helpers.                                                                                      |
-| `static/` (repo root)                | **Shared public assets**: `glyphs/**`, `favicon.png`. Used by Vite `publicDir`; served at `/glyphs/...` in dev and copied into `dist/` on build. |
+| `static/` (repo root)                | **Shared public assets**: `app-shell/**`, `glyphs/**`, `favicon.png`. Used by Vite `publicDir` and copied into `dist/` on build.                |
 | `apps/web-react/src/locales/`        | **i18n JSON** (`cs`, `en`, `fr`, `es`) — generated from `translations.csv`; imported by the app (not served from `static/`).                     |
 | `apps/web-react/src/lib/i18n/`       | **i18next** init, `LANGUAGE_STORAGE_KEY` (`kefer-language` in `localStorage`).                                                                   |
+
+## UI component strategy
+
+- Prefer the existing shadcn-style primitives in `apps/web-react/src/app/components/ui/` before building custom controls.
+- Styling work should usually happen through tokens, variants, composition, and shared wrappers.
+- Reach for bespoke component CSS only when the shared component layer cannot express the needed behavior.
 
 ## Internationalization (i18n)
 
 **Do you need JSON under `static/`?** No. Locale files live in **`apps/web-react/src/locales/`** and are bundled by Vite, which works offline in Tauri and avoids extra `fetch` / CSP concerns. Reserve **repo root `static/`** (shared across frontends) for assets you reference by URL (glyphs, favicon).
 
 - **Source of truth**: repo root **`translations.csv`** (columns `internal_name`, `czech`, `english`, `french`, `spanish`). In a collaborative setup, maintain the sheet in **Google Sheets**, then **File → Download → CSV** (or a scheduled export) and replace `translations.csv` in the repo.
-- **Regenerate JSON**: `npm run i18n:sync` runs `scripts/csv-to-locales.mjs`, which writes the same four locale files to **every** path listed in `localeOutputDirs` (React today; add Svelte paths when that app exists). One command keeps all frontends on the same keys and strings.
 - **Regenerate JSON**: `npm run i18n:sync` runs `scripts/csv-to-locales.mjs`, which writes the same four locale files to **every** path listed in `localeOutputDirs` (React and Svelte today). One command keeps all frontends on the same keys and strings.
 - **Staying in sync**: After updating the CSV, run `npm run i18n:sync` and commit **both** `translations.csv` and the generated `**/locales/*.json`. Optionally add CI that fails if someone edits JSON by hand without syncing, or that runs the script and checks for a clean `git diff`.
 - **Runtime**: `react-i18next` + `i18next`; wrap is in **`apps/web-react/src/main.tsx`** (`I18nextProvider`). Use `useTranslation()` and `t('key')` where `key` is `internal_name` from the CSV.
@@ -71,13 +76,28 @@ In **`App.tsx`**, sidebar actions:
 
 Other views (horoscope dashboard, transits, aspectarium) are still mostly presentational until you thread `charts` / `computed` state into them.
 
-## Glyphs (SVG)
+## Shared static assets
 
-Keep source glyphs under **`static/glyphs/`** (repo root). `apps/web-react` sets Vite `publicDir` to that folder, so in components you can use absolute URLs:
+Keep shared source assets under repo-root `static/`. `apps/web-react` points Vite `publicDir` at that folder, so assets are copied into the app build and resolved through the active Vite base path.
+
+Current source-of-truth layout:
+
+- `static/app-shell/icons/default/*.svg`
+- `static/app-shell/icons/modern/*.svg`
+- `static/app-shell/logo-full-*.svg`
+- `static/app-shell/logo-mark-*.svg`
+- `static/glyphs/default/planets/*.svg`
+- `static/glyphs/default/zodiac/*.svg`
+- `static/glyphs/classic/planets/*.svg`
+- `static/glyphs/classic/zodiac/*.svg`
+
+For docs builds, the app is published under `/apps/web-react/`, so shared asset URLs must be based on `import.meta.env.BASE_URL` rather than hard-coded root-absolute paths.
+
+Example glyph paths:
 
 ```tsx
-<img src="/glyphs/default/planets/sun.svg" alt="" />
-<img src="/glyphs/classic/zodiac/aries.svg" alt="" />
+<img src={`${import.meta.env.BASE_URL}glyphs/default/planets/sun.svg`} alt="" />
+<img src={`${import.meta.env.BASE_URL}glyphs/classic/zodiac/aries.svg`} alt="" />
 ```
 
 Do not rely on old `dist/` copies for source of truth; `dist/` is build output and is gitignored.

@@ -29,14 +29,36 @@ npm run docs:prepare          # Builds all frontends and copies them into docs/s
 | `apps/web-svelte/src/lib/i18n/` | Generated locale JSON (`cs`, `en`, `fr`, `es`) plus the Svelte runtime helper.                           |
 | `apps/web-svelte/vite.config.ts` | Shared static root, docs-safe base path support, and the alternate Vite/Tauri dev ports (`1422`/`1423`). |
 
+## UI component strategy
+
+- Prefer the shared Svelte UI primitives under `apps/web-svelte/src/lib/components/ui/` before introducing bespoke controls.
+- Those primitives are the Svelte-side equivalent of the repo’s shadcn-style component layer and should be the first place to extend styling behavior.
+- Styling should flow through shared tokens, variants, spacing, and wrappers before adding one-off component CSS.
+
+## Shared static assets
+
+Both frontends consume the same repo-root `static/` tree:
+
+- `static/app-shell/icons/default/*.svg`
+- `static/app-shell/icons/modern/*.svg`
+- `static/app-shell/logo-full-*.svg`
+- `static/app-shell/logo-mark-*.svg`
+- `static/glyphs/default/{planets,zodiac}/*.svg`
+- `static/glyphs/classic/{planets,zodiac}/*.svg`
+
+Svelte resolves these through `import.meta.env.BASE_URL`, so the same code works for:
+
+- normal app builds and Tauri builds
+- docs publishing under `/apps/web-svelte/`
+
 ## Static docs build
 
 `npm run docs:prepare` already builds every workspace under `apps/*` and copies each finished `dist/` into `docs/static/apps/<app>/`. That means the Svelte app is automatically published under the docs artifact alongside React, with no extra per-app copy step.
 
 Published static entry points:
 
-- Svelte: [`/apps/web-svelte/`](/apps/web-svelte/)
-- React: [`/apps/web-react/`](/apps/web-react/)
+- Svelte: `apps/web-svelte/`
+- React: `apps/web-react/`
 
 ## Tauri targeting
 

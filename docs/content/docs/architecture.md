@@ -15,6 +15,7 @@ Consolidated architecture reference for the Tauri + Python astrology browser.
 - **Compute**: Python sidecar (CLI) performs astrology calculations.
 - **Storage**: YAML for metadata + DuckDB/Parquet for positions-only data.
 - **Aspects**: Computed on demand from stored positions (not persisted).
+- **Shared assets**: repo-root `static/` is the source of truth for app-shell logos/icons and astrology glyph sets used by both frontends.
 
 ## Core Principles
 
@@ -128,11 +129,20 @@ UI derives aspects from loaded positions when needed
 - `apps/web-react/src/lib/tauri/` — types and `invoke` helpers (`openWorkspaceFolder`, `saveWorkspace`, etc.).
 - `apps/web-react/src/app/App.tsx` — workspace open/save from the sidebar; extend with chart editors and data views.
 - `apps/web-svelte/src/` — alternate Svelte workspace with the more advanced panel/radix/transits UI.
+- `static/app-shell/` — shared app-shell logos and icon sets (`default`, `modern`) for both frontends.
+- `static/glyphs/` — shared glyph families (`default`, `classic`) for both frontends.
 
 **To add (React):**
 
 - Time navigation state/hooks and panels (see [time-navigation](./time-navigation/) for design).
-- Tables, radix chart canvas, and aspect grids as React components; use `/glyphs/...` from repo root `static/` (shared).
+- Tables, radix chart canvas, and aspect grids as React components; use shared glyph assets from repo root `static/`.
+
+## UI system guidance
+
+- Prefer the shared shadcn-style primitive layers before building bespoke UI controls.
+- React uses the existing shadcn/Radix-style component set under `apps/web-react/src/app/components/ui/`.
+- Svelte uses the shared UI primitives under `apps/web-svelte/src/lib/components/ui/`, built around Bits UI and the same token-first styling approach.
+- When adjusting visual design, prefer variants, theme tokens, spacing, and shared wrappers over one-off duplicated component implementations.
 
 ## Tauri Commands (High-Level)
 

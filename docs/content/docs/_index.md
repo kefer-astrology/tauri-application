@@ -15,7 +15,14 @@ Start here for how the Kefer desktop app is structured and how to work on it.
 | **Frontends** (`apps/web-react/`, `apps/web-svelte/`) | UI workspaces. React is the current primary shell; Svelte is the more advanced alternate build. |
 | **Tauri** (`src-tauri/`)                   | Native window, `invoke` commands, Python sidecar lifecycle.                                |
 | **Python** (`backend-python/`)             | Ephemeris / chart computation (sidecar binary bundled in `src-tauri/binaries/`).           |
-| **Static assets** (`static/` at repo root) | Shared glyphs and favicon; each Vite app points `publicDir` here; URLs stay `/glyphs/...`. |
+| **Static assets** (`static/` at repo root) | Shared public assets for both frontends: `app-shell/**`, `glyphs/**`, favicon, and shared SVG families copied into each frontend build. |
+
+## Frontend rules
+
+- Prefer the existing shadcn-style component systems before inventing custom controls.
+- React work should start from `apps/web-react/src/app/components/ui/`.
+- Svelte work should start from `apps/web-svelte/src/lib/components/ui/`.
+- Restyling should usually happen through shared variants, theme tokens, spacing, and composition rather than one-off component CSS forks.
 
 ## Guides (read in this order)
 
