@@ -9,6 +9,7 @@ node_modules
 dist
 dist-docs
 dist-ssr
+build-artifacts/
 *.local
 .DS_Store
 *.suo
@@ -41,9 +42,13 @@ env/
 .ruff_cache/
 
 # Tauri sidecar build artifacts
-/src-tauri/binaries/kefer-backend
+/src-tauri/binaries/*
+!/src-tauri/binaries/.gitkeep
 
 # Hugo docs build/generated artifacts
 docs/resources/
 docs/static/apps/
 docs/data/generated/
+
+# AI bloat
+.codex
