@@ -1,6 +1,6 @@
 # Kefer Astrology (desktop)
 
-Astrology desktop app: **Tauri 2**, **React** (Vite, Radix/shadcn-style UI), and a **Python** computation sidecar. This repo is an **npm workspace** monorepo: the React UI is **`apps/web-react/`**; native integration is in **`src-tauri/`**; chart logic is in **`backend-python/`**.
+Astrology desktop app: **Tauri 2**, **React** and **Svelte** frontend workspaces (both Vite-based), and a **Python** computation sidecar. This repo is an **npm workspace** monorepo: the main frontend workspaces are **`apps/web-react/`** and **`apps/web-svelte/`**; native integration is in **`src-tauri/`**; chart logic is in **`backend-python/`**.
 
 ## Documentation
 
@@ -9,18 +9,33 @@ Project docs live in **[`docs/`](docs/)** as a Hugo site source. The main entryp
 | Guide                                       | Topic                                                                     |
 | ------------------------------------------- | ------------------------------------------------------------------------- |
 | [frontend-react](docs/content/docs/frontend-react.md) | Commands, `apps/web-react/` layout, Tauri bridge, i18n, assets            |
+| [frontend-svelte](docs/content/docs/frontend-svelte.md) | Commands, `apps/web-svelte/` layout, shared assets, docs-build behavior   |
 | [ui-conventions](docs/content/docs/ui-conventions.md) | Themes, sidebar, i18n workflow (`translations.csv` → `npm run i18n:sync`) |
 | [architecture](docs/content/docs/architecture.md)     | Workspace layout, storage, Rust ↔ Python flow                             |
 | [python-package](docs/content/docs/python-package.md) | Python module and CLI used by the app                                     |
 
 ## Stack
 
-| Layer                                                                | Role                                                                       |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| **React** (`apps/web-react/src/app/`, `apps/web-react/src/main.tsx`) | UI shell (Radix + MUI where used)                                          |
-| **Tauri** (`src-tauri/`)                                             | Native window, `invoke` commands, Python sidecar lifecycle                 |
-| **Python** (`backend-python/`)                                       | Ephemeris / chart computation (sidecar binary under `src-tauri/binaries/`) |
-| **Static assets** (`static/`, repo root)                               | Shared glyphs, favicon; served at `/glyphs/...` in dev and copied into each app’s build |
+| Layer | Role |
+| --- | --- |
+| **React frontend** (`apps/web-react/src/app/`, `apps/web-react/src/main.tsx`) | Current primary desktop UI shell (Radix/shadcn-style primitives, MUI where already used) |
+| **Svelte frontend** (`apps/web-svelte/src/`) | Alternate richer frontend workspace, also built by Vite and staged into docs builds |
+| **Tauri** (`src-tauri/`) | Native window, `invoke` commands, Python sidecar lifecycle |
+| **Python** (`backend-python/`) | Ephemeris / chart computation (sidecar binary under `src-tauri/binaries/`) |
+| **Static assets** (`static/`, repo root) | Shared glyphs, app-shell icons/logos, favicon; copied into each frontend build |
+
+## Repo Shape
+
+At a high level, the repo is split by responsibility:
+
+- `apps/web-react/` contains the desktop UI. Inside `src/`, `app/` is app composition and feature wiring, `app/components/` holds feature-facing UI, `ui/` holds shared presentational React primitives, and `lib/` holds non-visual logic such as Tauri helpers, i18n setup, and app-shell metadata.
+- `apps/web-svelte/` contains the alternate frontend workspace. Inside `src/`, `lib/components/` holds feature and shared Svelte UI, `lib/components/ui/` holds shared primitives, and `lib/stores/` resolves shared app-shell and glyph assets from repo-root `static/`.
+- `static/` is the shared source of truth for public assets used by frontends, especially app-shell icons, logos, and glyph families.
+- `src-tauri/` contains the native shell, command handlers, packaging config, and sidecar integration.
+- `backend-python/` contains the astrology computation package and CLI that get built into the desktop sidecar.
+- `docs/` is the Hugo documentation site source, including both developer docs and LLM continuation notes.
+
+If you need more than this overview, start with [frontend-react](docs/content/docs/frontend-react.md) or [frontend-svelte](docs/content/docs/frontend-svelte.md) for workspace structure, then use [architecture](docs/content/docs/architecture.md) for the Rust/Python flow.
 
 ## Requirements
 
