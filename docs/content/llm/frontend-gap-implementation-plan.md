@@ -7,7 +7,7 @@ weight: 45
 
 This plan turns the frontend workflow baseline into an implementation sequence.
 
-Use it when closing the current gaps between React, Svelte, Tauri, and the Rust/Python compute paths.
+Use it when closing the current gaps between React, Svelte, Tauri, and the compute backends.
 
 ## Goal
 
@@ -28,6 +28,7 @@ Make both frontends ready for these workflows:
   - StarFisher/SFS, when parser support is available
 - Keep import separate from "create new chart from frontend form data".
 - Use one startup-time Python availability check as the general backend-selection rule instead of repeated feature-level sidecar existence checks.
+- Define how backend provenance is surfaced in compute responses and the UI.
 - Decide where computed settings live:
   - workspace defaults
   - per-chart config
@@ -78,7 +79,7 @@ Make both frontends ready for these workflows:
   - `compute_chart_from_data`
 - Add a dedicated import command instead of hiding import behavior behind workspace open.
 - Implement native YAML import in Rust first through the dedicated import command.
-- Keep `swisseph` as the default engine for baseline no-sidecar workflows.
+- Keep the command contract backend-neutral even when a specific backend is currently favored.
 - Decide whether SFS import is handled:
   - directly in Rust
   - through the Python/backend side when available
@@ -91,6 +92,7 @@ Make both frontends ready for these workflows:
   - selected objects
   - selected aspects
   - aspect orbs
+- Verify Rust and Python preserve the same instant for offset-aware datetimes.
 
 ### Acceptance checks
 
@@ -98,7 +100,7 @@ Make both frontends ready for these workflows:
 - Rust compute and Python compute consume the same effective config.
 - The import workflow has a dedicated command if it represents a distinct operation.
 - Native YAML import is covered by Rust tests before frontend wiring begins.
-- `jpl` support for the Rust path is explicitly backlog work and should not be treated as a current baseline requirement.
+- The architecture should leave room for `jpl` / SPICE to become the preferred long-term backend without changing frontend contracts.
 
 ## Phase 4: React implementation
 
@@ -153,6 +155,7 @@ Make both frontends ready for these workflows:
 - Confirm both frontends compute the same selected objects for the same chart.
 - Confirm both frontends use the same selected aspects and orbs.
 - Confirm the no-sidecar Rust fallback still works for supported charts.
+- Confirm backend provenance reaches the frontend for debugging and user trust.
 
 ### Acceptance checks
 
@@ -163,6 +166,7 @@ Make both frontends ready for these workflows:
 - React and Svelte behave the same for the four baseline workflows.
 - Workspace reload preserves the intended settings.
 - Compute behavior is consistent across Rust fallback and Python-backed execution for supported scenarios.
+- Datetime handling is consistent across Rust and Python for naive and offset-aware inputs.
 
 ## Suggested execution order
 

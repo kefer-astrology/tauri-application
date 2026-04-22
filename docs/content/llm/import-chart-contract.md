@@ -34,6 +34,8 @@ Use a dedicated Tauri command for import:
 
 SFS remains in scope, but should use the Python-backed path once that parser flow is wired into the desktop app.
 
+The frontend and Tauri command contract should remain backend-neutral even if a specific parser path is currently implemented in Python first.
+
 ## Required behavior
 
 - The command loads the target workspace manifest first.
@@ -54,6 +56,7 @@ SFS remains in scope, but should use the Python-backed path once that parser flo
 - Native YAML import must work without the Python backend.
 - SFS import should not pretend to work through Rust-only heuristics.
 - Until the Python-backed SFS path exists, `.sfs` import should fail explicitly and clearly.
+- Import responses and error handling should not imply that Python is the architectural owner of chart ingestion in the long term.
 
 ## Acceptance checks
 

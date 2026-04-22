@@ -6,8 +6,8 @@
 	"build": {
 		"frontendDist": "../apps/web-react/dist",
 		"devUrl": "http://localhost:1420",
-		"beforeDevCommand": "cd .. && npm run dev -w web-react",
-		"beforeBuildCommand": "cd .. && npm run build -w web-react"
+		"beforeDevCommand": "npm run dev -w web-react",
+		"beforeBuildCommand": "npm run build -w web-react"
 	},
 	"app": {
 		"windows": [
@@ -26,7 +26,7 @@
 	"bundle": {
 		"active": true,
 		"targets": "all",
-		"resources": ["binaries"],
+		"resources": ["binaries", "resources/swisseph", "../backend-python/source/de421.bsp"],
 		"windows": {
 			"certificateThumbprint": null,
 			"digestAlgorithm": "sha256",

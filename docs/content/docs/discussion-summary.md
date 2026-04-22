@@ -6,12 +6,14 @@ weight: 90
 
 # Architecture Discussion Summary
 
-> **Note:** Written for the earlier Svelte UI. For the current React + Tauri frontend, see [frontend-react](./frontend-react/).
+> Historical planning notes from the earlier UI phase.
+> Keep this page as background only.
+> For the current migration state, use [MIGRATION.md](MIGRATION.md) and [spice-backend](./spice-backend/).
 
 ## Your Key Requirements
 
-1. ✅ **User defines initial conditions** → Svelte UI forms → Tauri commands → Python computation
-2. ✅ **Python handles computation** → Python sidecar with CLI interface
+1. ✅ **User defines initial conditions** → UI forms → Tauri commands → compute routing
+2. ✅ **Python can handle computation** → optional sidecar with CLI interface
 3. ✅ **Persistent local storage** → DuckDB + Parquet for time series
 4. ✅ **YAML compatibility** → Keep workspace/charts in YAML (same as Python package)
 5. ✅ **2-chart relations** → Primary use case (transits, synastry)
@@ -54,7 +56,9 @@ workspace/
 - If you need real-time updates (every second)
 - If binary size is critical
 
-**Recommendation**: Start with Python sidecar, measure performance, port only if needed.
+**Historical recommendation**: Start with Python sidecar, measure performance, port only if needed.
+
+**Current preferred direction**: keep Python optional, keep computation provenance explicit, and avoid tying chart semantics to a single backend implementation.
 
 ### Relation Structure
 

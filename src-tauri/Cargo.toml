@@ -26,3 +26,10 @@ tauri = { version = "2.10.3", features = [] }
 tauri-plugin-log = "2.8.0"
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12.22", default-features = false, features = ["json", "default-tls"] }
+anise = "0.9.6"
+hifitime = "4"
+
+[features]
+# Compile and link the Swiss Ephemeris C library (AGPL-3.0 / commercial).
+# Disable for a fully license-clean build that uses anise + de421.bsp only.
+swisseph = []

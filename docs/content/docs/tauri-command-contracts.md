@@ -51,6 +51,7 @@ Acceptance criteria:
 ### `create_chart(workspace_path, chart) -> Result<String, String>`
 
 - Requires an `id` in the chart payload.
+- `chart.subject.event_time` should be provided in a canonical parseable form such as `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`, or RFC3339.
 - Writes a chart YAML file and registers it in `workspace.yaml`.
 - Returns the chart id.
 - Returns an error if the chart id already exists.
@@ -107,25 +108,33 @@ Acceptance criteria:
 - `KEFER_COMPUTE_BACKEND=Auto`: Python first, Rust fallback when fallback is enabled.
 - `KEFER_COMPUTE_BACKEND=Python`: Python only.
 - `KEFER_COMPUTE_BACKEND=Rust`: Rust only.
-- Precision-sensitive charts may force Python and return an error if Rust-only mode is selected.
+- The contract should make backend provenance observable to callers.
+
+Recommended response metadata:
+
+- `backend_used`
+- `fallback_used`
+- `warnings`
+- `ephemeris_source` when known
 
 ### `compute_chart_from_data(chart_json) -> Result<Map<String, Value>, String>`
 
 - Computes positions and aspects from an in-memory chart payload.
-- Returns an object with `positions`, `aspects`, `axes`, `house_cusps`, and `chart_id`.
-- Uses Python or Rust depending on backend selection and precision requirements.
+- `chart_json.subject.event_time` must be parseable as `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`, `YYYY-MM-DDTHH:mm:ssZ`, or RFC3339.
+- Returns an object with `positions`, `aspects`, `axes`, `house_cusps`, `chart_id`, and backend provenance fields when available.
+- Uses Python or Rust depending on backend selection and availability.
 
 Acceptance criteria:
 
 - A valid chart payload returns `positions`, `aspects`, and `chart_id`.
 - Rust-supported radix output should also include `axes` and `house_cusps`.
-- A chart payload that requires Python precision must fail in Rust-only mode.
+- When fallback occurs, the response should expose that fact instead of failing silently.
 
 ### `compute_chart(app, backend_state, workspace_path, chart_id) -> Result<Map<String, Value>, String>`
 
 - Loads a chart from workspace storage and computes positions and aspects.
-- Returns `positions`, `aspects`, `axes`, `house_cusps`, and `chart_id`.
-- Uses Python or Rust depending on backend selection and precision requirements.
+- Returns `positions`, `aspects`, `axes`, `house_cusps`, `chart_id`, and backend provenance fields when available.
+- Uses Python or Rust depending on backend selection and availability.
 
 ### `compute_transit_series(...) -> Result<Value, String>`
 

@@ -25,6 +25,7 @@ Rust does not own persisted storage of computed positions, aspects, or transit s
 - CI and desktop packaging must not be blocked by sidecar build failures while the Rust/no-sidecar path is the baseline.
 - `backend-python/` may be omitted from some packaging contexts as long as the resulting app still supports the documented Rust fallback flows.
 - Do not reintroduce DuckDB- or Parquet-based persistence on the Rust side unless a new `/llm/` spec explicitly changes this rule.
+- Keep backend provenance visible to callers; do not allow silent backend changes to be invisible in compute results.
 
 ## Practical implications
 
@@ -34,8 +35,9 @@ Rust does not own persisted storage of computed positions, aspects, or transit s
 - Workspace and chart file behavior should stay aligned with the Python workspace/model layer.
 - Native YAML chart import should work through Rust without requiring the Python backend.
 - StarFisher/SFS import remains in scope, but should stay explicitly staged until a Python-backed parser path is wired in.
-- `swisseph` is the default engine for no-sidecar desktop flows.
-- `jpl` remains backlog for the Rust path and should currently be treated as Python-backed precision work.
+- Current implementation may use Swiss-backed paths locally, but the architecture should evolve toward a backend-neutral astronomy interface.
+- `jpl` / SPICE is the preferred long-term astronomy direction and should be added behind that interface rather than as a one-off special case.
+- Rust-side contracts should prefer backend-neutral result shapes even when current implementation details differ underneath.
 - Backend selection should follow this general rule:
   - app starts
   - app checks Python backend availability once

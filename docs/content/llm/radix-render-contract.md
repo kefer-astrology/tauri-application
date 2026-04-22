@@ -5,7 +5,7 @@ weight: 43
 
 # Radix render contract
 
-This page defines the current Rust-side output contract for rendering a radix view without mock data.
+This page defines the current compute output contract for rendering a radix view without mock data.
 
 ## Goal
 
@@ -44,21 +44,25 @@ The frontend radix view should render from computed chart output, not from hardc
 
 ## Support rule
 
-Current Rust house cusp support should be treated as:
+House support must follow two rules:
 
-- `Whole Sign`: supported directly
-- `Equal`: supported directly
-- other house systems: use a clearly documented equal-house fallback until dedicated Rust implementations exist
+- the compute response must be honest about what was actually computed
+- the frontend must render the returned geometry rather than inventing its own fallback wheel
 
-This is acceptable for the current no-sidecar baseline because it removes mocked frontend house structures while staying honest about the present Rust scope.
+When house-system support differs by backend or implementation maturity:
+
+- the response should still return `house_cusps` when it has a valid computed result
+- provenance or warnings should indicate if a fallback or reduced-fidelity path was used
+- the frontend should prefer truthfully computed output over inferred placeholder geometry
 
 ## Frontend rule
 
 - React and Svelte should prefer `axes` and `house_cusps` from compute output over hand-authored fallback values.
 - If those fields are absent, the frontend may show an explicit empty or partial state, but should not silently substitute mock horoscope geometry.
+- If compute responses include provenance or warnings, the frontend should preserve enough of that context for debugging and user trust.
 
 ## Backlog
 
-- dedicated Rust implementations for Placidus, Koch, Campanus, Regiomontanus, and other house systems
+- normalized house-system support across backends
 - richer computed points beyond the current baseline
 - stronger normalized render payloads if the frontend needs more than longitudes

@@ -32,13 +32,16 @@ A frontend is only "ready" for this baseline when:
   - StarFisher-style formats such as `.sfs`, when parsing support is available through the backend/tooling
 - Creating a chart counts only when the chart is persisted to workspace YAML when a workspace is active.
 - Settings count only when they feed the persisted workspace/chart configuration or the active compute payload.
-- For the current no-sidecar baseline, default engine behavior should prefer `swisseph`.
-- `jpl` should not block baseline frontend readiness; it is currently a Python-backed/backlog path for precise computation.
+- Frontend contracts should stay backend-neutral even when a specific backend is favored in the implementation.
+- `jpl` / SPICE should not block baseline frontend readiness, but the frontend contract should leave room for it to become the preferred long-term astronomy backend.
 - React location entry should support explicit place-to-coordinate resolution without requiring manual latitude/longitude entry.
 - The React radix view should render from computed chart payloads, not mock wheel or mock position data.
 - The default first-run React chart should compute positions for the current date/time automatically.
 - Creating a new chart in React should switch to the radix view and start background computation immediately.
 - Both frontends should consume the same radix compute contract, including `positions`, `axes`, and `house_cusps`.
+- Both frontends should be able to surface backend provenance from compute responses when available.
+- Both frontends should emit canonical chart timestamps as `YYYY-MM-DD HH:mm:ss` or RFC3339.
+- Frontends should not emit localized chart timestamps such as `DD/MM/YYYY HH:mm:ss` in compute or persistence payloads.
 - Svelte should prefer `house_cusps` from compute output over legacy `house_1..house_12` fallback keys.
 - React should use two center-layout families:
   - edge-to-edge for radix, information/dashboard, aspectarium, and open-workspace flows
@@ -82,4 +85,5 @@ A frontend is only "ready" for this baseline when:
 3. Wire that model into payload builders in both frontends.
 4. Verify Rust/Python compute respects the same inputs.
 5. Finish the missing import workflow in each frontend.
-6. Only then mark the baseline workflows as ready.
+6. Verify Rust/Python preserve the same instant for offset-aware datetimes.
+7. Only then mark the baseline workflows as ready.

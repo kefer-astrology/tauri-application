@@ -6,12 +6,15 @@ weight: 50
 
 # Python Package Integration
 
-Consolidated reference for implementing the Python functions called from the Tauri app.
+Consolidated reference for the optional Python computation path used by the Tauri app.
 
 ## Overview
 
-The Python package is the computation engine for astrological calculations. Tauri calls
+The Python package is an optional computation backend and compatibility layer. Tauri calls
 Python via a subprocess and expects JSON on stdout.
+
+It should not be treated as the sole owner of astrology semantics. Long-term architecture
+should keep astrology rules portable across Rust and Python paths.
 
 ## Current Integration Status
 
@@ -32,6 +35,13 @@ Python via a subprocess and expects JSON on stdout.
 - Revolution computation
 - Extended physical properties (magnitude, phase, elongation)
 - Topocentric coordinates (altitude, azimuth)
+
+## Role in the target architecture
+
+- Provide backend-specific integrations that are easier to maintain in Python.
+- Serve as a compatibility path for Swiss-oriented workflows.
+- Serve as a validation path while backend-neutral Rust layers mature.
+- Avoid becoming the only place where zodiac, house, ayanamsha, or tradition semantics exist.
 
 ## Required Functions
 
@@ -180,8 +190,10 @@ STANDARD_OBJECTS = [
 
 ### Datetime
 
-- Input: ISO 8601 or datetime objects (timezone-aware)
-- Output: ISO 8601 with microseconds
+- Input: ISO 8601 or datetime objects
+- Offset-aware inputs must preserve the represented instant
+- Naive inputs must be interpreted by an explicit documented rule
+- Output: ISO 8601 with microseconds when precision is available
 
 ## Rust ↔ Python Integration
 
@@ -219,6 +231,13 @@ Recommended error types:
 - `EphemerisNotFound`
 - `ComputationError`
 
+Recommended warning/provenance fields in successful results:
+
+- `backend_used`
+- `fallback_used`
+- `ephemeris_source`
+- `warnings`
+
 ## Testing
 
 ### Quick Test Script
@@ -247,17 +266,20 @@ aspects = compute_aspects_for_chart(chart, ws=ws)
 
 ## Implementation Checklist
 
-### Phase 1: Core Fixes
+### Phase 1: Contract parity and correctness
 
-- [ ] Implement `compute_aspects_for_chart`
-- [ ] Update Rust to call aspect computation
-- [ ] Enhance `compute_positions_for_chart` for JPL
-- [ ] Test swisseph + JPL formats
+- [x] Keep datetime and timezone semantics aligned with Rust — offset-aware instants preserved correctly
+- [x] Enhance `compute_positions_for_chart` for richer astronomy backends — `JplAstronomyBackend` now wraps the JPL compute path
+- [x] Expose provenance fields in compute responses — `backend_used`, `fallback_used`, `ephemeris_source`, `warnings`
+- [x] Expose `axes` and `house_cusps` in chart compute responses
+- [x] Test Swiss-compatibility and JPL-oriented formats — timezone regression tests in `tests/test_timezone_alignment.py`
+- [ ] Implement `compute_aspects_for_chart` — aspects still returned empty from Python path
+- [ ] Update Rust to call Python aspect computation
 
 ### Phase 2: Transit Computation
 
-- [ ] Implement `compute_transit_series`
-- [ ] Add Rust command for transit computation
+- [x] Implement `compute_transit_series` — implemented in Python; Rust/Tauri command exists
+- [x] Expose provenance fields in transit responses
 
 ### Phase 3: Extended Features
 
@@ -265,3 +287,13 @@ aspects = compute_aspects_for_chart(chart, ws=ws)
 - [ ] Add extended physical properties
 - [ ] Implement `compute_revolution_series`
 - [ ] Add caching for performance
+
+### Phase 4: Seam alignment (new)
+
+- [x] Define `AstronomyBackend` Protocol in `astronomy.py`
+- [x] Implement `SwissAstronomyBackend` and `JplAstronomyBackend`
+- [x] Add `ChartData` dataclass and `compute_chart_data()` to align Python protocol with Rust trait
+- [x] Update `compute_positions_for_chart` to use `compute_chart_data()` internally
+- [x] Compute Python JPL `axes` and `house_cusps`
+- [x] Update CLI chart compute to consume `ChartData` directly
+- [ ] Finish Stage 2 verification (`True Node`, `Chiron`, no-Swiss smoke, full env test run)
