@@ -17,7 +17,7 @@ export interface AppChart {
 	longitude?: number;
 	timezone?: string;
 	computed?: {
-		positions?: Record<string, number>;
+		positions?: Record<string, unknown>;
 		aspects?: unknown[];
 		axes?: {
 			asc: number;
@@ -26,6 +26,41 @@ export interface AppChart {
 			ic: number;
 		};
 		houseCusps?: number[];
+	};
+}
+
+export interface ComputedChartPayload {
+	positions?: Record<string, unknown>;
+	aspects?: unknown[];
+	axes?: {
+		asc: number;
+		desc: number;
+		mc: number;
+		ic: number;
+	};
+	house_cusps?: number[];
+}
+
+export function normalizeComputedChartPayload(
+	payload: ComputedChartPayload
+): NonNullable<AppChart['computed']> {
+	const positions = { ...(payload.positions ?? {}) };
+	const axes = payload.axes;
+	if (axes) {
+		positions.asc = axes.asc;
+		positions.desc = axes.desc;
+		positions.mc = axes.mc;
+		positions.ic = axes.ic;
+	}
+	const houseCusps = payload.house_cusps ?? [];
+	houseCusps.forEach((cusp, index) => {
+		positions[`house_${index + 1}`] = cusp;
+	});
+	return {
+		positions,
+		aspects: payload.aspects ?? [],
+		axes,
+		houseCusps
 	};
 }
 
@@ -251,7 +286,7 @@ export function appChartFromNewHoroscopeInput(input: {
 }
 
 function formatDatePart(value: Date): string {
-	return `${String(value.getDate()).padStart(2, '0')}/${String(value.getMonth() + 1).padStart(2, '0')}/${value.getFullYear()}`;
+	return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
 }
 
 function formatTimePart(value: Date): string {

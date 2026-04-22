@@ -31,6 +31,7 @@ interface PlanetPosition {
 	degrees: number;
 	signIcon: string;
 	minutes: number;
+	seconds: number;
 }
 
 const SIGN_GLYPHS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
@@ -82,10 +83,10 @@ function normalizeLongitude(value: unknown): number | null {
 
 function longitudeToPosition(id: string, longitude: number, t: (key: string) => string): PlanetPosition {
 	const withinSign = longitude % 30;
-	const wholeDegrees = Math.floor(withinSign);
-	const roundedMinutes = Math.round((withinSign - wholeDegrees) * 60);
-	const degrees = roundedMinutes === 60 ? (wholeDegrees + 1) % 30 : wholeDegrees;
-	const minutes = roundedMinutes === 60 ? 0 : roundedMinutes;
+	const totalSeconds = Math.round(withinSign * 3600);
+	const degrees = Math.floor(totalSeconds / 3600) % 30;
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
 	const signIndex = Math.floor(longitude / 30) % 12;
 	const meta = POSITION_META[id] ?? { fallbackLabel: id, icon: id.slice(0, 3) };
 	return {
@@ -94,7 +95,8 @@ function longitudeToPosition(id: string, longitude: number, t: (key: string) => 
 		icon: meta.icon,
 		degrees,
 		signIcon: SIGN_GLYPHS[signIndex] ?? '♈',
-		minutes
+		minutes,
+		seconds
 	};
 }
 
@@ -102,6 +104,14 @@ function parseChartDateTime(value?: string): Date | null {
 	if (!value?.trim()) return null;
 	const direct = new Date(value);
 	if (!Number.isNaN(direct.getTime())) return direct;
+
+	const normalized = value.includes('T')
+		? value
+		: /^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)$/.test(value)
+			? value.replace(' ', 'T') + 'Z'
+			: value;
+	const normalizedDate = new Date(normalized);
+	if (!Number.isNaN(normalizedDate.getTime())) return normalizedDate;
 
 	const match = value.match(
 		/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
@@ -360,7 +370,7 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 
 				{/* Center Column - Full middle track */}
 				<div className="flex min-h-0 min-w-0 items-center justify-center overflow-hidden">
-					<div className="aspect-square h-auto w-full max-w-[min(100%,72vh)]">
+					<div className="aspect-square h-full w-full max-h-full max-w-full">
 						<HoroscopeWheel
 							theme={theme}
 							bodyLongitudes={wheelBodyLongitudes}
@@ -419,7 +429,8 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 													</span>
 													<span className="w-12 text-right">{pos.degrees}°</span>
 													<span className="w-8 text-center text-base">{pos.signIcon}</span>
-													<span className="text-right">{pos.minutes}'</span>
+													<span className="w-10 text-right">{pos.minutes}'</span>
+													<span className="w-10 text-right">{pos.seconds}"</span>
 												</div>
 											))}
 										</div>

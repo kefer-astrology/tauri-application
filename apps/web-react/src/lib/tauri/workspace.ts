@@ -6,7 +6,12 @@ import type {
 	WorkspaceDefaultsDto,
 	WorkspaceInfo
 } from './types';
-import { chartDetailsToAppChart, summaryToAppChart, type AppChart } from './chartPayload';
+import {
+	chartDetailsToAppChart,
+	normalizeComputedChartPayload,
+	summaryToAppChart,
+	type AppChart
+} from './chartPayload';
 
 export async function openFolderDialog(): Promise<string | null> {
 	return invoke<string | null>('open_folder_dialog');
@@ -86,12 +91,7 @@ export async function openWorkspaceFolder(
 	for (const chart of charts) {
 		try {
 			const result = await computeChart(workspace.path, chart.id);
-			chart.computed = {
-				positions: result.positions,
-				aspects: result.aspects,
-				axes: result.axes,
-				houseCusps: result.house_cusps
-			};
+			chart.computed = normalizeComputedChartPayload(result);
 		} catch (err) {
 			console.error(`compute_chart failed for ${chart.id}:`, err);
 		}

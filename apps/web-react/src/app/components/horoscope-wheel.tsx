@@ -79,8 +79,16 @@ export function planetNorthSouthHemisphere(eclipticDeg: number): 'north' | 'sout
 }
 
 function polar(cx: number, cy: number, r: number, eclipticDeg: number) {
-	const rad = ((eclipticDeg - 90) * Math.PI) / 180;
+	const rad = ((180 - eclipticDeg) * Math.PI) / 180;
 	return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function longitudeToScreenRadians(eclipticDeg: number) {
+	return ((180 - eclipticDeg) * Math.PI) / 180;
+}
+
+function normalizeDeg(value: number) {
+	return ((value % 360) + 360) % 360;
 }
 
 export interface HoroscopeWheelProps {
@@ -141,6 +149,8 @@ export function HoroscopeWheel({
 	const strokeMain = isDark ? 'rgba(255,255,255,0.5)' : '#000000';
 	const strokeSoft = isDark ? 'rgba(255,255,255,0.4)' : '#000000';
 	const fillBg = isDark ? 'rgba(255,255,255,0.03)' : '#ffffff';
+	const wheelRotationOffset = 0;
+	const displayLon = (lon: number) => normalizeDeg(lon + wheelRotationOffset);
 
 	const zodiacWithColors = [
 		{ ...zodiacSigns[0], color: '#ef4444' },
@@ -170,18 +180,18 @@ export function HoroscopeWheel({
 		{ key: 'pluto', icon: '♇' }
 	];
 
-	const pAsc = hasAxisGeometry ? polar(center, center, outerRadius + 4, axisAsc) : null;
-	const pDsc = hasAxisGeometry ? polar(center, center, outerRadius + 4, axisDsc) : null;
-	const pMc = hasAxisGeometry ? polar(center, center, outerRadius + 4, axisMc) : null;
-	const pIc = hasAxisGeometry ? polar(center, center, outerRadius + 4, axisIc) : null;
+	const pAsc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisAsc)) : null;
+	const pDsc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisDsc)) : null;
+	const pMc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisMc)) : null;
+	const pIc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisIc)) : null;
 
 	const overlayTint = isDark ? 'rgba(59, 130, 246, 0.14)' : 'rgba(37, 99, 235, 0.12)';
 	const overlayTintAlt = isDark ? 'rgba(244, 63, 94, 0.12)' : 'rgba(244, 63, 94, 0.1)';
 
 	/** Wedge from center to outer arc [startLon → endLon] (ecliptic °). */
 	function arcWedge(startLon: number, endLon: number, sweepFlag: 0 | 1): string {
-		const p1 = polar(center, center, outerRadius, startLon);
-		const p2 = polar(center, center, outerRadius, endLon);
+		const p1 = polar(center, center, outerRadius, displayLon(startLon));
+		const p2 = polar(center, center, outerRadius, displayLon(endLon));
 		return `M ${center} ${center} L ${p1.x} ${p1.y} A ${outerRadius} ${outerRadius} 0 0 ${sweepFlag} ${p2.x} ${p2.y} Z`;
 	}
 
@@ -236,8 +246,7 @@ export function HoroscopeWheel({
 			<circle cx={center} cy={center} r={innerRadius} fill="none" stroke={strokeMain} strokeWidth="1.5" />
 
 			{zodiacSigns.map((sign, idx) => {
-				const angle = sign.angle - 90;
-				const rad = (angle * Math.PI) / 180;
+				const rad = longitudeToScreenRadians(displayLon(sign.angle));
 				const x1 = center + innerRadius * Math.cos(rad);
 				const y1 = center + innerRadius * Math.sin(rad);
 				const x2 = center + outerRadius * Math.cos(rad);
@@ -256,9 +265,8 @@ export function HoroscopeWheel({
 			})}
 
 			<g>
-				{Array.from({ length: 360 }, (_, i) => {
-					const angle = i - 90;
-					const rad = (angle * Math.PI) / 180;
+			{Array.from({ length: 360 }, (_, i) => {
+					const rad = longitudeToScreenRadians(displayLon(i));
 					const is10Degree = i % 10 === 0;
 					const is5Degree = i % 5 === 0;
 					let tickLength: number;
@@ -292,8 +300,7 @@ export function HoroscopeWheel({
 			</g>
 
 			{zodiacWithColors.map((sign) => {
-				const angle = sign.angle - 90 + 15;
-				const rad = (angle * Math.PI) / 180;
+				const rad = longitudeToScreenRadians(displayLon(sign.angle + 15));
 				const zodiacRadius = (innerRadius + outerRadius) / 2;
 				const x = center + zodiacRadius * Math.cos(rad);
 				const y = center + zodiacRadius * Math.sin(rad);
@@ -378,12 +385,12 @@ export function HoroscopeWheel({
 				opacity={showAspectLines ? 0.45 : 0}
 				style={{ pointerEvents: 'none' }}
 			>
-				{aspectPairs.flatMap(([a, b]) => {
-					const aLon = wheelBodyLongitudes[a];
-					const bLon = wheelBodyLongitudes[b];
-					if (typeof aLon !== 'number' || typeof bLon !== 'number') return [];
-					const pa = polar(center, center, planetRadius, aLon);
-					const pb = polar(center, center, planetRadius, bLon);
+					{aspectPairs.flatMap(([a, b]) => {
+						const aLon = wheelBodyLongitudes[a];
+						const bLon = wheelBodyLongitudes[b];
+						if (typeof aLon !== 'number' || typeof bLon !== 'number') return [];
+						const pa = polar(center, center, planetRadius, displayLon(aLon));
+						const pb = polar(center, center, planetRadius, displayLon(bLon));
 					return [(
 						<line
 							key={`${a}-${b}`}
@@ -404,7 +411,7 @@ export function HoroscopeWheel({
 					{bodies.flatMap(({ key, icon }) => {
 						const lon = wheelBodyLongitudes[key];
 						if (typeof lon !== 'number') return [];
-						const p = polar(center, center, planetRadius, lon);
+						const p = polar(center, center, planetRadius, displayLon(lon));
 						const hi = highlightBodies.has(key);
 						let hemiDim = 1;
 						if (hemisphereOverlay !== 'off') {

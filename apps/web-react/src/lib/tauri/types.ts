@@ -52,7 +52,7 @@ export interface ChartDetails {
 }
 
 export interface ComputeChartResult {
-	positions: Record<string, number>;
+	positions: Record<string, unknown>;
 	aspects: unknown[];
 	axes?: {
 		asc: number;

@@ -27,6 +27,7 @@ import {
 	chartDataToComputePayload,
 	createBootstrapChart,
 	DEFAULT_WORKSPACE_DEFAULTS,
+	normalizeComputedChartPayload,
 	type AppChart,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
@@ -125,12 +126,7 @@ export default function App() {
 				chart.id === chartId
 					? {
 							...chart,
-							computed: {
-								positions: result.positions,
-								aspects: result.aspects,
-								axes: result.axes,
-								houseCusps: result.house_cusps
-							}
+							computed: normalizeComputedChartPayload(result)
 						}
 					: chart
 			)

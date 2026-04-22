@@ -109,7 +109,7 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
  * (Tranzity / Nastavení) so sub-rails match the primary rail.
  */
 export const sidebarNavMenuRowClassName =
-	'min-h-10 rounded-md px-2.5 py-1 text-sm font-medium transition-all duration-200';
+	'h-11 rounded-md px-2.5 text-sm font-medium transition-all duration-200';
 
 export function AstrologySidebar({
 	onThemeChange,
@@ -182,24 +182,19 @@ export function AstrologySidebar({
 			}
 		>
 			{/* Logo Area */}
-			<div className={cn('px-3', isExpanded ? 'mb-2.5' : 'mb-2')}>
+			<div className="mb-2.5 px-3">
 				<div
 					className={cn(
-						'flex items-center',
-						isExpanded ? 'min-h-10 justify-start px-2.5' : 'justify-center'
+						'flex h-11 items-center',
+						isExpanded ? 'justify-start px-2.5' : 'justify-center'
 					)}
 				>
 						{isExpanded ? (
 							<div className={cn('flex items-center gap-2.5', themeStyle.text)}>
-								<AppShellLogoMark
-									iconSet={appShellIconSet}
-									className="h-7 w-7"
-									size={28}
-								/>
 								<AppShellLogoFull
 									iconSet={appShellIconSet}
 									className={themeStyle.text}
-									iconSize={28}
+									iconSize={32}
 								/>
 							</div>
 						) : (

@@ -14,6 +14,7 @@ export {
   resetWorkspaceDefaults,
   loadChartsFromWorkspace,
   getSelectedChart,
+  normalizeComputedPayload,
   updateChartComputation,
   chartDataToComputePayload
 } from './layout.svelte';

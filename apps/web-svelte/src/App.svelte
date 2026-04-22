@@ -378,6 +378,19 @@
   });
 
   const planetRows = $derived.by(() => Object.entries(planets ?? {}));
+
+  function splitSignArc(positionInHouse: number) {
+    const totalSeconds = Math.round(positionInHouse * 3600);
+    const degrees = Math.floor(totalSeconds / 3600) % 30;
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return { degrees, minutes, seconds };
+  }
+
+  function formatSignArc(positionInHouse: number) {
+    const { degrees, minutes, seconds } = splitSignArc(positionInHouse);
+    return `${degrees}°${minutes}'${seconds}"`;
+  }
   
   // Chart details for left expander: always show selected chart fields with sensible display defaults
   const chartDetails = $derived.by(() => {
@@ -434,6 +447,37 @@
     return { date, time };
   }
 
+  function parseChartDateTimeValue(value: string): Date | null {
+    const trimmed = value?.trim();
+    if (!trimmed) return null;
+
+    const direct = new Date(trimmed);
+    if (!isNaN(direct.getTime())) return direct;
+
+    const normalized = trimmed.includes('T')
+      ? trimmed
+      : /^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)$/.test(trimmed)
+        ? trimmed.replace(' ', 'T') + 'Z'
+        : trimmed;
+    const normalizedDate = new Date(normalized);
+    if (!isNaN(normalizedDate.getTime())) return normalizedDate;
+
+    const legacy = trimmed.match(
+      /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
+    );
+    if (!legacy) return null;
+
+    const [, dd, mm, yyyy, hh = '00', min = '00', ss = '00'] = legacy;
+    return new Date(
+      Number(yyyy),
+      Number(mm) - 1,
+      Number(dd),
+      Number(hh),
+      Number(min),
+      Number(ss)
+    );
+  }
+
   function populateFormFromChart(chart: ChartData) {
     const { date, time } = parseDateTime(chart.dateTime);
     newContextName = chart.name;
@@ -467,9 +511,9 @@
     const chart = selectedChart;
     if (chart && chart.dateTime) {
       try {
-        // Parse the chart's event time
-        const chartDate = new Date(chart.dateTime);
-        if (!isNaN(chartDate.getTime())) {
+        // Accept the same canonical chart timestamp contract as React/Rust.
+        const chartDate = parseChartDateTimeValue(chart.dateTime);
+        if (chartDate && !isNaN(chartDate.getTime())) {
           // Set the current time to the chart's event time
           timeNavigation.currentTime = chartDate;
           // Set time range around the chart time (default: 1 day before/after)
@@ -1239,13 +1283,12 @@
             <ExpandablePanel title={t('right_panel', {}, 'Poloha')} bind:expanded={rightExpanded}>
               {#snippet children()}
                 {#if isRadixLikeMode}
-                  <!-- Radix: object glyph, degrees, house sign glyph, minutes -->
+                  <!-- Radix: object glyph, degrees, house sign glyph, minutes, seconds -->
                   <ul class="space-y-0.5 text-[11px] max-h-full overflow-auto pr-1">
                     {#each planetRows as [planetName, planetData]}
                       {@const planetGlyph = getGlyphContent(planetName)}
                       {@const signGlyph = getGlyphContent(planetData.signName)}
-                      {@const deg = Math.floor(planetData.positionInHouse)}
-                      {@const minutes = Math.floor((planetData.positionInHouse % 1) * 60)}
+                      {@const arc = splitSignArc(planetData.positionInHouse)}
                       <li class="flex items-center gap-1.5 py-0.5 border-b border-border/30 last:border-0">
                         <!-- Object glyph -->
                         {#if planetGlyph.type === 'svg'}
@@ -1259,7 +1302,7 @@
                         {:else}
                           <span class="flex-shrink-0 w-[0.9em] text-center">{planetGlyph.content || planetName.charAt(0).toUpperCase()}</span>
                         {/if}
-                        <span class="font-mono opacity-90 flex-shrink-0">{deg}°</span>
+                        <span class="font-mono opacity-90 flex-shrink-0">{arc.degrees}°</span>
                         <!-- House sign glyph -->
                         {#if signGlyph.type === 'svg'}
                           <span class="inline-block flex-shrink-0" style="width: 0.9em; height: 0.9em; vertical-align: middle;">{@html signGlyph.content}</span>
@@ -1272,7 +1315,8 @@
                         {:else}
                           <span class="flex-shrink-0 w-[0.9em] text-center">{signGlyph.content || planetData.signName.slice(0, 2)}</span>
                         {/if}
-                        <span class="font-mono opacity-90 flex-shrink-0">{minutes}'</span>
+                        <span class="font-mono opacity-90 flex-shrink-0">{arc.minutes}'</span>
+                        <span class="font-mono opacity-90 flex-shrink-0">{arc.seconds}"</span>
                       </li>
                     {/each}
                     {#if planetRows.length === 0}
@@ -1306,9 +1350,7 @@
                         <tbody>
                           <tr>
                             {#each planetRows.slice(0, 10) as [planetName, planetData]}
-                              {@const deg = Math.floor(planetData.positionInHouse)}
-                              {@const min = Math.floor((planetData.positionInHouse % 1) * 60)}
-                              <td class="px-1 py-0.5 font-mono opacity-90">{deg}°{min}'</td>
+                              <td class="px-1 py-0.5 font-mono opacity-90">{formatSignArc(planetData.positionInHouse)}</td>
                             {/each}
                           </tr>
                         </tbody>

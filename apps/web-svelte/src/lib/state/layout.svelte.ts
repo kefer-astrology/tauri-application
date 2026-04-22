@@ -21,7 +21,7 @@ export interface ChartData {
   longitude?: number;
   timezone?: string;
   computed?: {
-    positions?: Record<string, number>;
+    positions?: Record<string, unknown>;
     aspects?: any[];
     axes?: {
       asc: number;
@@ -163,10 +163,31 @@ export function getSelectedChart(): ChartData | undefined {
   return layout.contexts.find(c => c.id === layout.selectedContext);
 }
 
+export function normalizeComputedPayload(computed: ChartData['computed']): ChartData['computed'] {
+  const positions = { ...(computed?.positions ?? {}) } as Record<string, unknown>;
+  const axes = computed?.axes;
+  if (axes) {
+    positions.asc = axes.asc;
+    positions.desc = axes.desc;
+    positions.mc = axes.mc;
+    positions.ic = axes.ic;
+  }
+  const houseCusps = computed?.houseCusps ?? [];
+  houseCusps.forEach((cusp, index) => {
+    positions[`house_${index + 1}`] = cusp;
+  });
+  return {
+    positions,
+    aspects: computed?.aspects ?? [],
+    axes,
+    houseCusps,
+  };
+}
+
 export function updateChartComputation(chartId: string, computed: ChartData['computed']) {
   const chart = layout.contexts.find(c => c.id === chartId);
   if (chart) {
-    chart.computed = computed;
+    chart.computed = normalizeComputedPayload(computed);
     layout.contexts = [...layout.contexts]; // Trigger reactivity
   }
 }

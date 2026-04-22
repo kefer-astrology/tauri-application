@@ -155,8 +155,10 @@
       for (const chart of charts) {
         try {
           const result = await invoke<{
-            positions: Record<string, number>;
-            aspects: any[];
+            positions?: Record<string, unknown>;
+            aspects?: any[];
+            axes?: { asc: number; desc: number; mc: number; ic: number };
+            house_cusps?: number[];
             chart_id: string;
           }>('compute_chart', {
             workspacePath: workspace.path,
@@ -164,8 +166,10 @@
           });
 
           updateChartComputation(chart.id, {
-            positions: result.positions,
-            aspects: result.aspects
+            positions: result.positions ?? {},
+            aspects: result.aspects ?? [],
+            axes: result.axes,
+            houseCusps: result.house_cusps
           });
         } catch (err) {
           console.error(`Failed to compute chart ${chart.id}:`, err);

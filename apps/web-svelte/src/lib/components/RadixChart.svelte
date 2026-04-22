@@ -145,8 +145,11 @@
   // Format planet degree display (precise angle)
   function formatPreciseAngle(planet: { degrees: number; sign: string }): string {
     const signDeg = planet.degrees % 30;
-    const minutes = Math.floor((signDeg % 1) * 60);
-    return `${Math.floor(signDeg)}° ${minutes}'`;
+    const totalSeconds = Math.round(signDeg * 3600);
+    const degrees = Math.floor(totalSeconds / 3600) % 30;
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${degrees}° ${minutes}' ${seconds}"`;
   }
 
   // SVG element reference
