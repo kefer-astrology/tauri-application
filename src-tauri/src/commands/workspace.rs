@@ -588,12 +588,17 @@ pub async fn compute_chart_from_data(
         ComputeRoute::Rust => compute_chart_from_data_rust(chart_json),
         ComputeRoute::Python if matches!(backend, ComputeBackend::Auto) && !force_python => {
             match compute_chart_from_data_python(&app, &backend_state, chart_json.clone()).await {
-                Ok(result) => Ok(result),
-                Err(_err) if fallback_to_python => compute_chart_from_data_rust(chart_json),
+                Ok(result) => Ok(normalize_chart_response(result, Some("python"))),
+                Err(_err) if fallback_to_python => Ok(annotate_chart_fallback(
+                    compute_chart_from_data_rust(chart_json)?,
+                    "python_compute_failed_auto_fallback",
+                )),
                 Err(err) => Err(err),
             }
         }
-        ComputeRoute::Python => compute_chart_from_data_python(&app, &backend_state, chart_json).await,
+        ComputeRoute::Python => compute_chart_from_data_python(&app, &backend_state, chart_json)
+            .await
+            .map(|result| normalize_chart_response(result, Some("python"))),
     }
 }
 
@@ -638,14 +643,17 @@ pub async fn compute_chart(
         ComputeRoute::Rust => compute_chart_rust(&workspace_path, &chart_id),
         ComputeRoute::Python if matches!(backend, ComputeBackend::Auto) && !force_python => {
             match compute_chart_python(&app, &backend_state, &workspace_path, &chart_id).await {
-                Ok(result) => Ok(result),
-                Err(_err) if fallback_to_python => compute_chart_rust(&workspace_path, &chart_id),
+                Ok(result) => Ok(normalize_chart_response(result, Some("python"))),
+                Err(_err) if fallback_to_python => Ok(annotate_chart_fallback(
+                    compute_chart_rust(&workspace_path, &chart_id)?,
+                    "python_compute_failed_auto_fallback",
+                )),
                 Err(err) => Err(err),
             }
         }
-        ComputeRoute::Python => {
-            compute_chart_python(&app, &backend_state, &workspace_path, &chart_id).await
-        }
+        ComputeRoute::Python => compute_chart_python(&app, &backend_state, &workspace_path, &chart_id)
+            .await
+            .map(|result| normalize_chart_response(result, Some("python"))),
     }
 }
 
@@ -728,17 +736,20 @@ pub async fn compute_transit_series(
             )
             .await
             {
-                Ok(result) => Ok(result),
-                Err(_err) if fallback_to_python => compute_transit_series_rust(
-                    &workspace_path,
-                    &chart_id,
-                    &start_datetime,
-                    &end_datetime,
-                    time_step_seconds,
-                    &transiting_objects,
-                    &transited_objects,
-                    &aspect_types,
-                ),
+                Ok(result) => Ok(normalize_transit_response(result, Some("python"))),
+                Err(_err) if fallback_to_python => Ok(annotate_transit_fallback(
+                    compute_transit_series_rust(
+                        &workspace_path,
+                        &chart_id,
+                        &start_datetime,
+                        &end_datetime,
+                        time_step_seconds,
+                        &transiting_objects,
+                        &transited_objects,
+                        &aspect_types,
+                    )?,
+                    "python_transit_compute_failed_auto_fallback",
+                )),
                 Err(err) => Err(err),
             }
         }
@@ -756,6 +767,7 @@ pub async fn compute_transit_series(
                 aspect_types,
             )
             .await
+            .map(|result| normalize_transit_response(result, Some("python")))
         }
     }
 }
@@ -841,6 +853,10 @@ fn compute_transit_series_rust(
         },
         "time_step": format!("{}s", time_step_seconds),
         "results": results,
+        "backend_used": "swisseph",
+        "fallback_used": false,
+        "ephemeris_source": rust_ephemeris_source(&source_chart),
+        "warnings": [],
     }))
 }
 
@@ -874,72 +890,12 @@ async fn compute_transit_series_python(
 }
 
 #[derive(Clone, Copy)]
-struct OrbitalBody {
-    id: &'static str,
-    semi_major_axis_au: f64,
-    mean_longitude_j2000_deg: f64,
-    orbital_period_days: f64,
-}
-
-#[derive(Clone, Copy)]
 struct AspectSpec {
     id: &'static str,
     angle: f64,
     default_orb: f64,
 }
 
-const EARTH_HELIO_LONGITUDE_J2000: f64 = 100.466_457;
-const OBLIQUITY_DEGREES: f64 = 23.439_291_1;
-const ORBITAL_BODIES: [OrbitalBody; 8] = [
-    OrbitalBody {
-        id: "mercury",
-        semi_major_axis_au: 0.387_098,
-        mean_longitude_j2000_deg: 252.250_84,
-        orbital_period_days: 87.969,
-    },
-    OrbitalBody {
-        id: "venus",
-        semi_major_axis_au: 0.723_332,
-        mean_longitude_j2000_deg: 181.979_73,
-        orbital_period_days: 224.701,
-    },
-    OrbitalBody {
-        id: "mars",
-        semi_major_axis_au: 1.523_679,
-        mean_longitude_j2000_deg: 355.433,
-        orbital_period_days: 686.980,
-    },
-    OrbitalBody {
-        id: "jupiter",
-        semi_major_axis_au: 5.203_8,
-        mean_longitude_j2000_deg: 34.351,
-        orbital_period_days: 4_332.589,
-    },
-    OrbitalBody {
-        id: "saturn",
-        semi_major_axis_au: 9.537,
-        mean_longitude_j2000_deg: 50.077,
-        orbital_period_days: 10_759.22,
-    },
-    OrbitalBody {
-        id: "uranus",
-        semi_major_axis_au: 19.191,
-        mean_longitude_j2000_deg: 314.055,
-        orbital_period_days: 30_688.5,
-    },
-    OrbitalBody {
-        id: "neptune",
-        semi_major_axis_au: 30.07,
-        mean_longitude_j2000_deg: 304.348,
-        orbital_period_days: 60_182.0,
-    },
-    OrbitalBody {
-        id: "pluto",
-        semi_major_axis_au: 39.482,
-        mean_longitude_j2000_deg: 238.929,
-        orbital_period_days: 90_560.0,
-    },
-];
 const MAJOR_ASPECTS: [AspectSpec; 5] = [
     AspectSpec {
         id: "conjunction",
@@ -976,14 +932,114 @@ struct RadixAxes {
     ic: f64,
 }
 
+fn rust_ephemeris_source(chart: &crate::workspace::models::ChartInstance) -> Option<String> {
+    crate::astronomy::backend_for_chart(chart).ephemeris_source(chart)
+}
+
+fn merge_chart_warnings(
+    existing: Option<&serde_json::Value>,
+    additional: &[String],
+) -> serde_json::Value {
+    let mut merged: Vec<String> = existing
+        .and_then(serde_json::Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+
+    for warning in additional {
+        if !merged.iter().any(|item| item == warning) {
+            merged.push(warning.clone());
+        }
+    }
+
+    serde_json::json!(merged)
+}
+
+fn normalize_chart_response(
+    mut result: HashMap<String, serde_json::Value>,
+    backend_used_fallback: Option<&str>,
+) -> HashMap<String, serde_json::Value> {
+    if !result.contains_key("backend_used") {
+        result.insert(
+            "backend_used".to_string(),
+            serde_json::json!(backend_used_fallback),
+        );
+    }
+    if !result.contains_key("fallback_used") {
+        result.insert("fallback_used".to_string(), serde_json::json!(false));
+    }
+    if !result.contains_key("ephemeris_source") {
+        result.insert("ephemeris_source".to_string(), serde_json::Value::Null);
+    }
+    if !result.contains_key("warnings") {
+        result.insert("warnings".to_string(), serde_json::json!([]));
+    }
+    result
+}
+
+fn annotate_chart_fallback(
+    mut result: HashMap<String, serde_json::Value>,
+    warning: &str,
+) -> HashMap<String, serde_json::Value> {
+    result.insert("fallback_used".to_string(), serde_json::json!(true));
+    let warnings = merge_chart_warnings(result.get("warnings"), &[warning.to_string()]);
+    result.insert("warnings".to_string(), warnings);
+    result
+}
+
+fn normalize_transit_response(
+    mut result: serde_json::Value,
+    backend_used_fallback: Option<&str>,
+) -> serde_json::Value {
+    if let Some(object) = result.as_object_mut() {
+        object
+            .entry("backend_used".to_string())
+            .or_insert_with(|| serde_json::json!(backend_used_fallback));
+        object
+            .entry("fallback_used".to_string())
+            .or_insert_with(|| serde_json::json!(false));
+        object
+            .entry("ephemeris_source".to_string())
+            .or_insert(serde_json::Value::Null);
+        object
+            .entry("warnings".to_string())
+            .or_insert_with(|| serde_json::json!([]));
+    }
+    result
+}
+
+fn annotate_transit_fallback(mut result: serde_json::Value, warning: &str) -> serde_json::Value {
+    if let Some(object) = result.as_object_mut() {
+        object.insert("fallback_used".to_string(), serde_json::json!(true));
+        let warnings = merge_chart_warnings(object.get("warnings"), &[warning.to_string()]);
+        object.insert("warnings".to_string(), warnings);
+    }
+    result
+}
+
 fn build_chart_result(
     chart: &crate::workspace::models::ChartInstance,
     aspect_types: Option<&[String]>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
-    let axes = compute_radix_axes(chart)?;
-    let house_cusps = compute_house_cusps(chart, &axes);
-    let positions =
-        compute_positions_for_chart_rust(chart, chart.config.observable_objects.as_ref())?;
+    let backend = crate::astronomy::backend_for_chart(chart);
+    let requested_objects = normalize_requested_objects(chart.config.observable_objects.as_ref());
+    let computed = backend.compute_chart_data(
+        chart,
+        requested_objects,
+    )?;
+    let axes = RadixAxes {
+        asc: computed.axes.asc,
+        desc: computed.axes.desc,
+        mc: computed.axes.mc,
+        ic: computed.axes.ic,
+    };
+    let house_cusps = computed.house_cusps;
+    let positions = computed.positions;
     let aspects = compute_chart_aspects(&positions, &chart.config.aspect_orbs, aspect_types);
 
     Ok(HashMap::from([
@@ -992,86 +1048,60 @@ fn build_chart_result(
         ("axes".to_string(), serde_json::json!(axes)),
         ("house_cusps".to_string(), serde_json::json!(house_cusps)),
         ("chart_id".to_string(), serde_json::json!(chart.id)),
+        (
+            "backend_used".to_string(),
+            serde_json::json!(backend.backend_id()),
+        ),
+        ("fallback_used".to_string(), serde_json::json!(false)),
+        (
+            "ephemeris_source".to_string(),
+            serde_json::json!(rust_ephemeris_source(chart)),
+        ),
+        ("warnings".to_string(), serde_json::json!([])),
     ]))
 }
 
+#[cfg(test)]
 fn compute_radix_axes(
     chart: &crate::workspace::models::ChartInstance,
 ) -> Result<RadixAxes, String> {
-    let event_time = chart
-        .subject
-        .event_time
-        .ok_or_else(|| "Chart has no subject.event_time".to_string())?;
-    let jd = julian_day(event_time);
-    let (asc, mc) = asc_mc_longitudes(
-        jd,
-        chart.subject.location.latitude,
-        chart.subject.location.longitude,
-    );
-
+    let backend = crate::astronomy::backend_for_chart(chart);
+    let computed = backend.compute_chart_data(chart, Some(&vec!["asc".into(), "mc".into()]))?;
     Ok(RadixAxes {
-        asc,
-        desc: normalize_deg(asc + 180.0),
-        mc,
-        ic: normalize_deg(mc + 180.0),
+        asc: computed.axes.asc,
+        desc: computed.axes.desc,
+        mc: computed.axes.mc,
+        ic: computed.axes.ic,
     })
 }
 
+#[cfg(test)]
 fn compute_house_cusps(
     chart: &crate::workspace::models::ChartInstance,
-    axes: &RadixAxes,
+    _axes: &RadixAxes,
 ) -> Vec<f64> {
-    let start = match chart.config.house_system {
-        Some(crate::workspace::models::HouseSystem::WholeSign) => {
-            normalize_deg((axes.asc / 30.0).floor() * 30.0)
-        }
-        _ => axes.asc,
-    };
-
-    (0..12)
-        .map(|offset| normalize_deg(start + 30.0 * offset as f64))
-        .collect()
+    crate::astronomy::backend_for_chart(chart)
+        .compute_chart_data(chart, None)
+        .map(|computed| computed.house_cusps)
+        .unwrap_or_default()
 }
 
 fn compute_positions_for_chart_rust(
     chart: &crate::workspace::models::ChartInstance,
     requested_objects: Option<&Vec<String>>,
 ) -> Result<HashMap<String, f64>, String> {
-    let event_time = chart
-        .subject
-        .event_time
-        .ok_or_else(|| "Chart has no subject.event_time".to_string())?;
-    let jd = julian_day(event_time);
-    let d = jd - 2_451_545.0;
+    crate::astronomy::backend_for_chart(chart)
+        .compute_chart_data(chart, normalize_requested_objects(requested_objects))
+        .map(|computed| computed.positions)
+}
 
-    let mut positions = HashMap::new();
-
-    let sun = sun_longitude_deg(d);
-    let moon = moon_longitude_deg(d);
-    positions.insert("sun".to_string(), sun);
-    positions.insert("moon".to_string(), moon);
-
-    let earth_helio = normalize_deg(EARTH_HELIO_LONGITUDE_J2000 + (360.0 / 365.256_363_004) * d);
-    for body in ORBITAL_BODIES {
-        let longitude = geocentric_longitude_deg(body, d, earth_helio);
-        positions.insert(body.id.to_string(), longitude);
+fn normalize_requested_objects(
+    requested_objects: Option<&Vec<String>>,
+) -> Option<&Vec<String>> {
+    match requested_objects {
+        Some(list) if list.is_empty() => None,
+        other => other,
     }
-
-    let axes = compute_radix_axes(chart)?;
-    positions.insert("asc".to_string(), axes.asc);
-    positions.insert("desc".to_string(), axes.desc);
-    positions.insert("mc".to_string(), axes.mc);
-    positions.insert("ic".to_string(), axes.ic);
-
-    if let Some(requested) = requested_objects {
-        if !requested.is_empty() {
-            let requested_norm: HashSet<String> =
-                requested.iter().map(|id| normalize_object_id(id)).collect();
-            positions.retain(|key, _| requested_norm.contains(&normalize_object_id(key)));
-        }
-    }
-
-    Ok(positions)
 }
 
 fn compute_chart_aspects(
@@ -1211,86 +1241,6 @@ fn parse_datetime_input(value: &str) -> Result<DateTime<Utc>, String> {
     Err(format!("Invalid datetime format: {}", value))
 }
 
-fn normalize_object_id(id: &str) -> String {
-    match id.trim().to_ascii_lowercase().as_str() {
-        "ascendant" => "asc".to_string(),
-        "descendant" => "desc".to_string(),
-        "midheaven" | "medium_coeli" => "mc".to_string(),
-        "imum_coeli" => "ic".to_string(),
-        other => other.to_string(),
-    }
-}
-
-fn julian_day(dt: DateTime<Utc>) -> f64 {
-    2_440_587.5
-        + (dt.timestamp() as f64 / 86_400.0)
-        + (f64::from(dt.timestamp_subsec_nanos()) / 86_400_000_000_000.0)
-}
-
-fn geocentric_longitude_deg(body: OrbitalBody, d: f64, earth_helio_longitude: f64) -> f64 {
-    let mean_motion = 360.0 / body.orbital_period_days;
-    let planet_helio = normalize_deg(body.mean_longitude_j2000_deg + mean_motion * d);
-    let px = body.semi_major_axis_au * cos_deg(planet_helio);
-    let py = body.semi_major_axis_au * sin_deg(planet_helio);
-    let ex = cos_deg(earth_helio_longitude);
-    let ey = sin_deg(earth_helio_longitude);
-    normalize_deg(rad_to_deg((py - ey).atan2(px - ex)))
-}
-
-fn sun_longitude_deg(d: f64) -> f64 {
-    let m = normalize_deg(357.529_11 + 0.985_600_28 * d);
-    normalize_deg(
-        280.466_46
-            + 0.985_647_36 * d
-            + 1.914_602 * sin_deg(m)
-            + 0.019_993 * sin_deg(2.0 * m)
-            + 0.000_289 * sin_deg(3.0 * m),
-    )
-}
-
-fn moon_longitude_deg(d: f64) -> f64 {
-    let l0 = normalize_deg(218.316 + 13.176_396 * d);
-    let mm = normalize_deg(134.963 + 13.064_993 * d);
-    let ms = normalize_deg(357.529 + 0.985_600_28 * d);
-    let dd = normalize_deg(297.850 + 12.190_749 * d);
-    let ff = normalize_deg(93.272 + 13.229_350 * d);
-
-    normalize_deg(
-        l0 + 6.289 * sin_deg(mm)
-            + 1.274 * sin_deg(2.0 * dd - mm)
-            + 0.658 * sin_deg(2.0 * dd)
-            + 0.214 * sin_deg(2.0 * mm)
-            - 0.186 * sin_deg(ms)
-            - 0.059 * sin_deg(2.0 * dd - 2.0 * mm)
-            - 0.057 * sin_deg(2.0 * dd - ms - mm)
-            + 0.053 * sin_deg(2.0 * dd + mm)
-            + 0.046 * sin_deg(2.0 * dd - ms)
-            + 0.041 * sin_deg(ms - mm)
-            - 0.035 * sin_deg(dd)
-            - 0.031 * sin_deg(ms + mm)
-            - 0.015 * sin_deg(2.0 * ff - 2.0 * dd)
-            + 0.011 * sin_deg(2.0 * dd - 4.0 * mm),
-    )
-}
-
-fn asc_mc_longitudes(jd: f64, latitude_deg: f64, longitude_deg: f64) -> (f64, f64) {
-    let t = (jd - 2_451_545.0) / 36_525.0;
-    let gmst = normalize_deg(
-        280.460_618_37 + 360.985_647_366_29 * (jd - 2_451_545.0) + 0.000_387_933 * t * t
-            - (t * t * t) / 38_710_000.0,
-    );
-    let lst = normalize_deg(gmst + longitude_deg);
-    let theta = deg_to_rad(lst);
-    let eps = deg_to_rad(OBLIQUITY_DEGREES);
-    let phi = deg_to_rad(latitude_deg);
-
-    let mc = normalize_deg(rad_to_deg((theta.sin() / eps.cos()).atan2(theta.cos())));
-    let asc = normalize_deg(rad_to_deg(
-        (-theta.cos()).atan2(theta.sin() * eps.cos() + phi.tan() * eps.sin()),
-    ));
-    (asc, mc)
-}
-
 fn shortest_arc_deg(a: f64, b: f64) -> f64 {
     let mut diff = (normalize_deg(a) - normalize_deg(b)).abs();
     if diff > 180.0 {
@@ -1305,22 +1255,6 @@ fn normalize_deg(value: f64) -> f64 {
         out += 360.0;
     }
     out
-}
-
-fn sin_deg(value: f64) -> f64 {
-    deg_to_rad(value).sin()
-}
-
-fn cos_deg(value: f64) -> f64 {
-    deg_to_rad(value).cos()
-}
-
-fn deg_to_rad(value: f64) -> f64 {
-    value * std::f64::consts::PI / 180.0
-}
-
-fn rad_to_deg(value: f64) -> f64 {
-    value * 180.0 / std::f64::consts::PI
 }
 
 /// Only JPL, Jyotish and Custom require Python; Swisseph can use Python (preferred) with Rust fallback.
@@ -1525,7 +1459,7 @@ mod tests {
 
     fn sample_workspace_path() -> String {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../backend-python-tests/sample")
+            .join("../backend-python/tests/sample")
             .canonicalize()
             .expect("sample workspace should exist")
             .to_string_lossy()
@@ -1534,7 +1468,7 @@ mod tests {
 
     fn sample_chart_source_path() -> String {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../backend-python-tests/sample/charts/base-chart.yml")
+            .join("../backend-python/tests/sample/charts/base-chart.yml")
             .canonicalize()
             .expect("sample chart should exist")
             .to_string_lossy()
@@ -1612,6 +1546,10 @@ mod tests {
             .expect("sample workspace chart should compute");
 
         assert_eq!(result.get("chart_id"), Some(&serde_json::json!("Base Chart")));
+        assert_eq!(result.get("backend_used"), Some(&serde_json::json!("swisseph")));
+        assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
+        assert!(result.get("ephemeris_source").is_some());
+        assert_eq!(result.get("warnings"), Some(&serde_json::json!([])));
 
         let positions = result
             .get("positions")
@@ -1639,6 +1577,50 @@ mod tests {
             .and_then(Value::as_array)
             .expect("aspects should be an array");
         assert!(aspects.iter().all(Value::is_object));
+    }
+
+    #[test]
+    fn annotate_chart_fallback_marks_result_and_preserves_existing_warnings() {
+        let result = HashMap::from([
+            ("backend_used".to_string(), serde_json::json!("swisseph")),
+            ("fallback_used".to_string(), serde_json::json!(false)),
+            (
+                "warnings".to_string(),
+                serde_json::json!(["partial_axes"]),
+            ),
+        ]);
+
+        let annotated = annotate_chart_fallback(result, "python_compute_failed_auto_fallback");
+
+        assert_eq!(annotated.get("fallback_used"), Some(&serde_json::json!(true)));
+        assert_eq!(
+            annotated.get("warnings"),
+            Some(&serde_json::json!([
+                "partial_axes",
+                "python_compute_failed_auto_fallback"
+            ]))
+        );
+    }
+
+    #[test]
+    fn annotate_transit_fallback_marks_result_and_preserves_existing_warnings() {
+        let result = serde_json::json!({
+            "backend_used": "swisseph",
+            "fallback_used": false,
+            "warnings": ["partial_axes"],
+        });
+
+        let annotated =
+            annotate_transit_fallback(result, "python_transit_compute_failed_auto_fallback");
+
+        assert_eq!(annotated.get("fallback_used"), Some(&serde_json::json!(true)));
+        assert_eq!(
+            annotated.get("warnings"),
+            Some(&serde_json::json!([
+                "partial_axes",
+                "python_transit_compute_failed_auto_fallback"
+            ]))
+        );
     }
 
     #[test]
@@ -1683,6 +1665,10 @@ mod tests {
             .and_then(Value::as_array)
             .expect("results should be an array");
         assert_eq!(results.len(), 3);
+        assert_eq!(result.get("backend_used"), Some(&serde_json::json!("swisseph")));
+        assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
+        assert!(result.get("ephemeris_source").is_some());
+        assert_eq!(result.get("warnings"), Some(&serde_json::json!([])));
 
         for entry in results {
             let positions = entry

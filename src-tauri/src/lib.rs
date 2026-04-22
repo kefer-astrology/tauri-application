@@ -1,7 +1,12 @@
+mod astronomy;
 mod backend;
 mod commands;
+mod houses;
 mod storage;
 mod workspace;
+#[cfg(feature = "swisseph")]
+mod swisseph;
+mod jpl_backend;
 use tauri::Manager;
 use commands::default::{read, write};
 use commands::storage::{
