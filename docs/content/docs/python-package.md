@@ -20,21 +20,25 @@ should keep astrology rules portable across Rust and Python paths.
 
 ### ✅ Implemented
 
-- `compute_positions_for_chart(chart: ChartInstance, ws: Optional[Workspace] = None) -> Dict[str, float]`
-  - Called from Rust: `compute_chart` command
-  - Returns: object IDs mapped to longitude values (degrees)
+- `compute_positions_for_chart(chart: ChartInstance, ws: Optional[Workspace] = None) -> Dict[str, float | Dict[str, float]]`
+  - Routed through the backend seam
+  - Returns longitude-only values for Swiss-backed paths and richer dict payloads for JPL-backed paths
+- `compute_chart_data_for_chart(...) -> ChartData`
+  - Normalized Python chart-data seam used by backend-aware chart compute
+  - Returns `positions`, `axes`, `house_cusps`, and `warnings`
+- Python JPL chart-data responses now compute `axes` and `house_cusps`
+- CLI chart compute now consumes `ChartData` directly and exposes normalized provenance fields
+- Python transit-series responses expose provenance-oriented top-level metadata
 
 ### ⚠️ Needs Enhancement
 
 - Aspect computation (currently returns empty list)
-- JPL-specific properties (declination, RA, distance) computed but not returned
+- `/function-wrapper/module/` still needs these same seam updates mirrored over if it remains a parallel authoritative copy
 
 ### ❌ Not Yet Implemented
 
-- Transit series computation
 - Revolution computation
-- Extended physical properties (magnitude, phase, elongation)
-- Topocentric coordinates (altitude, azimuth)
+- End-to-end verification in a fully provisioned Python environment
 
 ## Role in the target architecture
 
@@ -59,6 +63,25 @@ def compute_positions_for_chart(
         - Non-JPL: float (longitude in degrees)
         - JPL: dict with extended properties
     """
+```
+
+### 1a. Structured chart seam
+
+```python
+@dataclass
+class ChartData:
+    positions: PositionResult
+    axes: Dict[str, float]
+    house_cusps: List[float]
+    warnings: List[str]
+
+def compute_chart_data_for_chart(
+    chart: ChartInstance,
+    ws: Optional[Workspace] = None,
+    include_physical: bool = False,
+    include_topocentric: bool = False,
+) -> ChartData:
+    """Compute structured chart data using the active backend seam."""
 ```
 
 **JPL Required Keys (always present):**
@@ -297,3 +320,4 @@ aspects = compute_aspects_for_chart(chart, ws=ws)
 - [x] Compute Python JPL `axes` and `house_cusps`
 - [x] Update CLI chart compute to consume `ChartData` directly
 - [ ] Finish Stage 2 verification (`True Node`, `Chiron`, no-Swiss smoke, full env test run)
+- [ ] Mirror the same Python seam changes into `/function-wrapper/module/` if that copy remains authoritative

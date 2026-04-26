@@ -8,6 +8,13 @@ weight: 25
 
 `apps/web-svelte` is the Svelte port of the app. It currently carries more feature depth than the React shell, so it is useful both as an implementation reference and as an alternate desktop target.
 
+## Current status
+
+- Svelte currently exposes a broader interactive surface than React in several areas.
+- It includes a wired transit compute flow through Tauri `compute_transit_series`.
+- It also still carries more compatibility-era assumptions than React in some places, especially around storage/query helpers.
+- Treat it as a valuable functional reference, but not as a guarantee that every internal path is already on the final desktop persistence model.
+
 ## Commands
 
 ```bash
@@ -99,3 +106,9 @@ The base `src-tauri/tauri.conf.json` still points at React by default. Use the o
 - `src-tauri/tauri.svelte.conf.json`
 
 The root scripts wrap those configs so you can switch foregrounds without editing Tauri config files by hand.
+
+## Data-path note
+
+- Svelte can render from real computed chart payloads returned by Tauri.
+- Some Svelte data helpers also call storage compatibility commands such as `query_positions`.
+- In the current desktop app, those storage commands do not persist computed data in Rust, so Svelte may fall back to in-memory chart computation results when query calls return empty data.

@@ -244,6 +244,8 @@ Those higher layers remain Kefer-owned logic.
 - `backend_for_chart(chart)` — prefers `JplAstronomyBackend` when BSP is resolvable; falls back to Swiss only when `swisseph` feature is enabled
 - `houses.rs` ✅ — pure-Rust obliquity, GMST, ASC/MC, Whole Sign + Placidus cusps, Mean Node, ICRF→ecliptic
 - `build.rs` ✅ — only compiles libswe when `CARGO_FEATURE_SWISSEPH` is set
+- Rust Tauri chart responses now surface backend warnings from `AstronomyChartData`
+- Rust transit responses now report the actual backend used instead of a hardcoded Swiss label
 
 ### Python
 
@@ -257,11 +259,12 @@ Those higher layers remain Kefer-owned logic.
 - Python JPL now computes `axes` and `house_cusps`
 - `services.py` now routes chart computation through the structured chart-data seam
 - `cli.py` chart compute now consumes `ChartData` directly
+- `/function-wrapper/module/` should mirror these same Python seam changes if that copy remains active in parallel
 
 ### Seam alignment
 
-- Rust: `compute_chart_data()` → `AstronomyChartData { positions, axes, house_cusps }`
-- Python: `compute_chart_data()` → `ChartData { positions, axes, house_cusps }` ✅ aligned
+- Rust: `compute_chart_data()` → `AstronomyChartData { positions, axes, house_cusps, warnings }`
+- Python: `compute_chart_data()` → `ChartData { positions, axes, house_cusps, warnings }` ✅ aligned
 
 ### Remaining gaps
 

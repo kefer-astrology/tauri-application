@@ -36,6 +36,18 @@ Acceptance criteria:
 - Saving a workspace with N charts creates N chart files and one `workspace.yaml`.
 - The saved manifest references the generated chart files.
 
+### `save_workspace_defaults(workspace_path, defaults) -> Result<Value, String>`
+
+- Updates workspace-level defaults in `workspace.yaml` without rewriting chart files.
+- Returns the normalized workspace defaults payload after persistence.
+- Intended for settings changes that belong to workspace state rather than to a specific chart.
+
+Acceptance criteria:
+
+- Updating default bodies persists to `workspace.yaml`.
+- Updating default engine, house system, or location defaults persists to `workspace.yaml`.
+- Chart YAML files are left untouched by this command.
+
 ### `create_workspace(workspace_path, owner) -> Result<String, String>`
 
 - Creates the workspace directory and `charts/`.

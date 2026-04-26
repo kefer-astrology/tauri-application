@@ -14,8 +14,24 @@ Consolidated architecture reference for the Tauri desktop app and its computatio
 - **Backend**: Tauri (Rust) commands orchestrate workspace and computation.
 - **Compute**: Rust and Python can both participate in computation; Python is optional, not foundational.
 - **Storage**: YAML workspace manifests and chart files are the active persistence layer.
+- **Workspace defaults**: workspace-level settings can be persisted independently to `workspace.yaml` without rewriting all chart files.
 - **Computed data**: Positions, aspects, and transit-series results are computed on demand and are not persisted by the Rust desktop app.
 - **Shared assets**: repo-root `static/` is the source of truth for app-shell logos/icons and astrology glyph sets used by both frontends.
+
+## Current runtime state
+
+This section describes the app as it behaves today, without assuming future migration steps.
+
+- **Workspace persistence**: chart definitions and workspace defaults are persisted in YAML under a workspace folder.
+- **Workspace defaults**: workspace-level settings can be updated directly in `workspace.yaml` through `save_workspace_defaults(...)`.
+- **Computed chart data**: chart positions, axes, house cusps, aspects, and transit-series results are computed on demand and kept in memory.
+- **Computed storage**: the Rust desktop app does not currently persist computed positions/aspects/relations as a queryable local database layer.
+- **Backend routing**: all frontend calls go through Tauri. Tauri then routes computation to Rust or Python depending on backend selection and backend availability.
+- **Auto routing**: `KEFER_COMPUTE_BACKEND=Auto` currently prefers Python when the sidecar is available and falls back to Rust otherwise.
+- **Rust compute**: Rust has a real local compute path for chart and transit work.
+- **Python compute**: Python also has a real compute path and remains part of the active runtime contract, not just a historical reference.
+- **React status**: the main React horoscope flow uses real Tauri-backed chart computation; some secondary screens are still prototype/presentational.
+- **Svelte status**: the Svelte shell currently exposes more end-user surface area, including a wired transit compute flow, but some data access still passes through compatibility-era storage commands and in-memory fallbacks.
 
 ## Core Principles
 
@@ -27,21 +43,23 @@ Consolidated architecture reference for the Tauri desktop app and its computatio
 6. **Precision Support**: The architecture should support second-level and higher precision where the backend supports it.
 7. **License-Clean Default**: New compute paths must not introduce AGPL dependencies. Swiss Ephemeris (libswe, Kerykeion) is AGPL or paid-commercial; it is retained as an explicit opt-in compatibility path, never the default for new work.
 
-## Current state vs target direction
-
-### Current state
+## Compute stack today
 
 - Tauri owns command routing and workspace I/O.
-- Rust computes locally through libswe (Swiss Ephemeris, AGPL). The standalone path carries an AGPL obligation today.
-- Python sidecar: Kerykeion path is AGPL; Skyfield + `de421.bsp` path (MIT + public domain) is already license-clean.
-- Swiss-backed computation is the only functional path in Rust standalone mode.
+- Rust chart compute is backend-pluggable through the local astronomy layer.
+- Python remains available as an active compute backend behind Tauri routing.
+- Default backend selection is operationally:
+  - `Auto`: Python when available, Rust otherwise.
+  - `Python`: Python only.
+  - `Rust`: Rust only.
+- Response metadata is intended to expose which backend actually handled the request.
 
-### Target direction
+## Non-final surfaces today
 
-- Rust standalone: `JplAstronomyBackend` using `anise` (MIT) + `de421.bsp` — no AGPL, same file as Python.
-- Python sidecar: `JplAstronomyBackend` via Skyfield (MIT) — already partially in place.
-- Swiss Ephemeris gated behind a Cargo feature flag; excluded from release builds by default.
-- Astrology semantics (zodiac, houses, aspects, tradition rules) in Kefer-owned layers above the backend.
+- The React `InformationView` is still explicitly marked prototype in the UI.
+- The React `HoroscopeDashboard` uses real chart-backed wheel data.
+- Rust storage compatibility commands remain registered for API stability, but they should not be interpreted as a real persisted computed-data subsystem.
+- Some Svelte views still use those compatibility commands and fall back to in-memory computed payloads when storage returns nothing.
 
 ## Workspace Layout
 
@@ -61,6 +79,7 @@ workspace/
 
 - **Current live state**: the Rust desktop app persists workspace YAML only; see **[tauri-command-contracts](./tauri-command-contracts/)** and `src-tauri/src/commands/storage.rs`.
 - **Chart definitions** live in YAML and should stay compatible with the Python workspace/model layer.
+- **Workspace defaults** live in `workspace.yaml` and now have a dedicated persistence path separate from full workspace save.
 - **Computed positions and aspects** are produced on demand in Rust or Python.
 - **Storage commands** remain registered for compatibility, but they do not persist calculated data.
 
@@ -162,7 +181,7 @@ UI consumes returned in-memory results and derives or displays aspects as requir
 ## Tauri Commands (High-Level)
 
 **Invoked from frontend today:**  
-`read`, `write`, `open_folder_dialog`, `load_workspace`, `save_workspace`, `get_workspace_defaults`, `get_chart_details`, `init_storage`, `compute_chart`, `compute_chart_from_data`, `compute_transit_series`, `create_chart`, `update_chart`, `query_positions`, `compute_aspects`, `query_radix_relative`.
+`read`, `write`, `open_folder_dialog`, `load_workspace`, `save_workspace`, `save_workspace_defaults`, `get_workspace_defaults`, `get_chart_details`, `init_storage`, `compute_chart`, `compute_chart_from_data`, `compute_transit_series`, `create_chart`, `update_chart`, `query_positions`, `compute_aspects`, `query_radix_relative`.
 
 **Registered but not yet used from UI (reserved for future wiring):**  
 `store_positions`, `store_relation`, `query_timestamps`, `create_workspace`, `delete_workspace`, `delete_chart`.

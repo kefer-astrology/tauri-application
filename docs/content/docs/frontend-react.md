@@ -8,6 +8,15 @@ weight: 20
 
 Operational guide for the Kefer desktop UI (React + Vite + Tauri).
 
+## Current status
+
+- React is the default desktop shell.
+- The main horoscope workflow is wired to real Tauri compute commands.
+- Workspace open/save/defaults persistence are wired.
+- The create-new flow uses app-owned popover controls for time and location search.
+- Some secondary views are still presentational or prototype-oriented rather than fully chart-backed.
+- React does not currently expose the deepest feature coverage in the repo; Svelte still carries some richer screens and interactions.
+
 ## Prerequisites
 
 - Node.js (see team `.nvmrc` or local convention).
@@ -59,7 +68,7 @@ npm run i18n:sync        # Regenerate `apps/web-react/src/locales/*.json` from `
 - **Regenerate JSON**: `npm run i18n:sync` runs `scripts/csv-to-locales.mjs`, which writes the same four locale files to **every** path listed in `localeOutputDirs` (React and Svelte today). One command keeps all frontends on the same keys and strings.
 - **Staying in sync**: After updating the CSV, run `npm run i18n:sync` and commit **both** `translations.csv` and the generated `**/locales/*.json`. Optionally add CI that fails if someone edits JSON by hand without syncing, or that runs the script and checks for a clean `git diff`.
 - **Runtime**: `react-i18next` + `i18next`; wrap is in **`apps/web-react/src/main.tsx`** (`I18nextProvider`). Use `useTranslation()` and `t('key')` where `key` is `internal_name` from the CSV.
-- **Settings UI**: **`apps/web-react/src/app/components/settings-view.tsx`** — language, location, house system, aspects, appearance, manual, plus **Cancel / Confirm** footer. Language is stored under **`kefer-language`**; glyph set choice writes **`glyph_set`** in `localStorage`. Other fields are UI state until workspace/theme hooks are ported. Open settings from the sidebar’s **last main nav item** (translated `settings`).
+- **Settings UI**: **`apps/web-react/src/app/components/settings-view.tsx`** — language, location, house system, aspects, appearance, manual, plus **Cancel / Confirm** footer. Language is stored under **`kefer-language`**; glyph set choice writes **`glyph_set`** in `localStorage` (`default` \| `modern`, mapped to **`static/glyphs/default/**` and **`static/glyphs/modern/**`**). Other fields are UI state until workspace/theme hooks are ported. Open settings from the sidebar’s **last main nav item** (translated `settings`).
 - **Conventions**: See **[ui-conventions](./ui-conventions/)** for the full i18n workflow and transits/settings layout notes.
 
 ## Tauri bridge (`apps/web-react/src/lib/tauri/`)
@@ -75,7 +84,13 @@ In **`App.tsx`**, sidebar actions:
 - **Otevřít** (`otevrit`) — runs `openWorkspaceFolder()` after `open_folder_dialog`; merges workspace defaults; stores charts in React state; toasts success/failure.
 - **Uložit** (`ulozit`) — if there are in-memory charts, saves via `save_workspace` + `init_storage`; prompts for folder when no `workspacePath` yet.
 
-Other views (horoscope dashboard, transits, aspectarium) are still mostly presentational until you thread `charts` / `computed` state into them.
+Current React surface by state:
+
+- **Horoscope dashboard**: wired to selected chart state and real computed chart payloads.
+- **Create new dialog**: wired to real chart creation / compute flow, with Tauri-backed location resolution.
+- **Settings**: workspace defaults persistence is wired through `save_workspace_defaults(...)`.
+- **Information view**: still explicitly prototype-oriented.
+- **Transits / secondary analysis views**: not all screens are yet wired as full end-to-end compute views.
 
 ## Structure conventions
 
@@ -132,6 +147,8 @@ Example glyph paths:
 <img src={`${import.meta.env.BASE_URL}glyphs/default/planets/sun.svg`} alt="" />
 <img src={`${import.meta.env.BASE_URL}glyphs/modern/zodiac/aries.svg`} alt="" />
 ```
+
+**In-app usage**: Prefer **`apps/web-react/src/ui/astrology-glyph.tsx`** (`AstrologyGlyph`), which resolves URLs through **`apps/web-react/src/lib/astrology/glyphs.ts`** (`getAstrologyGlyphSrc` for planets, `getZodiacGlyphSrc` for signs, `readStoredGlyphSet` / `persistGlyphSet`). `SharedSvgIcon` masks the SVG with `currentColor` so glyphs follow theme text color. **`HoroscopeWheel`**: planets use native **`<image>`** (light themes: `feFlood` tint to resolved `--color-primary`; dark: invert filter); the zodiac ring uses the same **`<image>`** + per-sign `feFlood` tints from element colors when a glyph set is active, otherwise **Unicode** with the same palette from **`apps/web-react/src/lib/astrology/elementColors.ts`** (`readStoredElementColors` / `persistElementColors`, pickers under Settings → Appearance). **Do not** embed HTML/`foreignObject` in the wheel—Chromium/Tauri often mis-maps those coordinates. The horoscope dashboard list, settings observable-objects, Aspectarium, transits body lists, and Information-view badges use `AstrologyGlyph`. Bodies without files (e.g. Chiron, asteroids) still pass a Unicode `fallback` string.
 
 Do not rely on old `dist/` copies for source of truth; `dist/` is build output and is gitignored.
 
