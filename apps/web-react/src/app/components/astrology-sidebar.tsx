@@ -111,6 +111,22 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 export const sidebarNavMenuRowClassName =
 	'h-11 rounded-md px-2.5 text-sm font-medium transition-all duration-200';
 
+/**
+ * Main left-rail nav icons (`AppShellIcon` `size`, px). Default set gets a slightly larger box + higher mask
+ * in `app-shell.ts`; modern a smaller box + lower mask so the two meet visually.
+ */
+export const SIDEBAR_APP_SHELL_NAV_ICON_PX = {
+	default: 34,
+	modern: 30
+} as const;
+
+/** Theme strip + collapsed theme cycle (fits `size-9` ~36px hit targets). */
+const SIDEBAR_THEME_APP_SHELL_ICON_PX = 26;
+
+/** Stale HMR / old bundles referenced these names — keep as no-op strings so refresh is not required for the symbol table. */
+export const sidebarAppShellIconClassModern = 'shrink-0';
+export const sidebarAppShellIconClassDefault = 'shrink-0';
+
 export function AstrologySidebar({
 	onThemeChange,
 	currentTheme = 'noon',
@@ -148,24 +164,28 @@ export function AstrologySidebar({
 	};
 
 	const themeStyle = sidebarThemeStyles[currentTheme];
+	const sidebarMainNavIconPx =
+		appShellIconSet === 'default'
+			? SIDEBAR_APP_SHELL_NAV_ICON_PX.default
+			: SIDEBAR_APP_SHELL_NAV_ICON_PX.modern;
 
 	const renderSharedIcon = (
 		iconId: AppShellIconId,
 		label: string,
-		className: string,
-		size = 30
+		className = 'shrink-0',
+		pixelSize: number = sidebarMainNavIconPx
 	) => (
 		<AppShellIcon
 			iconId={iconId}
 			iconSet={appShellIconSet}
 			title={label}
 			className={className}
-			size={size}
+			size={pixelSize}
 		/>
 	);
 
 	const renderThemeIcon = (iconId: AppShellIconId, label: string) =>
-		renderSharedIcon(iconId, label, 'h-5 w-5', 20);
+		renderSharedIcon(iconId, label, 'shrink-0', SIDEBAR_THEME_APP_SHELL_ICON_PX);
 
 	return (
 		<aside
@@ -219,7 +239,7 @@ export function AstrologySidebar({
 						isExpanded ? 'justify-start' : 'mx-auto h-11 w-11 justify-center px-0 py-0'
 					)}
 				>
-					{renderSharedIcon('menu', t('sidebar_menu'), 'h-7 w-7 flex-shrink-0')}
+					{renderSharedIcon('menu', t('sidebar_menu'))}
 					{isExpanded && <span>{t('sidebar_menu')}</span>}
 				</button>
 			</div>
@@ -242,11 +262,7 @@ export function AstrologySidebar({
 								isExpanded ? 'justify-start' : 'mx-auto h-11 w-11 justify-center px-0 py-0'
 							)}
 						>
-							{renderSharedIcon(
-								item.iconId,
-								t(item.labelKey),
-								'h-8 w-8 flex-shrink-0'
-							)}
+							{renderSharedIcon(item.iconId, t(item.labelKey))}
 							{isExpanded && <span>{t(item.labelKey)}</span>}
 						</button>
 					);
@@ -274,11 +290,7 @@ export function AstrologySidebar({
 								isExpanded ? 'justify-start' : 'mx-auto h-11 w-11 justify-center px-0 py-0'
 							)}
 						>
-							{renderSharedIcon(
-								item.iconId,
-								t(item.labelKey),
-								'h-8 w-8 flex-shrink-0'
-							)}
+							{renderSharedIcon(item.iconId, t(item.labelKey))}
 							{isExpanded && <span>{t(item.labelKey)}</span>}
 						</button>
 					);
@@ -308,11 +320,7 @@ export function AstrologySidebar({
 								isExpanded ? 'justify-start' : 'mx-auto h-11 w-11 justify-center px-0 py-0'
 							)}
 						>
-							{renderSharedIcon(
-								item.iconId,
-								t(item.labelKey),
-								'h-8 w-8 flex-shrink-0'
-							)}
+							{renderSharedIcon(item.iconId, t(item.labelKey))}
 							{isExpanded && <span>{t(item.labelKey)}</span>}
 						</button>
 					);

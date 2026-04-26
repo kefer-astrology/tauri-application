@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+
+use serde::Serialize;
 #[cfg(feature = "swisseph")]
 use std::path::Path;
 
@@ -12,11 +14,19 @@ pub struct AstronomyAxes {
     pub ic: f64,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct AstronomyMotion {
+    pub speed: f64,
+    pub retrograde: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct AstronomyChartData {
     pub positions: HashMap<String, f64>,
+    pub motion: HashMap<String, AstronomyMotion>,
     pub axes: AstronomyAxes,
     pub house_cusps: Vec<f64>,
+    pub warnings: Vec<String>,
 }
 
 pub trait AstronomyBackend {
@@ -56,6 +66,7 @@ impl AstronomyBackend for SwissAstronomyBackend {
         let computed = crate::swisseph::compute_chart_data(chart, requested_objects, None)?;
         Ok(AstronomyChartData {
             positions: computed.positions,
+            motion: computed.motion,
             axes: AstronomyAxes {
                 asc: computed.axes.asc,
                 desc: computed.axes.desc,
@@ -63,6 +74,7 @@ impl AstronomyBackend for SwissAstronomyBackend {
                 ic: computed.axes.ic,
             },
             house_cusps: computed.house_cusps,
+            warnings: Vec::new(),
         })
     }
 }
@@ -104,6 +116,7 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
         let computed = crate::swisseph::compute_chart_data_jpl(chart, requested_objects, jpl_file)?;
         Ok(AstronomyChartData {
             positions: computed.positions,
+            motion: computed.motion,
             axes: AstronomyAxes {
                 asc: computed.axes.asc,
                 desc: computed.axes.desc,
@@ -111,6 +124,7 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
                 ic: computed.axes.ic,
             },
             house_cusps: computed.house_cusps,
+            warnings: Vec::new(),
         })
     }
 }
@@ -139,4 +153,3 @@ pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Se
         Box::new(backend)
     }
 }
-

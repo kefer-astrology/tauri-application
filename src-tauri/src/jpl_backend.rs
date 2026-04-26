@@ -20,7 +20,7 @@ use anise::constants::frames::{
 use anise::prelude::*;
 use hifitime::Epoch;
 
-use crate::astronomy::{AstronomyAxes, AstronomyBackend, AstronomyChartData};
+use crate::astronomy::{AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion};
 use crate::houses::{
     compute_axes, general_precession_deg, icrf_to_ecliptic, julian_day_from_unix, mean_node_lon,
     mean_obliquity_deg, normalize_deg,
@@ -45,6 +45,49 @@ fn body_frames() -> &'static [(&'static str, anise::prelude::Frame)] {
         ("neptune", NEPTUNE_BARYCENTER_J2000),
         ("pluto", PLUTO_BARYCENTER_J2000),
     ]
+}
+
+fn sample_tropical_longitude(
+    almanac: &Almanac,
+    frame: anise::prelude::Frame,
+    unix_secs: f64,
+) -> Result<f64, String> {
+    let jd_ut = julian_day_from_unix(unix_secs);
+    let epoch = Epoch::from_unix_seconds(unix_secs);
+    let obliquity = mean_obliquity_deg(jd_ut);
+    let tropical_offset = general_precession_deg(jd_ut);
+    let state = almanac
+        .translate(frame, EARTH_J2000, epoch, None)
+        .map_err(|err| err.to_string())?;
+    let (lon, _lat) =
+        icrf_to_ecliptic(state.radius_km.x, state.radius_km.y, state.radius_km.z, obliquity);
+    Ok(normalize_deg(lon + tropical_offset))
+}
+
+fn angular_delta_deg(from: f64, to: f64) -> f64 {
+    let mut delta = normalize_deg(to) - normalize_deg(from);
+    if delta > 180.0 {
+        delta -= 360.0;
+    } else if delta < -180.0 {
+        delta += 360.0;
+    }
+    delta
+}
+
+fn sample_motion(
+    almanac: &Almanac,
+    frame: anise::prelude::Frame,
+    unix_secs: f64,
+) -> Result<AstronomyMotion, String> {
+    const SAMPLE_STEP_SECONDS: f64 = 3600.0;
+    let before = sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS)?;
+    let after = sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS)?;
+    let delta = angular_delta_deg(before, after);
+    let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
+    Ok(AstronomyMotion {
+        speed,
+        retrograde: speed < 0.0,
+    })
 }
 
 // ─── backend ─────────────────────────────────────────────────────────────────
@@ -153,6 +196,7 @@ impl AstronomyBackend for JplAstronomyBackend {
 
         // ── planetary positions ───────────────────────────────────────────
         let mut positions: HashMap<String, f64> = HashMap::new();
+        let mut motion: HashMap<String, AstronomyMotion> = HashMap::new();
         let mut warnings: Vec<String> = Vec::new();
 
         for &(id, frame) in body_frames() {
@@ -167,6 +211,9 @@ impl AstronomyBackend for JplAstronomyBackend {
                         id.to_string(),
                         normalize_deg(lon + tropical_offset),
                     );
+                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
+                        motion.insert(id.to_string(), body_motion);
+                    }
                 }
                 Err(e) => {
                     warnings.push(format!("{id}_unavailable: {e}"));
@@ -179,11 +226,25 @@ impl AstronomyBackend for JplAstronomyBackend {
         if wanted("north_node") || wanted("mean_node") {
             let key = if wanted("north_node") { "north_node" } else { "mean_node" };
             positions.insert(key.to_string(), mean_node);
+            motion.insert(
+                key.to_string(),
+                AstronomyMotion {
+                    speed: -0.05295,
+                    retrograde: true,
+                },
+            );
         }
         if wanted("south_node") || wanted("mean_south_node") {
             let key = if wanted("south_node") { "south_node" } else { "mean_south_node" };
             let south = (mean_node + 180.0) % 360.0;
             positions.insert(key.to_string(), south);
+            motion.insert(
+                key.to_string(),
+                AstronomyMotion {
+                    speed: -0.05295,
+                    retrograde: true,
+                },
+            );
         }
         // True node not yet computed; warn if requested
         if wanted("true_north_node") || wanted("true_south_node") {
@@ -195,6 +256,11 @@ impl AstronomyBackend for JplAstronomyBackend {
         // Chiron is not in DE421
         if wanted("chiron") {
             warnings.push("chiron_not_available: not present in de421.bsp".to_string());
+        }
+        for asteroid_id in ["ceres", "pallas", "juno", "vesta"] {
+            if wanted(asteroid_id) {
+                warnings.push(format!("{asteroid_id}_not_available: not present in de421.bsp"));
+            }
         }
 
         // ── axes and house cusps ──────────────────────────────────────────
@@ -222,12 +288,13 @@ impl AstronomyBackend for JplAstronomyBackend {
         };
         warnings.extend(house_warnings);
 
-        // Optionally surface warnings in positions map (callers check result metadata)
-        // The AstronomyChartData struct does not carry warnings yet; they are dropped here.
-        // TODO: add warnings field to AstronomyChartData when the trait is extended.
-        let _ = warnings;
-
-        Ok(AstronomyChartData { positions, axes, house_cusps })
+        Ok(AstronomyChartData {
+            positions,
+            motion,
+            axes,
+            house_cusps,
+            warnings,
+        })
     }
 }
 

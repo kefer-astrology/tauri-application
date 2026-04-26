@@ -7,6 +7,7 @@ export type SettingsSectionId =
 	| 'jazyk'
 	| 'lokace'
 	| 'system_domu'
+	| 'pozorovane_objekty'
 	| 'nastaveni_aspektu'
 	| 'vzhled'
 	| 'manual';
@@ -30,6 +31,7 @@ export function SettingsSecondarySidebar({
 				{ id: 'jazyk' as const, label: t('section_jazyk') },
 				{ id: 'lokace' as const, label: t('section_lokace') },
 				{ id: 'system_domu' as const, label: t('section_system_domu') },
+				{ id: 'pozorovane_objekty' as const, label: t('section_observable_objects', { defaultValue: 'Observable objects' }) },
 				{ id: 'nastaveni_aspektu' as const, label: t('section_nastaveni_aspektu') },
 				{ id: 'vzhled' as const, label: t('section_vzhled') },
 				{ id: 'manual' as const, label: t('section_manual') }

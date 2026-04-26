@@ -22,6 +22,8 @@ export type AppShellIconId =
 	| 'theme-midnight';
 
 export const APP_SHELL_ICON_SET_KEY = 'app_shell_icon_set';
+/** Set by the reverted swap; remove and flip stored id back to pre-swap semantics. */
+const APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY = 'app_shell_icon_set_swap_v1';
 
 export const APP_SHELL_ICON_SET_OPTIONS = [
 	{
@@ -43,48 +45,16 @@ const APP_SHELL_FULL_LOGO_ASPECT_RATIO: Record<AppShellIconSetId, number> = {
 
 export const APP_SHELL_MARK_MASK_SCALE = 0.88;
 
-const APP_SHELL_ICON_MASK_SCALE: Record<AppShellIconSetId, Record<AppShellIconId, number>> = {
-	default: {
-		menu: 0.8,
-		new: 1.1,
-		open: 0.86,
-		save: 0.94,
-		export: 0.94,
-		horoscope: 1.08,
-		aspects: 1.12,
-		information: 1.1,
-		transits: 1.05,
-		dynamics: 0.9,
-		revolution: 1.05,
-		synastry: 0.86,
-		settings: 1.1,
-		favorite: 1.12,
-		'theme-sunrise': 0.9,
-		'theme-noon': 0.78,
-		'theme-twilight': 0.9,
-		'theme-midnight': 0.98
-	},
-	modern: {
-		menu: 0.94,
-		new: 0.8,
-		open: 0.8,
-		save: 0.84,
-		export: 0.84,
-		horoscope: 0.84,
-		aspects: 0.84,
-		information: 0.8,
-		transits: 0.8,
-		dynamics: 0.84,
-		revolution: 0.84,
-		synastry: 0.8,
-		settings: 0.82,
-		favorite: 0.8,
-		'theme-sunrise': 0.8,
-		'theme-noon': 0.8,
-		'theme-twilight': 0.8,
-		'theme-midnight': 0.84
-	}
-};
+/**
+ * Uniform mask for **default** set (`icons/default/`). Higher = ink fills more of the same px box.
+ * Paired with `APP_SHELL_MODERN_NAV_ICON_MASK_SCALE` so both families read similar in the sidebar.
+ */
+export const APP_SHELL_DEFAULT_NAV_ICON_MASK_SCALE = 0.86;
+
+/**
+ * Uniform mask for **modern** set (`icons/modern/`). Keep below default — stroke icons read larger at the same %.
+ */
+export const APP_SHELL_MODERN_NAV_ICON_MASK_SCALE = 0.64;
 
 const iconFileNames: Record<AppShellIconId, string> = {
 	menu: 'menu.svg',
@@ -107,14 +77,34 @@ const iconFileNames: Record<AppShellIconId, string> = {
 	'theme-midnight': 'theme-midnight.svg'
 };
 
+function uniformDefaultMaskScales(): Record<AppShellIconId, number> {
+	const s = APP_SHELL_DEFAULT_NAV_ICON_MASK_SCALE;
+	return Object.fromEntries(
+		(Object.keys(iconFileNames) as AppShellIconId[]).map((id) => [id, s])
+	) as Record<AppShellIconId, number>;
+}
+
+function uniformModernMaskScales(): Record<AppShellIconId, number> {
+	const s = APP_SHELL_MODERN_NAV_ICON_MASK_SCALE;
+	return Object.fromEntries(
+		(Object.keys(iconFileNames) as AppShellIconId[]).map((id) => [id, s])
+	) as Record<AppShellIconId, number>;
+}
+
+const APP_SHELL_ICON_MASK_SCALE: Record<AppShellIconSetId, Record<AppShellIconId, number>> = {
+	default: uniformDefaultMaskScales(),
+	modern: uniformModernMaskScales()
+};
+
 function assetUrl(relativePath: string): string {
 	const normalizedBase = ASSET_BASE_URL.endsWith('/') ? ASSET_BASE_URL : `${ASSET_BASE_URL}/`;
 	const normalizedPath = relativePath.replace(/^\/+/, '');
 	return `${normalizedBase}${normalizedPath}`;
 }
 
+/** Resolve folder / logo suffix: UI “Default” → `default`, “Modern” → `modern`. */
 function appShellAssetSet(iconSet: AppShellIconSetId): AppShellIconSetId {
-	return iconSet === 'default' ? 'modern' : 'default';
+	return iconSet;
 }
 
 export function getAppShellIconSrc(iconSet: AppShellIconSetId, iconId: AppShellIconId): string {
@@ -141,6 +131,12 @@ export function getAppShellLogoFullWidth(iconSet: AppShellIconSetId, height: num
 
 export function readStoredAppShellIconSet(): AppShellIconSetId {
 	try {
+		if (localStorage.getItem(APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY)) {
+			const prev = localStorage.getItem(APP_SHELL_ICON_SET_KEY);
+			if (prev === 'default') localStorage.setItem(APP_SHELL_ICON_SET_KEY, 'modern');
+			else if (prev === 'modern') localStorage.setItem(APP_SHELL_ICON_SET_KEY, 'default');
+			localStorage.removeItem(APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY);
+		}
 		const value = localStorage.getItem(APP_SHELL_ICON_SET_KEY);
 		if (value === 'default' || value === 'modern') {
 			return value;

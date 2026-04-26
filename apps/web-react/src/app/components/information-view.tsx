@@ -11,6 +11,9 @@ import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import type { ElementColors } from '@/lib/astrology/elementColors';
+import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import {
 	HoroscopeWheel,
 	type HemisphereOverlayKind,
@@ -19,6 +22,9 @@ import {
 
 interface InformationViewProps {
 	theme: Theme;
+	glyphSet: AstrologyGlyphSetId;
+	elementColors: ElementColors;
+	lightPlanetFill: string;
 }
 
 type MicroBadgeId = 'lunar' | 'lights' | 'synodic';
@@ -35,7 +41,7 @@ function chipStateClass(
 	return cn(base, 'border-border bg-card hover:bg-muted/60');
 }
 
-export function InformationView({ theme }: InformationViewProps) {
+export function InformationView({ theme, glyphSet, elementColors, lightPlanetFill }: InformationViewProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 	const isDark = theme === 'midnight' || theme === 'twilight';
@@ -44,7 +50,6 @@ export function InformationView({ theme }: InformationViewProps) {
 	const [singletonHover, setSingletonHover] = useState(false);
 	const [retroPatternHover, setRetroPatternHover] = useState<RetroPatternId>(null);
 	const [hemiGaugeHover, setHemiGaugeHover] = useState<HemiPreviewId>(null);
-	const [aspectHistHover, setAspectHistHover] = useState(false);
 	const [dynamicsMode, setDynamicsMode] = useState(false);
 	const [lockedChipId, setLockedChipId] = useState<string | null>(null);
 	const [hoverChipId, setHoverChipId] = useState<string | null>(null);
@@ -83,8 +88,6 @@ export function InformationView({ theme }: InformationViewProps) {
 		}
 		return s;
 	}, [microHover, singletonHover, lockedChipId, focalFilterHover]);
-
-	const showAspectLines = dynamicsMode || aspectHistHover;
 
 	const dimNonHighlighted =
 		singletonHover ||
@@ -375,7 +378,25 @@ export function InformationView({ theme }: InformationViewProps) {
 							onMouseEnter={() => setMicroHover('lights')}
 							onMouseLeave={() => setMicroHover(null)}
 						>
-							Světla & obzor: ☉ nad · ☾ pod
+							<span className="inline-flex flex-wrap items-center gap-0.5">
+								<span>{'Světla & obzor:'}</span>
+								<AstrologyGlyph
+									glyphId="sun"
+									glyphSet={glyphSet}
+									fallback="☉"
+									size={12}
+									className="inline-block align-middle"
+								/>
+								<span>nad ·</span>
+								<AstrologyGlyph
+									glyphId="moon"
+									glyphSet={glyphSet}
+									fallback="☾"
+									size={12}
+									className="inline-block align-middle"
+								/>
+								<span>pod</span>
+							</span>
 						</Badge>
 						<Badge
 							data-handoff="MicroBadge_SynodicRoles"
@@ -387,7 +408,24 @@ export function InformationView({ theme }: InformationViewProps) {
 							onMouseEnter={() => setMicroHover('synodic')}
 							onMouseLeave={() => setMicroHover(null)}
 						>
-							☿ Prometheus · ♀ Jitřenka
+							<span className="inline-flex flex-wrap items-center gap-0.5">
+								<AstrologyGlyph
+									glyphId="mercury"
+									glyphSet={glyphSet}
+									fallback="☿"
+									size={12}
+									className="inline-block align-middle"
+								/>
+								<span>Prometheus ·</span>
+								<AstrologyGlyph
+									glyphId="venus"
+									glyphSet={glyphSet}
+									fallback="♀"
+									size={12}
+									className="inline-block align-middle"
+								/>
+								<span>Jitřenka</span>
+							</span>
 						</Badge>
 					</div>
 
@@ -395,12 +433,14 @@ export function InformationView({ theme }: InformationViewProps) {
 						<div className="flex h-full min-h-[200px] items-center justify-center p-1">
 							<HoroscopeWheel
 								theme={theme}
+								glyphSet={glyphSet}
+								elementColors={elementColors}
+								lightPlanetFill={lightPlanetFill}
 								showPlanetGlyphs
 								showAxisLines
 								highlightBodies={highlightBodies}
 								dimNonHighlighted={dimNonHighlighted}
 								hemisphereOverlay={hemisphereOverlay}
-								showAspectLines={showAspectLines}
 								className="max-h-full max-w-full"
 							/>
 						</div>
@@ -461,11 +501,7 @@ export function InformationView({ theme }: InformationViewProps) {
 										</TabsTrigger>
 									</TabsList>
 									<TabsContent value="pos" className="mt-2">
-										<div
-											className="space-y-1"
-											onMouseEnter={() => setAspectHistHover(true)}
-											onMouseLeave={() => setAspectHistHover(false)}
-										>
+										<div className="space-y-1">
 											<AspectHistogram positive />
 										</div>
 									</TabsContent>
@@ -516,7 +552,26 @@ export function InformationView({ theme }: InformationViewProps) {
 							</CardHeader>
 							<CardContent className="space-y-1 px-3">
 								<p className="text-sm font-medium">Stellium: 10. dům (3 planety)</p>
-								<p className="text-muted-foreground text-[11px]">☉ ♀ ♃</p>
+								<p className="text-muted-foreground flex items-center gap-1 text-[11px]">
+									<AstrologyGlyph
+										glyphId="sun"
+										glyphSet={glyphSet}
+										fallback="☉"
+										size={14}
+									/>
+									<AstrologyGlyph
+										glyphId="venus"
+										glyphSet={glyphSet}
+										fallback="♀"
+										size={14}
+									/>
+									<AstrologyGlyph
+										glyphId="jupiter"
+										glyphSet={glyphSet}
+										fallback="♃"
+										size={14}
+									/>
+								</p>
 							</CardContent>
 						</RailCard>
 

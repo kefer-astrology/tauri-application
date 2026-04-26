@@ -25,6 +25,10 @@
     setAppShellIconSet,
     type AppShellIconSetId
   } from '$lib/stores/app-shell-icons.svelte';
+  import BodySelector from '$lib/components/BodySelector.svelte';
+  import { layout, chartDataToComputePayload, updateChartComputationAtTime, setWorkspaceDefaults } from '$lib/state/layout';
+  import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
+  import { invoke } from '@tauri-apps/api/core';
 
   let {
     section
@@ -114,6 +118,62 @@
       elementColors = { ...getElementColors() };
     }
   });
+
+  let selectedBodies = $state<string[]>(layout.workspaceDefaults.defaultBodies.length > 0
+    ? [...layout.workspaceDefaults.defaultBodies]
+    : [...DEFAULT_OBSERVABLE_OBJECT_IDS]);
+
+  $effect(() => {
+    selectedBodies = layout.workspaceDefaults.defaultBodies.length > 0
+      ? [...layout.workspaceDefaults.defaultBodies]
+      : [...DEFAULT_OBSERVABLE_OBJECT_IDS];
+  });
+
+  async function applyObservableObjects(nextBodies: string[]) {
+    selectedBodies = [...nextBodies];
+    setWorkspaceDefaults({ defaultBodies: nextBodies });
+    settingsChanged = true;
+
+    if (layout.workspacePath) {
+      try {
+        await invoke('save_workspace_defaults', {
+          workspacePath: layout.workspacePath,
+          defaults: {
+            default_bodies: nextBodies,
+          },
+        });
+      } catch (err) {
+        console.warn('Failed to persist workspace defaults', err);
+      }
+    }
+
+    for (const chart of layout.contexts) {
+      const chartAtTime = {
+        ...chart,
+        dateTime: chart.dateTime?.trim() || new Date().toISOString().slice(0, 19) + 'Z'
+      };
+
+      try {
+        const result = await invoke<{
+          positions?: Record<string, unknown>;
+          motion?: Record<string, { speed: number; retrograde: boolean }>;
+          aspects?: unknown[];
+          axes?: { asc: number; desc: number; mc: number; ic: number };
+          house_cusps?: number[];
+        }>('compute_chart_from_data', { chartJson: chartDataToComputePayload(chartAtTime) });
+
+        updateChartComputationAtTime(chart.id, chartAtTime.dateTime, {
+          positions: result.positions ?? {},
+          motion: result.motion ?? {},
+          aspects: result.aspects ?? [],
+          axes: result.axes,
+          houseCusps: result.house_cusps
+        });
+      } catch (err) {
+        console.warn(`Failed to refresh chart ${chart.id} after observable object change`, err);
+      }
+    }
+  }
 </script>
 
 <div class="h-full min-w-0 rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col overflow-hidden">
@@ -180,6 +240,14 @@
             </Select.Content>
           </Select.Root>
         </div>
+      </div>
+    {:else if section === 'pozorovane_objekty'}
+      <h3 class="text-sm font-semibold mb-4">{t('section_observable_objects', {}, 'Observable objects')}</h3>
+      <div class="space-y-4 max-w-4xl">
+        <p class="text-sm opacity-80">
+          {t('settings_observable_objects_hint', {}, 'Select the celestial bodies and points that should be computed and shown across the app.')}
+        </p>
+        <BodySelector bind:selectedBodies={selectedBodies} onSelectionChange={applyObservableObjects} />
       </div>
     {:else if section === 'nastaveni_aspektu'}
       <h3 class="text-sm font-semibold mb-4">{t('section_nastaveni_aspektu', {}, 'Aspect settings')}</h3>

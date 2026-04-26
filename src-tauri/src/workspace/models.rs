@@ -200,6 +200,8 @@ pub struct ChartConfig {
     #[serde(default)]
     pub aspect_orbs: HashMap<String, f64>,
     #[serde(default)]
+    pub selected_aspects: Option<Vec<String>>,
+    #[serde(default)]
     pub display_style: String,
     #[serde(default)]
     pub color_theme: String,
@@ -226,6 +228,64 @@ pub struct ChartInstance {
     pub tags: Vec<String>,
 }
 
+/// Line weight on the radix wheel from orb tightness vs the configured max orb for that aspect type.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AspectLineTierStyle {
+    /// Orb within this percentage of the configured max orb uses `width_tight` (e.g. 1.0 = 1%).
+    #[serde(default = "aspect_line_tier_default_tight_pct")]
+    pub tight_threshold_pct: f64,
+    #[serde(default = "aspect_line_tier_default_medium_pct")]
+    pub medium_threshold_pct: f64,
+    #[serde(default = "aspect_line_tier_default_loose_pct")]
+    pub loose_threshold_pct: f64,
+    #[serde(default = "aspect_line_tier_default_width_tight")]
+    pub width_tight: f64,
+    #[serde(default = "aspect_line_tier_default_width_medium")]
+    pub width_medium: f64,
+    #[serde(default = "aspect_line_tier_default_width_loose")]
+    pub width_loose: f64,
+    /// Used when the aspect is valid but looser than `loose_threshold_pct` of the max orb.
+    #[serde(default = "aspect_line_tier_default_width_outer")]
+    pub width_outer: f64,
+}
+
+fn aspect_line_tier_default_tight_pct() -> f64 {
+    1.0
+}
+fn aspect_line_tier_default_medium_pct() -> f64 {
+    2.0
+}
+fn aspect_line_tier_default_loose_pct() -> f64 {
+    10.0
+}
+fn aspect_line_tier_default_width_tight() -> f64 {
+    5.0
+}
+fn aspect_line_tier_default_width_medium() -> f64 {
+    2.0
+}
+fn aspect_line_tier_default_width_loose() -> f64 {
+    1.0
+}
+fn aspect_line_tier_default_width_outer() -> f64 {
+    1.0
+}
+
+impl Default for AspectLineTierStyle {
+    fn default() -> Self {
+        Self {
+            tight_threshold_pct: aspect_line_tier_default_tight_pct(),
+            medium_threshold_pct: aspect_line_tier_default_medium_pct(),
+            loose_threshold_pct: aspect_line_tier_default_loose_pct(),
+            width_tight: aspect_line_tier_default_width_tight(),
+            width_medium: aspect_line_tier_default_width_medium(),
+            width_loose: aspect_line_tier_default_width_loose(),
+            width_outer: aspect_line_tier_default_width_outer(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkspaceDefaults {
     #[serde(default)]
@@ -248,6 +308,12 @@ pub struct WorkspaceDefaults {
     pub default_bodies: Option<Vec<String>>,
     #[serde(default)]
     pub default_aspects: Option<Vec<String>>,
+    #[serde(default)]
+    pub default_aspect_orbs: Option<HashMap<String, f64>>,
+    #[serde(default)]
+    pub default_aspect_colors: Option<HashMap<String, String>>,
+    #[serde(default)]
+    pub aspect_line_tier_style: Option<AspectLineTierStyle>,
     #[serde(default)]
     pub time_system: Option<TimeSystem>,
 }

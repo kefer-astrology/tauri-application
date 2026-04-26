@@ -16,7 +16,7 @@ use commands::storage::{
 use commands::workspace::{
     compute_chart, compute_chart_from_data, compute_transit_series, create_chart, create_workspace,
     delete_chart, delete_workspace, get_chart_details, get_workspace_defaults, import_chart, load_workspace,
-    open_folder_dialog, resolve_location, save_workspace, update_chart,
+    open_folder_dialog, resolve_location, save_workspace, save_workspace_defaults, search_locations, update_chart,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -56,6 +56,7 @@ pub fn run() {
             query_timestamps,
             load_workspace,
             save_workspace,
+            save_workspace_defaults,
             create_workspace,
             delete_workspace,
             create_chart,
@@ -68,6 +69,7 @@ pub fn run() {
             compute_transit_series,
             open_folder_dialog,
             resolve_location,
+            search_locations,
             get_chart_details,
         ])
         .build(tauri::generate_context!())

@@ -156,6 +156,7 @@
         try {
           const result = await invoke<{
             positions?: Record<string, unknown>;
+            motion?: Record<string, { speed: number; retrograde: boolean }>;
             aspects?: any[];
             axes?: { asc: number; desc: number; mc: number; ic: number };
             house_cusps?: number[];
@@ -167,6 +168,7 @@
 
           updateChartComputation(chart.id, {
             positions: result.positions ?? {},
+            motion: result.motion ?? {},
             aspects: result.aspects ?? [],
             axes: result.axes,
             houseCusps: result.house_cusps
@@ -199,6 +201,16 @@
         workspacePath: folderPath,
         owner: 'User',
         charts: chartsPayload,
+        defaults: {
+          default_house_system: layout.workspaceDefaults.houseSystem,
+          default_timezone: layout.workspaceDefaults.timezone,
+          default_location_name: layout.workspaceDefaults.locationName,
+          default_location_latitude: layout.workspaceDefaults.locationLatitude,
+          default_location_longitude: layout.workspaceDefaults.locationLongitude,
+          default_engine: layout.workspaceDefaults.engine,
+          default_bodies: layout.workspaceDefaults.defaultBodies,
+          default_aspects: layout.workspaceDefaults.defaultAspects
+        }
       });
       await invoke<string>('init_storage', { workspacePath: folderPath });
       layout.workspacePath = folderPath;

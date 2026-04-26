@@ -7,9 +7,11 @@ export interface AppShellIconSetOption {
 }
 
 export const APP_SHELL_ICON_SET_STORAGE_KEY = 'app_shell_icon_set';
+/** Set by the reverted swap; remove and flip stored id back to pre-swap semantics. */
+const APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY = 'app_shell_icon_set_swap_v1';
 const ASSET_BASE_URL = import.meta.env.BASE_URL;
 function appShellAssetSet(setId: AppShellIconSetId): AppShellIconSetId {
-  return setId === 'default' ? 'modern' : 'default';
+  return setId;
 }
 export const APP_SHELL_FULL_LOGO_ASPECT_RATIO: Record<AppShellIconSetId, number> = {
   default: 247 / 77,
@@ -102,6 +104,12 @@ function isAppShellIconSetId(value: string): value is AppShellIconSetId {
 
 export function loadStoredAppShellIconSet(): AppShellIconSetId {
   try {
+    if (localStorage.getItem(APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY)) {
+      const prev = localStorage.getItem(APP_SHELL_ICON_SET_STORAGE_KEY);
+      if (prev === 'default') localStorage.setItem(APP_SHELL_ICON_SET_STORAGE_KEY, 'modern');
+      else if (prev === 'modern') localStorage.setItem(APP_SHELL_ICON_SET_STORAGE_KEY, 'default');
+      localStorage.removeItem(APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY);
+    }
     const value = localStorage.getItem(APP_SHELL_ICON_SET_STORAGE_KEY);
     if (value && isAppShellIconSetId(value)) {
       return value;

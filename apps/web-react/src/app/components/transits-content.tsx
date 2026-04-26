@@ -10,10 +10,12 @@ import { type AppFormFieldTheme, useAppFormFieldTheme } from './form-field-theme
 import type { TransitSection } from './transits-secondary-sidebar';
 import { TransitsBodiesConfig } from './transits-bodies-config';
 import type { Theme } from './astrology-sidebar';
+import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 
 interface TransitsContentProps {
 	section: TransitSection;
 	theme: Theme;
+	glyphSet: AstrologyGlyphSetId;
 }
 
 type DropdownOption = { id: string; label: string };
@@ -110,7 +112,7 @@ const MINOR_ASPECT_ROWS: { labelKey: string; angle: string; orb: string }[] = [
 	{ labelKey: 'transits_aspects_sesqui', angle: '135°', orb: '3°' }
 ];
 
-export function TransitsContent({ section, theme }: TransitsContentProps) {
+export function TransitsContent({ section, theme, glyphSet }: TransitsContentProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 
@@ -401,6 +403,7 @@ export function TransitsContent({ section, theme }: TransitsContentProps) {
 				return (
 					<TransitsBodiesConfig
 						theme={theme}
+						glyphSet={glyphSet}
 						titleKey="transits_heading_transiting"
 						subtitleKey="transits_subtitle_transiting"
 					/>
@@ -410,6 +413,7 @@ export function TransitsContent({ section, theme }: TransitsContentProps) {
 				return (
 					<TransitsBodiesConfig
 						theme={theme}
+						glyphSet={glyphSet}
 						titleKey="transits_heading_transited"
 						subtitleKey="transits_subtitle_transited"
 					/>

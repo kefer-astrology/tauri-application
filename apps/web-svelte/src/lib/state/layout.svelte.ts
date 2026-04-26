@@ -1,5 +1,7 @@
 // Runes global state (no stores, no classes)
 
+import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
+
 export const tabs = ['Radix', 'Aspects', 'Transits', 'Settings', 'About'] as const;
 export type Tab = (typeof tabs)[number];
 
@@ -22,6 +24,7 @@ export interface ChartData {
   timezone?: string;
   computed?: {
     positions?: Record<string, unknown>;
+    motion?: Record<string, { speed: number; retrograde: boolean }>;
     aspects?: any[];
     axes?: {
       asc: number;
@@ -53,7 +56,7 @@ const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
   locationLatitude: 50.0875,
   locationLongitude: 14.4214,
   engine: 'swisseph',
-  defaultBodies: [],
+  defaultBodies: [...DEFAULT_OBSERVABLE_OBJECT_IDS],
   defaultAspects: [],
 };
 
@@ -178,6 +181,7 @@ export function normalizeComputedPayload(computed: ChartData['computed']): Chart
   });
   return {
     positions,
+    motion: computed?.motion ?? {},
     aspects: computed?.aspects ?? [],
     axes,
     houseCusps,
@@ -189,6 +193,19 @@ export function updateChartComputation(chartId: string, computed: ChartData['com
   if (chart) {
     chart.computed = normalizeComputedPayload(computed);
     layout.contexts = [...layout.contexts]; // Trigger reactivity
+  }
+}
+
+export function updateChartComputationAtTime(
+  chartId: string,
+  dateTime: string,
+  computed: ChartData['computed']
+) {
+  const chart = layout.contexts.find(c => c.id === chartId);
+  if (chart) {
+    chart.dateTime = dateTime;
+    chart.computed = normalizeComputedPayload(computed);
+    layout.contexts = [...layout.contexts];
   }
 }
 

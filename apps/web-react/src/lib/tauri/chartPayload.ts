@@ -1,4 +1,7 @@
 import type { ChartDetails } from './types';
+import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
+import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
+import type { AspectLineTierStyleDto } from './types';
 
 /** In-memory chart row used by the React shell (until views own full editor state). */
 export interface AppChart {
@@ -18,6 +21,13 @@ export interface AppChart {
 	timezone?: string;
 	computed?: {
 		positions?: Record<string, unknown>;
+		motion?: Record<
+			string,
+			{
+				speed: number;
+				retrograde: boolean;
+			}
+		>;
 		aspects?: unknown[];
 		axes?: {
 			asc: number;
@@ -31,6 +41,13 @@ export interface AppChart {
 
 export interface ComputedChartPayload {
 	positions?: Record<string, unknown>;
+	motion?: Record<
+		string,
+		{
+			speed: number;
+			retrograde: boolean;
+		}
+	>;
 	aspects?: unknown[];
 	axes?: {
 		asc: number;
@@ -58,9 +75,63 @@ export function normalizeComputedChartPayload(
 	});
 	return {
 		positions,
+		motion: payload.motion ?? {},
 		aspects: payload.aspects ?? [],
 		axes,
 		houseCusps
+	};
+}
+
+/** Radix wheel aspect line weights from orb vs allowed orb (workspace default). */
+export interface AspectLineTierStyleState {
+	/** Orb ≤ this % of max orb → `widthTight`. */
+	tightThresholdPct: number;
+	mediumThresholdPct: number;
+	looseThresholdPct: number;
+	widthTight: number;
+	widthMedium: number;
+	widthLoose: number;
+	/** Wider than `looseThresholdPct` but still within orb. */
+	widthOuter: number;
+}
+
+export const DEFAULT_ASPECT_LINE_TIER_STYLE: AspectLineTierStyleState = {
+	tightThresholdPct: 1,
+	mediumThresholdPct: 2,
+	looseThresholdPct: 10,
+	widthTight: 5,
+	widthMedium: 2,
+	widthLoose: 1,
+	widthOuter: 1
+};
+
+export function aspectLineTierStyleFromDto(
+	dto: AspectLineTierStyleDto | null | undefined
+): AspectLineTierStyleState {
+	const base = DEFAULT_ASPECT_LINE_TIER_STYLE;
+	if (!dto || typeof dto !== 'object') return { ...base };
+	const num = (v: unknown, fallback: number) =>
+		typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+	return {
+		tightThresholdPct: num(dto.tight_threshold_pct, base.tightThresholdPct),
+		mediumThresholdPct: num(dto.medium_threshold_pct, base.mediumThresholdPct),
+		looseThresholdPct: num(dto.loose_threshold_pct, base.looseThresholdPct),
+		widthTight: num(dto.width_tight, base.widthTight),
+		widthMedium: num(dto.width_medium, base.widthMedium),
+		widthLoose: num(dto.width_loose, base.widthLoose),
+		widthOuter: num(dto.width_outer, base.widthOuter)
+	};
+}
+
+export function aspectLineTierStyleToDto(style: AspectLineTierStyleState): AspectLineTierStyleDto {
+	return {
+		tight_threshold_pct: style.tightThresholdPct,
+		medium_threshold_pct: style.mediumThresholdPct,
+		loose_threshold_pct: style.looseThresholdPct,
+		width_tight: style.widthTight,
+		width_medium: style.widthMedium,
+		width_loose: style.widthLoose,
+		width_outer: style.widthOuter
 	};
 }
 
@@ -74,6 +145,9 @@ export interface WorkspaceDefaultsState {
 	engine: string | null;
 	defaultBodies: string[];
 	defaultAspects: string[];
+	defaultAspectOrbs: Record<string, number>;
+	defaultAspectColors: Record<string, string>;
+	aspectLineTierStyle: AspectLineTierStyleState;
 }
 
 export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
@@ -84,8 +158,11 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	locationLatitude: 50.0875,
 	locationLongitude: 14.4214,
 	engine: 'swisseph',
-	defaultBodies: [],
-	defaultAspects: []
+	defaultBodies: [...DEFAULT_OBSERVABLE_OBJECT_IDS],
+	defaultAspects: ASPECT_ROWS.map((aspect) => aspect.id),
+	defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
+	defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
+	aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }
 };
 
 export function chartDetailsToAppChart(full: ChartDetails): AppChart {
@@ -145,6 +222,7 @@ export function chartDataToComputePayload(
 	const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
 	const model = asNonEmpty(chart.model);
 	const observableObjects = defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined;
+	const selectedAspects = [...defaults.defaultAspects];
 
 	return {
 		id: chart.id,
@@ -166,7 +244,9 @@ export function chartDataToComputePayload(
 			engine,
 			override_ephemeris: overrideEphemeris,
 			model,
-			observable_objects: observableObjects
+			observable_objects: observableObjects,
+			selected_aspects: selectedAspects,
+			aspect_orbs: defaults.defaultAspectOrbs
 		},
 		tags: chart.tags ?? []
 	};
@@ -237,7 +317,6 @@ export function appChartFromNewHoroscopeInput(input: {
 	chartKind: NewHoroscopeChartKind;
 	dateTime: Date;
 	location: string;
-	advancedLocation: string;
 	tags: string;
 	latitude: string;
 	longitude: string;
@@ -258,7 +337,7 @@ export function appChartFromNewHoroscopeInput(input: {
 
 	const dateTime = `${formatDatePart(input.dateTime)} ${formatTimePart(input.dateTime)}`;
 
-	const locText = input.advancedMode ? input.advancedLocation.trim() : input.location.trim();
+	const locText = input.location.trim();
 	const location = locText || input.workspaceDefaults.locationName;
 
 	const lat = applyDirection(input.latitude, 'north', input.latitudeDir);

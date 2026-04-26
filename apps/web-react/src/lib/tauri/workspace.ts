@@ -7,10 +7,12 @@ import type {
 	WorkspaceInfo
 } from './types';
 import {
+	aspectLineTierStyleToDto,
 	chartDetailsToAppChart,
 	normalizeComputedChartPayload,
 	summaryToAppChart,
-	type AppChart
+	type AppChart,
+	type WorkspaceDefaultsState
 } from './chartPayload';
 
 export async function openFolderDialog(): Promise<string | null> {
@@ -53,12 +55,58 @@ export async function resolveLocation(query: string): Promise<ResolvedLocation> 
 	return invoke<ResolvedLocation>('resolve_location', { query });
 }
 
+export async function searchLocations(query: string): Promise<ResolvedLocation[]> {
+	return invoke<ResolvedLocation[]>('search_locations', { query });
+}
+
 export async function saveWorkspace(
 	workspacePath: string,
 	owner: string,
-	charts: Record<string, unknown>[]
+	charts: Record<string, unknown>[],
+	defaults?: WorkspaceDefaultsState
 ): Promise<string> {
-	return invoke<string>('save_workspace', { workspacePath, owner, charts });
+	return invoke<string>('save_workspace', {
+		workspacePath,
+		owner,
+		charts,
+		defaults: defaults
+			? {
+					default_house_system: defaults.houseSystem,
+					default_timezone: defaults.timezone,
+					default_location_name: defaults.locationName,
+					default_location_latitude: defaults.locationLatitude,
+					default_location_longitude: defaults.locationLongitude,
+					default_engine: defaults.engine,
+					default_bodies: defaults.defaultBodies,
+					default_aspects: defaults.defaultAspects,
+					default_aspect_orbs: defaults.defaultAspectOrbs,
+					default_aspect_colors: defaults.defaultAspectColors,
+					aspect_line_tier_style: aspectLineTierStyleToDto(defaults.aspectLineTierStyle)
+				}
+			: undefined
+	});
+}
+
+export async function saveWorkspaceDefaults(
+	workspacePath: string,
+	defaults: WorkspaceDefaultsState
+): Promise<WorkspaceDefaultsDto> {
+	return invoke<WorkspaceDefaultsDto>('save_workspace_defaults', {
+		workspacePath,
+		defaults: {
+			default_house_system: defaults.houseSystem,
+			default_timezone: defaults.timezone,
+			default_location_name: defaults.locationName,
+			default_location_latitude: defaults.locationLatitude,
+			default_location_longitude: defaults.locationLongitude,
+			default_engine: defaults.engine,
+			default_bodies: defaults.defaultBodies,
+			default_aspects: defaults.defaultAspects,
+			default_aspect_orbs: defaults.defaultAspectOrbs,
+			default_aspect_colors: defaults.defaultAspectColors,
+			aspect_line_tier_style: aspectLineTierStyleToDto(defaults.aspectLineTierStyle)
+		}
+	});
 }
 
 /** Load workspace folder: summaries → full chart rows where possible, init DB, compute each chart. */

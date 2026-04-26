@@ -6,6 +6,7 @@ use std::sync::{Mutex, OnceLock};
 
 use chrono::{DateTime, Datelike, Timelike, Utc};
 
+use crate::astronomy::AstronomyMotion;
 use crate::workspace::models::{Ayanamsa, ChartInstance, HouseSystem, ZodiacType};
 
 const SE_SUN: c_int = 0;
@@ -22,6 +23,10 @@ const SE_MEAN_NODE: c_int = 10;
 const SE_TRUE_NODE: c_int = 11;
 const SE_MEAN_APOG: c_int = 12;
 const SE_CHIRON: c_int = 15;
+const SE_CERES: c_int = 17;
+const SE_PALLAS: c_int = 18;
+const SE_JUNO: c_int = 19;
+const SE_VESTA: c_int = 20;
 
 const SEFLG_JPLEPH: i32 = 1;
 const SEFLG_SWIEPH: i32 = 2;
@@ -50,6 +55,7 @@ pub struct SwissAxes {
 #[derive(Debug, Clone)]
 pub struct SwissChartData {
     pub positions: HashMap<String, f64>,
+    pub motion: HashMap<String, AstronomyMotion>,
     pub axes: SwissAxes,
     pub house_cusps: Vec<f64>,
 }
@@ -170,26 +176,61 @@ fn compute_chart_data_locked(
         .filter(|items| !items.is_empty())
         .map(|items| items.iter().map(|item| normalize_object_id(item)).collect::<HashSet<_>>());
     let wanted = |id: &str| requested.as_ref().map(|set| set.contains(id)).unwrap_or(true);
+    let should_compute = |id: &str| match id {
+        "north_node" => wanted("north_node") || wanted("south_node"),
+        "mean_node" => wanted("mean_node") || wanted("mean_south_node"),
+        "true_north_node" => wanted("true_north_node") || wanted("true_south_node"),
+        _ => wanted(id),
+    };
 
     let mut positions = HashMap::new();
+    let mut motion = HashMap::new();
     for &(id, planet) in object_planets() {
-        if !wanted(id) {
+        if !should_compute(id) {
             continue;
         }
-        let longitude = calc_longitude_ut(jd_ut, planet, iflag)?;
+        let (longitude, speed) = calc_longitude_and_speed_ut(jd_ut, planet, iflag)?;
         positions.insert(id.to_string(), longitude);
+        motion.insert(
+            id.to_string(),
+            AstronomyMotion {
+                speed,
+                retrograde: speed < 0.0,
+            },
+        );
         match id {
-            "true_north_node" | "north_node" => {
-                if wanted("south_node") {
-                    positions.insert("south_node".to_string(), normalize_deg(longitude + 180.0));
-                }
+            "true_north_node" => {
                 if wanted("true_south_node") {
                     positions.insert("true_south_node".to_string(), normalize_deg(longitude + 180.0));
+                    motion.insert(
+                        "true_south_node".to_string(),
+                        AstronomyMotion {
+                            speed,
+                            retrograde: speed < 0.0,
+                        },
+                    );
                 }
             }
-            "mean_node" => {
+            "north_node" | "mean_node" => {
+                if wanted("south_node") {
+                    positions.insert("south_node".to_string(), normalize_deg(longitude + 180.0));
+                    motion.insert(
+                        "south_node".to_string(),
+                        AstronomyMotion {
+                            speed,
+                            retrograde: speed < 0.0,
+                        },
+                    );
+                }
                 if wanted("mean_south_node") {
                     positions.insert("mean_south_node".to_string(), normalize_deg(longitude + 180.0));
+                    motion.insert(
+                        "mean_south_node".to_string(),
+                        AstronomyMotion {
+                            speed,
+                            retrograde: speed < 0.0,
+                        },
+                    );
                 }
             }
             _ => {}
@@ -211,6 +252,7 @@ fn compute_chart_data_locked(
 
     Ok(SwissChartData {
         positions,
+        motion,
         axes,
         house_cusps,
     })
@@ -248,14 +290,14 @@ fn configure_swisseph(chart: &ChartInstance, ephemeris_path: Option<&Path>) -> R
     Ok(())
 }
 
-fn calc_longitude_ut(jd_ut: f64, planet: i32, iflag: i32) -> Result<f64, String> {
+fn calc_longitude_and_speed_ut(jd_ut: f64, planet: i32, iflag: i32) -> Result<(f64, f64), String> {
     let mut xx = [0.0_f64; 6];
     let mut serr = [0_i8; 256];
     let rc = unsafe { swe_calc_ut(jd_ut, planet, iflag, xx.as_mut_ptr(), serr.as_mut_ptr()) };
     if rc < 0 {
         return Err(read_error(&serr));
     }
-    Ok(normalize_deg(xx[0]))
+    Ok((normalize_deg(xx[0]), xx[3]))
 }
 
 fn calc_flags(chart: &ChartInstance, ephemeris_flag: i32) -> i32 {
@@ -326,8 +368,12 @@ fn object_planets() -> &'static [(&'static str, i32)] {
         ("uranus", SE_URANUS),
         ("neptune", SE_NEPTUNE),
         ("pluto", SE_PLUTO),
+        ("ceres", SE_CERES),
+        ("pallas", SE_PALLAS),
+        ("juno", SE_JUNO),
+        ("vesta", SE_VESTA),
         ("true_north_node", SE_TRUE_NODE),
-        ("north_node", SE_TRUE_NODE),
+        ("north_node", SE_MEAN_NODE),
         ("mean_node", SE_MEAN_NODE),
         ("lilith", SE_MEAN_APOG),
         ("chiron", SE_CHIRON),

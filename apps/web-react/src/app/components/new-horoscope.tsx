@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { cs, enUS, es, fr } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, LocateFixed } from 'lucide-react';
+import { Calendar as CalendarIcon, LocateFixed } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
@@ -12,6 +12,7 @@ import { LocationSelector } from './location-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
+import { TimeRollerPicker } from './time-roller-picker';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
@@ -21,28 +22,15 @@ import {
 	type AppChart,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
-import { resolveLocation } from '@/lib/tauri/workspace';
+import { resolveLocation, searchLocations } from '@/lib/tauri/workspace';
 
 type ChartKind = 'radix' | 'event' | 'horary';
 type LatDir = 'north' | 'south';
 type LonDir = 'east' | 'west';
 
-function formatTimeInputValue(value: Date): string {
-	return format(value, 'HH:mm:ss');
-}
-
 function mergeDatePart(target: Date, pickedDate: Date): Date {
 	const next = new Date(target);
 	next.setFullYear(pickedDate.getFullYear(), pickedDate.getMonth(), pickedDate.getDate());
-	return next;
-}
-
-function mergeTimePart(target: Date, timeValue: string): Date {
-	const match = timeValue.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
-	if (!match) return target;
-	const [, hh, mm, ss] = match;
-	const next = new Date(target);
-	next.setHours(Number(hh), Number(mm), Number(ss ?? '0'), 0);
 	return next;
 }
 
@@ -88,7 +76,6 @@ export function NewHoroscope({
 
 	const [locationName, setLocationName] = useState('');
 	const [location, setLocation] = useState('');
-	const [advancedLocation, setAdvancedLocation] = useState('');
 	const [tags, setTags] = useState('');
 	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() => new Date());
 	const [chartKind, setChartKind] = useState<ChartKind>('radix');
@@ -123,19 +110,14 @@ export function NewHoroscope({
 		[workspaceDefaults.locationName]
 	);
 
-	const timeInputValue = useMemo(() => formatTimeInputValue(selectedDateTime), [selectedDateTime]);
-	const currentLocationQuery = advancedMode ? advancedLocation.trim() : location.trim();
+	const currentLocationQuery = location.trim();
 
 	const applyResolvedLocation = (
 		displayName: string,
 		resolvedLatitude: number,
 		resolvedLongitude: number
 	) => {
-		if (advancedMode) {
-			setAdvancedLocation(displayName);
-		} else {
-			setLocation(displayName);
-		}
+		setLocation(displayName);
 		setLatitude(formatCoordinateMagnitude(resolvedLatitude));
 		setLongitude(formatCoordinateMagnitude(resolvedLongitude));
 		setLatitudeDir(resolvedLatitude >= 0 ? 'north' : 'south');
@@ -172,7 +154,7 @@ export function NewHoroscope({
 			return;
 		}
 
-		let resolvedLocation = advancedMode ? advancedLocation : location;
+		let resolvedLocation = location;
 		let resolvedLatitude = latitude;
 		let resolvedLongitude = longitude;
 		let resolvedLatitudeDir = latitudeDir;
@@ -193,8 +175,7 @@ export function NewHoroscope({
 			locationName,
 			chartKind,
 			dateTime: selectedDateTime,
-			location: advancedMode ? location : resolvedLocation,
-			advancedLocation: advancedMode ? resolvedLocation : advancedLocation,
+			location: resolvedLocation,
 			tags,
 			latitude: resolvedLatitude,
 			longitude: resolvedLongitude,
@@ -291,61 +272,58 @@ export function NewHoroscope({
 								</Popover>
 							</div>
 
-							<div className="flex flex-col gap-2">
-								<Label htmlFor="new-chart-time" className={cn('mb-1.5 block', ft.label)}>
-									{t('new_time')}
-								</Label>
-								<div className="relative w-full">
-									<Input
+								<div className="flex flex-col gap-2">
+									<TimeRollerPicker
 										id="new-chart-time"
-										type="time"
-										step={1}
-										value={timeInputValue}
-										onChange={(e) =>
-											setSelectedDateTime((prev) => mergeTimePart(prev, e.target.value))
-										}
-										className={cn(ft.input, 'pr-11 font-mono tabular-nums shadow-inner')}
-									/>
-									<Clock
-										className={cn(
-											'pointer-events-none absolute top-1/2 right-3 h-5 w-5 -translate-y-1/2',
-											ft.iconColor
-										)}
-										aria-hidden
+										label={t('new_time')}
+										value={selectedDateTime}
+										onValueChange={setSelectedDateTime}
+										labelClassName={ft.label}
+										triggerClassName={cn(ft.input, ft.selectTrigger)}
+										iconClassName={ft.iconColor}
+										panelClassName={ft.selectContent}
 									/>
 								</div>
 							</div>
-						</div>
 
 						<div>
 							<Label htmlFor="location" className={cn('mb-1.5 block', ft.label)}>
 								{t('new_location')}
 							</Label>
-							<div className="flex gap-2">
-								<div className="min-w-0 flex-1">
-									<LocationSelector
-										id="location"
-										value={location}
-										onValueChange={setLocation}
-										options={locationOptions}
-										placeholder={t('new_placeholder_any_location')}
-										searchPlaceholder={t('new_location_search')}
-										emptyLabel={t('new_placeholder_any_location')}
-										disabled={advancedMode}
-										className={cn(ft.selectTrigger, advancedMode && cn(ft.inputDisabled, 'border'))}
-										iconClassName={ft.iconColor}
-									/>
+							<div className="space-y-2">
+								<LocationSelector
+									id="location"
+									value={location}
+									onValueChange={setLocation}
+									options={locationOptions}
+									placeholder={t('new_placeholder_any_location')}
+									searchPlaceholder={t('new_location_search')}
+									emptyLabel={t('new_placeholder_any_location')}
+									loadingLabel={t('new_resolving_location')}
+									disabled={advancedMode}
+									className={cn(ft.selectTrigger, advancedMode && cn(ft.inputDisabled, 'border'))}
+									iconClassName={ft.iconColor}
+									searchLocations={searchLocations}
+									onResolvedLocationSelect={(result) =>
+										applyResolvedLocation(
+											result.display_name,
+											result.latitude,
+											result.longitude
+										)
+									}
+								/>
+								<div className="flex justify-end">
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => void resolveCurrentLocation()}
+										disabled={advancedMode || isResolvingLocation || !location.trim()}
+										className={cn('shadow-inner', ft.selectTrigger)}
+									>
+										<LocateFixed className={cn('mr-2 h-4 w-4', ft.iconColor)} />
+										{isResolvingLocation ? t('new_resolving_location') : t('new_resolve_location')}
+									</Button>
 								</div>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => void resolveCurrentLocation()}
-									disabled={advancedMode || isResolvingLocation || !location.trim()}
-									className={cn('shrink-0 shadow-inner', ft.selectTrigger)}
-								>
-									<LocateFixed className={cn('mr-2 h-4 w-4', ft.iconColor)} />
-									{isResolvingLocation ? t('new_resolving_location') : t('new_resolve_location')}
-								</Button>
 							</div>
 						</div>
 
@@ -379,37 +357,6 @@ export function NewHoroscope({
 
 						{advancedMode && (
 							<div className={cn('space-y-4', ft.advancedPanel)}>
-								<div>
-									<Label htmlFor="advancedLocation" className={cn('mb-1.5 block', ft.label)}>
-										{t('new_location')}
-									</Label>
-									<div className="flex gap-2">
-										<div className="min-w-0 flex-1">
-											<LocationSelector
-												id="advancedLocation"
-												value={advancedLocation}
-												onValueChange={setAdvancedLocation}
-												options={locationOptions}
-												placeholder={t('new_placeholder_prague')}
-												searchPlaceholder={t('new_location_search')}
-												emptyLabel={t('new_placeholder_prague')}
-												className={cn(ft.selectTrigger, 'shadow-inner')}
-												iconClassName={ft.iconColor}
-											/>
-										</div>
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() => void resolveCurrentLocation()}
-											disabled={isResolvingLocation || !advancedLocation.trim()}
-											className={cn('shrink-0 shadow-inner', ft.selectTrigger)}
-										>
-											<LocateFixed className={cn('mr-2 h-4 w-4', ft.iconColor)} />
-											{isResolvingLocation ? t('new_resolving_location') : t('new_resolve_location')}
-										</Button>
-									</div>
-								</div>
-
 								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 									<div className="space-y-4">
 										<div>

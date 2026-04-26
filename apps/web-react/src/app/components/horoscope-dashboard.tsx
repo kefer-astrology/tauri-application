@@ -18,10 +18,20 @@ import { useAppFormFieldTheme } from './form-field-theme';
 import { HoroscopeContextTabs } from './horoscope-context-tabs';
 import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
-import { HoroscopeWheel, type HoroscopeWheelBody } from './horoscope-wheel';
+import { HoroscopeWheel, type HoroscopeWheelBody, type RadixAspectDrawInput } from './horoscope-wheel';
+import { toast } from 'sonner';
+import { DEFAULT_OBSERVABLE_OBJECT_IDS, OBSERVABLE_OBJECTS } from '@/lib/astrology/observableObjects';
+import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
+import type { ElementColors } from '@/lib/astrology/elementColors';
+import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { AstrologyGlyph } from '@/ui/astrology-glyph';
 
 interface HoroscopeDashboardProps {
 	theme: Theme;
+	workspaceDefaults: WorkspaceDefaultsState;
+	glyphSet: AstrologyGlyphSetId;
+	elementColors: ElementColors;
+	lightPlanetFill: string;
 }
 
 interface PlanetPosition {
@@ -29,12 +39,27 @@ interface PlanetPosition {
 	label: string;
 	icon: string;
 	degrees: number;
-	signIcon: string;
+	signZodiacId: string;
+	signGlyphFallback: string;
 	minutes: number;
 	seconds: number;
+	retrograde: boolean;
 }
 
-const SIGN_GLYPHS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+const ZODIAC_UNICODE_FALLBACK = [
+	'♈',
+	'♉',
+	'♊',
+	'♋',
+	'♌',
+	'♍',
+	'♎',
+	'♏',
+	'♐',
+	'♑',
+	'♒',
+	'♓'
+] as const;
 
 const POSITION_META: Record<string, { labelKey?: string; fallbackLabel: string; icon: string }> = {
 	sun: { labelKey: 'planet_sun', fallbackLabel: 'Sun', icon: '☉' },
@@ -50,23 +75,39 @@ const POSITION_META: Record<string, { labelKey?: string; fallbackLabel: string; 
 	asc: { fallbackLabel: 'Asc', icon: 'Asc' },
 	desc: { fallbackLabel: 'Dsc', icon: 'Dsc' },
 	mc: { fallbackLabel: 'MC', icon: 'MC' },
-	ic: { fallbackLabel: 'IC', icon: 'IC' }
+	ic: { fallbackLabel: 'IC', icon: 'IC' },
+	north_node: { fallbackLabel: 'North Node', icon: '☊' },
+	south_node: { fallbackLabel: 'South Node', icon: '☋' },
+	true_north_node: { fallbackLabel: 'True North Node', icon: '☊' },
+	true_south_node: { fallbackLabel: 'True South Node', icon: '☋' },
+	lilith: { fallbackLabel: 'Lilith', icon: '⚸' },
+	chiron: { fallbackLabel: 'Chiron', icon: '⚷' },
+	ceres: { fallbackLabel: 'Ceres', icon: 'Ce' },
+	pallas: { fallbackLabel: 'Pallas', icon: 'Pa' },
+	juno: { fallbackLabel: 'Juno', icon: 'Ju' },
+	vesta: { fallbackLabel: 'Vesta', icon: 'Ve' }
 };
 
-const WHEEL_BODY_ORDER: HoroscopeWheelBody[] = [
-	'sun',
-	'moon',
-	'mercury',
-	'venus',
-	'mars',
-	'jupiter',
-	'saturn',
-	'uranus',
-	'neptune',
-	'pluto'
-];
+function parseRadixAspect(raw: unknown): RadixAspectDrawInput | null {
+	if (!raw || typeof raw !== 'object') return null;
+	const o = raw as Record<string, unknown>;
+	const from = typeof o.from === 'string' ? o.from : null;
+	const to = typeof o.to === 'string' ? o.to : null;
+	const type = typeof o.type === 'string' ? o.type : null;
+	const orbRaw = o.orb;
+	const orb =
+		typeof orbRaw === 'number'
+			? orbRaw
+			: typeof orbRaw === 'string'
+				? Number(orbRaw)
+				: NaN;
+	if (!from || !to || !type || !Number.isFinite(orb)) return null;
+	return { from, to, type, orb };
+}
 
-const SIDEBAR_POSITION_ORDER = [...WHEEL_BODY_ORDER, 'asc', 'mc', 'desc', 'ic'] as const;
+const ANGLE_POSITION_IDS = new Set(
+	OBSERVABLE_OBJECTS.filter((item) => item.category === 'angles').map((item) => item.id)
+);
 
 function normalizeLongitude(value: unknown): number | null {
 	if (typeof value === 'number' && Number.isFinite(value)) {
@@ -81,7 +122,12 @@ function normalizeLongitude(value: unknown): number | null {
 	return null;
 }
 
-function longitudeToPosition(id: string, longitude: number, t: (key: string) => string): PlanetPosition {
+function longitudeToPosition(
+	id: string,
+	longitude: number,
+	retrograde: boolean,
+	t: (key: string) => string
+): PlanetPosition {
 	const withinSign = longitude % 30;
 	const totalSeconds = Math.round(withinSign * 3600);
 	const degrees = Math.floor(totalSeconds / 3600) % 30;
@@ -94,9 +140,11 @@ function longitudeToPosition(id: string, longitude: number, t: (key: string) => 
 		label: meta.labelKey ? t(meta.labelKey) : meta.fallbackLabel,
 		icon: meta.icon,
 		degrees,
-		signIcon: SIGN_GLYPHS[signIndex] ?? '♈',
+		signZodiacId: signIndexToZodiacId(signIndex),
+		signGlyphFallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
 		minutes,
-		seconds
+		seconds,
+		retrograde
 	};
 }
 
@@ -134,9 +182,15 @@ function formatCoords(latitude?: number, longitude?: number) {
 	return `${latitude!.toFixed(4)}, ${longitude!.toFixed(4)}`;
 }
 
-export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
+export function HoroscopeDashboard({
+	theme,
+	workspaceDefaults,
+	glyphSet,
+	elementColors,
+	lightPlanetFill
+}: HoroscopeDashboardProps) {
 	const { t, i18n } = useTranslation();
-	const { selectedChart } = useWorkspaceCharts();
+	const { selectedChart, shiftSelectedChartTime } = useWorkspaceCharts();
 	const ft = useAppFormFieldTheme(theme);
 	const [profileCollapsed, setProfileCollapsed] = useState(false);
 	const [astrolabeCollapsed, setAstrolabeCollapsed] = useState(false);
@@ -144,6 +198,7 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 	const [timeUnit, setTimeUnit] = useState<'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'>('day');
 	const [timeAmount, setTimeAmount] = useState(1);
 	const [showPositionModal, setShowPositionModal] = useState(false);
+	const [isSteppingTime, setIsSteppingTime] = useState(false);
 
 	const isDark = theme === 'midnight' || theme === 'twilight';
 
@@ -188,29 +243,66 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 		t('demo_chart_house_system');
 	const chartTags = selectedChart?.tags?.filter(Boolean) ?? [];
 	const computedPositions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
+	const computedMotion = selectedChart?.computed?.motion ?? {};
 	const computedAxes = selectedChart?.computed?.axes;
-	const wheelBodyLongitudes = Object.fromEntries(
-		WHEEL_BODY_ORDER.map((body) => {
-			const longitude = normalizeLongitude(computedPositions[body]);
-			return [body, longitude];
-		}).filter((entry): entry is [HoroscopeWheelBody, number] => entry[1] !== null)
-	) as Partial<Record<HoroscopeWheelBody, number>>;
+	const positionOrder =
+		workspaceDefaults.defaultBodies.length > 0
+			? workspaceDefaults.defaultBodies
+			: DEFAULT_OBSERVABLE_OBJECT_IDS;
+	const enabledPositionIds = new Set(positionOrder);
+	const showAsc = enabledPositionIds.has('asc');
+	const showDsc = enabledPositionIds.has('desc');
+	const showMc = enabledPositionIds.has('mc');
+	const showIc = enabledPositionIds.has('ic');
 	const axisLongitudes = {
-		asc: normalizeLongitude(computedAxes?.asc ?? computedPositions.asc) ?? undefined,
-		dsc: normalizeLongitude(computedAxes?.desc ?? computedPositions.desc) ?? undefined,
-		mc: normalizeLongitude(computedAxes?.mc ?? computedPositions.mc) ?? undefined,
-		ic: normalizeLongitude(computedAxes?.ic ?? computedPositions.ic) ?? undefined
+		asc: showAsc ? (normalizeLongitude(computedAxes?.asc ?? computedPositions.asc) ?? undefined) : undefined,
+		dsc: showDsc ? (normalizeLongitude(computedAxes?.desc ?? computedPositions.desc) ?? undefined) : undefined,
+		mc: showMc ? (normalizeLongitude(computedAxes?.mc ?? computedPositions.mc) ?? undefined) : undefined,
+		ic: showIc ? (normalizeLongitude(computedAxes?.ic ?? computedPositions.ic) ?? undefined) : undefined
 	};
-	const positionRows: PlanetPosition[] = SIDEBAR_POSITION_ORDER.flatMap((id) => {
+	const wheelBodyOrder: HoroscopeWheelBody[] = positionOrder.filter((id) => !ANGLE_POSITION_IDS.has(id));
+	const wheelBodyLongitudes = Object.fromEntries(
+		wheelBodyOrder
+			.map((body) => {
+				const longitude = normalizeLongitude(computedPositions[body]);
+				return [body, longitude];
+			})
+			.filter((entry): entry is [HoroscopeWheelBody, number] => entry[1] !== null)
+	) as Partial<Record<string, number>>;
+	const positionRows: PlanetPosition[] = positionOrder.flatMap((id) => {
 		const longitude = normalizeLongitude(computedPositions[id]);
-		return longitude === null ? [] : [longitudeToPosition(id, longitude, t)];
+		const retrograde = computedMotion[id]?.retrograde ?? false;
+		return longitude === null ? [] : [longitudeToPosition(id, longitude, retrograde, t)];
 	});
+	const showAxisLines = showAsc || showDsc || showMc || showIc;
+
+	const radixAspects: RadixAspectDrawInput[] = (selectedChart?.computed?.aspects ?? [])
+		.map(parseRadixAspect)
+		.filter((a): a is RadixAspectDrawInput => a !== null);
 
 	const getMaxAmount = () => {
 		if (timeUnit === 'sec' || timeUnit === 'min' || timeUnit === 'yr') return 10;
 		if (timeUnit === 'hr') return 12;
 		if (timeUnit === 'month') return 12;
 		return 30; // day
+	};
+
+	const stepChartTime = async (direction: -1 | 1) => {
+		if (!selectedChart || isSteppingTime) return;
+		setIsSteppingTime(true);
+		try {
+			await shiftSelectedChartTime({
+				unit: timeUnit,
+				amount: timeAmount * direction
+			});
+		} catch (error) {
+			console.error('Astrolabe time step failed:', error);
+			toast.error(t('toast_save_failed'), {
+				description: error instanceof Error ? error.message : String(error)
+			});
+		} finally {
+			setIsSteppingTime(false);
+		}
 	};
 
 	return (
@@ -289,6 +381,8 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 								<div className="flex items-center gap-2">
 									<button
 										className={`rounded-full border p-2 ${borderColor} ${hoverBg} ${textColor}`}
+										onClick={() => void stepChartTime(-1)}
+										disabled={isSteppingTime || !selectedChart}
 									>
 										<ChevronLeft className="h-4 w-4" />
 									</button>
@@ -322,6 +416,8 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 
 									<button
 										className={`rounded-full border p-2 ${borderColor} ${hoverBg} ${textColor}`}
+										onClick={() => void stepChartTime(1)}
+										disabled={isSteppingTime || !selectedChart}
 									>
 										<ChevronRight className="h-4 w-4" />
 									</button>
@@ -373,11 +469,19 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 					<div className="aspect-square h-full w-full max-h-full max-w-full">
 						<HoroscopeWheel
 							theme={theme}
+							glyphSet={glyphSet}
+							elementColors={elementColors}
+							lightPlanetFill={lightPlanetFill}
 							bodyLongitudes={wheelBodyLongitudes}
+							bodyOrder={wheelBodyOrder}
 							axisLongitudes={axisLongitudes}
 							useFallbackData={false}
 							showPlanetGlyphs
-							showAxisLines
+							showAxisLines={showAxisLines}
+							radixAspects={radixAspects}
+							aspectOrbsForRadix={workspaceDefaults.defaultAspectOrbs}
+							aspectColorsForRadix={workspaceDefaults.defaultAspectColors}
+							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
 						/>
 					</div>
 				</div>
@@ -418,19 +522,47 @@ export function HoroscopeDashboard({ theme }: HoroscopeDashboardProps) {
 									<>
 										<div className="space-y-1.5">
 											{positionRows.map((pos) => (
-												<div key={pos.id} className={`flex items-center ${textColor} font-mono text-sm`} title={pos.label}>
+												<div
+													key={pos.id}
+													className={cn(
+														'flex items-center gap-0.5',
+														textColor,
+														'font-mono text-sm tabular-nums leading-none'
+													)}
+													title={pos.label}
+												>
 													<span
 														className={cn(
-															'w-8 text-center',
-															pos.icon.length > 2 ? 'text-[10px] font-semibold' : 'text-base'
+															'inline-flex h-[1.125rem] w-8 shrink-0 items-center justify-center',
+															pos.icon.length > 2 ? 'text-[10px] font-semibold' : ''
 														)}
 													>
-														{pos.icon}
+														<AstrologyGlyph
+															glyphId={pos.id}
+															glyphSet={glyphSet}
+															fallback={pos.icon}
+															size={18}
+															title={pos.label}
+															className="leading-none"
+														/>
 													</span>
 													<span className="w-12 text-right">{pos.degrees}°</span>
-													<span className="w-8 text-center text-base">{pos.signIcon}</span>
+													<span className="inline-flex h-[1.125rem] w-8 shrink-0 items-center justify-center">
+														<AstrologyGlyph
+															glyphId={pos.signZodiacId}
+															glyphSet={glyphSet}
+															domain="zodiac"
+															fallback={pos.signGlyphFallback}
+															size={18}
+															title={pos.signZodiacId}
+															className="leading-none"
+														/>
+													</span>
 													<span className="w-10 text-right">{pos.minutes}'</span>
 													<span className="w-10 text-right">{pos.seconds}"</span>
+													<span className="w-6 text-center text-[10px] font-semibold uppercase text-amber-600">
+														{pos.retrograde ? 'R' : ''}
+													</span>
 												</div>
 											))}
 										</div>

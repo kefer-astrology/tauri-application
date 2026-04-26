@@ -1,6 +1,7 @@
 type SharedSvgIconProps = {
 	src: string;
 	className?: string;
+	/** Pixel box; omit when `className` sets size (e.g. `size-7`) so Tailwind is not overridden. */
 	size?: number;
 	width?: number;
 	height?: number;
@@ -11,7 +12,7 @@ type SharedSvgIconProps = {
 export function SharedSvgIcon({
 	src,
 	className = '',
-	size = 20,
+	size,
 	width,
 	height,
 	maskScale = 1,
@@ -19,6 +20,11 @@ export function SharedSvgIcon({
 }: SharedSvgIconProps) {
 	const resolvedWidth = width ?? size;
 	const resolvedHeight = height ?? size;
+	const hasExplicitPixelBox =
+		typeof resolvedWidth === 'number' &&
+		Number.isFinite(resolvedWidth) &&
+		typeof resolvedHeight === 'number' &&
+		Number.isFinite(resolvedHeight);
 	const resolvedMaskScale = `${maskScale * 100}%`;
 
 	return (
@@ -28,8 +34,9 @@ export function SharedSvgIcon({
 			aria-hidden={title ? undefined : true}
 			role={title ? 'img' : 'presentation'}
 			style={{
-				width: resolvedWidth,
-				height: resolvedHeight,
+				...(hasExplicitPixelBox
+					? { width: resolvedWidth, height: resolvedHeight }
+					: {}),
 				display: 'block',
 				flexShrink: 0,
 				lineHeight: 0,

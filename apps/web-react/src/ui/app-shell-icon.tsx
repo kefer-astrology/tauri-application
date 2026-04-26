@@ -19,7 +19,8 @@ export function AppShellIcon({
 	iconId: AppShellIconId;
 	iconSet: AppShellIconSetId;
 	className?: string;
-	size: number;
+	/** Omit to size with Tailwind on `className` (sidebar uses `size-7`). */
+	size?: number;
 	title?: string;
 }) {
 	return (

@@ -16,5 +16,6 @@ export {
   getSelectedChart,
   normalizeComputedPayload,
   updateChartComputation,
+  updateChartComputationAtTime,
   chartDataToComputePayload
 } from './layout.svelte';

@@ -1,6 +1,6 @@
 <!-- src/lib/components/MiddleContent.svelte -->
 <script lang="ts">
-  import { layout, getSelectedChart, updateChartComputation, chartDataToComputePayload } from '$lib/state/layout';
+  import { layout, getSelectedChart, updateChartComputation, updateChartComputationAtTime, chartDataToComputePayload } from '$lib/state/layout';
   import { t, i18n, setLang } from '$lib/i18n/index.svelte';
   import * as Select from '$lib/components/ui/select/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
@@ -12,6 +12,7 @@
   import { effectiveTime, timeNavigation } from '$lib/stores/timeNavigation.svelte';
   import { getCurrentPositions, queryPositions, type Position } from '$lib/stores/data.svelte';
   import { signIdFromLongitude } from '$lib/stores/glyphs.svelte';
+  import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
   import { invoke } from '@tauri-apps/api/core';
 
   // reactive references using runes
@@ -89,6 +90,10 @@
     square = size > 0 ? size : 0;
   }
 
+  function formatChartDateTimeUtc(date: Date): string {
+    return date.toISOString().slice(0, 19) + 'Z';
+  }
+
   $effect(() => {
     const el = contentEl;
     if (!el) return;
@@ -113,10 +118,7 @@
   // Convert Position[] to RadixChart format (sign = glyph id for settings-controlled display)
   const planetPositions = $derived(() => {
     const result: Record<string, { degrees: number; sign: string; house?: number }> = {};
-    const defaultBodyOrder = [
-      'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
-      'asc', 'mc', 'ic', 'desc', 'north_node', 'south_node', 'lilith', 'chiron'
-    ];
+    const defaultBodyOrder = DEFAULT_OBSERVABLE_OBJECT_IDS;
     const fullBodyOrder = layout.workspaceDefaults.defaultBodies.length > 0
       ? layout.workspaceDefaults.defaultBodies
       : defaultBodyOrder;
@@ -126,8 +128,10 @@
       'true_north_node': 'north_node',
       'true_south_node': 'south_node',
       'mean_node': 'north_node',
+      'mean_south_node': 'south_node',
       'true_node': 'north_node',
       'black_moon': 'lilith',
+      'true_lilith': 'lilith',
       'chiron': 'chiron',
       'asc': 'asc',
       'desc': 'desc',
@@ -410,7 +414,8 @@
     if (chart.computed?.positions && Object.keys(chart.computed.positions).length > 0) return;
     const payload = chartDataToComputePayload(chart);
     invoke<{
-      positions?: Record<string, number>;
+      positions?: Record<string, unknown>;
+      motion?: Record<string, { speed: number; retrograde: boolean }>;
       aspects?: unknown[];
       axes?: { asc: number; desc: number; mc: number; ic: number };
       house_cusps?: number[];
@@ -419,6 +424,7 @@
       .then((result) => {
         updateChartComputation(chart.id, {
           positions: result.positions ?? {},
+          motion: result.motion ?? {},
           aspects: result.aspects ?? [],
           axes: result.axes,
           houseCusps: result.house_cusps
@@ -429,6 +435,46 @@
       });
   });
 
+  // Recompute the selected chart whenever the effective astrolabe time changes.
+  // This keeps stepping/backtracking functional even without a precomputed time series.
+  $effect(() => {
+    const chart = selectedChart;
+    const time = currentTime;
+
+    if (!chart?.id) return;
+    if (!chart.location?.trim()) return;
+
+    const targetDateTime = formatChartDateTimeUtc(time);
+    const hasComputedPositions = Boolean(chart.computed?.positions && Object.keys(chart.computed.positions).length > 0);
+    if (chart.dateTime === targetDateTime && hasComputedPositions) return;
+
+    const chartAtTime = {
+      ...chart,
+      dateTime: targetDateTime
+    };
+
+    invoke<{
+      positions?: Record<string, unknown>;
+      motion?: Record<string, { speed: number; retrograde: boolean }>;
+      aspects?: unknown[];
+      axes?: { asc: number; desc: number; mc: number; ic: number };
+      house_cusps?: number[];
+      chart_id?: string;
+    }>('compute_chart_from_data', { chartJson: chartDataToComputePayload(chartAtTime) })
+      .then((result) => {
+        updateChartComputationAtTime(chart.id, targetDateTime, {
+          positions: result.positions ?? {},
+          motion: result.motion ?? {},
+          aspects: result.aspects ?? [],
+          axes: result.axes,
+          houseCusps: result.house_cusps
+        });
+      })
+      .catch((err) => {
+        console.warn('Astrolabe recompute failed for chart', chart.id, err);
+      });
+  });
+
   // Workspace mode: compute real positions when chart has no computed payload yet.
   $effect(() => {
     const chart = selectedChart;
@@ -436,7 +482,8 @@
     if (chart.computed?.positions && Object.keys(chart.computed.positions).length > 0) return;
 
     invoke<{
-      positions?: Record<string, number>;
+      positions?: Record<string, unknown>;
+      motion?: Record<string, { speed: number; retrograde: boolean }>;
       aspects?: unknown[];
       axes?: { asc: number; desc: number; mc: number; ic: number };
       house_cusps?: number[];
@@ -448,6 +495,7 @@
       .then((result) => {
         updateChartComputation(chart.id, {
           positions: result.positions ?? {},
+          motion: result.motion ?? {},
           aspects: result.aspects ?? [],
           axes: result.axes,
           houseCusps: result.house_cusps

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState
+} from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,12 +24,13 @@ import { TransitsContent } from './components/transits-content';
 import { Aspectarium } from './components/aspectarium';
 import { HoroscopeDashboard } from './components/horoscope-dashboard';
 import { InformationView } from './components/information-view';
-import { SettingsView } from './components/settings-view';
+import SettingsView from './components/settings-view';
 import { OpenWorkspaceView } from './components/open-workspace-view';
 import { ExportWorkspaceView } from './components/export-workspace-view';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 import {
+	aspectLineTierStyleFromDto,
 	BOOTSTRAP_CHART_ID,
 	chartDataToComputePayload,
 	createBootstrapChart,
@@ -38,13 +46,23 @@ import {
 	initStorage,
 	openFolderDialog,
 	openWorkspaceFolder,
-	saveWorkspace
+	saveWorkspace,
+	saveWorkspaceDefaults
 } from '@/lib/tauri/workspace';
 import type { WorkspaceDefaultsDto } from '@/lib/tauri/types';
 import {
 	readStoredAppShellIconSet,
 	type AppShellIconSetId
 } from '@/lib/app-shell';
+import {
+	persistElementColors,
+	readStoredElementColors,
+	type ElementColors
+} from '@/lib/astrology/elementColors';
+import {
+	readStoredGlyphSet,
+	type AstrologyGlyphSetId
+} from '@/lib/astrology/glyphs';
 
 function mergeWorkspaceDefaults(
 	prev: WorkspaceDefaultsState,
@@ -69,8 +87,86 @@ function mergeWorkspaceDefaults(
 		defaultBodies: Array.isArray(dto.default_bodies) ? [...dto.default_bodies] : prev.defaultBodies,
 		defaultAspects: Array.isArray(dto.default_aspects)
 			? [...dto.default_aspects]
-			: prev.defaultAspects
+			: prev.defaultAspects,
+		defaultAspectOrbs:
+			dto.default_aspect_orbs && typeof dto.default_aspect_orbs === 'object'
+				? { ...prev.defaultAspectOrbs, ...dto.default_aspect_orbs }
+				: prev.defaultAspectOrbs,
+		defaultAspectColors:
+			dto.default_aspect_colors && typeof dto.default_aspect_colors === 'object'
+				? { ...prev.defaultAspectColors, ...dto.default_aspect_colors }
+				: prev.defaultAspectColors,
+		aspectLineTierStyle: aspectLineTierStyleFromDto(dto.aspect_line_tier_style)
 	};
+}
+
+function mergeWorkspaceDefaultsPatch(
+	prev: WorkspaceDefaultsState,
+	patch: Partial<WorkspaceDefaultsState>
+): WorkspaceDefaultsState {
+	return {
+		...prev,
+		...patch,
+		defaultBodies: Array.isArray(patch.defaultBodies) ? [...patch.defaultBodies] : prev.defaultBodies,
+		defaultAspects: Array.isArray(patch.defaultAspects) ? [...patch.defaultAspects] : prev.defaultAspects,
+		defaultAspectOrbs: patch.defaultAspectOrbs
+			? { ...prev.defaultAspectOrbs, ...patch.defaultAspectOrbs }
+			: prev.defaultAspectOrbs,
+		defaultAspectColors: patch.defaultAspectColors
+			? { ...prev.defaultAspectColors, ...patch.defaultAspectColors }
+			: prev.defaultAspectColors,
+		aspectLineTierStyle: patch.aspectLineTierStyle
+			? { ...prev.aspectLineTierStyle, ...patch.aspectLineTierStyle }
+			: prev.aspectLineTierStyle
+	};
+}
+
+function addUtcStep(
+	base: Date,
+	step: { unit: 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'; amount: number }
+): Date {
+	const next = new Date(base);
+	switch (step.unit) {
+		case 'sec':
+			next.setUTCSeconds(next.getUTCSeconds() + step.amount);
+			break;
+		case 'min':
+			next.setUTCMinutes(next.getUTCMinutes() + step.amount);
+			break;
+		case 'hr':
+			next.setUTCHours(next.getUTCHours() + step.amount);
+			break;
+		case 'day':
+			next.setUTCDate(next.getUTCDate() + step.amount);
+			break;
+		case 'month':
+			next.setUTCMonth(next.getUTCMonth() + step.amount);
+			break;
+		case 'yr':
+			next.setUTCFullYear(next.getUTCFullYear() + step.amount);
+			break;
+	}
+	return next;
+}
+
+function parseChartDateTime(value?: string): Date | null {
+	if (!value?.trim()) return null;
+	const direct = new Date(value);
+	if (!Number.isNaN(direct.getTime())) return direct;
+
+	const normalized = value.includes('T')
+		? value
+		: /^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)$/.test(value)
+			? value.replace(' ', 'T') + 'Z'
+			: value;
+	const normalizedDate = new Date(normalized);
+	if (!Number.isNaN(normalizedDate.getTime())) return normalizedDate;
+
+	return null;
+}
+
+function formatChartDateTimeUtc(value: Date): string {
+	return value.toISOString().slice(0, 19) + 'Z';
 }
 
 export default function App() {
@@ -79,7 +175,24 @@ export default function App() {
 	const [appShellIconSet, setAppShellIconSet] = useState<AppShellIconSetId>(() =>
 		readStoredAppShellIconSet()
 	);
+	const [astrologyGlyphSet, setAstrologyGlyphSet] = useState<AstrologyGlyphSetId>(() =>
+		readStoredGlyphSet()
+	);
+	const [elementWheelColors, setElementWheelColors] = useState<ElementColors>(() =>
+		readStoredElementColors()
+	);
+	const [lightPlanetFill, setLightPlanetFill] = useState('#030213');
 	const formTheme = useAppFormFieldTheme(theme);
+
+	useLayoutEffect(() => {
+		const raw = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+		if (raw) setLightPlanetFill(raw);
+	}, [theme]);
+
+	const commitElementWheelColors = useCallback((next: ElementColors) => {
+		setElementWheelColors(next);
+		persistElementColors(next);
+	}, []);
 	const [activeView, setActiveView] = useState<string>('horoskop');
 	const [activeTransitSection, setActiveTransitSection] = useState<TransitSection>('general');
 	const [activeSettingsSection, setActiveSettingsSection] = useState<SettingsSectionId>('jazyk');
@@ -88,12 +201,14 @@ export default function App() {
 		createBootstrapChart(DEFAULT_WORKSPACE_DEFAULTS)
 	]);
 	const [selectedChartId, setSelectedChartId] = useState<string | null>(BOOTSTRAP_CHART_ID);
+	const [selectedChartPreview, setSelectedChartPreview] = useState<AppChart | null>(null);
 	const [workspaceDefaults, setWorkspaceDefaults] = useState<WorkspaceDefaultsState>(() => ({
 		...DEFAULT_WORKSPACE_DEFAULTS
 	}));
 	const computingChartIdsRef = useRef<Set<string>>(new Set());
 
 	const addChart = useCallback((chart: AppChart) => {
+		setSelectedChartPreview(null);
 		setCharts((prev) => [...prev, chart]);
 		setSelectedChartId(chart.id);
 	}, []);
@@ -101,23 +216,11 @@ export default function App() {
 	const replaceChartsFromWorkspace = useCallback(
 		(loaded: AppChart[]) => {
 			const list = loaded.length > 0 ? loaded : [createBootstrapChart(workspaceDefaults)];
+			setSelectedChartPreview(null);
 			setCharts(list);
 			setSelectedChartId(list[0]!.id);
 		},
 		[workspaceDefaults]
-	);
-
-	const workspaceChartsValue = useMemo<WorkspaceChartsValue>(
-		() => ({
-			charts,
-			selectedChartId,
-			selectedChart: charts.find((c) => c.id === selectedChartId),
-			setSelectedChartId,
-			setCharts,
-			addChart,
-			replaceChartsFromWorkspace
-		}),
-		[charts, selectedChartId, addChart, replaceChartsFromWorkspace]
 	);
 
 	const applyComputedChartResult = useCallback((chartId: string, result: Awaited<ReturnType<typeof computeChart>>) => {
@@ -132,6 +235,68 @@ export default function App() {
 			)
 		);
 	}, []);
+
+	const shiftSelectedChartTime = useCallback(
+		async (step: { unit: 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'; amount: number }) => {
+			const persistedChart = charts.find((chart) => chart.id === selectedChartId);
+			const selectedChart =
+				selectedChartPreview && selectedChartPreview.id === selectedChartId
+					? selectedChartPreview
+					: persistedChart;
+			if (!selectedChart) return;
+
+			const baseTime = parseChartDateTime(selectedChart.dateTime) ?? new Date();
+			const shiftedTime = addUtcStep(baseTime, step);
+			const shiftedDateTime = formatChartDateTimeUtc(shiftedTime);
+			const shiftedChart: AppChart = { ...selectedChart, dateTime: shiftedDateTime };
+
+			const result = await computeChartFromData(chartDataToComputePayload(shiftedChart, workspaceDefaults));
+			setSelectedChartPreview({
+				...shiftedChart,
+				computed: normalizeComputedChartPayload(result)
+			});
+		},
+		[charts, selectedChartId, selectedChartPreview, workspaceDefaults]
+	);
+
+	const resetSelectedChartPreview = useCallback(() => {
+		setSelectedChartPreview(null);
+	}, []);
+
+	const handleSelectChartId = useCallback((id: string | null) => {
+		setSelectedChartPreview(null);
+		setSelectedChartId(id);
+	}, []);
+
+	const workspaceChartsValue = useMemo<WorkspaceChartsValue>(
+		() => ({
+			charts,
+			selectedChartId,
+			selectedChart:
+				selectedChartPreview && selectedChartPreview.id === selectedChartId
+					? selectedChartPreview
+					: charts.find((c) => c.id === selectedChartId),
+			selectedPersistedChart: charts.find((c) => c.id === selectedChartId),
+			isSelectedChartPreview:
+				selectedChartPreview !== null && selectedChartPreview.id === selectedChartId,
+			setSelectedChartId: handleSelectChartId,
+			setCharts,
+			addChart,
+			replaceChartsFromWorkspace,
+			shiftSelectedChartTime,
+			resetSelectedChartPreview
+		}),
+		[
+			charts,
+			selectedChartId,
+			selectedChartPreview,
+			handleSelectChartId,
+			addChart,
+			replaceChartsFromWorkspace,
+			shiftSelectedChartTime,
+			resetSelectedChartPreview
+		]
+	);
 
 	const computeChartInBackground = useCallback(
 		async (chart: AppChart, targetWorkspacePath: string | null) => {
@@ -149,6 +314,32 @@ export default function App() {
 			}
 		},
 		[applyComputedChartResult, workspaceDefaults]
+	);
+
+	const applyWorkspaceDefaultsPatch = useCallback(
+		async (patch: Partial<WorkspaceDefaultsState>) => {
+			const nextDefaults = mergeWorkspaceDefaultsPatch(workspaceDefaults, patch);
+			setWorkspaceDefaults(nextDefaults);
+
+			if (workspacePath) {
+				try {
+					const persisted = await saveWorkspaceDefaults(workspacePath, nextDefaults);
+					setWorkspaceDefaults((prev) => mergeWorkspaceDefaults(prev, persisted));
+				} catch (error) {
+					console.error('Failed to persist workspace defaults:', error);
+				}
+			}
+
+			for (const chart of charts) {
+				try {
+					const result = await computeChartFromData(chartDataToComputePayload(chart, nextDefaults));
+					applyComputedChartResult(chart.id, result);
+				} catch (error) {
+					console.error(`Failed to refresh chart ${chart.id} after defaults change:`, error);
+				}
+			}
+		},
+		[workspaceDefaults, workspacePath, charts, applyComputedChartResult]
 	);
 
 	const handleChartCreated = async (chart: AppChart) => {
@@ -221,7 +412,7 @@ export default function App() {
 				if (!path) return;
 			}
 			const payloads = charts.map((c) => chartDataToComputePayload(c, workspaceDefaults));
-			await saveWorkspace(path, 'User', payloads);
+			await saveWorkspace(path, 'User', payloads, workspaceDefaults);
 			await initStorage(path);
 			setWorkspacePath(path);
 			toast.success(t('toast_workspace_saved'), { description: path });
@@ -314,7 +505,13 @@ export default function App() {
 						style={currentThemeStyle.style}
 					>
 						{activeView === 'horoskop' ? (
-							<HoroscopeDashboard theme={theme} />
+							<HoroscopeDashboard
+								theme={theme}
+								workspaceDefaults={workspaceDefaults}
+								glyphSet={astrologyGlyphSet}
+								elementColors={elementWheelColors}
+								lightPlanetFill={lightPlanetFill}
+							/>
 						) : activeView === 'otevrit' ? (
 							<OpenWorkspaceView
 								theme={theme}
@@ -322,14 +519,19 @@ export default function App() {
 								onOpenWorkspace={runOpenWorkspaceFolder}
 								onSaveWorkspace={runSaveWorkspace}
 								onActivateChart={(id) => {
-									setSelectedChartId(id);
+									handleSelectChartId(id);
 									setActiveView('horoskop');
 								}}
 							/>
 						) : activeView === 'export' ? (
 							<ExportWorkspaceView theme={theme} />
 						) : activeView === 'informace' ? (
-							<InformationView theme={theme} />
+							<InformationView
+								theme={theme}
+								glyphSet={astrologyGlyphSet}
+								elementColors={elementWheelColors}
+								lightPlanetFill={lightPlanetFill}
+							/>
 						) : activeView === 'novy' ? (
 							<NewHoroscope
 								theme={theme}
@@ -339,15 +541,25 @@ export default function App() {
 								onBack={() => setActiveView('horoskop')}
 							/>
 						) : activeView === 'aspektarium' ? (
-							<Aspectarium theme={theme} />
+							<Aspectarium theme={theme} glyphSet={astrologyGlyphSet} />
 						) : activeView === 'tranzity' ? (
-							<TransitsContent section={activeTransitSection} theme={theme} />
+							<TransitsContent
+								section={activeTransitSection}
+								theme={theme}
+								glyphSet={astrologyGlyphSet}
+							/>
 						) : activeView === 'nastaveni' ? (
 							<SettingsView
 								theme={theme}
 								section={activeSettingsSection}
 								appShellIconSet={appShellIconSet}
 								onAppShellIconSetChange={setAppShellIconSet}
+								astrologyGlyphSet={astrologyGlyphSet}
+								onAstrologyGlyphSetChange={setAstrologyGlyphSet}
+								elementColors={elementWheelColors}
+								onElementColorsCommit={commitElementWheelColors}
+								workspaceDefaults={workspaceDefaults}
+								onWorkspaceDefaultsChange={applyWorkspaceDefaultsPatch}
 							/>
 						) : (
 							<AppMainContentRoot>

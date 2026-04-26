@@ -1,8 +1,11 @@
 import { useTranslation } from 'react-i18next';
+import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { Theme } from './astrology-sidebar';
 
 interface AspectariumProps {
 	theme: Theme;
+	glyphSet: AstrologyGlyphSetId;
 }
 
 const planetSymbols: Record<string, string> = {
@@ -44,7 +47,7 @@ const planetRows = [
 	['asc', 'dsc']
 ] as const;
 
-export function Aspectarium({ theme }: AspectariumProps) {
+export function Aspectarium({ theme, glyphSet }: AspectariumProps) {
 	const { t } = useTranslation();
 
 	const themeStyles = {
@@ -112,8 +115,20 @@ export function Aspectarium({ theme }: AspectariumProps) {
 									key={planetKey}
 									className={`flex h-24 w-24 flex-col items-center justify-center rounded-2xl ${currentTheme.planetBg} ${currentTheme.shadow} border ${currentTheme.planetBorder} backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg`}
 								>
-									<div className={`mb-1 text-3xl ${currentTheme.planetText}`}>
-										{planetSymbols[planetKey]}
+									<div
+										className={`mb-1 flex items-center justify-center ${currentTheme.planetText}`}
+									>
+										{planetKey === 'asc' || planetKey === 'dsc' ? (
+											<span className="text-3xl">{planetSymbols[planetKey]}</span>
+										) : (
+											<AstrologyGlyph
+												glyphId={planetKey}
+												glyphSet={glyphSet}
+												fallback={planetSymbols[planetKey]}
+												size={36}
+												className={currentTheme.planetText}
+											/>
+										)}
 									</div>
 									<div className={`text-xs font-medium ${currentTheme.planetText} opacity-80`}>
 										{t(planetLabelKeys[planetKey] ?? planetKey)}

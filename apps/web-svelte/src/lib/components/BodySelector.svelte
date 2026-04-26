@@ -1,18 +1,16 @@
 <!-- Body Selector Component - Grid of checkboxes with astrological bodies organized by categories -->
 <script lang="ts">
-  import { glyphs } from '$lib/stores/glyphs.svelte';
   import { getGlyphContent } from '$lib/stores/glyphs.svelte';
   import { Button } from '$lib/components/ui/button/index.js';
-  
-  interface Body {
-    id: string;
-    name: string;
-    category: string;
-  }
+  import {
+    OBSERVABLE_OBJECTS,
+    OBSERVABLE_OBJECT_CATEGORY_LABELS,
+    type ObservableObjectCategory
+  } from '$lib/astrology/observableObjects';
   
   interface Props {
     selectedBodies?: string[];
-    onSelectionChange?: (selected: string[]) => void;
+    onSelectionChange?: (selected: string[]) => void | Promise<void>;
   }
   
   let { 
@@ -21,80 +19,30 @@
   }: Props = $props();
   let failedGlyphFiles = $state<Record<string, boolean>>({});
   
-  // Body definitions organized by category
-  const bodyCategories = [
-    {
-      name: 'Luminaries',
-      bodies: [
-        { id: 'sun', name: 'Sun' },
-        { id: 'moon', name: 'Moon' }
-      ]
-    },
-    {
-      name: 'Lunar Nodes',
-      bodies: [
-        { id: 'meanNode', name: 'Lunar Mean Nodes' },
-        { id: 'trueNode', name: 'Lunar True Nodes' }
-      ]
-    },
-    {
-      name: 'Personal Planets',
-      bodies: [
-        { id: 'mercury', name: 'Mercury' },
-        { id: 'venus', name: 'Venus' },
-        { id: 'mars', name: 'Mars' }
-      ]
-    },
-    {
-      name: 'Lunar Apsides',
-      bodies: [
-        { id: 'blackMoonMean', name: 'Black Moon (Mean)' },
-        { id: 'blackMoonNatural', name: 'Black Moon (Natural)' },
-        { id: 'blackMoonOsculating', name: 'Black Moon (Osculating)' }
-      ]
-    },
-    {
-      name: 'Social Planets',
-      bodies: [
-        { id: 'jupiter', name: 'Jupiter' },
-        { id: 'saturn', name: 'Saturn' }
-      ]
-    },
-    {
-      name: 'Centaurs',
-      bodies: [
-        { id: 'chiron', name: 'Chiron' },
-        { id: 'pholus', name: 'Pholus' }
-      ]
-    },
-    {
-      name: 'Transpersonal Planets',
-      bodies: [
-        { id: 'uranus', name: 'Uranus' },
-        { id: 'neptune', name: 'Neptune' },
-        { id: 'pluto', name: 'Pluto' }
-      ]
-    },
-    {
-      name: 'Asteroids',
-      bodies: [
-        { id: 'ceres', name: 'Ceres' },
-        { id: 'pallas', name: 'Pallas' },
-        { id: 'juno', name: 'Juno' },
-        { id: 'vesta', name: 'Vesta' }
-      ]
-    }
+  const categoryOrder: ObservableObjectCategory[] = [
+    'luminaries',
+    'personal_planets',
+    'social_outer_planets',
+    'angles',
+    'lunar_nodes',
+    'calculated_points',
+    'asteroids'
   ];
+
+  const bodyCategories = categoryOrder.map((category) => ({
+    id: category,
+    name: OBSERVABLE_OBJECT_CATEGORY_LABELS[category],
+    bodies: OBSERVABLE_OBJECTS.filter((body) => body.category === category)
+  }));
   
   // Category expanded state
   let categoryExpanded = $state<Record<string, boolean>>({
     'Luminaries': true,
-    'Lunar Nodes': false,
     'Personal Planets': true,
-    'Lunar Apsides': false,
-    'Social Planets': true,
-    'Centaurs': false,
-    'Transpersonal Planets': true,
+    'Social and Outer Planets': true,
+    'Angles': false,
+    'Lunar Nodes': false,
+    'Calculated Points': false,
     'Asteroids': false
   });
   

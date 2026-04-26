@@ -20,6 +20,32 @@ pub struct GeocodedLocation {
     pub longitude: f64,
 }
 
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct SaveWorkspaceDefaultsInput {
+    #[serde(default)]
+    pub default_house_system: Option<String>,
+    #[serde(default)]
+    pub default_timezone: Option<String>,
+    #[serde(default)]
+    pub default_location_name: Option<String>,
+    #[serde(default)]
+    pub default_location_latitude: Option<f64>,
+    #[serde(default)]
+    pub default_location_longitude: Option<f64>,
+    #[serde(default)]
+    pub default_engine: Option<String>,
+    #[serde(default)]
+    pub default_bodies: Option<Vec<String>>,
+    #[serde(default)]
+    pub default_aspects: Option<Vec<String>>,
+    #[serde(default)]
+    pub default_aspect_orbs: Option<HashMap<String, f64>>,
+    #[serde(default)]
+    pub default_aspect_colors: Option<HashMap<String, String>>,
+    #[serde(default)]
+    pub aspect_line_tier_style: Option<crate::workspace::models::AspectLineTierStyle>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 struct NominatimSearchResult {
     display_name: String,
@@ -130,6 +156,16 @@ end tell"#;
 /// Resolve a free-form place string into coordinates using a configurable geocoder endpoint.
 #[tauri::command]
 pub async fn resolve_location(query: String) -> Result<GeocodedLocation, String> {
+    let results = search_locations(query).await?;
+    results
+        .into_iter()
+        .next()
+        .ok_or_else(|| "No location results found".to_string())
+}
+
+/// Search a free-form place string and return multiple candidate locations.
+#[tauri::command]
+pub async fn search_locations(query: String) -> Result<Vec<GeocodedLocation>, String> {
     let trimmed_query = query.trim();
     if trimmed_query.is_empty() {
         return Err("Location query is required".to_string());
@@ -152,7 +188,7 @@ pub async fn resolve_location(query: String) -> Result<GeocodedLocation, String>
         .query(&[
             ("q", trimmed_query),
             ("format", "jsonv2"),
-            ("limit", "1"),
+            ("limit", "5"),
             ("addressdetails", "0"),
         ])
         .send()
@@ -171,7 +207,7 @@ pub async fn resolve_location(query: String) -> Result<GeocodedLocation, String>
         .await
         .map_err(|err| format!("Failed to decode location lookup response: {err}"))?;
 
-    select_nominatim_result(trimmed_query, &candidates)
+    select_nominatim_results(trimmed_query, &candidates)
 }
 
 /// Save current charts to a workspace folder (creates workspace.yaml and chart YAMLs).
@@ -181,6 +217,7 @@ pub async fn save_workspace(
     workspace_path: String,
     owner: String,
     charts: Vec<serde_json::Value>,
+    defaults: Option<SaveWorkspaceDefaultsInput>,
 ) -> Result<String, String> {
     use crate::workspace::models::{WorkspaceDefaults, WorkspaceManifest};
     use std::fs;
@@ -216,17 +253,63 @@ pub async fn save_workspace(
         chart_refs.push(rel);
     }
 
+    let parsed_defaults = defaults.unwrap_or_default();
+
+    let default_house_system = parsed_defaults
+        .default_house_system
+        .as_deref()
+        .and_then(|value| match value {
+            "Placidus" => Some(crate::workspace::models::HouseSystem::Placidus),
+            "Whole Sign" => Some(crate::workspace::models::HouseSystem::WholeSign),
+            "Campanus" => Some(crate::workspace::models::HouseSystem::Campanus),
+            "Koch" => Some(crate::workspace::models::HouseSystem::Koch),
+            "Equal" => Some(crate::workspace::models::HouseSystem::Equal),
+            "Regiomontanus" => Some(crate::workspace::models::HouseSystem::Regiomontanus),
+            "Vehlow" => Some(crate::workspace::models::HouseSystem::Vehlow),
+            "Porphyry" => Some(crate::workspace::models::HouseSystem::Porphyry),
+            "Alcabitius" => Some(crate::workspace::models::HouseSystem::Alcabitius),
+            _ => None,
+        });
+    let ephemeris_engine = parsed_defaults
+        .default_engine
+        .as_deref()
+        .and_then(|value| match value {
+            "swisseph" => Some(crate::workspace::models::EngineType::Swisseph),
+            "jyotish" => Some(crate::workspace::models::EngineType::Jyotish),
+            "jpl" => Some(crate::workspace::models::EngineType::Jpl),
+            "custom" => Some(crate::workspace::models::EngineType::Custom),
+            _ => None,
+        })
+        .or(Some(crate::workspace::models::EngineType::Swisseph));
+    let default_location = match (
+        parsed_defaults.default_location_name,
+        parsed_defaults.default_location_latitude,
+        parsed_defaults.default_location_longitude,
+        parsed_defaults.default_timezone,
+    ) {
+        (Some(name), Some(latitude), Some(longitude), Some(timezone)) => Some(crate::workspace::models::Location {
+            name,
+            latitude,
+            longitude,
+            timezone,
+        }),
+        _ => None,
+    };
+
     let default = WorkspaceDefaults {
-        ephemeris_engine: Some(crate::workspace::models::EngineType::Swisseph),
+        ephemeris_engine,
         ephemeris_backend: None,
         element_colors: None,
         radix_point_colors: None,
-        default_location: None,
+        default_location,
         language: None,
         theme: None,
-        default_house_system: None,
-        default_bodies: None,
-        default_aspects: None,
+        default_house_system,
+        default_bodies: parsed_defaults.default_bodies,
+        default_aspects: parsed_defaults.default_aspects,
+        default_aspect_orbs: parsed_defaults.default_aspect_orbs,
+        default_aspect_colors: parsed_defaults.default_aspect_colors,
+        aspect_line_tier_style: parsed_defaults.aspect_line_tier_style,
         time_system: None,
     };
     let manifest = WorkspaceManifest {
@@ -253,6 +336,19 @@ pub async fn save_workspace(
     fs::write(&manifest_path, manifest_yaml).map_err(|e| format!("Write workspace.yaml: {}", e))?;
 
     Ok(workspace_path)
+}
+
+/// Update workspace-level defaults in `workspace.yaml` without rewriting chart files.
+#[tauri::command]
+pub async fn save_workspace_defaults(
+    workspace_path: String,
+    defaults: SaveWorkspaceDefaultsInput,
+) -> Result<serde_json::Value, String> {
+    let base = Path::new(&workspace_path);
+    let mut manifest = load_workspace_manifest(base)?;
+    apply_workspace_defaults_patch(&mut manifest.default, defaults);
+    write_workspace_manifest(base, &manifest)?;
+    get_workspace_defaults(workspace_path).await
 }
 
 /// Create a new workspace with an empty manifest and charts directory.
@@ -491,6 +587,9 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
         "default_timezone": default_timezone,
         "default_bodies": defaults.default_bodies,
         "default_aspects": defaults.default_aspects,
+        "default_aspect_orbs": defaults.default_aspect_orbs,
+        "default_aspect_colors": defaults.default_aspect_colors,
+        "aspect_line_tier_style": defaults.aspect_line_tier_style,
         "time_system": defaults.time_system,
     }))
 }
@@ -798,6 +897,7 @@ fn compute_transit_series_rust(
     let chart_rel = find_chart_ref_by_id(base, &manifest, chart_id)?
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
     let source_chart = load_chart(base, &chart_rel)?;
+    let backend = crate::astronomy::backend_for_chart(&source_chart);
 
     let transited_filter = if transited_objects.is_empty() {
         source_chart.config.observable_objects.clone()
@@ -853,7 +953,7 @@ fn compute_transit_series_rust(
         },
         "time_step": format!("{}s", time_step_seconds),
         "results": results,
-        "backend_used": "swisseph",
+        "backend_used": backend.backend_id(),
         "fallback_used": false,
         "ephemeris_source": rust_ephemeris_source(&source_chart),
         "warnings": [],
@@ -896,7 +996,7 @@ struct AspectSpec {
     default_orb: f64,
 }
 
-const MAJOR_ASPECTS: [AspectSpec; 5] = [
+const MAJOR_ASPECTS: [AspectSpec; 6] = [
     AspectSpec {
         id: "conjunction",
         angle: 0.0,
@@ -916,6 +1016,11 @@ const MAJOR_ASPECTS: [AspectSpec; 5] = [
         id: "trine",
         angle: 120.0,
         default_orb: 8.0,
+    },
+    AspectSpec {
+        id: "quincunx",
+        angle: 150.0,
+        default_orb: 3.0,
     },
     AspectSpec {
         id: "opposition",
@@ -1039,11 +1144,15 @@ fn build_chart_result(
         ic: computed.axes.ic,
     };
     let house_cusps = computed.house_cusps;
+    let motion = computed.motion;
     let positions = computed.positions;
-    let aspects = compute_chart_aspects(&positions, &chart.config.aspect_orbs, aspect_types);
+    let warnings = computed.warnings;
+    let selected_aspects = aspect_types.or(chart.config.selected_aspects.as_deref());
+    let aspects = compute_chart_aspects(&positions, &chart.config.aspect_orbs, selected_aspects);
 
     Ok(HashMap::from([
         ("positions".to_string(), serde_json::json!(positions)),
+        ("motion".to_string(), serde_json::json!(motion)),
         ("aspects".to_string(), serde_json::json!(aspects)),
         ("axes".to_string(), serde_json::json!(axes)),
         ("house_cusps".to_string(), serde_json::json!(house_cusps)),
@@ -1057,7 +1166,7 @@ fn build_chart_result(
             "ephemeris_source".to_string(),
             serde_json::json!(rust_ephemeris_source(chart)),
         ),
-        ("warnings".to_string(), serde_json::json!([])),
+        ("warnings".to_string(), serde_json::json!(warnings)),
     ]))
 }
 
@@ -1414,6 +1523,9 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
             default_house_system: None,
             default_bodies: None,
             default_aspects: None,
+            default_aspect_orbs: None,
+            default_aspect_colors: None,
+            aspect_line_tier_style: None,
             time_system: None,
         },
         chart_presets: vec![],
@@ -1421,6 +1533,90 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
         charts: vec![],
         layouts: vec![],
         annotations: vec![],
+    }
+}
+
+fn parse_house_system(value: &str) -> Option<crate::workspace::models::HouseSystem> {
+    match value {
+        "Placidus" => Some(crate::workspace::models::HouseSystem::Placidus),
+        "Whole Sign" => Some(crate::workspace::models::HouseSystem::WholeSign),
+        "Campanus" => Some(crate::workspace::models::HouseSystem::Campanus),
+        "Koch" => Some(crate::workspace::models::HouseSystem::Koch),
+        "Equal" => Some(crate::workspace::models::HouseSystem::Equal),
+        "Regiomontanus" => Some(crate::workspace::models::HouseSystem::Regiomontanus),
+        "Vehlow" => Some(crate::workspace::models::HouseSystem::Vehlow),
+        "Porphyry" => Some(crate::workspace::models::HouseSystem::Porphyry),
+        "Alcabitius" => Some(crate::workspace::models::HouseSystem::Alcabitius),
+        _ => None,
+    }
+}
+
+fn parse_engine_type(value: &str) -> Option<crate::workspace::models::EngineType> {
+    match value {
+        "swisseph" => Some(crate::workspace::models::EngineType::Swisseph),
+        "jyotish" => Some(crate::workspace::models::EngineType::Jyotish),
+        "jpl" => Some(crate::workspace::models::EngineType::Jpl),
+        "custom" => Some(crate::workspace::models::EngineType::Custom),
+        _ => None,
+    }
+}
+
+fn apply_workspace_defaults_patch(
+    defaults: &mut crate::workspace::models::WorkspaceDefaults,
+    patch: SaveWorkspaceDefaultsInput,
+) {
+    if let Some(value) = patch.default_house_system.as_deref() {
+        defaults.default_house_system = parse_house_system(value);
+    }
+
+    if let Some(value) = patch.default_engine.as_deref() {
+        if let Some(engine) = parse_engine_type(value) {
+            defaults.ephemeris_engine = Some(engine);
+        }
+    }
+
+    if patch.default_timezone.is_some()
+        || patch.default_location_name.is_some()
+        || patch.default_location_latitude.is_some()
+        || patch.default_location_longitude.is_some()
+    {
+        let mut location = defaults.default_location.clone().unwrap_or(crate::workspace::models::Location {
+            name: String::new(),
+            latitude: 0.0,
+            longitude: 0.0,
+            timezone: "UTC".to_string(),
+        });
+
+        if let Some(value) = patch.default_location_name {
+            location.name = value;
+        }
+        if let Some(value) = patch.default_location_latitude {
+            location.latitude = value;
+        }
+        if let Some(value) = patch.default_location_longitude {
+            location.longitude = value;
+        }
+        if let Some(value) = patch.default_timezone {
+            location.timezone = value;
+        }
+
+        defaults.default_location = Some(location);
+    }
+
+    if let Some(value) = patch.default_bodies {
+        defaults.default_bodies = Some(value);
+    }
+    if let Some(value) = patch.default_aspects {
+        defaults.default_aspects = Some(value);
+    }
+    if let Some(value) = patch.default_aspect_orbs {
+        defaults.default_aspect_orbs = Some(value);
+    }
+    if let Some(value) = patch.default_aspect_colors {
+        defaults.default_aspect_colors = Some(value);
+    }
+    if let Some(value) = patch.aspect_line_tier_style {
+        defaults.aspect_line_tier_style = Some(value);
     }
 }
 
@@ -1542,14 +1738,39 @@ mod tests {
 
     #[test]
     fn compute_chart_rust_reads_sample_workspace() {
-        let result = compute_chart_rust(&sample_workspace_path(), "Base Chart")
+        let workspace_path = sample_workspace_path();
+        let base = std::path::Path::new(&workspace_path);
+        let manifest = load_workspace_manifest(base).expect("sample workspace manifest should load");
+        let chart_rel = find_chart_ref_by_id(base, &manifest, "Base Chart")
+            .expect("chart lookup should succeed")
+            .expect("Base Chart should exist");
+        let chart = load_chart(base, &chart_rel).expect("sample chart should load");
+
+        let result = compute_chart_rust(&workspace_path, "Base Chart")
             .expect("sample workspace chart should compute");
 
         assert_eq!(result.get("chart_id"), Some(&serde_json::json!("Base Chart")));
-        assert_eq!(result.get("backend_used"), Some(&serde_json::json!("swisseph")));
+        assert_eq!(
+            result.get("backend_used"),
+            Some(&serde_json::json!(
+                crate::astronomy::backend_for_chart(&chart).backend_id()
+            ))
+        );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
         assert!(result.get("ephemeris_source").is_some());
-        assert_eq!(result.get("warnings"), Some(&serde_json::json!([])));
+
+        let warnings = result
+            .get("warnings")
+            .and_then(Value::as_array)
+            .expect("warnings should be an array");
+        if crate::astronomy::backend_for_chart(&chart).backend_id() == "jpl" {
+            assert!(
+                warnings.iter().any(|warning| warning == "true_node_not_available: anise backend uses mean node only"),
+                "jpl path should surface true-node warning"
+            );
+        } else {
+            assert!(warnings.is_empty(), "swisseph path should not emit jpl-only warnings");
+        }
 
         let positions = result
             .get("positions")
@@ -1557,7 +1778,6 @@ mod tests {
             .expect("positions should be an object");
         assert!(positions.contains_key("sun"));
         assert!(positions.contains_key("moon"));
-        assert!(positions.contains_key("asc"));
 
         let axes = result
             .get("axes")
@@ -1644,12 +1864,20 @@ mod tests {
 
     #[test]
     fn compute_transit_series_rust_applies_requested_filters() {
+        let workspace_path = sample_workspace_path();
+        let base = std::path::Path::new(&workspace_path);
+        let manifest = load_workspace_manifest(base).expect("sample workspace manifest should load");
+        let chart_rel = find_chart_ref_by_id(base, &manifest, "Base Chart")
+            .expect("chart lookup should succeed")
+            .expect("Base Chart should exist");
+        let chart = load_chart(base, &chart_rel).expect("sample chart should load");
+
         let transiting_objects = vec!["sun".to_string()];
         let transited_objects = vec!["moon".to_string()];
         let aspect_types = vec!["square".to_string()];
 
         let result = compute_transit_series_rust(
-            &sample_workspace_path(),
+            &workspace_path,
             "Base Chart",
             "2024-01-01T00:00:00Z",
             "2024-01-01T02:00:00Z",
@@ -1665,7 +1893,12 @@ mod tests {
             .and_then(Value::as_array)
             .expect("results should be an array");
         assert_eq!(results.len(), 3);
-        assert_eq!(result.get("backend_used"), Some(&serde_json::json!("swisseph")));
+        assert_eq!(
+            result.get("backend_used"),
+            Some(&serde_json::json!(
+                crate::astronomy::backend_for_chart(&chart).backend_id()
+            ))
+        );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
         assert!(result.get("ephemeris_source").is_some());
         assert_eq!(result.get("warnings"), Some(&serde_json::json!([])));
@@ -1718,6 +1951,67 @@ mod tests {
         assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("swisseph")));
         assert_eq!(defaults.get("default_bodies"), Some(&serde_json::Value::Null));
         assert_eq!(defaults.get("default_aspects"), Some(&serde_json::Value::Null));
+    }
+
+    #[test]
+    fn save_workspace_defaults_updates_manifest_defaults_without_rewriting_charts() {
+        let temp = TestWorkspaceDir::new("workspace-defaults");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str.clone(),
+            SaveWorkspaceDefaultsInput {
+                default_house_system: Some("Whole Sign".to_string()),
+                default_timezone: Some("Europe/Prague".to_string()),
+                default_location_name: Some("Prague".to_string()),
+                default_location_latitude: Some(50.0875),
+                default_location_longitude: Some(14.4214),
+                default_engine: Some("jpl".to_string()),
+                default_bodies: Some(vec!["sun".to_string(), "moon".to_string(), "asc".to_string()]),
+                default_aspects: Some(vec!["conjunction".to_string(), "trine".to_string()]),
+                default_aspect_orbs: Some(HashMap::from([
+                    ("conjunction".to_string(), 8.0),
+                    ("trine".to_string(), 7.5),
+                ])),
+                ..Default::default()
+            },
+        ))
+        .expect("workspace defaults should persist");
+
+        assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("jpl")));
+        assert_eq!(
+            defaults.get("default_bodies"),
+            Some(&serde_json::json!(["sun", "moon", "asc"]))
+        );
+
+        let manifest = load_workspace_manifest(&workspace_path).expect("manifest should load");
+        assert!(matches!(
+            manifest.default.default_house_system,
+            Some(crate::workspace::models::HouseSystem::WholeSign)
+        ));
+        assert!(matches!(
+            manifest.default.ephemeris_engine,
+            Some(crate::workspace::models::EngineType::Jpl)
+        ));
+        assert_eq!(
+            manifest
+                .default
+                .default_location
+                .as_ref()
+                .map(|location| location.timezone.as_str()),
+            Some("Europe/Prague")
+        );
+        assert_eq!(
+            manifest.default.default_bodies,
+            Some(vec!["sun".to_string(), "moon".to_string(), "asc".to_string()])
+        );
     }
 
     #[test]
@@ -1928,29 +2222,45 @@ fn read_importable_chart_yaml(path: &Path) -> Result<crate::workspace::models::C
         .map_err(|e| format!("Failed to parse chart YAML {}: {}", path.display(), e))
 }
 
+#[cfg(test)]
 fn select_nominatim_result(
     query: &str,
     candidates: &[NominatimSearchResult],
 ) -> Result<GeocodedLocation, String> {
-    let best = candidates
-        .first()
-        .ok_or_else(|| format!("No location results found for '{query}'"))?;
+    select_nominatim_results(query, candidates)?
+        .into_iter()
+        .next()
+        .ok_or_else(|| format!("No location results found for '{query}'"))
+}
 
-    let latitude = best
-        .lat
-        .parse::<f64>()
-        .map_err(|err| format!("Invalid latitude returned by geocoder: {err}"))?;
-    let longitude = best
-        .lon
-        .parse::<f64>()
-        .map_err(|err| format!("Invalid longitude returned by geocoder: {err}"))?;
+fn select_nominatim_results(
+    query: &str,
+    candidates: &[NominatimSearchResult],
+) -> Result<Vec<GeocodedLocation>, String> {
+    if candidates.is_empty() {
+        return Err(format!("No location results found for '{query}'"));
+    }
 
-    Ok(GeocodedLocation {
-        query: query.to_string(),
-        display_name: best.display_name.clone(),
-        latitude,
-        longitude,
-    })
+    candidates
+        .iter()
+        .map(|candidate| {
+            let latitude = candidate
+                .lat
+                .parse::<f64>()
+                .map_err(|err| format!("Invalid latitude returned by geocoder: {err}"))?;
+            let longitude = candidate
+                .lon
+                .parse::<f64>()
+                .map_err(|err| format!("Invalid longitude returned by geocoder: {err}"))?;
+
+            Ok(GeocodedLocation {
+                query: query.to_string(),
+                display_name: candidate.display_name.clone(),
+                latitude,
+                longitude,
+            })
+        })
+        .collect()
 }
 
 fn upsert_chart_id(chart: &mut serde_json::Value, chart_id: &str) -> Result<(), String> {

@@ -5,10 +5,14 @@ export type WorkspaceChartsValue = {
 	charts: AppChart[];
 	selectedChartId: string | null;
 	selectedChart: AppChart | undefined;
+	selectedPersistedChart: AppChart | undefined;
+	isSelectedChartPreview: boolean;
 	setSelectedChartId: (id: string | null) => void;
 	setCharts: React.Dispatch<React.SetStateAction<AppChart[]>>;
 	addChart: (chart: AppChart) => void;
 	replaceChartsFromWorkspace: (loaded: AppChart[]) => void;
+	shiftSelectedChartTime: (step: { unit: 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'; amount: number }) => Promise<void>;
+	resetSelectedChartPreview: () => void;
 };
 
 const WorkspaceChartsContext = createContext<WorkspaceChartsValue | null>(null);

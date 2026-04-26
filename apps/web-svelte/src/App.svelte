@@ -19,6 +19,7 @@
   import { Input } from '$lib/components/ui/input/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { getGlyphContent, signIdFromLongitude } from '$lib/stores/glyphs.svelte';
+  import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
   import BodySelector from '$lib/components/BodySelector.svelte';
   import PanelMenu from '$lib/components/PanelMenu.svelte';
   import OptionListMenu from '$lib/components/OptionListMenu.svelte';
@@ -238,6 +239,7 @@
     { id: 'jazyk', label: t('section_jazyk', {}, 'Language') },
     { id: 'lokace', label: t('section_lokace', {}, 'Location') },
     { id: 'system_domu', label: t('section_system_domu', {}, 'House system') },
+    { id: 'pozorovane_objekty', label: t('section_observable_objects', {}, 'Observable objects') },
     { id: 'nastaveni_aspektu', label: t('section_nastaveni_aspektu', {}, 'Aspect settings') },
     { id: 'vzhled', label: t('section_vzhled', {}, 'Appearance') },
     { id: 'manual', label: t('section_manual', {}, 'Manual') },
@@ -270,10 +272,7 @@
   // Planet positions for right Radix table
   // Get planets from selected chart's computed data, or use defaults
   const selectedChart = $derived(getSelectedChart());
-  const defaultBodyOrder = [
-    'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
-    'asc', 'mc', 'ic', 'desc', 'north_node', 'south_node', 'lilith', 'chiron'
-  ];
+  const defaultBodyOrder = DEFAULT_OBSERVABLE_OBJECT_IDS;
   const fullBodyOrder = $derived(
     layout.workspaceDefaults.defaultBodies.length > 0
       ? layout.workspaceDefaults.defaultBodies
@@ -347,7 +346,14 @@
       return {};
     }
 
-    const result: Record<string, { longitude: number; signName: string; house: number; positionInHouse: number }> = {};
+    const motion = selectedChart?.computed?.motion ?? {};
+    const result: Record<string, {
+      longitude: number;
+      signName: string;
+      house: number;
+      positionInHouse: number;
+      retrograde: boolean;
+    }> = {};
     const computedRecord = computed as Record<string, unknown>;
     const cusps = getHouseCusps(computedRecord, selectedChart?.computed?.houseCusps);
     for (const [name, position] of Object.entries(computedRecord)) {
@@ -360,6 +366,7 @@
         signName: signIdFromLongitude(longitude),
         house,
         positionInHouse,
+        retrograde: Boolean(motion[name]?.retrograde),
       };
     }
 
@@ -1317,6 +1324,9 @@
                         {/if}
                         <span class="font-mono opacity-90 flex-shrink-0">{arc.minutes}'</span>
                         <span class="font-mono opacity-90 flex-shrink-0">{arc.seconds}"</span>
+                        <span class="font-mono text-[10px] font-semibold uppercase text-amber-600 w-4 text-center flex-shrink-0">
+                          {planetData.retrograde ? 'R' : ''}
+                        </span>
                       </li>
                     {/each}
                     {#if planetRows.length === 0}
@@ -1350,7 +1360,9 @@
                         <tbody>
                           <tr>
                             {#each planetRows.slice(0, 10) as [planetName, planetData]}
-                              <td class="px-1 py-0.5 font-mono opacity-90">{formatSignArc(planetData.positionInHouse)}</td>
+                              <td class="px-1 py-0.5 font-mono opacity-90">
+                                {formatSignArc(planetData.positionInHouse)}{planetData.retrograde ? ' R' : ''}
+                              </td>
                             {/each}
                           </tr>
                         </tbody>

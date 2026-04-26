@@ -21,7 +21,8 @@ type HoroscopeContextTabsProps = {
  * Bottom workspace chart strip — chart switching only; **New** is via the left sidebar (`novy`).
  */
 export function HoroscopeContextTabs({ theme }: HoroscopeContextTabsProps) {
-	const { charts, selectedChartId, setSelectedChartId } = useWorkspaceCharts();
+	const { charts, selectedChartId, setSelectedChartId, isSelectedChartPreview, resetSelectedChartPreview } =
+		useWorkspaceCharts();
 	const ft = useAppFormFieldTheme(theme);
 
 	return (
@@ -30,13 +31,14 @@ export function HoroscopeContextTabs({ theme }: HoroscopeContextTabsProps) {
 				<BreadcrumbList className={cn('flex-nowrap items-center gap-0.5 sm:gap-1', ft.muted)}>
 					{charts.map((chart, i) => {
 						const isActive = selectedChartId === chart.id;
+						const showPreviewReset = isActive && isSelectedChartPreview;
 						return (
 							<Fragment key={chart.id}>
 								{i > 0 && (
 									<BreadcrumbSeparator className={cn('[&>svg]:size-3.5', ft.contextSeparator)} />
 								)}
 								<BreadcrumbItem className="max-w-[min(12rem,40vw)] shrink-0">
-									{isActive ? (
+									{isActive && !showPreviewReset ? (
 										<BreadcrumbPage className={ft.contextTabActive}>{chart.name}</BreadcrumbPage>
 									) : (
 										<BreadcrumbLink asChild>
@@ -44,8 +46,14 @@ export function HoroscopeContextTabs({ theme }: HoroscopeContextTabsProps) {
 												type="button"
 												variant="ghost"
 												size="sm"
-												className={ft.contextTabGhost}
-												onClick={() => setSelectedChartId(chart.id)}
+												className={showPreviewReset ? ft.contextTabActive : ft.contextTabGhost}
+												onClick={() => {
+													if (showPreviewReset) {
+														resetSelectedChartPreview();
+														return;
+													}
+													setSelectedChartId(chart.id);
+												}}
 											>
 												{chart.name}
 											</Button>

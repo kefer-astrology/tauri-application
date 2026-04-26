@@ -2,19 +2,92 @@
  * Horoscope wheel SVG — single source shared with Horoskop tab (`HoroscopeDashboard`).
  * Developer handoff id: HoroscopeWheel
  */
+import { useId } from 'react';
+import {
+	DEFAULT_ELEMENT_COLORS,
+	elementForZodiacId,
+	wheelZodiacFillOnDark,
+	type ElementColors
+} from '@/lib/astrology/elementColors';
+import {
+	ASPECT_ROWS,
+	DEFAULT_ASPECT_COLORS,
+	DEFAULT_ASPECT_ORBS
+} from '@/lib/astrology/aspects';
+import { OBSERVABLE_OBJECTS } from '@/lib/astrology/observableObjects';
+import { getAstrologyGlyphSrc, getZodiacGlyphSrc, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import type { AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
+import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
 import type { Theme } from './astrology-sidebar';
 
-export type HoroscopeWheelBody =
-	| 'sun'
-	| 'moon'
-	| 'mercury'
-	| 'venus'
-	| 'mars'
-	| 'jupiter'
-	| 'saturn'
-	| 'uranus'
-	| 'neptune'
-	| 'pluto';
+/** Dark themes: planet SVGs (no per-color filter assets). */
+function WheelPlanetImageDark({ href, x, y, size }: { href: string; x: number; y: number; size: number }) {
+	const half = size / 2;
+	return (
+		<image
+			href={href}
+			x={x - half}
+			y={y - half}
+			width={size}
+			height={size}
+			preserveAspectRatio="xMidYMid meet"
+			style={{
+				pointerEvents: 'none',
+				filter: 'invert(1) brightness(0.42) contrast(1.1)'
+			}}
+		/>
+	);
+}
+
+/** Tint a raster SVG glyph to a solid color via `url(#filterId)` (`feFlood` + `feComposite` in defs). */
+function WheelTintedGlyphImage({
+	href,
+	x,
+	y,
+	size,
+	filterId
+}: {
+	href: string;
+	x: number;
+	y: number;
+	size: number;
+	filterId: string;
+}) {
+	const half = size / 2;
+	return (
+		<image
+			href={href}
+			x={x - half}
+			y={y - half}
+			width={size}
+			height={size}
+			preserveAspectRatio="xMidYMid meet"
+			style={{
+				pointerEvents: 'none',
+				filter: `url(#${filterId})`
+			}}
+		/>
+	);
+}
+
+export type HoroscopeWheelBody = string;
+
+const DEFAULT_WHEEL_BODY_ORDER: readonly HoroscopeWheelBody[] = [
+	'sun',
+	'moon',
+	'mercury',
+	'venus',
+	'mars',
+	'jupiter',
+	'saturn',
+	'uranus',
+	'neptune',
+	'pluto'
+];
+
+const OBSERVABLE_OBJECT_META = new Map(
+	OBSERVABLE_OBJECTS.map((item) => [item.id, { icon: item.icon }] as const)
+);
 
 export type HemisphereOverlayKind =
 	| 'off'
@@ -24,22 +97,22 @@ export type HemisphereOverlayKind =
 	| 'mc-ic-south';
 
 const zodiacSigns = [
-	{ name: 'Aries', icon: '♈', angle: 0 },
-	{ name: 'Taurus', icon: '♉', angle: 30 },
-	{ name: 'Gemini', icon: '♊', angle: 60 },
-	{ name: 'Cancer', icon: '♋', angle: 90 },
-	{ name: 'Leo', icon: '♌', angle: 120 },
-	{ name: 'Virgo', icon: '♍', angle: 150 },
-	{ name: 'Libra', icon: '♎', angle: 180 },
-	{ name: 'Scorpio', icon: '♏', angle: 210 },
-	{ name: 'Sagittarius', icon: '♐', angle: 240 },
-	{ name: 'Capricorn', icon: '♑', angle: 270 },
-	{ name: 'Aquarius', icon: '♒', angle: 300 },
-	{ name: 'Pisces', icon: '♓', angle: 330 }
-];
+	{ name: 'Aries', id: 'aries', icon: '♈', angle: 0 },
+	{ name: 'Taurus', id: 'taurus', icon: '♉', angle: 30 },
+	{ name: 'Gemini', id: 'gemini', icon: '♊', angle: 60 },
+	{ name: 'Cancer', id: 'cancer', icon: '♋', angle: 90 },
+	{ name: 'Leo', id: 'leo', icon: '♌', angle: 120 },
+	{ name: 'Virgo', id: 'virgo', icon: '♍', angle: 150 },
+	{ name: 'Libra', id: 'libra', icon: '♎', angle: 180 },
+	{ name: 'Scorpio', id: 'scorpio', icon: '♏', angle: 210 },
+	{ name: 'Sagittarius', id: 'sagittarius', icon: '♐', angle: 240 },
+	{ name: 'Capricorn', id: 'capricorn', icon: '♑', angle: 270 },
+	{ name: 'Aquarius', id: 'aquarius', icon: '♒', angle: 300 },
+	{ name: 'Pisces', id: 'pisces', icon: '♓', angle: 330 }
+] as const;
 
 /** Ecliptic longitudes (°) — aligned with `horoscope-dashboard` mock radix for handoff */
-const DEFAULT_BODY_LONGITUDE: Record<HoroscopeWheelBody, number> = {
+const DEFAULT_BODY_LONGITUDE: Record<string, number> = {
 	sun: 240 + 9 + 47 / 60,
 	moon: 30 + 18 + 23 / 60,
 	mercury: 240 + 2 + 15 / 60,
@@ -91,9 +164,74 @@ function normalizeDeg(value: number) {
 	return ((value % 360) + 360) % 360;
 }
 
+function normalizeAspectPointId(id: string): string {
+	const s = id.trim().toLowerCase();
+	return s === 'desc' ? 'dsc' : s;
+}
+
+function longitudeForAspectPoint(
+	id: string,
+	bodyLongitudes: Partial<Record<string, number>>,
+	axisLongitudes: Partial<HoroscopeWheelAxis>
+): number | null {
+	const norm = normalizeAspectPointId(id);
+	if (Object.prototype.hasOwnProperty.call(bodyLongitudes, norm)) {
+		const lon = bodyLongitudes[norm];
+		return typeof lon === 'number' ? lon : null;
+	}
+	if (norm === 'asc' || norm === 'dsc' || norm === 'mc' || norm === 'ic') {
+		const lon = axisLongitudes[norm];
+		return typeof lon === 'number' ? lon : null;
+	}
+	return null;
+}
+
+function maxOrbForAspectType(aspectType: string, aspectOrbs: Record<string, number>): number {
+	const configured = aspectOrbs[aspectType];
+	if (typeof configured === 'number' && Number.isFinite(configured)) {
+		return Math.max(configured, 1e-9);
+	}
+	const row = ASPECT_ROWS.find((r) => r.id === aspectType);
+	if (row) return Math.max(row.defaultOrb, 1e-9);
+	return 8;
+}
+
+function strokeWidthFromOrbTiers(
+	orbDeg: number,
+	maxOrbDeg: number,
+	tier: AspectLineTierStyleState
+): number {
+	const max = Math.max(maxOrbDeg, 1e-9);
+	const pct = (Math.abs(orbDeg) / max) * 100;
+	const t = tier.tightThresholdPct;
+	const m = Math.max(tier.mediumThresholdPct, t);
+	const l = Math.max(tier.looseThresholdPct, m);
+	if (pct <= t) return tier.widthTight;
+	if (pct <= m) return tier.widthMedium;
+	if (pct <= l) return tier.widthLoose;
+	return tier.widthOuter;
+}
+
+export interface RadixAspectDrawInput {
+	from: string;
+	to: string;
+	type: string;
+	orb: number;
+}
+
 export interface HoroscopeWheelProps {
 	theme: Theme;
-	bodyLongitudes?: Partial<Record<HoroscopeWheelBody, number>>;
+	/**
+	 * When set, planet and zodiac marks use `static/glyphs/.../planets/*.svg` and `.../zodiac/*.svg`
+	 * as native `<image>` with per-tint SVG filters (`elementColors` for signs; primary for light planets).
+	 */
+	glyphSet?: AstrologyGlyphSetId;
+	/** Fire / earth / air / water colors for zodiac ring on the wheel. */
+	elementColors?: ElementColors;
+	/** Resolved CSS color for light-theme planet glyphs (typically `--color-primary`). */
+	lightPlanetFill?: string;
+	bodyLongitudes?: Partial<Record<string, number>>;
+	bodyOrder?: readonly HoroscopeWheelBody[];
 	axisLongitudes?: Partial<HoroscopeWheelAxis>;
 	useFallbackData?: boolean;
 	/** Bodies that receive a soft halo (badge hover, singleton, focal planets, …) */
@@ -101,8 +239,14 @@ export interface HoroscopeWheelProps {
 	/** When true, non-highlighted planets/icons are dimmed (hemisphere / focus preview) */
 	dimNonHighlighted?: boolean;
 	hemisphereOverlay?: HemisphereOverlayKind;
-	/** Aspect lines between bodies — default hidden; show in “Dynamika” or histogram hover */
-	showAspectLines?: boolean;
+	/** Computed radix aspects (backend); lines drawn when both endpoints resolve on the wheel. */
+	radixAspects?: RadixAspectDrawInput[];
+	/** Max orbs per aspect type (typically workspace defaults) for line weight vs tightness. */
+	aspectOrbsForRadix?: Record<string, number>;
+	/** Stroke color per aspect type (workspace defaults). */
+	aspectColorsForRadix?: Record<string, string>;
+	/** Thresholds (% of max orb) and stroke widths for tight / medium / loose bands. */
+	aspectLineTierStyle?: AspectLineTierStyleState;
 	/** Horoskop tab uses radix-only wheel; Informace view enables glyphs + axes */
 	showPlanetGlyphs?: boolean;
 	showAxisLines?: boolean;
@@ -111,25 +255,39 @@ export interface HoroscopeWheelProps {
 
 export function HoroscopeWheel({
 	theme,
+	glyphSet,
 	bodyLongitudes,
+	bodyOrder,
 	axisLongitudes,
 	useFallbackData = true,
 	highlightBodies = new Set(),
 	dimNonHighlighted = false,
 	hemisphereOverlay = 'off',
-	showAspectLines = false,
+	radixAspects,
+	aspectOrbsForRadix,
+	aspectColorsForRadix,
+	aspectLineTierStyle: aspectLineTierStyleProp,
 	showPlanetGlyphs = false,
 	showAxisLines = false,
+	elementColors: elementColorsProp = DEFAULT_ELEMENT_COLORS,
+	lightPlanetFill = '#030213',
 	className
 }: HoroscopeWheelProps) {
 	const isDark = theme === 'midnight' || theme === 'twilight';
+	const wheelFilterUid = useId().replace(/:/g, '');
+	const planetLightFilterId = `${wheelFilterUid}-pl`;
 	const wheelSize = 800;
 	const center = wheelSize / 2;
 	const outerRadius = 320;
 	const innerRadius = 270;
 	const innerCenterRing = 184;
 	const innerCenterCore = 152;
-	const planetRadius = (innerRadius + innerCenterRing) / 2 - 8;
+	/** Small outward nudge from the original mid-band radii (larger values crowded the layout). */
+	const glyphRadialOutset = 3;
+	const planetRadius = (innerRadius + innerCenterRing) / 2 - 8 + glyphRadialOutset;
+	/** Aspect chords on the inner radix band (between core and inner ring), not at glyph radius. */
+	const radixAspectChordRadius = (innerCenterCore + innerCenterRing) / 2;
+	const zodiacRadius = (innerRadius + outerRadius) / 2 + glyphRadialOutset;
 	const wheelBodyLongitudes = useFallbackData
 		? { ...DEFAULT_BODY_LONGITUDE, ...bodyLongitudes }
 		: (bodyLongitudes ?? {});
@@ -152,33 +310,21 @@ export function HoroscopeWheel({
 	const wheelRotationOffset = 0;
 	const displayLon = (lon: number) => normalizeDeg(lon + wheelRotationOffset);
 
-	const zodiacWithColors = [
-		{ ...zodiacSigns[0], color: '#ef4444' },
-		{ ...zodiacSigns[1], color: '#000000' },
-		{ ...zodiacSigns[2], color: '#22c55e' },
-		{ ...zodiacSigns[3], color: '#3b82f6' },
-		{ ...zodiacSigns[4], color: '#ef4444' },
-		{ ...zodiacSigns[5], color: '#000000' },
-		{ ...zodiacSigns[6], color: '#22c55e' },
-		{ ...zodiacSigns[7], color: '#3b82f6' },
-		{ ...zodiacSigns[8], color: '#ef4444' },
-		{ ...zodiacSigns[9], color: '#000000' },
-		{ ...zodiacSigns[10], color: '#22c55e' },
-		{ ...zodiacSigns[11], color: '#3b82f6' }
-	];
-
-	const bodies: { key: HoroscopeWheelBody; icon: string }[] = [
-		{ key: 'sun', icon: '☉' },
-		{ key: 'moon', icon: '☽' },
-		{ key: 'mercury', icon: '☿' },
-		{ key: 'venus', icon: '♀' },
-		{ key: 'mars', icon: '♂' },
-		{ key: 'jupiter', icon: '♃' },
-		{ key: 'saturn', icon: '♄' },
-		{ key: 'uranus', icon: '♅' },
-		{ key: 'neptune', icon: '♆' },
-		{ key: 'pluto', icon: '♇' }
-	];
+	const bodies: { key: HoroscopeWheelBody; icon: string }[] = (bodyOrder ?? DEFAULT_WHEEL_BODY_ORDER).map(
+		(key) => ({
+			key,
+			icon: OBSERVABLE_OBJECT_META.get(key)?.icon ?? key.slice(0, 3)
+		})
+	);
+	const anglePoints: { key: 'asc' | 'dsc' | 'mc' | 'ic'; icon: string; longitude: number }[] = [
+		typeof axisAsc === 'number' ? { key: 'asc', icon: OBSERVABLE_OBJECT_META.get('asc')?.icon ?? 'Asc', longitude: axisAsc } : null,
+		typeof axisDsc === 'number' ? { key: 'dsc', icon: OBSERVABLE_OBJECT_META.get('desc')?.icon ?? 'Dsc', longitude: axisDsc } : null,
+		typeof axisMc === 'number' ? { key: 'mc', icon: OBSERVABLE_OBJECT_META.get('mc')?.icon ?? 'MC', longitude: axisMc } : null,
+		typeof axisIc === 'number' ? { key: 'ic', icon: OBSERVABLE_OBJECT_META.get('ic')?.icon ?? 'IC', longitude: axisIc } : null
+	].filter((item): item is { key: 'asc' | 'dsc' | 'mc' | 'ic'; icon: string; longitude: number } => item !== null);
+	const planetGlyphColor = isDark ? '#cbd5e1' : lightPlanetFill;
+	const elementColors = elementColorsProp;
+	const angleMarkerRadius = outerRadius + 22;
 
 	const pAsc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisAsc)) : null;
 	const pDsc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisDsc)) : null;
@@ -215,11 +361,10 @@ export function HoroscopeWheel({
 						? pathMcIcSouth
 						: null;
 
-	const aspectPairs: [HoroscopeWheelBody, HoroscopeWheelBody][] = [
-		['sun', 'moon'],
-		['venus', 'mars'],
-		['jupiter', 'saturn']
-	];
+	const tierStyle = aspectLineTierStyleProp ?? DEFAULT_ASPECT_LINE_TIER_STYLE;
+	const orbTable = { ...DEFAULT_ASPECT_ORBS, ...(aspectOrbsForRadix ?? {}) };
+	const colorTable = { ...DEFAULT_ASPECT_COLORS, ...(aspectColorsForRadix ?? {}) };
+	const aspectList = radixAspects ?? [];
 
 	return (
 		<svg
@@ -238,6 +383,48 @@ export function HoroscopeWheel({
 						<feMergeNode in="SourceGraphic" />
 					</feMerge>
 				</filter>
+				{!isDark && glyphSet ? (
+					<filter
+						id={planetLightFilterId}
+						colorInterpolationFilters="sRGB"
+						x="-50%"
+						y="-50%"
+						width="200%"
+						height="200%"
+					>
+						<feFlood floodColor={lightPlanetFill} floodOpacity="1" result="c" />
+						<feComposite in="c" in2="SourceGraphic" operator="in" result="r" />
+						<feMerge>
+							<feMergeNode in="r" />
+						</feMerge>
+					</filter>
+				) : null}
+				{glyphSet
+					? zodiacSigns.map((sign) => {
+							const href = getZodiacGlyphSrc(glyphSet, sign.id);
+							if (!href) return null;
+							const el = elementForZodiacId(sign.id);
+							const base = elementColors[el];
+							const tint = isDark ? wheelZodiacFillOnDark(base) : base;
+							return (
+								<filter
+									key={`zf-${sign.id}`}
+									id={`${wheelFilterUid}-z-${sign.id}`}
+									colorInterpolationFilters="sRGB"
+									x="-50%"
+									y="-50%"
+									width="200%"
+									height="200%"
+								>
+									<feFlood floodColor={tint} floodOpacity="1" result="zc" />
+									<feComposite in="zc" in2="SourceGraphic" operator="in" result="zr" />
+									<feMerge>
+										<feMergeNode in="zr" />
+									</feMerge>
+								</filter>
+							);
+						})
+					: null}
 			</defs>
 
 			<circle cx={center} cy={center} r={outerRadius + 60} fill={fillBg} />
@@ -299,18 +486,24 @@ export function HoroscopeWheel({
 				})}
 			</g>
 
-			{zodiacWithColors.map((sign) => {
+			{zodiacSigns.map((sign) => {
 				const rad = longitudeToScreenRadians(displayLon(sign.angle + 15));
-				const zodiacRadius = (innerRadius + outerRadius) / 2;
 				const x = center + zodiacRadius * Math.cos(rad);
 				const y = center + zodiacRadius * Math.sin(rad);
-				let finalColor = sign.color;
-				if (isDark && sign.color !== '#000000') {
-					finalColor = sign.color + 'dd';
-				} else if (isDark && sign.color === '#000000') {
-					finalColor = '#ffffff';
-				}
-				return (
+				const el = elementForZodiacId(sign.id);
+				const base = elementColors[el];
+				const fill = isDark ? wheelZodiacFillOnDark(base) : base;
+				const zHref = glyphSet ? getZodiacGlyphSrc(glyphSet, sign.id) : null;
+				return zHref ? (
+					<WheelTintedGlyphImage
+						key={sign.name}
+						href={zHref}
+						x={x}
+						y={y}
+						size={20}
+						filterId={`${wheelFilterUid}-z-${sign.id}`}
+					/>
+				) : (
 					<text
 						key={sign.name}
 						x={x}
@@ -319,7 +512,7 @@ export function HoroscopeWheel({
 						dominantBaseline="middle"
 						fontSize="20"
 						fontWeight="500"
-						fill={finalColor}
+						fill={fill}
 					>
 						{sign.icon}
 					</text>
@@ -379,29 +572,77 @@ export function HoroscopeWheel({
 				</g>
 			)}
 
-			{/* Layer: aspect lines (default off) */}
+			{/* Selected angle points from observable objects */}
+			{showPlanetGlyphs && anglePoints.length > 0 && (
+				<g data-handoff="Layer_AngleGlyphs">
+					{anglePoints.map(({ key, icon, longitude }) => {
+						const p = polar(center, center, angleMarkerRadius, displayLon(longitude));
+						const angleHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						return (
+							<g key={key} data-handoff={`Angle_${key}`}>
+								{angleHref ? (
+									isDark ? (
+										<WheelPlanetImageDark href={angleHref} x={p.x} y={p.y} size={18} />
+									) : (
+										<WheelTintedGlyphImage
+											href={angleHref}
+											x={p.x}
+											y={p.y}
+											size={18}
+											filterId={planetLightFilterId}
+										/>
+									)
+								) : (
+									<text
+										x={p.x}
+										y={p.y}
+										textAnchor="middle"
+										dominantBaseline="middle"
+										fontSize="11"
+										fontWeight="700"
+										fill={planetGlyphColor}
+									>
+										{icon}
+									</text>
+								)}
+							</g>
+						);
+					})}
+				</g>
+			)}
+
+			{/* Layer: radix aspect lines (from computed aspects) */}
 			<g
 				data-handoff="Layer_AspectLines"
-				opacity={showAspectLines ? 0.45 : 0}
+				opacity={aspectList.length > 0 ? 0.5 : 0}
 				style={{ pointerEvents: 'none' }}
 			>
-					{aspectPairs.flatMap(([a, b]) => {
-						const aLon = wheelBodyLongitudes[a];
-						const bLon = wheelBodyLongitudes[b];
-						if (typeof aLon !== 'number' || typeof bLon !== 'number') return [];
-						const pa = polar(center, center, planetRadius, displayLon(aLon));
-						const pb = polar(center, center, planetRadius, displayLon(bLon));
-					return [(
+				{aspectList.flatMap((aspect, idx) => {
+					const aLon = longitudeForAspectPoint(aspect.from, wheelBodyLongitudes, wheelAxisLongitudes);
+					const bLon = longitudeForAspectPoint(aspect.to, wheelBodyLongitudes, wheelAxisLongitudes);
+					if (aLon === null || bLon === null) return [];
+					const pa = polar(center, center, radixAspectChordRadius, displayLon(aLon));
+					const pb = polar(center, center, radixAspectChordRadius, displayLon(bLon));
+					const maxOrb = maxOrbForAspectType(aspect.type, orbTable);
+					const sw = strokeWidthFromOrbTiers(aspect.orb, maxOrb, tierStyle);
+					const baseHex = colorTable[aspect.type] ?? '#64748b';
+					const stroke =
+						baseHex.length === 7 && baseHex.startsWith('#')
+							? `${baseHex}${isDark ? '99' : 'cc'}`
+							: baseHex;
+					const key = `${aspect.from}-${aspect.to}-${aspect.type}-${idx}`;
+					return [
 						<line
-							key={`${a}-${b}`}
+							key={key}
 							x1={pa.x}
 							y1={pa.y}
 							x2={pb.x}
 							y2={pb.y}
-							stroke={isDark ? 'rgba(250,204,21,0.6)' : 'rgba(161,98,7,0.55)'}
-							strokeWidth="1.2"
+							stroke={stroke}
+							strokeWidth={sw}
+							strokeLinecap="round"
 						/>
-					)];
+					];
 				})}
 			</g>
 
@@ -433,6 +674,7 @@ export function HoroscopeWheel({
 									: dimNonHighlighted
 										? 0.62
 										: 1) * hemiDim;
+						const planetHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
 						return [(
 							<g
 								key={key}
@@ -449,17 +691,31 @@ export function HoroscopeWheel({
 										filter="url(#hw-planet-halo)"
 									/>
 								)}
-								<text
-									x={p.x}
-									y={p.y}
-									textAnchor="middle"
-									dominantBaseline="middle"
-									fontSize="18"
-									fontWeight="600"
-									fill={isDark ? '#f8fafc' : '#0f172a'}
-								>
-									{icon}
-								</text>
+								{planetHref ? (
+									isDark ? (
+										<WheelPlanetImageDark href={planetHref} x={p.x} y={p.y} size={18} />
+									) : (
+										<WheelTintedGlyphImage
+											href={planetHref}
+											x={p.x}
+											y={p.y}
+											size={18}
+											filterId={planetLightFilterId}
+										/>
+									)
+								) : (
+									<text
+										x={p.x}
+										y={p.y}
+										textAnchor="middle"
+										dominantBaseline="middle"
+										fontSize="18"
+										fontWeight="600"
+										fill={planetGlyphColor}
+									>
+										{icon}
+									</text>
+								)}
 							</g>
 						)];
 					})}
