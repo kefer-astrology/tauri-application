@@ -149,7 +149,7 @@ pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Se
     #[cfg(not(feature = "swisseph"))]
     {
         let backend = crate::jpl_backend::jpl_backend_for_chart(chart)
-            .unwrap_or_else(|_| crate::jpl_backend::JplAstronomyBackend::new("de421.bsp"));
+            .unwrap_or_else(|_| crate::jpl_backend::JplAstronomyBackend::new(vec![std::path::PathBuf::from("de421.bsp")]));
         Box::new(backend)
     }
 }

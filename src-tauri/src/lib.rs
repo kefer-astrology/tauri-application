@@ -1,14 +1,16 @@
 mod astronomy;
 mod backend;
 mod commands;
+mod ephemeris_manager;
 mod houses;
+mod jpl_backend;
 mod storage;
 mod workspace;
 #[cfg(feature = "swisseph")]
 mod swisseph;
-mod jpl_backend;
 use tauri::Manager;
 use commands::default::{read, write};
+use commands::ephemeris::{download_ephemeris, get_available_bodies, list_ephemeris_catalog};
 use commands::storage::{
     compute_aspects, init_storage, query_aspects, query_positions, query_radix_relative,
     query_timestamps, store_positions, store_relation,
@@ -34,6 +36,11 @@ pub fn run() {
                 )?;
             }
 
+            // Initialise the ephemeris cache dir from the platform app-data directory.
+            if let Ok(data_dir) = app.path().app_data_dir() {
+                ephemeris_manager::init_cache_dir(data_dir.join("ephemeris"));
+            }
+
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state = app_handle.state::<backend::BackendState>();
@@ -46,6 +53,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read,
             write,
+            list_ephemeris_catalog,
+            download_ephemeris,
+            get_available_bodies,
             init_storage,
             store_positions,
             query_positions,

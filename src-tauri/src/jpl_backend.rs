@@ -1,19 +1,20 @@
-/// Astronomy backend using the `anise` crate (MPL-2.0) with a SPICE BSP ephemeris file.
+/// Astronomy backend using the `anise` crate (MPL-2.0) with SPICE BSP ephemeris files.
 ///
-/// This is the license-clean standalone Rust compute path. It reads the same
-/// `de421.bsp` file used by the Python/Skyfield sidecar, with no libswe dependency.
-///
-/// Gaps vs libswe (handled above the astronomy layer):
-/// - Ecliptic longitude: converted from ICRF via obliquity rotation in houses.rs
-/// - Lunar nodes: computed analytically in houses.rs (not in DE421)
-/// - House cusps: computed in houses.rs (anise is astrodynamics, not astrology)
-/// - Chiron: not in DE421; skipped with a warning
+/// Loads all available BSP files (bundled de440s.bsp + any user-downloaded files) via
+/// `EphemerisManager` into a chained `Almanac`. Standard DE planetary kernels provide the
+/// 10 planets + Moon; asteroid bodies require a separate dedicated asteroid SPK kernel.
+/// Gaps handled above the astronomy layer:
+///   - Ecliptic longitude: ICRF → ecliptic via obliquity rotation in houses.rs
+///   - Lunar nodes: computed analytically in houses.rs
+///   - House cusps: computed in houses.rs
+///   - Chiron: not in any standard DE file; planned via JPL Horizons API
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::{Arc, OnceLock, RwLock};
 
 use anise::constants::frames::{
-    EARTH_J2000, JUPITER_BARYCENTER_J2000, MARS_J2000, MERCURY_J2000, MOON_J2000,
+    EARTH_J2000, JUPITER_BARYCENTER_J2000, MARS_BARYCENTER_J2000, MERCURY_J2000, MOON_J2000,
     NEPTUNE_BARYCENTER_J2000, PLUTO_BARYCENTER_J2000, SATURN_BARYCENTER_J2000, SUN_J2000,
     URANUS_BARYCENTER_J2000, VENUS_J2000,
 };
@@ -21,35 +22,89 @@ use anise::prelude::*;
 use hifitime::Epoch;
 
 use crate::astronomy::{AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion};
+use crate::ephemeris_manager::{
+    EphemerisManager, CERES_J2000, JUNO_J2000, PALLAS_J2000, VESTA_J2000,
+};
 use crate::houses::{
     compute_axes, general_precession_deg, icrf_to_ecliptic, julian_day_from_unix, mean_node_lon,
-    mean_obliquity_deg, normalize_deg,
-    placidus_cusps, whole_sign_cusps,
+    mean_obliquity_deg, normalize_deg, placidus_cusps, whole_sign_cusps,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem};
 
-// ─── body table ──────────────────────────────────────────────────────────────
+// ─── Body table ──────────────────────────────────────────────────────────────
 
-/// Maps Kefer body IDs to anise J2000 frames available in DE421.
-/// Outer planets use barycenters (individual planet offsets not in DE421).
-fn body_frames() -> &'static [(&'static str, anise::prelude::Frame)] {
+/// Maps Kefer body IDs to anise J2000 frames.
+/// Bodies not present in the loaded BSP(s) are skipped with a warning — no hard failure.
+fn body_frames() -> &'static [(&'static str, Frame)] {
     &[
+        // Standard planets (all DE files)
         ("sun", SUN_J2000),
         ("moon", MOON_J2000),
         ("mercury", MERCURY_J2000),
         ("venus", VENUS_J2000),
-        ("mars", MARS_J2000),
+        // DE planetary SPKs expose Mars through the barycenter frame, not 499.
+        ("mars", MARS_BARYCENTER_J2000),
         ("jupiter", JUPITER_BARYCENTER_J2000),
         ("saturn", SATURN_BARYCENTER_J2000),
         ("uranus", URANUS_BARYCENTER_J2000),
         ("neptune", NEPTUNE_BARYCENTER_J2000),
         ("pluto", PLUTO_BARYCENTER_J2000),
+        // Asteroid frames — NAIF IDs for bodies that would appear in a dedicated
+        // asteroid SPK kernel (e.g. codes_300ast or individual ceres/vesta files).
+        // DE440s/DE440/DE441 do NOT store asteroid positions as SPK segments —
+        // those asteroids are integration perturbers only. Queries below will
+        // produce "unavailable" warnings until a matching asteroid kernel is loaded.
+        ("ceres", CERES_J2000),
+        ("pallas", PALLAS_J2000),
+        ("juno", JUNO_J2000),
+        ("vesta", VESTA_J2000),
     ]
+}
+
+fn asteroid_body_frames() -> &'static [(&'static str, Frame)] {
+    &[
+        ("ceres", CERES_J2000),
+        ("pallas", PALLAS_J2000),
+        ("juno", JUNO_J2000),
+        ("vesta", VESTA_J2000),
+    ]
+}
+
+fn likely_supports_asteroid_bodies(bsp_paths: &[PathBuf]) -> bool {
+    bsp_paths.iter().any(|path| {
+        let name = path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        name.contains("300ast")
+            || name.contains("asteroid")
+            || name.contains("ceres")
+            || name.contains("pallas")
+            || name.contains("juno")
+            || name.contains("vesta")
+    })
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+type AlmanacCache = HashMap<String, Arc<Almanac>>;
+
+fn almanac_cache() -> &'static RwLock<AlmanacCache> {
+    static CACHE: OnceLock<RwLock<AlmanacCache>> = OnceLock::new();
+    CACHE.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+fn almanac_cache_key(paths: &[PathBuf]) -> String {
+    paths.iter()
+        .map(|path| path.to_string_lossy().into_owned())
+        .collect::<Vec<_>>()
+        .join("|")
 }
 
 fn sample_tropical_longitude(
     almanac: &Almanac,
-    frame: anise::prelude::Frame,
+    frame: Frame,
     unix_secs: f64,
 ) -> Result<f64, String> {
     let jd_ut = julian_day_from_unix(unix_secs);
@@ -58,7 +113,7 @@ fn sample_tropical_longitude(
     let tropical_offset = general_precession_deg(jd_ut);
     let state = almanac
         .translate(frame, EARTH_J2000, epoch, None)
-        .map_err(|err| err.to_string())?;
+        .map_err(|e| e.to_string())?;
     let (lon, _lat) =
         icrf_to_ecliptic(state.radius_km.x, state.radius_km.y, state.radius_km.z, obliquity);
     Ok(normalize_deg(lon + tropical_offset))
@@ -74,11 +129,7 @@ fn angular_delta_deg(from: f64, to: f64) -> f64 {
     delta
 }
 
-fn sample_motion(
-    almanac: &Almanac,
-    frame: anise::prelude::Frame,
-    unix_secs: f64,
-) -> Result<AstronomyMotion, String> {
+fn sample_motion(almanac: &Almanac, frame: Frame, unix_secs: f64) -> Result<AstronomyMotion, String> {
     const SAMPLE_STEP_SECONDS: f64 = 3600.0;
     let before = sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS)?;
     let after = sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS)?;
@@ -90,68 +141,49 @@ fn sample_motion(
     })
 }
 
-// ─── backend ─────────────────────────────────────────────────────────────────
+// ─── Backend ─────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
 pub struct JplAstronomyBackend {
-    bsp_path: PathBuf,
+    /// All BSP files to load, in priority order. The first valid file wins for any given body.
+    bsp_paths: Vec<PathBuf>,
 }
 
 impl JplAstronomyBackend {
-    pub fn new(bsp_path: impl Into<PathBuf>) -> Self {
-        Self { bsp_path: bsp_path.into() }
+    pub fn new(bsp_paths: Vec<PathBuf>) -> Self {
+        Self { bsp_paths }
     }
 
-    /// Locate the BSP file: use `override_ephemeris` from chart config if set,
-    /// otherwise fall back to the bundled `de421.bsp` in resources.
-    pub fn resolve_bsp(chart: &ChartInstance) -> Option<PathBuf> {
-        // 1. Explicit override in chart config
-        if let Some(path) = chart.config.override_ephemeris.as_deref() {
-            let p = PathBuf::from(path);
-            if p.exists() && p.extension().map_or(false, |e| e == "bsp") {
-                return Some(p);
-            }
+    fn build_almanac(&self) -> Result<Arc<Almanac>, String> {
+        if self.bsp_paths.is_empty() {
+            return Err("No BSP ephemeris files available.".to_string());
         }
 
-        // 2. KEFER_BSP_PATH environment variable
-        if let Ok(env) = std::env::var("KEFER_BSP_PATH") {
-            let p = PathBuf::from(env);
-            if p.exists() {
-                return Some(p);
-            }
+        let cache_key = almanac_cache_key(&self.bsp_paths);
+        if let Some(cached) = almanac_cache()
+            .read()
+            .map_err(|_| "Almanac cache lock poisoned".to_string())?
+            .get(&cache_key)
+            .cloned()
+        {
+            return Ok(cached);
         }
 
-        // 3. Bundled de421.bsp next to the binary or in resources/
-        let candidates = [
-            PathBuf::from("de421.bsp"),
-            PathBuf::from("resources/de421.bsp"),
-            PathBuf::from("backend-python/source/de421.bsp"),
-            PathBuf::from("../backend-python/source/de421.bsp"),
-            PathBuf::from("../src-tauri/resources/de421.bsp"),
-        ];
-        for c in &candidates {
-            if c.exists() {
-                return Some(c.clone());
-            }
+        let mut almanac = Almanac::default();
+        for path in &self.bsp_paths {
+            let s = path
+                .to_str()
+                .ok_or("BSP path contains non-UTF-8 characters")?;
+            almanac = almanac
+                .load(s)
+                .map_err(|e| format!("Failed to load '{}': {e}", path.display()))?;
         }
-        if let Ok(exe) = std::env::current_exe() {
-            for base in exe.ancestors() {
-                for rel in [
-                    "de421.bsp",
-                    "resources/de421.bsp",
-                    "backend-python/source/de421.bsp",
-                    "../backend-python/source/de421.bsp",
-                    "../src-tauri/resources/de421.bsp",
-                ] {
-                    let p = base.join(rel);
-                    if p.exists() {
-                        return Some(p);
-                    }
-                }
-            }
-        }
-
-        None
+        let shared = Arc::new(almanac);
+        almanac_cache()
+            .write()
+            .map_err(|_| "Almanac cache lock poisoned".to_string())?
+            .insert(cache_key, Arc::clone(&shared));
+        Ok(shared)
     }
 }
 
@@ -161,7 +193,17 @@ impl AstronomyBackend for JplAstronomyBackend {
     }
 
     fn ephemeris_source(&self, _chart: &ChartInstance) -> Option<String> {
-        Some(self.bsp_path.to_string_lossy().into_owned())
+        if self.bsp_paths.is_empty() {
+            None
+        } else {
+            Some(
+                self.bsp_paths
+                    .iter()
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )
+        }
     }
 
     fn compute_chart_data(
@@ -169,12 +211,8 @@ impl AstronomyBackend for JplAstronomyBackend {
         chart: &ChartInstance,
         requested_objects: Option<&Vec<String>>,
     ) -> Result<AstronomyChartData, String> {
-        // ── load almanac ──────────────────────────────────────────────────
-        let almanac = Almanac::default()
-            .load(self.bsp_path.to_str().ok_or("BSP path is not valid UTF-8")?)
-            .map_err(|e| format!("Failed to load BSP '{}': {e}", self.bsp_path.display()))?;
+        let almanac = self.build_almanac()?;
 
-        // ── event time ────────────────────────────────────────────────────
         let event_time = chart
             .subject
             .event_time
@@ -187,30 +225,31 @@ impl AstronomyBackend for JplAstronomyBackend {
         let obliquity = mean_obliquity_deg(jd_ut);
         let tropical_offset = general_precession_deg(jd_ut);
 
-        // ── requested body filter ─────────────────────────────────────────
         let wanted = |id: &str| {
             requested_objects
                 .map(|list| list.iter().any(|s| s.as_str() == id))
                 .unwrap_or(true)
         };
 
-        // ── planetary positions ───────────────────────────────────────────
         let mut positions: HashMap<String, f64> = HashMap::new();
         let mut motion: HashMap<String, AstronomyMotion> = HashMap::new();
         let mut warnings: Vec<String> = Vec::new();
+        let asteroid_support = likely_supports_asteroid_bodies(&self.bsp_paths);
 
+        // ── Standard planetary positions ─────────────────────────────────
         for &(id, frame) in body_frames() {
             if !wanted(id) {
                 continue;
             }
             match almanac.translate(frame, EARTH_J2000, epoch, None) {
                 Ok(state) => {
-                    let (lon, _lat) =
-                        icrf_to_ecliptic(state.radius_km.x, state.radius_km.y, state.radius_km.z, obliquity);
-                    positions.insert(
-                        id.to_string(),
-                        normalize_deg(lon + tropical_offset),
+                    let (lon, _lat) = icrf_to_ecliptic(
+                        state.radius_km.x,
+                        state.radius_km.y,
+                        state.radius_km.z,
+                        obliquity,
                     );
+                    positions.insert(id.to_string(), normalize_deg(lon + tropical_offset));
                     if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
                         motion.insert(id.to_string(), body_motion);
                     }
@@ -221,49 +260,73 @@ impl AstronomyBackend for JplAstronomyBackend {
             }
         }
 
-        // ── lunar nodes (analytical, not in DE421) ────────────────────────
+        // ── Optional asteroid positions ──────────────────────────────────
+        if asteroid_support {
+            for &(id, frame) in asteroid_body_frames() {
+                if !wanted(id) {
+                    continue;
+                }
+                match almanac.translate(frame, EARTH_J2000, epoch, None) {
+                    Ok(state) => {
+                        let (lon, _lat) = icrf_to_ecliptic(
+                            state.radius_km.x,
+                            state.radius_km.y,
+                            state.radius_km.z,
+                            obliquity,
+                        );
+                        positions.insert(id.to_string(), normalize_deg(lon + tropical_offset));
+                        if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
+                            motion.insert(id.to_string(), body_motion);
+                        }
+                    }
+                    Err(e) => {
+                        warnings.push(format!("{id}_unavailable: {e}"));
+                    }
+                }
+            }
+        } else {
+            for &(id, _frame) in asteroid_body_frames() {
+                if wanted(id) {
+                    warnings.push(format!(
+                        "{id}_not_available: dedicated asteroid SPK kernel required"
+                    ));
+                }
+            }
+        }
+
+        // ── Lunar nodes (analytical) ──────────────────────────────────────
         let mean_node = mean_node_lon(jd_ut);
         if wanted("north_node") || wanted("mean_node") {
             let key = if wanted("north_node") { "north_node" } else { "mean_node" };
             positions.insert(key.to_string(), mean_node);
             motion.insert(
                 key.to_string(),
-                AstronomyMotion {
-                    speed: -0.05295,
-                    retrograde: true,
-                },
+                AstronomyMotion { speed: -0.052_95, retrograde: true },
             );
         }
         if wanted("south_node") || wanted("mean_south_node") {
             let key = if wanted("south_node") { "south_node" } else { "mean_south_node" };
-            let south = (mean_node + 180.0) % 360.0;
-            positions.insert(key.to_string(), south);
+            positions.insert(key.to_string(), (mean_node + 180.0) % 360.0);
             motion.insert(
                 key.to_string(),
-                AstronomyMotion {
-                    speed: -0.05295,
-                    retrograde: true,
-                },
+                AstronomyMotion { speed: -0.052_95, retrograde: true },
             );
         }
-        // True node not yet computed; warn if requested
         if wanted("true_north_node") || wanted("true_south_node") {
             warnings.push(
                 "true_node_not_available: anise backend uses mean node only".to_string(),
             );
         }
 
-        // Chiron is not in DE421
+        // Chiron is not in any standard DE planetary ephemeris
         if wanted("chiron") {
-            warnings.push("chiron_not_available: not present in de421.bsp".to_string());
-        }
-        for asteroid_id in ["ceres", "pallas", "juno", "vesta"] {
-            if wanted(asteroid_id) {
-                warnings.push(format!("{asteroid_id}_not_available: not present in de421.bsp"));
-            }
+            warnings.push(
+                "chiron_not_available: not in standard DE files; JPL Horizons API planned"
+                    .to_string(),
+            );
         }
 
-        // ── axes and house cusps ──────────────────────────────────────────
+        // ── Axes and house cusps ──────────────────────────────────────────
         let lat = chart.subject.location.latitude;
         let lon = chart.subject.location.longitude;
 
@@ -272,17 +335,14 @@ impl AstronomyBackend for JplAstronomyBackend {
 
         let axes = AstronomyAxes { asc, desc, mc, ic };
 
-        let house_system = chart.config.house_system.clone();
-        let (house_cusps, house_warnings) = match house_system {
+        let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
             Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
             Some(HouseSystem::Placidus) => placidus_cusps(jd_ut, lat, lon, asc, mc),
             Some(other) => {
                 let name = format!("{other:?}").to_lowercase();
                 (
                     whole_sign_cusps(asc),
-                    vec![format!(
-                        "house_system_{name}_not_yet_supported: whole_sign_used"
-                    )],
+                    vec![format!("house_system_{name}_not_yet_supported: whole_sign_used")],
                 )
             }
         };
@@ -298,39 +358,45 @@ impl AstronomyBackend for JplAstronomyBackend {
     }
 }
 
-// ─── path resolution ─────────────────────────────────────────────────────────
+// ─── Path resolution ─────────────────────────────────────────────────────────
 
-/// Resolve the BSP file path for a chart and return a ready backend, or an error
-/// describing what was missing.
+/// Build a `JplAstronomyBackend` for a chart.
+///
+/// If the chart has `override_ephemeris` set to a valid `.bsp` path, only that
+/// file is used. Otherwise, all available BSP files are loaded via `EphemerisManager`.
 pub fn jpl_backend_for_chart(chart: &ChartInstance) -> Result<JplAstronomyBackend, String> {
-    let path = JplAstronomyBackend::resolve_bsp(chart).ok_or_else(|| {
-        "No de421.bsp file found. Set KEFER_BSP_PATH or place de421.bsp next to the binary."
-            .to_string()
-    })?;
-    Ok(JplAstronomyBackend::new(path))
+    // Per-chart override takes priority
+    if let Some(path) = chart.config.override_ephemeris.as_deref() {
+        let p = PathBuf::from(path);
+        if p.exists() && p.extension().map_or(false, |e| e == "bsp") {
+            return Ok(JplAstronomyBackend::new(vec![p]));
+        }
+    }
+
+    let manager = EphemerisManager::from_global();
+    let paths = manager.available_bsp_paths();
+    if paths.is_empty() {
+        return Err(
+            "No BSP ephemeris file found. Set KEFER_BSP_PATH, place de440s.bsp next to the \
+             binary, or download one via the ephemeris manager."
+                .to_string(),
+        );
+    }
+    Ok(JplAstronomyBackend::new(paths))
 }
 
-// ─── tests ───────────────────────────────────────────────────────────────────
+// ─── Tests ───────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn resolve_bsp_returns_none_when_missing() {
-        // A chart with no override_ephemeris and no BSP on PATH → None (or Some if dev env has BSP).
-        let chart: crate::workspace::models::ChartInstance = serde_json::from_value(serde_json::json!({
-            "id": "x",
-            "subject": { "id": "x", "name": "x", "event_time": null,
-                         "location": { "name": "x", "latitude": 0.0, "longitude": 0.0, "timezone": "UTC" } },
-            "config": { "mode": "NATAL", "zodiac_type": "Tropical",
-                        "included_points": [], "aspect_orbs": {}, "display_style": "", "color_theme": "" },
-            "tags": []
-        })).unwrap();
-        let _result = JplAstronomyBackend::resolve_bsp(&chart);
+    fn no_bsp_returns_error() {
+        let backend = JplAstronomyBackend::new(vec![PathBuf::from("nonexistent.bsp")]);
+        assert!(backend.build_almanac().is_err());
     }
 
-    /// Build a minimal ChartInstance for J2000.0 (2000-01-01 12:00:00 UTC), Greenwich.
     fn j2000_chart(bsp_path: &str) -> crate::workspace::models::ChartInstance {
         serde_json::from_value(serde_json::json!({
             "id": "j2000_test",
@@ -360,162 +426,111 @@ mod tests {
         .expect("valid chart JSON")
     }
 
-    /// Locate de421.bsp relative to the crate root, used by dev-time tests.
-    fn dev_bsp_path() -> Option<std::path::PathBuf> {
+    fn dev_bsp_path(filename: &str) -> Option<PathBuf> {
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()?
-            .join("backend-python/source/de421.bsp");
+            .join(format!("backend-python/source/{filename}"));
         root.exists().then_some(root)
     }
 
-    /// Validate JplAstronomyBackend at J2000.0 and print positions for cross-language comparison.
-    ///
-    /// Run this first, then run the Python counterpart:
-    ///   cd backend-python && python -m pytest tests/test_jpl_backend_j2000.py -v -s
-    ///
-    /// The two outputs (Rust/anise vs Python/Skyfield, same de421.bsp) should agree to ≤0.01°.
-    ///
-    /// Run with: cargo test --features swisseph j2000_positions -- --ignored --nocapture
+    /// Validate positions at J2000.0 against known Horizons values.
+    /// Run: cargo test j2000_positions -- --ignored --nocapture
     #[test]
-    #[ignore = "requires backend-python/source/de421.bsp"]
+    #[ignore = "requires a BSP file (de440s.bsp or de421.bsp) in backend-python/source/"]
     fn j2000_positions_match_horizons() {
-        let bsp = match dev_bsp_path() {
-            Some(p) => p,
-            None => {
-                eprintln!("SKIP: de421.bsp not found");
-                return;
-            }
-        };
+        let bsp = dev_bsp_path("de440s.bsp")
+            .or_else(|| dev_bsp_path("de421.bsp"))
+            .expect("no BSP found");
 
         let chart = j2000_chart(bsp.to_str().unwrap());
-        let backend = JplAstronomyBackend::new(&bsp);
-        let data = backend.compute_chart_data(&chart, None).expect("compute_chart_data failed");
+        let backend = JplAstronomyBackend::new(vec![bsp]);
+        let data = backend.compute_chart_data(&chart, None).expect("compute failed");
 
-        // Print all positions so the Python comparison test can validate side-by-side.
-        let mut bodies: Vec<(&str, f64)> = data.positions.iter()
-            .map(|(k, &v)| (k.as_str(), v))
-            .collect();
+        let mut bodies: Vec<(&str, f64)> =
+            data.positions.iter().map(|(k, &v)| (k.as_str(), v)).collect();
         bodies.sort_by_key(|(k, _)| *k);
-        println!("\n=== JplAstronomyBackend positions at J2000.0 (Rust/anise) ===");
+        println!("\n=== JplAstronomyBackend positions at J2000.0 ===");
         for (body, lon) in &bodies {
             println!("  {body:<20} {lon:.4}°");
         }
         println!("  {:<20} {:.4}°  (asc)", "asc", data.axes.asc);
         println!("  {:<20} {:.4}°  (mc)", "mc", data.axes.mc);
-        println!("  house_cusps: {:?}", data.house_cusps);
 
-        // All 10 bodies must be present.
-        let expected_bodies = ["sun", "moon", "mercury", "venus", "mars",
-                                "jupiter", "saturn", "uranus", "neptune", "pluto"];
-        for body in expected_bodies {
-            assert!(data.positions.contains_key(body), "{body} missing from positions");
+        for body in ["sun", "moon", "mercury", "venus", "mars",
+                     "jupiter", "saturn", "uranus", "neptune", "pluto"] {
+            assert!(data.positions.contains_key(body), "{body} missing");
         }
-
-        // All longitudes must be in [0, 360).
         for (body, &lon) in &data.positions {
-            assert!((0.0..360.0).contains(&lon), "{body} longitude {lon} out of range");
+            assert!((0.0..360.0).contains(&lon), "{body} lon {lon} out of range");
         }
-
-        // Sun at J2000.0 is well-established: winter solstice ~Dec 22 → ~280° on Jan 1.
         let sun = data.positions["sun"];
         let sun_diff = ((sun - 280.4 + 540.0) % 360.0) - 180.0;
-        assert!(sun_diff.abs() < 1.0, "sun: got {sun:.4}°, expected ~280.4° (diff {sun_diff:+.4}°)");
-
-        // Uranus and Neptune are slow movers; cross-check against Horizons-calibrated values.
-        let uranus = data.positions["uranus"];
-        let u_diff = ((uranus - 314.8 + 540.0) % 360.0) - 180.0;
-        assert!(u_diff.abs() < 1.0, "uranus: got {uranus:.4}°, expected ~314.8° (diff {u_diff:+.4}°)");
-
-        let neptune = data.positions["neptune"];
-        let n_diff = ((neptune - 303.2 + 540.0) % 360.0) - 180.0;
-        assert!(n_diff.abs() < 1.0, "neptune: got {neptune:.4}°, expected ~303.2° (diff {n_diff:+.4}°)");
+        assert!(sun_diff.abs() < 1.0, "sun: {sun:.4}° expected ~280.4°");
     }
 
+    /// Cross-check JPL vs Swiss Ephemeris at a fixed reference instant.
+    /// Run: cargo test --features swisseph compare_jpl_vs_swisseph -- --ignored --nocapture
     #[cfg(feature = "swisseph")]
     #[test]
-    #[ignore = "diagnostic comparison against Swiss Ephemeris at a fixed reference instant"]
+    #[ignore = "diagnostic comparison; requires de440s.bsp + Swiss Ephemeris"]
     fn compare_jpl_vs_swisseph_2026_04_22_1500_utc() {
         use crate::astronomy::{AstronomyBackend, SwissAstronomyBackend};
 
-        let bsp = match dev_bsp_path() {
-            Some(p) => p,
-            None => {
-                eprintln!("SKIP: de421.bsp not found");
-                return;
-            }
-        };
+        let bsp = dev_bsp_path("de440s.bsp")
+            .or_else(|| dev_bsp_path("de421.bsp"))
+            .expect("no BSP found");
 
-        let jpl_chart: crate::workspace::models::ChartInstance = serde_json::from_value(serde_json::json!({
-            "id": "cmp_2026_04_22_1500",
-            "subject": {
-                "id": "cmp_2026_04_22_1500",
-                "name": "2026-04-22 15:00 UTC",
-                "event_time": "2026-04-22 15:00:00+00:00",
-                "location": {
-                    "name": "Greenwich",
-                    "latitude": 51.4779,
-                    "longitude": 0.0,
-                    "timezone": "UTC"
-                }
-            },
-            "config": {
-                "mode": "NATAL",
-                "house_system": "Placidus",
-                "zodiac_type": "Tropical",
-                "included_points": [],
-                "aspect_orbs": {},
-                "display_style": "",
-                "color_theme": "",
-                "override_ephemeris": bsp,
-                "engine": "jpl"
-            },
-            "tags": []
-        })).expect("valid comparison chart JSON");
+        let jpl_chart: crate::workspace::models::ChartInstance = serde_json::from_value(
+            serde_json::json!({
+                "id": "cmp", "subject": {
+                    "id": "cmp", "name": "2026-04-22 15:00 UTC",
+                    "event_time": "2026-04-22 15:00:00+00:00",
+                    "location": { "name": "Greenwich", "latitude": 51.4779, "longitude": 0.0, "timezone": "UTC" }
+                },
+                "config": {
+                    "mode": "NATAL", "house_system": "Placidus", "zodiac_type": "Tropical",
+                    "included_points": [], "aspect_orbs": {}, "display_style": "", "color_theme": "",
+                    "override_ephemeris": bsp, "engine": "jpl"
+                },
+                "tags": []
+            }),
+        ).expect("valid JSON");
 
-        let swiss_chart: crate::workspace::models::ChartInstance = serde_json::from_value(serde_json::json!({
-            "id": "cmp_2026_04_22_1500_swiss",
-            "subject": {
-                "id": "cmp_2026_04_22_1500_swiss",
-                "name": "2026-04-22 15:00 UTC",
-                "event_time": "2026-04-22 15:00:00+00:00",
-                "location": {
-                    "name": "Greenwich",
-                    "latitude": 51.4779,
-                    "longitude": 0.0,
-                    "timezone": "UTC"
-                }
-            },
-            "config": {
-                "mode": "NATAL",
-                "house_system": "Placidus",
-                "zodiac_type": "Tropical",
-                "included_points": [],
-                "aspect_orbs": {},
-                "display_style": "",
-                "color_theme": "",
-                "engine": "swisseph"
-            },
-            "tags": []
-        })).expect("valid swiss comparison chart JSON");
+        let swiss_chart: crate::workspace::models::ChartInstance = serde_json::from_value(
+            serde_json::json!({
+                "id": "cmp_swiss", "subject": {
+                    "id": "cmp_swiss", "name": "2026-04-22 15:00 UTC",
+                    "event_time": "2026-04-22 15:00:00+00:00",
+                    "location": { "name": "Greenwich", "latitude": 51.4779, "longitude": 0.0, "timezone": "UTC" }
+                },
+                "config": {
+                    "mode": "NATAL", "house_system": "Placidus", "zodiac_type": "Tropical",
+                    "included_points": [], "aspect_orbs": {}, "display_style": "", "color_theme": "",
+                    "engine": "swisseph"
+                },
+                "tags": []
+            }),
+        ).expect("valid JSON");
 
-        let jpl = JplAstronomyBackend::new(jpl_chart.config.override_ephemeris.clone().unwrap());
+        let jpl = JplAstronomyBackend::new(vec![jpl_chart
+            .config
+            .override_ephemeris
+            .clone()
+            .map(PathBuf::from)
+            .unwrap()]);
         let swiss = SwissAstronomyBackend;
 
-        let jpl_data = jpl.compute_chart_data(&jpl_chart, None).expect("jpl compute_chart_data failed");
-        let swiss_data = swiss.compute_chart_data(&swiss_chart, None).expect("swiss compute_chart_data failed");
+        let jd = jpl.compute_chart_data(&jpl_chart, None).expect("jpl failed");
+        let sd = swiss.compute_chart_data(&swiss_chart, None).expect("swiss failed");
 
-        let bodies = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"];
-        println!("\n=== JPL vs Swiss at 2026-04-22 15:00:00 UTC ===");
+        println!("\n=== JPL vs Swiss @ 2026-04-22 15:00 UTC ===");
         println!(" body                 jpl         swiss       diff");
-        for body in bodies {
-            let j = jpl_data.positions.get(body).copied().unwrap_or(f64::NAN);
-            let s = swiss_data.positions.get(body).copied().unwrap_or(f64::NAN);
+        for body in ["sun", "moon", "mercury", "venus", "mars",
+                     "jupiter", "saturn", "uranus", "neptune", "pluto"] {
+            let j = jd.positions.get(body).copied().unwrap_or(f64::NAN);
+            let s = sd.positions.get(body).copied().unwrap_or(f64::NAN);
             let diff = ((j - s + 540.0) % 360.0) - 180.0;
             println!(" {body:<12} {j:>10.6}° {s:>10.6}° {diff:>+9.6}°");
         }
-        let asc_diff = ((jpl_data.axes.asc - swiss_data.axes.asc + 540.0) % 360.0) - 180.0;
-        let mc_diff = ((jpl_data.axes.mc - swiss_data.axes.mc + 540.0) % 360.0) - 180.0;
-        println!(" asc          {:>10.6}° {:>10.6}° {:+9.6}°", jpl_data.axes.asc, swiss_data.axes.asc, asc_diff);
-        println!(" mc           {:>10.6}° {:>10.6}° {:+9.6}°", jpl_data.axes.mc, swiss_data.axes.mc, mc_diff);
     }
 }

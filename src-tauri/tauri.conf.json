@@ -26,7 +26,7 @@
 	"bundle": {
 		"active": true,
 		"targets": "all",
-		"resources": ["binaries", "resources/de421.bsp"],
+		"resources": ["binaries", "resources/de440s.bsp", "resources/de421.bsp"],
 		"windows": {
 			"certificateThumbprint": null,
 			"digestAlgorithm": "sha256",
