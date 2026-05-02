@@ -1,0 +1,44 @@
+apps/web-svelte/src/lib/i18n/cs.json
+  9dcea195e6c4fffc 142-143
+apps/web-svelte/src/lib/i18n/es.json
+  9dcea195e6c4fffc 42,142-143,207-221,260-262
+apps/web-svelte/src/lib/i18n/en.json
+  9dcea195e6c4fffc 142-143
+translations.csv
+  9dcea195e6c4fffc 42,142-143,207-221,260-262
+apps/web-react/src/locales/fr.json
+  9dcea195e6c4fffc 142-143
+apps/web-react/src/locales/en.json
+  9dcea195e6c4fffc 142-143
+apps/web-react/src/locales/cs.json
+  9dcea195e6c4fffc 142-143,207-215,260-262
+apps/web-svelte/src/lib/i18n/fr.json
+  9dcea195e6c4fffc 42,142-143,207-221,260-262
+apps/web-react/src/locales/es.json
+  9dcea195e6c4fffc 142-143
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "b1dff587aedfc4c4517c86ac39640ab4a3f436ee",
+  "prompts": {
+    "9dcea195e6c4fffc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019deab1-cebc-7160-b9b9-d7eac0b4f902",
+        "model": "gpt-5.4"
+      },
+      "human_author": "kubow",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 215,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_48e40f5ab776de": {
+      "author": "kubow"
+    }
+  }
+}
