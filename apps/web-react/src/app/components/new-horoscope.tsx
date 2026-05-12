@@ -189,18 +189,9 @@ export function NewHoroscope({
 		await onCreated?.(chart);
 	};
 
-	const bgStyle =
-		theme === 'midnight'
-			? {
-					background:
-						'radial-gradient(ellipse at center, #0D1B2E 0%, #0A1528 25%, #0B1729 60%, #0E1A2D 100%)'
-				}
-			: undefined;
-
 	return (
 		<AppMainContentRoot
 			className={cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')}
-			style={bgStyle}
 		>
 			<AppMainContentContainer layout="center-column">
 				<h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>{t('new_radix_title')}</h1>
@@ -349,7 +340,7 @@ export function NewHoroscope({
 								checked={advancedMode}
 								onCheckedChange={setAdvancedMode}
 								className={cn(
-									'h-6 w-11 shrink-0 scale-100 data-[state=checked]:bg-blue-600',
+									'h-6 w-11 shrink-0 scale-100 data-[state=checked]:bg-[color:var(--theme-accent)]',
 									ft.switchUnchecked
 								)}
 							/>

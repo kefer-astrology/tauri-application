@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { cn } from './ui/utils';
 import { AppShellIcon, AppShellLogoFull, AppShellLogoMark } from '@/ui/app-shell-icon';
 import type { AppShellIconId, AppShellIconSetId } from '@/lib/app-shell';
@@ -55,51 +56,55 @@ export type SidebarThemeBlock = {
 /** Shared by main sidebar and secondary (transits / settings) rail — four app themes only. */
 export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 	sunrise: {
-		bg: 'bg-gradient-to-b from-sky-50 to-cyan-50',
-		border: 'border-sky-200',
-		text: 'text-gray-900',
-		hover: 'hover:bg-sky-100',
-		active: 'bg-sky-400 text-white',
-		separator: 'bg-sky-200',
-		themeIconColor: '#1f2937'
+		bg: '',
+		border: 'border-[color:var(--theme-sidebar-border)]',
+		text: 'text-[color:var(--theme-nav-text-secondary)]',
+		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
+		separator: 'bg-[color:var(--theme-separator)]',
+		themeIconColor: 'var(--theme-nav-text-primary)',
+		customStyle: {
+			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			borderColor: 'var(--theme-sidebar-border)'
+		}
 	},
 	noon: {
-		bg: 'bg-white',
-		border: 'border-gray-200',
-		text: 'text-gray-700',
-		hover: 'hover:bg-gray-100',
-		active: 'bg-neutral-900 text-white',
-		separator: 'bg-gray-200',
-		themeIconColor: '#374151'
+		bg: '',
+		border: 'border-[color:var(--theme-sidebar-border)]',
+		text: 'text-[color:var(--theme-nav-text-secondary)]',
+		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
+		separator: 'bg-[color:var(--theme-separator)]',
+		themeIconColor: 'var(--theme-nav-text-primary)',
+		customStyle: {
+			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			borderColor: 'var(--theme-sidebar-border)'
+		}
 	},
 	twilight: {
-		bg: 'bg-gradient-to-b from-indigo-100 to-indigo-200',
-		border: 'border-white/20',
-		text: 'text-white',
-		hover: 'hover:bg-white/10',
-		active: 'bg-indigo-600 text-white',
-		separator: 'bg-white/25',
-		themeIconColor: '#ffffff',
+		bg: '',
+		border: 'border-[color:var(--theme-sidebar-border)]',
+		text: 'text-[color:var(--theme-nav-text-secondary)]',
+		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
+		separator: 'bg-[color:var(--theme-separator)]',
+		themeIconColor: 'var(--theme-nav-text-primary)',
 		customStyle: {
-			background:
-				'linear-gradient(to bottom, rgba(30, 64, 175, 0.9) 0%, rgba(37, 99, 235, 0.9) 50%, rgba(29, 78, 216, 0.85) 100%)',
-			backdropFilter: 'blur(10px)',
-			borderColor: 'rgba(59, 130, 246, 0.3)'
+			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			borderColor: 'var(--theme-sidebar-border)'
 		}
 	},
 	midnight: {
-		bg: 'bg-gradient-to-b from-slate-900 to-slate-800',
-		border: 'border-slate-700/30',
-		text: 'text-slate-200',
-		hover: 'hover:bg-slate-700/40',
-		active: 'bg-indigo-600 text-white',
-		separator: 'bg-slate-700/30',
-		themeIconColor: '#cbd5e1',
+		bg: '',
+		border: 'border-[color:var(--theme-sidebar-border)]',
+		text: 'text-[color:var(--theme-nav-text-secondary)]',
+		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
+		separator: 'bg-[color:var(--theme-separator)]',
+		themeIconColor: 'var(--theme-nav-text-primary)',
 		customStyle: {
-			background:
-				'linear-gradient(to bottom, rgba(13, 27, 46, 0.98) 0%, rgba(10, 21, 40, 0.98) 50%, rgba(11, 23, 41, 0.98) 100%)',
-			backdropFilter: 'blur(10px)',
-			borderColor: 'rgba(51, 65, 85, 0.2)'
+			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			borderColor: 'var(--theme-sidebar-border)'
 		}
 	}
 };
@@ -196,9 +201,7 @@ export function AstrologySidebar({
 				isExpanded ? 'w-[220px]' : 'w-16'
 			)}
 			style={
-				currentTheme === 'midnight' || currentTheme === 'twilight'
-					? { paddingTop: '12px', ...themeStyle.customStyle }
-					: { paddingTop: '12px' }
+				{ paddingTop: '12px', ...themeStyle.customStyle }
 			}
 		>
 			{/* Logo Area */}
@@ -229,8 +232,9 @@ export function AstrologySidebar({
 
 			{/* Menu Toggle Button */}
 			<div className="mb-px px-3">
-				<button
+				<Button
 					onClick={toggleSidebar}
+					variant="ghost"
 					className={cn(
 						'flex w-full items-center gap-2',
 						sidebarNavMenuRowClassName,
@@ -241,7 +245,7 @@ export function AstrologySidebar({
 				>
 					{renderSharedIcon('menu', t('sidebar_menu'))}
 					{isExpanded && <span>{t('sidebar_menu')}</span>}
-				</button>
+				</Button>
 			</div>
 
 			{/* Main Menu Items */}
@@ -250,8 +254,9 @@ export function AstrologySidebar({
 					const isActive = currentActiveItem === item.id;
 
 					return (
-						<button
+						<Button
 							key={item.id}
+							variant="ghost"
 							onClick={() => {
 								onMenuItemClick?.(item.id);
 							}}
@@ -264,7 +269,7 @@ export function AstrologySidebar({
 						>
 							{renderSharedIcon(item.iconId, t(item.labelKey))}
 							{isExpanded && <span>{t(item.labelKey)}</span>}
-						</button>
+						</Button>
 					);
 				})}
 
@@ -278,8 +283,9 @@ export function AstrologySidebar({
 					const isActive = currentActiveItem === item.id;
 
 					return (
-						<button
+						<Button
 							key={item.id}
+							variant="ghost"
 							onClick={() => {
 								onMenuItemClick?.(item.id);
 							}}
@@ -292,7 +298,7 @@ export function AstrologySidebar({
 						>
 							{renderSharedIcon(item.iconId, t(item.labelKey))}
 							{isExpanded && <span>{t(item.labelKey)}</span>}
-						</button>
+						</Button>
 					);
 				})}
 			</nav>
@@ -308,8 +314,9 @@ export function AstrologySidebar({
 					const isActive = currentActiveItem === item.id;
 
 					return (
-						<button
+						<Button
 							key={item.id}
+							variant="ghost"
 							onClick={() => {
 								onMenuItemClick?.(item.id);
 							}}
@@ -322,7 +329,7 @@ export function AstrologySidebar({
 						>
 							{renderSharedIcon(item.iconId, t(item.labelKey))}
 							{isExpanded && <span>{t(item.labelKey)}</span>}
-						</button>
+						</Button>
 					);
 				})}
 
@@ -333,9 +340,7 @@ export function AstrologySidebar({
 							className="bg-opacity-50 flex items-center justify-between gap-0.5 rounded-md px-1.5 py-1.5"
 							style={{
 								backgroundColor:
-									currentTheme === 'midnight' || currentTheme === 'twilight'
-										? 'rgba(51, 65, 85, 0.5)'
-										: 'rgba(243, 244, 246, 0.5)'
+									'var(--theme-soft-bg)'
 							}}
 						>
 							{themeOrder.map((themeKey) => {
@@ -343,34 +348,38 @@ export function AstrologySidebar({
 								const themeIconId = `theme-${themeKey}` as AppShellIconId;
 
 								return (
-									<button
+									<Button
 										key={themeKey}
+										variant="ghost"
+										size="icon"
 										onClick={() => handleThemeClick(themeKey)}
 										className={cn(
-											'flex size-9 shrink-0 items-center justify-center rounded-sm p-0 transition-all duration-200',
+											'size-9 shrink-0 rounded-sm p-0 transition-all duration-200',
 											isSelected
-												? currentTheme === 'twilight' || currentTheme === 'midnight'
-													? 'bg-indigo-600 shadow-sm'
-													: currentTheme === 'sunrise'
-														? 'bg-sky-500 shadow-sm'
-														: 'bg-neutral-900 shadow-sm'
+												? 'bg-[color:var(--theme-accent)] shadow-sm'
 												: cn('hover:bg-opacity-50', themeStyle.hover)
 										)}
 										title={themeLabels[themeKey]}
 										>
-											<span style={{ color: isSelected ? '#FFFFFF' : themeStyle.themeIconColor }}>
+											<span
+												style={{
+													color: isSelected ? 'var(--theme-nav-text-primary)' : themeStyle.themeIconColor
+												}}
+											>
 												{renderThemeIcon(themeIconId, themeLabels[themeKey])}
 											</span>
-										</button>
+										</Button>
 								);
 							})}
 						</div>
 					</div>
 				) : (
-					<button
+					<Button
 						onClick={cycleTheme}
+						variant="ghost"
+						size="icon"
 						className={cn(
-							'flex w-full items-center justify-center',
+							'w-full',
 							sidebarNavMenuRowClassName,
 							themeStyle.hover,
 							'mx-auto h-11 w-11 px-0 py-0'
@@ -383,7 +392,7 @@ export function AstrologySidebar({
 									themeLabels[currentTheme]
 								)}
 							</span>
-						</button>
+						</Button>
 				)}
 			</div>
 		</aside>

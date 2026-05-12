@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { Button } from './ui/button';
 import { cn } from './ui/utils';
 import type { Theme } from './astrology-sidebar';
 import { sidebarNavMenuRowClassName, sidebarThemeStyles } from './astrology-sidebar';
@@ -30,14 +31,17 @@ export function SecondaryNavPanel({
 }: SecondaryNavPanelProps) {
 	const st = sidebarThemeStyles[theme];
 
-	const asideStyle: CSSProperties | undefined =
-		theme === 'twilight' || theme === 'midnight' ? { ...st.customStyle } : undefined;
+	const asideStyle: CSSProperties | undefined = {
+		background: 'linear-gradient(to bottom, var(--theme-secondary-sidebar-start) 0%, var(--theme-secondary-sidebar-end) 100%)',
+		borderColor: 'var(--theme-sidebar-border)'
+	};
 
 	return (
 		<aside
 			className={cn(
-				'flex h-full min-h-0 w-[220px] shrink-0 flex-col pt-2 transition-all duration-300 ease-in-out',
+				'flex h-full min-h-0 w-[220px] shrink-0 flex-col border-r pt-2 transition-all duration-300 ease-in-out',
 				st.bg,
+				st.border,
 				className
 			)}
 			style={asideStyle}
@@ -55,9 +59,10 @@ export function SecondaryNavPanel({
 				{items.map((item) => {
 					const isActive = activeId === item.id;
 					return (
-						<button
+						<Button
 							key={item.id}
 							type="button"
+							variant="ghost"
 							onClick={() => onSelect(item.id)}
 							className={cn(
 								'w-full text-left',
@@ -67,7 +72,7 @@ export function SecondaryNavPanel({
 							aria-current={isActive ? 'page' : undefined}
 						>
 							{item.label}
-						</button>
+						</Button>
 					);
 				})}
 			</nav>

@@ -270,7 +270,7 @@ export function HoroscopeWheel({
 	showPlanetGlyphs = false,
 	showAxisLines = false,
 	elementColors: elementColorsProp = DEFAULT_ELEMENT_COLORS,
-	lightPlanetFill = '#030213',
+	lightPlanetFill = 'var(--theme-content-primary)',
 	className
 }: HoroscopeWheelProps) {
 	const isDark = theme === 'midnight' || theme === 'twilight';
@@ -304,9 +304,9 @@ export function HoroscopeWheel({
 		typeof axisMc === 'number' &&
 		typeof axisIc === 'number';
 
-	const strokeMain = isDark ? 'rgba(255,255,255,0.5)' : '#000000';
-	const strokeSoft = isDark ? 'rgba(255,255,255,0.4)' : '#000000';
-	const fillBg = isDark ? 'rgba(255,255,255,0.03)' : '#ffffff';
+	const strokeMain = 'var(--token-wheel-stroke-main)';
+	const strokeSoft = 'var(--token-wheel-stroke-soft)';
+	const fillBg = 'var(--token-wheel-bg)';
 	const wheelRotationOffset = 0;
 	const displayLon = (lon: number) => normalizeDeg(lon + wheelRotationOffset);
 
@@ -322,7 +322,7 @@ export function HoroscopeWheel({
 		typeof axisMc === 'number' ? { key: 'mc', icon: OBSERVABLE_OBJECT_META.get('mc')?.icon ?? 'MC', longitude: axisMc } : null,
 		typeof axisIc === 'number' ? { key: 'ic', icon: OBSERVABLE_OBJECT_META.get('ic')?.icon ?? 'IC', longitude: axisIc } : null
 	].filter((item): item is { key: 'asc' | 'dsc' | 'mc' | 'ic'; icon: string; longitude: number } => item !== null);
-	const planetGlyphColor = isDark ? '#cbd5e1' : lightPlanetFill;
+	const planetGlyphColor = isDark ? 'var(--token-wheel-glyph)' : lightPlanetFill;
 	const elementColors = elementColorsProp;
 	const angleMarkerRadius = outerRadius + 22;
 
@@ -331,8 +331,8 @@ export function HoroscopeWheel({
 	const pMc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisMc)) : null;
 	const pIc = hasAxisGeometry ? polar(center, center, outerRadius + 4, displayLon(axisIc)) : null;
 
-	const overlayTint = isDark ? 'rgba(59, 130, 246, 0.14)' : 'rgba(37, 99, 235, 0.12)';
-	const overlayTintAlt = isDark ? 'rgba(244, 63, 94, 0.12)' : 'rgba(244, 63, 94, 0.1)';
+	const overlayTint = 'var(--token-wheel-overlay-primary)';
+	const overlayTintAlt = 'var(--token-wheel-overlay-secondary)';
 
 	/** Wedge from center to outer arc [startLon → endLon] (ecliptic °). */
 	function arcWedge(startLon: number, endLon: number, sweepFlag: 0 | 1): string {
@@ -363,7 +363,10 @@ export function HoroscopeWheel({
 
 	const tierStyle = aspectLineTierStyleProp ?? DEFAULT_ASPECT_LINE_TIER_STYLE;
 	const orbTable = { ...DEFAULT_ASPECT_ORBS, ...(aspectOrbsForRadix ?? {}) };
-	const colorTable = { ...DEFAULT_ASPECT_COLORS, ...(aspectColorsForRadix ?? {}) };
+	const colorTable: Record<string, string> = {
+		...DEFAULT_ASPECT_COLORS,
+		...(aspectColorsForRadix ?? {})
+	};
 	const aspectList = radixAspects ?? [];
 
 	return (
@@ -551,7 +554,7 @@ export function HoroscopeWheel({
 
 			{/* Axis lines for hemisphere boundaries */}
 			{showAxisLines && hasAxisGeometry && pAsc && pDsc && pMc && pIc && (
-				<g data-handoff="Layer_AxisLines" stroke={isDark ? 'rgba(96,165,250,0.85)' : 'rgba(37,99,235,0.75)'}>
+				<g data-handoff="Layer_AxisLines" stroke="var(--token-wheel-axis)">
 					<line
 						x1={pAsc.x}
 						y1={pAsc.y}
@@ -625,7 +628,7 @@ export function HoroscopeWheel({
 					const pb = polar(center, center, radixAspectChordRadius, displayLon(bLon));
 					const maxOrb = maxOrbForAspectType(aspect.type, orbTable);
 					const sw = strokeWidthFromOrbTiers(aspect.orb, maxOrb, tierStyle);
-					const baseHex = colorTable[aspect.type] ?? '#64748b';
+					const baseHex = colorTable[aspect.type] ?? 'var(--token-viz-2)';
 					const stroke =
 						baseHex.length === 7 && baseHex.startsWith('#')
 							? `${baseHex}${isDark ? '99' : 'cc'}`
@@ -687,7 +690,7 @@ export function HoroscopeWheel({
 										cx={p.x}
 										cy={p.y}
 										r="22"
-										fill={isDark ? 'rgba(250,204,21,0.2)' : 'rgba(250,204,21,0.35)'}
+										fill="var(--token-wheel-highlight)"
 										filter="url(#hw-planet-halo)"
 									/>
 								)}

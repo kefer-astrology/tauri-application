@@ -5,7 +5,7 @@ import type { Theme } from './astrology-sidebar';
 /**
  * Shared field styling aligned with **New Horoscope** (`new-horoscope.tsx`) so settings and
  * other forms match the same glass / border / focus treatment across `sunrise` | `noon` | `twilight` | `midnight`.
- * `sunrise` uses sky/cyan surfaces and `bg-sky-500` primary actions to match the sidebar + main shell.
+ * `sunrise` uses a dark-nav / bright-canvas palette with blue accents.
  */
 export function getAppFormFieldTheme(theme: Theme) {
 	const isMidnight = theme === 'midnight';
@@ -14,269 +14,106 @@ export function getAppFormFieldTheme(theme: Theme) {
 	/** Legacy: true only for midnight (charts / icons that distinguish blue night). */
 	const isDark = isMidnight;
 
-	const title =
-		isMidnight || isTwilight
-			? 'text-white'
-			: isSunrise
-				? 'text-sky-950'
-				: 'text-gray-900';
-	const label = isMidnight
-		? 'text-blue-100'
-		: isTwilight
-			? 'text-white'
-			: isSunrise
-				? 'text-sky-900'
-				: 'text-gray-700';
-	const muted = isMidnight
-		? 'text-blue-200/80'
-		: isTwilight
-			? 'text-white/80'
-			: isSunrise
-				? 'text-sky-800/85'
-				: 'text-muted-foreground';
+	const title = 'text-[color:var(--theme-content-primary)]';
+	const label = 'text-[color:var(--theme-content-secondary)]';
+	const muted = 'text-[color:var(--theme-content-muted)]';
 
 	const input = cn(
-		'w-full rounded-xl border px-4 py-2.5 text-base transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none md:text-sm',
-		isDark
-			? 'border-blue-900/40 bg-blue-950/40 text-slate-100 placeholder:text-slate-600 backdrop-blur-sm shadow-inner'
-			: isTwilight
-				? 'border-blue-700/40 bg-blue-900/30 text-white placeholder:text-white/50 backdrop-blur-sm shadow-inner'
-				: isSunrise
-					? 'border-sky-200 bg-white/95 text-sky-950 placeholder:text-sky-400/80 shadow-inner focus:ring-sky-500'
-					: 'border-gray-200 bg-white text-gray-900'
+		'w-full rounded-xl border px-4 py-2.5 text-base transition-all md:text-sm',
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
+		'placeholder:text-[color:var(--theme-content-muted)] shadow-inner backdrop-blur-sm',
+		'focus:border-transparent focus:ring-2 focus:ring-[var(--theme-accent)] focus:outline-none'
 	);
 
 	const inputCompact = cn(
-		'h-9 rounded-xl border px-3 py-1 text-sm transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none',
-		isDark
-			? 'border-blue-900/40 bg-blue-950/40 text-slate-100 backdrop-blur-sm'
-			: isTwilight
-				? 'border-blue-700/40 bg-blue-900/30 text-white backdrop-blur-sm'
-				: isSunrise
-					? 'border-sky-200 bg-white/95 text-sky-950 focus:ring-sky-500'
-					: 'border-gray-200 bg-white text-gray-900'
+		'h-9 rounded-xl border px-3 py-1 text-sm transition-all',
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
+		'backdrop-blur-sm focus:border-transparent focus:ring-2 focus:ring-[var(--theme-accent)] focus:outline-none'
 	);
 
 	const selectTrigger = cn(
-		'flex h-auto min-h-10 w-full items-center justify-between rounded-xl border px-4 py-2.5 text-base transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none md:text-sm [&>svg]:opacity-70',
-		isDark
-			? 'border-blue-900/40 bg-blue-950/40 text-slate-100 backdrop-blur-sm shadow-inner'
-			: isTwilight
-				? 'border-blue-700/40 bg-blue-900/30 text-white backdrop-blur-sm shadow-inner'
-				: isSunrise
-					? 'border-sky-200 bg-white/95 text-sky-950 shadow-inner focus:ring-sky-500'
-					: 'border-gray-200 bg-white text-gray-900'
+		'flex h-auto min-h-10 w-full items-center justify-between rounded-xl border px-4 py-2.5 text-base transition-all md:text-sm [&>svg]:opacity-70',
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-inner backdrop-blur-sm',
+		'focus:border-transparent focus:ring-2 focus:ring-[var(--theme-accent)] focus:outline-none'
 	);
 
 	const selectContent = cn(
 		'rounded-xl border shadow-lg',
-		isDark
-			? 'border-blue-900/40 bg-blue-950/95 text-slate-100 backdrop-blur-lg'
-			: isTwilight
-				? 'border-blue-700/40 bg-blue-900/95 text-white backdrop-blur-lg'
-				: isSunrise
-					? 'border-sky-200 bg-white text-sky-950 shadow-lg'
-					: 'border-gray-200 bg-white text-popover-foreground'
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]'
 	);
 
 	const selectItem =
-		isDark || isTwilight
-			? 'focus:bg-blue-900/70 focus:text-white data-[highlighted]:bg-blue-900/70 data-[highlighted]:text-white'
-			: isSunrise
-				? 'focus:bg-sky-100 focus:text-sky-950 data-[highlighted]:bg-sky-100 data-[highlighted]:text-sky-950'
-				: '';
+		'focus:bg-[color:var(--theme-soft-bg)] focus:text-[color:var(--theme-content-primary)] data-[highlighted]:bg-[color:var(--theme-soft-bg)] data-[highlighted]:text-[color:var(--theme-content-primary)]';
 
-	const footerBorder = isDark
-		? 'border-blue-900/40'
-		: isTwilight
-			? 'border-blue-800/40'
-			: isSunrise
-				? 'border-sky-200/80'
-				: 'border-gray-200';
+	const footerBorder = 'border-[color:var(--theme-panel-border)]';
 
 	const footerCancel = cn(
 		'flex-1 rounded-xl border px-6 py-2.5 font-medium transition-all focus:ring-2 focus:ring-offset-2 focus:outline-none',
-		isDark
-			? 'border-blue-900/40 bg-blue-950/40 text-slate-200 hover:bg-blue-900/60 focus:ring-slate-500 backdrop-blur-sm shadow-inner'
-			: isTwilight
-				? 'border-blue-700/40 bg-blue-900/30 text-white hover:bg-blue-800/50 focus:ring-blue-400 backdrop-blur-sm shadow-inner'
-				: isSunrise
-					? 'border-sky-300 bg-white/95 text-sky-900 shadow-sm hover:bg-sky-50 focus:ring-sky-400'
-					: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500'
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-secondary)] backdrop-blur-sm shadow-inner',
+		'hover:bg-[color:var(--theme-soft-bg)] focus:ring-[var(--theme-accent)]'
 	);
 
 	const footerPrimary = cn(
 		'flex-1 rounded-xl px-6 py-2.5 font-medium text-white shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50',
-		isDark || isTwilight
-			? 'bg-indigo-600 hover:bg-indigo-500 focus:ring-indigo-400 shadow-lg shadow-indigo-900/50'
-			: isSunrise
-				? 'bg-sky-500 hover:bg-sky-600 focus:ring-sky-400 shadow-lg shadow-sky-700/25'
-				: 'bg-neutral-900 hover:bg-neutral-800 focus:ring-neutral-600 shadow-lg shadow-black/20'
+		'bg-[color:var(--theme-accent)] hover:brightness-95 focus:ring-[var(--theme-accent)] shadow-lg shadow-black/20'
 	);
 
-	/** Noon: neutral/black; twilight & midnight: indigo; sunrise: sky — matches sidebar accents. */
-	const langBubbleActive = isSunrise
-		? 'border-sky-600 bg-sky-500 text-white ring-2 ring-sky-400/45 shadow-sm'
-		: isMidnight || isTwilight
-			? 'border-indigo-500 bg-indigo-600 text-white ring-2 ring-indigo-400/50 shadow-sm'
-			: 'border-neutral-800 bg-neutral-900 text-white ring-2 ring-neutral-600/50 shadow-sm';
-	const langBubbleIdle = isDark
-		? 'border-blue-800/50 bg-blue-950/50 text-slate-200 hover:bg-blue-900/50'
-		: isTwilight
-			? 'border-blue-700/50 bg-blue-900/40 text-white hover:bg-blue-800/50'
-			: isSunrise
-				? 'border-sky-300 bg-white/95 text-sky-900 hover:border-sky-400 hover:bg-sky-50'
-				: 'border-gray-300 bg-white text-gray-900 hover:border-gray-400 hover:bg-neutral-50';
+	const langBubbleActive =
+		'border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)] text-white ring-2 ring-[color:var(--theme-accent)] shadow-sm';
+	const langBubbleIdle =
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-secondary)] hover:bg-[color:var(--theme-soft-bg)]';
 
 	const inputDisabled = cn(
 		'cursor-not-allowed border text-base md:text-sm',
-		isDark
-			? 'border-blue-950/40 bg-blue-950/60 text-slate-700 backdrop-blur-sm'
-			: isTwilight
-				? 'border-blue-900/40 bg-blue-950/40 text-white/45 backdrop-blur-sm'
-				: isSunrise
-					? 'border-sky-200 bg-sky-50/80 text-sky-400'
-					: 'border-gray-200 bg-white text-gray-400'
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-muted)] backdrop-blur-sm'
 	);
 
 	const dropdown = selectContent;
 
-	const dropdownHover = isDark
-		? 'hover:bg-blue-900/60'
-		: isTwilight
-			? 'hover:bg-blue-800/60'
-			: isSunrise
-				? 'hover:bg-sky-100'
-				: 'hover:bg-gray-50';
+	const dropdownHover = 'hover:bg-[color:var(--theme-soft-bg)]';
 
-	const dropdownActive =
-		isDark || isTwilight
-			? 'bg-indigo-600/90 text-white'
-			: isSunrise
-				? 'bg-sky-100 text-sky-800'
-				: 'bg-neutral-100 text-neutral-900';
+	const dropdownActive = 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]';
 
-	const advancedPanel = cn(
-		'rounded-xl border-0 p-4',
-		isDark
-			? 'bg-blue-950/30 backdrop-blur-sm'
-			: isTwilight
-				? 'bg-blue-900/25 backdrop-blur-sm'
-				: isSunrise
-					? 'bg-sky-50/90'
-					: 'bg-blue-50'
-	);
+	const advancedPanel = 'rounded-xl border-0 bg-[color:var(--theme-soft-bg)] p-4 backdrop-blur-sm';
 
-	const iconColor = isDark
-		? 'text-blue-400'
-		: isTwilight
-			? 'text-white'
-			: isSunrise
-				? 'text-sky-600'
-				: 'text-gray-400';
+	const iconColor = 'text-[color:var(--theme-accent)]';
 
 	const datePicker = cn(
-		'w-80 rounded-xl border-0 p-4 shadow-xl ring-1 ring-black/5 dark:ring-white/10',
-		isDark
-			? 'bg-blue-950/95 backdrop-blur-lg'
-			: isTwilight
-				? 'bg-blue-900/95 backdrop-blur-lg'
-				: isSunrise
-					? 'bg-white shadow-xl'
-					: 'bg-white'
+		'w-80 rounded-xl border p-4 shadow-xl ring-1 ring-black/5 dark:ring-white/10',
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)]'
 	);
 
-	const datePickerHeader = isDark
-		? 'text-blue-400'
-		: isTwilight
-			? 'text-white'
-			: isSunrise
-				? 'text-sky-700'
-				: 'text-gray-500';
+	const datePickerHeader = 'text-[color:var(--theme-content-secondary)]';
 
-	const datePickerButton = isDark
-		? 'hover:bg-blue-900/60'
-		: isTwilight
-			? 'hover:bg-blue-800/60'
-			: isSunrise
-				? 'hover:bg-sky-100'
-				: 'hover:bg-gray-100';
+	const datePickerButton = 'hover:bg-[color:var(--theme-soft-bg)]';
 
-	const datePickerDay = isDark
-		? 'hover:bg-blue-900/60 text-slate-300'
-		: isTwilight
-			? 'hover:bg-blue-800/60 text-white'
-			: isSunrise
-				? 'hover:bg-sky-100 text-sky-900'
-				: 'hover:bg-blue-50';
+	const datePickerDay = 'hover:bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-primary)]';
 
 	const datePickerDayActive =
-		isDark || isTwilight
-			? 'bg-indigo-600/90 text-white hover:bg-indigo-600'
-			: isSunrise
-				? 'bg-sky-500 text-white hover:bg-sky-600'
-				: 'bg-neutral-900 text-white hover:bg-neutral-800';
+		'bg-[color:var(--theme-accent)] text-white hover:brightness-95';
 
 	/** Native checkbox accent color (Tailwind `text-*` tints the checkmark). */
-	const checkboxAccent = isMidnight || isTwilight
-		? 'text-indigo-400 focus:ring-indigo-400'
-		: isSunrise
-			? 'text-sky-600 focus:ring-sky-500'
-			: 'text-neutral-900 focus:ring-neutral-600';
+	const checkboxAccent = 'text-[color:var(--theme-accent)] focus:ring-[var(--theme-accent)]';
 
-	/** Light themes: subtle page tint behind the form. Dark themes use `App` / inline bg instead. */
 	const formPageBg =
-		isDark || isTwilight
-			? ''
-			: isSunrise
-				? 'bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-100'
-				: 'bg-gradient-to-b from-gray-50 to-white';
+		'bg-[linear-gradient(to_bottom_right,var(--theme-canvas-start),var(--theme-canvas-end))]';
 
-	const switchUnchecked = isDark
-		? 'data-[state=unchecked]:bg-slate-700'
-		: isTwilight
-			? 'data-[state=unchecked]:bg-slate-600'
-			: isSunrise
-				? 'data-[state=unchecked]:bg-sky-300'
-				: 'data-[state=unchecked]:bg-gray-300';
+	const switchUnchecked = 'data-[state=unchecked]:bg-[color:var(--theme-content-muted)]';
 
-	const textDisabled = isDark
-		? 'text-slate-500'
-		: isTwilight
-			? 'text-white/45'
-			: isSunrise
-				? 'text-sky-500/90'
-				: 'text-gray-400';
+	const textDisabled = 'text-[color:var(--theme-content-muted)]';
 
-	const bodyText = isDark
-		? 'text-slate-200'
-		: isTwilight
-			? 'text-white'
-			: isSunrise
-				? 'text-sky-900/90'
-				: 'text-gray-600';
+	const bodyText = 'text-[color:var(--theme-content-secondary)]';
 
 	/** Bottom horoscope strip: workspace chart “tabs” — shadcn surfaces + app glass (matches settings cards). */
 	const contextRail = cn(
 		'flex min-h-11 w-full items-center justify-center gap-2 overflow-x-auto overflow-y-hidden border-t px-3 py-1.5',
-		isDark
-			? 'border-blue-900/40 bg-blue-950/45 text-slate-100 backdrop-blur-md'
-			: isTwilight
-				? 'border-blue-800/40 bg-blue-950/30 text-white backdrop-blur-md'
-				: isSunrise
-					? 'border-sky-200/80 bg-white/70 text-sky-950 backdrop-blur-md supports-[backdrop-filter]:bg-white/60'
-					: 'border-border bg-muted/50 text-foreground backdrop-blur-sm supports-[backdrop-filter]:bg-background/70'
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
+		'backdrop-blur-md supports-[backdrop-filter]:bg-[color:var(--theme-panel-bg-strong)]'
 	);
 
 	const contextTabGhost = cn(
 		'h-8 min-h-8 max-w-[min(12rem,40vw)] justify-start truncate px-2 font-normal shadow-none',
-		isDark
-			? 'text-slate-300 hover:bg-white/10 hover:text-white'
-			: isTwilight
-				? 'text-white hover:bg-white/10 hover:text-white'
-				: isSunrise
-					? 'text-sky-800/90 hover:bg-sky-100 hover:text-sky-950'
-					: 'text-muted-foreground hover:bg-muted hover:text-foreground'
+		'text-[color:var(--theme-content-secondary)] hover:bg-[color:var(--theme-soft-bg)] hover:text-[color:var(--theme-content-primary)]'
 	);
 
 	const contextTabActive = cn(
@@ -284,13 +121,7 @@ export function getAppFormFieldTheme(theme: Theme) {
 		title
 	);
 
-	const contextSeparator = isDark
-		? '[&>svg]:text-slate-500'
-		: isTwilight
-			? '[&>svg]:text-white/55'
-			: isSunrise
-				? '[&>svg]:text-sky-500/70'
-				: '[&>svg]:text-muted-foreground/60';
+	const contextSeparator = '[&>svg]:text-[color:var(--theme-content-muted)]';
 
 	return {
 		isDark,

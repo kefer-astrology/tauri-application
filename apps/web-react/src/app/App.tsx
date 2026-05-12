@@ -63,6 +63,12 @@ import {
 	readStoredGlyphSet,
 	type AstrologyGlyphSetId
 } from '@/lib/astrology/glyphs';
+import {
+	persistThemePalettes,
+	readStoredThemePalettes,
+	themePaletteVars,
+	type ThemePalettes
+} from '@/lib/themePalettes';
 
 function mergeWorkspaceDefaults(
 	prev: WorkspaceDefaultsState,
@@ -172,6 +178,7 @@ function formatChartDateTimeUtc(value: Date): string {
 export default function App() {
 	const { t } = useTranslation();
 	const [theme, setTheme] = useState<Theme>('noon');
+	const [themePalettes, setThemePalettes] = useState<ThemePalettes>(() => readStoredThemePalettes());
 	const [appShellIconSet, setAppShellIconSet] = useState<AppShellIconSetId>(() =>
 		readStoredAppShellIconSet()
 	);
@@ -181,11 +188,14 @@ export default function App() {
 	const [elementWheelColors, setElementWheelColors] = useState<ElementColors>(() =>
 		readStoredElementColors()
 	);
-	const [lightPlanetFill, setLightPlanetFill] = useState('#030213');
+	const [lightPlanetFill, setLightPlanetFill] = useState('var(--theme-content-primary)');
 	const formTheme = useAppFormFieldTheme(theme);
 
 	useLayoutEffect(() => {
-		const raw = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+		const style = getComputedStyle(document.documentElement);
+		const raw =
+			style.getPropertyValue('--theme-content-primary').trim() ||
+			style.getPropertyValue('--theme-accent').trim();
 		if (raw) setLightPlanetFill(raw);
 	}, [theme]);
 
@@ -443,36 +453,20 @@ export default function App() {
 		}
 	};
 
-	type MainThemeStyle = { bg: string; text: string; style?: CSSProperties };
-	const themeStyles: Record<Theme, MainThemeStyle> = {
-		sunrise: {
-			bg: 'bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-100',
-			text: 'text-gray-900'
-		},
-		noon: {
-			bg: 'bg-white',
-			text: 'text-gray-900'
-		},
-			twilight: {
-				bg: 'kefer-twilight-bg',
-				text: 'text-white'
-			},
-		midnight: {
-			bg: '',
-			text: 'text-white',
-			style: {
-				background:
-					'radial-gradient(ellipse at center, #0D1B2E 0%, #0A1528 25%, #0B1729 60%, #0E1A2D 100%)'
-			}
-		}
-	};
-
-	const currentThemeStyle = themeStyles[theme];
+	const currentThemePalette = themePalettes[theme];
+	const currentThemeStyle = useMemo<CSSProperties>(
+		() => ({
+			...themePaletteVars(currentThemePalette),
+			background: `linear-gradient(to bottom right, ${currentThemePalette.canvasStart} 0%, ${currentThemePalette.canvasEnd} 100%)`,
+			color: currentThemePalette.contentTextPrimary
+		}),
+		[currentThemePalette]
+	);
 
 	return (
 		<>
 			<WorkspaceChartsProvider value={workspaceChartsValue}>
-				<div className="flex h-screen overflow-hidden">
+				<div className="flex h-screen overflow-hidden" style={currentThemeStyle}>
 					{/* Main Sidebar */}
 					<AstrologySidebar
 						onThemeChange={setTheme}
@@ -501,8 +495,7 @@ export default function App() {
 
 					{/* Main Content Area */}
 					<main
-						className={`flex-1 ${currentThemeStyle.bg} ${currentThemeStyle.text} overflow-auto transition-colors duration-500`}
-						style={currentThemeStyle.style}
+						className="flex-1 overflow-auto transition-colors duration-500 text-[color:var(--theme-content-primary)]"
 					>
 						{activeView === 'horoskop' ? (
 							<HoroscopeDashboard
@@ -541,7 +534,11 @@ export default function App() {
 								onBack={() => setActiveView('horoskop')}
 							/>
 						) : activeView === 'aspektarium' ? (
-							<Aspectarium theme={theme} glyphSet={astrologyGlyphSet} />
+							<Aspectarium
+								theme={theme}
+								glyphSet={astrologyGlyphSet}
+								workspaceDefaults={workspaceDefaults}
+							/>
 						) : activeView === 'tranzity' ? (
 							<TransitsContent
 								section={activeTransitSection}
@@ -558,6 +555,14 @@ export default function App() {
 								onAstrologyGlyphSetChange={setAstrologyGlyphSet}
 								elementColors={elementWheelColors}
 								onElementColorsCommit={commitElementWheelColors}
+								themePalette={currentThemePalette}
+								onThemePaletteCommit={(nextPalette) => {
+									setThemePalettes((prev) => {
+										const next = { ...prev, [theme]: nextPalette };
+										persistThemePalettes(next);
+										return next;
+									});
+								}}
 								workspaceDefaults={workspaceDefaults}
 								onWorkspaceDefaultsChange={applyWorkspaceDefaultsPatch}
 							/>

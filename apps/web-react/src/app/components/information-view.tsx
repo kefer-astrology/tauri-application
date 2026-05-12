@@ -6,6 +6,7 @@ import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
@@ -44,7 +45,6 @@ function chipStateClass(
 export function InformationView({ theme, glyphSet, elementColors, lightPlanetFill }: InformationViewProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
-	const isDark = theme === 'midnight' || theme === 'twilight';
 
 	const [microHover, setMicroHover] = useState<MicroBadgeId | null>(null);
 	const [singletonHover, setSingletonHover] = useState(false);
@@ -98,7 +98,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 
 	const pageShell = cn(
 		'flex h-screen min-h-0 flex-col overflow-hidden transition-colors',
-		isDark ? 'bg-background text-foreground' : 'bg-background text-foreground'
+		'bg-background text-foreground'
 	);
 
 	const smallTitle = cn('text-xs font-semibold uppercase tracking-wide', ft.muted);
@@ -140,7 +140,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 				className="flex h-9 flex-shrink-0 items-center border-b border-border px-4"
 			>
 				<span className={cn('text-sm font-medium', ft.title)}>{t('sidebar_information')}</span>
-				<span className={cn('ml-2 text-xs', ft.muted)}>— syntéza & struktura (prototype)</span>
+				<span className={cn('ml-2 text-xs', ft.muted)}>— syntéza & struktura</span>
 			</header>
 
 			<div className="flex min-h-0 flex-1 gap-2 overflow-hidden p-2 pt-1">
@@ -193,9 +193,9 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 									<TabsContent value="pos" className="mt-2">
 										<StackedBar
 											segments={[
-												{ label: 'Kardinální', pct: 50, count: 5, className: 'bg-rose-500' },
-												{ label: 'Fixní', pct: 30, count: 3, className: 'bg-sky-600' },
-												{ label: 'Mutuální', pct: 20, count: 2, className: 'bg-emerald-500' }
+												{ label: 'Kardinální', pct: 50, count: 5, color: 'var(--token-viz-1)' },
+												{ label: 'Fixní', pct: 30, count: 3, color: 'var(--token-viz-2)' },
+												{ label: 'Mutuální', pct: 20, count: 2, color: 'var(--token-viz-3)' }
 											]}
 											positive
 										/>
@@ -203,9 +203,9 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 									<TabsContent value="neg" className="mt-2">
 										<StackedBar
 											segments={[
-												{ label: 'Kardinální', pct: 0, count: 0, className: 'bg-rose-500' },
-												{ label: 'Fixní', pct: 0, count: 0, className: 'bg-sky-600' },
-												{ label: 'Mutuální', pct: 100, count: 0, className: 'bg-emerald-500' }
+												{ label: 'Kardinální', pct: 0, count: 0, color: 'var(--token-viz-1)' },
+												{ label: 'Fixní', pct: 0, count: 0, color: 'var(--token-viz-2)' },
+												{ label: 'Mutuální', pct: 100, count: 0, color: 'var(--token-viz-3)' }
 											]}
 											positive={false}
 										/>
@@ -233,9 +233,9 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 									<TabsContent value="pos" className="mt-2 space-y-2">
 										<StackedBar
 											segments={[
-												{ label: 'Rohové', pct: 40, count: 4, className: 'bg-violet-500' },
-												{ label: 'Následné', pct: 35, count: 3, className: 'bg-amber-500' },
-												{ label: 'Koncové', pct: 25, count: 2, className: 'bg-slate-500' }
+												{ label: 'Rohové', pct: 40, count: 4, color: 'var(--token-viz-1)' },
+												{ label: 'Následné', pct: 35, count: 3, color: 'var(--token-viz-2)' },
+												{ label: 'Koncové', pct: 25, count: 2, color: 'var(--token-viz-4)' }
 											]}
 											positive
 										/>
@@ -244,9 +244,9 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 									<TabsContent value="neg" className="mt-2 space-y-2">
 										<StackedBar
 											segments={[
-												{ label: 'Rohové', pct: 0, count: 0, className: 'bg-violet-500' },
-												{ label: 'Následné', pct: 0, count: 0, className: 'bg-amber-500' },
-												{ label: 'Koncové', pct: 100, count: 0, className: 'bg-slate-500' }
+												{ label: 'Rohové', pct: 0, count: 0, color: 'var(--token-viz-1)' },
+												{ label: 'Následné', pct: 0, count: 0, color: 'var(--token-viz-2)' },
+												{ label: 'Koncové', pct: 100, count: 0, color: 'var(--token-viz-4)' }
 											]}
 											positive={false}
 										/>
@@ -277,51 +277,59 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 								<div>
 									<p className={smallTitle}>Východ (ASC) vs Západ (DSC)</p>
 									<div className="mt-1 flex gap-2">
-										<button
+										<Button
 											type="button"
 											data-state={hemiGaugeHover === 'ew-east' ? 'hover-preview' : 'default'}
-											className="bg-muted/50 hover:bg-muted flex-1 rounded-lg border border-transparent px-2 py-1.5 text-left text-[11px] transition-colors"
+											variant="ghost"
+											size="sm"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
 											onMouseEnter={() => setHemiGaugeHover('ew-east')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
 											Východ <span className="text-muted-foreground">7/10 · 70 %</span>
-										</button>
-										<button
+										</Button>
+										<Button
 											type="button"
 											data-state={hemiGaugeHover === 'ew-west' ? 'hover-preview' : 'default'}
-											className="bg-muted/50 hover:bg-muted flex-1 rounded-lg border border-transparent px-2 py-1.5 text-left text-[11px] transition-colors"
+											variant="ghost"
+											size="sm"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
 											onMouseEnter={() => setHemiGaugeHover('ew-west')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
 											Západ <span className="text-muted-foreground">3/10 · 30 %</span>
-										</button>
+										</Button>
 									</div>
-									<HemiBalanceBar leftPct={70} rightPct={30} />
+									<HemiBalanceBar leftPct={70} />
 								</div>
 								<Separator />
 								<div>
 									<p className={smallTitle}>Nahoře (MC) vs Dole (IC)</p>
 									<div className="mt-1 flex gap-2">
-										<button
+										<Button
 											type="button"
 											data-state={hemiGaugeHover === 'ns-north' ? 'hover-preview' : 'default'}
-											className="bg-muted/50 hover:bg-muted flex-1 rounded-lg border border-transparent px-2 py-1.5 text-left text-[11px] transition-colors"
+											variant="ghost"
+											size="sm"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
 											onMouseEnter={() => setHemiGaugeHover('ns-north')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
 											Nahoře <span className="text-muted-foreground">6/10 · 60 %</span>
-										</button>
-										<button
+										</Button>
+										<Button
 											type="button"
 											data-state={hemiGaugeHover === 'ns-south' ? 'hover-preview' : 'default'}
-											className="bg-muted/50 hover:bg-muted flex-1 rounded-lg border border-transparent px-2 py-1.5 text-left text-[11px] transition-colors"
+											variant="ghost"
+											size="sm"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
 											onMouseEnter={() => setHemiGaugeHover('ns-south')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
 											Dole <span className="text-muted-foreground">4/10 · 40 %</span>
-										</button>
+										</Button>
 									</div>
-									<HemiBalanceBar leftPct={60} rightPct={40} />
+									<HemiBalanceBar leftPct={60} />
 								</div>
 							</CardContent>
 						</RailCard>
@@ -334,8 +342,8 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 							<CardContent className="px-3">
 								<div className="relative h-8 w-full overflow-hidden rounded-full border bg-muted/40">
 									<div
-										className="absolute top-0 left-0 h-full w-1/2 bg-sky-500/30"
-										style={{ width: '58%' }}
+										className="absolute top-0 left-0 h-full w-1/2"
+										style={{ width: '58%', backgroundColor: 'var(--token-viz-1)' }}
 									/>
 									<div className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
 										58 % extro · 42 % intro
@@ -520,12 +528,14 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 								<ScrollArea className="h-[100px] w-full rounded-lg border">
 									<div className="flex flex-col gap-1 p-2">
 										{configs.map((c) => (
-											<button
+											<Button
 												key={c.id}
 												type="button"
+												variant="ghost"
+												size="sm"
 												data-state={selectedConfig === c.id ? 'active' : 'default'}
 												className={cn(
-													'rounded-lg px-2 py-1 text-left text-[11px] transition-colors',
+													'h-auto justify-start rounded-lg px-2 py-1 text-left text-[11px] transition-colors',
 													selectedConfig === c.id
 														? 'bg-primary/15 text-foreground font-medium'
 														: 'hover:bg-muted'
@@ -533,7 +543,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 												onClick={() => setSelectedConfig(c.id)}
 											>
 												{c.label}
-											</button>
+											</Button>
 										))}
 									</div>
 								</ScrollArea>
@@ -605,22 +615,26 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 									</Badge>
 								</div>
 								<p className={smallTitle}>Retrográdní vzorce</p>
-								<button
+								<Button
 									type="button"
-									className="hover:bg-muted w-full rounded-lg border border-transparent px-2 py-1.5 text-left text-[11px]"
+									variant="ghost"
+									size="sm"
+									className="h-auto w-full justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
 									onMouseEnter={() => setRetroPatternHover('all-upper')}
 									onMouseLeave={() => setRetroPatternHover(null)}
 								>
 									Všechny planety nahoře retrográdní → náhled MC hemisféra
-								</button>
-								<button
+								</Button>
+								<Button
 									type="button"
-									className="hover:bg-muted w-full rounded-lg border border-transparent px-2 py-1.5 text-left text-[11px]"
+									variant="ghost"
+									size="sm"
+									className="h-auto w-full justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
 									onMouseEnter={() => setRetroPatternHover('all-east')}
 									onMouseLeave={() => setRetroPatternHover(null)}
 								>
 									Všechny planety na východě retrográdní → náhled ASC hemisféra
-								</button>
+								</Button>
 							</CardContent>
 						</RailCard>
 
@@ -690,23 +704,25 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 					const locked = lockedChipId === c.id;
 					const hover = hoverChipId === c.id;
 					return (
-						<button
+						<Button
 							key={c.id}
 							type="button"
+							variant="ghost"
+							size="sm"
 							data-state={
 								locked ? 'locked-focus' : hover ? 'hover-preview' : 'default'
 							}
 							className={chipStateClass(
 								locked,
 								hover,
-								'shrink-0 rounded-full border px-2.5 py-1 text-[10px] transition-colors'
+								'shrink-0 rounded-full border px-2.5 py-1 text-[10px] transition-colors h-auto'
 							)}
 							onMouseEnter={() => setHoverChipId(c.id)}
 							onMouseLeave={() => setHoverChipId(null)}
 							onClick={() => setLockedChipId((prev) => (prev === c.id ? null : c.id))}
 						>
 							{c.label}
-						</button>
+						</Button>
 					);
 				})}
 			</div>
@@ -716,10 +732,10 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 
 function ElementBars({ positive }: { positive: boolean }) {
 	const rows = [
-		{ label: 'Oheň', n: 4, pct: 40, c: 'bg-orange-500' },
-		{ label: 'Země', n: 2, pct: 20, c: 'bg-amber-700' },
-		{ label: 'Vzduch', n: 3, pct: 30, c: 'bg-sky-500' },
-		{ label: 'Voda', n: 1, pct: 10, c: 'bg-blue-600' }
+		{ label: 'Oheň', n: 4, pct: 40, color: 'var(--token-viz-1)' },
+		{ label: 'Země', n: 2, pct: 20, color: 'var(--token-viz-2)' },
+		{ label: 'Vzduch', n: 3, pct: 30, color: 'var(--token-viz-3)' },
+		{ label: 'Voda', n: 1, pct: 10, color: 'var(--token-viz-4)' }
 	];
 	if (!positive) {
 		return (
@@ -743,7 +759,10 @@ function ElementBars({ positive }: { positive: boolean }) {
 		<div className="flex h-20 items-end justify-between gap-1">
 			{rows.map((r) => (
 				<div key={r.label} className="flex flex-1 flex-col items-center gap-0.5">
-					<div className={cn('w-full rounded-t-lg', r.c)} style={{ height: `${r.pct}%` }} />
+					<div
+						className="w-full rounded-t-lg"
+						style={{ height: `${r.pct}%`, backgroundColor: r.color }}
+					/>
 					<span className="text-[10px] font-medium">
 						{r.n} · {r.pct}%
 					</span>
@@ -758,7 +777,7 @@ function StackedBar({
 	segments,
 	positive
 }: {
-	segments: { label: string; pct: number; count: number; className: string }[];
+	segments: { label: string; pct: number; count: number; color: string }[];
 	positive: boolean;
 }) {
 	return (
@@ -767,11 +786,16 @@ function StackedBar({
 				{segments.map((s) => (
 					<div
 						key={s.label}
-						style={{ width: `${s.pct}%` }}
+						style={
+							positive
+								? { width: `${s.pct}%`, backgroundColor: s.color }
+								: { width: `${s.pct}%` }
+						}
 						className={cn(
-							positive ? s.className : 'border border-dashed bg-transparent',
+							positive ? '' : 'border border-dashed bg-transparent',
 							!positive && s.pct === 0 && 'border-muted-foreground/30'
 						)}
+						data-segment-color={s.color}
 						title={s.label}
 					/>
 				))}
@@ -796,7 +820,7 @@ function HouseHeatmap() {
 				<div
 					key={labels[i]}
 					className="flex aspect-square items-center justify-center rounded-lg border text-[8px]"
-					style={{ backgroundColor: `rgba(59, 130, 246, ${0.15 + v * 0.5})` }}
+					style={{ backgroundColor: `color-mix(in srgb, var(--token-viz-1) ${20 + Math.round(v * 50)}%, transparent)` }}
 				>
 					{labels[i]}
 				</div>
@@ -818,7 +842,7 @@ function QuadrantDonut() {
 				className="h-14 w-14 shrink-0 rounded-full"
 				style={{
 					background:
-						'conic-gradient(#f43f5e 0% 28%, #0ea5e9 28% 52%, #10b981 52% 74%, #8b5cf6 74% 100%)'
+						'conic-gradient(var(--token-viz-1) 0% 28%, var(--token-viz-2) 28% 52%, var(--token-viz-3) 52% 74%, var(--token-viz-4) 74% 100%)'
 				}}
 			/>
 			<div className="grid flex-1 grid-cols-2 gap-1 text-[10px]">
@@ -833,7 +857,7 @@ function QuadrantDonut() {
 	);
 }
 
-function HemiBalanceBar({ leftPct, rightPct }: { leftPct: number; rightPct: number }) {
+function HemiBalanceBar({ leftPct }: { leftPct: number }) {
 	return (
 		<div className="bg-muted mt-1 h-2 w-full overflow-hidden rounded-full">
 			<div
@@ -865,7 +889,12 @@ function AspectHistogram({ positive: _positive }: { positive: boolean }) {
 						/>
 					</div>
 					<span className="w-4 text-[10px] tabular-nums">{r.n}</span>
-					{r.star && <Star className="text-amber-500 h-3 w-3 fill-amber-400" />}
+					{r.star && (
+						<Star
+							className="h-3 w-3"
+							style={{ color: 'var(--token-viz-1)', fill: 'var(--token-viz-1)' }}
+						/>
+					)}
 				</div>
 			))}
 		</div>
@@ -874,9 +903,9 @@ function AspectHistogram({ positive: _positive }: { positive: boolean }) {
 
 function AspectNegativeAbsence() {
 	const rows = [
-		{ k: 'Kardinální modalita (osy)', n: 0 },
-		{ k: 'Živel Voda (osy)', n: 0 },
-		{ k: 'Konjunkce (slabé)', n: 1 }
+		{ k: 'Kardinální modalita (osy)' },
+		{ k: 'Živel Voda (osy)' },
+		{ k: 'Konjunkce (slabé)' }
 	];
 	return (
 		<div className="space-y-2">

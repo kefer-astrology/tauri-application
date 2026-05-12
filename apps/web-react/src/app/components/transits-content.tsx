@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown } from 'lucide-react';
+import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
+import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { cn } from './ui/utils';
-import { type AppFormFieldTheme, useAppFormFieldTheme } from './form-field-theme';
+import { useAppFormFieldTheme } from './form-field-theme';
 import type { TransitSection } from './transits-secondary-sidebar';
 import { TransitsBodiesConfig } from './transits-bodies-config';
 import type { Theme } from './astrology-sidebar';
@@ -19,83 +21,6 @@ interface TransitsContentProps {
 }
 
 type DropdownOption = { id: string; label: string };
-
-interface CustomDropdownProps {
-	label: string;
-	value: string;
-	options: DropdownOption[];
-	onChange: (id: string) => void;
-	ft: AppFormFieldTheme;
-}
-
-function CustomDropdown({ label, value, options, onChange, ft }: CustomDropdownProps) {
-	const [isOpen, setIsOpen] = useState(false);
-	const dropdownRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-				setIsOpen(false);
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
-
-	const selectedLabel = options.find((o) => o.id === value)?.label ?? value;
-	const isDark = ft.isDark || ft.isTwilight;
-
-	return (
-		<div ref={dropdownRef}>
-			<Label className={cn('mb-2 block', ft.label)}>{label}</Label>
-
-			<button
-				type="button"
-				onClick={() => setIsOpen(!isOpen)}
-				className={cn(
-					ft.selectTrigger,
-					'shadow-inner',
-					'focus:ring-2 focus:ring-blue-500 focus:outline-none'
-				)}
-			>
-				<span className="text-sm">{selectedLabel}</span>
-				<ChevronDown
-					className={cn('h-4 w-4 transition-transform duration-200', isOpen && 'rotate-180')}
-				/>
-			</button>
-
-			{isOpen && (
-				<div
-					className={cn(
-						'animate-dropdown-slide-in mt-2 overflow-hidden rounded-lg shadow-xl ring-1 ring-black/5 dark:ring-white/10',
-						ft.dropdown,
-						'border-0'
-					)}
-				>
-					{options.map((option, index) => (
-						<button
-							key={option.id}
-							type="button"
-							onClick={() => {
-								onChange(option.id);
-								setIsOpen(false);
-							}}
-							className={cn(
-								'w-full px-4 py-2.5 text-left text-sm transition-colors duration-150',
-								value === option.id ? ft.dropdownActive : cn(ft.dropdownHover, 'text-left'),
-								index > 0 && 'border-t',
-								isDark && index > 0 ? 'border-blue-900/40' : 'border-gray-100'
-							)}
-						>
-							{option.label}
-						</button>
-					))}
-				</div>
-			)}
-		</div>
-	);
-}
 
 const MAJOR_ASPECT_ROWS: { labelKey: string; glyph: string; angle: string; orb: string }[] = [
 	{ labelKey: 'aspect_conjunction', glyph: '☌', angle: '0°', orb: '8°' },
@@ -158,21 +83,37 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								<p className={cn('text-sm', ft.muted)}>{t('transits_subtitle_general')}</p>
 							</div>
 
-							<CustomDropdown
-								label={t('transits_label_type')}
-								value={selectedTypeId}
-								options={typeOptions}
-								onChange={setSelectedTypeId}
-								ft={ft}
-							/>
+							<div>
+								<Label className={cn('mb-2 block', ft.label)}>{t('transits_label_type')}</Label>
+								<Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
+									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className={ft.selectContent}>
+										{typeOptions.map((option) => (
+											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
 
-							<CustomDropdown
-								label={t('transits_label_period')}
-								value={periodModeId}
-								options={periodOptions}
-								onChange={setPeriodModeId}
-								ft={ft}
-							/>
+							<div>
+								<Label className={cn('mb-2 block', ft.label)}>{t('transits_label_period')}</Label>
+								<Select value={periodModeId} onValueChange={setPeriodModeId}>
+									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className={ft.selectContent}>
+										{periodOptions.map((option) => (
+											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
 
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-3">
@@ -182,16 +123,12 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
 										)}
 									>
-										<input
-											type="checkbox"
+										<Checkbox
 											checked={checkboxes.houseTransitions}
-											onChange={(e) =>
-												setCheckboxes({ ...checkboxes, houseTransitions: e.target.checked })
+											onCheckedChange={(checked) =>
+												setCheckboxes({ ...checkboxes, houseTransitions: checked === true })
 											}
-											className={cn(
-												'mt-0.5 h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50',
-												ft.checkboxAccent
-											)}
+											className={cn('mt-0.5 disabled:cursor-not-allowed', ft.checkboxAccent)}
 											disabled={areCheckboxesDisabled}
 										/>
 										<span
@@ -209,16 +146,12 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
 										)}
 									>
-										<input
-											type="checkbox"
+										<Checkbox
 											checked={checkboxes.signTransitions}
-											onChange={(e) =>
-												setCheckboxes({ ...checkboxes, signTransitions: e.target.checked })
+											onCheckedChange={(checked) =>
+												setCheckboxes({ ...checkboxes, signTransitions: checked === true })
 											}
-											className={cn(
-												'mt-0.5 h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50',
-												ft.checkboxAccent
-											)}
+											className={cn('mt-0.5 disabled:cursor-not-allowed', ft.checkboxAccent)}
 											disabled={areCheckboxesDisabled}
 										/>
 										<span
@@ -238,16 +171,12 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
 										)}
 									>
-										<input
-											type="checkbox"
+										<Checkbox
 											checked={checkboxes.transitLimits}
-											onChange={(e) =>
-												setCheckboxes({ ...checkboxes, transitLimits: e.target.checked })
+											onCheckedChange={(checked) =>
+												setCheckboxes({ ...checkboxes, transitLimits: checked === true })
 											}
-											className={cn(
-												'mt-0.5 h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50',
-												ft.checkboxAccent
-											)}
+											className={cn('mt-0.5 disabled:cursor-not-allowed', ft.checkboxAccent)}
 											disabled={areCheckboxesDisabled}
 										/>
 										<span
@@ -265,16 +194,15 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
 										)}
 									>
-										<input
-											type="checkbox"
+										<Checkbox
 											checked={checkboxes.precessionCorrection}
-											onChange={(e) =>
-												setCheckboxes({ ...checkboxes, precessionCorrection: e.target.checked })
+											onCheckedChange={(checked) =>
+												setCheckboxes({
+													...checkboxes,
+													precessionCorrection: checked === true
+												})
 											}
-											className={cn(
-												'mt-0.5 h-4 w-4 rounded disabled:cursor-not-allowed disabled:opacity-50',
-												ft.checkboxAccent
-											)}
+											className={cn('mt-0.5 disabled:cursor-not-allowed', ft.checkboxAccent)}
 											disabled={areCheckboxesDisabled}
 										/>
 										<span
@@ -388,12 +316,12 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 							</div>
 
 							<div className="flex items-center justify-center gap-4 pt-6">
-								<button type="button" className={cn(ft.footerCancel, '!flex-none')}>
+								<Button type="button" variant="outline" className={cn(ft.footerCancel, '!flex-none')}>
 									{t('button_close')}
-								</button>
-								<button type="button" className={cn(ft.footerPrimary, '!flex-none')}>
+								</Button>
+								<Button type="button" className={cn(ft.footerPrimary, '!flex-none')}>
 									{t('button_ok')}
-								</button>
+								</Button>
 							</div>
 						</CardContent>
 					</Card>
@@ -438,11 +366,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 									{MAJOR_ASPECT_ROWS.map((aspect) => (
 										<div key={aspect.labelKey} className="flex items-center gap-4">
 											<label className="flex flex-1 cursor-pointer items-center gap-3">
-												<input
-													type="checkbox"
-													className={cn('h-4 w-4 rounded', ft.checkboxAccent)}
-													defaultChecked
-												/>
+												<Checkbox className={ft.checkboxAccent} defaultChecked />
 												<span className={cn('text-sm font-medium', ft.bodyText)}>
 													{t(aspect.labelKey)} {aspect.glyph}
 												</span>
@@ -471,10 +395,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 									{MINOR_ASPECT_ROWS.map((aspect) => (
 										<div key={aspect.labelKey} className="flex items-center gap-4">
 											<label className="flex flex-1 cursor-pointer items-center gap-3">
-												<input
-													type="checkbox"
-													className={cn('h-4 w-4 rounded', ft.checkboxAccent)}
-												/>
+												<Checkbox className={ft.checkboxAccent} />
 												<span className={cn('text-sm font-medium', ft.bodyText)}>
 													{t(aspect.labelKey)}
 												</span>

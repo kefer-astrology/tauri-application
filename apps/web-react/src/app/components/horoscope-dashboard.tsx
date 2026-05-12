@@ -10,9 +10,11 @@ import {
 	X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { HoroscopeContextTabs } from './horoscope-context-tabs';
@@ -200,16 +202,14 @@ export function HoroscopeDashboard({
 	const [showPositionModal, setShowPositionModal] = useState(false);
 	const [isSteppingTime, setIsSteppingTime] = useState(false);
 
-	const isDark = theme === 'midnight' || theme === 'twilight';
-
-	const borderColor = isDark ? 'border-white/10' : 'border-gray-200';
+	const borderColor = 'border-[color:var(--token-border-subtle)]';
 	const textColor = ft.title;
 	const mutedColor = ft.muted;
-	const hoverBg = isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50';
+	const hoverBg = 'hover:bg-[color:var(--token-hover-subtle)]';
 	const controlRow = cn(
 		'flex items-center gap-2 rounded-xl border px-3 py-2',
 		borderColor,
-		isDark ? 'bg-white/5' : 'bg-gray-50'
+		'bg-[color:var(--token-surface-subtle)]'
 	);
 	const nativeSelect = cn(
 		ft.inputCompact,
@@ -327,12 +327,14 @@ export function HoroscopeDashboard({
 									{selectedChart?.name ?? t('demo_chart_name')}
 								</h3>
 							</div>
-							<button
-								className={`rounded-lg p-1.5 ${hoverBg}`}
+							<Button
+								variant="ghost"
+								size="icon"
+								className={cn('rounded-lg', hoverBg)}
 								onClick={(e) => e.stopPropagation()}
 							>
 								<Pencil className={`h-4 w-4 ${mutedColor}`} />
-							</button>
+							</Button>
 						</div>
 
 						{!profileCollapsed && (
@@ -379,48 +381,60 @@ export function HoroscopeDashboard({
 							<div className="space-y-3 px-4 pb-4">
 								{/* Time Stepper */}
 								<div className="flex items-center gap-2">
-									<button
-										className={`rounded-full border p-2 ${borderColor} ${hoverBg} ${textColor}`}
+									<Button
+										variant="outline"
+										size="icon"
+										className={cn('rounded-full', borderColor, hoverBg, textColor)}
 										onClick={() => void stepChartTime(-1)}
 										disabled={isSteppingTime || !selectedChart}
 									>
 										<ChevronLeft className="h-4 w-4" />
-									</button>
+									</Button>
 
-									<select
-										value={timeAmount}
-										onChange={(e) => setTimeAmount(Number(e.target.value))}
-										className={nativeSelect}
+									<Select
+										value={String(timeAmount)}
+										onValueChange={(value) => setTimeAmount(Number(value))}
 									>
-										{Array.from({ length: getMaxAmount() }, (_, i) => i + 1).map((n) => (
-											<option key={n} value={n}>
-												{n}
-											</option>
-										))}
-									</select>
+										<SelectTrigger className={nativeSelect}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent className={ft.selectContent}>
+											{Array.from({ length: getMaxAmount() }, (_, i) => i + 1).map((n) => (
+												<SelectItem key={n} value={String(n)} className={ft.selectItem}>
+													{n}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 
-									<select
+									<Select
 										value={timeUnit}
-										onChange={(e) =>
-											setTimeUnit(e.target.value as 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr')
+										onValueChange={(value) =>
+											setTimeUnit(value as 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr')
 										}
-										className={nativeSelect}
 									>
-										<option value="sec">{t('astrolabe_unit_sec')}</option>
-										<option value="min">{t('astrolabe_unit_min')}</option>
-										<option value="hr">{t('astrolabe_unit_hr')}</option>
-										<option value="day">{t('astrolabe_unit_day')}</option>
-										<option value="month">{t('astrolabe_unit_month')}</option>
-										<option value="yr">{t('astrolabe_unit_yr')}</option>
-									</select>
+										<SelectTrigger className={nativeSelect}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent className={ft.selectContent}>
+											<SelectItem value="sec" className={ft.selectItem}>{t('astrolabe_unit_sec')}</SelectItem>
+											<SelectItem value="min" className={ft.selectItem}>{t('astrolabe_unit_min')}</SelectItem>
+											<SelectItem value="hr" className={ft.selectItem}>{t('astrolabe_unit_hr')}</SelectItem>
+											<SelectItem value="day" className={ft.selectItem}>{t('astrolabe_unit_day')}</SelectItem>
+											<SelectItem value="month" className={ft.selectItem}>{t('astrolabe_unit_month')}</SelectItem>
+											<SelectItem value="yr" className={ft.selectItem}>{t('astrolabe_unit_yr')}</SelectItem>
+										</SelectContent>
+									</Select>
 
-									<button
-										className={`rounded-full border p-2 ${borderColor} ${hoverBg} ${textColor}`}
+									<Button
+										variant="outline"
+										size="icon"
+										className={cn('rounded-full', borderColor, hoverBg, textColor)}
 										onClick={() => void stepChartTime(1)}
 										disabled={isSteppingTime || !selectedChart}
 									>
 										<ChevronRight className="h-4 w-4" />
-									</button>
+									</Button>
 								</div>
 
 								{/* Date Input */}
@@ -505,15 +519,17 @@ export function HoroscopeDashboard({
 								)}
 								<h3 className={`font-medium ${textColor}`}>{t('right_panel')}</h3>
 							</div>
-							<button
-								className={`rounded-lg p-1.5 ${hoverBg}`}
+							<Button
+								variant="ghost"
+								size="icon"
+								className={cn('rounded-lg', hoverBg)}
 								onClick={(e) => {
 									e.stopPropagation();
 									setShowPositionModal(true);
 								}}
 							>
 								<Pencil className={`h-4 w-4 ${mutedColor}`} />
-							</button>
+							</Button>
 						</div>
 
 						{!positionsCollapsed && (
@@ -560,7 +576,7 @@ export function HoroscopeDashboard({
 													</span>
 													<span className="w-10 text-right">{pos.minutes}'</span>
 													<span className="w-10 text-right">{pos.seconds}"</span>
-													<span className="w-6 text-center text-[10px] font-semibold uppercase text-amber-600">
+													<span className="w-6 text-center text-[10px] font-semibold uppercase text-[color:var(--theme-accent)]">
 														{pos.retrograde ? 'R' : ''}
 													</span>
 												</div>
@@ -596,32 +612,35 @@ export function HoroscopeDashboard({
 							<h3 className={`text-lg font-medium ${textColor}`}>
 								{t('dashboard_positions_picker_title')}
 							</h3>
-							<button
+							<Button
+								variant="ghost"
+								size="icon"
 								onClick={() => setShowPositionModal(false)}
-								className={`rounded-lg p-2 ${hoverBg}`}
+								className={cn('rounded-lg', hoverBg)}
 							>
 								<X className={`h-5 w-5 ${mutedColor}`} />
-							</button>
+							</Button>
 						</div>
 						<div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-4">
 							<p className={`text-sm ${mutedColor}`}>{t('dashboard_positions_picker_hint')}</p>
 							{/* Add checkboxes similar to Transit settings */}
 						</div>
 						<div className={cn('flex justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}>
-							<button
+							<Button
 								type="button"
+								variant="outline"
 								onClick={() => setShowPositionModal(false)}
 								className={cn(ft.footerCancel, '!flex-none')}
 							>
 								{t('cancel')}
-							</button>
-							<button
+							</Button>
+							<Button
 								type="button"
 								onClick={() => setShowPositionModal(false)}
 								className={cn(ft.footerPrimary, '!flex-none')}
 							>
 								{t('sidebar_save')}
-							</button>
+							</Button>
 						</div>
 					</Card>
 				</div>

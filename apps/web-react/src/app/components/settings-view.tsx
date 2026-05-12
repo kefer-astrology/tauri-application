@@ -7,9 +7,11 @@ import { LocationSelector } from './location-selector';
 import type { SettingsSectionId } from './settings-secondary-sidebar';
 import type { Theme } from './astrology-sidebar';
 import { Card, CardContent, CardFooter } from './ui/card';
+import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Separator } from './ui/separator';
 import {
 	Select,
 	SelectContent,
@@ -39,6 +41,7 @@ import {
 	OBSERVABLE_OBJECT_CATEGORY_LABELS,
 	type ObservableObjectCategory
 } from '@/lib/astrology/observableObjects';
+import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
 import type { AspectLineTierStyleState, WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import { searchLocations } from '@/lib/tauri/workspace';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
@@ -90,6 +93,8 @@ interface SettingsViewProps {
 	onAstrologyGlyphSetChange: (value: AstrologyGlyphSetId) => void;
 	elementColors: ElementColors;
 	onElementColorsCommit: (value: ElementColors) => void;
+	themePalette: ThemePalette;
+	onThemePaletteCommit: (value: ThemePalette) => void;
 	workspaceDefaults: WorkspaceDefaultsState;
 	onWorkspaceDefaultsChange: (patch: Partial<WorkspaceDefaultsState>) => Promise<void> | void;
 }
@@ -103,6 +108,8 @@ function SettingsView({
 	onAstrologyGlyphSetChange,
 	elementColors,
 	onElementColorsCommit,
+	themePalette,
+	onThemePaletteCommit,
 	workspaceDefaults,
 	onWorkspaceDefaultsChange
 }: SettingsViewProps) {
@@ -117,6 +124,7 @@ function SettingsView({
 	const [presetValue, setPresetValue] = useState<string>('default');
 	const [glyphSetValue, setGlyphSetValue] = useState<AstrologyGlyphSetId>(astrologyGlyphSet);
 	const [elementDraft, setElementDraft] = useState<ElementColors>(elementColors);
+	const [themePaletteDraft, setThemePaletteDraft] = useState<ThemePalette>(themePalette);
 	const [selectedBodies, setSelectedBodies] = useState<string[]>(
 		workspaceDefaults.defaultBodies.length > 0
 			? workspaceDefaults.defaultBodies
@@ -174,6 +182,10 @@ function SettingsView({
 	useEffect(() => {
 		setElementDraft(elementColors);
 	}, [elementColors]);
+
+	useEffect(() => {
+		setThemePaletteDraft(themePalette);
+	}, [themePalette]);
 
 	const markChanged = useCallback(() => setSettingsChanged(true), []);
 
@@ -247,13 +259,15 @@ function SettingsView({
 		setAspectLineTiers({ ...workspaceDefaults.aspectLineTierStyle });
 		setGlyphSetValue(astrologyGlyphSet);
 		setElementDraft(elementColors);
+		setThemePaletteDraft(themePalette);
 		onAppShellIconSetChange(readStoredAppShellIconSet());
-	}, [astrologyGlyphSet, elementColors, onAppShellIconSetChange, workspaceDefaults]);
+	}, [astrologyGlyphSet, elementColors, onAppShellIconSetChange, themePalette, workspaceDefaults]);
 
 	const handleConfirm = useCallback(() => {
 		onElementColorsCommit(elementDraft);
+		onThemePaletteCommit(themePaletteDraft);
 		setSettingsChanged(false);
-	}, [elementDraft, onElementColorsCommit]);
+	}, [elementDraft, onElementColorsCommit, onThemePaletteCommit, themePaletteDraft]);
 
 	const persistLocationPatch = useCallback(
 		async (patch?: Partial<WorkspaceDefaultsState>) => {
@@ -359,16 +373,7 @@ function SettingsView({
 								<div className="max-w-xl space-y-4">
 									<div className="flex items-center gap-2">
 										<Languages
-											className={cn(
-												'h-6 w-6 shrink-0',
-												ft.isTwilight
-													? 'text-white'
-													: ft.isDark
-														? 'text-blue-400'
-														: ft.isSunrise
-															? 'text-sky-600'
-															: 'text-neutral-900'
-											)}
+											className={cn('h-6 w-6 shrink-0', ft.iconColor)}
 											aria-hidden
 										/>
 										<h2 className={ft.sectionTitle}>{t('section_jazyk')}</h2>
@@ -381,9 +386,10 @@ function SettingsView({
 												const active =
 													i18n.language === code || i18n.language.startsWith(`${code}-`);
 												return (
-													<button
+													<Button
 														key={code}
 														type="button"
+														variant="ghost"
 														onClick={() => {
 															void i18n.changeLanguage(code);
 															markChanged();
@@ -391,7 +397,7 @@ function SettingsView({
 														className={ft.langBubble(active)}
 													>
 														{label}
-													</button>
+													</Button>
 												);
 											})}
 										</div>
@@ -529,7 +535,7 @@ function SettingsView({
 									</p>
 									<div className="grid gap-4 md:grid-cols-2">
 										{observableCategories.map((category) => (
-											<div key={category.id} className="rounded-xl border border-border/60 p-4">
+											<div key={category.id} className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 p-4">
 												<h3 className={cn('mb-3 text-sm font-semibold', ft.label)}>{category.label}</h3>
 												<div className="space-y-2">
 													{category.items.map((item) => (
@@ -571,7 +577,7 @@ function SettingsView({
 												return (
 													<div
 														key={aspect.id}
-													className="grid items-center gap-3 rounded-xl border border-border/60 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_170px]"
+														className="grid items-center gap-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_170px]"
 													>
 														<label className="flex cursor-pointer items-center gap-3">
 															<Checkbox
@@ -640,7 +646,8 @@ function SettingsView({
 											})}
 										</div>
 									</div>
-									<div className="space-y-3 rounded-xl border border-border/60 px-4 py-4">
+									<Separator className="bg-[color:var(--theme-panel-border)]" />
+									<div className="space-y-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
 										<p className={ft.label}>{t('settings_radix_aspect_lines_title')}</p>
 										<p className={cn('text-xs', ft.muted)}>{t('settings_radix_aspect_lines_hint')}</p>
 										<div className="grid gap-3 sm:grid-cols-2">
@@ -894,7 +901,95 @@ function SettingsView({
 											</p>
 										) : null}
 									</div>
-									<div className="space-y-4 border-t border-border/60 pt-6">
+									<Separator className="bg-[color:var(--theme-panel-border)]" />
+									<div className="space-y-4 pt-1">
+										<h3 className={cn('text-sm font-semibold', ft.title)}>
+											{t('settings_theme_palette_title')}
+										</h3>
+										<p className={cn('text-xs leading-relaxed', ft.muted)}>
+											{t('settings_theme_palette_blurb', { theme: t(`sidebar_theme_${theme}`) })}
+										</p>
+										<div className="grid gap-4 sm:grid-cols-2">
+											{(
+												[
+													['mainSidebarStart', 'settings_theme_main_sidebar_start'],
+													['mainSidebarEnd', 'settings_theme_main_sidebar_end'],
+													['secondarySidebarStart', 'settings_theme_secondary_sidebar_start'],
+													['secondarySidebarEnd', 'settings_theme_secondary_sidebar_end'],
+													['canvasStart', 'settings_theme_canvas_start'],
+													['canvasEnd', 'settings_theme_canvas_end'],
+													['navTextPrimary', 'settings_theme_nav_text_primary'],
+													['navTextSecondary', 'settings_theme_nav_text_secondary'],
+													['contentTextPrimary', 'settings_theme_content_text_primary'],
+													['contentTextSecondary', 'settings_theme_content_text_secondary'],
+													['contentMuted', 'settings_theme_content_muted'],
+													['accent', 'settings_theme_accent']
+												] as const
+											).map(([key, labelKey]) => (
+												<div key={key} className="flex items-center gap-3">
+													<div className="min-w-0 flex-1">
+														<Label className={cn(ft.label, 'mb-1 block')}>{t(labelKey)}</Label>
+														<Input
+															className={ft.inputCompact}
+															value={themePaletteDraft[key]}
+															onChange={(e) => {
+																const value = e.target.value;
+																setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+																markChanged();
+															}}
+														/>
+													</div>
+													<input
+														type="color"
+														className="mt-5 h-9 w-14 shrink-0 cursor-pointer rounded-md border border-border/60 bg-background p-0 shadow-inner"
+														value={themePaletteDraft[key]}
+														onChange={(e) => {
+															const value = e.target.value;
+															setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+															markChanged();
+														}}
+														aria-label={t(labelKey)}
+													/>
+												</div>
+											))}
+										</div>
+										<div className="grid gap-4 sm:grid-cols-2">
+											{(
+												[
+													['hoverBackground', 'settings_theme_hover_background'],
+													['selectedBackground', 'settings_theme_selected_background']
+												] as const
+											).map(([key, labelKey]) => (
+												<div key={key} className="space-y-1">
+													<Label className={ft.label}>{t(labelKey)}</Label>
+													<Input
+														className={ft.inputCompact}
+														value={themePaletteDraft[key]}
+														onChange={(e) => {
+															const value = e.target.value;
+															setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+															markChanged();
+														}}
+													/>
+												</div>
+											))}
+										</div>
+										<div className="pt-1">
+											<Button
+												type="button"
+												variant="outline"
+												className={cn(ft.footerCancel, 'max-w-xs')}
+												onClick={() => {
+													setThemePaletteDraft(DEFAULT_THEME_PALETTES[theme]);
+													markChanged();
+												}}
+											>
+												{t('settings_theme_reset_current')}
+											</Button>
+										</div>
+									</div>
+									<Separator className="bg-[color:var(--theme-panel-border)]" />
+									<div className="space-y-4 pt-1">
 										<h3 className={cn('text-sm font-semibold', ft.title)}>
 											{t('settings_element_wheel_title')}
 										</h3>
@@ -935,17 +1030,17 @@ function SettingsView({
 						</CardContent>
 
 						<CardFooter className="shrink-0 flex-col gap-2 border-0 bg-transparent px-6 py-4 md:px-8 sm:flex-row">
-							<button type="button" className={ft.footerCancel} onClick={handleCancel}>
+							<Button type="button" variant="outline" className={ft.footerCancel} onClick={handleCancel}>
 								{t('cancel')}
-							</button>
-							<button
+							</Button>
+							<Button
 								type="button"
 								className={ft.footerPrimary}
 								onClick={handleConfirm}
 								disabled={!settingsChanged}
 							>
 								{t('confirm')}
-							</button>
+							</Button>
 						</CardFooter>
 					</Card>
 				</div>

@@ -6,10 +6,14 @@ import { cn } from './utils';
 export type CardTheme = 'sunrise' | 'noon' | 'twilight' | 'midnight';
 
 const themedCardClasses: Record<CardTheme, string> = {
-	sunrise: 'border-sky-200/90 bg-white/90 text-sky-950 shadow-sm backdrop-blur-sm',
-	noon: 'border-gray-200 bg-white/95 text-gray-900 shadow-sm',
-	twilight: 'border-blue-700/50 bg-blue-900/35 text-white backdrop-blur-md',
-	midnight: 'border-blue-900/50 bg-blue-950/50 text-slate-100 backdrop-blur-md'
+	sunrise:
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-sm',
+	noon:
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-sm',
+	twilight:
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-md',
+	midnight:
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-md'
 };
 
 const cardVariants = cva('flex flex-col gap-6 rounded-2xl', {

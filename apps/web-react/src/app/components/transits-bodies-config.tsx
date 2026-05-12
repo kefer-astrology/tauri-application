@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
+import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
@@ -456,12 +457,12 @@ export function TransitsBodiesConfig({ theme, glyphSet, titleKey, subtitleKey }:
 				</div>
 
 				<div className="flex items-center justify-center gap-4 pt-6">
-					<button type="button" className={cn(ft.footerCancel, '!flex-none text-sm')}>
+					<Button type="button" variant="outline" className={cn(ft.footerCancel, '!flex-none text-sm')}>
 						{t('button_close')}
-					</button>
-					<button type="button" className={cn(ft.footerPrimary, '!flex-none text-sm')}>
+					</Button>
+					<Button type="button" className={cn(ft.footerPrimary, '!flex-none text-sm')}>
 						{t('button_ok')}
-					</button>
+					</Button>
 				</div>
 			</CardContent>
 		</Card>
