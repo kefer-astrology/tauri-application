@@ -1,6 +1,6 @@
 # Kefer Astrology (desktop)
 
-Astrology desktop app: **Tauri 2**, **React** and **Svelte** frontend workspaces (both Vite-based), and a **Python** computation sidecar. This repo is an **npm workspace** monorepo: the main frontend workspaces are **`apps/web-react/`** and **`apps/web-svelte/`**; native integration is in **`src-tauri/`**; chart logic is in **`backend-python/`**.
+Astrology desktop app: **Tauri 2**, **React** and **Svelte** frontend workspaces (both Vite-based), and a **Python** computation sidecar. This repo is an **npm workspace** monorepo: the main frontend workspaces are **`apps/web-react/`** and **`apps/web-svelte/`**; native integration is in **`src-tauri/`**; python sidecar funcitonality available in **`backend-python/`**.
 
 ## Documentation
 

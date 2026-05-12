@@ -47,6 +47,8 @@ cache/
 # Tauri sidecar build artifacts
 /src-tauri/binaries/*
 !/src-tauri/binaries/.gitkeep
+# ignore temp folder with fuction-wrapper
+backend-python/
 
 # Hugo docs build/generated artifacts
 docs/resources/

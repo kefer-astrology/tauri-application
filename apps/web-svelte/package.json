@@ -24,6 +24,7 @@
 	"devDependencies": {
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
 		"@tailwindcss/vite": "^4.2.1",
+		"esbuild": "^0.27.7",
 		"obug": "^2.1.0",
 		"rollup": "^4.60.3",
 		"svelte-check": "^4.3.1",
