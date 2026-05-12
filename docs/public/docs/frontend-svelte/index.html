@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Svelte frontend | Kefer docs</title>
     <meta name="description" content="Operational guide for the alternate Svelte &#43; Vite &#43; Tauri workspace." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
   </head>
   <body>
     <div class="shell">
@@ -27,111 +27,135 @@
       <p class="lede">Operational guide for the alternate Svelte &#43; Vite &#43; Tauri workspace.</p>
     </header>
     <div class="prose">
-      <h1 id="svelte-frontend-alternate-tauri-shell">Svelte frontend (alternate Tauri shell)</h1>
-<p><code>apps/web-svelte</code> is the Svelte port of the app. It currently carries more feature depth than the React shell, so it is useful both as an implementation reference and as an alternate desktop target.</p>
+      <h2 id="current-status">Current status</h2>
+<ul>
+<li>Svelte is the alternate desktop shell.</li>
+<li>Radix/settings/transits parity with React is much better than before.</li>
+<li>It includes a wired <code>compute_transit_series</code> flow through Tauri.</li>
+<li>It still carries more compatibility-era assumptions than React, especially around storage/query helpers and in-memory fallbacks.</li>
+<li>Performance and decomposition still need more care here than in the React shell.</li>
+</ul>
 <h2 id="commands">Commands</h2>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm install
-</span></span><span style="display:flex;"><span>npm run dev:svelte            <span style="color:#75715e"># Vite only, http://localhost:1422</span>
-</span></span><span style="display:flex;"><span>npm run check:svelte          <span style="color:#75715e"># Svelte type/check pass</span>
-</span></span><span style="display:flex;"><span>npm run build:svelte          <span style="color:#75715e"># Frontend -&gt; apps/web-svelte/dist/</span>
-</span></span><span style="display:flex;"><span>npm run tauri:dev:svelte      <span style="color:#75715e"># Desktop app using the Svelte frontend</span>
-</span></span><span style="display:flex;"><span>npm run tauri:build:svelte    <span style="color:#75715e"># Desktop bundle with Svelte as foreground</span>
-</span></span><span style="display:flex;"><span>npm run docs:prepare          <span style="color:#75715e"># Builds all frontends and copies them into docs/static/apps/</span>
-</span></span></code></pre></div><h2 id="layout">Layout</h2>
-<table>
-  <thead>
-      <tr>
-          <th>Path</th>
-          <th>Purpose</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><code>apps/web-svelte/src/App.svelte</code></td>
-          <td>Main shell for panels, radix/chart interactions, settings, and transit controls.</td>
-      </tr>
-      <tr>
-          <td><code>apps/web-svelte/src/lib/</code></td>
-          <td>Svelte state, i18n, glyphs, shared UI primitives, and Tauri <code>invoke</code> usage.</td>
-      </tr>
-      <tr>
-          <td><code>apps/web-svelte/src/lib/i18n/</code></td>
-          <td>Generated locale JSON (<code>cs</code>, <code>en</code>, <code>fr</code>, <code>es</code>) plus the Svelte runtime helper.</td>
-      </tr>
-      <tr>
-          <td><code>apps/web-svelte/vite.config.ts</code></td>
-          <td>Shared static root, docs-safe base path support, and the alternate Vite/Tauri dev ports (<code>1422</code>/<code>1423</code>).</td>
-      </tr>
-  </tbody>
-</table>
-<h2 id="structure-conventions">Structure conventions</h2>
+</span></span><span style="display:flex;"><span>npm run dev:svelte
+</span></span><span style="display:flex;"><span>npm run check:svelte
+</span></span><span style="display:flex;"><span>npm run build:svelte
+</span></span><span style="display:flex;"><span>npm run tauri:dev:svelte
+</span></span><span style="display:flex;"><span>npm run tauri:build:svelte
+</span></span><span style="display:flex;"><span>npm run docs:prepare
+</span></span></code></pre></div><h2 id="workspace-shape">Workspace shape</h2>
 <ul>
-<li><code>src/App.svelte</code> is currently a large integration shell. Treat it as orchestration glue, not as the preferred home for new feature logic.</li>
-<li>New feature UI should usually be extracted into <code>src/lib/components/</code> instead of extending <code>App.svelte</code> with another large conditional branch.</li>
-<li>Shared Svelte UI primitives belong under <code>src/lib/components/ui/</code>.</li>
-<li>Rune-backed global state should live in <code>src/lib/state/*.svelte.ts</code>, with plain <code>.ts</code> wrappers only when needed for cleaner imports.</li>
-<li>Shared visual asset resolution belongs in dedicated helpers such as:
+<li><code>apps/web-svelte/src/App.svelte</code> — main integration shell.</li>
+<li><code>apps/web-svelte/src/lib/components/</code> — feature-facing Svelte UI.</li>
+<li><code>apps/web-svelte/src/lib/components/ui/</code> — shared Svelte primitive layer.</li>
+<li><code>apps/web-svelte/src/lib/state/</code> — rune-backed application state.</li>
+<li><code>apps/web-svelte/src/lib/stores/</code> — helper stores for icons, glyphs, data, and time navigation.</li>
+<li><code>apps/web-svelte/src/lib/i18n/</code> — generated locale JSON plus runtime helper.</li>
+</ul>
+<h2 id="ui-rules">UI rules</h2>
 <ul>
-<li><code>src/lib/stores/app-shell-icons.svelte.ts</code></li>
-<li><code>src/lib/stores/glyphs.svelte.ts</code></li>
+<li>Prefer shared Svelte UI primitives before bespoke controls.</li>
+<li>Treat <code>App.svelte</code> as orchestration glue, not the ideal home for more feature logic.</li>
+<li>Extract new feature UI into focused components instead of extending <code>App.svelte</code> with another large conditional branch.</li>
+<li>Prefer shared tokens, variants, spacing, and wrappers over one-off component CSS.</li>
+</ul>
+<h2 id="runtime-behavior">Runtime behavior</h2>
+<ul>
+<li>Svelte can render from real chart payloads returned by Tauri.</li>
+<li>It still uses some compatibility storage helpers and may fall back to in-memory results when those query paths return nothing.</li>
+<li>The transit flow is real, but some UX and screen composition still lag behind React.</li>
+<li>Recent fixes improved reactive stability, loading behavior, and repeated backend reload patterns.</li>
+</ul>
+<h2 id="important-current-files">Important current files</h2>
+<ul>
+<li><code>src/App.svelte</code> — shell orchestration.</li>
+<li><code>src/lib/components/MiddleContent.svelte</code> — central content composition.</li>
+<li><code>src/lib/components/RadixChart.svelte</code> — wheel rendering.</li>
+<li><code>src/lib/components/TimeNavigationPanel.svelte</code> — time-navigation controls.</li>
+<li><code>src/lib/state/layout.svelte.ts</code> — workspace defaults and chart payload building.</li>
+<li><code>src/lib/stores/timeNavigation.svelte.ts</code> — shared time-navigation state.</li>
+<li><code>src/lib/stores/data.svelte.ts</code> — query helpers and compatibility fallbacks.</li>
+</ul>
+<h2 id="parity-summary">Parity summary</h2>
+<ul>
+<li><strong>Mostly aligned</strong>:
+<ul>
+<li>translation pipeline</li>
+<li>workspace defaults behavior</li>
+<li>current-sky bootstrap</li>
+<li>basic transits compute wiring</li>
 </ul>
 </li>
-<li>Do not add or revive app-local icon families under <code>src/lib/icons/</code> for app-shell style navigation. That directory is legacy; shared app-shell icons and logos come from repo-root <code>static/</code>.</li>
-</ul>
-<h2 id="ui-component-strategy">UI component strategy</h2>
+<li><strong>Still behind React</strong>:
 <ul>
-<li>Prefer the shared Svelte UI primitives under <code>apps/web-svelte/src/lib/components/ui/</code> before introducing bespoke controls.</li>
-<li>Those primitives are the Svelte-side equivalent of the repo’s shadcn-style component layer and should be the first place to extend styling behavior.</li>
-<li>Styling should flow through shared tokens, variants, spacing, and wrappers before adding one-off component CSS.</li>
-<li>When two views are structurally similar, prefer extracting a shared panel, menu, or content container rather than repeating another mode-specific block inside <code>App.svelte</code>.</li>
+<li>app-shell decomposition</li>
+<li>richer location and time input primitives</li>
+<li>information view richness</li>
+<li>some wheel polish and interaction detail</li>
+<li>some storage/data-path cleanup</li>
 </ul>
-<h2 id="shared-static-assets">Shared static assets</h2>
-<p>Both frontends consume the same repo-root <code>static/</code> tree:</p>
+</li>
+</ul>
+<h2 id="recent-stability-improvements">Recent stability improvements</h2>
 <ul>
-<li><code>static/app-shell/icons/default/*.svg</code></li>
-<li><code>static/app-shell/icons/modern/*.svg</code></li>
-<li><code>static/app-shell/logo-full-*.svg</code></li>
-<li><code>static/app-shell/logo-mark-*.svg</code></li>
-<li><code>static/glyphs/default/{planets,zodiac}/*.svg</code></li>
-<li><code>static/glyphs/modern/{planets,zodiac}/*.svg</code></li>
+<li>language switching no longer bounces through redundant effect loops</li>
+<li>wheel updates keep the last rendered state during loading</li>
+<li>expensive recompute loops were reduced</li>
+<li>repeated <code>de440s.bsp</code> reload behavior was reduced by backend-side caching</li>
+<li>default flows no longer eagerly enable unsupported asteroid lookups</li>
 </ul>
-<p>App-shell SVGs are shared source assets, but they are not intrinsically uniform:</p>
+<p>These paths are worth checking first before adding more reactive logic.</p>
+<h2 id="shared-assets">Shared assets</h2>
+<p>Svelte uses the same repo-root <code>static/</code> source assets as React:</p>
 <ul>
-<li>the <code>default</code> icon family is mostly filled artwork authored in a <code>209 x 209</code> box</li>
-<li>the <code>modern</code> family is mostly <code>24 x 24</code> stroke-based artwork</li>
-<li>full logos are rectangular and must not be rendered through a square-only assumption</li>
+<li><code>static/app-shell/</code></li>
+<li><code>static/glyphs/</code></li>
+<li>shared logos and favicon</li>
 </ul>
-<p>Normalization therefore happens in the frontend render layer:</p>
+<p>Normalization happens in the frontend render layer, especially through:</p>
 <ul>
-<li>Svelte paths and logo ratios live in <code>apps/web-svelte/src/lib/stores/app-shell-icons.svelte.ts</code></li>
-<li>the shared masked renderer is <code>apps/web-svelte/src/lib/components/SharedSvgIcon.svelte</code></li>
-<li>React mirrors the same behavior in its own app-shell helper and shared SVG wrapper</li>
+<li><code>apps/web-svelte/src/lib/stores/app-shell-icons.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/stores/glyphs.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/components/SharedSvgIcon.svelte</code></li>
 </ul>
-<p>That render-layer normalization is per icon, not just per family, because several icons within the same set occupy meaningfully different visual area.</p>
 <p>Legacy note:</p>
 <ul>
-<li><code>apps/web-svelte/src/lib/icons/</code> should be treated as obsolete local icon residue, not as the source of truth for the app shell.</li>
-<li>Shared shell visuals should continue to resolve through the repo-root <code>static/</code> assets and the corresponding Svelte helper stores.</li>
+<li><code>apps/web-svelte/src/lib/icons/</code> should be treated as old local residue, not source of truth.</li>
 </ul>
-<p>Svelte resolves these through <code>import.meta.env.BASE_URL</code>, so the same code works for:</p>
+<h2 id="i18n">i18n</h2>
 <ul>
-<li>normal app builds and Tauri builds</li>
-<li>docs publishing under <code>/apps/web-svelte/</code></li>
+<li>Source of truth: repo-root <code>translations.csv</code>.</li>
+<li>Regeneration command: <code>npm run i18n:sync</code>.</li>
+<li>Generated output includes <code>apps/web-svelte/src/lib/i18n/*.json</code> and the matching React locale files.</li>
+<li>Author new copy in <code>translations.csv</code>, not in generated JSON.</li>
 </ul>
-<h2 id="static-docs-build">Static docs build</h2>
-<p><code>npm run docs:prepare</code> already builds every workspace under <code>apps/*</code> and copies each finished <code>dist/</code> into <code>docs/static/apps/&lt;app&gt;/</code>. That means the Svelte app is automatically published under the docs artifact alongside React, with no extra per-app copy step.</p>
-<p>Published static entry points:</p>
+<h2 id="docs-and-tauri-integration">Docs and Tauri integration</h2>
 <ul>
-<li>Svelte: <code>apps/web-svelte/</code></li>
-<li>React: <code>apps/web-react/</code></li>
-</ul>
-<h2 id="tauri-targeting">Tauri targeting</h2>
-<p>The base <code>src-tauri/tauri.conf.json</code> still points at React by default. Use the override configs when you want the desktop shell to foreground Svelte instead:</p>
+<li><code>npm run docs:prepare</code> builds Svelte alongside the other workspaces and publishes it under <code>docs/static/apps/web-svelte/</code>.</li>
+<li>The base Tauri config still points at React by default.</li>
+<li>Use:
 <ul>
 <li><code>src-tauri/tauri.react.conf.json</code></li>
-<li><code>src-tauri/tauri.svelte.conf.json</code></li>
+<li><code>src-tauri/tauri.svelte.conf.json</code>
+when switching foreground frontend targets.</li>
 </ul>
-<p>The root scripts wrap those configs so you can switch foregrounds without editing Tauri config files by hand.</p>
+</li>
+</ul>
+<h2 id="remaining-priorities">Remaining priorities</h2>
+<ol>
+<li>Decompose more logic out of <code>App.svelte</code>.</li>
+<li>Keep closing radix dashboard and wheel parity gaps with React.</li>
+<li>Port or redesign richer location/time input controls.</li>
+<li>Improve the information view and transits configurator UX.</li>
+<li>Reduce compatibility-era storage/query assumptions.</li>
+</ol>
+<h2 id="related-docs">Related docs</h2>
+<ul>
+<li><a href="../architecture/">architecture</a> — app-level architecture and routing.</li>
+<li><a href="../frontend-react/">frontend-react</a> — current primary-shell reference.</li>
+<li><a href="../ui-conventions/">ui-conventions</a> — theme, component, and i18n rules.</li>
+<li><a href="../time-navigation/">time-navigation</a> — shared navigation model.</li>
+</ul>
 
     </div>
   </article>

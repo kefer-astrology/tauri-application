@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tauri command contracts | Kefer docs</title>
     <meta name="description" content="Normative command-level contract for the current desktop app." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
   </head>
   <body>
     <div class="shell">
@@ -36,6 +36,18 @@
 <li>Successful commands return JSON-serializable values.</li>
 <li>Failing commands return <code>Err(String)</code> with a user-displayable message.</li>
 <li>Commands documented here describe the <strong>current</strong> desktop contract, not the intended long-term architecture.</li>
+<li>Signatures below are written from the frontend caller’s point of view. Tauri-injected internal parameters such as <code>AppHandle</code> and managed state are intentionally omitted.</li>
+</ul>
+<h2 id="utility-commands">Utility commands</h2>
+<h3 id="readpath---resultstring-string"><code>read(path) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Reads a file from the given path.</li>
+<li>Returns the file contents as a string on success.</li>
+</ul>
+<h3 id="writepath-contents---result-string"><code>write(path, contents) -&gt; Result&lt;(), String&gt;</code></h3>
+<ul>
+<li>Writes the provided string contents to the given path.</li>
+<li>Returns success when the file is written.</li>
 </ul>
 <h2 id="workspace-and-chart-commands">Workspace and chart commands</h2>
 <h3 id="open_folder_dialog---resultoptionstring-string"><code>open_folder_dialog() -&gt; Result&lt;Option&lt;String&gt;, String&gt;</code></h3>
@@ -44,16 +56,30 @@
 <li>Returns <code>Ok(Some(path))</code> when the user selects a folder.</li>
 <li>Returns <code>Ok(None)</code> when the user cancels or no supported chooser succeeds.</li>
 </ul>
-<h3 id="save_workspaceworkspace_path-owner-charts---resultstring-string"><code>save_workspace(workspace_path, owner, charts) -&gt; Result&lt;String, String&gt;</code></h3>
+<h3 id="save_workspaceworkspace_path-owner-charts-defaults---resultstring-string"><code>save_workspace(workspace_path, owner, charts, defaults?) -&gt; Result&lt;String, String&gt;</code></h3>
 <ul>
 <li>Creates <code>workspace.yaml</code> and <code>charts/*.yml</code> under <code>workspace_path</code>.</li>
 <li>Sanitizes chart file names from chart ids.</li>
+<li>Accepts an optional <code>defaults</code> payload and persists it into <code>workspace.yaml</code> alongside chart references.</li>
 <li>Returns the <code>workspace_path</code> string on success.</li>
 </ul>
 <p>Acceptance criteria:</p>
 <ul>
 <li>Saving a workspace with N charts creates N chart files and one <code>workspace.yaml</code>.</li>
 <li>The saved manifest references the generated chart files.</li>
+<li>When <code>defaults</code> is provided, workspace-level engine / house / location / aspect defaults are written into the saved manifest.</li>
+</ul>
+<h3 id="save_workspace_defaultsworkspace_path-defaults---resultvalue-string"><code>save_workspace_defaults(workspace_path, defaults) -&gt; Result&lt;Value, String&gt;</code></h3>
+<ul>
+<li>Updates workspace-level defaults in <code>workspace.yaml</code> without rewriting chart files.</li>
+<li>Returns the normalized workspace defaults payload after persistence.</li>
+<li>Intended for settings changes that belong to workspace state rather than to a specific chart.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>Updating default bodies persists to <code>workspace.yaml</code>.</li>
+<li>Updating default engine, house system, or location defaults persists to <code>workspace.yaml</code>.</li>
+<li>Chart YAML files are left untouched by this command.</li>
 </ul>
 <h3 id="create_workspaceworkspace_path-owner---resultstring-string"><code>create_workspace(workspace_path, owner) -&gt; Result&lt;String, String&gt;</code></h3>
 <ul>
@@ -70,6 +96,7 @@
 <h3 id="create_chartworkspace_path-chart---resultstring-string"><code>create_chart(workspace_path, chart) -&gt; Result&lt;String, String&gt;</code></h3>
 <ul>
 <li>Requires an <code>id</code> in the chart payload.</li>
+<li><code>chart.subject.event_time</code> should be provided in a canonical parseable form such as <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code>, or RFC3339.</li>
 <li>Writes a chart YAML file and registers it in <code>workspace.yaml</code>.</li>
 <li>Returns the chart id.</li>
 <li>Returns an error if the chart id already exists.</li>
@@ -114,6 +141,13 @@
 <li>Intended for explicit user-triggered lookup, not per-keystroke autocomplete.</li>
 <li>Returns an error when the query is empty or no result can be resolved.</li>
 </ul>
+<h3 id="search_locationsquery---resultvecvalue-string"><code>search_locations(query) -&gt; Result&lt;Vec&lt;Value&gt;, String&gt;</code></h3>
+<ul>
+<li>Resolves a free-form place query into multiple candidate locations.</li>
+<li>Uses the configured geocoder endpoint, defaulting to Nominatim search.</li>
+<li>Returns up to 5 candidates with <code>query</code>, <code>display_name</code>, <code>latitude</code>, and <code>longitude</code>.</li>
+<li>Returns an error when the query is empty or lookup fails.</li>
+</ul>
 <h3 id="get_chart_detailsworkspace_path-chart_id---resultvalue-string"><code>get_chart_details(workspace_path, chart_id) -&gt; Result&lt;Value, String&gt;</code></h3>
 <ul>
 <li>Returns the full chart payload needed by the React editor surface.</li>
@@ -125,25 +159,34 @@
 <li><code>KEFER_COMPUTE_BACKEND=Auto</code>: Python first, Rust fallback when fallback is enabled.</li>
 <li><code>KEFER_COMPUTE_BACKEND=Python</code>: Python only.</li>
 <li><code>KEFER_COMPUTE_BACKEND=Rust</code>: Rust only.</li>
-<li>Precision-sensitive charts may force Python and return an error if Rust-only mode is selected.</li>
+<li>The contract should make backend provenance observable to callers.</li>
+</ul>
+<p>Recommended response metadata:</p>
+<ul>
+<li><code>backend_used</code></li>
+<li><code>fallback_used</code></li>
+<li><code>warnings</code></li>
+<li><code>ephemeris_source</code> when known</li>
 </ul>
 <h3 id="compute_chart_from_datachart_json---resultmapstring-value-string"><code>compute_chart_from_data(chart_json) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
 <ul>
 <li>Computes positions and aspects from an in-memory chart payload.</li>
-<li>Returns an object with <code>positions</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, and <code>chart_id</code>.</li>
-<li>Uses Python or Rust depending on backend selection and precision requirements.</li>
+<li><code>chart_json.subject.event_time</code> must be parseable as <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ssZ</code>, or RFC3339.</li>
+<li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Uses Python or Rust depending on backend selection and availability.</li>
 </ul>
 <p>Acceptance criteria:</p>
 <ul>
 <li>A valid chart payload returns <code>positions</code>, <code>aspects</code>, and <code>chart_id</code>.</li>
 <li>Rust-supported radix output should also include <code>axes</code> and <code>house_cusps</code>.</li>
-<li>A chart payload that requires Python precision must fail in Rust-only mode.</li>
+<li>Rust-supported radix output should include <code>motion</code> when the selected backend can derive it.</li>
+<li>When fallback occurs, the response should expose that fact instead of failing silently.</li>
 </ul>
-<h3 id="compute_chartapp-backend_state-workspace_path-chart_id---resultmapstring-value-string"><code>compute_chart(app, backend_state, workspace_path, chart_id) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
+<h3 id="compute_chartworkspace_path-chart_id---resultmapstring-value-string"><code>compute_chart(workspace_path, chart_id) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
 <ul>
 <li>Loads a chart from workspace storage and computes positions and aspects.</li>
-<li>Returns <code>positions</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, and <code>chart_id</code>.</li>
-<li>Uses Python or Rust depending on backend selection and precision requirements.</li>
+<li>Returns <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Uses Python or Rust depending on backend selection and availability.</li>
 </ul>
 <h3 id="compute_transit_series---resultvalue-string"><code>compute_transit_series(...) -&gt; Result&lt;Value, String&gt;</code></h3>
 <p>Inputs:</p>
@@ -162,7 +205,7 @@
 <li><code>time_step_seconds</code> must be greater than <code>0</code>.</li>
 <li><code>end_datetime</code> must be greater than or equal to <code>start_datetime</code>.</li>
 <li>Rust mode enforces a hard cap of <code>50_000</code> generated steps.</li>
-<li>Returns a response with <code>source_chart_id</code>, <code>time_range</code>, <code>time_step</code>, and <code>results</code>.</li>
+<li>Returns a response with <code>source_chart_id</code>, <code>time_range</code>, <code>time_step</code>, <code>results</code>, and backend provenance fields.</li>
 </ul>
 <p>Acceptance criteria:</p>
 <ul>
@@ -170,9 +213,28 @@
 <li>Non-positive step returns an error.</li>
 <li>A valid range returns ordered results with <code>datetime</code>, <code>transit_positions</code>, and <code>aspects</code>.</li>
 </ul>
+<h2 id="ephemeris-commands">Ephemeris commands</h2>
+<h3 id="list_ephemeris_catalog---vecephemerisinfo"><code>list_ephemeris_catalog() -&gt; Vec&lt;EphemerisInfo&gt;</code></h3>
+<ul>
+<li>Returns the current BSP catalog and local download status for each entry.</li>
+<li>Each entry includes id, filename, URL, size, supported bodies, year coverage, default status, download status, and optional local path.</li>
+</ul>
+<h3 id="download_ephemerisid---result-string"><code>download_ephemeris(id) -&gt; Result&lt;(), String&gt;</code></h3>
+<ul>
+<li>Starts downloading a BSP file from the built-in catalog into the app-data ephemeris cache.</li>
+<li>Emits <code>ephemeris-progress</code> events while downloading and <code>ephemeris-ready</code> on completion.</li>
+<li>Returns an error when the catalog id is unknown or the download fails.</li>
+</ul>
+<h3 id="get_available_bodies---vecstring"><code>get_available_bodies() -&gt; Vec&lt;String&gt;</code></h3>
+<ul>
+<li>Returns the currently queryable body ids inferred from available BSP files.</li>
+<li>This reflects file availability, not a guarantee that every body has a dedicated SPK segment in the loaded kernels.</li>
+</ul>
 <h2 id="storage-commands">Storage commands</h2>
 <p>Current Rust storage behavior is workspace-only.</p>
-<p>Computed positions, aspects, and relations are <strong>not persisted</strong> by the Rust desktop app.</p>
+<p>Computed positions, aspects, and relations are <strong>not persisted</strong> by the Rust desktop app.
+These compatibility commands remain registered so older frontend invoke paths keep working while
+workspace data continues to live in YAML and live computations come from the chart compute commands.</p>
 <h3 id="init_storageworkspace_path---resultstring-string"><code>init_storage(workspace_path) -&gt; Result&lt;String, String&gt;</code></h3>
 <ul>
 <li>Ensures <code>workspace_path/</code> and <code>workspace_path/charts/</code> exist.</li>
@@ -213,6 +275,7 @@
 <ul>
 <li>Frontend code may invoke these commands without crashing.</li>
 <li>Frontend code must treat storage query results as empty unless a future spec introduces persisted computed storage.</li>
+<li>Frontend code should use <code>compute_chart</code> / <code>compute_chart_from_data</code> / <code>compute_transit_series</code> for live computation, not these storage compatibility commands.</li>
 </ul>
 <h2 id="spec-maintenance-rule">Spec maintenance rule</h2>
 <p>When any command signature or behavior changes, update this page in the same change set.</p>

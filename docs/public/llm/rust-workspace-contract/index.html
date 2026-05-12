@@ -6,7 +6,7 @@
     <title>Rust workspace contract | Kefer docs</title>
     <meta name="description" content="Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.9c876a9bb96c0c324f5bd1d3bf997e8012edfe9a7e0e5bf98c693d411fc7e059.css" integrity="sha256-nIdqm7lsDDJPW9HTv5l&#43;gBLt/pp&#43;Dlv5jGk9QR/H4Fk=" />
   </head>
   <body>
     <div class="shell">
@@ -41,7 +41,10 @@
 <li>The app should check whether the Python backend is available at startup and use that availability state as the general runtime decision source.</li>
 <li>Do not repeatedly probe for Python sidecar existence in every feature flow when startup availability state can be reused.</li>
 <li>If Python is unavailable, Rust fallback behavior must remain functional for supported features.</li>
+<li>CI and desktop packaging must not be blocked by sidecar build failures while the Rust/no-sidecar path is the baseline.</li>
+<li><code>backend-python/</code> may be omitted from some packaging contexts as long as the resulting app still supports the documented Rust fallback flows.</li>
 <li>Do not reintroduce DuckDB- or Parquet-based persistence on the Rust side unless a new <code>/llm/</code> spec explicitly changes this rule.</li>
+<li>Keep backend provenance visible to callers; do not allow silent backend changes to be invisible in compute results.</li>
 </ul>
 <h2 id="practical-implications">Practical implications</h2>
 <ul>
@@ -51,8 +54,9 @@
 <li>Workspace and chart file behavior should stay aligned with the Python workspace/model layer.</li>
 <li>Native YAML chart import should work through Rust without requiring the Python backend.</li>
 <li>StarFisher/SFS import remains in scope, but should stay explicitly staged until a Python-backed parser path is wired in.</li>
-<li><code>swisseph</code> is the default engine for no-sidecar desktop flows.</li>
-<li><code>jpl</code> remains backlog for the Rust path and should currently be treated as Python-backed precision work.</li>
+<li>Current implementation may use Swiss-backed paths locally, but the architecture should evolve toward a backend-neutral astronomy interface.</li>
+<li><code>jpl</code> / SPICE is the preferred long-term astronomy direction and should be added behind that interface rather than as a one-off special case.</li>
+<li>Rust-side contracts should prefer backend-neutral result shapes even when current implementation details differ underneath.</li>
 <li>Backend selection should follow this general rule:
 <ul>
 <li>app starts</li>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SPICE backend | Kefer docs</title>
+    <meta name="description" content="JPL/SPICE backend contract, implementation boundary, and current status." />
+    
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>SPICE backend</h1>
+      <p class="lede">JPL/SPICE backend contract, implementation boundary, and current status.</p>
+    </header>
+    <div class="prose">
+      <h1 id="spice-backend">SPICE backend</h1>
+<p>This page defines the role of the <strong>JPL / SPICE backend</strong> in Kefer.</p>
+<p>It is intentionally narrower than <a href="../architecture/">architecture</a>: this page is about the astronomy backend layer itself, not the whole app.</p>
+<p>For BSP catalog, download, overlap, cache, and kernel-file lifecycle details, see <a href="../ephemeris-manager/">ephemeris-manager</a>.</p>
+<h2 id="why-it-exists">Why it exists</h2>
+<p>Kefer needs an astronomy backend that is:</p>
+<ul>
+<li>backend-pluggable</li>
+<li>precise enough for modern chart and transit work</li>
+<li>able to expose provenance cleanly</li>
+<li>not tied by default to Swiss Ephemeris licensing</li>
+</ul>
+<p>Swiss Ephemeris (libswe / Kerykeion) is dual-licensed: AGPL or paid commercial. A JPL/SPICE path lets the default Rust runtime move toward a license-clean astronomy layer.</p>
+<h2 id="backend-boundary">Backend boundary</h2>
+<p>The SPICE backend belongs to the <strong>astronomy layer</strong>.</p>
+<p>It should answer questions like:</p>
+<ul>
+<li>where is body <code>X</code> at moment <code>T</code></li>
+<li>what are the observer-relative axes for moment <code>T</code></li>
+<li>what are the house cusps for the requested system</li>
+<li>what kernel/provenance metadata applies to this result</li>
+</ul>
+<p>It should not own:</p>
+<ul>
+<li>zodiac interpretation</li>
+<li>aspect policy or orb rules</li>
+<li>house interpretation in a tradition</li>
+<li>Vedic vs Western semantic defaults</li>
+</ul>
+<h2 id="file-format-boundary">File format boundary</h2>
+<p>The Rust and Python JPL paths target <strong>SPICE BSP/SPK</strong> files such as <code>de440s.bsp</code> and <code>de421.bsp</code>.</p>
+<p>That is distinct from Swiss Ephemeris JPL support through old-format <code>.eph</code> files in <code>swejpl.c</code> mode. <code>JplViaSwissAstronomyBackend</code> is still Swiss-backed and does not replace the SPICE/BSP path.</p>
+<h2 id="rust-implementation">Rust implementation</h2>
+<p>Rust uses <a href="https://github.com/nyx-space/anise"><code>anise</code></a> to read BSP files directly.</p>
+<p>Current Rust module split:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>src-tauri/src/
+</span></span><span style="display:flex;"><span>  astronomy.rs         # AstronomyBackend trait + backend selection
+</span></span><span style="display:flex;"><span>  jpl_backend.rs       # JplAstronomyBackend using anise
+</span></span><span style="display:flex;"><span>  ephemeris_manager.rs # BSP catalog, download, cache, multi-file almanac
+</span></span><span style="display:flex;"><span>  houses.rs            # obliquity, axes, cusps, node helpers, transforms
+</span></span><span style="display:flex;"><span>  swisseph.rs          # Swiss-backed compatibility path, feature-gated
+</span></span></code></pre></div><p>What the Rust SPICE backend currently provides:</p>
+<ul>
+<li>body position queries from loaded BSP kernels</li>
+<li>axes and house cusp support through the Rust astronomy layer</li>
+<li>explicit <code>backend_used</code> / <code>ephemeris_source</code> style provenance</li>
+<li>multi-file kernel loading via <code>EphemerisManager</code></li>
+</ul>
+<p>What still sits above or beside it:</p>
+<ul>
+<li>astrology-layer interpretation</li>
+<li>some house-system fallback policy</li>
+<li>true-node support</li>
+<li>asteroid availability beyond what loaded kernels actually contain</li>
+</ul>
+<h2 id="python-implementation">Python implementation</h2>
+<p>Python keeps a parallel JPL path through Skyfield-backed BSP usage.</p>
+<p>That path should stay aligned with Rust at the contract level:</p>
+<ul>
+<li>same backend intent</li>
+<li>same general provenance fields</li>
+<li>same chart-data shape where practical</li>
+</ul>
+<p>The Python path is still optional runtime infrastructure, not the defining architecture.</p>
+<h2 id="contract-shape">Contract shape</h2>
+<p>The SPICE backend should expose a small backend-neutral astronomy contract.</p>
+<p>Representative backend responsibilities:</p>
+<ul>
+<li><code>backend_id()</code></li>
+<li><code>ephemeris_source(...)</code></li>
+<li>body-state computation</li>
+<li>axes computation</li>
+<li>house-cusp computation</li>
+<li>optional ayanamsha support when available</li>
+</ul>
+<p>The goal is not to expose raw SPICE mechanics everywhere in the app. The goal is to expose a stable astronomy result surface that frontends and higher astrology layers can trust.</p>
+<h2 id="provenance-rules">Provenance rules</h2>
+<p>SPICE-backed results should be able to surface:</p>
+<ul>
+<li><code>backend_used</code></li>
+<li><code>ephemeris_source</code></li>
+<li><code>fallback_used</code> when applicable</li>
+<li><code>warnings</code></li>
+</ul>
+<p>If a requested capability is unsupported or reduced-fidelity, the result should stay honest rather than silently inventing missing geometry.</p>
+<h2 id="current-implementation-status">Current implementation status</h2>
+<p>Implemented:</p>
+<ul>
+<li><code>JplAstronomyBackend</code> in Rust using <code>anise</code></li>
+<li>feature-gated Swiss path in Rust</li>
+<li>pure-Rust support for key transforms and baseline house/axis calculations in <code>houses.rs</code></li>
+<li><code>EphemerisManager</code> integration for resolving active BSP files</li>
+<li>bundled <code>de440s.bsp</code> primary path, with <code>de421.bsp</code> still available as fallback</li>
+<li>Python JPL backend path aligned around structured chart-data output</li>
+</ul>
+<p>Still incomplete:</p>
+<ul>
+<li>True Node is not implemented as a real true-node computation</li>
+<li>asteroid bodies still require dedicated asteroid kernels to become genuinely queryable</li>
+<li>ayanamsha remains incomplete on the Rust-owned side</li>
+<li>validation and parity coverage between backends is still partial</li>
+</ul>
+<h2 id="practical-boundary-with-ephemeris-manager">Practical boundary with ephemeris manager</h2>
+<p>Use this page when the question is:</p>
+<ul>
+<li>what is the SPICE backend responsible for</li>
+<li>what does the Rust/Python JPL layer currently provide</li>
+<li>what belongs in the astronomy backend versus higher astrology logic</li>
+</ul>
+<p>Use <a href="../ephemeris-manager/">ephemeris-manager</a> when the question is:</p>
+<ul>
+<li>which BSP files exist</li>
+<li>where they come from</li>
+<li>how downloads work</li>
+<li>how multi-file kernel selection works</li>
+<li>why asteroid kernels are separate</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

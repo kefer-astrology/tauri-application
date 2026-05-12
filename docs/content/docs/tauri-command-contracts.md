@@ -16,6 +16,19 @@ It focuses on what the frontend can rely on today, including current no-op behav
 - Successful commands return JSON-serializable values.
 - Failing commands return `Err(String)` with a user-displayable message.
 - Commands documented here describe the **current** desktop contract, not the intended long-term architecture.
+- Signatures below are written from the frontend caller’s point of view. Tauri-injected internal parameters such as `AppHandle` and managed state are intentionally omitted.
+
+## Utility commands
+
+### `read(path) -> Result<String, String>`
+
+- Reads a file from the given path.
+- Returns the file contents as a string on success.
+
+### `write(path, contents) -> Result<(), String>`
+
+- Writes the provided string contents to the given path.
+- Returns success when the file is written.
 
 ## Workspace and chart commands
 
@@ -138,7 +151,7 @@ Recommended response metadata:
 - `warnings`
 - `ephemeris_source` when known
 
-### `compute_chart_from_data(app, backend_state, chart_json) -> Result<Map<String, Value>, String>`
+### `compute_chart_from_data(chart_json) -> Result<Map<String, Value>, String>`
 
 - Computes positions and aspects from an in-memory chart payload.
 - `chart_json.subject.event_time` must be parseable as `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`, `YYYY-MM-DDTHH:mm:ssZ`, or RFC3339.
@@ -152,7 +165,7 @@ Acceptance criteria:
 - Rust-supported radix output should include `motion` when the selected backend can derive it.
 - When fallback occurs, the response should expose that fact instead of failing silently.
 
-### `compute_chart(app, backend_state, workspace_path, chart_id) -> Result<Map<String, Value>, String>`
+### `compute_chart(workspace_path, chart_id) -> Result<Map<String, Value>, String>`
 
 - Loads a chart from workspace storage and computes positions and aspects.
 - Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `chart_id`, and backend provenance fields when available.
@@ -191,7 +204,7 @@ Acceptance criteria:
 - Returns the current BSP catalog and local download status for each entry.
 - Each entry includes id, filename, URL, size, supported bodies, year coverage, default status, download status, and optional local path.
 
-### `download_ephemeris(id, app) -> Result<(), String>`
+### `download_ephemeris(id) -> Result<(), String>`
 
 - Starts downloading a BSP file from the built-in catalog into the app-data ephemeris cache.
 - Emits `ephemeris-progress` events while downloading and `ephemeris-ready` on completion.

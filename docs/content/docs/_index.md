@@ -1,58 +1,47 @@
 ---
-title: "Project docs"
-description: "Core architecture, frontend, Python, integration, and planning notes."
+title: "Project documentation"
+description: "Chaptered map of the current Kefer Astrology stack."
 weight: 10
 ---
 
-# Documentation index
+## Architecture foundation
 
-Start here for how the Kefer desktop app is structured and how to work on it.
+- **[System architecture](./architecture/)** — cross-layer model definition.
+- **[Tauri command contracts](./tauri-command-contracts/)** — normative frontend-facing command contract.
 
-## Current stack
+## Backend and astronomy engine
 
-| Layer                                      | Role                                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| **Frontends** (`apps/web-react/`, `apps/web-svelte/`) | UI workspaces. React is the current primary shell; Svelte is the alternate shell and parity target in several feature areas. |
-| **Tauri** (`src-tauri/`)                   | Native window, `invoke` commands, workspace orchestration, and local compute routing.      |
-| **Python** (`backend-python/`)             | Optional computation sidecar and compatibility path; not the only compute owner.           |
-| **Static assets** (`static/` at repo root) | Shared public assets for both frontends: `app-shell/**`, `glyphs/**`, favicon, and shared SVG families copied into each frontend build. |
+- **[SPICE backend](./spice-backend/)** — JPL/SPICE architecture, licensing rationale, and runtime status.
+- **[Ephemeris manager](./ephemeris-manager/)** — BSP catalog ownership, downloads, chaining, and asteroid support.
+- **[Python package](./python-package/)** — optional Python compute seam and subprocess contract.
 
-## Frontend rules
+## Frontend shells and UI behavior
 
-- Prefer the existing shadcn-style component systems before inventing custom controls.
-- React work should start from `apps/web-react/src/app/components/ui/`.
-- Svelte work should start from `apps/web-svelte/src/lib/components/ui/`.
-- Restyling should usually happen through shared variants, theme tokens, spacing, and composition rather than one-off component CSS forks.
+- **[React frontend](./frontend-react/)** — primary desktop shell, workspace flows, Tauri integration, and docs/i18n workflow.
+- **[Svelte frontend](./frontend-svelte/)** — alternate shell, parity status, and publication behavior.
+- **[UI conventions](./ui-conventions/)** — shared theme palette, component rules, and translation workflow.
+- **[Time navigation](./time-navigation/)** — precise stepping, range selection, and time-series behavior.
 
-## Core docs
+## Data, contracts, and reference material
 
-- **[frontend-react](./frontend-react/)** — React + Vite + Tauri wiring, Tauri API layer, assets, dev commands.
-- **[ui-conventions](./ui-conventions/)** — Four themes, `sidebarThemeStyles`, secondary nav, and i18n workflow.
-- **[architecture](./architecture/)** — Cross-layer model and current storage status.
-- **[spice-backend](./spice-backend/)** — JPL/SPICE backend architecture, `anise` assessment, implementation status.
-- **[ephemeris-manager](./ephemeris-manager/)** — Multi-BSP catalog, de440s upgrade, asteroid bodies, download API.
-- **[tauri-command-contracts](./tauri-command-contracts/)** — Current command-level behavior reference for the desktop app.
-- **[python-package](./python-package/)** — Python compatibility/backend contract and planned extensions.
+- **[Physical properties](./physical-properties/)** — JPL-derived physical fields and richer astronomy payload notes.
 
-## Reference docs
+## Build and automation notes
 
-- **[frontend-svelte](./frontend-svelte/)** — Alternate Svelte workspace layout and docs build behavior.
-- **[time-navigation](./time-navigation/)** — Time navigation design reference; implement with React state/hooks if adopted.
-- **[physical-properties](./physical-properties/)** — JPL / physical field reference.
-- **[integration-examples](./integration-examples/)** — `invoke` patterns and examples; illustrative only.
+- **[CI todo](./ci-todo/)** — planned automation around i18n sync and docs/build verification.
+- `npm run docs:prepare` rebuilds frontend workspaces, copies `apps/*/dist` into `docs/static/apps/`, and regenerates `docs/data/generated/frontends.json`.
 
-For Codex-facing workflow and specs rules, start in **`/llm/`**, not here.
+## Historical context
 
-## Architecture direction
+- **[Discussion summary](./discussion-summary/)** — archival notes from the earlier UI phase.
+- Root-level **[`MIGRATION.md`](../../../MIGRATION.md)** — remaining backend migration work and long-term JPL-centered direction.
 
-- The long-term target is a **backend-pluggable astronomy core** with **JPL / SPICE as the preferred canonical backend**.
-- Astrology semantics such as zodiac system, houses, ayanamsha, aspect rules, and tradition defaults should live above the astronomy backend.
-- Swiss Ephemeris remains valuable as a compatibility and validation backend, but should not define the whole system shape.
+## Folder structure description
 
-## Planning notes
-
-- **[discussion-summary](./discussion-summary/)** and **[implementation-plan](./implementation-plan/)** predate the React shell. Use them for background only; prefer **[frontend-react](./frontend-react/)** and **[ui-conventions](./ui-conventions/)** for the live codebase.
-
-## Automation (todo)
-
-- **[ci-todo](./ci-todo/)** — Planned GitHub Actions: i18n sync verification, Rust/Tauri matrix builds, optional follow-ups.
+| Layer | Role |
+| --- | --- |
+| **Frontends** (`apps/web-react/`, `apps/web-svelte/`) | UI workspaces. React is the current primary shell; Svelte is the alternate shell and parity target. |
+| **Documentation** (`docs/content/`, `docs/public/`) | Internal documentation sources and generated doc pages. |
+| **Tauri** (`src-tauri/`) | Native window, `invoke` commands, workspace orchestration, and local compute routing. |
+| **Python** (`backend-python/`) | Optional computation sidecar and compatibility path; not the sole compute owner. |
+| **Static assets** (`static/`) | Shared app-shell assets and astrology glyphs copied into frontend builds. |

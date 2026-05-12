@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chart datetime contract | Kefer docs</title>
+    <meta name="description" content="Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo." />
+    
+    <link rel="stylesheet" href="/css/site.min.9c876a9bb96c0c324f5bd1d3bf997e8012edfe9a7e0e5bf98c693d411fc7e059.css" integrity="sha256-nIdqm7lsDDJPW9HTv5l&#43;gBLt/pp&#43;Dlv5jGk9QR/H4Fk=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">llm</p>
+      <h1>Chart datetime contract</h1>
+      
+    </header>
+    <div class="prose">
+      <h1 id="chart-datetime-contract">Chart datetime contract</h1>
+<p>This page defines the canonical chart datetime format shared by the frontends and Tauri commands.</p>
+<h2 id="canonical-rule">Canonical rule</h2>
+<ul>
+<li>Frontends should emit chart datetimes in one of these forms:
+<ul>
+<li><code>YYYY-MM-DD HH:mm:ss</code></li>
+<li>RFC3339, for example <code>2026-04-19T14:30:00Z</code></li>
+</ul>
+</li>
+<li>Frontends should not emit localized display formats such as <code>DD/MM/YYYY HH:mm:ss</code> in compute or persistence payloads.</li>
+<li>Offset-aware datetimes and naive datetimes are not interchangeable and must not be normalized as if they represent the same local wall clock time.</li>
+</ul>
+<h2 id="responsibility-split">Responsibility split</h2>
+<ul>
+<li>React and Svelte own formatting outgoing chart datetimes into the canonical shape.</li>
+<li>Rust owns parsing the canonical shape and may keep a small tolerance layer for legacy inputs.</li>
+<li>Python should continue to accept canonical strings and may remain more permissive internally, but frontend payloads should still follow the canonical shape.</li>
+<li>Both Rust and Python must preserve the same instant when consuming offset-aware timestamps.</li>
+</ul>
+<h2 id="practical-implications">Practical implications</h2>
+<ul>
+<li>New chart creation in both frontends should produce canonical timestamps.</li>
+<li>In-memory compute payloads and persisted chart payloads should use the same timestamp contract.</li>
+<li>Display formatting for humans is separate from payload formatting.</li>
+<li>Localized display strings should only appear in rendered UI labels, not in stored chart payloads.</li>
+<li>If a chart also carries location timezone metadata, offset-aware timestamps still win for the represented instant; localization should happen after parsing, not before.</li>
+</ul>
+<h2 id="current-accepted-backend-formats">Current accepted backend formats</h2>
+<ul>
+<li>Rust currently accepts:
+<ul>
+<li><code>YYYY-MM-DD HH:mm:ss</code></li>
+<li><code>YYYY-MM-DD HH:mm</code></li>
+<li><code>YYYY-MM-DDTHH:mm:ss</code></li>
+<li><code>YYYY-MM-DDTHH:mm:ssZ</code></li>
+<li>RFC3339</li>
+<li><code>YYYY-MM-DD</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="migration-rule">Migration rule</h2>
+<ul>
+<li>Legacy localized timestamps may still be tolerated when reading existing in-memory/UI state.</li>
+<li>New writes should always use the canonical contract.</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

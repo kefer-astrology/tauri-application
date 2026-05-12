@@ -1,51 +1,48 @@
 ---
 title: "CI todo"
-description: "Planned automation and CI follow-up work."
+description: "Current automation follow-up for docs, i18n, and desktop builds."
 weight: 110
 ---
 
-# CI / GitHub Actions - planned work
+# CI todo
 
-Tracking items for automation; not implemented yet.
+This page tracks current automation follow-up only.
 
-## 1. Translations (CSV → locale JSON)
+It is not a frontend planning page and should not be used for general UI backlog notes.
 
-**Goal:** Keep `translations.csv` and generated `**/locales/*.json` in sync without manual mistakes.
+## Translation sync
 
-**Sketch:**
+Current desired CI behavior:
 
-- Trigger on pull requests (and/or pushes to `main`) when `translations.csv` or `scripts/csv-to-locales.mjs` changes.
-- Job steps: `actions/checkout`, setup Node (see `package.json` engines if you add them), `npm ci`, `npm run i18n:sync`.
-- **Verify:** `git diff --exit-code` on tracked locale files — fail the job if the repo would change (forces commit of regenerated JSON).
-- **Alternative:** auto-commit from a bot account (team policy); only use if you trust branch protections.
+- watch `translations.csv` and `scripts/csv-to-locales.mjs`
+- run `npm ci`
+- run `npm run i18n:sync`
+- fail if generated locale files would change
 
-**Related:** `localeOutputDirs` in `scripts/csv-to-locales.mjs` — extend when new frontends (e.g. Svelte) are added so one workflow still covers all outputs.
+This keeps `translations.csv` as the source of truth and prevents hand-edited locale drift.
 
----
+## Desktop build verification
 
-## 2. Rust / Tauri builds (per platform)
+Current desired CI behavior:
 
-**Goal:** Reproducible desktop builds in CI.
+- run Rust/Tauri build verification on the target operating systems you actually ship
+- install the Rust toolchain and Tauri prerequisites per runner
+- build the relevant frontend and then verify the desktop bundle or at least a Rust-side smoke build
 
-**Sketch:**
+The practical target is reproducible desktop builds, not speculative architecture work.
 
-- Use a **matrix** of runners: e.g. `ubuntu-latest`, `macos-latest`, `windows-latest` (trim to what you actually ship).
-- On each runner, install **Rust** via `dtolnay/rust-toolchain@stable` (or match `rust-toolchain.toml` / `src-tauri/Cargo.toml` `rust-version`).
-- Install **Tauri v2 prerequisites** per OS ([Linux deps](https://tauri.app/start/prerequisites/), MSVC on Windows if building there).
-- Cache `~/.cargo` and `src-tauri/target` where it helps.
-- Build: `npm ci`, then either `npm run build -w web-react` + `npm run tauri:build` or `npm run build -w web-svelte` + `npm run tauri:build:svelte` (or `cargo build` only for a faster smoke test).
+## Optional follow-up
 
-**Note on wording “compiler for each chart”:** If this meant **one Rust toolchain per CI job / per OS target**, the matrix above is the usual pattern (each runner has its own `rustc` for that platform). If it meant **astrological chart** workloads compiled or validated in Rust per chart, that is **application logic** — track separately (e.g. tests under `src-tauri/`, not this doc).
+- keep the Python sidecar optional in CI while Rust/no-sidecar remains the baseline
+- add signing and notarization only when release workflow is ready
 
----
+## Scope rule
 
-## 3. Optional follow-ups
+Keep this page limited to automation:
 
-- Python sidecar: keep it optional in CI while Rust/no-sidecar is the baseline. When needed, build `kefer-backend` (or your binary name) and attach it as a separate artifact or release asset instead of making desktop bundle jobs depend on it.
-- Code signing / notarization secrets (Windows, macOS) — only when you are ready to release.
+- i18n sync verification
+- docs/build verification
+- Rust/Tauri build checks
+- optional packaging/signing follow-up
 
-## 4. Scope note
-
-This page is only for CI / automation follow-up.
-
-UI cleanup items such as SVG replacement, color tweaks, or theme-selector polish should be tracked in frontend planning docs or issue/backlog tooling instead of here.
+Do not use this page for general UI cleanup or feature planning.

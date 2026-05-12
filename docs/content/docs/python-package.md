@@ -1,330 +1,75 @@
 ---
 title: "Python package"
-description: "Notes on the Python backend package, CLI, and app integration."
+description: "Reference for the optional Python backend package and its role in the current architecture."
 weight: 50
 ---
 
-# Python Package Integration
+# Python package
 
-Consolidated reference for the optional Python computation path used by the Tauri app.
+The Python package is an optional computation backend used by the Tauri app.
 
-## Overview
+It should be treated as:
 
-The Python package is an optional computation backend and compatibility layer. Tauri calls
-Python via a subprocess and expects JSON on stdout.
+- a compatibility path
+- a backend-specific integration surface
+- a validation path while backend-neutral Rust layers mature
 
-It should not be treated as the sole owner of astrology semantics. Long-term architecture
-should keep astrology rules portable across Rust and Python paths.
+It should not be treated as the sole owner of astrology semantics.
 
-## Current Integration Status
+## Current role
 
-### ✅ Implemented
+- Tauri can route chart and transit computation to Python
+- Python remains optional rather than foundational
+- backend provenance should make Python-vs-Rust routing visible to callers
 
-- `compute_positions_for_chart(chart: ChartInstance, ws: Optional[Workspace] = None) -> Dict[str, float | Dict[str, float]]`
-  - Routed through the backend seam
-  - Returns longitude-only values for Swiss-backed paths and richer dict payloads for JPL-backed paths
-- `compute_chart_data_for_chart(...) -> ChartData`
-  - Normalized Python chart-data seam used by backend-aware chart compute
-  - Returns `positions`, `axes`, `house_cusps`, and `warnings`
-- `compute_aspects_for_chart(...) -> List[Dict[str, Any]]`
-  - Service-layer aspect seam is implemented
-  - Uses computed positions plus active aspect definitions and returns normalized aspect dictionaries
-- Python JPL chart-data responses now compute `axes` and `house_cusps`
-- CLI chart compute now consumes `ChartData` directly and exposes normalized provenance fields
-- Python transit-series responses expose provenance-oriented top-level metadata
+## Current implemented seams
 
-### ⚠️ Needs Enhancement
+Implemented or effectively present today:
 
-- Rust desktop storage compatibility commands still return empty computed-storage results; the Python aspect seam is not yet wired into those Rust no-op storage commands
-- `compute_aspects_for_chart(...)` still needs fuller validation coverage, especially around applying/separating behavior and environment parity
-- `/function-wrapper/module/` still needs these same seam updates mirrored over if it remains a parallel authoritative copy
+- `compute_positions_for_chart(...)`
+- `compute_chart_data_for_chart(...)`
+- `compute_aspects_for_chart(...)`
+- Python transit-series responses with provenance-oriented metadata
+- JPL-backed Python chart data with `positions`, `axes`, `house_cusps`, and `warnings`
 
-### ❌ Not Yet Implemented
+## Contract expectations
 
-- Revolution computation
-- End-to-end verification in a fully provisioned Python environment
+Python-backed chart responses should align with the shared frontend/backend expectations:
 
-## Role in the target architecture
-
-- Provide backend-specific integrations that are easier to maintain in Python.
-- Serve as a compatibility path for Swiss-oriented workflows.
-- Serve as a validation path while backend-neutral Rust layers mature.
-- Avoid becoming the only place where zodiac, house, ayanamsha, or tradition semantics exist.
-
-## Required Functions
-
-### 1. Enhanced `compute_positions_for_chart`
-
-```python
-def compute_positions_for_chart(
-    chart: ChartInstance,
-    ws: Optional[Workspace] = None,
-    include_physical: bool = False,
-    include_topocentric: bool = False
-) -> Dict[str, Union[float, Dict[str, float]]]:
-    """
-    Returns:
-        - Non-JPL: float (longitude in degrees)
-        - JPL: dict with extended properties
-    """
-```
-
-### 1a. Structured chart seam
-
-```python
-@dataclass
-class ChartData:
-    positions: PositionResult
-    axes: Dict[str, float]
-    house_cusps: List[float]
-    warnings: List[str]
-
-def compute_chart_data_for_chart(
-    chart: ChartInstance,
-    ws: Optional[Workspace] = None,
-    include_physical: bool = False,
-    include_topocentric: bool = False,
-) -> ChartData:
-    """Compute structured chart data using the active backend seam."""
-```
-
-**JPL Required Keys (always present):**
-
-- `distance` (AU)
-- `declination` (degrees)
-- `right_ascension` (degrees)
-
-**Non-JPL Behavior:**
-
-- Return only longitude as float for backward compatibility.
-
-### 2. `compute_aspects_for_chart`
-
-```python
-def compute_aspects_for_chart(
-    chart: ChartInstance,
-    aspect_definitions: Optional[List[AspectDefinition]] = None,
-    ws: Optional[Workspace] = None
-) -> List[Dict[str, Any]]:
-    """Returns list of aspect dictionaries."""
-```
-
-**Implementation Notes:**
-
-- Implemented in `backend-python/module/services.py`.
-- Uses Python position computation plus active aspect definitions from the chart/workspace model.
-- Returns normalized aspect dictionaries for CLI and service consumers.
-- Still needs broader verification and any remaining mirror updates in `/function-wrapper/module/` if that copy stays active.
-
-### 3. `compute_transit_series`
-
-```python
-def compute_transit_series(
-    source_chart: ChartInstance,
-    start_datetime: datetime,
-    end_datetime: datetime,
-    time_step: timedelta,
-    transiting_objects: Optional[List[str]] = None,
-    transited_objects: Optional[List[str]] = None,
-    aspect_types: Optional[List[str]] = None,
-    ws: Optional[Workspace] = None,
-    include_physical: bool = False,
-    include_topocentric: bool = False
-) -> Dict[str, Any]:
-    """Returns transit series results."""
-```
-
-### 4. `compute_revolution_series`
-
-```python
-def compute_revolution_series(
-    source_chart: ChartInstance,
-    start_year: int,
-    end_year: int,
-    revolution_type: str = 'solar',
-    ws: Optional[Workspace] = None
-) -> Dict[str, Any]:
-    """Returns revolution charts with computed positions/aspects."""
-```
-
-## Return Format Standards
-
-### Positions (Non-JPL)
-
-```python
-{
-    'sun': 45.5,
-    'moon': 120.3,
-    'mars': 200.7
-}
-```
-
-### Positions (JPL)
-
-```python
-{
-    'sun': {
-        'longitude': 45.5,
-        'latitude': 0.0,
-        'distance': 0.985,
-        'declination': 15.2,
-        'right_ascension': 45.8,
-        'speed': 0.985,
-        'retrograde': False
-    }
-}
-```
-
-### Aspects
-
-```python
-[
-    {
-        'from': 'sun',
-        'to': 'moon',
-        'type': 'trine',
-        'angle': 119.5,
-        'orb': 0.5,
-        'exact_angle': 120.0,
-        'applying': True,
-        'separating': False
-    }
-]
-```
-
-## Data Format Standards
-
-### Object IDs
-
-Use frontend-compatible IDs:
-
-```python
-STANDARD_OBJECTS = [
-    'sun', 'moon', 'mercury', 'venus', 'mars',
-    'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
-    'asc', 'desc', 'mc', 'ic',
-    'north_node', 'south_node',
-    'true_north_node', 'true_south_node',
-    'lilith', 'chiron'
-]
-```
-
-### Units
-
-- Angles in degrees (0-360 longitude, -90 to +90 latitude/declination)
-- Right ascension in degrees (not hours)
-- Distance in AU
-- Light time in seconds
-
-### Datetime
-
-- Input: ISO 8601 or datetime objects
-- Offset-aware inputs must preserve the represented instant
-- Naive inputs must be interpreted by an explicit documented rule
-- Output: ISO 8601 with microseconds when precision is available
-
-## Rust ↔ Python Integration
-
-### Call Pattern
-
-Python must:
-
-1. Print JSON to stdout
-2. Print errors to stderr
-3. Exit with code 0 on success
-
-```python
-try:
-    result = compute_positions_for_chart(chart)
-    print(json.dumps(result))
-except Exception as e:
-    print(json.dumps({'error': str(e)}), file=sys.stderr)
-    sys.exit(1)
-```
-
-### JSON Serialization
-
-- Convert datetime to ISO strings
-- Convert numpy types to native Python types
-- Ensure all outputs are JSON-serializable
-
-## Error Handling
-
-Recommended error types:
-
-- `ChartNotFound`
-- `InvalidDatetime`
-- `InvalidLocation`
-- `EngineNotAvailable`
-- `EphemerisNotFound`
-- `ComputationError`
-
-Recommended warning/provenance fields in successful results:
-
-- `backend_used`
-- `fallback_used`
-- `ephemeris_source`
+- stable chart identity
+- normalized `positions`
+- `axes` when available
+- `house_cusps` when available
 - `warnings`
+- provenance fields such as `backend_used`, `fallback_used`, and `ephemeris_source`
 
-## Testing
+## Data-shape notes
 
-### Quick Test Script
+- non-JPL paths may still be simpler
+- JPL-backed paths should expose richer astronomy fields when available
+- datetime handling must preserve the represented instant for offset-aware inputs
+- outputs must stay JSON-serializable for Tauri transport
 
-```python
-from module.workspace import load_workspace
-from module.services import compute_positions_for_chart, compute_aspects_for_chart
+## Runtime integration rules
 
-ws = load_workspace('path/to/workspace')
-chart = ws.charts[0]
+- Python communicates with Tauri through structured JSON
+- frontend code should never talk to Python directly
+- the Python path should not be allowed to silently redefine frontend-facing contracts independently of Rust
 
-positions = compute_positions_for_chart(chart, ws=ws)
-aspects = compute_aspects_for_chart(chart, ws=ws)
-```
+## Current limitations
 
-### Unit Tests
+- Rust storage compatibility commands are still no-op and do not persist computed data coming from Python
+- some seam validation is still incomplete
+- `/function-wrapper/module/` may still need mirroring if it remains authoritative in parallel
+- revolution computation is still not implemented
+- end-to-end confidence still depends on a provisioned Python environment
 
-- Validate swisseph (float positions)
-- Validate JPL/local BSP paths (dict positions with required keys)
-- Validate aspects shape, exact-angle normalization, and required keys
+## Design rule
 
-## Performance Notes
+Keep astrology semantics portable. Python may implement backend-specific details, but chart semantics such as zodiac policy, house interpretation, aspect defaults, and tradition behavior should not become Python-only knowledge.
 
-- Cache repeated computations where possible.
-- Batch transit series computations to avoid memory spikes.
+## Related docs
 
-## Implementation Checklist
-
-### Phase 1: Contract parity and correctness
-
-- [x] Keep datetime and timezone semantics aligned with Rust — offset-aware instants preserved correctly
-- [x] Enhance `compute_positions_for_chart` for richer astronomy backends — `JplAstronomyBackend` now wraps the JPL compute path
-- [x] Expose provenance fields in compute responses — `backend_used`, `fallback_used`, `ephemeris_source`, `warnings`
-- [x] Expose `axes` and `house_cusps` in chart compute responses
-- [x] Test Swiss-compatibility and JPL-oriented formats — timezone regression tests in `tests/test_timezone_alignment.py`
-- [x] Implement `compute_aspects_for_chart` in the Python service seam
-- [ ] Add stronger regression coverage for `compute_aspects_for_chart`
-- [ ] Decide whether any Rust/Tauri callers should route aspect-only requests through Python instead of the current Rust storage compatibility no-op commands
-
-### Phase 2: Transit Computation
-
-- [x] Implement `compute_transit_series` — implemented in Python; Rust/Tauri command exists
-- [x] Expose provenance fields in transit responses
-
-### Phase 3: Extended Features
-
-- [ ] Add topocentric coordinates
-- [ ] Add extended physical properties
-- [ ] Implement `compute_revolution_series`
-- [ ] Add caching for performance
-
-### Phase 4: Seam alignment (new)
-
-- [x] Define `AstronomyBackend` Protocol in `astronomy.py`
-- [x] Implement `SwissAstronomyBackend` and `JplAstronomyBackend`
-- [x] Add `ChartData` dataclass and `compute_chart_data()` to align Python protocol with Rust trait
-- [x] Update `compute_positions_for_chart` to use `compute_chart_data()` internally
-- [x] Compute Python JPL `axes` and `house_cusps`
-- [x] Keep a Python-native aspect seam alongside `ChartData`
-- [x] Update CLI chart compute to consume `ChartData` directly
-- [ ] Finish Stage 2 verification (`True Node`, `Chiron`, no-Swiss smoke, full env test run)
-- [ ] Mirror the same Python seam changes into `/function-wrapper/module/` if that copy remains authoritative
+- [architecture](../architecture/) — app-level routing and backend boundaries
+- [spice-backend](../spice-backend/) — JPL/SPICE backend boundary
+- [tauri-command-contracts](../tauri-command-contracts/) — frontend-visible command contract

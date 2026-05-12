@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Project docs | Kefer docs</title>
-    <meta name="description" content="Core architecture, frontend, Python, integration, and planning notes." />
+    <title>Project documentation | Kefer docs</title>
+    <meta name="description" content="Chaptered map of the current Kefer Astrology stack." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
   </head>
   <body>
     <div class="shell">
@@ -23,13 +23,52 @@
   <article class="content">
     <header class="page-header">
       <p class="eyebrow">docs</p>
-      <h1>Project docs</h1>
-      <p class="lede">Core architecture, frontend, Python, integration, and planning notes.</p>
+      <h1>Project documentation</h1>
+      <p class="lede">Chaptered map of the current Kefer Astrology stack.</p>
     </header>
     <div class="prose">
-      <h1 id="documentation-index">Documentation index</h1>
-<p>Start here for how the Kefer desktop app is structured and how to work on it.</p>
-<h2 id="current-stack">Current stack</h2>
+      <h2 id="chapters">Chapters</h2>
+<ol>
+<li>Architecture foundation
+<ul>
+<li><strong><a href="./architecture/">System architecture</a></strong> — cross-layer model definition.</li>
+<li><strong><a href="./tauri-command-contracts/">Tauri command contracts</a></strong> — normative frontend-facing command contract.</li>
+</ul>
+</li>
+<li>Backend and astronomy engine
+<ul>
+<li><strong><a href="./spice-backend/">SPICE backend</a></strong> — JPL/SPICE architecture, licensing rationale, and runtime status.</li>
+<li><strong><a href="./ephemeris-manager/">Ephemeris manager</a></strong> — BSP catalog ownership, downloads, chaining, and asteroid support.</li>
+<li><strong><a href="./python-package/">Python package</a></strong> — optional Python compute seam and subprocess contract.</li>
+</ul>
+</li>
+<li>Frontend shells and UI behavior
+<ul>
+<li><strong><a href="./frontend-react/">React frontend</a></strong> — primary desktop shell, workspace flows, Tauri integration, and docs/i18n workflow.</li>
+<li><strong><a href="./frontend-svelte/">Svelte frontend</a></strong> — alternate shell, parity status, and publication behavior.</li>
+<li><strong><a href="./ui-conventions/">UI conventions</a></strong> — shared theme palette, component rules, and translation workflow.</li>
+<li><strong><a href="./time-navigation/">Time navigation</a></strong> — precise stepping, range selection, and time-series behavior.</li>
+</ul>
+</li>
+<li>Data, contracts, and reference material
+<ul>
+<li><strong><a href="./physical-properties/">Physical properties</a></strong> — JPL-derived physical fields and richer astronomy payload notes.</li>
+</ul>
+</li>
+<li>Build and automation notes
+<ul>
+<li><strong><a href="./ci-todo/">CI todo</a></strong> — planned automation around i18n sync and docs/build verification.</li>
+<li><code>npm run docs:prepare</code> rebuilds frontend workspaces, copies <code>apps/*/dist</code> into <code>docs/static/apps/</code>, and regenerates <code>docs/data/generated/frontends.json</code>.</li>
+</ul>
+</li>
+<li>Historical context
+<ul>
+<li><strong><a href="./discussion-summary/">Discussion summary</a></strong> — archival notes from the earlier UI phase.</li>
+<li>Root-level <strong><a href="../../../MIGRATION.md"><code>MIGRATION.md</code></a></strong> — remaining backend migration work and long-term JPL-centered direction.</li>
+</ul>
+</li>
+</ol>
+<h2 id="folder-structure-description">Folder structure description</h2>
 <table>
   <thead>
       <tr>
@@ -40,53 +79,26 @@
   <tbody>
       <tr>
           <td><strong>Frontends</strong> (<code>apps/web-react/</code>, <code>apps/web-svelte/</code>)</td>
-          <td>UI workspaces. React is the current primary shell; Svelte is the more advanced alternate build.</td>
+          <td>UI workspaces. React is the current primary shell; Svelte is the alternate shell and parity target.</td>
+      </tr>
+      <tr>
+          <td><strong>Documentation</strong> (<code>docs/content/</code>, <code>docs/public/</code>)</td>
+          <td>Internal documentation sources and generated doc pages.</td>
       </tr>
       <tr>
           <td><strong>Tauri</strong> (<code>src-tauri/</code>)</td>
-          <td>Native window, <code>invoke</code> commands, Python sidecar lifecycle.</td>
+          <td>Native window, <code>invoke</code> commands, workspace orchestration, and local compute routing.</td>
       </tr>
       <tr>
           <td><strong>Python</strong> (<code>backend-python/</code>)</td>
-          <td>Ephemeris / chart computation (sidecar binary bundled in <code>src-tauri/binaries/</code>).</td>
+          <td>Optional computation sidecar and compatibility path; not the sole compute owner.</td>
       </tr>
       <tr>
-          <td><strong>Static assets</strong> (<code>static/</code> at repo root)</td>
-          <td>Shared public assets for both frontends: <code>app-shell/**</code>, <code>glyphs/**</code>, favicon, and shared SVG families copied into each frontend build.</td>
+          <td><strong>Static assets</strong> (<code>static/</code>)</td>
+          <td>Shared app-shell assets and astrology glyphs copied into frontend builds.</td>
       </tr>
   </tbody>
 </table>
-<h2 id="frontend-rules">Frontend rules</h2>
-<ul>
-<li>Prefer the existing shadcn-style component systems before inventing custom controls.</li>
-<li>React work should start from <code>apps/web-react/src/app/components/ui/</code>.</li>
-<li>Svelte work should start from <code>apps/web-svelte/src/lib/components/ui/</code>.</li>
-<li>Restyling should usually happen through shared variants, theme tokens, spacing, and composition rather than one-off component CSS forks.</li>
-</ul>
-<h2 id="core-docs">Core docs</h2>
-<ul>
-<li><strong><a href="./frontend-react/">frontend-react</a></strong> — React + Vite + Tauri wiring, Tauri API layer, assets, dev commands.</li>
-<li><strong><a href="./ui-conventions/">ui-conventions</a></strong> — Four themes, <code>sidebarThemeStyles</code>, secondary nav, and i18n workflow.</li>
-<li><strong><a href="./architecture/">architecture</a></strong> — Cross-layer model and current storage status.</li>
-<li><strong><a href="./tauri-command-contracts/">tauri-command-contracts</a></strong> — Current command-level behavior reference for the desktop app.</li>
-<li><strong><a href="./python-package/">python-package</a></strong> — Python backend contract and planned extensions.</li>
-</ul>
-<h2 id="reference-docs">Reference docs</h2>
-<ul>
-<li><strong><a href="./frontend-svelte/">frontend-svelte</a></strong> — Alternate Svelte workspace layout and docs build behavior.</li>
-<li><strong><a href="./time-navigation/">time-navigation</a></strong> — Time navigation design reference; implement with React state/hooks if adopted.</li>
-<li><strong><a href="./physical-properties/">physical-properties</a></strong> — JPL / physical field reference.</li>
-<li><strong><a href="./integration-examples/">integration-examples</a></strong> — <code>invoke</code> patterns and examples; illustrative only.</li>
-</ul>
-<p>For Codex-facing workflow and specs rules, start in <strong><code>/llm/</code></strong>, not here.</p>
-<h2 id="historical--planning-notes">Historical / planning notes</h2>
-<ul>
-<li><strong><a href="./discussion-summary/">discussion-summary</a></strong> and <strong><a href="./implementation-plan/">implementation-plan</a></strong> predate the React shell. Use them for background only; prefer <strong><a href="./frontend-react/">frontend-react</a></strong> and <strong><a href="./ui-conventions/">ui-conventions</a></strong> for the live codebase.</li>
-</ul>
-<h2 id="automation-todo">Automation (todo)</h2>
-<ul>
-<li><strong><a href="./ci-todo/">ci-todo</a></strong> — Planned GitHub Actions: i18n sync verification, Rust/Tauri matrix builds, optional follow-ups.</li>
-</ul>
 
     </div>
     
@@ -109,7 +121,17 @@
         
           <a class="card" href="/docs/architecture/">
             <h2>Architecture</h2>
-            <p>Cross-layer architecture for the Tauri, React, and Python stack.</p>
+            <p>Cross-layer architecture for the Tauri desktop app and compute stack.</p>
+          </a>
+        
+          <a class="card" href="/docs/spice-backend/">
+            <h2>SPICE backend</h2>
+            <p>JPL/SPICE backend contract, implementation boundary, and current status.</p>
+          </a>
+        
+          <a class="card" href="/docs/ephemeris-manager/">
+            <h2>Ephemeris manager</h2>
+            <p>Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.</p>
           </a>
         
           <a class="card" href="/docs/tauri-command-contracts/">
@@ -119,37 +141,27 @@
         
           <a class="card" href="/docs/python-package/">
             <h2>Python package</h2>
-            <p>Notes on the Python backend package, CLI, and app integration.</p>
+            <p>Reference for the optional Python backend package and its role in the current architecture.</p>
           </a>
         
           <a class="card" href="/docs/time-navigation/">
             <h2>Time navigation</h2>
-            <p>Reference design for time navigation behavior and state.</p>
+            <p>Current reference for time navigation behavior and state.</p>
           </a>
         
           <a class="card" href="/docs/physical-properties/">
             <h2>Physical properties</h2>
-            <p>Reference notes for JPL-derived physical fields and support.</p>
-          </a>
-        
-          <a class="card" href="/docs/integration-examples/">
-            <h2>Integration examples</h2>
-            <p>Examples for Tauri command usage and Python-side integration.</p>
+            <p>Reference notes for richer astronomy fields exposed by JPL-backed results.</p>
           </a>
         
           <a class="card" href="/docs/discussion-summary/">
             <h2>Discussion summary</h2>
-            <p>Historical architecture discussion notes from the earlier UI phase.</p>
-          </a>
-        
-          <a class="card" href="/docs/implementation-plan/">
-            <h2>Implementation plan</h2>
-            <p>Historical implementation notes and migration planning context.</p>
+            <p>Historical architecture notes from the earlier UI phase.</p>
           </a>
         
           <a class="card" href="/docs/ci-todo/">
             <h2>CI todo</h2>
-            <p>Planned automation and CI follow-up work.</p>
+            <p>Current automation follow-up for docs, i18n, and desktop builds.</p>
           </a>
         
       </section>

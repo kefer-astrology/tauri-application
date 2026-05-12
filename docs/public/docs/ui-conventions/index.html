@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>UI conventions | Kefer docs</title>
     <meta name="description" content="Theme, layout, and i18n rules for the React shell." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
   </head>
   <body>
     <div class="shell">
@@ -29,6 +29,13 @@
     <div class="prose">
       <h1 id="ui-conventions">UI conventions</h1>
 <p>Crisp reference for <strong>themes</strong>, <strong>secondary navigation</strong>, <strong>shared component strategy</strong>, and <strong>i18n</strong> so new work stays aligned with the app themes and a single source of styling truth.</p>
+<h2 id="ui-view-modes">UI View Modes</h2>
+<ul>
+<li><strong>Radix View</strong>: circular chart, houses, aspects (derived).</li>
+<li><strong>Table View</strong>: positions table with optional JPL columns.</li>
+<li><strong>Statistics View</strong>: aggregated counts.</li>
+<li><strong>Interpretations View</strong>: text-based meanings.</li>
+</ul>
 <h2 id="component-baseline">Component baseline</h2>
 <ul>
 <li>Prefer the repo’s existing shadcn-style component systems before building bespoke controls.</li>
@@ -66,12 +73,22 @@
   </tbody>
 </table>
 <p><strong>Type:</strong> <code>Theme</code> in <code>src/app/components/astrology-sidebar.tsx</code>.</p>
+<p><strong>Current source of truth</strong></p>
+<ul>
+<li>Shared palette model: <code>apps/web-react/src/lib/themePalettes.ts</code></li>
+<li>App shell / CSS variable application: <code>apps/web-react/src/app/App.tsx</code></li>
+<li>Main sidebar theme adapter: <code>apps/web-react/src/app/components/astrology-sidebar.tsx</code></li>
+<li>Secondary rail theme adapter: <code>apps/web-react/src/app/components/secondary-nav-panel.tsx</code></li>
+<li>Content/form surface theme helper: <code>apps/web-react/src/app/components/form-field-theme.ts</code></li>
+</ul>
 <p><strong>Where they apply</strong></p>
 <ol>
-<li><strong>Main window background</strong> — <code>src/app/App.tsx</code> maps each theme to Tailwind classes and, for <code>twilight</code> / <code>midnight</code>, to <strong>document-level</strong> background (<code>backgroundImage</code> or radial gradient). Those are intentional “scene” backgrounds for the content area.</li>
-<li><strong>Chrome (sidebars and rails)</strong> — <strong><code>sidebarThemeStyles</code></strong> in the same file: exported <code>Record&lt;Theme, SidebarThemeBlock&gt;</code> with <code>bg</code>, <code>border</code>, <code>text</code>, <code>hover</code>, <code>active</code>, <code>separator</code>, etc. For <code>twilight</code> and <code>midnight</code>, <strong><code>customStyle</code></strong> adds gradient, blur, and border color so the rail matches the main sidebar.</li>
+<li><strong>Palette values</strong> live in <code>themePalettes.ts</code> and are persisted from Settings → Appearance.</li>
+<li><strong>App shell</strong> applies the active palette as CSS variables in <code>App.tsx</code>.</li>
+<li><strong>Chrome (sidebars and rails)</strong> adapts those variables through <code>sidebarThemeStyles</code> and <code>SecondaryNavPanel</code>.</li>
+<li><strong>Content surfaces</strong> (inputs, selects, labels, footer actions, context rails) read the same active palette through <code>useAppFormFieldTheme()</code>.</li>
 </ol>
-<p><strong>Rule:</strong> Do not introduce one-off hex colors or <code>isDark ? … : …</code> forks for rails or primary navigation. Use <code>sidebarThemeStyles[theme]</code> (or extend that object if a new surface is needed).</p>
+<p><strong>Rule:</strong> Do not introduce one-off hex colors or ad-hoc theme forks for rails, content surfaces, or layout chrome. Extend the shared palette model first, then consume it through the existing adapters/helpers.</p>
 <h2 id="secondary-navigation-secondarynavpanel">Secondary navigation (<code>SecondaryNavPanel</code>)</h2>
 <p><strong>File:</strong> <code>src/app/components/secondary-nav-panel.tsx</code></p>
 <p>Used for:</p>
@@ -79,7 +96,7 @@
 <li><strong>Transits</strong> — <code>TransitsSecondarySidebar</code> wraps it (section titles from i18n).</li>
 <li><strong>Settings</strong> — <code>SettingsView</code> places it in a <strong>grid</strong> next to the settings card: <code>lg:grid-cols-[14rem_minmax(0,1fr)]</code>, <code>gap-6</code>, <code>items-stretch</code>.</li>
 </ul>
-<p>The panel consumes <strong><code>sidebarThemeStyles[theme]</code></strong> for surface, borders, text, hover, and active button states. <strong>Twilight / midnight</strong> reuse the same <strong><code>customStyle</code></strong> as the main sidebar (not separate inline colors in this component).</p>
+<p>The panel consumes the active theme palette through the same shared sidebar adapter, and its background is driven from the <strong>secondary sidebar</strong> palette values rather than a separate hardcoded preset.</p>
 <p>Optional <strong><code>className</code></strong> on the panel (e.g. max-height + scroll on the settings rail) is for layout only, not alternate palettes.</p>
 <h2 id="transits-layout-shell">Transits layout (shell)</h2>
 <p>In <strong><code>App.tsx</code></strong>, when <code>activeView === 'tranzity'</code>, the transits <strong>secondary</strong> rail is a sibling of the main content column (same flex row as <code>AstrologySidebar</code>). Content is <strong><code>TransitsContent</code></strong> with a <code>section</code> driven by the rail.</p>
@@ -118,8 +135,8 @@
 <p><strong>Create new chart</strong> (<code>new-horoscope.tsx</code>) and <strong>Settings</strong> both use this helper on top of shadcn <strong><code>Card</code></strong>, <strong><code>Input</code></strong>, <strong><code>Label</code></strong>, <strong><code>Select</code></strong>, <strong><code>Switch</code></strong>, and native **<code>&lt;button&gt;</code>**s for the wide footer actions (same pattern as settings).</p>
 <h2 id="related-docs">Related docs</h2>
 <ul>
-<li><strong><a href="./frontend-react/">frontend-react</a></strong> — Commands, folder layout, Tauri bridge, glyphs.</li>
-<li><strong><a href="./architecture/">architecture</a></strong> — Workspace and storage (backend-oriented).</li>
+<li><strong><a href="../frontend-react/">frontend-react</a></strong> — Commands, folder layout, Tauri bridge, glyphs.</li>
+<li><strong><a href="../architecture/">architecture</a></strong> — Workspace and storage (backend-oriented).</li>
 </ul>
 
     </div>

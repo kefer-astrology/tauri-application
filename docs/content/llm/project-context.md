@@ -59,6 +59,10 @@ weight: 20
 - Prefer the shared shadcn-style component layer first when building or restyling UI.
 - In React, that means starting from the existing shadcn/Radix-style primitives in `apps/web-react/src/app/components/ui/`.
 - In Svelte, that means starting from the existing shared UI primitives built around Bits UI in `apps/web-svelte/src/lib/components/ui/`.
+- Translation workflow is CSV-first:
+  - add or edit keys in repo-root `translations.csv`
+  - regenerate locale bundles with `npm run i18n:sync`
+  - do not treat generated locale JSON in `apps/web-react/src/locales/` or `apps/web-svelte/src/lib/i18n/` as the primary place to author copy
 - Do not introduce ad-hoc bespoke controls when an existing shadcn-style primitive can be extended with tokens, variants, spacing, or composition.
 - Styling should flow through shared theme tokens and shared component surfaces before adding one-off CSS.
 - In React specifically, prefer existing shared building blocks such as:

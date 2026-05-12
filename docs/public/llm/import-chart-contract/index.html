@@ -6,7 +6,7 @@
     <title>Import chart contract | Kefer docs</title>
     <meta name="description" content="Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.9c876a9bb96c0c324f5bd1d3bf997e8012edfe9a7e0e5bf98c693d411fc7e059.css" integrity="sha256-nIdqm7lsDDJPW9HTv5l&#43;gBLt/pp&#43;Dlv5jGk9QR/H4Fk=" />
   </head>
   <body>
     <div class="shell">
@@ -51,6 +51,7 @@
 <li>StarFisher / SFS: <code>.sfs</code></li>
 </ul>
 <p>SFS remains in scope, but should use the Python-backed path once that parser flow is wired into the desktop app.</p>
+<p>The frontend and Tauri command contract should remain backend-neutral even if a specific parser path is currently implemented in Python first.</p>
 <h2 id="required-behavior">Required behavior</h2>
 <ul>
 <li>The command loads the target workspace manifest first.</li>
@@ -71,6 +72,7 @@
 <li>Native YAML import must work without the Python backend.</li>
 <li>SFS import should not pretend to work through Rust-only heuristics.</li>
 <li>Until the Python-backed SFS path exists, <code>.sfs</code> import should fail explicitly and clearly.</li>
+<li>Import responses and error handling should not imply that Python is the architectural owner of chart ingestion in the long term.</li>
 </ul>
 <h2 id="acceptance-checks">Acceptance checks</h2>
 <ul>

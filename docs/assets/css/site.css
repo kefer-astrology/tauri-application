@@ -34,7 +34,7 @@ a {
 }
 
 .shell {
-  width: min(1120px, calc(100% - 2rem));
+  width: min(1360px, calc(100% - 2rem));
   margin: 0 auto;
   padding: 1.25rem 0 4rem;
 }
@@ -71,7 +71,7 @@ a {
 }
 
 .content {
-  padding: 2rem;
+  padding: 2rem 2.25rem;
   background: var(--panel-strong);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -100,13 +100,29 @@ a {
 }
 
 .prose {
-  max-width: 72ch;
+  max-width: none;
   line-height: 1.8;
+}
+
+.prose > :where(p, dl, blockquote, pre, h1, h2, h3, h4, h5, h6) {
+  max-width: 78ch;
 }
 
 .prose img,
 .prose video {
   max-width: 100%;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.prose th,
+.prose td {
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  vertical-align: top;
 }
 
 .prose code {
@@ -177,7 +193,7 @@ a {
 
 @media (max-width: 720px) {
   .shell {
-    width: min(100% - 1rem, 1120px);
+    width: min(100% - 1rem, 1360px);
   }
 
   .content {

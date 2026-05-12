@@ -6,7 +6,7 @@
     <title>Radix render contract | Kefer docs</title>
     <meta name="description" content="Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.9c876a9bb96c0c324f5bd1d3bf997e8012edfe9a7e0e5bf98c693d411fc7e059.css" integrity="sha256-nIdqm7lsDDJPW9HTv5l&#43;gBLt/pp&#43;Dlv5jGk9QR/H4Fk=" />
   </head>
   <body>
     <div class="shell">
@@ -28,7 +28,7 @@
     </header>
     <div class="prose">
       <h1 id="radix-render-contract">Radix render contract</h1>
-<p>This page defines the current Rust-side output contract for rendering a radix view without mock data.</p>
+<p>This page defines the current compute output contract for rendering a radix view without mock data.</p>
 <h2 id="goal">Goal</h2>
 <p>The frontend radix view should render from computed chart output, not from hardcoded fallback wheels, demo positions, or hand-authored house values.</p>
 <h2 id="current-contract">Current contract</h2>
@@ -64,21 +64,26 @@
 <li>Ordered from house 1 through house 12.</li>
 </ul>
 <h2 id="support-rule">Support rule</h2>
-<p>Current Rust house cusp support should be treated as:</p>
+<p>House support must follow two rules:</p>
 <ul>
-<li><code>Whole Sign</code>: supported directly</li>
-<li><code>Equal</code>: supported directly</li>
-<li>other house systems: use a clearly documented equal-house fallback until dedicated Rust implementations exist</li>
+<li>the compute response must be honest about what was actually computed</li>
+<li>the frontend must render the returned geometry rather than inventing its own fallback wheel</li>
 </ul>
-<p>This is acceptable for the current no-sidecar baseline because it removes mocked frontend house structures while staying honest about the present Rust scope.</p>
+<p>When house-system support differs by backend or implementation maturity:</p>
+<ul>
+<li>the response should still return <code>house_cusps</code> when it has a valid computed result</li>
+<li>provenance or warnings should indicate if a fallback or reduced-fidelity path was used</li>
+<li>the frontend should prefer truthfully computed output over inferred placeholder geometry</li>
+</ul>
 <h2 id="frontend-rule">Frontend rule</h2>
 <ul>
 <li>React and Svelte should prefer <code>axes</code> and <code>house_cusps</code> from compute output over hand-authored fallback values.</li>
 <li>If those fields are absent, the frontend may show an explicit empty or partial state, but should not silently substitute mock horoscope geometry.</li>
+<li>If compute responses include provenance or warnings, the frontend should preserve enough of that context for debugging and user trust.</li>
 </ul>
 <h2 id="backlog">Backlog</h2>
 <ul>
-<li>dedicated Rust implementations for Placidus, Koch, Campanus, Regiomontanus, and other house systems</li>
+<li>normalized house-system support across backends</li>
 <li>richer computed points beyond the current baseline</li>
 <li>stronger normalized render payloads if the frontend needs more than longitudes</li>
 </ul>

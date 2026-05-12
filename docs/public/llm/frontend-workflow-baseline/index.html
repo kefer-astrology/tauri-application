@@ -6,7 +6,7 @@
     <title>Frontend workflow baseline | Kefer docs</title>
     <meta name="description" content="Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.9c876a9bb96c0c324f5bd1d3bf997e8012edfe9a7e0e5bf98c693d411fc7e059.css" integrity="sha256-nIdqm7lsDDJPW9HTv5l&#43;gBLt/pp&#43;Dlv5jGk9QR/H4Fk=" />
   </head>
   <body>
     <div class="shell">
@@ -57,13 +57,16 @@
 </li>
 <li>Creating a chart counts only when the chart is persisted to workspace YAML when a workspace is active.</li>
 <li>Settings count only when they feed the persisted workspace/chart configuration or the active compute payload.</li>
-<li>For the current no-sidecar baseline, default engine behavior should prefer <code>swisseph</code>.</li>
-<li><code>jpl</code> should not block baseline frontend readiness; it is currently a Python-backed/backlog path for precise computation.</li>
+<li>Frontend contracts should stay backend-neutral even when a specific backend is favored in the implementation.</li>
+<li><code>jpl</code> / SPICE should not block baseline frontend readiness, but the frontend contract should leave room for it to become the preferred long-term astronomy backend.</li>
 <li>React location entry should support explicit place-to-coordinate resolution without requiring manual latitude/longitude entry.</li>
 <li>The React radix view should render from computed chart payloads, not mock wheel or mock position data.</li>
 <li>The default first-run React chart should compute positions for the current date/time automatically.</li>
 <li>Creating a new chart in React should switch to the radix view and start background computation immediately.</li>
 <li>Both frontends should consume the same radix compute contract, including <code>positions</code>, <code>axes</code>, and <code>house_cusps</code>.</li>
+<li>Both frontends should be able to surface backend provenance from compute responses when available.</li>
+<li>Both frontends should emit canonical chart timestamps as <code>YYYY-MM-DD HH:mm:ss</code> or RFC3339.</li>
+<li>Frontends should not emit localized chart timestamps such as <code>DD/MM/YYYY HH:mm:ss</code> in compute or persistence payloads.</li>
 <li>Svelte should prefer <code>house_cusps</code> from compute output over legacy <code>house_1..house_12</code> fallback keys.</li>
 <li>React should use two center-layout families:
 <ul>
@@ -112,6 +115,7 @@
 <li>Wire that model into payload builders in both frontends.</li>
 <li>Verify Rust/Python compute respects the same inputs.</li>
 <li>Finish the missing import workflow in each frontend.</li>
+<li>Verify Rust/Python preserve the same instant for offset-aware datetimes.</li>
 <li>Only then mark the baseline workflows as ready.</li>
 </ol>
 

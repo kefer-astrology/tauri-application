@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Architecture | Kefer docs</title>
-    <meta name="description" content="Cross-layer architecture for the Tauri, React, and Python stack." />
+    <meta name="description" content="Cross-layer architecture for the Tauri desktop app and compute stack." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
   </head>
   <body>
     <div class="shell">
@@ -24,121 +24,215 @@
     <header class="page-header">
       <p class="eyebrow">docs</p>
       <h1>Architecture</h1>
-      <p class="lede">Cross-layer architecture for the Tauri, React, and Python stack.</p>
+      <p class="lede">Cross-layer architecture for the Tauri desktop app and compute stack.</p>
     </header>
     <div class="prose">
-      <h1 id="architecture">Architecture</h1>
-<p>Consolidated architecture reference for the Tauri + Python astrology browser.</p>
-<h2 id="overview">Overview</h2>
+      <h2 id="overview">Overview</h2>
 <ul>
-<li><strong>Frontends</strong>: React UI (<code>apps/web-react/</code>) and an alternate Svelte UI (<code>apps/web-svelte/</code>). Both call Tauri through <code>@tauri-apps/api/core</code>; see <a href="./frontend-react/">frontend-react</a> and <a href="./frontend-svelte/">frontend-svelte</a>. UI themes and i18n workflow: <a href="./ui-conventions/">ui-conventions</a>.</li>
-<li><strong>Backend</strong>: Tauri (Rust) commands orchestrate workspace and computation.</li>
-<li><strong>Compute</strong>: Python sidecar (CLI) performs astrology calculations.</li>
-<li><strong>Storage</strong>: YAML workspace manifests and chart files are the active persistence layer.</li>
-<li><strong>Computed data</strong>: Positions, aspects, and transit-series results are computed on demand and are not persisted by the Rust desktop app.</li>
-<li><strong>Shared assets</strong>: repo-root <code>static/</code> is the source of truth for app-shell logos/icons and astrology glyph sets used by both frontends.</li>
-</ul>
-<h2 id="core-principles">Core Principles</h2>
-<ol>
-<li><strong>YAML Compatibility</strong>: Workspace/charts remain compatible with the Python package.</li>
-<li><strong>Workspace-First Persistence</strong>: Persist workspace definitions in YAML; keep computed data ephemeral in the desktop app.</li>
-<li><strong>Python Sidecar</strong>: Heavy computation stays in Python; async from Tauri.</li>
-<li><strong>No-Sidecar Operation</strong>: The app must still run and compute supported features without the Python sidecar.</li>
-<li><strong>Precision Support</strong>: JPL supports seconds/microseconds as needed.</li>
-</ol>
-<h2 id="workspace-layout">Workspace Layout</h2>
-<pre tabindex="0"><code>workspace/
-├── workspace.yaml              # Workspace metadata
-├── charts/                     # Chart definitions
-│   ├── chart_001.yaml
-│   └── chart_002.yaml
-├── subjects/                   # Optional subject definitions
-│   └── subject_001.yaml
-└── layouts/                    # Optional layouts/annotations/modules
-    └── layout_001.yaml
-</code></pre><h2 id="storage-model">Storage model</h2>
+<li><strong>Backend</strong>:
 <ul>
-<li><strong>Current live state</strong>: the Rust desktop app persists workspace YAML only; see <strong><a href="./tauri-command-contracts/">tauri-command-contracts</a></strong> and <code>src-tauri/src/commands/storage.rs</code>.</li>
-<li><strong>Chart definitions</strong> live in YAML and should stay compatible with the Python workspace/model layer.</li>
-<li><strong>Computed positions and aspects</strong> are produced on demand in Rust or Python.</li>
-<li><strong>Storage commands</strong> remain registered for compatibility, but they do not persist calculated data.</li>
-</ul>
-<h3 id="jpl-field-expectations">JPL field expectations</h3>
-<ul>
-<li>For JPL: <code>declination</code>, <code>right_ascension</code>, <code>distance</code> are <strong>always</strong> computed.</li>
-<li>For non‑JPL: those columns are <code>NULL</code>.</li>
-<li>Optional topocentric and physical fields depend on engine support and request shape.</li>
-</ul>
-<h2 id="backend-routing-rust--python--rust">Backend routing (Rust → Python / Rust)</h2>
-<ul>
-<li><strong>All frontend actions</strong> go through Tauri: the UI only calls <code>invoke('&lt;command&gt;', ...)</code>. There is no direct frontend → Python path.</li>
-<li><strong>Compute router</strong> (env <code>KEFER_COMPUTE_BACKEND</code>):
-<ul>
-<li><code>Auto</code> (default): <strong>Python primary</strong>, <strong>Rust fallback</strong>. Try Python first; on failure, fall back to Rust when <code>KEFER_PYTHON_FALLBACK</code> is not disabled.</li>
-<li><code>Python</code>: use Python only.</li>
-<li><code>Rust</code>: use Rust only (no fallback).</li>
+<li><strong>Workspace management</strong>: workspace-level settings (<code>workspace.yaml</code>) opening, importing (including foreign file imports like SFS).</li>
+<li><strong>Compute engines</strong>: Rust and Python can both participate in computation; Python is optional, not foundational.</li>
+<li><strong>Storage</strong>: App stores default JPL data (BSP files) as well as translation file (CSV exported from google doc) and geo-data (maps, geocoders, &hellip;).</li>
+<li><strong>Ephemeris management</strong>: Manage bundled and downloaded BSP files through the command surface.</li>
+<li><strong>Computed data</strong>: Positions, aspects, and transit-series results are computed on demand and may be persisted if needed (storage type still in discussion).</li>
 </ul>
 </li>
-<li><strong>Rust</strong> implements workspace I/O and in-memory chart building; <strong>Python</strong> is used for Swiss Ephemeris / JPL when available.</li>
-</ul>
-<h2 id="data-flows">Data Flows</h2>
-<h3 id="chart-creation">Chart Creation</h3>
-<pre tabindex="0"><code>React UI → Tauri command → write YAML → optional compute in Python or Rust → return in-memory result
-</code></pre><h3 id="transit-computation">Transit Computation</h3>
-<pre tabindex="0"><code>React UI → Tauri command → Python or Rust compute positions over range
-UI consumes returned in-memory results and derives aspects when needed
-</code></pre><h2 id="integration-points-frontend">Integration Points (frontend)</h2>
-<p><strong>Current:</strong></p>
+<li><strong>Frontends</strong>:
 <ul>
-<li><code>apps/web-react/src/lib/tauri/</code> — types and <code>invoke</code> helpers (<code>openWorkspaceFolder</code>, <code>saveWorkspace</code>, etc.).</li>
-<li><code>apps/web-react/src/app/App.tsx</code> — workspace open/save from the sidebar; extend with chart editors and data views.</li>
-<li><code>apps/web-svelte/src/</code> — alternate Svelte workspace with the more advanced panel/radix/transits UI.</li>
-<li><code>static/app-shell/</code> — shared app-shell logos and icon sets (<code>default</code>, <code>modern</code>) for both frontends.</li>
-<li><code>static/glyphs/</code> — shared glyph families (<code>default</code>, <code>modern</code>) for both frontends.</li>
+<li><strong><a href="../frontend-react/">React</a></strong> UI (stored in <code>apps/web-react/</code>)</li>
+<li><strong><a href="../frontend-svelte/">Svelte</a></strong> UI (stored in <code>apps/web-svelte/</code>).</li>
+<li>Both call Tauri through <code>@tauri-apps/api/core</code>;</li>
+<li>UI themes and i18n workflow: <a href="../ui-conventions/">ui-conventions</a>.</li>
+<li><strong>Shared assets</strong>: repo-root <code>static/</code> is the source of truth for app-shell logos/icons and astrology glyph sets used by both frontends.</li>
 </ul>
-<p><strong>To add (React):</strong></p>
+</li>
+</ul>
+<h2 id="current-state">Current state</h2>
 <ul>
-<li>Time navigation state/hooks and panels (see <a href="./time-navigation/">time-navigation</a> for design).</li>
-<li>Tables, radix chart canvas, and aspect grids as React components; use shared glyph assets from repo root <code>static/</code>.</li>
+<li><strong>Workspace persistence</strong>: chart definitions and workspace defaults are stored in YAML under a workspace folder.</li>
+<li><strong>Workspace defaults</strong>: can be updated directly in <code>workspace.yaml</code> through <code>save_workspace_defaults(...)</code>.</li>
+<li><strong>Chart import</strong>: native YAML is supported directly; <code>.sfs</code> is still not wired in the current Rust path.</li>
+<li><strong>Computed chart data</strong>: positions, axes, house cusps, aspects, and transit-series results are computed on demand.</li>
+<li><strong>Computed storage</strong>: there is no settled queryable storage layer for computed data yet.</li>
+<li><strong>Backend routing</strong>: all frontend calls go through Tauri, which then routes to Rust or Python.</li>
+<li><strong>Auto routing</strong>: <code>KEFER_COMPUTE_BACKEND=Auto</code> currently prefers Python when available and falls back to Rust.</li>
+<li><strong>Geocoding</strong>: location lookup is handled in Rust through a configurable Nominatim-style endpoint.</li>
+<li><strong>Ephemeris downloads</strong>: BSP discovery, cache management, and download status are handled in Rust.</li>
+<li><strong>React status</strong>: the main horoscope flow is wired to real Tauri-backed compute; some secondary screens are still presentational.</li>
+<li><strong>Svelte status</strong>: radix/settings/transits parity is much better than before, but some compatibility-era storage helpers and in-memory fallbacks still remain.</li>
 </ul>
-<h2 id="ui-system-guidance">UI system guidance</h2>
-<ul>
-<li>Prefer the shared shadcn-style primitive layers before building bespoke UI controls.</li>
-<li>React uses the existing shadcn/Radix-style component set under <code>apps/web-react/src/app/components/ui/</code>.</li>
-<li>Svelte uses the shared UI primitives under <code>apps/web-svelte/src/lib/components/ui/</code>, built around Bits UI and the same token-first styling approach.</li>
-<li>When adjusting visual design, prefer variants, theme tokens, spacing, and shared wrappers over one-off duplicated component implementations.</li>
-</ul>
-<h2 id="tauri-commands-high-level">Tauri Commands (High-Level)</h2>
-<p><strong>Invoked from frontend today:</strong><br>
-<code>read</code>, <code>write</code>, <code>open_folder_dialog</code>, <code>load_workspace</code>, <code>save_workspace</code>, <code>get_workspace_defaults</code>, <code>get_chart_details</code>, <code>init_storage</code>, <code>compute_chart</code>, <code>compute_chart_from_data</code>, <code>compute_transit_series</code>, <code>create_chart</code>, <code>update_chart</code>, <code>query_positions</code>, <code>compute_aspects</code>, <code>query_radix_relative</code>.</p>
-<p><strong>Registered but not yet used from UI (reserved for future wiring):</strong><br>
-<code>store_positions</code>, <code>store_relation</code>, <code>query_timestamps</code>, <code>create_workspace</code>, <code>delete_workspace</code>, <code>delete_chart</code>.</p>
-<p>For current command behavior, return shapes, and no-op storage semantics, use <strong><a href="./tauri-command-contracts/">tauri-command-contracts</a></strong> as the behavior reference.</p>
-<h2 id="time-navigation">Time Navigation</h2>
-<ul>
-<li>Seconds/minutes/hours/days stepping (default 1 hour).</li>
-<li>Quick navigation: first, prev, next, last, now.</li>
-<li>Time shift (Astrolab): years/months/days/hours/minutes/seconds.</li>
-</ul>
-<h2 id="ui-view-modes">UI View Modes</h2>
-<ul>
-<li><strong>Radix View</strong>: circular chart, houses, aspects (derived).</li>
-<li><strong>Table View</strong>: positions table with optional JPL columns.</li>
-<li><strong>Statistics View</strong>: aggregated counts.</li>
-<li><strong>Interpretations View</strong>: text-based meanings.</li>
-</ul>
-<h2 id="performance-notes">Performance Notes</h2>
-<ul>
-<li>Batch computation with pre‑initialized engines.</li>
-<li>Cache recent computations in memory for UI responsiveness.</li>
-</ul>
-<h2 id="implementation-checklist">Implementation Checklist</h2>
+<h2 id="principles">Principles</h2>
 <ol>
-<li>Preserve i18n/theming.</li>
-<li>Add time navigation store + UI.</li>
-<li>Ensure Python CLI returns JPL columns.</li>
-<li>Keep Rust fallback functional when Python is unavailable.</li>
-<li>Wire UI views to in-memory results and derive aspects on demand.</li>
+<li><strong>YAML compatibility</strong>: workspace and chart definitions should stay compatible with the Python package.</li>
+<li><strong>Workspace-first persistence</strong>: workspace definitions are primary; computed data stays secondary.</li>
+<li><strong>Backend-neutral astronomy</strong>: astronomy backends should be swappable without changing chart semantics.</li>
+<li><strong>No-sidecar operation</strong>: the app should still run supported flows without Python.</li>
+<li><strong>Astronomy vs astrology separation</strong>: zodiac, houses, ayanamsha, aspect rules, and tradition defaults belong above the astronomy backend.</li>
+<li><strong>Precision support</strong>: the architecture should support second-level and higher precision where the backend supports it.</li>
+<li><strong>License-clean default</strong>: new default compute paths should not reintroduce AGPL dependency.</li>
+</ol>
+<h2 id="workspace-model">Workspace model</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>workspace/
+</span></span><span style="display:flex;"><span>├── workspace.yaml
+</span></span><span style="display:flex;"><span>├── charts/
+</span></span><span style="display:flex;"><span>│   ├── chart_001.yaml
+</span></span><span style="display:flex;"><span>│   └── chart_002.yaml
+</span></span><span style="display:flex;"><span>├── subjects/
+</span></span><span style="display:flex;"><span>│   └── subject_001.yaml
+</span></span><span style="display:flex;"><span>└── layouts/
+</span></span><span style="display:flex;"><span>    └── layout_001.yaml
+</span></span></code></pre></div><ul>
+<li><strong>Live state today</strong>: the Rust desktop app persists workspace YAML only.</li>
+<li><strong>Chart definitions</strong>: stay in YAML and should remain compatible with the Python workspace/model layer.</li>
+<li><strong>Workspace defaults</strong>: live in <code>workspace.yaml</code> and have their own persistence path.</li>
+<li><strong>Computed positions and aspects</strong>: are produced on demand in Rust or Python.</li>
+<li><strong>Storage compatibility commands</strong>: still exist, but should not be treated as a real computed-data persistence layer.</li>
+</ul>
+<h2 id="compute-model">Compute model</h2>
+<ul>
+<li><strong>Tauri owns routing</strong>: the frontend only calls <code>invoke(...)</code>.</li>
+<li><strong>Rust path</strong>: local chart and transit compute is real and active.</li>
+<li><strong>Python path</strong>: optional sidecar path for compatibility and backend-specific integrations.</li>
+<li><strong>Response provenance</strong>: callers should be able to see which backend actually handled the request.</li>
+</ul>
+<h3 id="backend-selection">Backend selection</h3>
+<ul>
+<li><code>Auto</code>: Python when available, Rust otherwise.</li>
+<li><code>Python</code>: Python only.</li>
+<li><code>Rust</code>: Rust only.</li>
+</ul>
+<h3 id="result-shape">Result shape</h3>
+<ul>
+<li><strong>Stable core fields</strong>:
+<ul>
+<li><code>longitude</code></li>
+<li><code>latitude</code> when available</li>
+<li><code>speed</code> when available</li>
+<li><code>retrograde</code> when derivable</li>
+</ul>
+</li>
+<li><strong>Additive fields</strong>:
+<ul>
+<li><code>declination</code></li>
+<li><code>right_ascension</code></li>
+<li><code>distance</code></li>
+<li>topocentric fields</li>
+<li>physical properties</li>
+</ul>
+</li>
+<li><strong>Provenance fields</strong>:
+<ul>
+<li><code>backend_used</code></li>
+<li><code>fallback_used</code></li>
+<li><code>ephemeris_source</code></li>
+<li><code>warnings</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="layering">Layering</h2>
+<h3 id="time-and-observer-layer">Time and observer layer</h3>
+<ul>
+<li>canonical event time</li>
+<li>timezone handling</li>
+<li>location and observer model</li>
+<li>Julian/time-scale conversion</li>
+</ul>
+<h3 id="astronomy-backend-layer">Astronomy backend layer</h3>
+<ul>
+<li>body-state computation</li>
+<li>axes computation</li>
+<li>house-cusp computation</li>
+<li>backend-specific provenance</li>
+</ul>
+<h3 id="transform-layer">Transform layer</h3>
+<ul>
+<li>ecliptic and equatorial transforms</li>
+<li>tropical and sidereal projection</li>
+<li>geocentric and topocentric handling</li>
+<li>apparent and mean model switches</li>
+</ul>
+<h3 id="astrology-layer">Astrology layer</h3>
+<ul>
+<li>zodiac sign mapping</li>
+<li>house interpretation</li>
+<li>aspect computation and orb policy</li>
+<li>tradition defaults</li>
+<li>derived points such as nodes, Lilith variants, and lots</li>
+</ul>
+<h2 id="frontend-integration">Frontend integration</h2>
+<ul>
+<li><strong>React Tauri layer</strong>: <code>apps/web-react/src/lib/tauri/</code></li>
+<li><strong>React shell</strong>: <code>apps/web-react/src/app/App.tsx</code></li>
+<li><strong>Svelte shell</strong>: <code>apps/web-svelte/src/</code></li>
+<li><strong>Shared app-shell assets</strong>: <code>static/app-shell/</code></li>
+<li><strong>Shared astrology glyphs</strong>: <code>static/glyphs/</code></li>
+</ul>
+<h3 id="ui-rules">UI rules</h3>
+<ul>
+<li>Prefer shared component systems before bespoke controls.</li>
+<li>React should start from <code>apps/web-react/src/app/components/ui/</code>.</li>
+<li>Svelte should start from <code>apps/web-svelte/src/lib/components/ui/</code>.</li>
+<li>Visual changes should prefer variants, tokens, spacing, and shared wrappers over one-off forks.</li>
+</ul>
+<h2 id="runtime-flows">Runtime flows</h2>
+<h3 id="chart-creation">Chart creation</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Frontend UI -&gt; Tauri command -&gt; write YAML -&gt; compute through selected backend -&gt; return in-memory result with provenance
+</span></span></code></pre></div><h3 id="transit-computation">Transit computation</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Frontend UI -&gt; Tauri command -&gt; compute over time range -&gt; return in-memory results for rendering and aspect display
+</span></span></code></pre></div><h2 id="tauri-surface">Tauri surface</h2>
+<ul>
+<li><strong>Mainly used from UI today</strong>:
+<ul>
+<li><code>list_ephemeris_catalog</code></li>
+<li><code>download_ephemeris</code></li>
+<li><code>get_available_bodies</code></li>
+<li><code>open_folder_dialog</code></li>
+<li><code>resolve_location</code></li>
+<li><code>search_locations</code></li>
+<li><code>load_workspace</code></li>
+<li><code>save_workspace</code></li>
+<li><code>save_workspace_defaults</code></li>
+<li><code>get_workspace_defaults</code></li>
+<li><code>get_chart_details</code></li>
+<li><code>init_storage</code></li>
+<li><code>compute_chart</code></li>
+<li><code>compute_chart_from_data</code></li>
+<li><code>compute_transit_series</code></li>
+<li><code>create_chart</code></li>
+<li><code>import_chart</code></li>
+<li><code>update_chart</code></li>
+<li><code>query_positions</code></li>
+<li><code>compute_aspects</code></li>
+<li><code>query_radix_relative</code></li>
+</ul>
+</li>
+<li><strong>Registered but not yet central in the UI</strong>:
+<ul>
+<li><code>store_positions</code></li>
+<li><code>store_relation</code></li>
+<li><code>query_timestamps</code></li>
+<li><code>create_workspace</code></li>
+<li><code>delete_workspace</code></li>
+<li><code>delete_chart</code></li>
+</ul>
+</li>
+</ul>
+<p>For exact current command behavior, use <a href="../tauri-command-contracts/">tauri-command-contracts</a>.</p>
+<h2 id="non-final-areas">Non-final areas</h2>
+<ul>
+<li><code>InformationView</code> in React is still explicitly prototype-oriented.</li>
+<li>Some Svelte views still rely on compatibility storage commands and in-memory fallback behavior.</li>
+<li>Computed-data persistence is still not a fully settled architecture topic.</li>
+<li>Some import/storage directions are still under discussion.</li>
+</ul>
+<h2 id="near-term-direction">Near-term direction</h2>
+<ol>
+<li>Keep frontend behavior wired to real compute paths rather than mock geometry.</li>
+<li>Keep no-sidecar execution functional.</li>
+<li>Surface backend provenance consistently.</li>
+<li>Continue moving astrology semantics into backend-neutral layers.</li>
+<li>Keep shared assets, shared translation workflow, and shared UI rules aligned across both frontends.</li>
 </ol>
 
     </div>

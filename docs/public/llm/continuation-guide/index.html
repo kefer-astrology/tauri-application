@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Continuation guide | Kefer docs</title>
     <meta name="description" content="Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo." />
     
-    <link rel="stylesheet" href="/css/site.min.6dea3a68d7d33e949211edd3ff7022abdbe2b950a74846096dc611e865523e64.css" integrity="sha256-beo6aNfTPpSSEe3T/3Aiq9viuVCnSEYJbcYR6GVSPmQ=" />
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
   </head>
   <body>
     <div class="shell">
@@ -32,6 +32,7 @@
 <li>Read <code>/llm/project-context/</code>.</li>
 <li>Read <code>/llm/specs-workflow/</code>.</li>
 <li>Look in <code>/llm/</code> for any task-specific spec or operating note before treating <code>/docs/</code> as the spec source.</li>
+<li>If the task affects compute architecture, backend ownership, zodiac/house semantics, or long-term migration, read <code>/MIGRATION.md</code>.</li>
 <li>Read <code>/docs/</code> and then the most relevant guide for the task area.</li>
 <li>Inspect current uncommitted changes before editing.</li>
 <li>Rebuild generated docs assets with <code>npm run docs:prepare</code> when frontend build output changes.</li>
@@ -44,6 +45,7 @@
 <ul>
 <li>Always look for the spec in <code>/llm/</code> first.</li>
 <li>Use <code>/docs/</code> as descriptive system documentation and current-behavior reference.</li>
+<li>Use <code>/MIGRATION.md</code> when the task touches long-term compute architecture or backend direction.</li>
 <li>If a task has no explicit <code>/llm/</code> spec, derive the narrowest safe interpretation from <code>/docs/</code> plus live code and record assumptions.</li>
 <li>When architecture direction changes, update the relevant <code>/llm/</code> spec in the same change set.</li>
 </ul>

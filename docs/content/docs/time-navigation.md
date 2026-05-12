@@ -1,440 +1,133 @@
 ---
 title: "Time navigation"
-description: "Reference design for time navigation behavior and state."
+description: "Current reference for time navigation behavior and state."
 weight: 60
 ---
 
-# Time Navigation Architecture
+Time navigation exists to support:
 
-> **Note:** Code samples use Svelte. Treat them as a design reference, not as a guarantee that the current implementation matches line-for-line. See [frontend-react](./frontend-react/) and [frontend-svelte](./frontend-svelte/) for current app status.
+- precise stepping through computed chart states
+- quick movement through a defined time range
+- transit browsing over intervals
+- Astrolabe-style time shifting
 
-## Overview
+For frontend-specific implementation status, see [frontend-react](../frontend-react/) or [frontend-svelte](../frontend-svelte/).
 
-The application needs to support precise time navigation for browsing computed astrological data, with support for:
+## Core behavior
 
-- **High precision**: Seconds-level granularity (JPL precision)
-- **Flexible stepping**: User-selectable time steps (seconds, minutes, hours, days)
-- **Quick navigation**: Jump forward/backward by selected step
-- **Time range selection**: Define start/end times for computation
-- **Current time tracking**: Track current position in time series
+- stepping units should include `seconds`, `minutes`, `hours`, and `days` (ideally also `months` and `years`)
+- default step is typically `1 hour` (should be a workspace parameter)
+- navigation actions should include `first`, `previous`, `next`, `last`, and `now`
+- users should be able to define a `start` and `end` time range through normalized selectors (specific for date and time adjust)
 
-## Current implementation note
+## Frontend vs backend handling
 
-The live Svelte implementation already goes beyond the original examples in a few places:
+Time navigation is split across both layers:
 
-- it supports `months` and `years` in addition to `seconds`, `minutes`, `hours`, and `days`
-- it uses UTC-safe stepping for the main time navigation path
-- it includes an Astrolabe-style shift model layered on top of the current time
+**Frontend responsibilities**
 
-It also still differs from the ideal reference architecture:
+- keep the current navigation state
+- apply local step changes and range clamps
+- drive the visible controls for step size, range, and shift
+- decide when a view should recompute
 
-- some radix update paths still mix in-memory computed payloads with compatibility-era query helpers
-- performance work has focused on reducing reactive churn and repeated backend loads during stepping
+**Backend responsibilities**
 
-When updating time navigation, use this document for intended behavior and `frontend-svelte.md` for current implementation status.
+- parse incoming datetime strings for compute commands
+- validate transit ranges and step size
+- perform the actual time-series computation
+- return normalized timestamps in compute results
 
-## UI Components
+In other words, the frontend owns navigation intent and UI state; Tauri owns computation and final datetime validation.
 
-### Time Navigation Panel
+## Current implementation direction
 
-Located in the left sidebar (similar to Streamlit's Astrolab), provides:
+- Svelte already supports UTC-safe stepping for the main navigation path
+- Svelte already supports an Astrolabe-style shift model layered on top of current time
+- React should follow the same behavior contract even where the exact UI differs
+- some current update paths still mix live computed payloads with compatibility-era query helpers
 
-1. **Current Time Display**
-   - Shows current datetime being viewed
-   - Format: `YYYY-MM-DD HH:MM:SS`
-   - Timezone-aware display
+## Supported datetime formats
 
-2. **Time Step Selector**
-   - Dropdown/buttons for step size:
-     - Seconds (1s, 5s, 10s, 30s, 60s)
-     - Minutes (1m, 5m, 15m, 30m)
-     - Hours (1h, 6h, 12h, 24h)
-     - Days (1d, 7d, 30d)
-   - Default: 1 hour
+### Backend-accepted datetime strings
 
-3. **Navigation Controls**
-   - `⏮ First`: Jump to start of time range
-   - `⏪ Previous`: Step backward by selected step
-   - `⏩ Next`: Step forward by selected step
-   - `⏭ Last`: Jump to end of time range
-   - `📍 Now`: Jump to current real-time
+The Rust Tauri compute path currently accepts these input forms:
 
-4. **Time Range Selector**
-   - Start datetime picker
-   - End datetime picker
-   - Quick presets:
-     - "Today"
-     - "This Week"
-     - "This Month"
-     - "This Year"
-     - "Custom Range"
+- RFC3339 / ISO datetime with timezone: `2024-01-01T12:00:00+01:00`, `2024-01-01T11:00:00Z`
+- naive datetime with seconds: `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`
+- naive datetime without seconds: `YYYY-MM-DD HH:mm`
+- date only: `YYYY-MM-DD`
 
-5. **Time Shift (Astrolab)**
-   - Years, Months, Days inputs
-   - Hours, Minutes, Seconds inputs
-   - "Apply Shift" button
-   - "Reset" button
+Current backend rule:
 
-## State Management
+- RFC3339 values preserve their represented instant and are converted to UTC internally
+- naive datetime strings are treated as UTC in the Rust parser
+- date-only values are interpreted as `00:00:00` UTC
 
-### Svelte Store Structure
+### Frontend parsing notes
 
-```typescript
-// src/lib/stores/timeNavigation.ts
-import { writable, derived } from 'svelte/store';
+- React currently accepts normal JS `Date`-parseable values and also normalizes `YYYY-MM-DD HH:mm[:ss]` into a `T...Z` form before parsing
+- Svelte does the same basic normalization and also still accepts a legacy `DD/MM/YYYY HH:mm[:ss]` form in some local parsing paths
 
-export type TimeStep =
-	| { unit: 'seconds'; value: number }
-	| { unit: 'minutes'; value: number }
-	| { unit: 'hours'; value: number }
-	| { unit: 'days'; value: number };
+That means frontend parsing is slightly more permissive than the backend contract. For durable interop, prefer RFC3339 or `YYYY-MM-DDTHH:mm:ssZ` when values cross the Tauri boundary.
 
-export interface TimeNavigationState {
-	// Current time being viewed
-	currentTime: Date;
+## UI expectations
 
-	// Time range for computation
-	startTime: Date;
-	endTime: Date;
+A time-navigation surface should provide:
 
-	// Current step size
-	step: TimeStep;
+- current time display
+- step-size selection
+- quick navigation controls
+- start/end range controls
+- optional shift controls for years/months/days/hours/minutes/seconds
 
-	// Time shift (Astrolab)
-	shift: {
-		years: number;
-		months: number;
-		days: number;
-		hours: number;
-		minutes: number;
-		seconds: number;
-	};
+The exact layout can differ by frontend, but the interaction model should stay consistent.
 
-	// Whether shift is active
-	shiftActive: boolean;
-}
+## State model
 
-export const timeNavigation = writable<TimeNavigationState>({
-	currentTime: new Date(),
-	startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-	endTime: new Date(),
-	step: { unit: 'hours', value: 1 },
-	shift: {
-		years: 0,
-		months: 0,
-		days: 0,
-		hours: 0,
-		minutes: 0,
-		seconds: 0
-	},
-	shiftActive: false
-});
+The navigation state should keep:
 
-// Derived: Effective time (current + shift)
-export const effectiveTime = derived(timeNavigation, ($nav) => {
-	if (!$nav.shiftActive) return $nav.currentTime;
+- current time
+- start time
+- end time
+- current step definition
+- optional shift values
+- whether shift is active
 
-	const result = new Date($nav.currentTime);
-	result.setFullYear(result.getFullYear() + $nav.shift.years);
-	result.setMonth(result.getMonth() + $nav.shift.months);
-	result.setDate(result.getDate() + $nav.shift.days);
-	result.setHours(result.getHours() + $nav.shift.hours);
-	result.setMinutes(result.getMinutes() + $nav.shift.minutes);
-	result.setSeconds(result.getSeconds() + $nav.shift.seconds);
+In the current Svelte implementation, this state lives in `apps/web-svelte/src/lib/stores/timeNavigation.svelte.ts`.
 
-	return result;
-});
+Current details in that store:
 
-// Helper functions
-export function stepForward() {
-	timeNavigation.update((nav) => {
-		const newTime = addTimeStep(nav.currentTime, nav.step);
-		if (newTime <= nav.endTime) {
-			return { ...nav, currentTime: newTime };
-		}
-		return nav;
-	});
-}
+- step units include `seconds`, `minutes`, `hours`, `days`, `months`, and `years`
+- stepping uses UTC setters such as `setUTCSeconds`, `setUTCHours`, `setUTCMonth`, and `setUTCFullYear`
+- navigation is clamped to the active `startTime` / `endTime`
+- the effective displayed time can be the base `currentTime` plus an active shift
 
-export function stepBackward() {
-	timeNavigation.update((nav) => {
-		const newTime = subtractTimeStep(nav.currentTime, nav.step);
-		if (newTime >= nav.startTime) {
-			return { ...nav, currentTime: newTime };
-		}
-		return nav;
-	});
-}
+React does not yet centralize this in the same dedicated store shape, but it should follow the same contract.
 
-export function jumpToStart() {
-	timeNavigation.update((nav) => ({
-		...nav,
-		currentTime: new Date(nav.startTime)
-	}));
-}
+## Backend compute rules
 
-export function jumpToEnd() {
-	timeNavigation.update((nav) => ({
-		...nav,
-		currentTime: new Date(nav.endTime)
-	}));
-}
+For `compute_transit_series(...)` specifically:
 
-export function jumpToNow() {
-	timeNavigation.update((nav) => ({
-		...nav,
-		currentTime: new Date()
-	}));
-}
+- `time_step_seconds` must be greater than `0`
+- `end_datetime` must be greater than or equal to `start_datetime`
+- the Rust path enforces a hard limit of `50_000` generated steps
+- Rust transit results return timestamps as RFC3339
+- Rust transit responses currently format `time_step` as a compact seconds string such as `3600s`
 
-function addTimeStep(date: Date, step: TimeStep): Date {
-	const result = new Date(date);
-	switch (step.unit) {
-		case 'seconds':
-			result.setSeconds(result.getSeconds() + step.value);
-			break;
-		case 'minutes':
-			result.setMinutes(result.getMinutes() + step.value);
-			break;
-		case 'hours':
-			result.setHours(result.getHours() + step.value);
-			break;
-		case 'days':
-			result.setDate(result.getDate() + step.value);
-			break;
-	}
-	return result;
-}
+Backend chart payloads also carry datetime through chart `subject.event_time`. Chart navigation and transit navigation should therefore not drift into separate formatting rules.
 
-function subtractTimeStep(date: Date, step: TimeStep): Date {
-	const result = new Date(date);
-	switch (step.unit) {
-		case 'seconds':
-			result.setSeconds(result.getSeconds() - step.value);
-			break;
-		case 'minutes':
-			result.setMinutes(result.getMinutes() - step.value);
-			break;
-		case 'hours':
-			result.setHours(result.getHours() - step.value);
-			break;
-		case 'days':
-			result.setDate(result.getDate() - step.value);
-			break;
-	}
-	return result;
-}
-```
+## Integration rules
 
-## Component Implementation
+- frontend controls should drive recomputation through the active Tauri compute flow
+- stepping should not silently invent data or bypass the backend contract
+- backend results should remain the source of truth for rendered chart state
+- loading behavior should preserve the last stable rendered state where practical
+- when possible, the same datetime value should be usable both for chart recompute and transit-series requests without frontend-only reinterpretation
 
-### TimeNavigationPanel.svelte
+## Current caveats
 
-```svelte
-<script lang="ts">
-  import { timeNavigation, effectiveTime, stepForward, stepBackward, jumpToStart, jumpToEnd, jumpToNow } from '$lib/stores/timeNavigation';
-  import { t } from '$lib/i18n/index.svelte';
-
-  const nav = $derived.by(() => $timeNavigation);
-  const effective = $derived($effectiveTime);
-
-  // Format time for display
-  function formatTime(date: Date): string {
-    return date.toISOString().slice(0, 19).replace('T', ' ');
-  }
-
-  // Step options
-  const stepOptions = [
-    { unit: 'seconds' as const, value: 1, label: '1 second' },
-    { unit: 'seconds' as const, value: 5, label: '5 seconds' },
-    { unit: 'seconds' as const, value: 10, label: '10 seconds' },
-    { unit: 'seconds' as const, value: 30, label: '30 seconds' },
-    { unit: 'seconds' as const, value: 60, label: '1 minute' },
-    { unit: 'minutes' as const, value: 1, label: '1 minute' },
-    { unit: 'minutes' as const, value: 5, label: '5 minutes' },
-    { unit: 'minutes' as const, value: 15, label: '15 minutes' },
-    { unit: 'minutes' as const, value: 30, label: '30 minutes' },
-    { unit: 'hours' as const, value: 1, label: '1 hour' },
-    { unit: 'hours' as const, value: 6, label: '6 hours' },
-    { unit: 'hours' as const, value: 12, label: '12 hours' },
-    { unit: 'hours' as const, value: 24, label: '1 day' },
-    { unit: 'days' as const, value: 1, label: '1 day' },
-    { unit: 'days' as const, value: 7, label: '1 week' },
-    { unit: 'days' as const, value: 30, label: '1 month' },
-  ];
-
-  function updateStep(unit: 'seconds' | 'minutes' | 'hours' | 'days', value: number) {
-    timeNavigation.update(n => ({ ...n, step: { unit, value } }));
-  }
-
-  function applyShift() {
-    timeNavigation.update(n => ({ ...n, shiftActive: true }));
-  }
-
-  function resetShift() {
-    timeNavigation.update(n => ({
-      ...n,
-      shift: { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 },
-      shiftActive: false,
-    }));
-  }
-</script>
-
-<div class="space-y-4 p-4">
-  <h3 class="text-lg font-semibold">{t('time_navigation.title', {}, 'Time Navigation')}</h3>
-
-  <!-- Current Time Display -->
-  <div class="space-y-1">
-    <label class="text-sm font-medium">{t('time_navigation.current_time', {}, 'Current Time')}</label>
-    <div class="p-2 bg-muted rounded text-sm font-mono">
-      {formatTime(effective)}
-    </div>
-    {#if nav.shiftActive}
-      <div class="text-xs text-muted-foreground">
-        Base: {formatTime(nav.currentTime)} + Shift
-      </div>
-    {/if}
-  </div>
-
-  <!-- Time Step Selector -->
-  <div class="space-y-1">
-    <label class="text-sm font-medium">{t('time_navigation.step_size', {}, 'Step Size')}</label>
-    <select
-      class="w-full p-2 border rounded"
-      onchange={(e) => {
-        const selected = stepOptions[parseInt(e.target.value)];
-        updateStep(selected.unit, selected.value);
-      }}
-    >
-      {#each stepOptions as opt, i}
-        <option
-          value={i}
-          selected={nav.step.unit === opt.unit && nav.step.value === opt.value}
-        >
-          {opt.label}
-        </option>
-      {/each}
-    </select>
-  </div>
-
-  <!-- Navigation Controls -->
-  <div class="grid grid-cols-3 gap-2">
-    <button
-      class="px-2 py-1 text-xs border rounded hover:bg-muted"
-      onclick={jumpToStart}
-    >
-      ⏮ First
-    </button>
-    <button
-      class="px-2 py-1 text-xs border rounded hover:bg-muted"
-      onclick={stepBackward}
-    >
-      ⏪ Prev
-    </button>
-    <button
-      class="px-2 py-1 text-xs border rounded hover:bg-muted"
-      onclick={stepForward}
-    >
-      ⏩ Next
-    </button>
-    <button
-      class="px-2 py-1 text-xs border rounded hover:bg-muted"
-      onclick={jumpToEnd}
-    >
-      ⏭ Last
-    </button>
-    <button
-      class="px-2 py-1 text-xs border rounded hover:bg-muted col-span-2"
-      onclick={jumpToNow}
-    >
-      📍 Now
-    </button>
-  </div>
-
-  <!-- Time Shift (Astrolab) -->
-  <div class="space-y-2 border-t pt-4">
-    <h4 class="text-sm font-medium">{t('time_navigation.shift', {}, 'Time Shift')}</h4>
-    <div class="grid grid-cols-3 gap-2">
-      <input
-        type="number"
-        class="p-1 border rounded text-sm"
-        placeholder="Years"
-        bind:value={nav.shift.years}
-      />
-      <input
-        type="number"
-        class="p-1 border rounded text-sm"
-        placeholder="Months"
-        bind:value={nav.shift.months}
-      />
-      <input
-        type="number"
-        class="p-1 border rounded text-sm"
-        placeholder="Days"
-        bind:value={nav.shift.days}
-      />
-      <input
-        type="number"
-        class="p-1 border rounded text-sm"
-        placeholder="Hours"
-        bind:value={nav.shift.hours}
-      />
-      <input
-        type="number"
-        class="p-1 border rounded text-sm"
-        placeholder="Minutes"
-        bind:value={nav.shift.minutes}
-      />
-      <input
-        type="number"
-        class="p-1 border rounded text-sm"
-        placeholder="Seconds"
-        bind:value={nav.shift.seconds}
-      />
-    </div>
-    <div class="flex gap-2">
-      <button
-        class="flex-1 px-2 py-1 text-sm border rounded hover:bg-muted"
-        onclick={applyShift}
-      >
-        {t('time_navigation.apply_shift', {}, 'Apply Shift')}
-      </button>
-      {#if nav.shiftActive}
-        <button
-          class="flex-1 px-2 py-1 text-sm border rounded hover:bg-muted"
-          onclick={resetShift}
-        >
-          {t('time_navigation.reset', {}, 'Reset')}
-        </button>
-      {/if}
-    </div>
-  </div>
-</div>
-```
-
-## Integration with Data Queries
-
-When querying positions/aspects, use the effective time:
-
-```typescript
-// In data query functions
-import { effectiveTime } from '$lib/stores/timeNavigation';
-
-export async function queryPositionsForCurrentTime(chartId: string) {
-	const time = $effectiveTime;
-	const isoString = time.toISOString();
-
-	return await invoke('query_positions', {
-		chartId,
-		datetime: isoString
-	});
-}
-```
-
-## Keyboard Shortcuts
-
-- `←` / `→`: Step backward/forward
-- `Home` / `End`: Jump to start/end
-- `N`: Jump to now
-- `+` / `-`: Increase/decrease step size
-- `S`: Toggle shift mode
+- some Svelte paths still rely on compatibility-era query helpers
+- performance work in this area is still partly about reducing reactive churn and repeated backend loads
+- this page is the behavior reference, not a promise that one frontend’s code samples are canonical
+- frontend-local parsing is currently a little broader than the Rust command contract, so docs and new UI flows should prefer the backend-safe formats above
