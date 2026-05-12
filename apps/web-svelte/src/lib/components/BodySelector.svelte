@@ -2,6 +2,7 @@
 <script lang="ts">
   import { getGlyphContent } from '$lib/stores/glyphs.svelte';
   import { Button } from '$lib/components/ui/button/index.js';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import {
     OBSERVABLE_OBJECTS,
     OBSERVABLE_OBJECT_CATEGORY_LABELS,
@@ -101,9 +102,8 @@
           class="flex items-center gap-2 hover:opacity-80 transition-opacity"
           onclick={() => toggleCategory(category.name)}
         >
-          <input
-            type="checkbox"
-            class="w-4 h-4 rounded border border-foreground/30 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+          <Checkbox
+            class="cursor-pointer"
             checked={isCategoryAllSelected(category.name)}
             onchange={() => toggleCategorySelection(category.name)}
             onclick={(e) => e.stopPropagation()}
@@ -127,9 +127,8 @@
           {#each category.bodies as body}
             {@const glyph = getGlyphContent(body.id)}
             <label class="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity">
-              <input
-                type="checkbox"
-                class="w-4 h-4 rounded border border-foreground/30 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+              <Checkbox
+                class="cursor-pointer"
                 checked={selectedBodies.includes(body.id)}
                 onchange={() => toggleBody(body.id)}
               />

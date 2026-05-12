@@ -18,6 +18,7 @@
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import { getGlyphContent, signIdFromLongitude } from '$lib/stores/glyphs.svelte';
   import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
   import BodySelector from '$lib/components/BodySelector.svelte';
@@ -699,7 +700,7 @@
 </script>
 
 <!-- Root layout: full viewport height, three rows by percentages -->
-<div class="h-screen w-screen grid grid-rows-[15%_75%_10%] bg-gradient-to-br from-[#274f73] to-[#242460] text-foreground select-none box-border overflow-x-hidden">
+<div class="h-screen w-screen grid grid-rows-[15%_75%_10%] bg-gradient-to-br from-[var(--panel)] to-[var(--panel-header)] text-foreground select-none box-border overflow-x-hidden">
   <!-- Top: 15% height -->
   <header class="row-span-1">
     <TopBar />
@@ -1193,9 +1194,8 @@
                   { id: 'opposition', labelKey: 'aspect_opposition' }
                 ] as aspect}
                   <label class="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity">
-                    <input
-                      type="checkbox"
-                      class="w-4 h-4 rounded border border-foreground/30 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+                    <Checkbox
+                      class="cursor-pointer"
                       checked={selectedAspects.includes(aspect.id)}
                       onchange={() => {
                         if (selectedAspects.includes(aspect.id)) {

@@ -2,6 +2,7 @@
   import * as Select from '$lib/components/ui/select/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import GlyphManager from '$lib/components/GlyphManager.svelte';
   import { t, i18n, setLang } from '$lib/i18n/index.svelte';
   import {
@@ -453,9 +454,8 @@
               {@const row = aspects[aspect.id]}
               <div class="grid items-center gap-3 rounded-xl border border-border/60 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_170px]">
                 <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    class="w-4 h-4 rounded border border-foreground/30 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+                  <Checkbox
+                    class="cursor-pointer"
                     checked={row?.enabled}
                     onchange={(e) => {
                       const next = {

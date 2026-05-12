@@ -1,6 +1,7 @@
 <script lang="ts">
   import { showOpenExportOverlay } from '$lib/state/layout';
   import { Button } from '$lib/components/ui/button/index.js';
+  import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import { t } from '$lib/i18n/index.svelte';
 
   export type ExportType = 'print' | 'pdf' | 'png';
@@ -25,13 +26,12 @@
 
     <div class="space-y-3">
       <label class="flex items-center gap-3 cursor-pointer group">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={exportIncludeLocation}
           onchange={(event) => {
             exportIncludeLocation = (event.currentTarget as HTMLInputElement).checked;
           }}
-          class="w-4 h-4 rounded border border-foreground/30 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="cursor-pointer"
         />
         <span class="text-sm opacity-85 group-hover:opacity-100 transition-opacity">
           {t('export_include_location', {}, 'Location')}
@@ -39,13 +39,12 @@
       </label>
 
       <label class="flex items-center gap-3 cursor-pointer group">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={exportIncludeAspects}
           onchange={(event) => {
             exportIncludeAspects = (event.currentTarget as HTMLInputElement).checked;
           }}
-          class="w-4 h-4 rounded border border-foreground/30 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="cursor-pointer"
         />
         <span class="text-sm opacity-85 group-hover:opacity-100 transition-opacity">
           {t('export_include_aspects', {}, 'Aspects')}
@@ -53,13 +52,12 @@
       </label>
 
       <label class="flex items-center gap-3 cursor-pointer group">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={exportIncludeInfo}
           onchange={(event) => {
             exportIncludeInfo = (event.currentTarget as HTMLInputElement).checked;
           }}
-          class="w-4 h-4 rounded border border-foreground/30 bg-background text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="cursor-pointer"
         />
         <span class="text-sm opacity-85 group-hover:opacity-100 transition-opacity">
           {t('export_include_info', {}, 'Info')}
