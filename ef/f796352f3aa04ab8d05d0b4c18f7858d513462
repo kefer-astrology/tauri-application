@@ -1,0 +1,141 @@
+apps/web-svelte/src/lib/components/MiddleContent.svelte
+  s_0e102c2a7e11bc::t_a2b99d78ab439a 539,549-550
+  s_0e102c2a7e11bc::t_b3efa6426f2db3 473,480-481
+  s_0e102c2a7e11bc::t_ca90444afa3fb8 512,519-520
+  s_0e102c2a7e11bc::t_c3ed204261c1fe 19-37
+src-tauri/tauri.conf.json
+  s_0e102c2a7e11bc::t_19918190c1f43d 29
+src-tauri/src/commands/ephemeris.rs
+  s_0e102c2a7e11bc::t_d6f7c9fa3809c8 23
+docs/content/docs/ephemeris-manager.md
+  s_0e102c2a7e11bc::t_450c3fae84ca7a 19
+  s_0e102c2a7e11bc::t_e003bfa94a7717 230-231
+  s_0e102c2a7e11bc::t_be4a6b5fb356c4 267
+  s_0e102c2a7e11bc::t_d3723d6bf1e8b2 338
+  s_e0fff8a0fdccbe::t_334080f1a3f157 336
+  s_e0fff8a0fdccbe::t_b09beebce7c447 129
+  s_0e102c2a7e11bc::t_40af3c6ee83c1b 331-334
+  s_0e102c2a7e11bc::t_8ff6b4cf5a1c7b 57,59-68,72,74-77,81
+  s_0e102c2a7e11bc::t_f6e7ff8fb3ebb4 337
+  s_0e102c2a7e11bc::t_1222b1c2ffd24f 116,135-140,143
+  s_0e102c2a7e11bc::t_315675fe113fd8 95-97,101,103-110
+  s_0e102c2a7e11bc::t_1f684207756804 141-142
+  s_0e102c2a7e11bc::t_d09508b8cca70b 235
+  s_e0fff8a0fdccbe::t_5aa20ce43a8963 73
+  s_e0fff8a0fdccbe::t_4d1dad13a0b0e1 318-320
+  s_0e102c2a7e11bc::t_10549205f2d10f 301-303
+  s_0e102c2a7e11bc::t_b4af7156e76311 35,40
+  s_0e102c2a7e11bc::t_174d711d47fe81 228-229
+src-tauri/src/ephemeris_manager.rs
+  s_0e102c2a7e11bc::t_ff4d5d3dcd0156 507,512-523
+  s_1abaeb740ccad0::t_bfce294eb488c7 504-506,508-510,525
+  s_0e102c2a7e11bc::t_9eb4d24fbafbe8 292-297,301-302,314
+  s_0e102c2a7e11bc::t_502dce414711ae 444-448
+  s_0e102c2a7e11bc::t_5156cb7e78e613 180-213,215-219,222-252
+  s_0e102c2a7e11bc::t_d1f7566796ba96 511
+  s_0e102c2a7e11bc::t_3475a507552c23 121-138
+  s_0e102c2a7e11bc::t_a5beb58500bb82 214
+  s_0e102c2a7e11bc::t_2f023fba567016 25-65
+  s_e0fff8a0fdccbe::t_022c4daea00592 117
+  s_0e102c2a7e11bc::t_433c722335131b 395-416,421,431-432
+  s_e0fff8a0fdccbe::t_98e9489d6e8355 424
+src-tauri/src/lib.rs
+  s_0e102c2a7e11bc::t_3d199d3a027f74 6
+src-tauri/src/houses.rs
+  s_e0fff8a0fdccbe::t_b4b2fe915bc775 311,313,316,318,321
+  s_e0fff8a0fdccbe::t_c492fe4bfb6c9c 288-289
+  s_e0fff8a0fdccbe::t_6228e019f8ae1b 224-287,290-310,312,314-315,317,319-320,322-323
+  s_e0fff8a0fdccbe::t_5930685a5f5701 9-10
+src-tauri/src/jpl_backend.rs
+  s_e0fff8a0fdccbe::t_f4f7a72ba2908d 33-34
+  s_0e102c2a7e11bc::t_20f530ff3d35f6 26-29
+  s_0e102c2a7e11bc::t_0f77f0f6551933 86-106
+  s_e0fff8a0fdccbe::t_63f6e3caf3bb92 346,352-353,355,362-363
+  s_1abaeb740ccad0::t_bfce294eb488c7 222
+  s_e0fff8a0fdccbe::t_e8ca9ce553c79f 327,329,338,340-345,347-351,354,356-361,364-370
+  s_0e102c2a7e11bc::t_68af001fa0701e 59-60,67-82
+  s_e0fff8a0fdccbe::t_4b5a846c17de38 164-193
+  s_0e102c2a7e11bc::t_c45800142cdf88 304
+  s_0e102c2a7e11bc::t_58a2c81248cf72 303,305-318,321-322
+  s_e0fff8a0fdccbe::t_2cc3dda5920f94 333
+  s_e0fff8a0fdccbe::t_40d57fb688fd57 491,493
+  s_e0fff8a0fdccbe::t_b127b2bde0be9d 529
+docs/content/docs/spice-backend.md
+  s_0e102c2a7e11bc::t_ba0a4e5c37ea54 128
+  s_0e102c2a7e11bc::t_576fd634b039da 132
+  s_0e102c2a7e11bc::t_98ab48193afda9 123,125
+  s_0e102c2a7e11bc::t_83514e2e3555a4 76
+  s_0e102c2a7e11bc::t_fa5531e7085af6 46
+  s_e0fff8a0fdccbe::t_19bbf2ee237768 124,127
+src-tauri/src/lunar_phase.rs
+  s_0e102c2a7e11bc::t_89445df53b92e2 1-107,114-121,124-144,155-156
+  s_0e102c2a7e11bc::t_27bcd68f90c371 145-154
+  s_0e102c2a7e11bc::t_fc9b9a33b13036 122-123
+  s_0e102c2a7e11bc::t_f7d9757e087c16 108-113
+docs/content/docs/tauri-command-contracts.md
+  s_0e102c2a7e11bc::t_e6d838cff2ab05 158
+  s_0e102c2a7e11bc::t_a526f89b15d3da 166
+  s_0e102c2a7e11bc::t_ce8870e6af44aa 172
+apps/web-svelte/src/lib/components/SettingsView.svelte
+  s_0e102c2a7e11bc::t_204431239d0355 259,266-267
+  s_0e102c2a7e11bc::t_726759f10a2fe3 40-57
+src-tauri/Cargo.toml
+  s_e0fff8a0fdccbe::t_d200718ebc3f56 34
+docs/content/docs/lunar-phase.md
+  s_0e102c2a7e11bc::t_fb148c7f24425c 50
+  s_0e102c2a7e11bc::t_b2931a1637506c 1-42,44-48
+  s_0e102c2a7e11bc::t_d7f3987c367602 43
+  s_0e102c2a7e11bc::t_c3505588b6020b 49
+apps/web-svelte/src/lib/components/OpenWorkspaceView.svelte
+  s_0e102c2a7e11bc::t_fcd8535b563443 202-209
+  s_0e102c2a7e11bc::t_9b9063558c14c8 221-222
+apps/web-svelte/src/lib/state/layout.svelte.ts
+  s_0e102c2a7e11bc::t_1dcd69ec5a5dec 53
+  s_0e102c2a7e11bc::t_1f49d2eb3bbe7d 13-21
+  s_0e102c2a7e11bc::t_851b9b5a604567 221-224,231
+src-tauri/src/astronomy.rs
+  s_e0fff8a0fdccbe::t_5d9679078362ee 151-155
+src-tauri/src/commands/workspace.rs
+  s_e0fff8a0fdccbe::t_45984c854ed23f 1798-1801
+  s_0e102c2a7e11bc::t_438930f40140bc 1095
+  s_1abaeb740ccad0::t_97647867e3ec33 767-771,903-907,1230-1242
+  s_0e102c2a7e11bc::t_5481a8722fd72d 1814-1820
+  s_0e102c2a7e11bc::t_bcb50575a422b7 1162-1165,1172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "eff796352f3aa04ab8d05d0b4c18f7858d513462",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0e102c2a7e11bc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3da71771-8532-4961-a025-4d0759008168",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_1abaeb740ccad0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e20de-9a27-7230-88db-086c993839a6",
+        "model": "gpt-5.4"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_e0fff8a0fdccbe": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "c255a2c6-5717-4b2d-beb7-55d7ef87a976",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
