@@ -31,8 +31,6 @@ fn build_swisseph() {
     for source in &sources {
         println!("cargo:rerun-if-changed={}", source_dir.join(source).display());
     }
-    println!("cargo:rerun-if-changed={}", manifest_dir.join("resources").join("swisseph").display());
-
     let mut objects = Vec::with_capacity(sources.len());
     for source in &sources {
         let src_path = source_dir.join(source);

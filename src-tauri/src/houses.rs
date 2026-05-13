@@ -6,6 +6,8 @@
 
 use std::f64::consts::PI;
 
+use crate::astronomy::AstronomyMotion;
+
 // ─── time helpers ────────────────────────────────────────────────────────────
 
 /// Julian Day Number (UT) from a Unix timestamp (seconds since 1970-01-01 00:00:00 UTC).
@@ -217,6 +219,106 @@ pub fn mean_node_lon(jd_ut: f64) -> f64 {
         + 0.002_075_81 * t * t
         + 0.000_002_15 * t * t * t;
     normalize_deg(omega)
+}
+
+fn angular_delta_deg_shortest(from_deg: f64, to_deg: f64) -> f64 {
+    let mut d = normalize_deg(to_deg) - normalize_deg(from_deg);
+    if d > 180.0 {
+        d -= 360.0;
+    } else if d < -180.0 {
+        d += 360.0;
+    }
+    d
+}
+
+/// Mean-node apparent motion (degrees per tropical day) from a short finite-difference
+/// on `mean_node_lon` — closer to ephemeris than a constant −0.05295°/day.
+pub fn mean_node_motion(jd_ut: f64) -> AstronomyMotion {
+    const SAMPLE_STEP_SECONDS: f64 = 3600.0;
+    let dt_days = SAMPLE_STEP_SECONDS / 86400.0;
+    let before = mean_node_lon(jd_ut - dt_days);
+    let after = mean_node_lon(jd_ut + dt_days);
+    let delta = angular_delta_deg_shortest(before, after);
+    let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
+    AstronomyMotion {
+        speed,
+        retrograde: speed < 0.0,
+    }
+}
+
+/// Rotate an ICRF/J2000 equatorial vector (km or km/s) into the mean ecliptic of date
+/// frame using the same obliquity convention as `icrf_to_ecliptic`.
+pub fn icrf_xyz_to_ecliptic_xyz(x: f64, y: f64, z: f64, obliquity_deg: f64) -> (f64, f64, f64) {
+    let eps = obliquity_deg.to_radians();
+    let cos_eps = eps.cos();
+    let sin_eps = eps.sin();
+    let x_e = x;
+    let y_e = y * cos_eps + z * sin_eps;
+    let z_e = -y * sin_eps + z * cos_eps;
+    (x_e, y_e, z_e)
+}
+
+/// Ecliptic longitude (degrees, [0,360)) of the direction `(x,y,z)` in ICRF equatorial,
+/// using mean obliquity of date (same longitude definition as planetary longitudes here).
+pub fn ecliptic_longitude_deg_from_icrf_xyz(x: f64, y: f64, z: f64, obliquity_deg: f64) -> f64 {
+    let (x_e, y_e, _) = icrf_xyz_to_ecliptic_xyz(x, y, z, obliquity_deg);
+    normalize_deg(y_e.atan2(x_e).to_degrees())
+}
+
+/// True (osculating) ascending lunar node, **tropical** longitude (degrees).
+///
+/// Uses the geocentric Moon position and velocity in the same inertial frame as the
+/// planetary BSP vectors (km, km/s), the mean obliquity of date, and `general_precession_deg`
+/// so the result matches other JPL/anise tropical longitudes in this backend.
+///
+/// The line of nodes is `K × h` with `K` the ecliptic north pole in equatorial coordinates
+/// and `h = r × v` the Moon's orbital angular momentum. Returns `None` if degenerate.
+pub fn true_node_tropical_deg(
+    rx: f64,
+    ry: f64,
+    rz: f64,
+    vx: f64,
+    vy: f64,
+    vz: f64,
+    jd_ut: f64,
+) -> Option<f64> {
+    let hx = ry * vz - rz * vy;
+    let hy = rz * vx - rx * vz;
+    let hz = rx * vy - ry * vx;
+    let h_sq = hx * hx + hy * hy + hz * hz;
+    if !h_sq.is_finite() || h_sq < 1e-50 {
+        return None;
+    }
+
+    let eps_deg = mean_obliquity_deg(jd_ut);
+    let eps = eps_deg.to_radians();
+    let kx = 0.0_f64;
+    let ky = -eps.sin();
+    let kz = eps.cos();
+    // Line of nodes: K × h (ascending-node direction for prograde Moon motion).
+    let nx = ky * hz - kz * hy;
+    let ny = kz * hx - kx * hz;
+    let nz = kx * hy - ky * hx;
+    let n_norm = (nx * nx + ny * ny + nz * nz).sqrt();
+    if !n_norm.is_finite() || n_norm < 1e-30 {
+        return None;
+    }
+    let nxs = nx / n_norm;
+    let nys = ny / n_norm;
+    let nzs = nz / n_norm;
+
+    let lambda_mean_ecliptic = ecliptic_longitude_deg_from_icrf_xyz(nxs, nys, nzs, eps_deg);
+    let mut tropical = normalize_deg(lambda_mean_ecliptic + general_precession_deg(jd_ut));
+
+    // Resolve ascending vs descending along the line of nodes: use Moon ecliptic latitude rate.
+    let (_, _, mz_e) = icrf_xyz_to_ecliptic_xyz(rx, ry, rz, eps_deg);
+    let (_, _, vz_e) = icrf_xyz_to_ecliptic_xyz(vx, vy, vz, eps_deg);
+    let ascending = mz_e * vz_e < 0.0 || (mz_e.abs() < 1e-9 && vz_e > 0.0);
+    if !ascending {
+        tropical = normalize_deg(tropical + 180.0);
+    }
+
+    Some(tropical)
 }
 
 // ─── ecliptic transform ───────────────────────────────────────────────────────

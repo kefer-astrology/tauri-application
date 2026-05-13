@@ -764,7 +764,11 @@ fn compute_chart_rust(
     let manifest = load_workspace_manifest(base)?;
     let chart_rel = find_chart_ref_by_id(base, &manifest, chart_id)?
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
-    let chart = load_chart(base, &chart_rel)?;
+    let mut chart = load_chart(base, &chart_rel)?;
+    apply_default_observable_objects(
+        &mut chart,
+        manifest.default.default_bodies.as_ref(),
+    );
     build_chart_result(&chart, None)
 }
 
@@ -896,7 +900,11 @@ fn compute_transit_series_rust(
     let manifest = load_workspace_manifest(base)?;
     let chart_rel = find_chart_ref_by_id(base, &manifest, chart_id)?
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
-    let source_chart = load_chart(base, &chart_rel)?;
+    let mut source_chart = load_chart(base, &chart_rel)?;
+    apply_default_observable_objects(
+        &mut source_chart,
+        manifest.default.default_bodies.as_ref(),
+    );
     let backend = crate::astronomy::backend_for_chart(&source_chart);
 
     let transited_filter = if transited_objects.is_empty() {
@@ -1084,6 +1092,7 @@ fn normalize_chart_response(
     if !result.contains_key("warnings") {
         result.insert("warnings".to_string(), serde_json::json!([]));
     }
+    crate::lunar_phase::inject_moon_details_into_chart_map(&mut result);
     result
 }
 
@@ -1150,12 +1159,17 @@ fn build_chart_result(
     let selected_aspects = aspect_types.or(chart.config.selected_aspects.as_deref());
     let aspects = compute_chart_aspects(&positions, &chart.config.aspect_orbs, selected_aspects);
 
+    let moon_details = crate::lunar_phase::from_position_map(&positions)
+        .map(|d| serde_json::to_value(d).unwrap_or(serde_json::Value::Null))
+        .unwrap_or(serde_json::Value::Null);
+
     Ok(HashMap::from([
         ("positions".to_string(), serde_json::json!(positions)),
         ("motion".to_string(), serde_json::json!(motion)),
         ("aspects".to_string(), serde_json::json!(aspects)),
         ("axes".to_string(), serde_json::json!(axes)),
         ("house_cusps".to_string(), serde_json::json!(house_cusps)),
+        ("moon_details".to_string(), moon_details),
         ("chart_id".to_string(), serde_json::json!(chart.id)),
         (
             "backend_used".to_string(),
@@ -1210,6 +1224,22 @@ fn normalize_requested_objects(
     match requested_objects {
         Some(list) if list.is_empty() => None,
         other => other,
+    }
+}
+
+fn apply_default_observable_objects(
+    chart: &mut crate::workspace::models::ChartInstance,
+    workspace_default_bodies: Option<&Vec<String>>,
+) {
+    if matches!(
+        normalize_requested_objects(chart.config.observable_objects.as_ref()),
+        Some(_)
+    ) {
+        return;
+    }
+
+    if let Some(defaults) = normalize_requested_objects(workspace_default_bodies) {
+        chart.config.observable_objects = Some(defaults.clone());
     }
 }
 
@@ -1765,8 +1795,10 @@ mod tests {
             .expect("warnings should be an array");
         if crate::astronomy::backend_for_chart(&chart).backend_id() == "jpl" {
             assert!(
-                warnings.iter().any(|warning| warning == "true_node_not_available: anise backend uses mean node only"),
-                "jpl path should surface true-node warning"
+                !warnings.iter().any(|warning| {
+                    warning.as_str() == Some("true_node_not_available: anise backend uses mean node only")
+                }),
+                "jpl path should provide true lunar nodes from Moon state"
             );
         } else {
             assert!(warnings.is_empty(), "swisseph path should not emit jpl-only warnings");
@@ -1778,6 +1810,13 @@ mod tests {
             .expect("positions should be an object");
         assert!(positions.contains_key("sun"));
         assert!(positions.contains_key("moon"));
+
+        let moon = result.get("moon_details").expect("moon_details key");
+        assert!(!moon.is_null(), "moon_details should be populated when sun and moon exist");
+        let obj = moon.as_object().expect("moon_details object");
+        assert!(obj.contains_key("elongation_deg"));
+        assert!(obj.contains_key("illuminated_fraction"));
+        assert!(obj.contains_key("phase_id"));
 
         let axes = result
             .get("axes")

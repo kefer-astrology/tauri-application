@@ -22,6 +22,47 @@ pub const CERES_J2000: Frame = Frame::from_ephem_j2000(2_000_001);
 pub const PALLAS_J2000: Frame = Frame::from_ephem_j2000(2_000_002);
 pub const JUNO_J2000: Frame = Frame::from_ephem_j2000(2_000_003);
 pub const VESTA_J2000: Frame = Frame::from_ephem_j2000(2_000_004);
+/// NAIF `2000005` … `2000020` — segments in `codes_300ast_*.bsp` (Baer 2010 solution).
+pub const ASTRAEA_J2000: Frame = Frame::from_ephem_j2000(2_000_005);
+pub const HEBE_J2000: Frame = Frame::from_ephem_j2000(2_000_006);
+pub const IRIS_J2000: Frame = Frame::from_ephem_j2000(2_000_007);
+pub const FLORA_J2000: Frame = Frame::from_ephem_j2000(2_000_008);
+pub const METIS_J2000: Frame = Frame::from_ephem_j2000(2_000_009);
+pub const HYGIEA_J2000: Frame = Frame::from_ephem_j2000(2_000_010);
+pub const PARTHENOPE_J2000: Frame = Frame::from_ephem_j2000(2_000_011);
+pub const VICTORIA_J2000: Frame = Frame::from_ephem_j2000(2_000_012);
+pub const EGERIA_J2000: Frame = Frame::from_ephem_j2000(2_000_013);
+pub const IRENE_J2000: Frame = Frame::from_ephem_j2000(2_000_014);
+pub const EUNOMIA_J2000: Frame = Frame::from_ephem_j2000(2_000_015);
+pub const PSYCHE_J2000: Frame = Frame::from_ephem_j2000(2_000_016);
+pub const THETIS_J2000: Frame = Frame::from_ephem_j2000(2_000_017);
+pub const MELPOMENE_J2000: Frame = Frame::from_ephem_j2000(2_000_018);
+pub const FORTUNA_J2000: Frame = Frame::from_ephem_j2000(2_000_019);
+pub const MASSALIA_J2000: Frame = Frame::from_ephem_j2000(2_000_020);
+
+/// Kefer body IDs covered by `codes_300ast_20100725.bsp` that the JPL backend queries.
+pub const CODES_300AST_MAJOR_BODIES: &[&str] = &[
+    "ceres",
+    "pallas",
+    "juno",
+    "vesta",
+    "astraea",
+    "hebe",
+    "iris",
+    "flora",
+    "metis",
+    "hygiea",
+    "parthenope",
+    "victoria",
+    "egeria",
+    "irene",
+    "eunomia",
+    "psyche",
+    "thetis",
+    "melpomene",
+    "fortuna",
+    "massalia",
+];
 
 // ─── Global cache-dir initialisation ─────────────────────────────────────────
 
@@ -72,15 +113,28 @@ const DE441_PART2_ID: &str = "de441_part2";
 
 const DE440S_FILENAME: &str = "de440s.bsp";
 const DE440_FILENAME: &str = "de440.bsp";
-const DE421_FILENAME: &str = "de421.bsp";
 
-const PRIMARY_BSP_PRIORITY: &[&str] = &[
-    DE440S_FILENAME,
-    DE440_FILENAME,
-    DE421_FILENAME,
-];
+const PRIMARY_BSP_PRIORITY: &[&str] = &[DE440S_FILENAME, DE440_FILENAME];
 
 const SUPPLEMENTARY_DOWNLOAD_IDS: &[&str] = &[DE441_PART1_ID, DE441_PART2_ID];
+
+const CERES_SPK_ID: &str = "ceres_spk";
+const PALLAS_SPK_ID: &str = "pallas_spk";
+const VESTA_SPK_ID: &str = "vesta_spk";
+const CODES_300AST_ID: &str = "codes_300ast";
+
+const CERES_SPK_FILENAME: &str = "ceres_1900_2100.bsp";
+const PALLAS_SPK_FILENAME: &str = "pallas_1900_2100.bsp";
+const VESTA_SPK_FILENAME: &str = "vesta_1900_2100.bsp";
+const CODES_300AST_FILENAME: &str = "codes_300ast_20100725.bsp";
+
+/// Asteroid SPKs appended after the planetary primary (and any de441 supplements).
+const ASTEROID_KERNEL_FILENAMES: &[&str] = &[
+    CERES_SPK_FILENAME,
+    PALLAS_SPK_FILENAME,
+    VESTA_SPK_FILENAME,
+    CODES_300AST_FILENAME,
+];
 
 pub static CATALOG: &[EphemerisEntry] = &[
     EphemerisEntry {
@@ -123,7 +177,79 @@ pub static CATALOG: &[EphemerisEntry] = &[
         year_end: 17_191,
         is_default: false,
     },
+    EphemerisEntry {
+        id: CERES_SPK_ID,
+        filename: CERES_SPK_FILENAME,
+        url: "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/asteroids/a_old_versions/ceres_1900_2100.bsp",
+        size_bytes: 1_149_952,
+        bodies: &["ceres"],
+        year_start: 1900,
+        year_end: 2100,
+        is_default: false,
+    },
+    EphemerisEntry {
+        id: PALLAS_SPK_ID,
+        filename: PALLAS_SPK_FILENAME,
+        url: "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/asteroids/a_old_versions/pallas_1900_2100.bsp",
+        size_bytes: 1_149_952,
+        bodies: &["pallas"],
+        year_start: 1900,
+        year_end: 2100,
+        is_default: false,
+    },
+    EphemerisEntry {
+        id: VESTA_SPK_ID,
+        filename: VESTA_SPK_FILENAME,
+        url: "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/asteroids/a_old_versions/vesta_1900_2100.bsp",
+        size_bytes: 1_149_952,
+        bodies: &["vesta"],
+        year_start: 1900,
+        year_end: 2100,
+        is_default: false,
+    },
+    EphemerisEntry {
+        id: CODES_300AST_ID,
+        filename: CODES_300AST_FILENAME,
+        url: "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/asteroids/codes_300ast_20100725.bsp",
+        size_bytes: 61_864_960,
+        bodies: CODES_300AST_MAJOR_BODIES,
+        year_start: 1600,
+        year_end: 2200,
+        is_default: false,
+    },
 ];
+
+/// Kefer body IDs queryable when a kernel with this basename is on the almanac path.
+pub fn bodies_for_spk_filename(filename: &str) -> Option<&'static [&'static str]> {
+    match filename {
+        CERES_SPK_FILENAME => Some(&["ceres"]),
+        PALLAS_SPK_FILENAME => Some(&["pallas"]),
+        VESTA_SPK_FILENAME => Some(&["vesta"]),
+        name if name.contains("codes_300ast") && name.ends_with(".bsp") => Some(CODES_300AST_MAJOR_BODIES),
+        DE440S_FILENAME | DE440_FILENAME => Some(DE_PLANETS),
+        "de441_part-1.bsp" | "de441_part-2.bsp" => Some(DE_PLANETS),
+        _ => None,
+    }
+}
+
+/// Union of body IDs implied by the given on-disk BSP paths (planets + asteroids).
+pub fn bodies_available_for_bsp_paths(paths: &[PathBuf]) -> Vec<String> {
+    use std::collections::HashSet;
+    let mut set = HashSet::new();
+    for path in paths {
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        if let Some(bodies) = bodies_for_spk_filename(name) {
+            for b in bodies {
+                set.insert((*b).to_string());
+            }
+        }
+    }
+    let mut out: Vec<String> = set.into_iter().collect();
+    out.sort();
+    out
+}
 
 // ─── Serialisable status DTO ──────────────────────────────────────────────────
 
@@ -163,19 +289,17 @@ impl EphemerisManager {
         CATALOG.iter().find(|entry| entry.id == id)
     }
 
-    /// Full path for a catalog entry in the cache directory.
-    pub fn local_path(&self, id: &str) -> Option<PathBuf> {
-        self.catalog_entry(id)
-            .map(|entry| self.cache_dir.join(entry.filename))
-    }
-
-    pub fn is_downloaded(&self, id: &str) -> bool {
-        self.local_path(id).map_or(false, |p| p.exists())
+    fn resolved_kernel_path_for_entry(&self, entry: &'static EphemerisEntry) -> Option<PathBuf> {
+        let cached = self.cache_dir.join(entry.filename);
+        if cached.exists() {
+            return Some(cached);
+        }
+        self.find_bundled_bsp(entry.filename)
     }
 
     fn catalog_status_for_entry(&self, entry: &'static EphemerisEntry) -> EphemerisInfo {
-        let local = self.cache_dir.join(entry.filename);
-        let is_downloaded = local.exists();
+        let resolved = self.resolved_kernel_path_for_entry(entry);
+        let is_downloaded = resolved.is_some();
 
         EphemerisInfo {
             id: entry.id,
@@ -187,7 +311,7 @@ impl EphemerisManager {
             year_end: entry.year_end,
             is_default: entry.is_default,
             is_downloaded,
-            local_path: is_downloaded.then(|| local.to_string_lossy().into_owned()),
+            local_path: resolved.map(|p| p.to_string_lossy().into_owned()),
         }
     }
 
@@ -268,42 +392,45 @@ impl EphemerisManager {
         paths
     }
 
+    fn resolve_asteroid_supplementary_bsps(&self, existing: &[PathBuf]) -> Vec<PathBuf> {
+        let mut paths = Vec::new();
+        for filename in ASTEROID_KERNEL_FILENAMES {
+            let Some(path) = self
+                .cached_bsp_path(filename)
+                .or_else(|| self.find_bundled_bsp(filename))
+            else {
+                continue;
+            };
+            if existing.iter().chain(paths.iter()).any(|p| p == &path) {
+                continue;
+            }
+            log::debug!(
+                "ephemeris: asteroid kernel {} → {}",
+                filename,
+                path.display()
+            );
+            paths.push(path);
+        }
+        paths
+    }
+
     /// All BSP paths currently available, in load order.
     ///
     /// 1. Exactly one primary kernel is selected from `PRIMARY_BSP_PRIORITY`.
     /// 2. Any downloaded de441 parts are appended as supplementary range extenders.
+    /// 3. Available asteroid SPKs (`ceres_1900_2100.bsp`, optional downloads, bundled Ceres).
     ///
     /// The primary currently resolves in this order:
-    /// `de440s` → `de440` → `de421`.
+    /// `de440s` → `de440`.
     pub fn available_bsp_paths(&self) -> Vec<PathBuf> {
         let mut paths = Vec::new();
         if let Some(primary) = self.resolve_primary_bsp() {
             paths.push(primary);
         }
         paths.extend(self.resolve_supplementary_bsps());
+        let asteroid_paths = self.resolve_asteroid_supplementary_bsps(&paths);
+        paths.extend(asteroid_paths);
         paths
-    }
-
-    /// Build an `Almanac` by chaining `.load()` across all available BSP files.
-    pub fn build_almanac(&self) -> Result<Almanac, String> {
-        let paths = self.available_bsp_paths();
-        if paths.is_empty() {
-            return Err(
-                "No BSP ephemeris files found. Ensure de440s.bsp is bundled or download one \
-                 via the ephemeris manager."
-                    .to_string(),
-            );
-        }
-        let mut almanac = Almanac::default();
-        for path in &paths {
-            let s = path
-                .to_str()
-                .ok_or("BSP path contains non-UTF-8 characters")?;
-            almanac = almanac
-                .load(s)
-                .map_err(|e| format!("Failed to load '{}': {e}", path.display()))?;
-        }
-        Ok(almanac)
     }
 
     /// Download a BSP from the catalog into the cache directory.
@@ -313,6 +440,11 @@ impl EphemerisManager {
         let entry = self
             .catalog_entry(id)
             .ok_or_else(|| format!("Unknown ephemeris id: '{id}'"))?;
+
+        if self.resolved_kernel_path_for_entry(entry).is_some() {
+            let _ = app.emit("ephemeris-ready", serde_json::json!({ "id": id }));
+            return Ok(());
+        }
 
         std::fs::create_dir_all(&self.cache_dir)
             .map_err(|e| format!("Cannot create cache dir: {e}"))?;
@@ -368,4 +500,27 @@ impl EphemerisManager {
         log::info!("ephemeris: download complete — {id} at {}", final_path.display());
         Ok(())
     }
+}
+
+pub(crate) fn load_almanac_from_paths(paths: &[PathBuf]) -> Result<Almanac, String> {
+    let mut almanac = Almanac::default();
+    for (idx, path) in paths.iter().enumerate() {
+        let s = path
+            .to_str()
+            .ok_or("BSP path contains non-UTF-8 characters")?;
+        match almanac.clone().load(s) {
+            Ok(next) => almanac = next,
+            Err(e) if idx > 0 => {
+                log::warn!(
+                    "ephemeris: skipping BSP {} after primary already loaded — {}",
+                    path.display(),
+                    e
+                );
+            }
+            Err(e) => {
+                return Err(format!("Failed to load '{}': {e}", path.display()));
+            }
+        }
+    }
+    Ok(almanac)
 }

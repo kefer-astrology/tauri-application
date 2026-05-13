@@ -31,5 +31,5 @@ hifitime = "4"
 
 [features]
 # Compile and link the Swiss Ephemeris C library (AGPL-3.0 / commercial).
-# Disable for a fully license-clean build that uses anise + de421.bsp only.
+# Disable for a fully license-clean build that uses anise + bundled `de440s.bsp` only.
 swisseph = []

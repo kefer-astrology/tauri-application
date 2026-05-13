@@ -18,19 +18,7 @@ pub async fn download_ephemeris(id: String, app: AppHandle) -> Result<(), String
 /// Return the body IDs queryable given currently available BSP files.
 #[tauri::command]
 pub fn get_available_bodies() -> Vec<String> {
-    use std::collections::HashSet;
     let manager = EphemerisManager::from_global();
     let available_paths = manager.available_bsp_paths();
-
-    crate::ephemeris_manager::CATALOG
-        .iter()
-        .filter(|entry| {
-            available_paths
-                .iter()
-                .any(|p| p.file_name().map(|f| f == entry.filename).unwrap_or(false))
-        })
-        .flat_map(|entry| entry.bodies.iter().map(|b| b.to_string()))
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect()
+    crate::ephemeris_manager::bodies_available_for_bsp_paths(&available_paths)
 }

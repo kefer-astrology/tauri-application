@@ -155,7 +155,7 @@ Recommended response metadata:
 
 - Computes positions and aspects from an in-memory chart payload.
 - `chart_json.subject.event_time` must be parseable as `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`, `YYYY-MM-DDTHH:mm:ssZ`, or RFC3339.
-- Returns an object with `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `chart_id`, and backend provenance fields when available.
+- Returns an object with `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `moon_details`, `chart_id`, and backend provenance fields when available.
 - Uses Python or Rust depending on backend selection and availability.
 
 Acceptance criteria:
@@ -163,12 +163,13 @@ Acceptance criteria:
 - A valid chart payload returns `positions`, `aspects`, and `chart_id`.
 - Rust-supported radix output should also include `axes` and `house_cusps`.
 - Rust-supported radix output should include `motion` when the selected backend can derive it.
+- When `positions.sun` and `positions.moon` exist, `moon_details` should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See [lunar-phase](../lunar-phase/).
 - When fallback occurs, the response should expose that fact instead of failing silently.
 
 ### `compute_chart(workspace_path, chart_id) -> Result<Map<String, Value>, String>`
 
 - Loads a chart from workspace storage and computes positions and aspects.
-- Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `chart_id`, and backend provenance fields when available.
+- Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `moon_details` (when Sun and Moon are present), `chart_id`, and backend provenance fields when available.
 - Uses Python or Rust depending on backend selection and availability.
 
 ### `compute_transit_series(...) -> Result<Value, String>`

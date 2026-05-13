@@ -10,6 +10,15 @@ import {
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
 
+export interface MoonDetailsDto {
+  elongation_deg: number;
+  illuminated_fraction: number;
+  age_days: number;
+  waxing: boolean;
+  phase_id: string;
+  phase_label: string;
+}
+
 export const tabs = ['Radix', 'Aspects', 'Transits', 'Settings', 'About'] as const;
 export type Tab = (typeof tabs)[number];
 
@@ -41,6 +50,7 @@ export interface ChartData {
       ic: number;
     };
     houseCusps?: number[];
+    moonDetails?: MoonDetailsDto | null;
   };
 }
 
@@ -208,12 +218,17 @@ export function normalizeComputedPayload(computed: ChartData['computed']): Chart
   houseCusps.forEach((cusp, index) => {
     positions[`house_${index + 1}`] = cusp;
   });
+  const moonDetails =
+    (computed as { moonDetails?: MoonDetailsDto | null; moon_details?: MoonDetailsDto | null } | undefined)
+      ?.moonDetails ??
+    (computed as { moon_details?: MoonDetailsDto | null } | undefined)?.moon_details;
   return {
     positions,
     motion: computed?.motion ?? {},
     aspects: computed?.aspects ?? [],
     axes,
     houseCusps,
+    ...(moonDetails !== undefined ? { moonDetails } : {})
   };
 }
 

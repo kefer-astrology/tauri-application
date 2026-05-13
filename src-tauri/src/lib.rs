@@ -3,6 +3,7 @@ mod backend;
 mod commands;
 mod ephemeris_manager;
 mod houses;
+mod lunar_phase;
 mod jpl_backend;
 mod storage;
 mod workspace;

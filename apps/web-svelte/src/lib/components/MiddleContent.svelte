@@ -16,6 +16,25 @@
   import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
   import { invoke } from '@tauri-apps/api/core';
 
+  type MoonDetailsPayload = {
+    elongation_deg: number;
+    illuminated_fraction: number;
+    age_days: number;
+    waxing: boolean;
+    phase_id: string;
+    phase_label: string;
+  } | null;
+
+  type ComputeChartInvokeResult = {
+    positions?: Record<string, unknown>;
+    motion?: Record<string, { speed: number; retrograde: boolean }>;
+    aspects?: unknown[];
+    axes?: { asc: number; desc: number; mc: number; ic: number };
+    house_cusps?: number[];
+    moon_details?: MoonDetailsPayload;
+    chart_id?: string;
+  };
+
   // reactive references using runes
   const tab = $derived(layout.selectedTab);
   const ctx = $derived(layout.selectedContext);
@@ -451,21 +470,15 @@
     if (!chart.dateTime?.trim() || !chart.location?.trim()) return;
     if (chart.computed?.positions && Object.keys(chart.computed.positions).length > 0) return;
     const payload = chartDataToComputePayload(chart);
-    invoke<{
-      positions?: Record<string, unknown>;
-      motion?: Record<string, { speed: number; retrograde: boolean }>;
-      aspects?: unknown[];
-      axes?: { asc: number; desc: number; mc: number; ic: number };
-      house_cusps?: number[];
-      chart_id?: string;
-    }>('compute_chart_from_data', { chartJson: payload })
+    invoke<ComputeChartInvokeResult>('compute_chart_from_data', { chartJson: payload })
       .then((result) => {
         updateChartComputation(chart.id, {
           positions: result.positions ?? {},
           motion: result.motion ?? {},
           aspects: result.aspects ?? [],
           axes: result.axes,
-          houseCusps: result.house_cusps
+          houseCusps: result.house_cusps,
+          moonDetails: result.moon_details
         });
       })
       .catch((err) => {
@@ -496,21 +509,15 @@
     };
     astrolabeComputeInFlightFor = requestKey;
 
-    invoke<{
-      positions?: Record<string, unknown>;
-      motion?: Record<string, { speed: number; retrograde: boolean }>;
-      aspects?: unknown[];
-      axes?: { asc: number; desc: number; mc: number; ic: number };
-      house_cusps?: number[];
-      chart_id?: string;
-    }>('compute_chart_from_data', { chartJson: chartDataToComputePayload(chartAtTime) })
+    invoke<ComputeChartInvokeResult>('compute_chart_from_data', { chartJson: chartDataToComputePayload(chartAtTime) })
       .then((result) => {
         updateChartComputationAtTime(chart.id, targetDateTime, {
           positions: result.positions ?? {},
           motion: result.motion ?? {},
           aspects: result.aspects ?? [],
           axes: result.axes,
-          houseCusps: result.house_cusps
+          houseCusps: result.house_cusps,
+          moonDetails: result.moon_details
         });
       })
       .catch((err) => {
@@ -529,14 +536,7 @@
     if (!chart?.id || !layout.workspacePath) return;
     if (chart.computed?.positions && Object.keys(chart.computed.positions).length > 0) return;
 
-    invoke<{
-      positions?: Record<string, unknown>;
-      motion?: Record<string, { speed: number; retrograde: boolean }>;
-      aspects?: unknown[];
-      axes?: { asc: number; desc: number; mc: number; ic: number };
-      house_cusps?: number[];
-      chart_id?: string;
-    }>('compute_chart', {
+    invoke<ComputeChartInvokeResult>('compute_chart', {
       workspacePath: layout.workspacePath,
       chartId: chart.id,
     })
@@ -546,7 +546,8 @@
           motion: result.motion ?? {},
           aspects: result.aspects ?? [],
           axes: result.axes,
-          houseCusps: result.house_cusps
+          houseCusps: result.house_cusps,
+          moonDetails: result.moon_details
         });
       })
       .catch((err) => {

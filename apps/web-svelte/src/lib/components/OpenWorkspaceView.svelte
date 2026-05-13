@@ -199,6 +199,14 @@
             aspects?: any[];
             axes?: { asc: number; desc: number; mc: number; ic: number };
             house_cusps?: number[];
+            moon_details?: {
+              elongation_deg: number;
+              illuminated_fraction: number;
+              age_days: number;
+              waxing: boolean;
+              phase_id: string;
+              phase_label: string;
+            } | null;
             chart_id: string;
           }>('compute_chart', {
             workspacePath: workspace.path,
@@ -210,7 +218,8 @@
             motion: result.motion ?? {},
             aspects: result.aspects ?? [],
             axes: result.axes,
-            houseCusps: result.house_cusps
+            houseCusps: result.house_cusps,
+            moonDetails: result.moon_details
           });
         } catch (err) {
           console.error(`Failed to compute chart ${chart.id}:`, err);

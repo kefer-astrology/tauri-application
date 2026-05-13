@@ -43,7 +43,7 @@ It should not own:
 
 ## File format boundary
 
-The Rust and Python JPL paths target **SPICE BSP/SPK** files such as `de440s.bsp` and `de421.bsp`.
+The Rust and Python JPL paths target **SPICE BSP/SPK** planetary kernels such as `de440s.bsp` and `de440.bsp`, with optional **additional SPK files** chained in the same almanac for asteroids and other small bodies. On Rust, `EphemerisManager` resolves and appends NAIF asteroid BSPs when present (including bundled `ceres_1900_2100.bsp` and optional catalog downloads such as `codes_300ast`).
 
 That is distinct from Swiss Ephemeris JPL support through old-format `.eph` files in `swejpl.c` mode. `JplViaSwissAstronomyBackend` is still Swiss-backed and does not replace the SPICE/BSP path.
 
@@ -73,8 +73,7 @@ What still sits above or beside it:
 
 - astrology-layer interpretation
 - some house-system fallback policy
-- true-node support
-- asteroid availability beyond what loaded kernels actually contain
+- asteroid availability for bodies **not** included in any loaded kernel (e.g. Chiron, TNOs, or minor planets absent from your SPK set)
 
 ## Python implementation
 
@@ -121,14 +120,16 @@ Implemented:
 - `JplAstronomyBackend` in Rust using `anise`
 - feature-gated Swiss path in Rust
 - pure-Rust support for key transforms and baseline house/axis calculations in `houses.rs`
-- `EphemerisManager` integration for resolving active BSP files
-- bundled `de440s.bsp` primary path, with `de421.bsp` still available as fallback
+- `EphemerisManager` integration for resolving active BSP files (planetary primary, optional de441 supplements, optional NAIF asteroid kernels)
+- bundled `de440s.bsp` as the default planetary kernel (`de440` is the documented wider-range upgrade)
+- bundled `ceres_1900_2100.bsp` and catalog entries for additional asteroid SPKs (`pallas_spk`, `vesta_spk`, `codes_300ast`)
 - Python JPL backend path aligned around structured chart-data output
+- osculating **true lunar node** (and true south node) from geocentric Moon state on both Rust and Python JPL paths
+- **`moon_details`** on chart compute responses: lunar phase from tropical Sun–Moon longitudes (see [lunar-phase](../lunar-phase/))
 
 Still incomplete:
 
-- True Node is not implemented as a real true-node computation
-- asteroid bodies still require dedicated asteroid kernels to become genuinely queryable
+- asteroid coverage beyond what is shipped or downloaded (Chiron, TNOs, arbitrary small bodies) still needs extra SPKs or another ephemeris source; see [ephemeris-manager](../ephemeris-manager/)
 - ayanamsha remains incomplete on the Rust-owned side
 - validation and parity coverage between backends is still partial
 
