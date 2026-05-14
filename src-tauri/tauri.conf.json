@@ -26,7 +26,12 @@
 	"bundle": {
 		"active": true,
 		"targets": "all",
-		"resources": ["binaries", "resources/de440s.bsp", "resources/ceres_1900_2100.bsp"],
+		"resources": [
+			"binaries",
+			"resources/de440s.bsp",
+			"resources/ceres_1900_2100.bsp",
+			"resources/codes_300ast_20100725.bsp"
+		],
 		"windows": {
 			"certificateThumbprint": null,
 			"digestAlgorithm": "sha256",
