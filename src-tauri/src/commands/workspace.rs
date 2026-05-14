@@ -108,7 +108,37 @@ end tell"#;
 
     #[cfg(target_os = "linux")]
     {
-        // Linux: try zenity, kdialog, or yad
+        // Linux: prefer a native Tk folder picker when available, then fall back to common desktop helpers.
+        let python_dialogs = vec!["python3", "python"];
+        let python_script = r#"
+import sys
+try:
+    import tkinter as tk
+    from tkinter import filedialog
+except Exception:
+    sys.exit(1)
+root = tk.Tk()
+root.withdraw()
+try:
+    root.attributes('-topmost', True)
+except Exception:
+    pass
+path = filedialog.askdirectory(title='Select Workspace Folder')
+print(path or '', end='')
+"#;
+
+        for python in python_dialogs {
+            if let Ok(output) = Command::new(python).args(["-c", python_script]).output() {
+                if output.status.success() {
+                    let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if !path.is_empty() {
+                        return Ok(Some(path));
+                    }
+                }
+            }
+        }
+
+        // Fall back to common Linux dialog tools when Python/Tk is unavailable.
         let commands = vec![
             (
                 "zenity",
@@ -144,7 +174,7 @@ end tell"#;
             }
         }
 
-        Ok(None)
+        Err("No native folder picker was available. Install python3-tk, zenity, kdialog, or yad.".to_string())
     }
 
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
@@ -280,7 +310,7 @@ pub async fn save_workspace(
             "custom" => Some(crate::workspace::models::EngineType::Custom),
             _ => None,
         })
-        .or(Some(crate::workspace::models::EngineType::Swisseph));
+        .or(Some(crate::workspace::models::EngineType::Jpl));
     let default_location = match (
         parsed_defaults.default_location_name,
         parsed_defaults.default_location_latitude,
@@ -1396,7 +1426,7 @@ fn normalize_deg(value: f64) -> f64 {
     out
 }
 
-/// Only JPL, Jyotish and Custom require Python; Swisseph can use Python (preferred) with Rust fallback.
+/// Only Jyotish and Custom require Python; JPL and Swisseph can run through Rust.
 fn chart_json_requires_python_precision(chart_json: &serde_json::Value) -> bool {
     let cfg = chart_json.get("config").and_then(|v| v.as_object());
     let engine = cfg
@@ -1409,7 +1439,7 @@ fn chart_json_requires_python_precision(chart_json: &serde_json::Value) -> bool 
         .map(|s| !s.trim().is_empty())
         .unwrap_or(false);
 
-    matches!(engine.as_deref(), Some("jpl" | "jyotish" | "custom")) || has_override_ephemeris
+    matches!(engine.as_deref(), Some("jyotish" | "custom")) || has_override_ephemeris
 }
 
 fn chart_requires_python_precision(workspace_path: &str, chart_id: &str) -> Result<bool, String> {
@@ -1419,12 +1449,11 @@ fn chart_requires_python_precision(workspace_path: &str, chart_id: &str) -> Resu
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
     let chart = load_chart(base, &chart_rel)?;
 
-    // Only JPL, Jyotish, Custom require Python; Swisseph can use Rust fallback.
+    // Only Jyotish and Custom require Python; JPL and Swisseph can use Rust.
     let requires = matches!(
         chart.config.engine,
         Some(
-            crate::workspace::models::EngineType::Jpl
-                | crate::workspace::models::EngineType::Jyotish
+            crate::workspace::models::EngineType::Jyotish
                 | crate::workspace::models::EngineType::Custom
         )
     ) || chart
@@ -1481,7 +1510,7 @@ fn select_chart_compute_route(
 ) -> Result<ComputeRoute, String> {
     if force_python {
         return match backend {
-            ComputeBackend::Rust => Err("Rust backend does not support precise Swiss Ephemeris/JPL chart computation yet. Use Python backend.".to_string()),
+            ComputeBackend::Rust => Err("Rust backend does not support this chart type yet. Use Python backend.".to_string()),
             _ if backend_available => Ok(ComputeRoute::Python),
             _ => Err("Python backend unavailable. This chart requires Python-backed computation.".to_string()),
         };
@@ -1543,7 +1572,7 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
         models: HashMap::new(),
         model_overrides: None,
         default: crate::workspace::models::WorkspaceDefaults {
-            ephemeris_engine: Some(crate::workspace::models::EngineType::Swisseph),
+            ephemeris_engine: Some(crate::workspace::models::EngineType::Jpl),
             ephemeris_backend: None,
             element_colors: None,
             radix_point_colors: None,
@@ -1728,7 +1757,7 @@ mod tests {
                 "color_theme": "",
                 "override_ephemeris": null,
                 "model": null,
-                "engine": "swisseph",
+                "engine": "jpl",
                 "ayanamsa": null,
                 "observable_objects": ["sun", "moon", "asc"],
                 "time_system": null
@@ -1987,7 +2016,7 @@ mod tests {
         let defaults = tauri::async_runtime::block_on(get_workspace_defaults(sample_workspace_path()))
             .expect("sample defaults should load");
 
-        assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("swisseph")));
+        assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("jpl")));
         assert_eq!(defaults.get("default_bodies"), Some(&serde_json::Value::Null));
         assert_eq!(defaults.get("default_aspects"), Some(&serde_json::Value::Null));
     }
