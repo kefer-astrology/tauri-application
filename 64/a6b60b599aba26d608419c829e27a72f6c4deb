@@ -1,0 +1,24 @@
+src-tauri/tauri.conf.json
+  s_1abaeb740ccad0::t_ef8e08778b4633 29-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "64a6b60b599aba26d608419c829e27a72f6c4deb",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_1abaeb740ccad0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e20de-9a27-7230-88db-086c993839a6",
+        "model": "gpt-5.4"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
