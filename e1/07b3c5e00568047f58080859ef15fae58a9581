@@ -1,0 +1,35 @@
+src-tauri/src/commands/workspace.rs
+  s_1abaeb740ccad0::t_aa25415115cb5e 313,1429,1442,1452,1456,1513,1575,1760,2019
+  s_1abaeb740ccad0::t_4cd59f27f2ac3f 111-141,177
+src-tauri/src/main.rs
+  s_96dffc213fd386::t_dea51095b175fa 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "e107b3c5e00568047f58080859ef15fae58a9581",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_1abaeb740ccad0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e20de-9a27-7230-88db-086c993839a6",
+        "model": "gpt-5.4"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_96dffc213fd386": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f24d7667-8f70-446b-aeab-8c5e772feaa2",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
