@@ -1,0 +1,129 @@
+docs/content/docs/ci-todo.md
+  s_8075e421ece6be::t_806cbfa40dfbc3 2-3
+  s_8075e421ece6be::t_ceb9a576a7f3d9 17,19
+docs/public/docs/tauri-command-contracts/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/llm/index.html
+  s_8075e421ece6be::t_437c68b2b4b1af 33,56-60
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/content/docs/ephemeris-manager.md
+  s_8075e421ece6be::t_e836474bc8b232 2-3,59-68,89-93,103-110,164-171,192-197,211-215,253,258-267,277,281-286,290-292,300,329-342
+  s_8075e421ece6be::t_afbea5b74c4421 310
+docs/public/llm/development-driver/index.html
+  s_8075e421ece6be::t_437c68b2b4b1af 1-91
+docs/public/docs/discussion-summary/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/content/_index.md
+  s_8075e421ece6be::t_a2d7dafbe07bd1 26,29-35
+  s_8075e421ece6be::t_da9ce1566c6faf 2-3
+docs/public/docs/python-package/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/apps/web-react/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 14-15
+docs/public/docs/spice-backend/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/docs/ci-todo/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/content/llm/continuation-guide.md
+  s_8075e421ece6be::t_7fcc1827833498 11,24
+docs/public/llm/continuation-guide/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/docs/ephemeris-manager/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/docs/lunar-phase/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/docs/frontend-svelte/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/apps/web-svelte/index.html
+  s_8075e421ece6be::t_78cb1f39cc9de6 8-9
+docs/content/llm/project-context.md
+  s_8075e421ece6be::t_806cbfa40dfbc3 2
+  s_8075e421ece6be::t_1ca96f23d448cc 11
+  s_8075e421ece6be::t_47c3de0419a27a 36
+  s_8075e421ece6be::t_ca4dadfd0e8213 39
+docs/public/apps/web-react/assets/index-DWCs8oto.css
+  s_8075e421ece6be::t_453f018fc2e00b 1-2
+docs/content/docs/python-package.md
+  s_8075e421ece6be::t_1bbaccc43634a3 11-12
+  s_8075e421ece6be::t_806cbfa40dfbc3 2-3
+docs/public/docs/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+README.md
+  s_8075e421ece6be::t_da9ce1566c6faf 9-11,13-15,80-99
+  s_8075e421ece6be::t_806cbfa40dfbc3 19-25
+  s_8075e421ece6be::t_0244a9f03a68e3 3,55,119
+  s_8075e421ece6be::t_052e07df9eaa45 71-72
+  s_8075e421ece6be::t_0971517e6ef752 76-79
+  s_8075e421ece6be::t_c86c47c461604b 27-45
+docs/content/docs/_index.md
+  s_8075e421ece6be::t_d5f79d6c7bc4a4 32-36
+  s_8075e421ece6be::t_da9ce1566c6faf 2-3,40-41,43-44,46
+  s_8075e421ece6be::t_9ebfab6771d7c4 45
+docs/public/docs/architecture/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/content/llm/_index.md
+  s_8075e421ece6be::t_d9d9649195c465 10
+docs/content/llm/specs-workflow.md
+  s_8075e421ece6be::t_8ee469e33d88d2 14-15,24,32
+docs/public/docs/physical-properties/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/content/docs/ui-conventions.md
+  s_8075e421ece6be::t_29c365b96e0e26 150
+  s_8075e421ece6be::t_f590d2641ba821 3
+  s_8075e421ece6be::t_f5580ccd0805d9 44
+  s_8075e421ece6be::t_da9ce1566c6faf 2,154-158,160
+  s_8075e421ece6be::t_6d2ad14244737f 159,164-166
+  s_8075e421ece6be::t_00d1b8f079758f 21-22,26
+  s_8075e421ece6be::t_98d6ed458b2fdb 28-36,38
+  s_8075e421ece6be::t_18533a6ad47523 37,39-43
+docs/public/apps/web-svelte/assets/index-C2Kfk0Rm.js
+  s_8075e421ece6be::t_78cb1f39cc9de6 1-9
+docs/public/docs/ui-conventions/index.html
+  s_8075e421ece6be::t_78cb1f39cc9de6 56,58-62
+  s_8075e421ece6be::t_437c68b2b4b1af 63
+  s_8075e421ece6be::t_453f018fc2e00b 3,7,27,42-43,46-55,57,64-71,106,118-130,143-181
+docs/content/llm/rust-workspace-contract.md
+  s_8075e421ece6be::t_b20a6daa27c096 19
+  s_8075e421ece6be::t_806cbfa40dfbc3 2
+docs/public/docs/time-navigation/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/apps/web-svelte/assets/index-EkbQB3Vj.css
+  s_8075e421ece6be::t_78cb1f39cc9de6 1
+docs/content/docs/frontend-react.md
+  s_8075e421ece6be::t_7333e7232c63ee 18-19,23,25,31-34
+  s_8075e421ece6be::t_da9ce1566c6faf 2-3
+docs/public/docs/frontend-react/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 3
+docs/public/apps/web-react/assets/index-CNvHfFDG.js
+  s_8075e421ece6be::t_453f018fc2e00b 1-52
+docs/public/index.html
+  s_8075e421ece6be::t_453f018fc2e00b 4
+docs/content/docs/frontend-svelte.md
+  s_8075e421ece6be::t_da9ce1566c6faf 2-3
+  s_8075e421ece6be::t_16bab68b448015 17-18,31-34
+docs/content/llm/development-driver.md
+  s_8075e421ece6be::t_1dcd82aca0e716 41-49
+  s_8075e421ece6be::t_048e41298cb84c 1-7,9,11,16-20,22-39,50-60
+  s_8075e421ece6be::t_4ec58aea8daf16 8,10,12-15,21,40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "e566f4f4d87740ff4cb4ed8a2f93c3efd10e3052",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8075e421ece6be": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "deed23b8-69ce-4eb6-b521-2de7484e0fd2",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
