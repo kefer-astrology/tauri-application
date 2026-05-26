@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Time navigation | Kefer docs</title>
@@ -34,7 +34,7 @@
 <li>transit browsing over intervals</li>
 <li>Astrolabe-style time shifting</li>
 </ul>
-<p>For frontend-specific implementation status, see <a href="../frontend-react/">frontend-react</a> or - <a href="../frontend-svelte/">frontend-svelte</a></p>
+<p>For frontend-specific implementation status, see <a href="../frontend-react/">frontend-react</a> or <a href="../frontend-svelte/">frontend-svelte</a>.</p>
 <h2 id="core-behavior">Core behavior</h2>
 <ul>
 <li>stepping units should include <code>seconds</code>, <code>minutes</code>, <code>hours</code>, and <code>days</code> (ideally also <code>months</code> and <code>years</code>)</li>
@@ -44,23 +44,19 @@
 </ul>
 <h2 id="frontend-vs-backend-handling">Frontend vs backend handling</h2>
 <p>Time navigation is split across both layers:</p>
+<p><strong>Frontend responsibilities</strong></p>
 <ul>
-<li><strong>Frontend</strong>:
-<ul>
-<li>keeps the current navigation state</li>
-<li>applies local step changes and range clamps</li>
-<li>drives the visible controls for step size, range, and shift</li>
-<li>decides when a view should recompute</li>
+<li>keep the current navigation state</li>
+<li>apply local step changes and range clamps</li>
+<li>drive the visible controls for step size, range, and shift</li>
+<li>decide when a view should recompute</li>
 </ul>
-</li>
-<li><strong>Backend</strong>:
+<p><strong>Backend responsibilities</strong></p>
 <ul>
-<li>parses incoming datetime strings for compute commands</li>
-<li>validates transit ranges and step size</li>
-<li>performs the actual time-series computation</li>
-<li>returns normalized timestamps in compute results</li>
-</ul>
-</li>
+<li>parse incoming datetime strings for compute commands</li>
+<li>validate transit ranges and step size</li>
+<li>perform the actual time-series computation</li>
+<li>return normalized timestamps in compute results</li>
 </ul>
 <p>In other words, the frontend owns navigation intent and UI state; Tauri owns computation and final datetime validation.</p>
 <h2 id="current-implementation-direction">Current implementation direction</h2>
@@ -74,28 +70,10 @@
 <h3 id="backend-accepted-datetime-strings">Backend-accepted datetime strings</h3>
 <p>The Rust Tauri compute path currently accepts these input forms:</p>
 <ul>
-<li>RFC3339 / ISO datetime with timezone
-<ul>
-<li>example: <code>2024-01-01T12:00:00+01:00</code></li>
-<li>example: <code>2024-01-01T11:00:00Z</code></li>
-</ul>
-</li>
-<li>naive datetime with seconds
-<ul>
-<li><code>YYYY-MM-DD HH:mm:ss</code></li>
-<li><code>YYYY-MM-DDTHH:mm:ss</code></li>
-</ul>
-</li>
-<li>naive datetime without seconds
-<ul>
-<li><code>YYYY-MM-DD HH:mm</code></li>
-</ul>
-</li>
-<li>date only
-<ul>
-<li><code>YYYY-MM-DD</code></li>
-</ul>
-</li>
+<li>RFC3339 / ISO datetime with timezone: <code>2024-01-01T12:00:00+01:00</code>, <code>2024-01-01T11:00:00Z</code></li>
+<li>naive datetime with seconds: <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code></li>
+<li>naive datetime without seconds: <code>YYYY-MM-DD HH:mm</code></li>
+<li>date only: <code>YYYY-MM-DD</code></li>
 </ul>
 <p>Current backend rule:</p>
 <ul>
@@ -130,7 +108,7 @@
 <li>whether shift is active</li>
 </ul>
 <p>In the current Svelte implementation, this state lives in <code>apps/web-svelte/src/lib/stores/timeNavigation.svelte.ts</code>.</p>
-<p>Key current details there:</p>
+<p>Current details in that store:</p>
 <ul>
 <li>step units include <code>seconds</code>, <code>minutes</code>, <code>hours</code>, <code>days</code>, <code>months</code>, and <code>years</code></li>
 <li>stepping uses UTC setters such as <code>setUTCSeconds</code>, <code>setUTCHours</code>, <code>setUTCMonth</code>, and <code>setUTCFullYear</code></li>
@@ -147,7 +125,7 @@
 <li>Rust transit results return timestamps as RFC3339</li>
 <li>Rust transit responses currently format <code>time_step</code> as a compact seconds string such as <code>3600s</code></li>
 </ul>
-<p>Backend chart payloads also carry datetime through chart <code>subject.event_time</code>, so chart navigation and transit navigation should not drift into separate formatting rules.</p>
+<p>Backend chart payloads also carry datetime through chart <code>subject.event_time</code>. Chart navigation and transit navigation should therefore not drift into separate formatting rules.</p>
 <h2 id="integration-rules">Integration rules</h2>
 <ul>
 <li>frontend controls should drive recomputation through the active Tauri compute flow</li>

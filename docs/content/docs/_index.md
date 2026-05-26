@@ -1,6 +1,6 @@
 ---
-title: "Project documentation"
-description: "Chaptered map of the current Kefer Astrology stack."
+title: 'Project documentation'
+description: 'Chaptered map of the current Kefer Astrology stack.'
 weight: 10
 ---
 
@@ -29,19 +29,18 @@ weight: 10
 ## Build and automation notes
 
 - **[CI todo](./ci-todo/)** — planned automation around i18n sync and docs/build verification.
-- `npm run docs:prepare` rebuilds frontend workspaces, copies `apps/*/dist` into `docs/static/apps/`, and regenerates `docs/data/generated/frontends.json`.
-
-## Historical context
-
-- **[Discussion summary](./discussion-summary/)** — archival notes from the earlier UI phase.
-- Root-level **[`MIGRATION.md`](../../../MIGRATION.md)** — remaining backend migration work and long-term JPL-centered direction.
+- React is the main app flow: `npm run dev`, `npm run tauri:dev`, `npm run build`, `npm run tauri:build`, and `npm run check`.
+- Svelte is a separate alternate app flow: `npm run dev:svelte`, `npm run tauri:dev:svelte`, `npm run build:svelte`, `npm run tauri:build:svelte`, and `npm run check:svelte`.
+- `npm run docs:prepare` rebuilds both frontend workspaces for static docs mode, copies `apps/*/dist` into `docs/static/apps/`, and regenerates `docs/data/generated/frontends.json`.
+- `npm run docs:dev` prepares those generated docs assets and starts Hugo locally; `npm run docs:build` prepares them and writes the production site to `dist-docs/`.
+- `translations.csv` feeds both frontend locale trees via `npm run i18n:sync`; `npm run i18n:prune:dry` and `npm run i18n:prune` check/remove keys unused by both frontends before syncing.
 
 ## Folder structure description
 
-| Layer | Role |
-| --- | --- |
+| Layer                                                 | Role                                                                                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | **Frontends** (`apps/web-react/`, `apps/web-svelte/`) | UI workspaces. React is the current primary shell; Svelte is the alternate shell and parity target. |
-| **Documentation** (`docs/content/`, `docs/public/`) | Internal documentation sources and generated doc pages. |
-| **Tauri** (`src-tauri/`) | Native window, `invoke` commands, workspace orchestration, and local compute routing. |
-| **Python** (`backend-python/`) | Optional computation sidecar and compatibility path; not the sole compute owner. |
-| **Static assets** (`static/`) | Shared app-shell assets and astrology glyphs copied into frontend builds. |
+| **Documentation** (`docs/content/`, `docs/public/`)   | Internal documentation sources and generated doc pages.                                             |
+| **Tauri** (`src-tauri/`)                              | Native window, `invoke` commands, workspace orchestration, and local compute routing.               |
+| **Python** (`backend-python/`)                        | Optional sidecar source when present; not the sole compute owner.                                   |
+| **Static assets** (`static/`)                         | Shared app-shell assets and astrology glyphs copied into frontend builds.                           |

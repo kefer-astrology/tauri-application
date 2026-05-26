@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>React frontend | Kefer docs</title>
@@ -37,14 +37,17 @@
 <li>React is still the clearer reference for app-shell decomposition and reusable input primitives.</li>
 </ul>
 <h2 id="commands">Commands</h2>
+<p>React is the primary frontend and the default desktop app target.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm install
 </span></span><span style="display:flex;"><span>npm run dev
-</span></span><span style="display:flex;"><span>npm run tauri dev
+</span></span><span style="display:flex;"><span>npm run tauri:dev
 </span></span><span style="display:flex;"><span>npm run build
-</span></span><span style="display:flex;"><span>npm run tauri build
+</span></span><span style="display:flex;"><span>npm run tauri:build
 </span></span><span style="display:flex;"><span>npm run check
 </span></span><span style="display:flex;"><span>npm run lint
 </span></span><span style="display:flex;"><span>npm run i18n:sync
+</span></span></code></pre></div><p>Docs builds use the same React app with a relative asset base:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm run build:react:docs
 </span></span></code></pre></div><h2 id="workspace-shape">Workspace shape</h2>
 <ul>
 <li><code>apps/web-react/src/main.tsx</code> — React root and global providers.</li>
@@ -61,6 +64,9 @@
 <li>Prefer the shared React primitive layer in <code>apps/web-react/src/app/components/ui/</code>.</li>
 <li>Favor tokens, variants, composition, and shared wrappers over one-off CSS forks.</li>
 <li>Treat <code>src/app/</code> as orchestration and <code>src/lib/</code> as non-visual infrastructure.</li>
+<li>Use shadcn primitives (<code>Button</code>, <code>Card</code>, <code>Sheet</code>, <code>Separator</code>, <code>ScrollArea</code>) as the default interactive/layout baseline before introducing custom wrappers.</li>
+<li>Keep interior sections mostly border-light: one outer surface per screen region, then spacing + subtle background layers + separators.</li>
+<li>In feature components, avoid raw native controls when primitives exist; promote missing controls into <code>src/app/components/ui/</code> before use.</li>
 </ul>
 <h2 id="runtime-behavior">Runtime behavior</h2>
 <ul>
@@ -130,7 +136,6 @@
 <h2 id="known-limits">Known limits</h2>
 <ul>
 <li>Some views are still richer in layout than in backend completeness.</li>
-<li><code>apps/web-react/src/app/components/horoscope-wheel.tsx</code> still has the known typecheck issue previously noted elsewhere in the repo.</li>
 <li>Prototype-era fallback surfaces still exist and should not be mistaken for final architecture.</li>
 </ul>
 <h2 id="related-docs">Related docs</h2>

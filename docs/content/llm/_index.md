@@ -7,6 +7,7 @@ weight: 10
 Use this section as the shortest reliable path back into the repo.
 
 - [Project context](./project-context/) summarizes the architecture, workflows, and active documentation entrypoints.
+- [Development driver](./development-driver/) defines the current high-level execution lanes and definition of done.
 - [Specs workflow](./specs-workflow/) defines the Codex rule for where to look for specs first and how to use `/docs/`.
 - [Rust workspace contract](./rust-workspace-contract/) defines the current Rust-side workspace and no-sidecar rules.
 - [Frontend workflow baseline](./frontend-workflow-baseline/) defines the baseline workspace/settings/compute workflows both frontends should satisfy.
@@ -22,5 +23,3 @@ Architecture direction to keep in mind while using these docs:
 - keep backend provenance visible
 - treat JPL / SPICE as the preferred long-term astronomy direction
 - treat Swiss Ephemeris as compatibility and validation infrastructure
-
-When the task is about staged migration rather than immediate contract behavior, also read `/MIGRATION.md`.

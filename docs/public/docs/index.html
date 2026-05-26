@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Project documentation | Kefer docs</title>
@@ -27,47 +27,42 @@
       <p class="lede">Chaptered map of the current Kefer Astrology stack.</p>
     </header>
     <div class="prose">
-      <h2 id="chapters">Chapters</h2>
-<ol>
-<li>Architecture foundation
+      <h2 id="architecture-foundation">Architecture foundation</h2>
 <ul>
 <li><strong><a href="./architecture/">System architecture</a></strong> — cross-layer model definition.</li>
 <li><strong><a href="./tauri-command-contracts/">Tauri command contracts</a></strong> — normative frontend-facing command contract.</li>
 </ul>
-</li>
-<li>Backend and astronomy engine
+<h2 id="backend-and-astronomy-engine">Backend and astronomy engine</h2>
 <ul>
 <li><strong><a href="./spice-backend/">SPICE backend</a></strong> — JPL/SPICE architecture, licensing rationale, and runtime status.</li>
 <li><strong><a href="./ephemeris-manager/">Ephemeris manager</a></strong> — BSP catalog ownership, downloads, chaining, and asteroid support.</li>
 <li><strong><a href="./python-package/">Python package</a></strong> — optional Python compute seam and subprocess contract.</li>
 </ul>
-</li>
-<li>Frontend shells and UI behavior
+<h2 id="frontend-shells-and-ui-behavior">Frontend shells and UI behavior</h2>
 <ul>
 <li><strong><a href="./frontend-react/">React frontend</a></strong> — primary desktop shell, workspace flows, Tauri integration, and docs/i18n workflow.</li>
 <li><strong><a href="./frontend-svelte/">Svelte frontend</a></strong> — alternate shell, parity status, and publication behavior.</li>
 <li><strong><a href="./ui-conventions/">UI conventions</a></strong> — shared theme palette, component rules, and translation workflow.</li>
 <li><strong><a href="./time-navigation/">Time navigation</a></strong> — precise stepping, range selection, and time-series behavior.</li>
 </ul>
-</li>
-<li>Data, contracts, and reference material
+<h2 id="data-contracts-and-reference-material">Data, contracts, and reference material</h2>
 <ul>
 <li><strong><a href="./physical-properties/">Physical properties</a></strong> — JPL-derived physical fields and richer astronomy payload notes.</li>
 </ul>
-</li>
-<li>Build and automation notes
+<h2 id="build-and-automation-notes">Build and automation notes</h2>
 <ul>
 <li><strong><a href="./ci-todo/">CI todo</a></strong> — planned automation around i18n sync and docs/build verification.</li>
-<li><code>npm run docs:prepare</code> rebuilds frontend workspaces, copies <code>apps/*/dist</code> into <code>docs/static/apps/</code>, and regenerates <code>docs/data/generated/frontends.json</code>.</li>
+<li>React is the main app flow: <code>npm run dev</code>, <code>npm run tauri:dev</code>, <code>npm run build</code>, <code>npm run tauri:build</code>, and <code>npm run check</code>.</li>
+<li>Svelte is a separate alternate app flow: <code>npm run dev:svelte</code>, <code>npm run tauri:dev:svelte</code>, <code>npm run build:svelte</code>, <code>npm run tauri:build:svelte</code>, and <code>npm run check:svelte</code>.</li>
+<li><code>npm run docs:prepare</code> rebuilds both frontend workspaces for static docs mode, copies <code>apps/*/dist</code> into <code>docs/static/apps/</code>, and regenerates <code>docs/data/generated/frontends.json</code>.</li>
+<li><code>npm run docs:dev</code> prepares those generated docs assets and starts Hugo locally; <code>npm run docs:build</code> prepares them and writes the production site to <code>dist-docs/</code>.</li>
+<li><code>translations.csv</code> feeds both frontend locale trees via <code>npm run i18n:sync</code>; <code>npm run i18n:prune:dry</code> and <code>npm run i18n:prune</code> check/remove keys unused by both frontends before syncing.</li>
 </ul>
-</li>
-<li>Historical context
+<h2 id="historical-context">Historical context</h2>
 <ul>
 <li><strong><a href="./discussion-summary/">Discussion summary</a></strong> — archival notes from the earlier UI phase.</li>
 <li>Root-level <strong><a href="../../../MIGRATION.md"><code>MIGRATION.md</code></a></strong> — remaining backend migration work and long-term JPL-centered direction.</li>
 </ul>
-</li>
-</ol>
 <h2 id="folder-structure-description">Folder structure description</h2>
 <table>
   <thead>
@@ -91,7 +86,7 @@
       </tr>
       <tr>
           <td><strong>Python</strong> (<code>backend-python/</code>)</td>
-          <td>Optional computation sidecar and compatibility path; not the sole compute owner.</td>
+          <td>Optional sidecar source when present; not the sole compute owner.</td>
       </tr>
       <tr>
           <td><strong>Static assets</strong> (<code>static/</code>)</td>
@@ -116,7 +111,7 @@
         
           <a class="card" href="/docs/ui-conventions/">
             <h2>UI conventions</h2>
-            <p>Theme, layout, and i18n rules for the React shell.</p>
+            <p>Theme, layout, component, and i18n rules for the frontend shells.</p>
           </a>
         
           <a class="card" href="/docs/architecture/">
@@ -132,6 +127,11 @@
           <a class="card" href="/docs/ephemeris-manager/">
             <h2>Ephemeris manager</h2>
             <p>Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.</p>
+          </a>
+        
+          <a class="card" href="/docs/lunar-phase/">
+            <h2>Lunar phase (moon details)</h2>
+            <p>How Kefer derives geocentric lunar phase and illumination from chart positions.</p>
           </a>
         
           <a class="card" href="/docs/tauri-command-contracts/">

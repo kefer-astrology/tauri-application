@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ephemeris manager | Kefer docs</title>
@@ -34,7 +34,7 @@
 <h2 id="why-it-exists">Why it exists</h2>
 <p>The original <code>JplAstronomyBackend</code> held a single <code>bsp_path: PathBuf</code> and loaded one BSP file per compute call. That approach had three problems:</p>
 <ol>
-<li><strong>No asteroid bodies.</strong> <code>de421.bsp</code> contains only the 10 standard planets and the Moon. Ceres, Pallas, Vesta, Juno — bodies present in DE440 — were simply unavailable.</li>
+<li><strong>No asteroid bodies.</strong> Planetary DE BSPs (<code>de440s</code>, <code>de440</code>, …) expose only the ten planets and the Moon as queryable SPK targets. Ceres-class bodies need separate NAIF asteroid kernels.</li>
 <li><strong>No upgrade path.</strong> Switching from <code>de421</code> to <code>de440s</code> required changing code, not config.</li>
 <li><strong>No user control.</strong> There was no way for a user to download a larger / longer ephemeris file without replacing the bundled binary.</li>
 </ol>
@@ -46,11 +46,10 @@
 ├── CATALOG: &amp;[EphemerisEntry]        static catalog of known BSP files
 │
 └── EphemerisManager { cache_dir }
-    ├── available_bsp_paths()         → Vec&lt;PathBuf&gt;  (primary + supplements)
-    ├── build_almanac()               → Almanac        (chained .load() calls)
+    ├── available_bsp_paths()         → Vec&lt;PathBuf&gt;  (primary + de441 supplements + asteroid SPKs)
     ├── catalog_status()              → Vec&lt;EphemerisInfo&gt;  (for Tauri command)
     └── download(id, app)             async, streams progress events
-</code></pre><p><code>JplAstronomyBackend</code> now holds <code>bsp_paths: Vec&lt;PathBuf&gt;</code> (resolved at construction time from <code>available_bsp_paths()</code>) and calls its own <code>build_almanac()</code> from those paths on every compute call.</p>
+</code></pre><p><code>JplAstronomyBackend</code> holds <code>bsp_paths: Vec&lt;PathBuf&gt;</code> (resolved at construction time from <code>available_bsp_paths()</code>), then chains them with <code>load_almanac_from_paths()</code> in <code>jpl_backend.rs</code> on each compute call.</p>
 <p>A global <code>OnceLock&lt;PathBuf&gt;</code> stores the cache directory. It is initialised once during Tauri app setup from <code>app.path().app_data_dir()</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">// lib.rs setup closure
 </span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ok(data_dir) <span style="color:#f92672">=</span> app.path().app_data_dir() {
@@ -59,16 +58,16 @@
 </span></span></code></pre></div><p>Anywhere else in the Rust backend: <code>EphemerisManager::from_global()</code> returns a manager pointed at that directory.</p>
 <hr>
 <h2 id="bsp-catalog">BSP catalog</h2>
-<p>The static catalog, runtime fallback set, and documented extension paths together define the BSP files Kefer can currently use or could adopt next. The table below includes active catalog entries, the bundled <code>de421</code> fallback, and additional candidate kernels already discussed in this repo.</p>
+<p>The static catalog and <code>available_bsp_paths()</code> define which files Kefer can download and which kernels are chained for JPL compute. Planetary kernels live under NAIF <code>spk/planets/</code>; asteroid kernels under <code>spk/asteroids/</code> (single-body archives use <code>asteroids/a_old_versions/</code>).</p>
 <table>
   <thead>
       <tr>
-          <th>id / source</th>
+          <th>id</th>
           <th>filename</th>
-          <th>size</th>
+          <th>size (approx.)</th>
           <th>date range</th>
           <th>queryable bodies</th>
-          <th>current status</th>
+          <th>notes</th>
       </tr>
   </thead>
   <tbody>
@@ -78,7 +77,7 @@
           <td>32 MB</td>
           <td>1900–2050</td>
           <td>10 planets + Moon</td>
-          <td>active catalog entry; bundled primary default</td>
+          <td>bundled primary default</td>
       </tr>
       <tr>
           <td><code>de440</code></td>
@@ -86,7 +85,7 @@
           <td>115 MB</td>
           <td>1550–2650</td>
           <td>10 planets + Moon</td>
-          <td>active catalog entry; downloadable upgrade</td>
+          <td>downloadable upgrade</td>
       </tr>
       <tr>
           <td><code>de441_part1</code></td>
@@ -94,7 +93,7 @@
           <td>~1.5 GB</td>
           <td>−13 200 to 0</td>
           <td>10 planets + Moon</td>
-          <td>active catalog entry; downloadable supplementary kernel</td>
+          <td>supplementary (cache)</td>
       </tr>
       <tr>
           <td><code>de441_part2</code></td>
@@ -102,42 +101,52 @@
           <td>~1.5 GB</td>
           <td>0 to +17 191</td>
           <td>10 planets + Moon</td>
-          <td>active catalog entry; downloadable supplementary kernel</td>
+          <td>supplementary (cache)</td>
       </tr>
       <tr>
-          <td><code>de421</code> <em>(bundled fallback)</em></td>
-          <td><code>de421.bsp</code></td>
-          <td>~17 MB</td>
-          <td>~1900–2050</td>
-          <td>10 planets + Moon</td>
-          <td>runtime fallback only; not part of <code>CATALOG</code></td>
+          <td><code>ceres_spk</code></td>
+          <td><code>ceres_1900_2100.bsp</code></td>
+          <td>~1.1 MB</td>
+          <td>1900–2100</td>
+          <td><code>ceres</code></td>
+          <td>bundled with the app; also downloadable if missing</td>
       </tr>
       <tr>
-          <td>NAIF single-asteroid kernels</td>
-          <td><code>ceres_1900_2100.bsp</code>, <code>vesta_1900_2100.bsp</code>, etc.</td>
-          <td>varies</td>
-          <td>typically 200-year windows</td>
-          <td>one asteroid per file</td>
-          <td>potentially usable; not yet wired into <code>CATALOG</code></td>
+          <td><code>pallas_spk</code></td>
+          <td><code>pallas_1900_2100.bsp</code></td>
+          <td>~1.1 MB</td>
+          <td>1900–2100</td>
+          <td><code>pallas</code></td>
+          <td>optional download</td>
       </tr>
       <tr>
-          <td>NAIF asteroid set</td>
+          <td><code>vesta_spk</code></td>
+          <td><code>vesta_1900_2100.bsp</code></td>
+          <td>~1.1 MB</td>
+          <td>1900–2100</td>
+          <td><code>vesta</code></td>
+          <td>optional download</td>
+      </tr>
+      <tr>
+          <td><code>codes_300ast</code></td>
           <td><code>codes_300ast_20100725.bsp</code></td>
           <td>~59 MB</td>
-          <td>solution-dependent</td>
-          <td>hundreds of asteroid bodies</td>
-          <td>potentially usable; not yet wired into <code>CATALOG</code></td>
+          <td>Baer 2010 solution window</td>
+          <td>subset of 300 asteroids (see below)</td>
+          <td>optional download; includes <strong>Juno</strong> (<code>2000003</code>)</td>
       </tr>
   </tbody>
 </table>
 <p>Current status:</p>
 <ul>
-<li><code>de440s</code>, <code>de440</code>, <code>de441_part1</code>, and <code>de441_part2</code> are the active catalog/download entries in <code>CATALOG</code>.</li>
-<li><code>de421</code> is not part of the download catalog; it remains a bundled runtime fallback considered during primary-kernel resolution.</li>
-<li>The asteroid kernels listed above are not yet part of the runtime catalog, but they fit the current JPL/SPICE direction and are the clearest next BSP additions if asteroid queries should become first-class.</li>
+<li>All rows above are <strong>active</strong> <code>CATALOG</code> entries with <code>download_ephemeris</code> support.</li>
+<li>The primary planetary kernel resolves as <strong><code>de440s</code> → <code>de440</code></strong> (cache first, then bundled <code>src-tauri/resources/</code>).</li>
+<li>After the primary and any cached <code>de441_part-*</code> files, the manager appends any resolved <strong>asteroid</strong> kernels in fixed order: Ceres → Pallas → Vesta → <code>codes_300ast</code> (each skipped if not present in cache or bundle search paths).</li>
+<li><code>tauri.conf.json</code> <code>bundle.resources</code> includes <code>resources/de440s.bsp</code> and <strong><code>resources/ceres_1900_2100.bsp</code></strong>.</li>
 </ul>
-<p>All files are served from the public NASA/JPL NAIF FTP over HTTPS:
-<code>https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/</code></p>
+<p>Planetary BSP base URL (NAIF HTTPS):</p>
+<p><code>https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/</code></p>
+<p>Asteroid BSP URLs are given per entry in <code>CATALOG</code> (under <code>spk/asteroids/</code> or <code>spk/asteroids/a_old_versions/</code>).</p>
 <h3 id="important-asteroids-are-not-in-these-files">Important: asteroids are NOT in these files</h3>
 <p>The 343 asteroids integrated alongside the planets in DE440/441 (Ceres, Pallas, Vesta, Juno, etc.) are <strong>integration perturbers only</strong>. They improve planetary accuracy but their positions are <strong>not stored as queryable SPK segments</strong> in any of the DE planetary files. Querying <code>NAIF 2000001</code> (Ceres) from <code>de440s.bsp</code> will fail.</p>
 <p>To get asteroid positions, a <strong>separate dedicated asteroid SPK kernel</strong> is required:</p>
@@ -167,59 +176,68 @@
       </tr>
   </tbody>
 </table>
-<p>These are planned additions to the catalog. For now, asteroid body IDs (<code>ceres</code>, <code>pallas</code>, <code>juno</code>, <code>vesta</code>) are registered in <code>jpl_backend.rs</code>&rsquo;s <code>body_frames()</code> table with the correct NAIF frames so they will resolve automatically once any matching asteroid kernel is loaded — the backend emits a graceful warning if the body is not found rather than failing the chart.</p>
+<p>Asteroid <strong>Kefer IDs</strong> and matching NAIF <code>2000xxx</code> frames are wired in <code>jpl_backend.rs</code> (small-body table). The backend calls <code>almanac.translate(...)</code> per body; if no SPK segment exists for that epoch, the chart still succeeds and a per-body <code>{id}_unavailable</code> warning is recorded.</p>
+<p><strong>Default chart</strong> (<code>included_points</code> / requested objects unspecified): only the <strong>four classical</strong> asteroids (Ceres, Pallas, Juno, Vesta) are evaluated automatically. If <code>codes_300ast_*.bsp</code> is on the load path, the backend also evaluates an extended list (<code>CODES_300AST_MAJOR_BODIES</code> in <code>ephemeris_manager.rs</code> — Astraea through Massalia) so optional downloads do not spam warnings for bodies that were never requested. When the client passes an explicit object list, every listed body is attempted.</p>
 <h3 id="naif-body-ids">NAIF body IDs</h3>
-<p>Standard planets use named constants from <code>anise::constants::frames</code>. Asteroid frames are defined as <code>pub const</code> in <code>ephemeris_manager.rs</code>:</p>
+<p>Standard planets use named constants from <code>anise::constants::frames</code>. Asteroid frames use <code>Frame::from_ephem_j2000(...)</code> in <code>ephemeris_manager.rs</code>:</p>
 <table>
   <thead>
       <tr>
           <th>Kefer ID</th>
           <th>NAIF ID</th>
-          <th>Kernel needed</th>
+          <th>Typical kernel</th>
       </tr>
   </thead>
   <tbody>
       <tr>
           <td><code>ceres</code></td>
           <td>2 000 001</td>
-          <td>dedicated asteroid SPK</td>
+          <td><code>ceres_1900_2100.bsp</code> (bundled) or <code>codes_300ast</code></td>
       </tr>
       <tr>
           <td><code>pallas</code></td>
           <td>2 000 002</td>
-          <td>dedicated asteroid SPK</td>
+          <td><code>pallas_1900_2100.bsp</code> or <code>codes_300ast</code></td>
       </tr>
       <tr>
           <td><code>juno</code></td>
           <td>2 000 003</td>
-          <td>dedicated asteroid SPK</td>
+          <td><strong><code>codes_300ast</code> only</strong> (no standalone <code>juno_1900_2100.bsp</code> in NAIF <code>a_old_versions</code>)</td>
       </tr>
       <tr>
           <td><code>vesta</code></td>
           <td>2 000 004</td>
-          <td>dedicated asteroid SPK</td>
+          <td><code>vesta_1900_2100.bsp</code> or <code>codes_300ast</code></td>
+      </tr>
+      <tr>
+          <td><code>astraea</code> … <code>massalia</code></td>
+          <td>2 000 005 … 2 000 020</td>
+          <td><code>codes_300ast_20100725.bsp</code></td>
       </tr>
       <tr>
           <td><code>chiron</code></td>
           <td>2 000 060</td>
-          <td>not in any standard file — JPL Horizons API planned</td>
+          <td>not in DE or <code>codes_300ast</code>; JPL Horizons API still planned</td>
       </tr>
   </tbody>
 </table>
 <hr>
 <h2 id="file-resolution">File resolution</h2>
-<p><code>available_bsp_paths()</code> implements a two-level selection:</p>
+<p><code>available_bsp_paths()</code> builds the almanac load list in <strong>three</strong> stages.</p>
 <h3 id="1--primary-bsp-exactly-one">1 — Primary BSP (exactly one)</h3>
 <p>The first match in this ordered list is used; the rest are skipped:</p>
 <pre tabindex="0"><code>cache/de440s.bsp   (user downloaded)
 cache/de440.bsp    (user downloaded)
 bundled de440s.bsp (src-tauri/resources/ or exe-adjacent)
 bundled de440.bsp
-bundled de421.bsp  (legacy fallback)
-</code></pre><p><code>de440s.bsp</code> is bundled with the app in <code>src-tauri/resources/</code>. <code>de421.bsp</code> remains bundled as a fallback for installs that have not yet received the update.</p>
+</code></pre><p><code>de440s.bsp</code> is bundled with the app in <code>src-tauri/resources/</code>.</p>
 <p>Exactly one primary is selected because all three files cover overlapping date ranges for the same bodies (see below). Loading two of them simultaneously would produce duplicate SPICE segments and undefined behaviour.</p>
 <h3 id="2--supplementary-bsps-de441-parts">2 — Supplementary BSPs (de441 parts)</h3>
-<p>Each <code>de441</code> part found in the cache directory is appended <strong>after</strong> the primary. These extend coverage into dates the primary cannot reach.</p>
+<p>Each <code>de441</code> part found in the <strong>cache</strong> directory is appended <strong>after</strong> the primary. These extend coverage into dates the primary cannot reach.</p>
+<h3 id="3--asteroid-supplementary-bsps">3 — Asteroid supplementary BSPs</h3>
+<p>For each of <code>ceres_1900_2100.bsp</code>, <code>pallas_1900_2100.bsp</code>, <code>vesta_1900_2100.bsp</code>, <code>codes_300ast_20100725.bsp</code>, the manager looks in the <strong>cache first</strong>, then the same bundled search paths as the primary (e.g. <code>src-tauri/resources/</code>). Each file is appended <strong>at most once</strong> and only if it exists. Ceres is normally satisfied by the <strong>bundled</strong> <code>ceres_1900_2100.bsp</code>; Pallas, Vesta, and the full 300-asteroid set are optional downloads.</p>
+<p><strong>Load failures after the primary:</strong> <code>load_almanac_from_paths</code> requires the <strong>first</strong> path to parse successfully. If a later file (de441 supplement or asteroid SPK) fails — for example an incompatible DAF endian with the current <code>anise</code> build — that file is <strong>skipped</strong> with a <code>log::warn!</code> and the almanac keeps the previous successful chain so charts still compute (e.g. planets without optional asteroids).</p>
+<p><strong>Load order and duplicates:</strong> SPICE-style chaining uses <strong>last-loaded wins</strong> when two files both define a segment for the same body and epoch. Asteroid files are appended <strong>after</strong> the planetary primary (and after any de441 supplements). Among asteroid files, <strong><code>codes_300ast</code> is loaded last</strong>, so if you have both <code>ceres_1900_2100.bsp</code> and <code>codes_300ast</code>, the CODES segment for Ceres takes precedence for overlapping epochs unless you remove one of the files from the path.</p>
 <hr>
 <h2 id="date-range-overlaps">Date range overlaps</h2>
 <p>Understanding which files overlap matters both for the primary-selection logic and for deciding when a de441 download actually adds value.</p>
@@ -230,7 +248,6 @@ de441_part1   ─────────────────────┤
 de441_part2             │          ├─────────────────────────────────────────┤
 de440                   │          │         ├─────────────────────┤         │
 de440s                  │          │         │     ├────────┤       │         │
-de421 (~)               │          │         │     ├────────┤       │         │
 </code></pre><h3 id="overlap-pairs">Overlap pairs</h3>
 <table>
   <thead>
@@ -344,6 +361,7 @@ de421 (~)               │          │         │     ├──────�
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>EphemerisManager::download(id: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, app: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">AppHandle</span>) -&gt; Result<span style="color:#f92672">&lt;</span>(), String<span style="color:#f92672">&gt;</span>
 </span></span></code></pre></div><ol>
 <li>Looks up the entry in <code>CATALOG</code> by <code>id</code>.</li>
+<li>If the kernel is <strong>already</strong> resolved (present in cache or bundled resources, same rules as <code>catalog_status</code>), returns <code>Ok</code> immediately and still emits <code>ephemeris-ready</code>.</li>
 <li>Opens the NAIF HTTPS URL with <code>reqwest</code> (streaming, no full-file buffer in memory).</li>
 <li>Writes chunks to <code>&lt;cache&gt;/&lt;filename&gt;.partial</code> using <code>std::fs::File</code>.</li>
 <li>Emits <code>ephemeris-progress</code> to the frontend every 512 KB:
@@ -359,52 +377,55 @@ de421 (~)               │          │         │     ├──────�
 <p>Three new commands are registered in <code>lib.rs</code>:</p>
 <h3 id="list_ephemeris_catalog"><code>list_ephemeris_catalog</code></h3>
 <p>Returns the full catalog with per-entry download status.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">catalog</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>&lt;<span style="color:#f92672">EphemerisInfo</span><span style="color:#960050;background-color:#1e0010">[]</span>&gt;(<span style="color:#e6db74">&#39;list_ephemeris_catalog&#39;</span>)
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">catalog</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>&lt;<span style="color:#f92672">EphemerisInfo</span><span style="color:#960050;background-color:#1e0010">[]</span>&gt;(<span style="color:#e6db74">&#39;list_ephemeris_catalog&#39;</span>);
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">EphemerisInfo</span> {
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">id</span>: <span style="color:#66d9ef">string</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">filename</span>: <span style="color:#66d9ef">string</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">url</span>: <span style="color:#66d9ef">string</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">size_bytes</span>: <span style="color:#66d9ef">number</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">bodies</span>: <span style="color:#66d9ef">string</span>[]
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">year_start</span>: <span style="color:#66d9ef">number</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">year_end</span>: <span style="color:#66d9ef">number</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">is_default</span>: <span style="color:#66d9ef">boolean</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">is_downloaded</span>: <span style="color:#66d9ef">boolean</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">local_path</span>: <span style="color:#66d9ef">string</span> <span style="color:#f92672">|</span> <span style="color:#66d9ef">null</span>   <span style="color:#75715e">// null when not yet downloaded
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">id</span>: <span style="color:#66d9ef">string</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">filename</span>: <span style="color:#66d9ef">string</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">url</span>: <span style="color:#66d9ef">string</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">size_bytes</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">bodies</span>: <span style="color:#66d9ef">string</span>[];
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">year_start</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">year_end</span>: <span style="color:#66d9ef">number</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">is_default</span>: <span style="color:#66d9ef">boolean</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">is_downloaded</span>: <span style="color:#66d9ef">boolean</span>;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">local_path</span>: <span style="color:#66d9ef">string</span> <span style="color:#f92672">|</span> <span style="color:#66d9ef">null</span>; <span style="color:#75715e">// null when unavailable; set when file is in cache *or* bundled (e.g. de440s, ceres_spk)
 </span></span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h3 id="download_ephemeris"><code>download_ephemeris</code></h3>
 <p>Starts a background download. Returns <code>Ok(())</code> immediately on network failure (error returned as <code>Err(string)</code>). Progress is reported via events.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#75715e">// Start download
-</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>(<span style="color:#e6db74">&#39;download_ephemeris&#39;</span>, { <span style="color:#a6e22e">id</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;de440&#39;</span> })
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>(<span style="color:#e6db74">&#39;download_ephemeris&#39;</span>, { <span style="color:#a6e22e">id</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;de440&#39;</span> });
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">// Listen for progress
 </span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">unlisten</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">listen</span><span style="color:#f92672">&lt;</span>{ <span style="color:#a6e22e">id</span>: <span style="color:#66d9ef">string</span>; <span style="color:#a6e22e">bytes_done</span>: <span style="color:#66d9ef">number</span>; <span style="color:#a6e22e">bytes_total</span>: <span style="color:#66d9ef">number</span> }<span style="color:#f92672">&gt;</span>(
-</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#39;ephemeris-progress&#39;</span>,
-</span></span><span style="display:flex;"><span>  ({ <span style="color:#a6e22e">payload</span> }) <span style="color:#f92672">=&gt;</span> {
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">pct</span> <span style="color:#f92672">=</span> Math.<span style="color:#a6e22e">round</span>((<span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">bytes_done</span> <span style="color:#f92672">/</span> <span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">bytes_total</span>) <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>)
-</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">`</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">id</span><span style="color:#e6db74">}</span><span style="color:#e6db74">: </span><span style="color:#e6db74">${</span><span style="color:#a6e22e">pct</span><span style="color:#e6db74">}</span><span style="color:#e6db74">%`</span>)
-</span></span><span style="display:flex;"><span>  }
-</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#39;ephemeris-progress&#39;</span>,
+</span></span><span style="display:flex;"><span>	({ <span style="color:#a6e22e">payload</span> }) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">pct</span> <span style="color:#f92672">=</span> Math.<span style="color:#a6e22e">round</span>((<span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">bytes_done</span> <span style="color:#f92672">/</span> <span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">bytes_total</span>) <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>);
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">`</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">id</span><span style="color:#e6db74">}</span><span style="color:#e6db74">: </span><span style="color:#e6db74">${</span><span style="color:#a6e22e">pct</span><span style="color:#e6db74">}</span><span style="color:#e6db74">%`</span>);
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">// Listen for completion
 </span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">await</span> <span style="color:#a6e22e">listen</span><span style="color:#f92672">&lt;</span>{ <span style="color:#a6e22e">id</span>: <span style="color:#66d9ef">string</span> }<span style="color:#f92672">&gt;</span>(<span style="color:#e6db74">&#39;ephemeris-ready&#39;</span>, ({ <span style="color:#a6e22e">payload</span> }) <span style="color:#f92672">=&gt;</span> {
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">`</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">id</span><span style="color:#e6db74">}</span><span style="color:#e6db74"> ready`</span>)
-</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">unlisten</span>()
-</span></span><span style="display:flex;"><span>})
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">`</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">payload</span>.<span style="color:#a6e22e">id</span><span style="color:#e6db74">}</span><span style="color:#e6db74"> ready`</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">unlisten</span>();
+</span></span><span style="display:flex;"><span>});
 </span></span></code></pre></div><h3 id="get_available_bodies"><code>get_available_bodies</code></h3>
 <p>Returns the union of body IDs queryable given currently available BSP files.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodies</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>&lt;<span style="color:#f92672">string</span><span style="color:#960050;background-color:#1e0010">[]</span>&gt;(<span style="color:#e6db74">&#39;get_available_bodies&#39;</span>)
-</span></span><span style="display:flex;"><span><span style="color:#75715e">// e.g. [&#34;sun&#34;,&#34;moon&#34;,&#34;mercury&#34;,&#34;venus&#34;,&#34;mars&#34;,&#34;jupiter&#34;,&#34;saturn&#34;,
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//       &#34;uranus&#34;,&#34;neptune&#34;,&#34;pluto&#34;,&#34;ceres&#34;,&#34;pallas&#34;,&#34;juno&#34;,&#34;vesta&#34;]
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-typescript" data-lang="typescript"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodies</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">invoke</span>&lt;<span style="color:#f92672">string</span><span style="color:#960050;background-color:#1e0010">[]</span>&gt;(<span style="color:#e6db74">&#39;get_available_bodies&#39;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Always includes the ten planets + Moon when a DE primary is loaded.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// With bundled Ceres SPK: at least &#34;ceres&#34;.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// With codes_300ast downloaded: also &#34;juno&#34; and extended IDs such as &#34;astraea&#34;, &#34;hebe&#34;, … (see CODES_300AST_MAJOR_BODIES in Rust).
 </span></span></span></code></pre></div><hr>
 <h2 id="python-sidecar">Python sidecar</h2>
-<p><code>backend-python/module/utils.py</code> exposes <code>default_ephemeris_path()</code> which now prefers <code>de440s.bsp</code> when present in <code>source/</code>:</p>
+<p>When the optional <code>backend-python/</code> source tree is present, <code>backend-python/module/utils.py</code> should expose <code>default_ephemeris_path()</code> with <code>de440s.bsp</code> preferred when present in <code>source/</code>:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">default_ephemeris_path</span>() <span style="color:#f92672">-&gt;</span> str:
 </span></span><span style="display:flex;"><span>    source_dir <span style="color:#f92672">=</span> Path(__file__)<span style="color:#f92672">.</span>resolve()<span style="color:#f92672">.</span>parent<span style="color:#f92672">.</span>parent <span style="color:#f92672">/</span> <span style="color:#e6db74">&#39;source&#39;</span>
 </span></span><span style="display:flex;"><span>    de440s <span style="color:#f92672">=</span> source_dir <span style="color:#f92672">/</span> <span style="color:#e6db74">&#39;de440s.bsp&#39;</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> de440s<span style="color:#f92672">.</span>exists():
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> str(de440s)
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> str(source_dir <span style="color:#f92672">/</span> <span style="color:#e6db74">&#39;de421.bsp&#39;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">FileNotFoundError</span>(
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;Place de440s.bsp in backend-python/source/ (see ephemeris manager docs).&#34;</span>
+</span></span><span style="display:flex;"><span>    )
 </span></span></code></pre></div><p>The <code>is_de421</code> flag in <code>services.py</code> (which controls whether outer-planet barycenters are used instead of direct names) works correctly for <code>de440s.bsp</code> without changes — it checks the filename and de440s passes the non-de421 path, which uses direct planet names as expected.</p>
 <hr>
 <h2 id="remaining-gaps">Remaining gaps</h2>
@@ -418,9 +439,24 @@ de421 (~)               │          │         │     ├──────�
   </thead>
   <tbody>
       <tr>
-          <td>Ceres, Pallas, Juno, Vesta</td>
-          <td>pending</td>
-          <td>NAIF frames registered; need a dedicated asteroid SPK kernel</td>
+          <td>Ceres</td>
+          <td>✅ done (JPL Rust)</td>
+          <td>Bundled <code>ceres_1900_2100.bsp</code>; <code>get_available_bodies</code> includes <code>ceres</code></td>
+      </tr>
+      <tr>
+          <td>Pallas, Vesta</td>
+          <td>optional</td>
+          <td>Download <code>pallas_spk</code> / <code>vesta_spk</code> or use <code>codes_300ast</code></td>
+      </tr>
+      <tr>
+          <td>Juno</td>
+          <td>optional</td>
+          <td>Requires <code>codes_300ast</code> (no standalone NAIF <code>juno_1900_2100.bsp</code> in the archived set Kefer links)</td>
+      </tr>
+      <tr>
+          <td>Extended main-belt (Astraea–Massalia)</td>
+          <td>optional</td>
+          <td><code>codes_300ast</code> + explicit chart object list or default extended path when that kernel is present</td>
       </tr>
       <tr>
           <td>South Node</td>
@@ -429,13 +465,18 @@ de421 (~)               │          │         │     ├──────�
       </tr>
       <tr>
           <td>True Node</td>
-          <td>pending</td>
-          <td>iterative osculation; needs Moon ephemeris sampling</td>
+          <td>✅ done</td>
+          <td>osculating node from geocentric Moon position + velocity (Rust JPL path); Python JPL path uses the same vector method</td>
       </tr>
       <tr>
           <td>Part of Fortune</td>
           <td>pending</td>
-          <td>pure formula: ASC + Moon − Sun; no BSP needed</td>
+          <td>Lot / Pars formula using ASC + Moon − Sun (or night variant); <strong>not</strong> lunar phase — a single derived longitude</td>
+      </tr>
+      <tr>
+          <td>Lunar phase (“moon shape”), illumination, age</td>
+          <td>✅ done</td>
+          <td>See <a href="../lunar-phase/">lunar-phase</a>: <code>moon_details</code> on <code>compute_chart</code> / <code>compute_chart_from_data</code> (tropical Sun–Moon elongation); not Part of Fortune</td>
       </tr>
       <tr>
           <td>Chiron (2060)</td>

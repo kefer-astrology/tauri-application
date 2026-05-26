@@ -1,12 +1,14 @@
 ---
-title: "Python package"
-description: "Reference for the optional Python backend package and its role in the current architecture."
+title: 'Python package'
+description: 'Reference for the optional Python backend package and its role in the current architecture.'
 weight: 50
 ---
 
 # Python package
 
 The Python package is an optional computation backend used by the Tauri app.
+
+Some checkouts may omit the `backend-python/` source tree and run through the Rust/no-sidecar path. Treat this page as the contract for that optional sidecar, not as a required baseline for every local checkout.
 
 It should be treated as:
 
@@ -60,7 +62,6 @@ Python-backed chart responses should align with the shared frontend/backend expe
 
 - Rust storage compatibility commands are still no-op and do not persist computed data coming from Python
 - some seam validation is still incomplete
-- `/function-wrapper/module/` may still need mirroring if it remains authoritative in parallel
 - revolution computation is still not implemented
 - end-to-end confidence still depends on a provisioned Python environment
 

@@ -1,6 +1,6 @@
 ---
-title: "CI todo"
-description: "Current automation follow-up for docs, i18n, and desktop builds."
+title: 'CI todo'
+description: 'Current automation follow-up for docs, i18n, and desktop builds.'
 weight: 110
 ---
 
@@ -14,8 +14,9 @@ It is not a frontend planning page and should not be used for general UI backlog
 
 Current desired CI behavior:
 
-- watch `translations.csv` and `scripts/csv-to-locales.mjs`
+- watch `translations.csv`, `scripts/csv-to-locales.mjs`, and `scripts/prune-unused-translations.py`
 - run `npm ci`
+- run `npm run i18n:prune:dry`
 - run `npm run i18n:sync`
 - fail if generated locale files would change
 

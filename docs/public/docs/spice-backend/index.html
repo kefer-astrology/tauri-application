@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SPICE backend | Kefer docs</title>
@@ -57,7 +57,7 @@
 <li>Vedic vs Western semantic defaults</li>
 </ul>
 <h2 id="file-format-boundary">File format boundary</h2>
-<p>The Rust and Python JPL paths target <strong>SPICE BSP/SPK</strong> files such as <code>de440s.bsp</code> and <code>de421.bsp</code>.</p>
+<p>The Rust and Python JPL paths target <strong>SPICE BSP/SPK</strong> planetary kernels such as <code>de440s.bsp</code> and <code>de440.bsp</code>, with optional <strong>additional SPK files</strong> chained in the same almanac for asteroids and other small bodies. On Rust, <code>EphemerisManager</code> resolves and appends NAIF asteroid BSPs when present (including bundled <code>ceres_1900_2100.bsp</code> and optional catalog downloads such as <code>codes_300ast</code>).</p>
 <p>That is distinct from Swiss Ephemeris JPL support through old-format <code>.eph</code> files in <code>swejpl.c</code> mode. <code>JplViaSwissAstronomyBackend</code> is still Swiss-backed and does not replace the SPICE/BSP path.</p>
 <h2 id="rust-implementation">Rust implementation</h2>
 <p>Rust uses <a href="https://github.com/nyx-space/anise"><code>anise</code></a> to read BSP files directly.</p>
@@ -79,8 +79,7 @@
 <ul>
 <li>astrology-layer interpretation</li>
 <li>some house-system fallback policy</li>
-<li>true-node support</li>
-<li>asteroid availability beyond what loaded kernels actually contain</li>
+<li>asteroid availability for bodies <strong>not</strong> included in any loaded kernel (e.g. Chiron, TNOs, or minor planets absent from your SPK set)</li>
 </ul>
 <h2 id="python-implementation">Python implementation</h2>
 <p>Python keeps a parallel JPL path through Skyfield-backed BSP usage.</p>
@@ -118,14 +117,16 @@
 <li><code>JplAstronomyBackend</code> in Rust using <code>anise</code></li>
 <li>feature-gated Swiss path in Rust</li>
 <li>pure-Rust support for key transforms and baseline house/axis calculations in <code>houses.rs</code></li>
-<li><code>EphemerisManager</code> integration for resolving active BSP files</li>
-<li>bundled <code>de440s.bsp</code> primary path, with <code>de421.bsp</code> still available as fallback</li>
+<li><code>EphemerisManager</code> integration for resolving active BSP files (planetary primary, optional de441 supplements, optional NAIF asteroid kernels)</li>
+<li>bundled <code>de440s.bsp</code> as the default planetary kernel (<code>de440</code> is the documented wider-range upgrade)</li>
+<li>bundled <code>ceres_1900_2100.bsp</code> and catalog entries for additional asteroid SPKs (<code>pallas_spk</code>, <code>vesta_spk</code>, <code>codes_300ast</code>)</li>
 <li>Python JPL backend path aligned around structured chart-data output</li>
+<li>osculating <strong>true lunar node</strong> (and true south node) from geocentric Moon state on both Rust and Python JPL paths</li>
+<li><strong><code>moon_details</code></strong> on chart compute responses: lunar phase from tropical Sun–Moon longitudes (see <a href="../lunar-phase/">lunar-phase</a>)</li>
 </ul>
 <p>Still incomplete:</p>
 <ul>
-<li>True Node is not implemented as a real true-node computation</li>
-<li>asteroid bodies still require dedicated asteroid kernels to become genuinely queryable</li>
+<li>asteroid coverage beyond what is shipped or downloaded (Chiron, TNOs, arbitrary small bodies) still needs extra SPKs or another ephemeris source; see <a href="../ephemeris-manager/">ephemeris-manager</a></li>
 <li>ayanamsha remains incomplete on the Rust-owned side</li>
 <li>validation and parity coverage between backends is still partial</li>
 </ul>

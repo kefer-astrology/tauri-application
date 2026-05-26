@@ -11,8 +11,8 @@ The main rule is:
 
 - Always look for the spec in `docs/content/llm/` first.
 - Use `docs/content/docs/` to understand the system, architecture, and current implementation behavior.
-- Use `MIGRATION.md` when the task affects long-term compute architecture, backend boundaries, or staged migration decisions.
-- When a migration task lands, update the progress ledger in `MIGRATION.md` in the same change set.
+- Use `development-driver.md` when the task affects long-term compute architecture, backend boundaries, or staged migration decisions.
+- When a migration task lands, update the development driver or the relevant task-specific `/llm/` contract in the same change set.
 
 ## Codex rule
 
@@ -21,7 +21,7 @@ When starting a task, follow this order:
 1. Read `/llm/project-context/`.
 2. Read `/llm/specs-workflow/`.
 3. Look in `/llm/` for a task-specific spec or workflow note.
-4. Read `/MIGRATION.md` if the task affects backend ownership, astrology layering, or migration sequencing.
+4. Read `/llm/development-driver/` if the task affects backend ownership, astrology layering, or migration sequencing.
 5. Use `/docs/` to understand how the system fits together and to confirm current implementation details.
 
 For workspace import work, use `/llm/import-chart-contract/` as the task-specific spec before inferring behavior from code.
@@ -29,7 +29,7 @@ For radix rendering work, use `/llm/radix-render-contract/` before inferring fro
 
 When a runtime decision rule is established in `/llm/`, prefer carrying that rule through the whole app consistently instead of reintroducing per-feature ad hoc checks.
 
-When `/llm/` describes the current contract and `MIGRATION.md` describes the target direction, preserve the current contract unless the task explicitly moves the implementation forward and updates the relevant specs in the same change set.
+When one `/llm/` page describes the current contract and another describes the target direction, preserve the current contract unless the task explicitly moves the implementation forward and updates the relevant specs in the same change set.
 
 ## Repository split
 

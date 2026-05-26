@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Python package | Kefer docs</title>
@@ -29,6 +29,7 @@
     <div class="prose">
       <h1 id="python-package">Python package</h1>
 <p>The Python package is an optional computation backend used by the Tauri app.</p>
+<p>Some checkouts may omit the <code>backend-python/</code> source tree and run through the Rust/no-sidecar path. Treat this page as the contract for that optional sidecar, not as a required baseline for every local checkout.</p>
 <p>It should be treated as:</p>
 <ul>
 <li>a compatibility path</li>
@@ -78,7 +79,6 @@
 <ul>
 <li>Rust storage compatibility commands are still no-op and do not persist computed data coming from Python</li>
 <li>some seam validation is still incomplete</li>
-<li><code>/function-wrapper/module/</code> may still need mirroring if it remains authoritative in parallel</li>
 <li>revolution computation is still not implemented</li>
 <li>end-to-end confidence still depends on a provisioned Python environment</li>
 </ul>

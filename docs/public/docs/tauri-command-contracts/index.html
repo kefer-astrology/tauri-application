@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tauri command contracts | Kefer docs</title>
@@ -172,7 +172,7 @@
 <ul>
 <li>Computes positions and aspects from an in-memory chart payload.</li>
 <li><code>chart_json.subject.event_time</code> must be parseable as <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ssZ</code>, or RFC3339.</li>
-<li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>moon_details</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
 <li>Uses Python or Rust depending on backend selection and availability.</li>
 </ul>
 <p>Acceptance criteria:</p>
@@ -180,12 +180,13 @@
 <li>A valid chart payload returns <code>positions</code>, <code>aspects</code>, and <code>chart_id</code>.</li>
 <li>Rust-supported radix output should also include <code>axes</code> and <code>house_cusps</code>.</li>
 <li>Rust-supported radix output should include <code>motion</code> when the selected backend can derive it.</li>
+<li>When <code>positions.sun</code> and <code>positions.moon</code> exist, <code>moon_details</code> should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See <a href="../lunar-phase/">lunar-phase</a>.</li>
 <li>When fallback occurs, the response should expose that fact instead of failing silently.</li>
 </ul>
 <h3 id="compute_chartworkspace_path-chart_id---resultmapstring-value-string"><code>compute_chart(workspace_path, chart_id) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
 <ul>
 <li>Loads a chart from workspace storage and computes positions and aspects.</li>
-<li>Returns <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Returns <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>moon_details</code> (when Sun and Moon are present), <code>chart_id</code>, and backend provenance fields when available.</li>
 <li>Uses Python or Rust depending on backend selection and availability.</li>
 </ul>
 <h3 id="compute_transit_series---resultvalue-string"><code>compute_transit_series(...) -&gt; Result&lt;Value, String&gt;</code></h3>

@@ -1,6 +1,6 @@
 ---
-title: "Svelte frontend"
-description: "Operational guide for the alternate Svelte + Vite + Tauri workspace."
+title: 'Svelte frontend'
+description: 'Operational guide for the alternate Svelte + Vite + Tauri workspace.'
 weight: 25
 ---
 
@@ -14,6 +14,8 @@ weight: 25
 
 ## Commands
 
+Svelte is the alternate frontend flow. Keep its build, check, and Tauri commands separate from the React defaults.
+
 ```bash
 npm install
 npm run dev:svelte
@@ -24,6 +26,12 @@ npm run check:svelte
 npm run lint
 npm run i18n:sync
 npm run docs:prepare
+```
+
+Docs builds use the same Svelte app with a relative asset base:
+
+```bash
+npm run build:svelte:docs
 ```
 
 ## Workspace shape

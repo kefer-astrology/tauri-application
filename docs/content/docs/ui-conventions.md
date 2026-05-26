@@ -1,6 +1,6 @@
 ---
-title: "UI conventions"
-description: "Theme, layout, and i18n rules for the React shell."
+title: 'UI conventions'
+description: 'Theme, layout, component, and i18n rules for the frontend shells.'
 weight: 30
 ---
 
@@ -18,12 +18,30 @@ Crisp reference for **themes**, **secondary navigation**, **shared component str
 ## Component baseline
 
 - Prefer the repo’s existing shadcn-style component systems before building bespoke controls.
-- In React, start with `src/app/components/ui/`.
-- In Svelte, start with `src/lib/components/ui/`.
+- In React, start with `apps/web-react/src/app/components/ui/`.
+- In Svelte, start with `apps/web-svelte/src/lib/components/ui/`.
 - Treat those as the default styling surface for forms, overlays, panels, selectors, and interactive controls.
 - When visuals need tuning, prefer variants, theme tokens, spacing, and composition over isolated per-component CSS forks.
 - Feature-level UI should not introduce raw native controls (`<button>`, `<select>`, checkbox `<input>`) when a shared primitive exists.
-- If a required primitive is missing, add it to `src/app/components/ui/` first, then consume it from feature components.
+- If a required primitive is missing, add it to that frontend's shared `ui/` layer first, then consume it from feature components.
+
+## Frontend Alignment Status
+
+Both frontend workspaces should keep these shared primitive families available before feature work adds custom controls:
+
+- React: `Button`, `Input`, `Textarea`, `Checkbox`, `ColorInput`, `Label`, `Select`, `Card`, `Dialog`, `Sheet` / `Drawer`, `Accordion`, `Tooltip`, `Breadcrumb`, `Badge`, `Separator`, and `Table`.
+- Svelte: `Button`, `Input`, `Textarea`, `Checkbox`, `ColorInput`, `Label`, `Select`, `Card`, `Dialog`, `Accordion`, `Tooltip`, `Breadcrumb`, `Badge`, `Separator`, and `Table`.
+
+Native control tags are allowed inside the shared primitive implementations themselves. In feature components they should be treated as drift unless the control genuinely has no primitive yet.
+
+Current alignment status:
+
+- React and Svelte feature components follow shared shadcn-style primitives for common controls.
+- React `TransitsBodiesConfig` is data-driven and uses shared `Checkbox` + `Label`.
+- React `Aspectarium` consumes shared `Table` primitives and theme tokens.
+- Svelte matrix rendering is routed through `components/chart-matrix/AspectMatrix.svelte`, with `AspectGrid.svelte` kept as a compatibility wrapper.
+- Svelte mode content is split into feature components including `NewRadixView`, `InformationView`, `RadixDetailsPanel`, `RadixPositionPanel`, and `RadixTransitsView`.
+- Ongoing work is driven from the [Development driver](../../llm/development-driver/). Future Dynamic/Revolution/Favorite behavior is spec-gated because the React reference is also placeholder/workbench-level there.
 
 ## Interior surfaces
 
@@ -129,17 +147,23 @@ The current React `Aspectarium` (`apps/web-react/src/app/components/aspectarium.
 - Prefer one reusable right-side detail panel component for repeated click-to-inspect flows across the app instead of re-implementing fixed right columns per screen.
 - If a reusable matrix-specific primitive is still missing, add a new focused component in `apps/web-react/src/app/components/` or `.../ui/` rather than embedding bespoke table behavior directly into `App.tsx`.
 - New styling should inherit the active theme palette through the same shared adapters/helpers used by other content surfaces.
+- Svelte chart matrices should follow the same domain-component rule through `apps/web-svelte/src/lib/components/chart-matrix/` and should not reintroduce feature-local lower-triangle table logic.
 
 ## Internationalization (i18n)
 
-| Item              | Location                                                                                     |
-| ----------------- | -------------------------------------------------------------------------------------------- |
-| Source of truth   | Repo root **`translations.csv`** (`internal_name` + `czech`, `english`, `french`, `spanish`) |
-| Generated bundles | **`src/locales/*.json`** — **do not edit by hand** for routine changes                       |
-| Sync command      | **`npm run i18n:sync`** (runs `scripts/csv-to-locales.mjs`)                                  |
-| Runtime           | React and Svelte both consume generated locale packs; keys are CSV `internal_name` values    |
+| Item              | Location                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| Source of truth   | Repo root **`translations.csv`** (`internal_name` + `czech`, `english`, `french`, `spanish`)          |
+| Generated bundles | **`src/locales/*.json`** — **do not edit by hand** for routine changes                                |
+| Sync command      | **`npm run i18n:sync`** (runs `scripts/csv-to-locales.mjs`)                                           |
+| Prune checker     | **`npm run i18n:prune:dry`** / **`npm run i18n:prune`** (runs `scripts/prune-unused-translations.py`) |
+| Runtime           | React and Svelte both consume generated locale packs; keys are CSV `internal_name` values             |
 
 **Workflow for new copy:** add or edit a row in **`translations.csv`**, run **`npm run i18n:sync`**, then use **`t('internal_name')`** in components.
+
+**Cleanup workflow:** run **`npm run i18n:prune:dry`** first. If the reported keys are truly unused in both `apps/web-react/src` and `apps/web-svelte/src`, run **`npm run i18n:prune`**, then **`npm run i18n:sync`** so both frontend bundles match the CSV.
+
+The CSV is the local source of truth for now. It is intended to mirror an externally maintained public Google Sheet later; when that is added, the import/export step should update `translations.csv` first, then keep the existing prune/sync flow unchanged.
 
 Transits-related keys use the `transits_*` prefix where grouped; shared labels reuse global keys (e.g. `planet_*`, `aspect_*`, `button_*`).
 

@@ -1,6 +1,6 @@
 ---
-title: "React frontend"
-description: "Operational guide for the React + Vite + Tauri UI workspace."
+title: 'React frontend'
+description: 'Operational guide for the React + Vite + Tauri UI workspace.'
 weight: 20
 ---
 
@@ -15,15 +15,23 @@ weight: 20
 
 ## Commands
 
+React is the primary frontend and the default desktop app target.
+
 ```bash
 npm install
 npm run dev
-npm run tauri dev
+npm run tauri:dev
 npm run build
-npm run tauri build
+npm run tauri:build
 npm run check
 npm run lint
 npm run i18n:sync
+```
+
+Docs builds use the same React app with a relative asset base:
+
+```bash
+npm run build:react:docs
 ```
 
 ## Workspace shape
@@ -117,7 +125,6 @@ See [ui-conventions](../ui-conventions/) for the cross-app theme rules.
 ## Known limits
 
 - Some views are still richer in layout than in backend completeness.
-- `apps/web-react/src/app/components/horoscope-wheel.tsx` still has the known typecheck issue previously noted elsewhere in the repo.
 - Prototype-era fallback surfaces still exist and should not be mistaken for final architecture.
 
 ## Related docs

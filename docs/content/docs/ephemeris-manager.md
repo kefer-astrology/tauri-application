@@ -1,6 +1,6 @@
 ---
-title: "Ephemeris manager"
-description: "Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager."
+title: 'Ephemeris manager'
+description: 'Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.'
 weight: 42
 ---
 
@@ -56,16 +56,16 @@ Anywhere else in the Rust backend: `EphemerisManager::from_global()` returns a m
 
 The static catalog and `available_bsp_paths()` define which files Kefer can download and which kernels are chained for JPL compute. Planetary kernels live under NAIF `spk/planets/`; asteroid kernels under `spk/asteroids/` (single-body archives use `asteroids/a_old_versions/`).
 
-| id | filename | size (approx.) | date range | queryable bodies | notes |
-|----|----------|----------------|------------|------------------|--------|
-| `de440s` *(default)* | `de440s.bsp` | 32 MB | 1900–2050 | 10 planets + Moon | bundled primary default |
-| `de440` | `de440.bsp` | 115 MB | 1550–2650 | 10 planets + Moon | downloadable upgrade |
-| `de441_part1` | `de441_part-1.bsp` | ~1.5 GB | −13 200 to 0 | 10 planets + Moon | supplementary (cache) |
-| `de441_part2` | `de441_part-2.bsp` | ~1.5 GB | 0 to +17 191 | 10 planets + Moon | supplementary (cache) |
-| `ceres_spk` | `ceres_1900_2100.bsp` | ~1.1 MB | 1900–2100 | `ceres` | bundled with the app; also downloadable if missing |
-| `pallas_spk` | `pallas_1900_2100.bsp` | ~1.1 MB | 1900–2100 | `pallas` | optional download |
-| `vesta_spk` | `vesta_1900_2100.bsp` | ~1.1 MB | 1900–2100 | `vesta` | optional download |
-| `codes_300ast` | `codes_300ast_20100725.bsp` | ~59 MB | Baer 2010 solution window | subset of 300 asteroids (see below) | optional download; includes **Juno** (`2000003`) |
+| id                   | filename                    | size (approx.) | date range                | queryable bodies                    | notes                                              |
+| -------------------- | --------------------------- | -------------- | ------------------------- | ----------------------------------- | -------------------------------------------------- |
+| `de440s` _(default)_ | `de440s.bsp`                | 32 MB          | 1900–2050                 | 10 planets + Moon                   | bundled primary default                            |
+| `de440`              | `de440.bsp`                 | 115 MB         | 1550–2650                 | 10 planets + Moon                   | downloadable upgrade                               |
+| `de441_part1`        | `de441_part-1.bsp`          | ~1.5 GB        | −13 200 to 0              | 10 planets + Moon                   | supplementary (cache)                              |
+| `de441_part2`        | `de441_part-2.bsp`          | ~1.5 GB        | 0 to +17 191              | 10 planets + Moon                   | supplementary (cache)                              |
+| `ceres_spk`          | `ceres_1900_2100.bsp`       | ~1.1 MB        | 1900–2100                 | `ceres`                             | bundled with the app; also downloadable if missing |
+| `pallas_spk`         | `pallas_1900_2100.bsp`      | ~1.1 MB        | 1900–2100                 | `pallas`                            | optional download                                  |
+| `vesta_spk`          | `vesta_1900_2100.bsp`       | ~1.1 MB        | 1900–2100                 | `vesta`                             | optional download                                  |
+| `codes_300ast`       | `codes_300ast_20100725.bsp` | ~59 MB         | Baer 2010 solution window | subset of 300 asteroids (see below) | optional download; includes **Juno** (`2000003`)   |
 
 Current status:
 
@@ -86,11 +86,11 @@ The 343 asteroids integrated alongside the planets in DE440/441 (Ceres, Pallas, 
 
 To get asteroid positions, a **separate dedicated asteroid SPK kernel** is required:
 
-| source | what it provides | notes |
-|--------|-----------------|-------|
-| Individual NAIF files (`ceres_1900_2100.bsp` etc.) | single-body, 200-year window | publicly archived on NAIF |
-| `codes_300ast_20100725.bsp` (59 MB) | 300 asteroids, Baer 2010 solution | one download covers most |
-| JPL Horizons REST API | any NAIF body, on demand | no file to bundle; query at compute time |
+| source                                             | what it provides                  | notes                                    |
+| -------------------------------------------------- | --------------------------------- | ---------------------------------------- |
+| Individual NAIF files (`ceres_1900_2100.bsp` etc.) | single-body, 200-year window      | publicly archived on NAIF                |
+| `codes_300ast_20100725.bsp` (59 MB)                | 300 asteroids, Baer 2010 solution | one download covers most                 |
+| JPL Horizons REST API                              | any NAIF body, on demand          | no file to bundle; query at compute time |
 
 Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `jpl_backend.rs` (small-body table). The backend calls `almanac.translate(...)` per body; if no SPK segment exists for that epoch, the chart still succeeds and a per-body `{id}_unavailable` warning is recorded.
 
@@ -100,14 +100,14 @@ Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `jpl_back
 
 Standard planets use named constants from `anise::constants::frames`. Asteroid frames use `Frame::from_ephem_j2000(...)` in `ephemeris_manager.rs`:
 
-| Kefer ID | NAIF ID | Typical kernel |
-|----------|---------|----------------|
-| `ceres` | 2 000 001 | `ceres_1900_2100.bsp` (bundled) or `codes_300ast` |
-| `pallas` | 2 000 002 | `pallas_1900_2100.bsp` or `codes_300ast` |
-| `juno` | 2 000 003 | **`codes_300ast` only** (no standalone `juno_1900_2100.bsp` in NAIF `a_old_versions`) |
-| `vesta` | 2 000 004 | `vesta_1900_2100.bsp` or `codes_300ast` |
-| `astraea` … `massalia` | 2 000 005 … 2 000 020 | `codes_300ast_20100725.bsp` |
-| `chiron` | 2 000 060 | not in DE or `codes_300ast`; JPL Horizons API still planned |
+| Kefer ID               | NAIF ID               | Typical kernel                                                                        |
+| ---------------------- | --------------------- | ------------------------------------------------------------------------------------- |
+| `ceres`                | 2 000 001             | `ceres_1900_2100.bsp` (bundled) or `codes_300ast`                                     |
+| `pallas`               | 2 000 002             | `pallas_1900_2100.bsp` or `codes_300ast`                                              |
+| `juno`                 | 2 000 003             | **`codes_300ast` only** (no standalone `juno_1900_2100.bsp` in NAIF `a_old_versions`) |
+| `vesta`                | 2 000 004             | `vesta_1900_2100.bsp` or `codes_300ast`                                               |
+| `astraea` … `massalia` | 2 000 005 … 2 000 020 | `codes_300ast_20100725.bsp`                                                           |
+| `chiron`               | 2 000 060             | not in DE or `codes_300ast`; JPL Horizons API still planned                           |
 
 ---
 
@@ -161,14 +161,14 @@ de440s                  │          │         │     ├──────�
 
 ### Overlap pairs
 
-| Pair | Overlap range | Consequence |
-|------|--------------|-------------|
-| de440s ∩ de441_part2 | 1900–2050 | de440s is entirely inside de441_part2 |
-| de440 ∩ de441_part2 | 1550–2650 | de440 is entirely inside de441_part2 |
-| de440s ∩ de440 | 1900–2050 | de440s is entirely inside de440 |
-| de441_part1 ∩ de440 | none | de441_part1 ends at year 0; de440 starts at 1550 |
-| de441_part1 ∩ de440s | none | same reason |
-| de441_part1 ∩ de441_part2 | year 0 only | one-epoch boundary; negligible |
+| Pair                      | Overlap range | Consequence                                      |
+| ------------------------- | ------------- | ------------------------------------------------ |
+| de440s ∩ de441_part2      | 1900–2050     | de440s is entirely inside de441_part2            |
+| de440 ∩ de441_part2       | 1550–2650     | de440 is entirely inside de441_part2             |
+| de440s ∩ de440            | 1900–2050     | de440s is entirely inside de440                  |
+| de441_part1 ∩ de440       | none          | de441_part1 ends at year 0; de440 starts at 1550 |
+| de441_part1 ∩ de440s      | none          | same reason                                      |
+| de441_part1 ∩ de441_part2 | year 0 only   | one-epoch boundary; negligible                   |
 
 ### What happens when overlapping files are loaded together
 
@@ -189,12 +189,12 @@ For normal astrological use (1900–2050), this is acceptable: DE441 was derived
 
 ### When to download de441 parts
 
-| Intended use | File needed |
-|---|---|
-| Modern charts (1900–2050) | de440s (bundled, no download) |
-| Renaissance / medieval (1550–1899 or 2051–2650) | de440 |
-| Ancient charts (before 1550 / before 1 AD) | de441_part1 |
-| Far-future charts (after 2650) | de441_part2 |
+| Intended use                                    | File needed                   |
+| ----------------------------------------------- | ----------------------------- |
+| Modern charts (1900–2050)                       | de440s (bundled, no download) |
+| Renaissance / medieval (1550–1899 or 2051–2650) | de440                         |
+| Ancient charts (before 1550 / before 1 AD)      | de441_part1                   |
+| Far-future charts (after 2650)                  | de441_part2                   |
 
 You do **not** need to download de441 if all your charts fall inside de440s's 1900–2050 window.
 
@@ -208,11 +208,11 @@ Setting `chart.config.override_ephemeris` to a valid `.bsp` path bypasses the ma
 
 Downloaded files are stored in the platform app-data directory:
 
-| Platform | Path |
-|----------|------|
-| Linux | `~/.local/share/kefer/ephemeris/` |
-| macOS | `~/Library/Application Support/dev.kefer.astrology/ephemeris/` |
-| Windows | `%APPDATA%\dev.kefer.astrology\ephemeris\` |
+| Platform | Path                                                           |
+| -------- | -------------------------------------------------------------- |
+| Linux    | `~/.local/share/kefer/ephemeris/`                              |
+| macOS    | `~/Library/Application Support/dev.kefer.astrology/ephemeris/` |
+| Windows  | `%APPDATA%\dev.kefer.astrology\ephemeris\`                     |
 
 Downloads use a `.partial` suffix while in progress and are atomically renamed on completion. A partially downloaded file is never loaded.
 
@@ -250,21 +250,21 @@ Three new commands are registered in `lib.rs`:
 Returns the full catalog with per-entry download status.
 
 ```typescript
-const catalog = await invoke<EphemerisInfo[]>('list_ephemeris_catalog')
+const catalog = await invoke<EphemerisInfo[]>('list_ephemeris_catalog');
 ```
 
 ```typescript
 interface EphemerisInfo {
-  id: string
-  filename: string
-  url: string
-  size_bytes: number
-  bodies: string[]
-  year_start: number
-  year_end: number
-  is_default: boolean
-  is_downloaded: boolean
-  local_path: string | null   // null when unavailable; set when file is in cache *or* bundled (e.g. de440s, ceres_spk)
+	id: string;
+	filename: string;
+	url: string;
+	size_bytes: number;
+	bodies: string[];
+	year_start: number;
+	year_end: number;
+	is_default: boolean;
+	is_downloaded: boolean;
+	local_path: string | null; // null when unavailable; set when file is in cache *or* bundled (e.g. de440s, ceres_spk)
 }
 ```
 
@@ -274,22 +274,22 @@ Starts a background download. Returns `Ok(())` immediately on network failure (e
 
 ```typescript
 // Start download
-await invoke('download_ephemeris', { id: 'de440' })
+await invoke('download_ephemeris', { id: 'de440' });
 
 // Listen for progress
 const unlisten = await listen<{ id: string; bytes_done: number; bytes_total: number }>(
-  'ephemeris-progress',
-  ({ payload }) => {
-    const pct = Math.round((payload.bytes_done / payload.bytes_total) * 100)
-    console.log(`${payload.id}: ${pct}%`)
-  }
-)
+	'ephemeris-progress',
+	({ payload }) => {
+		const pct = Math.round((payload.bytes_done / payload.bytes_total) * 100);
+		console.log(`${payload.id}: ${pct}%`);
+	}
+);
 
 // Listen for completion
 await listen<{ id: string }>('ephemeris-ready', ({ payload }) => {
-  console.log(`${payload.id} ready`)
-  unlisten()
-})
+	console.log(`${payload.id} ready`);
+	unlisten();
+});
 ```
 
 ### `get_available_bodies`
@@ -297,7 +297,7 @@ await listen<{ id: string }>('ephemeris-ready', ({ payload }) => {
 Returns the union of body IDs queryable given currently available BSP files.
 
 ```typescript
-const bodies = await invoke<string[]>('get_available_bodies')
+const bodies = await invoke<string[]>('get_available_bodies');
 // Always includes the ten planets + Moon when a DE primary is loaded.
 // With bundled Ceres SPK: at least "ceres".
 // With codes_300ast downloaded: also "juno" and extended IDs such as "astraea", "hebe", … (see CODES_300AST_MAJOR_BODIES in Rust).
@@ -307,7 +307,7 @@ const bodies = await invoke<string[]>('get_available_bodies')
 
 ## Python sidecar
 
-`backend-python/module/utils.py` exposes `default_ephemeris_path()` which now prefers `de440s.bsp` when present in `source/`:
+When the optional `backend-python/` source tree is present, `backend-python/module/utils.py` should expose `default_ephemeris_path()` with `de440s.bsp` preferred when present in `source/`:
 
 ```python
 def default_ephemeris_path() -> str:
@@ -326,17 +326,17 @@ The `is_de421` flag in `services.py` (which controls whether outer-planet baryce
 
 ## Remaining gaps
 
-| Body / Feature | Status | Notes |
-|----------------|--------|-------|
-| Ceres | ✅ done (JPL Rust) | Bundled `ceres_1900_2100.bsp`; `get_available_bodies` includes `ceres` |
-| Pallas, Vesta | optional | Download `pallas_spk` / `vesta_spk` or use `codes_300ast` |
-| Juno | optional | Requires `codes_300ast` (no standalone NAIF `juno_1900_2100.bsp` in the archived set Kefer links) |
-| Extended main-belt (Astraea–Massalia) | optional | `codes_300ast` + explicit chart object list or default extended path when that kernel is present |
-| South Node | ✅ done | Mean Node + 180° |
-| True Node | ✅ done | osculating node from geocentric Moon position + velocity (Rust JPL path); Python JPL path uses the same vector method |
-| Part of Fortune | pending | Lot / Pars formula using ASC + Moon − Sun (or night variant); **not** lunar phase — a single derived longitude |
-| Lunar phase (“moon shape”), illumination, age | ✅ done | See [lunar-phase](../lunar-phase/): `moon_details` on `compute_chart` / `compute_chart_from_data` (tropical Sun–Moon elongation); not Part of Fortune |
-| Chiron (2060) | pending | not in any standard DE file; JPL Horizons API planned |
-| Eris, Sedna | out of scope | TNOs not in standard NAIF kernels |
-| Black Moon Lilith | pending | mean lunar apogee formula; no BSP needed |
-| Minor aspects (Sesquisquare 135°, Semisquare 45°, Semisextile 30°) | pending | pure angle constants |
+| Body / Feature                                                     | Status             | Notes                                                                                                                                                 |
+| ------------------------------------------------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ceres                                                              | ✅ done (JPL Rust) | Bundled `ceres_1900_2100.bsp`; `get_available_bodies` includes `ceres`                                                                                |
+| Pallas, Vesta                                                      | optional           | Download `pallas_spk` / `vesta_spk` or use `codes_300ast`                                                                                             |
+| Juno                                                               | optional           | Requires `codes_300ast` (no standalone NAIF `juno_1900_2100.bsp` in the archived set Kefer links)                                                     |
+| Extended main-belt (Astraea–Massalia)                              | optional           | `codes_300ast` + explicit chart object list or default extended path when that kernel is present                                                      |
+| South Node                                                         | ✅ done            | Mean Node + 180°                                                                                                                                      |
+| True Node                                                          | ✅ done            | osculating node from geocentric Moon position + velocity (Rust JPL path); Python JPL path uses the same vector method                                 |
+| Part of Fortune                                                    | pending            | Lot / Pars formula using ASC + Moon − Sun (or night variant); **not** lunar phase — a single derived longitude                                        |
+| Lunar phase (“moon shape”), illumination, age                      | ✅ done            | See [lunar-phase](../lunar-phase/): `moon_details` on `compute_chart` / `compute_chart_from_data` (tropical Sun–Moon elongation); not Part of Fortune |
+| Chiron (2060)                                                      | pending            | not in any standard DE file; JPL Horizons API planned                                                                                                 |
+| Eris, Sedna                                                        | out of scope       | TNOs not in standard NAIF kernels                                                                                                                     |
+| Black Moon Lilith                                                  | pending            | mean lunar apogee formula; no BSP needed                                                                                                              |
+| Minor aspects (Sesquisquare 135°, Semisquare 45°, Semisextile 30°) | pending            | pure angle constants                                                                                                                                  |

@@ -1,5 +1,5 @@
 ---
-title: "Project context"
+title: 'Project context'
 weight: 20
 ---
 
@@ -8,7 +8,7 @@ weight: 20
 - `apps/web-react/`: React + Vite frontend workspace.
 - `apps/web-svelte/`: Svelte + Vite frontend workspace, intended as the alternate richer UI target.
 - `src-tauri/`: Tauri desktop shell and Rust command layer.
-- `backend-python/`: optional Python computation and service code.
+- `backend-python/`: optional Python computation and service code when that sidecar source tree is present.
 - `static/`: Shared public assets used by both frontends.
   - `static/app-shell/`: shared logos and app-shell icon families.
   - `static/glyphs/`: shared astrology glyph sets.
@@ -33,10 +33,10 @@ weight: 20
 
 - `docs/content/llm/` is the primary home for Codex-facing workflow, specs, and continuation rules.
 - `docs/content/docs/` is the primary home for human-readable project documentation and system description.
-- `MIGRATION.md` is the primary root-level note for long-term compute/backend migration direction.
+- `docs/content/llm/development-driver.md` is the active high-level task driver, including backend/runtime direction.
 - When starting implementation, look for specs in `docs/content/llm/` first.
 - Use `docs/content/docs/` to understand the current system and confirm how the pieces fit together.
-- Use `MIGRATION.md` when the task touches staged movement from Swiss-centered implementation toward backend-neutral and JPL-centered architecture.
+- Use the development driver and task-specific `/llm/` specs when the task touches staged movement from Swiss-centered implementation toward backend-neutral and JPL-centered architecture.
 
 ## Implementation principles
 

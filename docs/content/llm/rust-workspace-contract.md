@@ -1,5 +1,5 @@
 ---
-title: "Rust workspace contract"
+title: 'Rust workspace contract'
 weight: 35
 ---
 
@@ -16,8 +16,7 @@ Rust does not own persisted storage of computed positions, aspects, or transit s
 ## Rules
 
 - Keep workspace persistence focused on YAML manifests and chart files.
-- Respect the structures defined by `backend-python/module/models.py`.
-- Use `backend-python/module/workspace.py` as the reference for workspace-loading intent.
+- When the optional Python sidecar source tree is present, keep Rust workspace payloads compatible with `backend-python/module/models.py` and `backend-python/module/workspace.py`.
 - The desktop app must run without the Python sidecar.
 - The app should check whether the Python backend is available at startup and use that availability state as the general runtime decision source.
 - Do not repeatedly probe for Python sidecar existence in every feature flow when startup availability state can be reused.

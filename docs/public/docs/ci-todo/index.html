@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CI todo | Kefer docs</title>
@@ -33,8 +33,9 @@
 <h2 id="translation-sync">Translation sync</h2>
 <p>Current desired CI behavior:</p>
 <ul>
-<li>watch <code>translations.csv</code> and <code>scripts/csv-to-locales.mjs</code></li>
+<li>watch <code>translations.csv</code>, <code>scripts/csv-to-locales.mjs</code>, and <code>scripts/prune-unused-translations.py</code></li>
 <li>run <code>npm ci</code></li>
+<li>run <code>npm run i18n:prune:dry</code></li>
 <li>run <code>npm run i18n:sync</code></li>
 <li>fail if generated locale files would change</li>
 </ul>

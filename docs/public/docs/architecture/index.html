@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Architecture | Kefer docs</title>
@@ -28,28 +28,28 @@
     </header>
     <div class="prose">
       <h2 id="overview">Overview</h2>
+<p>The app has three main layers: frontend shells, the Tauri desktop boundary, and the compute/storage backend behind it.</p>
+<p><strong>Backend responsibilities</strong></p>
 <ul>
-<li><strong>Backend</strong>:
-<ul>
-<li><strong>Workspace management</strong>: workspace-level settings (<code>workspace.yaml</code>) opening, importing (including foreign file imports like SFS).</li>
-<li><strong>Compute engines</strong>: Rust and Python can both participate in computation; Python is optional, not foundational.</li>
-<li><strong>Storage</strong>: App stores default JPL data (BSP files) as well as translation file (CSV exported from google doc) and geo-data (maps, geocoders, &hellip;).</li>
-<li><strong>Ephemeris management</strong>: Manage bundled and downloaded BSP files through the command surface.</li>
-<li><strong>Computed data</strong>: Positions, aspects, and transit-series results are computed on demand and may be persisted if needed (storage type still in discussion).</li>
+<li>workspace management for opening, importing, and updating workspace-level settings such as <code>workspace.yaml</code></li>
+<li>compute execution through Rust and, optionally, Python</li>
+<li>storage for default JPL data, translation CSV input, and geo-data assets</li>
+<li>ephemeris management for bundled and downloaded BSP files</li>
+<li>on-demand calculation of positions, aspects, and transit-series results</li>
 </ul>
-</li>
-<li><strong>Frontends</strong>:
+<p><strong>Frontend responsibilities</strong></p>
 <ul>
-<li><strong><a href="../frontend-react/">React</a></strong> UI (stored in <code>apps/web-react/</code>)</li>
-<li><strong><a href="../frontend-svelte/">Svelte</a></strong> UI (stored in <code>apps/web-svelte/</code>).</li>
-<li>Both call Tauri through <code>@tauri-apps/api/core</code>;</li>
-<li>UI themes and i18n workflow: <a href="../ui-conventions/">ui-conventions</a>.</li>
-<li><strong>Shared assets</strong>: repo-root <code>static/</code> is the source of truth for app-shell logos/icons and astrology glyph sets used by both frontends.</li>
-</ul>
-</li>
+<li><a href="../frontend-react/">React</a> UI in <code>apps/web-react/</code></li>
+<li><a href="../frontend-svelte/">Svelte</a> UI in <code>apps/web-svelte/</code></li>
+<li>Tauri calls through <code>@tauri-apps/api/core</code></li>
+<li>shared theme and i18n workflow described in <a href="../ui-conventions/">ui-conventions</a></li>
+<li>shared asset usage from repo-root <code>static/</code></li>
 </ul>
 <h2 id="current-state">Current state</h2>
 <ul>
+<li>React is the current default desktop shell.</li>
+<li>Rust-backed chart and transit compute is active in the main app flows.</li>
+<li>Python is still supported as an optional compatibility backend rather than a required foundation.</li>
 <li><strong>Workspace persistence</strong>: chart definitions and workspace defaults are stored in YAML under a workspace folder.</li>
 <li><strong>Workspace defaults</strong>: can be updated directly in <code>workspace.yaml</code> through <code>save_workspace_defaults(...)</code>.</li>
 <li><strong>Chart import</strong>: native YAML is supported directly; <code>.sfs</code> is still not wired in the current Rust path.</li>
@@ -90,8 +90,8 @@
 <li><strong>Storage compatibility commands</strong>: still exist, but should not be treated as a real computed-data persistence layer.</li>
 </ul>
 <h2 id="compute-model">Compute model</h2>
+<p>The frontend should only call <code>invoke(...)</code>. Tauri owns backend selection and routes work to Rust or Python as needed.</p>
 <ul>
-<li><strong>Tauri owns routing</strong>: the frontend only calls <code>invoke(...)</code>.</li>
 <li><strong>Rust path</strong>: local chart and transit compute is real and active.</li>
 <li><strong>Python path</strong>: optional sidecar path for compatibility and backend-specific integrations.</li>
 <li><strong>Response provenance</strong>: callers should be able to see which backend actually handled the request.</li>
@@ -103,16 +103,14 @@
 <li><code>Rust</code>: Rust only.</li>
 </ul>
 <h3 id="result-shape">Result shape</h3>
-<ul>
-<li><strong>Stable core fields</strong>:
+<p><strong>Stable core fields</strong></p>
 <ul>
 <li><code>longitude</code></li>
 <li><code>latitude</code> when available</li>
 <li><code>speed</code> when available</li>
 <li><code>retrograde</code> when derivable</li>
 </ul>
-</li>
-<li><strong>Additive fields</strong>:
+<p><strong>Additive fields</strong></p>
 <ul>
 <li><code>declination</code></li>
 <li><code>right_ascension</code></li>
@@ -120,15 +118,12 @@
 <li>topocentric fields</li>
 <li>physical properties</li>
 </ul>
-</li>
-<li><strong>Provenance fields</strong>:
+<p><strong>Provenance fields</strong></p>
 <ul>
 <li><code>backend_used</code></li>
 <li><code>fallback_used</code></li>
 <li><code>ephemeris_source</code></li>
 <li><code>warnings</code></li>
-</ul>
-</li>
 </ul>
 <h2 id="layering">Layering</h2>
 <h3 id="time-and-observer-layer">Time and observer layer</h3>
@@ -181,8 +176,7 @@
 </span></span></code></pre></div><h3 id="transit-computation">Transit computation</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Frontend UI -&gt; Tauri command -&gt; compute over time range -&gt; return in-memory results for rendering and aspect display
 </span></span></code></pre></div><h2 id="tauri-surface">Tauri surface</h2>
-<ul>
-<li><strong>Mainly used from UI today</strong>:
+<p><strong>Mainly used from the UI today</strong></p>
 <ul>
 <li><code>list_ephemeris_catalog</code></li>
 <li><code>download_ephemeris</code></li>
@@ -206,8 +200,7 @@
 <li><code>compute_aspects</code></li>
 <li><code>query_radix_relative</code></li>
 </ul>
-</li>
-<li><strong>Registered but not yet central in the UI</strong>:
+<p><strong>Registered but not yet central in the UI</strong></p>
 <ul>
 <li><code>store_positions</code></li>
 <li><code>store_relation</code></li>
@@ -215,8 +208,6 @@
 <li><code>create_workspace</code></li>
 <li><code>delete_workspace</code></li>
 <li><code>delete_chart</code></li>
-</ul>
-</li>
 </ul>
 <p>For exact current command behavior, use <a href="../tauri-command-contracts/">tauri-command-contracts</a>.</p>
 <h2 id="non-final-areas">Non-final areas</h2>

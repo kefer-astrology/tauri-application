@@ -17,7 +17,6 @@ For current behavior and current architecture, prefer:
 3. [frontend-svelte](../frontend-svelte/)
 4. [tauri-command-contracts](../tauri-command-contracts/)
 5. [spice-backend](../spice-backend/)
-6. [MIGRATION.md](../../../MIGRATION.md)
 
 ## Still useful
 
