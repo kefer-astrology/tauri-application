@@ -4,8 +4,8 @@ import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
+import { Table, TableBody, TableCell, TableRow } from './ui/table';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { Theme } from './astrology-sidebar';
@@ -69,18 +69,18 @@ const BODY_META: Record<
 	pluto: { labelKey: 'planet_pluto', fallbackLabel: 'Pluto', icon: '♇' },
 	asc: { labelKey: 'point_asc', fallbackLabel: 'Asc', icon: 'Asc' },
 	desc: { labelKey: 'point_dsc', fallbackLabel: 'Dsc', icon: 'Dsc' },
-	mc: { fallbackLabel: 'MC', icon: 'MC' },
-	ic: { fallbackLabel: 'IC', icon: 'IC' },
-	north_node: { fallbackLabel: 'North Node', icon: '☊' },
-	south_node: { fallbackLabel: 'South Node', icon: '☋' },
-	true_north_node: { fallbackLabel: 'True North Node', icon: '☊' },
-	true_south_node: { fallbackLabel: 'True South Node', icon: '☋' },
-	lilith: { fallbackLabel: 'Lilith', icon: '⚸' },
-	chiron: { fallbackLabel: 'Chiron', icon: '⚷' },
-	ceres: { fallbackLabel: 'Ceres', icon: 'Ce' },
-	pallas: { fallbackLabel: 'Pallas', icon: 'Pa' },
-	juno: { fallbackLabel: 'Juno', icon: 'Ju' },
-	vesta: { fallbackLabel: 'Vesta', icon: 'Ve' }
+	mc: { labelKey: 'point_mc', fallbackLabel: 'MC', icon: 'MC' },
+	ic: { labelKey: 'point_ic', fallbackLabel: 'IC', icon: 'IC' },
+	north_node: { labelKey: 'point_north_node', fallbackLabel: 'North Node', icon: '☊' },
+	south_node: { labelKey: 'point_south_node', fallbackLabel: 'South Node', icon: '☋' },
+	true_north_node: { labelKey: 'point_true_north_node', fallbackLabel: 'True North Node', icon: '☊' },
+	true_south_node: { labelKey: 'point_true_south_node', fallbackLabel: 'True South Node', icon: '☋' },
+	lilith: { labelKey: 'point_lilith', fallbackLabel: 'Lilith', icon: '⚸' },
+	chiron: { labelKey: 'point_chiron', fallbackLabel: 'Chiron', icon: '⚷' },
+	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
+	pallas: { labelKey: 'point_pallas', fallbackLabel: 'Pallas', icon: 'Pa' },
+	juno: { labelKey: 'point_juno', fallbackLabel: 'Juno', icon: 'Ju' },
+	vesta: { labelKey: 'point_vesta', fallbackLabel: 'Vesta', icon: 'Ve' }
 };
 
 const ASPECT_GLYPHS: Record<string, string> = {
@@ -238,10 +238,10 @@ function AspectCellButton({
 			onClick={onSelect}
 			variant="ghost"
 			className={cn(
-				'flex aspect-square min-h-16 w-full min-w-16 flex-col items-center justify-center rounded-xl border px-1.5 py-1',
+				'flex aspect-square min-h-14 w-full min-w-14 flex-col items-center justify-center rounded-lg px-1.5 py-1 transition-colors',
 				isSelected
-					? 'border-[color:var(--theme-accent)] bg-[color:var(--theme-soft-bg)] shadow-sm'
-					: 'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] hover:bg-[color:var(--theme-soft-bg)]'
+					? 'bg-[color:var(--theme-soft-bg)] ring-1 ring-[color:var(--theme-accent)]'
+					: 'bg-[color:var(--theme-panel-bg)]/72 hover:bg-[color:var(--theme-soft-bg)]'
 			)}
 			aria-pressed={isSelected}
 		>
@@ -278,12 +278,20 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 
 	const positions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
 	const motion = selectedChart?.computed?.motion ?? {};
-	const bodyOrder = useMemo(
+	const configuredBodyOrder = useMemo(
 		() =>
 			workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
 				: DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS,
 		[workspaceDefaults.defaultBodies]
+	);
+	const bodyOrder = useMemo(
+		() =>
+			configuredBodyOrder.filter((id) => {
+				const value = positions[id];
+				return normalizeLongitude(value) !== null;
+			}),
+		[configuredBodyOrder, positions]
 	);
 	const enabledBodySet = useMemo(() => new Set(bodyOrder), [bodyOrder]);
 	const enabledAspectSet = useMemo(
@@ -339,25 +347,35 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 	}, [aspectEntries, selectedAspectId]);
 
 	const panelSurface =
-		theme === 'midnight' || theme === 'twilight' ? 'bg-white/5' : 'bg-[color:var(--theme-panel-bg)]';
+		theme === 'midnight' || theme === 'twilight'
+			? 'bg-[color:var(--token-surface-subtle)]/35'
+			: 'bg-[color:var(--theme-panel-bg)]/82';
 
 	const renderMatrix = () => (
-		<Card variant="themed" theme={theme} className="flex h-full min-h-0 gap-0 overflow-hidden">
-			<CardContent className="flex min-h-0 flex-1 flex-col gap-4 p-4 md:p-6">
+		<Card
+			variant="themed"
+			theme={theme}
+			className="flex h-full min-h-0 gap-0 overflow-hidden border-0 shadow-none ring-0"
+		>
+			<CardContent className="flex min-h-0 flex-1 flex-col gap-3 p-4 md:p-5">
 				<div className="shrink-0 space-y-1">
 					<h1 className={cn('text-2xl font-semibold', ft.title)}>{t('aspects_aspects')}</h1>
 					<p className={cn('text-sm', ft.muted)}>{t('aspectarium_subtitle')}</p>
 				</div>
 
-				<div className="min-h-0 flex-1 overflow-auto rounded-2xl bg-[color:var(--theme-panel-bg)]/80 p-2 md:p-3">
-					<table className="border-separate border-spacing-2">
-						<tbody>
-							{bodyOrder.map((rowId, rowIndex) => (
-								<tr key={rowId}>
-									<td className="sticky left-0 z-10 pr-2 align-middle">
+				<div
+					dir="rtl"
+					className="min-h-0 flex-1 overflow-auto rounded-2xl bg-[color:var(--theme-panel-bg)]/74 pr-2 pl-0 pt-2 pb-2 md:pr-2.5 md:pl-0 md:pt-2.5 md:pb-2.5"
+				>
+					<div dir="ltr" className="w-max mr-auto">
+						<Table className="w-auto border-separate border-spacing-1.5 md:border-spacing-1">
+							<TableBody>
+								{bodyOrder.map((rowId, rowIndex) => (
+									<TableRow key={rowId} className="border-0 hover:bg-transparent">
+									<TableCell className="sticky left-0 z-10 p-0 pr-1.5 align-middle">
 										<div
 											className={cn(
-												'flex min-w-40 items-center gap-3 rounded-xl px-3 py-2 backdrop-blur-sm',
+												'flex min-w-36 items-center gap-3 rounded-lg px-3 py-2 backdrop-blur-sm',
 												panelSurface
 											)}
 										>
@@ -377,19 +395,19 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 												</p>
 											</div>
 										</div>
-									</td>
+									</TableCell>
 
 									{bodyOrder.map((colId, colIndex) => {
 										if (colIndex > rowIndex) {
-											return <td key={`${rowId}:${colId}`} className="h-16 w-16 min-w-16" />;
+											return <TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0" />;
 										}
 
 										if (colIndex === rowIndex) {
 											return (
-												<td key={`${rowId}:${colId}`} className="h-16 w-16 min-w-16">
+												<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
 													<div
 														className={cn(
-															'flex aspect-square items-center justify-center rounded-xl text-[color:var(--theme-content-muted)]',
+															'flex aspect-square items-center justify-center rounded-lg text-[color:var(--theme-content-muted)]',
 															panelSurface
 														)}
 													>
@@ -400,7 +418,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 															className="opacity-80"
 														/>
 													</div>
-												</td>
+												</TableCell>
 											);
 										}
 
@@ -408,16 +426,16 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 										const aspect = aspectMap.get(pairKey);
 										if (!aspect) {
 											return (
-												<td key={`${rowId}:${colId}`} className="h-16 w-16 min-w-16">
+												<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
 													<div
 														className={cn(
-															'flex aspect-square items-center justify-center rounded-xl text-xs text-[color:var(--theme-content-muted)] opacity-40',
+															'flex aspect-square items-center justify-center rounded-lg text-[11px] text-[color:var(--theme-content-muted)] opacity-34',
 															panelSurface
 														)}
 													>
 														•
 													</div>
-												</td>
+												</TableCell>
 											);
 										}
 
@@ -430,20 +448,21 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 											'var(--theme-accent)';
 
 										return (
-											<td key={`${rowId}:${colId}`} className="h-16 w-16 min-w-16">
+											<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
 												<AspectCellButton
 													aspect={aspect}
 													isSelected={selectedAspectId === aspectId}
 													onSelect={() => setSelectedAspectId(aspectId)}
 													color={aspectColor}
 												/>
-											</td>
+											</TableCell>
 										);
 									})}
-								</tr>
-							))}
-						</tbody>
-					</table>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</div>
 				</div>
 
 				<div className={cn('shrink-0 text-xs', ft.muted)}>
@@ -457,8 +476,8 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 
 	const renderDetailContent = () =>
 		selectedAspect ? (
-			<ScrollArea className="min-h-0 h-full pr-3">
-				<div className="space-y-5 rounded-2xl bg-[color:var(--theme-soft-bg)]/45 p-4">
+			<div className="h-full min-h-0 overflow-y-auto rounded-2xl bg-[color:var(--theme-soft-bg)]/42 pr-2">
+				<div className="space-y-5 p-4">
 					<div>
 						<div className="flex items-center gap-3">
 							<div className="flex items-center gap-2">
@@ -560,12 +579,12 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 						);
 					})}
 				</div>
-			</ScrollArea>
+			</div>
 		) : null;
 
 	return (
 		<>
-			<div className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">{renderMatrix()}</div>
+			<div className="flex h-full min-h-0 flex-col p-4 md:p-6">{renderMatrix()}</div>
 
 			<DetailSidePanel
 				theme={theme}

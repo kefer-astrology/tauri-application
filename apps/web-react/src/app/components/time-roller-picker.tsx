@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ScrollArea } from './ui/scroll-area';
@@ -8,6 +9,22 @@ import { cn } from './ui/utils';
 
 function pad(value: number): string {
 	return value.toString().padStart(2, '0');
+}
+
+function formatTimeValue(value: Date): string {
+	return `${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(value.getSeconds())}`;
+}
+
+function parseTimeValue(raw: string): { hour: number; minute: number; second: number } | null {
+	const match = raw.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+	if (!match) return null;
+	const hour = Number(match[1]);
+	const minute = Number(match[2]);
+	const second = Number(match[3] ?? '0');
+	if (hour < 0 || hour > 23) return null;
+	if (minute < 0 || minute > 59) return null;
+	if (second < 0 || second > 59) return null;
+	return { hour, minute, second };
 }
 
 function buildRange(count: number): number[] {
@@ -24,7 +41,6 @@ type TimeRollerPickerProps = {
 	value: Date;
 	onValueChange: (value: Date) => void;
 	labelClassName?: string;
-	triggerClassName?: string;
 	iconClassName?: string;
 	panelClassName?: string;
 };
@@ -35,11 +51,11 @@ export function TimeRollerPicker({
 	value,
 	onValueChange,
 	labelClassName,
-	triggerClassName,
 	iconClassName,
 	panelClassName
 }: TimeRollerPickerProps) {
 	const [open, setOpen] = useState(false);
+	const [draftValue, setDraftValue] = useState(() => formatTimeValue(value));
 
 	const parts = useMemo(
 		() => ({
@@ -50,6 +66,10 @@ export function TimeRollerPicker({
 		[value]
 	);
 
+	useEffect(() => {
+		setDraftValue(formatTimeValue(value));
+	}, [value]);
+
 	const updatePart = (part: 'hour' | 'minute' | 'second', nextValue: number) => {
 		const next = new Date(value);
 		if (part === 'hour') next.setHours(nextValue);
@@ -58,26 +78,58 @@ export function TimeRollerPicker({
 		onValueChange(next);
 	};
 
+	const commitDraftValue = () => {
+		const parsed = parseTimeValue(draftValue);
+		if (!parsed) {
+			setDraftValue(formatTimeValue(value));
+			return;
+		}
+		const next = new Date(value);
+		next.setHours(parsed.hour, parsed.minute, parsed.second, 0);
+		onValueChange(next);
+	};
+
 	return (
-			<div className="flex flex-col gap-2">
+		<div className="flex flex-col gap-2">
 			<Label htmlFor={id} className={cn('mb-1.5 block', labelClassName)}>
 				{label}
 			</Label>
 			<Popover open={open} onOpenChange={setOpen}>
-				<PopoverTrigger asChild>
-					<Button
-						type="button"
+				<div
+					className={cn(
+						'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
+						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
+						'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
+					)}
+				>
+					<Input
 						id={id}
-						variant="outline"
-						className={cn(
-							'h-10 w-full justify-between font-mono tabular-nums shadow-inner',
-							triggerClassName
-						)}
-					>
-						<span>{`${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}`}</span>
-						<Clock className={cn('h-4 w-4 shrink-0', iconClassName)} />
-					</Button>
-				</PopoverTrigger>
+						type="text"
+						inputMode="numeric"
+						value={draftValue}
+						onChange={(event) => setDraftValue(event.target.value)}
+						onBlur={commitDraftValue}
+						onKeyDown={(event) => {
+							if (event.key === 'Enter') {
+								commitDraftValue();
+								setOpen(false);
+							}
+						}}
+						className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 tabular-nums shadow-none focus-visible:ring-0"
+						placeholder="HH:MM:SS"
+						aria-label={label}
+					/>
+					<PopoverTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+							aria-label={label}
+						>
+							<Clock className={cn('h-4 w-4 shrink-0', iconClassName)} />
+						</Button>
+					</PopoverTrigger>
+				</div>
 				<PopoverContent align="start" className={cn('w-[280px] p-3', panelClassName)}>
 					<div className="grid grid-cols-3 gap-3">
 						<TimeColumn

@@ -65,6 +65,15 @@ export interface ChartDetails {
 	tags: string[];
 }
 
+export interface MoonDetails {
+	elongation_deg: number;
+	illuminated_fraction: number;
+	age_days: number;
+	waxing: boolean;
+	phase_id: string;
+	phase_label: string;
+}
+
 export interface ComputeChartResult {
 	positions: Record<string, unknown>;
 	motion?: Record<
@@ -82,6 +91,7 @@ export interface ComputeChartResult {
 		ic: number;
 	};
 	house_cusps?: number[];
+	moon_details?: MoonDetails | null;
 	chart_id: string;
 }
 

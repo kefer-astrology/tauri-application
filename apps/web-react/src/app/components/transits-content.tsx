@@ -117,7 +117,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-3">
-									<label
+									<Label
 										className={cn(
 											'flex items-start gap-3',
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
@@ -139,8 +139,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										>
 											{t('transits_general_crossings')}
 										</span>
-									</label>
-									<label
+									</Label>
+									<Label
 										className={cn(
 											'flex items-start gap-3',
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
@@ -162,10 +162,10 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										>
 											{t('transits_general_crossings_2')}
 										</span>
-									</label>
+									</Label>
 								</div>
 								<div className="space-y-3">
-									<label
+									<Label
 										className={cn(
 											'flex items-start gap-3',
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
@@ -187,8 +187,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										>
 											{t('transits_general_transit_2')}
 										</span>
-									</label>
-									<label
+									</Label>
+									<Label
 										className={cn(
 											'flex items-start gap-3',
 											areCheckboxesDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
@@ -213,7 +213,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										>
 											{t('transits_general_precession')}
 										</span>
-									</label>
+									</Label>
 								</div>
 							</div>
 
@@ -365,13 +365,13 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								<div className="space-y-4">
 									{MAJOR_ASPECT_ROWS.map((aspect) => (
 										<div key={aspect.labelKey} className="flex items-center gap-4">
-											<label className="flex flex-1 cursor-pointer items-center gap-3">
+											<Label className="flex flex-1 cursor-pointer items-center gap-3">
 												<Checkbox className={ft.checkboxAccent} defaultChecked />
 												<span className={cn('text-sm font-medium', ft.bodyText)}>
 													{t(aspect.labelKey)} {aspect.glyph}
 												</span>
 												<span className={cn('text-xs', ft.muted)}>{aspect.angle}</span>
-											</label>
+											</Label>
 											<div className="flex items-center gap-2">
 												<span className={cn('text-xs', ft.label)}>{t('label_orb')}:</span>
 												<Input
@@ -394,13 +394,13 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								<div className="space-y-4">
 									{MINOR_ASPECT_ROWS.map((aspect) => (
 										<div key={aspect.labelKey} className="flex items-center gap-4">
-											<label className="flex flex-1 cursor-pointer items-center gap-3">
+											<Label className="flex flex-1 cursor-pointer items-center gap-3">
 												<Checkbox className={ft.checkboxAccent} />
 												<span className={cn('text-sm font-medium', ft.bodyText)}>
 													{t(aspect.labelKey)}
 												</span>
 												<span className={cn('text-xs', ft.muted)}>{aspect.angle}</span>
-											</label>
+											</Label>
 											<div className="flex items-center gap-2">
 												<span className={cn('text-xs', ft.label)}>{t('label_orb')}:</span>
 												<Input

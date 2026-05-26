@@ -399,6 +399,7 @@ export default function App() {
 			});
 			setWorkspacePath(path);
 			replaceChartsFromWorkspace(loaded);
+			setActiveView('horoskop');
 			toast.success(t('toast_workspace_loaded'), { description: path });
 		} catch (e) {
 			console.error(e);
@@ -510,7 +511,6 @@ export default function App() {
 								theme={theme}
 								workspacePath={workspacePath}
 								onOpenWorkspace={runOpenWorkspaceFolder}
-								onSaveWorkspace={runSaveWorkspace}
 								onActivateChart={(id) => {
 									handleSelectChartId(id);
 									setActiveView('horoskop');

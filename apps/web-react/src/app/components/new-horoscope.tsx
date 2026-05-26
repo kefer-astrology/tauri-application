@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
+import { format, isValid, parse } from 'date-fns';
 import { cs, enUS, es, fr } from 'date-fns/locale';
 import { Calendar as CalendarIcon, LocateFixed } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -96,6 +96,23 @@ export function NewHoroscope({
 		if (base === 'es') return es;
 		return enUS;
 	}, [i18n.language]);
+
+	const [draftDateValue, setDraftDateValue] = useState(() =>
+		format(selectedDateTime, 'P', { locale: dateFnsLocale })
+	);
+
+	useEffect(() => {
+		setDraftDateValue(format(selectedDateTime, 'P', { locale: dateFnsLocale }));
+	}, [selectedDateTime, dateFnsLocale]);
+
+	const commitDraftDateValue = () => {
+		const parsed = parse(draftDateValue.trim(), 'P', new Date(), { locale: dateFnsLocale });
+		if (!isValid(parsed)) {
+			setDraftDateValue(format(selectedDateTime, 'P', { locale: dateFnsLocale }));
+			return;
+		}
+		setSelectedDateTime((prev) => mergeDatePart(prev, parsed));
+	};
 
 	const locationOptions = useMemo(
 		() =>
@@ -233,20 +250,39 @@ export function NewHoroscope({
 									{t('new_date')}
 								</Label>
 								<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-									<PopoverTrigger asChild>
-										<Button
-											type="button"
+									<div
+										className={cn(
+											'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
+											'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
+											'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
+										)}
+									>
+										<Input
 											id="new-chart-date"
-											variant="outline"
-											className={cn(
-												'h-10 w-full justify-start text-left font-normal shadow-inner',
-												ft.selectTrigger
-											)}
-										>
-											<CalendarIcon className={cn('mr-2 h-4 w-4 shrink-0', ft.iconColor)} />
-											{format(selectedDateTime, 'P', { locale: dateFnsLocale })}
-										</Button>
-									</PopoverTrigger>
+											type="text"
+											inputMode="numeric"
+											value={draftDateValue}
+											onChange={(event) => setDraftDateValue(event.target.value)}
+											onBlur={commitDraftDateValue}
+											onKeyDown={(event) => {
+												if (event.key === 'Enter') {
+													commitDraftDateValue();
+													setDatePopoverOpen(false);
+												}
+											}}
+											className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
+											placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
+										/>
+										<PopoverTrigger asChild>
+											<Button
+												type="button"
+												variant="ghost"
+												className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+											>
+												<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
+											</Button>
+										</PopoverTrigger>
+									</div>
 									<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="start">
 										<Calendar
 											mode="single"
@@ -270,7 +306,6 @@ export function NewHoroscope({
 										value={selectedDateTime}
 										onValueChange={setSelectedDateTime}
 										labelClassName={ft.label}
-										triggerClassName={cn(ft.input, ft.selectTrigger)}
 										iconClassName={ft.iconColor}
 										panelClassName={ft.selectContent}
 									/>

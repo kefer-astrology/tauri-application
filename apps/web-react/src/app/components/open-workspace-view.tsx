@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Star } from 'lucide-react';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
@@ -22,7 +22,6 @@ export type OpenWorkspaceViewProps = {
 	theme: Theme;
 	workspacePath: string | null;
 	onOpenWorkspace: () => void | Promise<void>;
-	onSaveWorkspace: () => void | Promise<void>;
 	/** Select chart and return to horoscope view. */
 	onActivateChart: (chartId: string) => void;
 };
@@ -90,7 +89,6 @@ export function OpenWorkspaceView({
 	theme,
 	workspacePath,
 	onOpenWorkspace,
-	onSaveWorkspace,
 	onActivateChart
 }: OpenWorkspaceViewProps) {
 	const { t } = useTranslation();
@@ -101,6 +99,7 @@ export function OpenWorkspaceView({
 	const [selectedRows, setSelectedRows] = useState<string[]>([]);
 	const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+	const [focusedChartId, setFocusedChartId] = useState<string | null>(selectedChartId);
 
 	const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 	const planetLabels = useMemo(() => planetTranslationKeys.map((key) => t(key)), [t]);
@@ -144,6 +143,23 @@ export function OpenWorkspaceView({
 		});
 	}, [charts, favorites, openMode, searchQuery, selectedTypes, t]);
 
+	useEffect(() => {
+		if (selectedChartId) {
+			setFocusedChartId(selectedChartId);
+		}
+	}, [selectedChartId]);
+
+	useEffect(() => {
+		if (filtered.length === 0) {
+			setFocusedChartId(null);
+			return;
+		}
+		if (focusedChartId && filtered.some((chart) => chart.id === focusedChartId)) {
+			return;
+		}
+		setFocusedChartId(filtered[0]?.id ?? null);
+	}, [filtered, focusedChartId]);
+
 	const toggleRowSelection = (id: string) => {
 		setSelectedRows((prev) => (prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]));
 	};
@@ -160,6 +176,11 @@ export function OpenWorkspaceView({
 		setSearchQuery('');
 		setSelectedRows([]);
 		setSelectedTypes([]);
+	};
+
+	const openFocusedChart = () => {
+		if (!focusedChartId) return;
+		onActivateChart(focusedChartId);
 	};
 
 	return (
@@ -191,9 +212,10 @@ export function OpenWorkspaceView({
 										variant="outline"
 										size="sm"
 										className={cn(ft.footerCancel, 'h-8 px-3 py-1 text-xs')}
-										onClick={() => void onSaveWorkspace()}
+										onClick={openFocusedChart}
+										disabled={!focusedChartId}
 									>
-										{t('save_workspace')}
+										{t('button_open_chart')}
 									</Button>
 								</div>
 								<p className={cn('mt-2 truncate text-xs', ft.muted)}>
@@ -266,9 +288,9 @@ export function OpenWorkspaceView({
 															checked={selectedTypes.includes(type)}
 															onCheckedChange={() => toggleType(type)}
 														/>
-														<label htmlFor={`type-${type}`} className={cn('cursor-pointer text-sm', ft.bodyText)}>
+														<Label htmlFor={`type-${type}`} className={cn('cursor-pointer text-sm', ft.bodyText)}>
 															{type}
-														</label>
+														</Label>
 													</div>
 												))}
 											</div>
@@ -305,11 +327,11 @@ export function OpenWorkspaceView({
 										<AccordionContent className="px-4 sm:px-6">
 											<div className="space-y-3">
 												<div className="space-y-2">
-													<label className={cn('block text-sm', ft.bodyText)}>{t('open_filter_date_from')}</label>
+													<Label className={cn('block text-sm', ft.bodyText)}>{t('open_filter_date_from')}</Label>
 													<Input type="date" className={ft.inputCompact} />
 												</div>
 												<div className="space-y-2">
-													<label className={cn('block text-sm', ft.bodyText)}>{t('open_filter_date_to')}</label>
+													<Label className={cn('block text-sm', ft.bodyText)}>{t('open_filter_date_to')}</Label>
 													<Input type="date" className={ft.inputCompact} />
 												</div>
 											</div>
@@ -328,9 +350,9 @@ export function OpenWorkspaceView({
 												/>
 												<div className="flex items-center gap-2">
 													<Checkbox id="location-local-only" />
-													<label htmlFor="location-local-only" className={cn('cursor-pointer text-sm', ft.bodyText)}>
+													<Label htmlFor="location-local-only" className={cn('cursor-pointer text-sm', ft.bodyText)}>
 														{t('open_filter_location_local_only')}
-													</label>
+													</Label>
 												</div>
 											</div>
 										</AccordionContent>
@@ -344,15 +366,15 @@ export function OpenWorkspaceView({
 											<div className="space-y-3">
 												<div className="flex items-center gap-2">
 													<Checkbox id="metadata-notes" />
-													<label htmlFor="metadata-notes" className={cn('cursor-pointer text-sm', ft.bodyText)}>
+													<Label htmlFor="metadata-notes" className={cn('cursor-pointer text-sm', ft.bodyText)}>
 														{t('open_filter_with_notes')}
-													</label>
+													</Label>
 												</div>
 												<div className="flex items-center gap-2">
 													<Checkbox id="metadata-files" />
-													<label htmlFor="metadata-files" className={cn('cursor-pointer text-sm', ft.bodyText)}>
+													<Label htmlFor="metadata-files" className={cn('cursor-pointer text-sm', ft.bodyText)}>
 														{t('open_filter_with_files')}
-													</label>
+													</Label>
 												</div>
 											</div>
 										</AccordionContent>
@@ -445,9 +467,9 @@ export function OpenWorkspaceView({
 												{[t('aspect_conjunction'), t('aspect_opposition'), t('aspect_trine')].map((aspect) => (
 													<div key={aspect} className="flex items-center gap-2">
 														<Checkbox id={`aspect-${aspect}`} />
-														<label htmlFor={`aspect-${aspect}`} className={cn('cursor-pointer text-sm', ft.bodyText)}>
+														<Label htmlFor={`aspect-${aspect}`} className={cn('cursor-pointer text-sm', ft.bodyText)}>
 															{aspect}
-														</label>
+														</Label>
 													</div>
 												))}
 											</div>
@@ -463,9 +485,9 @@ export function OpenWorkspaceView({
 												{Array.from({ length: 12 }, (_, i) => i + 1).map((house) => (
 													<div key={house} className="flex items-center gap-2">
 														<Checkbox id={`house-${house}`} />
-														<label htmlFor={`house-${house}`} className={cn('cursor-pointer text-sm', ft.bodyText)}>
+														<Label htmlFor={`house-${house}`} className={cn('cursor-pointer text-sm', ft.bodyText)}>
 															{house}.
-														</label>
+														</Label>
 													</div>
 												))}
 											</div>
@@ -489,7 +511,7 @@ export function OpenWorkspaceView({
 
 						<div className="flex min-w-0 flex-1 flex-col">
 							<div className={cn('border-b px-4 sm:px-6', ft.footerBorder)}>
-								<div className="grid min-h-16 grid-cols-[40px_40px_minmax(12rem,1.5fr)_minmax(8rem,1fr)_minmax(10rem,1fr)_minmax(7rem,.8fr)_minmax(6rem,.7fr)_minmax(10rem,1.2fr)] items-center gap-2 text-sm">
+								<div className="grid min-h-16 grid-cols-[40px_40px_minmax(12rem,1.5fr)_minmax(8rem,1fr)_minmax(10rem,1fr)_minmax(7rem,.8fr)_minmax(6rem,.7fr)_minmax(10rem,1.2fr)_auto] items-center gap-2 text-sm">
 									<div />
 									<div />
 									<div className={cn('font-medium', ft.label)}>{t('table_name')}</div>
@@ -498,6 +520,7 @@ export function OpenWorkspaceView({
 									<div className={cn('font-medium', ft.label)}>{t('new_date')}</div>
 									<div className={cn('font-medium', ft.label)}>{t('new_time')}</div>
 									<div className={cn('font-medium', ft.label)}>{t('table_place')}</div>
+									<div />
 								</div>
 							</div>
 
@@ -520,8 +543,8 @@ export function OpenWorkspaceView({
 											<div
 												key={chart.id}
 												className={cn(
-													'grid cursor-pointer grid-cols-[40px_40px_minmax(12rem,1.5fr)_minmax(8rem,1fr)_minmax(10rem,1fr)_minmax(7rem,.8fr)_minmax(6rem,.7fr)_minmax(10rem,1.2fr)] items-center gap-2 border-b px-4 py-3 text-sm transition-colors sm:px-6',
-													selectedChartId === chart.id
+													'grid cursor-pointer grid-cols-[40px_40px_minmax(12rem,1.5fr)_minmax(8rem,1fr)_minmax(10rem,1fr)_minmax(7rem,.8fr)_minmax(6rem,.7fr)_minmax(10rem,1.2fr)_auto] items-center gap-2 border-b px-4 py-3 text-sm transition-colors sm:px-6',
+													focusedChartId === chart.id
 														? theme === 'sunrise'
 															? 'bg-[color:var(--theme-selected-bg)]'
 															: theme === 'midnight' || theme === 'twilight'
@@ -529,7 +552,8 @@ export function OpenWorkspaceView({
 																: 'bg-[color:var(--theme-selected-bg)]'
 														: 'hover:bg-[color:var(--token-hover-strong)]'
 												)}
-												onClick={() => onActivateChart(chart.id)}
+												onClick={() => setFocusedChartId(chart.id)}
+												onDoubleClick={() => onActivateChart(chart.id)}
 											>
 												<div
 													className="flex items-center"
@@ -582,6 +606,20 @@ export function OpenWorkspaceView({
 												<div className={cn('truncate', ft.muted)}>{dateTime.date}</div>
 												<div className={cn('truncate', ft.muted)}>{dateTime.time}</div>
 												<div className={cn('min-w-0 truncate', ft.muted)}>{chart.location}</div>
+												<div
+													className="flex justify-end"
+													onClick={(event) => event.stopPropagation()}
+												>
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														className={cn('h-8 px-3 text-xs', ft.footerCancel)}
+														onClick={() => onActivateChart(chart.id)}
+													>
+														{t('button_open_chart')}
+													</Button>
+												</div>
 											</div>
 										);
 									})

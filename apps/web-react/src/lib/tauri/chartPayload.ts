@@ -1,4 +1,4 @@
-import type { ChartDetails } from './types';
+import type { ChartDetails, MoonDetails } from './types';
 import { DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import type { AspectLineTierStyleDto } from './types';
@@ -36,6 +36,7 @@ export interface AppChart {
 			ic: number;
 		};
 		houseCusps?: number[];
+		moonDetails?: MoonDetails | null;
 	};
 }
 
@@ -56,6 +57,7 @@ export interface ComputedChartPayload {
 		ic: number;
 	};
 	house_cusps?: number[];
+	moon_details?: MoonDetails | null;
 }
 
 export function normalizeComputedChartPayload(
@@ -73,12 +75,15 @@ export function normalizeComputedChartPayload(
 	houseCusps.forEach((cusp, index) => {
 		positions[`house_${index + 1}`] = cusp;
 	});
+	const moonDetails =
+		'moon_details' in payload ? (payload.moon_details as MoonDetails | null | undefined) : undefined;
 	return {
 		positions,
 		motion: payload.motion ?? {},
 		aspects: payload.aspects ?? [],
 		axes,
-		houseCusps
+		houseCusps,
+		...(moonDetails !== undefined ? { moonDetails } : {})
 	};
 }
 
@@ -157,7 +162,7 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	locationName: 'Prague',
 	locationLatitude: 50.0875,
 	locationLongitude: 14.4214,
-	engine: 'swisseph',
+	engine: 'jpl',
 	defaultBodies: [...DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS],
 	defaultAspects: ASPECT_ROWS.map((aspect) => aspect.id),
 	defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
@@ -286,7 +291,7 @@ export function createBootstrapChart(defaults: WorkspaceDefaultsState): AppChart
 		timezone: defaults.timezone,
 		houseSystem: defaults.houseSystem,
 		zodiacType: defaults.zodiacType,
-		engine: defaults.engine ?? 'swisseph',
+		engine: defaults.engine ?? 'jpl',
 		tags: ['auto']
 	};
 }

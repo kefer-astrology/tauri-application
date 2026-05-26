@@ -9,6 +9,7 @@ import type { Theme } from './astrology-sidebar';
 import { Card, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
+import { ColorInput } from './ui/color-input';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
@@ -38,7 +39,8 @@ import {
 import {
 	DEFAULT_OBSERVABLE_OBJECT_IDS,
 	OBSERVABLE_OBJECTS,
-	OBSERVABLE_OBJECT_CATEGORY_LABELS,
+	getObservableCategoryLabel,
+	getObservableObjectLabel,
 	type ObservableObjectCategory
 } from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
@@ -201,10 +203,10 @@ function SettingsView({
 		];
 		return categoryOrder.map((category) => ({
 			id: category,
-			label: OBSERVABLE_OBJECT_CATEGORY_LABELS[category],
+			label: getObservableCategoryLabel(category, t),
 			items: OBSERVABLE_OBJECTS.filter((item) => item.category === category)
 		}));
-	}, []);
+	}, [t]);
 
 	const onGlyphSetChange = useCallback(
 		(value: string) => {
@@ -539,7 +541,7 @@ function SettingsView({
 												<h3 className={cn('mb-3 text-sm font-semibold', ft.label)}>{category.label}</h3>
 												<div className="space-y-2">
 													{category.items.map((item) => (
-														<label key={item.id} className="flex items-center gap-3 text-sm">
+														<Label key={item.id} className="flex items-center gap-3 text-sm">
 															<Checkbox
 																checked={selectedBodies.includes(item.id)}
 																onCheckedChange={() => void toggleObservableObject(item.id)}
@@ -550,10 +552,10 @@ function SettingsView({
 																fallback={item.icon}
 																size={18}
 																className="text-foreground"
-																title={item.label}
+																title={getObservableObjectLabel(item, t)}
 															/>
-															<span>{item.label}</span>
-														</label>
+															<span>{getObservableObjectLabel(item, t)}</span>
+														</Label>
 													))}
 												</div>
 											</div>
@@ -579,7 +581,7 @@ function SettingsView({
 														key={aspect.id}
 														className="grid items-center gap-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_170px]"
 													>
-														<label className="flex cursor-pointer items-center gap-3">
+														<Label className="flex cursor-pointer items-center gap-3">
 															<Checkbox
 																checked={row.enabled}
 																onCheckedChange={(checked) => {
@@ -596,11 +598,9 @@ function SettingsView({
 																}}
 															/>
 															<span className={cn('text-sm', ft.title)}>{t(aspect.labelKey)}</span>
-														</label>
+														</Label>
 														<div className="flex items-center gap-2">
-															<input
-																type="color"
-																className="h-9 w-10 shrink-0 cursor-pointer rounded-md border border-border/60 bg-background p-0 shadow-inner"
+															<ColorInput
 																value={row.color}
 																onChange={(e) => {
 																	const next = {
@@ -939,9 +939,8 @@ function SettingsView({
 															}}
 														/>
 													</div>
-													<input
-														type="color"
-														className="mt-5 h-9 w-14 shrink-0 cursor-pointer rounded-md border border-border/60 bg-background p-0 shadow-inner"
+													<ColorInput
+														className="mt-5 w-14"
 														value={themePaletteDraft[key]}
 														onChange={(e) => {
 															const value = e.target.value;
@@ -1002,9 +1001,8 @@ function SettingsView({
 													<Label className={cn(ft.label, 'min-w-[8rem] shrink-0')}>
 														{t(`settings_element_${el}`)}
 													</Label>
-													<input
-														type="color"
-														className="h-9 w-14 shrink-0 cursor-pointer rounded-md border border-border/60 bg-background p-0 shadow-inner"
+													<ColorInput
+														className="w-14"
 														value={elementDraft[el]}
 														onChange={(e) => {
 															const v = e.target.value;

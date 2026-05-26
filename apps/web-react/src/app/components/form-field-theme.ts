@@ -39,7 +39,7 @@ export function getAppFormFieldTheme(theme: Theme) {
 
 	const selectContent = cn(
 		'rounded-xl border shadow-lg',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]'
+		'border-[color:var(--theme-panel-border)] bg-popover text-popover-foreground'
 	);
 
 	const selectItem =
@@ -80,14 +80,14 @@ export function getAppFormFieldTheme(theme: Theme) {
 
 	const datePicker = cn(
 		'w-80 rounded-xl border p-4 shadow-xl ring-1 ring-black/5 dark:ring-white/10',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)]'
+		'border-[color:var(--theme-panel-border)] bg-popover text-popover-foreground'
 	);
 
-	const datePickerHeader = 'text-[color:var(--theme-content-secondary)]';
+	const datePickerHeader = 'text-popover-foreground';
 
 	const datePickerButton = 'hover:bg-[color:var(--theme-soft-bg)]';
 
-	const datePickerDay = 'hover:bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-primary)]';
+	const datePickerDay = 'hover:bg-[color:var(--theme-soft-bg)] text-popover-foreground';
 
 	const datePickerDayActive =
 		'bg-[color:var(--theme-accent)] text-white hover:brightness-95';

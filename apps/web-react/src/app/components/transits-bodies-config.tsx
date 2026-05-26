@@ -1,8 +1,11 @@
 import { useTranslation } from 'react-i18next';
+import type { ReactNode } from 'react';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import type { Theme } from './astrology-sidebar';
@@ -27,9 +30,178 @@ type TransitsBodiesConfigProps = {
 	subtitleKey: 'transits_subtitle_transiting' | 'transits_subtitle_transited';
 };
 
+type TransitBodyItem =
+	| { labelKey: string; label?: never; glyphId?: string }
+	| { label: string; labelKey?: never; glyphId?: never };
+
+type TransitBodyGroup = {
+	id: string;
+	labelKey: string;
+	minHeightClass: string;
+	items: TransitBodyItem[];
+};
+
+const TRANSIT_BODY_COLUMNS: TransitBodyGroup[][] = [
+	[
+		{
+			id: 'luminaries',
+			labelKey: 'transits_group_luminaries',
+			minHeightClass: 'min-h-[116px]',
+			items: [
+				{ labelKey: 'planet_sun', glyphId: 'sun' },
+				{ labelKey: 'planet_moon', glyphId: 'moon' }
+			]
+		},
+		{
+			id: 'lunar-nodes',
+			labelKey: 'transits_group_lunar_nodes',
+			minHeightClass: 'min-h-[88px]',
+			items: [{ labelKey: 'transits_node_mean' }, { labelKey: 'transits_node_true' }]
+		}
+	],
+	[
+		{
+			id: 'personal-planets',
+			labelKey: 'transits_group_personal_planets',
+			minHeightClass: 'min-h-[116px]',
+			items: [
+				{ labelKey: 'planet_mercury', glyphId: 'mercury' },
+				{ labelKey: 'planet_venus', glyphId: 'venus' },
+				{ labelKey: 'planet_mars', glyphId: 'mars' }
+			]
+		},
+		{
+			id: 'lunar-apsides',
+			labelKey: 'transits_group_lunar_apsides',
+			minHeightClass: 'min-h-[88px]',
+			items: [
+				{ labelKey: 'transits_black_moon_mean' },
+				{ labelKey: 'transits_black_moon_natural' },
+				{ labelKey: 'transits_black_moon_osc' }
+			]
+		}
+	],
+	[
+		{
+			id: 'social',
+			labelKey: 'transits_group_social',
+			minHeightClass: 'min-h-[116px]',
+			items: [
+				{ labelKey: 'planet_jupiter', glyphId: 'jupiter' },
+				{ labelKey: 'planet_saturn', glyphId: 'saturn' }
+			]
+		},
+		{
+			id: 'tno',
+			labelKey: 'transits_group_tno',
+			minHeightClass: 'min-h-[88px]',
+			items: ['⯰ Eris', '⯲ Sedna', '⯳ Haumea', '⯴ Makemake', '⯵ Quaoar', '⯶ Orcus', '⯷ Varuna'].map(
+				(label) => ({ label })
+			)
+		}
+	],
+	[
+		{
+			id: 'transpersonal',
+			labelKey: 'transits_group_transpersonal',
+			minHeightClass: 'min-h-[116px]',
+			items: [
+				{ labelKey: 'planet_uranus', glyphId: 'uranus' },
+				{ labelKey: 'planet_neptune', glyphId: 'neptune' },
+				{ labelKey: 'planet_pluto', glyphId: 'pluto' }
+			]
+		},
+		{
+			id: 'asteroids',
+			labelKey: 'transits_group_asteroids',
+			minHeightClass: 'min-h-[88px]',
+			items: ['⚳ Ceres', '⚴ Pallas', '⚵ Juno', '⚶ Vesta', '⚷ Chiron', '⯛ Pholus'].map(
+				(label) => ({ label })
+			)
+		}
+	]
+];
+
+const TRANSIT_BOTTOM_GROUPS: TransitBodyGroup[] = [
+	{
+		id: 'geo-nodes',
+		labelKey: 'transits_group_geo_nodes',
+		minHeightClass: '',
+		items: [
+			'transits_geo_mercury',
+			'transits_geo_saturn',
+			'transits_geo_venus',
+			'transits_geo_uranus',
+			'transits_geo_mars',
+			'transits_geo_neptune',
+			'transits_geo_jupiter',
+			'transits_geo_pluto'
+		].map((labelKey) => ({ labelKey }))
+	},
+	{
+		id: 'hypotheticals',
+		labelKey: 'transits_group_hypotheticals',
+		minHeightClass: '',
+		items: ['⚻ Cupido', '⯛ Apollon', '⯚ Hades', '⯰ Admetos', '⯙ Zeus', '⯲ Vulcanus', '⯘ Kronos', '⯰ Poseidon'].map(
+			(label) => ({ label })
+		)
+	}
+];
+
 export function TransitsBodiesConfig({ theme, glyphSet, titleKey, subtitleKey }: TransitsBodiesConfigProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
+
+	const renderItemLabel = (item: TransitBodyItem) => {
+		if ('label' in item) return item.label;
+		if (!item.glyphId) return t(item.labelKey);
+		return (
+			<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
+				<AstrologyGlyph
+					glyphId={item.glyphId}
+					glyphSet={glyphSet}
+					fallback={PLANET_GLYPH_FALLBACK[item.glyphId] ?? item.glyphId.charAt(0).toUpperCase()}
+					size={16}
+					className="shrink-0"
+				/>
+				{t(item.labelKey)}
+			</span>
+		);
+	};
+
+	const renderCheckboxRow = (
+		id: string,
+		content: ReactNode,
+		options: { strong?: boolean; compact?: boolean } = {}
+	) => (
+		<Label
+			key={id}
+			htmlFor={id}
+			className={cn(
+				'flex cursor-pointer items-center space-x-2',
+				options.compact ? 'h-5' : 'mb-3',
+				options.strong ? ft.label : ft.bodyText
+			)}
+		>
+			<Checkbox id={id} className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)} />
+			<span className={cn('text-sm', options.strong && 'font-semibold')}>{content}</span>
+		</Label>
+	);
+
+	const renderGroup = (group: TransitBodyGroup) => (
+		<div key={group.id} className={group.minHeightClass}>
+			{renderCheckboxRow(`transit-group-${group.id}`, t(group.labelKey), { strong: true })}
+			<div className="ml-6 flex flex-col gap-2">
+				{group.items.map((item, index) =>
+					renderCheckboxRow(
+						`transit-item-${group.id}-${'label' in item ? item.label : item.labelKey}-${index}`,
+						renderItemLabel(item),
+						{ compact: true }
+					)
+				)}
+			</div>
+		</div>
+	);
 
 	return (
 		<Card variant="ghost" className="w-full rounded-xl">
@@ -40,420 +212,27 @@ export function TransitsBodiesConfig({ theme, glyphSet, titleKey, subtitleKey }:
 				</div>
 
 				<div className="mb-8 grid grid-cols-4 gap-8">
-					<div className="flex flex-col gap-6">
-						<div className="min-h-[116px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_luminaries')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="sun"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.sun}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_sun')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="moon"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.moon}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_moon')}
-									</span>
-								</label>
-							</div>
+					{TRANSIT_BODY_COLUMNS.map((column, index) => (
+						<div key={index} className="flex flex-col gap-6">
+							{column.map(renderGroup)}
 						</div>
+					))}
+				</div>
 
-						<div className="min-h-[88px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_lunar_nodes')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('text-sm', ft.bodyText)}>{t('transits_node_mean')}</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('text-sm', ft.bodyText)}>{t('transits_node_true')}</span>
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div className="flex flex-col gap-6">
-						<div className="min-h-[116px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_personal_planets')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="mercury"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.mercury}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_mercury')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="venus"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.venus}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_venus')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="mars"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.mars}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_mars')}
-									</span>
-								</label>
-							</div>
-						</div>
-
-						<div className="min-h-[88px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_lunar_apsides')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('text-sm', ft.bodyText)}>
-										{t('transits_black_moon_mean')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('text-sm', ft.bodyText)}>
-										{t('transits_black_moon_natural')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('text-sm', ft.bodyText)}>{t('transits_black_moon_osc')}</span>
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div className="flex flex-col gap-6">
-						<div className="min-h-[116px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_social')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="jupiter"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.jupiter}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_jupiter')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="saturn"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.saturn}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_saturn')}
-									</span>
-								</label>
-							</div>
-						</div>
-
-						<div className="min-h-[88px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_tno')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								{[
-									'⯰ Eris',
-									'⯲ Sedna',
-									'⯳ Haumea',
-									'⯴ Makemake',
-									'⯵ Quaoar',
-									'⯶ Orcus',
-									'⯷ Varuna'
-								].map((label) => (
-									<label key={label} className="flex h-5 cursor-pointer items-center space-x-2">
-										<input
-											type="checkbox"
-											className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-										/>
-										<span className={cn('text-sm', ft.bodyText)}>{label}</span>
-									</label>
-								))}
-							</div>
-						</div>
-					</div>
-
-					<div className="flex flex-col gap-6">
-						<div className="min-h-[116px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_transpersonal')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="uranus"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.uranus}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_uranus')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="neptune"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.neptune}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_neptune')}
-									</span>
-								</label>
-								<label className="flex h-5 cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('inline-flex items-center gap-1.5 text-sm', ft.bodyText)}>
-										<AstrologyGlyph
-											glyphId="pluto"
-											glyphSet={glyphSet}
-											fallback={PLANET_GLYPH_FALLBACK.pluto}
-											size={16}
-											className="shrink-0"
-										/>
-										{t('planet_pluto')}
-									</span>
-								</label>
-							</div>
-						</div>
-
-						<div className="min-h-[88px]">
-							<label className="mb-3 flex h-5 cursor-pointer items-center space-x-2">
-								<input
-									type="checkbox"
-									className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-								/>
-								<span className={cn('text-sm font-semibold', ft.label)}>
-									{t('transits_group_asteroids')}
-								</span>
-							</label>
-							<div className="ml-6 flex flex-col gap-2">
-								{['⚳ Ceres', '⚴ Pallas', '⚵ Juno', '⚶ Vesta', '⚷ Chiron', '⯛ Pholus'].map(
-									(label) => (
-										<label key={label} className="flex h-5 cursor-pointer items-center space-x-2">
-											<input
-												type="checkbox"
-												className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
-											/>
-											<span className={cn('text-sm', ft.bodyText)}>{label}</span>
-										</label>
+				<div className="mb-8 grid grid-cols-2 gap-8">
+					{TRANSIT_BOTTOM_GROUPS.map((group) => (
+						<div key={group.id}>
+							{renderCheckboxRow(`transit-group-${group.id}`, t(group.labelKey), { strong: true })}
+							<div className="ml-6 grid grid-cols-2 gap-x-8 gap-y-2">
+								{group.items.map((item, index) =>
+									renderCheckboxRow(
+										`transit-item-${group.id}-${'label' in item ? item.label : item.labelKey}-${index}`,
+										renderItemLabel(item)
 									)
 								)}
 							</div>
 						</div>
-					</div>
-				</div>
-
-				<div className="mb-8 grid grid-cols-2 gap-8">
-					<div>
-						<label className="mb-3 flex cursor-pointer items-center space-x-2">
-							<input
-								type="checkbox"
-								className={cn('h-4 w-4 rounded', ft.checkboxAccent)}
-							/>
-							<span className={cn('text-sm font-semibold', ft.label)}>
-								{t('transits_group_geo_nodes')}
-							</span>
-						</label>
-						<div className="ml-6 grid grid-cols-2 gap-x-8 gap-y-2">
-							{(
-								[
-									'transits_geo_mercury',
-									'transits_geo_saturn',
-									'transits_geo_venus',
-									'transits_geo_uranus',
-									'transits_geo_mars',
-									'transits_geo_neptune',
-									'transits_geo_jupiter',
-									'transits_geo_pluto'
-								] as const
-							).map((key) => (
-								<label key={key} className="flex cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('text-sm', ft.bodyText)}>{t(key)}</span>
-								</label>
-							))}
-						</div>
-					</div>
-
-					<div>
-						<label className="mb-3 flex cursor-pointer items-center space-x-2">
-							<input
-								type="checkbox"
-								className={cn('h-4 w-4 rounded', ft.checkboxAccent)}
-							/>
-							<span className={cn('text-sm font-semibold', ft.label)}>
-								{t('transits_group_hypotheticals')}
-							</span>
-						</label>
-						<div className="ml-6 grid grid-cols-2 gap-x-8 gap-y-2">
-							{[
-								'⚻ Cupido',
-								'⯛ Apollon',
-								'⯚ Hades',
-								'⯰ Admetos',
-								'⯙ Zeus',
-								'⯲ Vulcanus',
-								'⯘ Kronos',
-								'⯰ Poseidon'
-							].map((label) => (
-								<label key={label} className="flex cursor-pointer items-center space-x-2">
-									<input
-										type="checkbox"
-										className={cn('h-4 w-4 rounded', ft.checkboxAccent)}
-									/>
-									<span className={cn('text-sm', ft.bodyText)}>{label}</span>
-								</label>
-							))}
-						</div>
-					</div>
+					))}
 				</div>
 
 				<div className="flex items-center justify-center gap-4 pt-6">

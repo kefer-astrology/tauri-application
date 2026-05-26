@@ -40,7 +40,7 @@ export function DetailSidePanel({
 				side="right"
 				className={cn(
 					'w-full gap-0 p-0 sm:max-w-md lg:w-[min(28rem,22vw)]',
-					'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
+					'border-[color:var(--theme-panel-border)] shadow-2xl',
 					surfaceClassName
 				)}
 			>
@@ -54,7 +54,9 @@ export function DetailSidePanel({
 						) : null}
 					</SheetHeader>
 					<Separator className="bg-[color:var(--theme-panel-border)]" />
-					<div className="min-h-0 flex-1 px-5 py-4">{children}</div>
+					<div className="min-h-0 flex-1 px-5 py-4">
+						{children}
+					</div>
 				</div>
 			</SheetContent>
 		</Sheet>
