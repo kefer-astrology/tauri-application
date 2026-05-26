@@ -1,0 +1,103 @@
+apps/web-react/src/app/components/detail-side-panel.tsx
+  s_1abaeb740ccad0::t_c50305c643c387 58-59
+  s_1abaeb740ccad0::t_1f5ca0434d7a3d 43,57
+apps/web-react/src/app/components/ui/alert-dialog.tsx
+  s_1abaeb740ccad0::t_1f5ca0434d7a3d 49
+apps/web-react/src/app/components/ui/drawer.tsx
+  s_1abaeb740ccad0::t_1f5ca0434d7a3d 51
+apps/web-react/src/lib/tauri/types.ts
+  s_0e102c2a7e11bc::t_d4ab5dcaae6e2d 68-76,94
+apps/web-react/src/app/components/transits-bodies-config.tsx
+  s_8075e421ece6be::t_cbcea32b8353ff 2,174
+  s_8075e421ece6be::t_f09cf2b7953b32 7-8,33-150,155-173,175-205,215-217,219-220,222-230,235
+apps/web-react/src/app/components/ui/sheet.tsx
+  s_1abaeb740ccad0::t_31cc462204d680 25-51,54-61,65-74
+  s_1abaeb740ccad0::t_1f5ca0434d7a3d 53
+apps/web-react/src/app/components/ui/dialog.tsx
+  s_1abaeb740ccad0::t_1f5ca0434d7a3d 52
+apps/web-react/src/app/components/aspectarium.tsx
+  s_1abaeb740ccad0::t_960dbe19028928 72-83
+  s_1abaeb740ccad0::t_be90879da4557d 358
+  s_1abaeb740ccad0::t_8129cd782cf144 370,373,462,465
+  s_1abaeb740ccad0::t_9d706bf9645f02 281,288-294
+  s_1abaeb740ccad0::t_624759f1304d54 355-357,359
+  s_1abaeb740ccad0::t_c50305c643c387 241,243-244,350,352,360,378,410,432,587
+  s_1abaeb740ccad0::t_12470169138401 366-367,369,479-480
+  s_8075e421ece6be::t_a9cdb23fcd2cd3 8,351,371-372,374-375,398,402,407,421,429,438,451,458,461,463-464
+  s_1abaeb740ccad0::t_c6edf4ff180c61 368
+  s_1abaeb740ccad0::t_31cc462204d680 582
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_0e102c2a7e11bc::t_0734c78ab48684 60
+  s_0e102c2a7e11bc::t_4e2d1278b2649e 85-86
+  s_0e102c2a7e11bc::t_97dc3dd92757af 78-79
+  s_0e102c2a7e11bc::t_2b493e64869bd5 1
+  s_1abaeb740ccad0::t_31cc462204d680 165,294
+  s_0e102c2a7e11bc::t_76faf2ce50ee88 39
+apps/web-react/src/app/components/time-roller-picker.tsx
+  s_1abaeb740ccad0::t_9c4efcc7819602 118
+  s_1abaeb740ccad0::t_da7470174ee73e 1,4,14-29,58,69-72,81-91,93,98-99,103-105,107-117,119-125,127-132
+  s_1abaeb740ccad0::t_f96e0fc25a022a 100-102,126
+apps/web-react/src/app/components/transits-content.tsx
+  s_8075e421ece6be::t_339e7ecc5669d6 120,142-143,165,168,190-191,216,368,374,397,403
+apps/web-react/src/app/App.tsx
+  s_1abaeb740ccad0::t_c50305c643c387 402
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_1abaeb740ccad0::t_fbaaa4cfc50248 1-2,100-115,262-270,274
+  s_1abaeb740ccad0::t_f96e0fc25a022a 253-260,271-273,275-285
+apps/web-react/src/app/components/open-workspace-view.tsx
+  s_8075e421ece6be::t_ae72ad08a8760d 291,293,330,334,353,355,369,371,375,377,470,472,488,490
+  s_1abaeb740ccad0::t_2c594448f5e9de 1,102,146-162,181-185,215-216,218,514,523,546-547,555-556,609-622
+apps/web-react/src/app/components/form-field-theme.ts
+  s_1abaeb740ccad0::t_18ca4bd4c62595 42,83,86,90
+apps/web-react/src/app/components/ui/color-input.tsx
+  s_8075e421ece6be::t_286639274d9ab2 1-19
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_8075e421ece6be::t_af802c8ea6f155 23-24
+  s_1abaeb740ccad0::t_795880825df624 12-13,18-22,26-49,57-67,69-83
+apps/web-react/src/app/components/settings-view.tsx
+  s_8075e421ece6be::t_34a82d5731477b 544,558,584,601
+  s_8075e421ece6be::t_7086ac9d52c9f6 12,603,942-943,1004-1005
+  s_1abaeb740ccad0::t_ff9cee85f2dd74 555,557
+  s_1abaeb740ccad0::t_7fe672096f2ac5 42-43,206,209
+apps/web-react/src/styles/theme.css
+  s_1abaeb740ccad0::t_1f5ca0434d7a3d 51-52
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_1abaeb740ccad0::t_af26b74a61fb88 77-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "53da23a12df9c986ba52e341c9418a551a3aa3f9",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0e102c2a7e11bc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3da71771-8532-4961-a025-4d0759008168",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_1abaeb740ccad0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e20de-9a27-7230-88db-086c993839a6",
+        "model": "gpt-5.4"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_8075e421ece6be": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "deed23b8-69ce-4eb6-b521-2de7484e0fd2",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
