@@ -1,0 +1,28 @@
+scripts/prune-unused-translations.py
+  s_8075e421ece6be::t_78af6dd52f13ad 1-39,42-138
+  s_8075e421ece6be::t_11c43296e52a87 40-41
+scripts/json-to-csv.js
+  s_8075e421ece6be::t_806cbfa40dfbc3 39-41
+  s_8075e421ece6be::t_65bff52e9a0956 3-5,9-11,14-28,46-52,59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "8114ee7714339786ff55026e2b2b35fc42210bd6",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8075e421ece6be": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "deed23b8-69ce-4eb6-b521-2de7484e0fd2",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
