@@ -1,0 +1,24 @@
+src-tauri/Cargo.toml
+  s_67290df301866b::t_423c0ce8894224 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "592709c7a0b01938265aab6e3e84dc3083ab33e7",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_67290df301866b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e8db3-5b61-77d2-acf4-03856c2eb796",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
