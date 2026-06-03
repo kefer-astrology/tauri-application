@@ -1,0 +1,27 @@
+apps/web-react/package.json
+  h_0907ec034f4a17 50,54,62-64
+package.json
+  h_0907ec034f4a17 38-49,56,60,62
+  s_8075e421ece6be::t_ec054a546a4011 26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "8f2046876ec3dbd32e4cbaacf48c0f7973c70cc7",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8075e421ece6be": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "deed23b8-69ce-4eb6-b521-2de7484e0fd2",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
