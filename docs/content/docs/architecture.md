@@ -39,7 +39,7 @@ The app has three main layers: frontend shells, the Tauri desktop boundary, and 
 - **Geocoding**: location lookup is handled in Rust through a configurable Nominatim-style endpoint.
 - **Ephemeris downloads**: BSP discovery, cache management, and download status are handled in Rust.
 - **React status**: the main horoscope flow is wired to real Tauri-backed compute; some secondary screens are still presentational.
-- **Svelte status**: radix/settings/transits parity is much better than before, but some compatibility-era storage helpers and in-memory fallbacks still remain.
+- **Svelte status**: radix/settings/transits and workspace query paths route through `apps/web-svelte/src/lib/tauri/`; in-memory fallbacks remain for static mode and workspaces without persisted computed rows.
 
 ## Principles
 
@@ -143,6 +143,7 @@ The frontend should only call `invoke(...)`. Tauri owns backend selection and ro
 ## Frontend integration
 
 - **React Tauri layer**: `apps/web-react/src/lib/tauri/`
+- **Svelte Tauri layer**: `apps/web-svelte/src/lib/tauri/`
 - **React shell**: `apps/web-react/src/app/App.tsx`
 - **Svelte shell**: `apps/web-svelte/src/`
 - **Shared app-shell assets**: `static/app-shell/`
@@ -209,7 +210,7 @@ For exact current command behavior, use [tauri-command-contracts](../tauri-comma
 ## Non-final areas
 
 - `InformationView` in React is still explicitly prototype-oriented.
-- Some Svelte views still rely on compatibility storage commands and in-memory fallback behavior.
+- Svelte still keeps in-memory fallback rendering for static mode and for workspaces without persisted computed query rows.
 - Computed-data persistence is still not a fully settled architecture topic.
 - Some import/storage directions are still under discussion.
 

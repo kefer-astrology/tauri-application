@@ -1,5 +1,5 @@
 ---
-title: "Frontend gap implementation plan"
+title: 'Frontend gap implementation plan'
 weight: 45
 ---
 
@@ -111,6 +111,7 @@ Make both frontends ready for these workflows:
 - Bind settings sections to shared app/workspace state.
 - Persist confirmed settings to the chosen storage scope.
 - Ensure chart creation uses the same settings model as compute.
+- Keep the create-new chart form ordered as chart name, chart type, date/time, time regime, location selector, and tags, with manual time-regime details only expanded in manual mode.
 - Verify workspace open:
   - loads charts
   - loads defaults
@@ -137,6 +138,7 @@ Make both frontends ready for these workflows:
 - Decide whether `BodySelector` becomes the main UI for default computed bodies or remains transit-specific.
 - Persist confirmed settings to the chosen storage scope.
 - Ensure both workspace and in-memory compute use the same effective settings model.
+- Keep the create-new chart form ordered as chart name, chart type, date/time, time regime, location selector, and tags, with manual time-regime details only expanded in manual mode.
 
 ### Acceptance checks
 

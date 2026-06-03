@@ -74,7 +74,7 @@ weight: 20
   - `src/lib/stores/glyphs.svelte.ts` for glyph set resolution
   - `src/lib/components/ui/` primitives before custom mode-specific markup
   - extracted `src/lib/components/` feature pieces instead of growing `App.svelte` with more inline feature branches
-- Treat `apps/web-svelte/src/lib/icons/` as legacy residue rather than an approved source of truth for shell/navigation icons.
+- Treat `apps/web-svelte/src/lib/icons/` as an unapproved source for shell/navigation icons.
 
 ## Best entrypoints
 

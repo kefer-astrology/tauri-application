@@ -39,7 +39,7 @@ Current alignment status:
 - React and Svelte feature components follow shared shadcn-style primitives for common controls.
 - React `TransitsBodiesConfig` is data-driven and uses shared `Checkbox` + `Label`.
 - React `Aspectarium` consumes shared `Table` primitives and theme tokens.
-- Svelte matrix rendering is routed through `components/chart-matrix/AspectMatrix.svelte`, with `AspectGrid.svelte` kept as a compatibility wrapper.
+- Svelte matrix rendering is routed through `components/chart-matrix/AspectMatrix.svelte`; `AspectGrid.svelte` is only a thin wrapper for existing imports.
 - Svelte mode content is split into feature components including `NewRadixView`, `InformationView`, `RadixDetailsPanel`, `RadixPositionPanel`, and `RadixTransitsView`.
 - Ongoing work is driven from the [Development driver](../../llm/development-driver/). Future Dynamic/Revolution/Favorite behavior is spec-gated because the React reference is also placeholder/workbench-level there.
 

@@ -12,6 +12,7 @@ Use this section as the shortest reliable path back into the repo.
 - [Rust workspace contract](./rust-workspace-contract/) defines the current Rust-side workspace and no-sidecar rules.
 - [Frontend workflow baseline](./frontend-workflow-baseline/) defines the baseline workspace/settings/compute workflows both frontends should satisfy.
 - [Chart datetime contract](./chart-datetime-contract/) defines the canonical timestamp shape shared by both frontends and Tauri commands.
+- [Transit series contract](./transit-series-contract/) defines the shared React/Svelte command payload and parity target for transit-series computation.
 - [Import chart contract](./import-chart-contract/) defines the current explicit import workflow and supported file formats.
 - [Radix render contract](./radix-render-contract/) defines the current computed output required to render a radix view without mock geometry.
 - [Frontend gap implementation plan](./frontend-gap-implementation-plan/) turns the current frontend gaps into a concrete execution sequence.

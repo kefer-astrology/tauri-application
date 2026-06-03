@@ -45,7 +45,7 @@ In other words, the frontend owns navigation intent and UI state; Tauri owns com
 - Svelte already supports UTC-safe stepping for the main navigation path
 - Svelte already supports an Astrolabe-style shift model layered on top of current time
 - React should follow the same behavior contract even where the exact UI differs
-- some current update paths still mix live computed payloads with compatibility-era query helpers
+- Svelte query helpers now route through `src/lib/tauri/workspace.ts`, with in-memory fallback rendering when persisted query rows are unavailable
 
 ## Supported datetime formats
 
@@ -127,7 +127,7 @@ Backend chart payloads also carry datetime through chart `subject.event_time`. C
 
 ## Current caveats
 
-- some Svelte paths still rely on compatibility-era query helpers
+- Svelte still falls back to the current in-memory computed payload when no persisted query rows are available
 - performance work in this area is still partly about reducing reactive churn and repeated backend loads
 - this page is the behavior reference, not a promise that one frontend’s code samples are canonical
 - frontend-local parsing is currently a little broader than the Rust command contract, so docs and new UI flows should prefer the backend-safe formats above

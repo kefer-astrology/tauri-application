@@ -17,6 +17,16 @@ Keep future work driven by explicit specs instead of scattered cleanup lists. Ne
 - Svelte is parity-compliant with the current React reference. Dynamic, Revolution, and Favorite remain spec-gated because the React reference is also placeholder/workbench-level there.
 - Backend/Tauri availability must not decide layout. Static/docs mode keeps the app shell and treats unavailable backend actions as no-ops or explicit disabled states.
 - New behavior starts from `/docs/content/llm/` specs before implementation.
+- Dual-frontend parity is mandatory for frontend-visible behavior: implement React and Svelte in the same change, or mark one frontend as explicitly spec-gated with acceptance criteria before merging the feature.
+
+## Dual-Frontend Rule
+
+1. Update the relevant `/docs/content/llm/` contract before adding or changing frontend-visible behavior.
+2. Keep React and Svelte on the same typed Tauri bridge contract under each frontend's `src/lib/tauri/` folder when commands or payloads are involved.
+3. Keep compute payload builders aligned when workspace, chart, transit, or settings configuration changes.
+4. Implement both frontend shells in the same change unless the spec names the deferred shell, the reason it is deferred, and the acceptance criteria for closing the gap.
+5. Do not add local-only UI state for values that affect computation unless the contract explicitly says the value is transient.
+6. Verification must include `npm run check`, `npm run check:svelte`, and the relevant build or docs command for the touched surface.
 
 ## Planned State
 
@@ -55,6 +65,6 @@ Keep future work driven by explicit specs instead of scattered cleanup lists. Ne
 
 - The relevant `/llm/` spec exists or was updated.
 - Feature UI uses shared primitives and existing domain components.
-- React and Svelte parity impact is explicit.
+- React and Svelte either both implement the behavior, or the spec names the intentional gap and the acceptance criteria for closing it.
 - Static/docs mode still renders the standard shell.
 - `npm run check`, `npm run check:svelte`, and the relevant build/docs command pass.

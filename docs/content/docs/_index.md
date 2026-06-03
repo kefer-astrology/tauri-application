@@ -12,6 +12,7 @@ weight: 10
 ## Backend and astronomy engine
 
 - **[SPICE backend](./spice-backend/)** — JPL/SPICE architecture, licensing rationale, and runtime status.
+- **[House systems](./house-systems/)** — supported house-system names, setup inputs, and backend coverage.
 - **[Ephemeris manager](./ephemeris-manager/)** — BSP catalog ownership, downloads, chaining, and asteroid support.
 - **[Python package](./python-package/)** — optional Python compute seam and subprocess contract.
 
