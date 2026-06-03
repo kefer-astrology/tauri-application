@@ -1,0 +1,26 @@
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_a6642f6a4933da::t_b09caad52f4c69 463-464,469,472-474,476
+  s_a6642f6a4933da::t_40f93b76a4f2d0 210,215-248,250-267,269-272,274-282,284-297,300-308,311-322,324-325,327-343,345,347-394,396,398-434,439-462,465-468,470-471,475,477-508
+  s_a6642f6a4933da::t_66d91bf15a2807 29,82,202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a03e28d3406e026de9310a1ced6329291d74c585",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a6642f6a4933da": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e819a-55d9-78a2-829b-c039b3e8dc6d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
