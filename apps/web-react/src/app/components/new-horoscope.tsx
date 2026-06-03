@@ -11,7 +11,6 @@ import { Label } from './ui/label';
 import { LocationSelector } from './location-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch } from './ui/switch';
 import { TimeRollerPicker } from './time-roller-picker';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { cn } from './ui/utils';
@@ -27,6 +26,7 @@ import { resolveLocation, searchLocations } from '@/lib/tauri/workspace';
 type ChartKind = 'radix' | 'event' | 'horary';
 type LatDir = 'north' | 'south';
 type LonDir = 'east' | 'west';
+type TimeRegime = 'auto' | 'manual';
 
 function mergeDatePart(target: Date, pickedDate: Date): Date {
 	const next = new Date(target);
@@ -79,7 +79,7 @@ export function NewHoroscope({
 	const [tags, setTags] = useState('');
 	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() => new Date());
 	const [chartKind, setChartKind] = useState<ChartKind>('radix');
-	const [advancedMode, setAdvancedMode] = useState(false);
+	const [timeRegime, setTimeRegime] = useState<TimeRegime>('auto');
 	const [latitude, setLatitude] = useState('');
 	const [longitude, setLongitude] = useState('');
 	const [timezone, setTimezone] = useState('');
@@ -199,7 +199,7 @@ export function NewHoroscope({
 			latitudeDir: resolvedLatitudeDir,
 			longitudeDir: resolvedLongitudeDir,
 			timezone,
-			advancedMode,
+			advancedMode: timeRegime === 'manual',
 			workspaceDefaults,
 			existingIds: existingChartIds
 		});
@@ -207,309 +207,305 @@ export function NewHoroscope({
 	};
 
 	return (
-		<AppMainContentRoot
-			className={cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')}
-		>
+		<AppMainContentRoot className={cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')}>
 			<AppMainContentContainer layout="center-column">
 				<h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>{t('new_radix_title')}</h1>
 
 				<div className="space-y-4">
-						<div>
-							<Label htmlFor="locationName" className={cn('mb-1.5 block', ft.label)}>
-								{t('new_name')}
-							</Label>
-							<Input
-								id="locationName"
-								value={locationName}
-								onChange={(e) => setLocationName(e.target.value)}
-								className={cn(ft.input, 'shadow-inner')}
-							/>
-						</div>
+					<div>
+						<Label htmlFor="locationName" className={cn('mb-1.5 block', ft.label)}>
+							{t('new_name')}
+						</Label>
+						<Input
+							id="locationName"
+							value={locationName}
+							onChange={(e) => setLocationName(e.target.value)}
+							className={cn(ft.input, 'shadow-inner')}
+						/>
+					</div>
 
-						<div>
-							<Label htmlFor="chart-type" className={cn('mb-1.5 block', ft.label)}>
-								{t('new_type')}
-							</Label>
-							<Select value={chartKind} onValueChange={(v) => setChartKind(v as ChartKind)}>
-								<SelectTrigger id="chart-type" className={cn(ft.selectTrigger, 'shadow-inner')}>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent className={ft.selectContent}>
-									{CHART_TYPE_ORDER.map((opt) => (
-										<SelectItem key={opt.id} value={opt.id} className={ft.selectItem}>
-											{t(opt.labelKey)}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					<div>
+						<Label htmlFor="chart-type" className={cn('mb-1.5 block', ft.label)}>
+							{t('new_type')}
+						</Label>
+						<Select value={chartKind} onValueChange={(v) => setChartKind(v as ChartKind)}>
+							<SelectTrigger id="chart-type" className={cn(ft.selectTrigger, 'shadow-inner')}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent className={ft.selectContent}>
+								{CHART_TYPE_ORDER.map((opt) => (
+									<SelectItem key={opt.id} value={opt.id} className={ft.selectItem}>
+										{t(opt.labelKey)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-							<div className="flex flex-col gap-2">
-								<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
-									{t('new_date')}
-								</Label>
-								<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-									<div
-										className={cn(
-											'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-											'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
-											'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
-										)}
-									>
-										<Input
-											id="new-chart-date"
-											type="text"
-											inputMode="numeric"
-											value={draftDateValue}
-											onChange={(event) => setDraftDateValue(event.target.value)}
-											onBlur={commitDraftDateValue}
-											onKeyDown={(event) => {
-												if (event.key === 'Enter') {
-													commitDraftDateValue();
-													setDatePopoverOpen(false);
-												}
-											}}
-											className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
-											placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
-										/>
-										<PopoverTrigger asChild>
-											<Button
-												type="button"
-												variant="ghost"
-												className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
-											>
-												<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
-											</Button>
-										</PopoverTrigger>
-									</div>
-									<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="start">
-										<Calendar
-											mode="single"
-											selected={selectedDateTime}
-											onSelect={(d) => {
-												if (d) setSelectedDateTime((prev) => mergeDatePart(prev, d));
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
+								{t('new_date')}
+							</Label>
+							<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+								<div
+									className={cn(
+										'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
+										'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
+										'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
+									)}
+								>
+									<Input
+										id="new-chart-date"
+										type="text"
+										inputMode="numeric"
+										value={draftDateValue}
+										onChange={(event) => setDraftDateValue(event.target.value)}
+										onBlur={commitDraftDateValue}
+										onKeyDown={(event) => {
+											if (event.key === 'Enter') {
+												commitDraftDateValue();
 												setDatePopoverOpen(false);
-											}}
-											locale={dateFnsLocale}
-											initialFocus
-											defaultMonth={selectedDateTime}
-										/>
-									</PopoverContent>
-								</Popover>
-							</div>
-
-								<div className="flex flex-col gap-2">
-									<TimeRollerPicker
-										id="new-chart-time"
-										label={t('new_time')}
-										value={selectedDateTime}
-										onValueChange={setSelectedDateTime}
-										labelClassName={ft.label}
-										iconClassName={ft.iconColor}
-										panelClassName={ft.selectContent}
+											}
+										}}
+										className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
+										placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
 									/>
+									<PopoverTrigger asChild>
+										<Button
+											type="button"
+											variant="ghost"
+											className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+										>
+											<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
+										</Button>
+									</PopoverTrigger>
 								</div>
-							</div>
-
-						<div>
-							<Label htmlFor="location" className={cn('mb-1.5 block', ft.label)}>
-								{t('new_location')}
-							</Label>
-							<div className="space-y-2">
-								<LocationSelector
-									id="location"
-									value={location}
-									onValueChange={setLocation}
-									options={locationOptions}
-									placeholder={t('new_placeholder_any_location')}
-									searchPlaceholder={t('new_location_search')}
-									emptyLabel={t('new_placeholder_any_location')}
-									loadingLabel={t('new_resolving_location')}
-									disabled={advancedMode}
-									className={cn(ft.selectTrigger, advancedMode && cn(ft.inputDisabled, 'border'))}
-									iconClassName={ft.iconColor}
-									searchLocations={searchLocations}
-									onResolvedLocationSelect={(result) =>
-										applyResolvedLocation(
-											result.display_name,
-											result.latitude,
-											result.longitude
-										)
-									}
-								/>
-								<div className="flex justify-end">
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => void resolveCurrentLocation()}
-										disabled={advancedMode || isResolvingLocation || !location.trim()}
-										className={cn('shadow-inner', ft.selectTrigger)}
-									>
-										<LocateFixed className={cn('mr-2 h-4 w-4', ft.iconColor)} />
-										{isResolvingLocation ? t('new_resolving_location') : t('new_resolve_location')}
-									</Button>
-								</div>
-							</div>
+								<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="start">
+									<Calendar
+										mode="single"
+										selected={selectedDateTime}
+										onSelect={(d) => {
+											if (d) setSelectedDateTime((prev) => mergeDatePart(prev, d));
+											setDatePopoverOpen(false);
+										}}
+										locale={dateFnsLocale}
+										initialFocus
+										defaultMonth={selectedDateTime}
+									/>
+								</PopoverContent>
+							</Popover>
 						</div>
 
-						<div>
-							<Label htmlFor="tags" className={cn('mb-1.5 block', ft.label)}>
-								{t('new_tags')}
-							</Label>
-							<Input
-								type="text"
-								id="tags"
-								value={tags}
-								onChange={(e) => setTags(e.target.value)}
-								placeholder={t('new_tags_comma_hint')}
-								className={cn(ft.input, 'shadow-inner')}
+						<div className="flex flex-col gap-2">
+							<TimeRollerPicker
+								id="new-chart-time"
+								label={t('new_time')}
+								value={selectedDateTime}
+								onValueChange={setSelectedDateTime}
+								labelClassName={ft.label}
+								iconClassName={ft.iconColor}
+								panelClassName={ft.selectContent}
 							/>
 						</div>
+					</div>
 
-						<div className="flex items-center justify-between py-3">
-							<span className={cn('text-sm font-medium', ft.label)}>
-								{t('new_advanced_settings')}
-							</span>
-							<Switch
-								checked={advancedMode}
-								onCheckedChange={setAdvancedMode}
+					<div>
+						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
+						<div
+							className="grid grid-cols-2 gap-2"
+							role="radiogroup"
+							aria-label={t('new_time_regime')}
+						>
+							<Button
+								type="button"
+								variant={timeRegime === 'auto' ? 'default' : 'outline'}
 								className={cn(
-									'h-6 w-11 shrink-0 scale-100 data-[state=checked]:bg-[color:var(--theme-accent)]',
-									ft.switchUnchecked
+									'justify-center shadow-inner',
+									timeRegime !== 'auto' && ft.selectTrigger
 								)}
-							/>
+								onClick={() => setTimeRegime('auto')}
+								aria-pressed={timeRegime === 'auto'}
+							>
+								{t('new_time_regime_auto')}
+							</Button>
+							<Button
+								type="button"
+								variant={timeRegime === 'manual' ? 'default' : 'outline'}
+								className={cn(
+									'justify-center shadow-inner',
+									timeRegime !== 'manual' && ft.selectTrigger
+								)}
+								onClick={() => setTimeRegime('manual')}
+								aria-pressed={timeRegime === 'manual'}
+							>
+								{t('new_time_regime_manual')}
+							</Button>
 						</div>
+					</div>
 
-						{advancedMode && (
-							<div className={cn('space-y-4', ft.advancedPanel)}>
-								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-									<div className="space-y-4">
-										<div>
-											<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
-												{t('current_info_latitude')}
-											</Label>
-											<Input
-												type="text"
-												id="latitude"
-												value={latitude}
-												onChange={(e) => setLatitude(e.target.value)}
-												placeholder="50.0755"
-												className={cn(ft.input, 'shadow-inner')}
-											/>
-										</div>
-										<div>
-											<Label htmlFor="longitude" className={cn('mb-1.5 block', ft.label)}>
-												{t('current_info_longitude')}
-											</Label>
-											<Input
-												type="text"
-												id="longitude"
-												value={longitude}
-												onChange={(e) => setLongitude(e.target.value)}
-												placeholder="14.4378"
-												className={cn(ft.input, 'shadow-inner')}
-											/>
-										</div>
-										<div>
-											<Label htmlFor="timezone" className={cn('mb-1.5 block', ft.label)}>
-												{t('new_advanced_timezone')}
-											</Label>
-											<Input
-												type="text"
-												id="timezone"
-												value={timezone}
-												onChange={(e) => setTimezone(e.target.value)}
-												placeholder={t('placeholder_utc_offset')}
-												className={cn(ft.input, 'shadow-inner')}
-											/>
-										</div>
+					{timeRegime === 'manual' && (
+						<div className={cn('space-y-4', ft.advancedPanel)}>
+							<div className={cn('text-sm font-medium', ft.label)}>
+								{t('new_manual_time_details')}
+							</div>
+							<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+								<div className="space-y-4">
+									<div className={cn('text-xs font-medium', ft.muted)}>
+										{t('new_home_location_details')}
 									</div>
+									<div>
+										<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
+											{t('current_info_latitude')}
+										</Label>
+										<Input
+											type="text"
+											id="latitude"
+											value={latitude}
+											onChange={(e) => setLatitude(e.target.value)}
+											placeholder="50.0755"
+											className={cn(ft.input, 'shadow-inner')}
+										/>
+									</div>
+									<div>
+										<Label htmlFor="longitude" className={cn('mb-1.5 block', ft.label)}>
+											{t('current_info_longitude')}
+										</Label>
+										<Input
+											type="text"
+											id="longitude"
+											value={longitude}
+											onChange={(e) => setLongitude(e.target.value)}
+											placeholder="14.4378"
+											className={cn(ft.input, 'shadow-inner')}
+										/>
+									</div>
+									<div>
+										<Label htmlFor="timezone" className={cn('mb-1.5 block', ft.label)}>
+											{t('new_utc_shift_definition')}
+										</Label>
+										<Input
+											type="text"
+											id="timezone"
+											value={timezone}
+											onChange={(e) => setTimezone(e.target.value)}
+											placeholder={t('new_timezone_placeholder')}
+											className={cn(ft.input, 'shadow-inner')}
+										/>
+									</div>
+								</div>
 
-									<div className="space-y-4">
-										<div>
-											<Label htmlFor="lat-dir" className={cn('mb-1.5 block', ft.label)}>
-												{t('new_lat_direction')}
-											</Label>
-											<Select
-												value={latitudeDir}
-												onValueChange={(v) => setLatitudeDir(v as LatDir)}
-											>
-												<SelectTrigger
-													id="lat-dir"
-													className={cn(ft.selectTrigger, 'shadow-inner')}
-												>
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent className={ft.selectContent}>
-													{LAT_DIRS.map((dir) => (
-														<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
-															{t(dir.labelKey)}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-										<div>
-											<Label htmlFor="lon-dir" className={cn('mb-1.5 block', ft.label)}>
-												{t('new_lon_direction')}
-											</Label>
-											<Select
-												value={longitudeDir}
-												onValueChange={(v) => setLongitudeDir(v as LonDir)}
-											>
-												<SelectTrigger
-													id="lon-dir"
-													className={cn(ft.selectTrigger, 'shadow-inner')}
-												>
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent className={ft.selectContent}>
-													{LON_DIRS.map((dir) => (
-														<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
-															{t(dir.labelKey)}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-										<div>
-											<Label className={cn('mb-1.5 block', ft.label)}>
-												{t('new_ephemeris_label')}
-											</Label>
-											<div
-												className={cn(
-													'w-full rounded-lg px-4 py-2.5 text-base md:text-sm',
-													ft.inputDisabled,
-													'border-0'
-												)}
-											>
-												{t('new_engine_swiss')}
-											</div>
-										</div>
+								<div className="space-y-4">
+									<div>
+										<Label htmlFor="lat-dir" className={cn('mb-1.5 block', ft.label)}>
+											{t('new_lat_direction')}
+										</Label>
+										<Select value={latitudeDir} onValueChange={(v) => setLatitudeDir(v as LatDir)}>
+											<SelectTrigger id="lat-dir" className={cn(ft.selectTrigger, 'shadow-inner')}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												{LAT_DIRS.map((dir) => (
+													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
+														{t(dir.labelKey)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+									<div>
+										<Label htmlFor="lon-dir" className={cn('mb-1.5 block', ft.label)}>
+											{t('new_lon_direction')}
+										</Label>
+										<Select
+											value={longitudeDir}
+											onValueChange={(v) => setLongitudeDir(v as LonDir)}
+										>
+											<SelectTrigger id="lon-dir" className={cn(ft.selectTrigger, 'shadow-inner')}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												{LON_DIRS.map((dir) => (
+													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
+														{t(dir.labelKey)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									</div>
 								</div>
 							</div>
-						)}
-
-						<div className="flex gap-4 pt-4">
-							<Button
-								type="button"
-								variant="ghost"
-								className={ft.footerCancel}
-								onClick={() => onBack?.()}
-							>
-								{t('new_back')}
-							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								className={ft.footerPrimary}
-								onClick={() => void handleCreate()}
-							>
-								{t('new_create_submit')}
-							</Button>
 						</div>
+					)}
+
+					<div>
+						<Label htmlFor="location" className={cn('mb-1.5 block', ft.label)}>
+							{t('new_location')}
+						</Label>
+						<div className="space-y-2">
+							<LocationSelector
+								id="location"
+								value={location}
+								onValueChange={setLocation}
+								options={locationOptions}
+								placeholder={t('new_placeholder_any_location')}
+								searchPlaceholder={t('new_location_search')}
+								emptyLabel={t('new_placeholder_any_location')}
+								loadingLabel={t('new_resolving_location')}
+								className={ft.selectTrigger}
+								iconClassName={ft.iconColor}
+								searchLocations={searchLocations}
+								onResolvedLocationSelect={(result) =>
+									applyResolvedLocation(result.display_name, result.latitude, result.longitude)
+								}
+							/>
+							<div className="flex justify-end">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => void resolveCurrentLocation()}
+									disabled={isResolvingLocation || !location.trim()}
+									className={cn('shadow-inner', ft.selectTrigger)}
+								>
+									<LocateFixed className={cn('mr-2 h-4 w-4', ft.iconColor)} />
+									{isResolvingLocation ? t('new_resolving_location') : t('new_resolve_location')}
+								</Button>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<Label htmlFor="tags" className={cn('mb-1.5 block', ft.label)}>
+							{t('new_tags')}
+						</Label>
+						<Input
+							type="text"
+							id="tags"
+							value={tags}
+							onChange={(e) => setTags(e.target.value)}
+							placeholder={t('new_tags_comma_hint')}
+							className={cn(ft.input, 'shadow-inner')}
+						/>
+					</div>
+
+					<div className="flex gap-4 pt-4">
+						<Button
+							type="button"
+							variant="ghost"
+							className={ft.footerCancel}
+							onClick={() => onBack?.()}
+						>
+							{t('new_back')}
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							className={ft.footerPrimary}
+							onClick={() => void handleCreate()}
+						>
+							{t('new_create_submit')}
+						</Button>
+					</div>
 				</div>
 			</AppMainContentContainer>
 		</AppMainContentRoot>
