@@ -44,7 +44,11 @@ import {
 	type ObservableObjectCategory
 } from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
-import type { AspectLineTierStyleState, WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
+import {
+	SUPPORTED_RUST_HOUSE_SYSTEMS,
+	type AspectLineTierStyleState,
+	type WorkspaceDefaultsState
+} from '@/lib/tauri/chartPayload';
 import { searchLocations } from '@/lib/tauri/workspace';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 
@@ -55,17 +59,7 @@ const LANG_BUBBLES: { code: AppLanguage; label: string }[] = [
 	{ code: 'es', label: 'ES' }
 ];
 
-const HOUSE_SYSTEMS = [
-	'Placidus',
-	'Whole Sign',
-	'Campanus',
-	'Koch',
-	'Equal',
-	'Regiomontanus',
-	'Vehlow',
-	'Porphyry',
-	'Alcabitius'
-] as const;
+const HOUSE_SYSTEMS = SUPPORTED_RUST_HOUSE_SYSTEMS;
 
 const PRESET_OPTIONS = [
 	{ value: 'default', label: 'Default' },
@@ -517,7 +511,7 @@ function SettingsView({
 										<p className={cn('text-xs', ft.muted)}>
 											{t('settings_house_system_hint', {
 												defaultValue:
-													'Swiss-backed paths support the full list. The current Rust JPL path computes Whole Sign and Placidus directly.'
+													'Shown options are computed by the current Rust JPL backend.'
 											})}
 										</p>
 									</div>

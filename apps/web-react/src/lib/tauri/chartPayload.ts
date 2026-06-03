@@ -40,6 +40,22 @@ export interface AppChart {
 	};
 }
 
+export const SUPPORTED_RUST_HOUSE_SYSTEMS = [
+	'Placidus',
+	'Whole Sign',
+	'Campanus'
+] as const;
+
+export type SupportedRustHouseSystem = (typeof SUPPORTED_RUST_HOUSE_SYSTEMS)[number];
+
+export function normalizeSupportedHouseSystem(
+	value?: string | null
+): SupportedRustHouseSystem | null {
+	const normalized = value?.trim();
+	if (!normalized) return null;
+	return SUPPORTED_RUST_HOUSE_SYSTEMS.find((system) => system === normalized) ?? null;
+}
+
 export interface ComputedChartPayload {
 	positions?: Record<string, unknown>;
 	motion?: Record<
@@ -220,7 +236,10 @@ export function chartDataToComputePayload(
 	const dateTime = asNonEmpty(chart.dateTime);
 	const locationName = asNonEmpty(chart.location) ?? defaults.locationName;
 	const timezone = asNonEmpty(chart.timezone) ?? defaults.timezone;
-	const houseSystem = asNonEmpty(chart.houseSystem) ?? defaults.houseSystem;
+	const houseSystem =
+		normalizeSupportedHouseSystem(asNonEmpty(chart.houseSystem)) ??
+		normalizeSupportedHouseSystem(defaults.houseSystem) ??
+		'Placidus';
 	const zodiacType = asNonEmpty(chart.zodiacType) ?? defaults.zodiacType;
 	const mode = asNonEmpty(chart.chartType) ?? 'NATAL';
 	const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);

@@ -35,6 +35,7 @@ import {
 	chartDataToComputePayload,
 	createBootstrapChart,
 	DEFAULT_WORKSPACE_DEFAULTS,
+	normalizeSupportedHouseSystem,
 	normalizeComputedChartPayload,
 	type AppChart,
 	type WorkspaceDefaultsState
@@ -83,7 +84,7 @@ function mergeWorkspaceDefaults(
 			? dto.default_location_longitude
 			: prev.locationLongitude;
 	return {
-		houseSystem: dto.default_house_system?.trim() || prev.houseSystem,
+		houseSystem: normalizeSupportedHouseSystem(dto.default_house_system) ?? prev.houseSystem,
 		zodiacType: prev.zodiacType,
 		timezone: dto.default_timezone?.trim() || prev.timezone,
 		locationName: dto.default_location_name?.trim() || prev.locationName,
@@ -329,7 +330,15 @@ export default function App() {
 	const applyWorkspaceDefaultsPatch = useCallback(
 		async (patch: Partial<WorkspaceDefaultsState>) => {
 			const nextDefaults = mergeWorkspaceDefaultsPatch(workspaceDefaults, patch);
+			const nextCharts =
+				typeof patch.houseSystem === 'string'
+					? charts.map((chart) => ({ ...chart, houseSystem: patch.houseSystem }))
+					: charts;
 			setWorkspaceDefaults(nextDefaults);
+			if (nextCharts !== charts) {
+				setSelectedChartPreview(null);
+				setCharts(nextCharts);
+			}
 
 			if (workspacePath) {
 				try {
@@ -340,7 +349,7 @@ export default function App() {
 				}
 			}
 
-			for (const chart of charts) {
+			for (const chart of nextCharts) {
 				try {
 					const result = await computeChartFromData(chartDataToComputePayload(chart, nextDefaults));
 					applyComputedChartResult(chart.id, result);
@@ -544,6 +553,7 @@ export default function App() {
 								section={activeTransitSection}
 								theme={theme}
 								glyphSet={astrologyGlyphSet}
+								workspacePath={workspacePath}
 							/>
 						) : activeView === 'nastaveni' ? (
 							<SettingsView

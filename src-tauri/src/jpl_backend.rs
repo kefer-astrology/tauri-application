@@ -29,9 +29,9 @@ use crate::ephemeris_manager::{
     PARTHENOPE_J2000, PSYCHE_J2000, THETIS_J2000, VICTORIA_J2000, VESTA_J2000,
 };
 use crate::houses::{
-    compute_axes, general_precession_deg, icrf_to_ecliptic, julian_day_from_unix, mean_node_lon,
-    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, true_node_tropical_deg,
-    whole_sign_cusps,
+    campanus_cusps, compute_axes, general_precession_deg, icrf_to_ecliptic,
+    julian_day_from_unix, mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg,
+    placidus_cusps, true_node_tropical_deg, whole_sign_cusps,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem};
 
@@ -390,6 +390,7 @@ impl AstronomyBackend for JplAstronomyBackend {
         let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
             Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
             Some(HouseSystem::Placidus) => placidus_cusps(jd_ut, lat, lon, asc, mc),
+            Some(HouseSystem::Campanus) => campanus_cusps(jd_ut, lat, lon, asc, mc),
             Some(other) => {
                 let name = format!("{other:?}").to_lowercase();
                 (

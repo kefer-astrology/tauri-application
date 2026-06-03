@@ -254,8 +254,9 @@ export function HoroscopeDashboard({
 	const showDsc = enabledPositionIds.has('desc');
 	const showMc = enabledPositionIds.has('mc');
 	const showIc = enabledPositionIds.has('ic');
+	const chartAscLongitude = normalizeLongitude(computedAxes?.asc ?? computedPositions.asc) ?? undefined;
 	const axisLongitudes = {
-		asc: showAsc ? (normalizeLongitude(computedAxes?.asc ?? computedPositions.asc) ?? undefined) : undefined,
+		asc: showAsc ? chartAscLongitude : undefined,
 		dsc: showDsc ? (normalizeLongitude(computedAxes?.desc ?? computedPositions.desc) ?? undefined) : undefined,
 		mc: showMc ? (normalizeLongitude(computedAxes?.mc ?? computedPositions.mc) ?? undefined) : undefined,
 		ic: showIc ? (normalizeLongitude(computedAxes?.ic ?? computedPositions.ic) ?? undefined) : undefined
@@ -489,6 +490,8 @@ export function HoroscopeDashboard({
 							bodyLongitudes={wheelBodyLongitudes}
 							bodyOrder={wheelBodyOrder}
 							axisLongitudes={axisLongitudes}
+							houseCusps={selectedChart?.computed?.houseCusps}
+							ascRotationLongitude={chartAscLongitude}
 							useFallbackData={false}
 							showPlanetGlyphs
 							showAxisLines={showAxisLines}

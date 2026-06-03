@@ -164,6 +164,16 @@ function normalizeDeg(value: number) {
 	return ((value % 360) + 360) % 360;
 }
 
+function midpointLongitude(startLon: number, endLon: number) {
+	return normalizeDeg(startLon + normalizeDeg(endLon - startLon) / 2);
+}
+
+function normalizeHouseCusps(cusps?: readonly number[]) {
+	if (!cusps || cusps.length !== 12) return [];
+	const normalized = cusps.map((cusp) => (Number.isFinite(cusp) ? normalizeDeg(cusp) : null));
+	return normalized.every((cusp): cusp is number => cusp !== null) ? normalized : [];
+}
+
 function normalizeAspectPointId(id: string): string {
 	const s = id.trim().toLowerCase();
 	return s === 'desc' ? 'dsc' : s;
@@ -233,6 +243,10 @@ export interface HoroscopeWheelProps {
 	bodyLongitudes?: Partial<Record<string, number>>;
 	bodyOrder?: readonly HoroscopeWheelBody[];
 	axisLongitudes?: Partial<HoroscopeWheelAxis>;
+	/** House cusps 1-12 in ecliptic longitude, from backend/Swiss/JPL. */
+	houseCusps?: readonly number[];
+	/** Longitude that should be pinned to the left edge; normally the computed ASC. */
+	ascRotationLongitude?: number;
 	useFallbackData?: boolean;
 	/** Bodies that receive a soft halo (badge hover, singleton, focal planets, …) */
 	highlightBodies?: ReadonlySet<HoroscopeWheelBody>;
@@ -259,6 +273,8 @@ export function HoroscopeWheel({
 	bodyLongitudes,
 	bodyOrder,
 	axisLongitudes,
+	houseCusps,
+	ascRotationLongitude,
 	useFallbackData = true,
 	highlightBodies = new Set(),
 	dimNonHighlighted = false,
@@ -280,11 +296,15 @@ export function HoroscopeWheel({
 	const center = wheelSize / 2;
 	const outerRadius = 320;
 	const innerRadius = 270;
+	const houseRingGap = 6;
+	const houseOuterRadius = innerRadius - houseRingGap;
+	const houseInnerRadius = houseOuterRadius - 25;
 	const innerCenterRing = 184;
 	const innerCenterCore = 152;
 	/** Small outward nudge from the original mid-band radii (larger values crowded the layout). */
 	const glyphRadialOutset = 3;
-	const planetRadius = (innerRadius + innerCenterRing) / 2 - 8 + glyphRadialOutset;
+	const planetRadius = (houseInnerRadius + innerCenterRing) / 2 - 8 + glyphRadialOutset;
+	const houseLabelRadius = (houseInnerRadius + houseOuterRadius) / 2;
 	/** Aspect chords on the inner radix band (between core and inner ring), not at glyph radius. */
 	const radixAspectChordRadius = (innerCenterCore + innerCenterRing) / 2;
 	const zodiacRadius = (innerRadius + outerRadius) / 2 + glyphRadialOutset;
@@ -307,8 +327,11 @@ export function HoroscopeWheel({
 	const strokeMain = 'var(--token-wheel-stroke-main)';
 	const strokeSoft = 'var(--token-wheel-stroke-soft)';
 	const fillBg = 'var(--token-wheel-bg)';
-	const wheelRotationOffset = 0;
+	const wheelRotationOffset = typeof ascRotationLongitude === 'number' && Number.isFinite(ascRotationLongitude)
+		? -normalizeDeg(ascRotationLongitude)
+		: 0;
 	const displayLon = (lon: number) => normalizeDeg(lon + wheelRotationOffset);
+	const wheelHouseCusps = normalizeHouseCusps(houseCusps);
 
 	const bodies: { key: HoroscopeWheelBody; icon: string }[] = (bodyOrder ?? DEFAULT_WHEEL_BODY_ORDER).map(
 		(key) => ({
@@ -538,6 +561,25 @@ export function HoroscopeWheel({
 			<circle
 				cx={center}
 				cy={center}
+				r={houseOuterRadius}
+				fill="none"
+				stroke={strokeMain}
+				strokeWidth="1.25"
+				opacity={0.72}
+			/>
+			<circle
+				cx={center}
+				cy={center}
+				r={houseInnerRadius}
+				fill="none"
+				stroke={strokeMain}
+				strokeWidth="1.25"
+				opacity={0.72}
+			/>
+
+			<circle
+				cx={center}
+				cy={center}
 				r={innerCenterRing}
 				fill="none"
 				stroke={strokeSoft}
@@ -551,6 +593,45 @@ export function HoroscopeWheel({
 				stroke={strokeSoft}
 				strokeWidth="1.5"
 			/>
+
+			{/* House cusps from the computed house system; projected after ASC rotation. */}
+			{wheelHouseCusps.length === 12 && (
+				<g data-handoff="Layer_HouseCusps" style={{ pointerEvents: 'none' }}>
+					{wheelHouseCusps.map((cusp, idx) => {
+						const p1 = polar(center, center, houseInnerRadius, displayLon(cusp));
+						const p2 = polar(center, center, houseOuterRadius, displayLon(cusp));
+						const next = wheelHouseCusps[(idx + 1) % wheelHouseCusps.length]!;
+						const labelLon = midpointLongitude(cusp, next);
+						const label = polar(center, center, houseLabelRadius, displayLon(labelLon));
+						const isAngular = idx === 0 || idx === 3 || idx === 6 || idx === 9;
+						return (
+							<g key={`house-cusp-${idx + 1}`}>
+								<line
+									x1={p1.x}
+									y1={p1.y}
+									x2={p2.x}
+									y2={p2.y}
+									stroke={strokeMain}
+									strokeWidth={isAngular ? 1.25 : 0.9}
+									opacity={isAngular ? 0.85 : 0.64}
+								/>
+								<text
+									x={label.x}
+									y={label.y}
+									textAnchor="middle"
+									dominantBaseline="middle"
+									fontSize="13"
+									fontWeight={isAngular ? 700 : 600}
+									fill={planetGlyphColor}
+									opacity={0.86}
+								>
+									{idx + 1}
+								</text>
+							</g>
+						);
+					})}
+				</g>
+			)}
 
 			{/* Axis lines for hemisphere boundaries */}
 			{showAxisLines && hasAxisGeometry && pAsc && pDsc && pMc && pIc && (

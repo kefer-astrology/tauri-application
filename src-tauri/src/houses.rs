@@ -117,21 +117,77 @@ pub fn whole_sign_cusps(asc_lon_deg: f64) -> Vec<f64> {
         .collect()
 }
 
+/// Campanus house cusps: divide the prime vertical into equal 30° arcs and
+/// project those division circles onto the ecliptic.
+///
+/// Returns 12 values in order (house 1 through 12). Houses 1, 4, 7, and 10 are
+/// the ascendant, IC, descendant, and MC respectively.
+pub fn campanus_cusps(
+    jd_ut: f64,
+    geo_lat_deg: f64,
+    geo_lon_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
+    let eps = mean_obliquity_deg(jd_ut);
+    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
+
+    let lat = geo_lat_deg.to_radians();
+    let sin_lat = lat.sin();
+    let cos_lat = lat.cos();
+    if cos_lat.abs() < 1e-12 {
+        return (
+            whole_sign_cusps(asc_lon_deg),
+            vec!["campanus_undefined_at_geographic_pole; whole_sign_used".to_string()],
+        );
+    }
+
+    let sqrt3 = 3.0_f64.sqrt();
+    let fh1 = (sin_lat * 0.5).asin().to_degrees();
+    let fh2 = (sin_lat * sqrt3 * 0.5).asin().to_degrees();
+    let xh1 = (sqrt3 / cos_lat).atan().to_degrees();
+    let xh2 = ((1.0 / sqrt3) / cos_lat).atan().to_degrees();
+
+    let h11 = great_circle_ecliptic_intersection(ramc + 90.0 - xh1, fh1, eps);
+    let h12 = great_circle_ecliptic_intersection(ramc + 90.0 - xh2, fh2, eps);
+    let h2 = great_circle_ecliptic_intersection(ramc + 90.0 + xh2, fh2, eps);
+    let h3 = great_circle_ecliptic_intersection(ramc + 90.0 + xh1, fh1, eps);
+
+    let desc = normalize_deg(asc_lon_deg + 180.0);
+    let ic = normalize_deg(mc_lon_deg + 180.0);
+    let cusps = vec![
+        asc_lon_deg,
+        h2,
+        h3,
+        ic,
+        normalize_deg(h11 + 180.0),
+        normalize_deg(h12 + 180.0),
+        desc,
+        normalize_deg(h2 + 180.0),
+        normalize_deg(h3 + 180.0),
+        mc_lon_deg,
+        h11,
+        h12,
+    ];
+    (cusps, vec![])
+}
+
 /// Placidus house cusps (houses 2–5, 8–11 computed iteratively; 1, 4, 7, 10 are the angles).
 /// Returns 12 values in order (house 1 through 12).
 /// Falls back to Whole Sign with a warning when Placidus is undefined (high latitudes).
 pub fn placidus_cusps(
     jd_ut: f64,
     geo_lat_deg: f64,
-    _geo_lon_deg: f64,
+    geo_lon_deg: f64,
     asc_lon_deg: f64,
     mc_lon_deg: f64,
 ) -> (Vec<f64>, Vec<String>) {
-    let eps = mean_obliquity_deg(jd_ut).to_radians();
+    let eps = mean_obliquity_deg(jd_ut);
+    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
     let lat = geo_lat_deg.to_radians();
 
-    // Placidus is undefined above ~66° (midnight sun region)
-    if geo_lat_deg.abs() > 66.0 {
+    // Placidus is undefined inside the polar circle.
+    if geo_lat_deg.abs() >= 90.0 - eps {
         return (
             whole_sign_cusps(asc_lon_deg),
             vec!["placidus_undefined_at_latitude; whole_sign_used".to_string()],
@@ -141,12 +197,20 @@ pub fn placidus_cusps(
     let desc = normalize_deg(asc_lon_deg + 180.0);
     let ic = normalize_deg(mc_lon_deg + 180.0);
 
-    // Cusps 2, 3 (between IC and ASC going clockwise) computed by trisecting the
-    // semi-arc below the horizon.
-    let h11 = placidus_cusp(mc_lon_deg, 1.0 / 3.0, eps, lat);
-    let h12 = placidus_cusp(mc_lon_deg, 2.0 / 3.0, eps, lat);
-    let h2 = placidus_cusp(ic, 2.0 / 3.0, eps, lat);
-    let h3 = placidus_cusp(ic, 1.0 / 3.0, eps, lat);
+    // The intermediate Placidus cusps are derived from RAMC, not from MC/IC
+    // ecliptic longitude. Using longitude as RAMC preserves the angles but can
+    // put houses 2/3/8/9 into the wrong quadrant.
+    let tan_eps = eps.to_radians().tan();
+    let a = (lat.tan() * tan_eps).asin().to_degrees();
+    let fh1 = ((a / 3.0).to_radians().sin() / tan_eps).atan().to_degrees();
+    let fh2 = ((a * 2.0 / 3.0).to_radians().sin() / tan_eps)
+        .atan()
+        .to_degrees();
+
+    let h11 = placidus_cusp(normalize_deg(ramc + 30.0), fh1, 3.0, eps, lat);
+    let h12 = placidus_cusp(normalize_deg(ramc + 60.0), fh2, 1.5, eps, lat);
+    let h2 = placidus_cusp(normalize_deg(ramc + 120.0), fh2, 1.5, eps, lat);
+    let h3 = placidus_cusp(normalize_deg(ramc + 150.0), fh1, 3.0, eps, lat);
 
     // Houses 5, 6, 8, 9 are opposite to 11, 12, 2, 3
     let h5 = normalize_deg(h11 + 180.0);
@@ -171,41 +235,91 @@ pub fn placidus_cusps(
     (cusps, vec![])
 }
 
-/// Single Placidus cusp via the trisection formula.
-/// `anchor` is MC or IC ecliptic longitude; `fraction` is 1/3 or 2/3.
-fn placidus_cusp(anchor_deg: f64, fraction: f64, eps_rad: f64, lat_rad: f64) -> f64 {
-    // Iterative solution: find λ such that its oblique ascension divided by the
-    // semi-arc equals the fraction. Converges in ~5 iterations for most latitudes.
-    let mut lon = anchor_deg;
-    for _ in 0..20 {
-        let lon_rad = lon.to_radians();
-        let dec = f64::asin(eps_rad.sin() * lon_rad.sin()); // declination of the cusp
-        let cos_dec = dec.cos();
-        if cos_dec.abs() < 1e-10 {
-            break;
+/// Single Placidus cusp following the Swiss Ephemeris iterative projection.
+/// `rectasc_deg` is the cusp's right ascension seed derived from RAMC.
+fn placidus_cusp(
+    rectasc_deg: f64,
+    initial_pole_height_deg: f64,
+    divisor: f64,
+    obliquity_deg: f64,
+    lat_rad: f64,
+) -> f64 {
+    let mut cusp =
+        great_circle_ecliptic_intersection(rectasc_deg, initial_pole_height_deg, obliquity_deg);
+    let tan_lat = lat_rad.tan();
+
+    for _ in 0..100 {
+        let decl_tan = (obliquity_deg.to_radians().sin() * cusp.to_radians().sin())
+            .asin()
+            .tan();
+        if decl_tan.abs() < 1e-12 {
+            return rectasc_deg;
         }
-        // Semi-diurnal arc: angle from meridian to horizon
-        let cos_sa = -(lat_rad.tan() * dec.tan());
-        if cos_sa.abs() > 1.0 {
-            break; // circumpolar or never rises
+
+        let asin_arg = (tan_lat * decl_tan).clamp(-1.0, 1.0);
+        let pole_height = ((asin_arg.asin() / divisor).sin() / decl_tan)
+            .atan()
+            .to_degrees();
+        let next = great_circle_ecliptic_intersection(rectasc_deg, pole_height, obliquity_deg);
+
+        if angular_delta_deg_shortest(cusp, next).abs() < 1.0 / 360_000.0 {
+            return next;
         }
-        let sa = cos_sa.acos();
-        // RAMC of the cusp
-        let ramc_cusp = local_ramc_from_fraction(anchor_deg, fraction, sa.to_degrees());
-        // Convert RAMC to ecliptic longitude
-        let ramc_rad = ramc_cusp.to_radians();
-        let new_lon = f64::atan2(ramc_rad.sin(), ramc_rad.cos() * eps_rad.cos()).to_degrees();
-        let new_lon = normalize_deg(new_lon);
-        if (new_lon - lon).abs() < 1e-6 {
-            return new_lon;
-        }
-        lon = new_lon;
+        cusp = next;
     }
-    lon
+
+    cusp
 }
 
-fn local_ramc_from_fraction(anchor_deg: f64, fraction: f64, sa_deg: f64) -> f64 {
-    normalize_deg(anchor_deg + fraction * sa_deg)
+/// Intersection of the ecliptic with a great circle. `equator_crossing_deg` is
+/// the great circle's ascending-node-like crossing on the equator; `pole_height_deg`
+/// is the circle pole's height above the equator.
+fn great_circle_ecliptic_intersection(
+    equator_crossing_deg: f64,
+    pole_height_deg: f64,
+    obliquity_deg: f64,
+) -> f64 {
+    let x = normalize_deg(equator_crossing_deg);
+    let quadrant = (x / 90.0).floor() as i32 + 1;
+    if (90.0 - pole_height_deg).abs() < 1e-10 {
+        return 180.0;
+    }
+    if (90.0 + pole_height_deg).abs() < 1e-10 {
+        return 0.0;
+    }
+
+    let projected = match quadrant {
+        1 => great_circle_ecliptic_intersection_q1(x, pole_height_deg, obliquity_deg),
+        2 => {
+            180.0
+                - great_circle_ecliptic_intersection_q1(180.0 - x, -pole_height_deg, obliquity_deg)
+        }
+        3 => {
+            180.0
+                + great_circle_ecliptic_intersection_q1(x - 180.0, -pole_height_deg, obliquity_deg)
+        }
+        _ => {
+            360.0 - great_circle_ecliptic_intersection_q1(360.0 - x, pole_height_deg, obliquity_deg)
+        }
+    };
+    normalize_deg(projected)
+}
+
+fn great_circle_ecliptic_intersection_q1(
+    x_deg: f64,
+    pole_height_deg: f64,
+    obliquity_deg: f64,
+) -> f64 {
+    let x = x_deg.to_radians();
+    let pole_height = pole_height_deg.to_radians();
+    let eps = obliquity_deg.to_radians();
+    let denominator = -pole_height.tan() * eps.sin() + eps.cos() * x.cos();
+    let angle = x.sin().atan2(denominator).to_degrees();
+    if angle < 0.0 {
+        angle + 180.0
+    } else {
+        angle
+    }
 }
 
 // ─── lunar node ──────────────────────────────────────────────────────────────
@@ -387,5 +501,57 @@ mod tests {
         let cusps = whole_sign_cusps(45.0); // ASC at 15° Taurus
         assert_eq!(cusps.len(), 12);
         assert!((cusps[0] - 30.0).abs() < 1e-9); // Taurus starts at 30°
+    }
+
+    #[test]
+    fn campanus_cusps_are_not_whole_sign() {
+        let jd = 2451545.0;
+        let lat = 50.0875;
+        let lon = 14.4214;
+        let (asc, mc, desc, ic) = compute_axes(jd, lat, lon).expect("axes");
+        let (campanus, warnings) = campanus_cusps(jd, lat, lon, asc, mc);
+        assert!(warnings.is_empty(), "unexpected warnings: {warnings:?}");
+        assert_eq!(campanus.len(), 12);
+        assert!(campanus.iter().all(|cusp| cusp.is_finite()));
+        assert!((campanus[0] - asc).abs() < 1e-9);
+        assert!((campanus[3] - ic).abs() < 1e-9);
+        assert!((campanus[6] - desc).abs() < 1e-9);
+        assert!((campanus[9] - mc).abs() < 1e-9);
+
+        let whole = whole_sign_cusps(asc);
+        assert!(
+            campanus
+                .iter()
+                .zip(whole.iter())
+                .any(|(a, b)| angular_delta_deg_shortest(*a, *b).abs() > 1.0),
+            "Campanus collapsed to Whole Sign: {campanus:?}"
+        );
+    }
+
+    #[test]
+    fn placidus_cusps_advance_in_house_order() {
+        let jd = 2451545.0;
+        let lat = 50.0875;
+        let lon = 14.4214;
+        let (asc, mc, desc, ic) = compute_axes(jd, lat, lon).expect("axes");
+        let (cusps, warnings) = placidus_cusps(jd, lat, lon, asc, mc);
+        assert!(warnings.is_empty(), "unexpected warnings: {warnings:?}");
+        assert_eq!(cusps.len(), 12);
+        assert!((cusps[0] - asc).abs() < 1e-9);
+        assert!((cusps[3] - ic).abs() < 1e-9);
+        assert!((cusps[6] - desc).abs() < 1e-9);
+        assert!((cusps[9] - mc).abs() < 1e-9);
+
+        for index in 0..cusps.len() {
+            let current = cusps[index];
+            let next = cusps[(index + 1) % cusps.len()];
+            let arc = normalize_deg(next - current);
+            assert!(
+                arc > 0.0 && arc < 90.0,
+                "cusp {} to {} should advance by a plausible house arc, got {arc} from {current} to {next}; cusps={cusps:?}",
+                index + 1,
+                (index + 1) % cusps.len() + 1
+            );
+        }
     }
 }
