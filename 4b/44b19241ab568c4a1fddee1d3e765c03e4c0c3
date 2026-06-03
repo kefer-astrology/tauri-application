@@ -1,0 +1,26 @@
+docs/layouts/_default/list.html
+  s_ad847b4d1263cf::t_ed65e1cee0417d 21,28
+docs/hugo.toml
+  s_ad847b4d1263cf::t_a1663d837608bc 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "4b44b19241ab568c4a1fddee1d3e765c03e4c0c3",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_ad847b4d1263cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7aa1-ba28-7323-829a-7e15fd094b43",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
