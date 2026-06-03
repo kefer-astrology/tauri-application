@@ -1,6 +1,6 @@
 baseURL = "/"
 title = "Kefer docs"
-languageCode = "en-us"
+locale = "en-US"
 disableKinds = ["taxonomy", "term", "rss", "sitemap"]
 staticDir = ["static", "../static"]
 
