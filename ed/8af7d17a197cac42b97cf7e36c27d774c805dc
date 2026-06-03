@@ -1,0 +1,24 @@
+docs/layouts/_default/list.html
+  s_67290df301866b::t_348a0ecacfdacb 2-9,29,36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ed8af7d17a197cac42b97cf7e36c27d774c805dc",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_67290df301866b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e8db3-5b61-77d2-acf4-03856c2eb796",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
