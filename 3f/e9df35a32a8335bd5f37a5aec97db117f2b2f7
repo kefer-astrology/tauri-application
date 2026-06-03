@@ -1,0 +1,143 @@
+apps/web-svelte/src/lib/components/ui/table/table.svelte
+  s_8075e421ece6be::t_f6c24f70246f04 1-12
+apps/web-svelte/src/lib/stores/app-shell-icons.svelte.ts
+  s_ad847b4d1263cf::t_860c2df5a42843 88
+apps/web-svelte/src/lib/tauri/types.ts
+  s_ad847b4d1263cf::t_ee3d49d45b1acc 119-125
+  s_a6642f6a4933da::t_78ac603a4ed260 98-107,113-116
+  s_ad847b4d1263cf::t_ed8a1bd40f60de 1-96,108-112,117-118
+  s_ad847b4d1263cf::t_25e2a8b974ffc6 126-173
+  s_a6642f6a4933da::t_b64321f974bc1e 97
+apps/web-svelte/vite.config.ts
+  s_ad847b4d1263cf::t_186c47fca11983 32-55
+apps/web-svelte/src/lib/components/chart-matrix/AspectMatrix.svelte
+  s_8075e421ece6be::t_801db473655b5f 3-8
+  s_8075e421ece6be::t_293fe34851e1d8 1-2,9-154
+apps/web-svelte/src/lib/components/RadixChart.svelte
+  s_8075e421ece6be::t_177ffcf7f7140e 166,225,320
+apps/web-svelte/src/lib/components/ui/table/table-header.svelte
+  s_8075e421ece6be::t_33f93d0aa84af4 1-10
+apps/web-svelte/src/lib/tauri/workspace.ts
+  s_ad847b4d1263cf::t_25e2a8b974ffc6 5,8-9,206-343
+  s_ad847b4d1263cf::t_af540ec80eb24a 10,153-160
+  s_ad847b4d1263cf::t_ed8a1bd40f60de 1-4,6-7,12-152,161-201,203-205,344-380
+  s_a6642f6a4933da::t_78ac603a4ed260 11,202
+apps/web-svelte/src/lib/components/OpenWorkspaceView.svelte
+  s_8075e421ece6be::t_c4fcd9cdd8366e 5,54-56
+  s_8075e421ece6be::t_6c800efa984bf9 73-75
+  s_ad847b4d1263cf::t_154d3edf8ffb51 7-12,58,61-63,65,84,90-91
+apps/web-svelte/src/lib/components/ui/card/index.ts
+  s_8075e421ece6be::t_f8da03e79e0b68 1-6
+apps/web-svelte/src/lib/stores/data.svelte.ts
+  s_ad847b4d1263cf::t_4a739c92c4e494 6-11,14,84-89,103,146-151,183-188
+  s_ad847b4d1263cf::t_c7f48acad6f730 12
+  s_8075e421ece6be::t_dc394409033af5 5,60-61,64-73,140-142,177
+apps/web-svelte/src/lib/components/ui/card/card-header.svelte
+  s_8075e421ece6be::t_546fd5b1b1a348 1-10
+apps/web-svelte/src/lib/components/ui/card/card-title.svelte
+  s_8075e421ece6be::t_a03b000ab129b2 1-10
+apps/web-svelte/src/lib/components/LocationSelector.svelte
+  s_ad847b4d1263cf::t_6edfd264b53ae8 1-223
+apps/web-svelte/src/lib/components/ui/table/table-row.svelte
+  s_8075e421ece6be::t_51cfc369d695a3 2,5
+  s_8075e421ece6be::t_a40ef4de809a3a 1,3-4,6-10
+apps/web-svelte/src/lib/components/ui/card/card-description.svelte
+  s_8075e421ece6be::t_a8a90199ef4d93 1-10
+apps/web-svelte/src/lib/components/ui/label/index.ts
+  s_8075e421ece6be::t_a64a14eecadedd 1
+apps/web-svelte/src/lib/tauri/runtime.ts
+  s_8075e421ece6be::t_4ecf664c4db5f9 1-3
+apps/web-svelte/src/lib/components/SettingsView.svelte
+  s_ad847b4d1263cf::t_7dcc329868e76b 36,43-44,47-48,79-90,293-328
+  s_ad847b4d1263cf::t_bb9f508596e9d5 40-42,45-46,222,243,245
+  s_ad847b4d1263cf::t_5246c8f9324173 397,399-403,405-410,412-429
+  s_8075e421ece6be::t_9739d5b7eb7ab3 39,220,240-242
+apps/web-svelte/package.json
+  s_8075e421ece6be::t_985ebe64e7d27a 25,30
+apps/web-svelte/src/lib/components/ui/table/table-body.svelte
+  s_8075e421ece6be::t_b825697983edcd 1-10
+apps/web-svelte/src/lib/components/InformationView.svelte
+  s_8075e421ece6be::t_90bb4934caafbe 3-6
+  s_8075e421ece6be::t_5cddfd6f5085d6 1-2,7-90
+apps/web-svelte/src/lib/components/SpecGatedModeView.svelte
+  s_8075e421ece6be::t_3771b512d10a7c 1-2,7-41
+  s_8075e421ece6be::t_40a989995fea70 3-6
+apps/web-svelte/src/lib/components/ui/card/card.svelte
+  s_8075e421ece6be::t_0ff9420ff8ad6d 1-10
+apps/web-svelte/src/lib/components/ui/card/card-content.svelte
+  s_8075e421ece6be::t_b9ab6036905bb3 1-10
+apps/web-svelte/src/lib/components/ui/card/card-footer.svelte
+  s_8075e421ece6be::t_c5c9ccb50f6fee 1-10
+apps/web-svelte/src/lib/components/MiddleContent.svelte
+  s_ad847b4d1263cf::t_2d55dbaf1f9f6d 18
+  s_8075e421ece6be::t_a8525b2b59c802 11,17,70-89,455,477,510
+  s_8075e421ece6be::t_c76d6b20e68628 630,674,676,786
+  s_ad847b4d1263cf::t_1b991416a1652f 459,461,492,494,513,515
+apps/web-svelte/src/lib/components/ui/table/table-cell.svelte
+  s_8075e421ece6be::t_2147a1011a6232 1-18
+apps/web-svelte/src/lib/components/ui/table/table-head.svelte
+  s_8075e421ece6be::t_28db72d58be79e 1-18
+apps/web-svelte/src/lib/components/ui/table/index.ts
+  s_8075e421ece6be::t_379d87ce878868 1-7
+apps/web-svelte/src/app.css
+  s_8075e421ece6be::t_9efffb922735f2 44-47,84-87
+apps/web-svelte/src/lib/components/chart-matrix/ChartMatrixGlyph.svelte
+  s_8075e421ece6be::t_9cb0853cc2bff5 1-49
+apps/web-svelte/src/lib/components/ui/table/table-caption.svelte
+  s_8075e421ece6be::t_1fc041c24d54d3 1-10
+apps/web-svelte/src/lib/components/ui/label/label.svelte
+  s_8075e421ece6be::t_516e3d3f2584e2 1-10
+apps/web-svelte/src/lib/components/chart-matrix/index.ts
+  s_8075e421ece6be::t_2e2d4ee614c657 1-2
+apps/web-svelte/src/App.svelte
+  s_ad847b4d1263cf::t_b0b4ca808edbb2 13,16-17,33,60-71,595-629,669-675
+  s_a6642f6a4933da::t_e23c8c623345e8 241
+  s_8075e421ece6be::t_578b3e464584cd 11-12,1033-1036
+  s_ad847b4d1263cf::t_3c4237bf445e35 961-962,965-977,979-994
+  s_a6642f6a4933da::t_994fcc41b2fb6b 51,55
+  s_a6642f6a4933da::t_407cc166db4a94 510-512,526-527,650-653
+  s_8075e421ece6be::t_2d25722f4e13e5 15,677,1315-1316
+  s_ad847b4d1263cf::t_8d8fed8e117c75 681,683,1330
+  s_a6642f6a4933da::t_342606f7b3dc54 841-859
+  s_a6642f6a4933da::t_8c4e95f7297c04 1011
+  s_a6642f6a4933da::t_d5c85902f11952 886-954
+apps/web-svelte/src/lib/components/AspectGrid.svelte
+  s_8075e421ece6be::t_3831341da36b49 2-4,11,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "3fe9df35a32a8335bd5f37a5aec97db117f2b2f7",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8075e421ece6be": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "deed23b8-69ce-4eb6-b521-2de7484e0fd2",
+        "model": "default"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_a6642f6a4933da": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e819a-55d9-78a2-829b-c039b3e8dc6d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_ad847b4d1263cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7aa1-ba28-7323-829a-7e15fd094b43",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
