@@ -1,4 +1,12 @@
 {{ define "main" }}
+  {{ $frontends := slice }}
+  {{ with site.Data.generated }}
+    {{ with .frontends }}
+      {{ with .frontends }}
+        {{ $frontends = . }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
   <article class="content">
     <header class="page-header">
       <p class="eyebrow">{{ .Section }}</p>
@@ -18,14 +26,14 @@
         {{ end }}
       </section>
     {{ end }}
-    {{ if and .IsHome hugo.Data.generated.frontends.frontends }}
+    {{ if and .IsHome $frontends }}
       <section id="frontend-builds" class="frontend-section">
         <div class="section-heading">
           <p class="eyebrow">Static frontends</p>
           <h2>Published frontend builds</h2>
         </div>
         <div class="card-grid">
-          {{ range hugo.Data.generated.frontends.frontends }}
+          {{ range $frontends }}
             <a class="card" href="{{ .output | relURL }}">
               <h3>{{ .id }}</h3>
               <p>{{ .title }}</p>
