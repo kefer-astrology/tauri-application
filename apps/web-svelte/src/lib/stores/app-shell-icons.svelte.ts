@@ -85,7 +85,7 @@ export const appShellIconSetOptions: AppShellIconSetOption[] = [
   {
     id: 'default',
     label: 'Default',
-    description: 'Heritage React app-shell icon family.',
+    description: 'Default app-shell SVG family.',
   },
   {
     id: 'modern',

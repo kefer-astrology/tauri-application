@@ -8,32 +8,14 @@
   import { presets, preset, applyPreset } from '$lib/state/theme.svelte';
   import { showOpenExportOverlay } from '$lib/state/layout';
   import RadixChart from '$lib/components/RadixChart.svelte';
-  import AspectGrid from '$lib/components/AspectGrid.svelte';
+  import { AspectMatrix } from '$lib/components/chart-matrix';
   import { DEFAULT_ASPECT_COLORS } from '$lib/astrology/aspects';
   import { effectiveTime, timeNavigation } from '$lib/stores/timeNavigation.svelte';
   import { getCurrentPositions, queryPositions, type Position } from '$lib/stores/data.svelte';
   import { signIdFromLongitude } from '$lib/stores/glyphs.svelte';
   import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
-  import { invoke } from '@tauri-apps/api/core';
-
-  type MoonDetailsPayload = {
-    elongation_deg: number;
-    illuminated_fraction: number;
-    age_days: number;
-    waxing: boolean;
-    phase_id: string;
-    phase_label: string;
-  } | null;
-
-  type ComputeChartInvokeResult = {
-    positions?: Record<string, unknown>;
-    motion?: Record<string, { speed: number; retrograde: boolean }>;
-    aspects?: unknown[];
-    axes?: { asc: number; desc: number; mc: number; ic: number };
-    house_cusps?: number[];
-    moon_details?: MoonDetailsPayload;
-    chart_id?: string;
-  };
+  import { isTauriRuntime } from '$lib/tauri/runtime';
+  import { computeChart, computeChartFromData, computeResultToComputed } from '$lib/tauri/workspace';
 
   // reactive references using runes
   const tab = $derived(layout.selectedTab);
@@ -83,16 +65,28 @@
   function openChart() { showOpenExportOverlay(true); }
   function selectContext(id: string) { layout.selectedContext = id; }
 
-  // square sizing logic
-  let contentEl = $state<HTMLDivElement | undefined>(undefined);
   let square = $state(0);
 
-  function recompute() {
-    if (!contentEl) return;
-    const rect = contentEl.getBoundingClientRect();
-    // Keep a safety margin so SVG labels never clip at container edges.
-    const size = Math.floor(Math.min(rect.width, rect.height) * 0.99);
-    square = size > 0 ? size : 0;
+  function measureSquare(node: HTMLElement) {
+    let frame = 0;
+    const recompute = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const rect = node.getBoundingClientRect();
+        // Keep a safety margin so SVG labels never clip at container edges.
+        const size = Math.floor(Math.min(rect.width, rect.height) * 0.99);
+        square = size > 0 ? size : 0;
+      });
+    };
+    const observer = new ResizeObserver(recompute);
+    observer.observe(node);
+    recompute();
+    return {
+      destroy() {
+        cancelAnimationFrame(frame);
+        observer.disconnect();
+      }
+    };
   }
 
   function normalizeLongitude(value: unknown): number | null {
@@ -160,15 +154,6 @@
       orb
     };
   }
-
-  $effect(() => {
-    const el = contentEl;
-    if (!el) return;
-    const ro = new ResizeObserver(() => recompute());
-    ro.observe(el);
-    queueMicrotask(recompute);
-    return () => ro.disconnect();
-  });
 
   // Load positions from database for radix chart
   const selectedChart = $derived(getSelectedChart());
@@ -467,19 +452,13 @@
   $effect(() => {
     const chart = selectedChart;
     if (!chart?.id || layout.workspacePath) return;
+    if (!isTauriRuntime()) return;
     if (!chart.dateTime?.trim() || !chart.location?.trim()) return;
     if (chart.computed?.positions && Object.keys(chart.computed.positions).length > 0) return;
     const payload = chartDataToComputePayload(chart);
-    invoke<ComputeChartInvokeResult>('compute_chart_from_data', { chartJson: payload })
+    computeChartFromData(payload)
       .then((result) => {
-        updateChartComputation(chart.id, {
-          positions: result.positions ?? {},
-          motion: result.motion ?? {},
-          aspects: result.aspects ?? [],
-          axes: result.axes,
-          houseCusps: result.house_cusps,
-          moonDetails: result.moon_details
-        });
+        updateChartComputation(chart.id, computeResultToComputed(result));
       })
       .catch((err) => {
         console.warn('In-memory compute failed for chart', chart.id, err);
@@ -495,6 +474,7 @@
 
     if (!chart?.id) return;
     if (!chart.location?.trim()) return;
+    if (!isTauriRuntime()) return;
     if (workspacePath && availableTimestamps.length > 1) return;
 
     const targetDateTime = timeIso.slice(0, 19) + 'Z';
@@ -509,16 +489,9 @@
     };
     astrolabeComputeInFlightFor = requestKey;
 
-    invoke<ComputeChartInvokeResult>('compute_chart_from_data', { chartJson: chartDataToComputePayload(chartAtTime) })
+    computeChartFromData(chartDataToComputePayload(chartAtTime))
       .then((result) => {
-        updateChartComputationAtTime(chart.id, targetDateTime, {
-          positions: result.positions ?? {},
-          motion: result.motion ?? {},
-          aspects: result.aspects ?? [],
-          axes: result.axes,
-          houseCusps: result.house_cusps,
-          moonDetails: result.moon_details
-        });
+        updateChartComputationAtTime(chart.id, targetDateTime, computeResultToComputed(result));
       })
       .catch((err) => {
         console.warn('Astrolabe recompute failed for chart', chart.id, err);
@@ -534,21 +507,12 @@
   $effect(() => {
     const chart = selectedChart;
     if (!chart?.id || !layout.workspacePath) return;
+    if (!isTauriRuntime()) return;
     if (chart.computed?.positions && Object.keys(chart.computed.positions).length > 0) return;
 
-    invoke<ComputeChartInvokeResult>('compute_chart', {
-      workspacePath: layout.workspacePath,
-      chartId: chart.id,
-    })
+    computeChart(layout.workspacePath, chart.id)
       .then((result) => {
-        updateChartComputation(chart.id, {
-          positions: result.positions ?? {},
-          motion: result.motion ?? {},
-          aspects: result.aspects ?? [],
-          axes: result.axes,
-          houseCusps: result.house_cusps,
-          moonDetails: result.moon_details
-        });
+        updateChartComputation(chart.id, computeResultToComputed(result));
       })
       .catch((err) => {
         console.warn('Workspace compute failed for chart', chart.id, err);
@@ -663,7 +627,7 @@
   <div class="h-full w-full min-h-0 rounded-md border border-transparent bg-transparent p-2 flex flex-col overflow-hidden">
     {#if tab === 'Radix'}
       <!-- Radix: Only SVG -->
-      <div class="flex-1 min-h-0 flex items-center justify-center" bind:this={contentEl}>
+      <div class="flex-1 min-h-0 flex items-center justify-center" use:measureSquare>
         {#if square > 0}
           {#if positionError}
             <div class="text-sm text-destructive opacity-80">
@@ -707,9 +671,9 @@
     {:else if tab === 'Aspects'}
       <!-- Aspects: Aspect grid SVG in a box -->
       <div class="flex-1 min-h-0 flex items-center justify-center p-4">
-        <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm flex items-center justify-center" bind:this={contentEl}>
+        <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm flex items-center justify-center" use:measureSquare>
           {#if square > 0}
-            <AspectGrid
+            <AspectMatrix
               size={square}
               planetPositions={planetPositions()}
               aspects={chartAspects}
@@ -819,7 +783,7 @@
         </ul>
       </div>
 
-      <div class="flex-1 min-h-0 flex items-center justify-center" bind:this={contentEl}>
+      <div class="flex-1 min-h-0 flex items-center justify-center" use:measureSquare>
         {#if square > 0}
           <div
             class="rounded-md border border-dashed bg-muted/40 text-muted-foreground flex items-center justify-center"

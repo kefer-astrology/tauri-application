@@ -8,16 +8,19 @@
   import ExportWorkspaceView from '$lib/components/ExportWorkspaceView.svelte';
   import SettingsView from '$lib/components/SettingsView.svelte';
   import TimeNavigationPanel from '$lib/components/TimeNavigationPanel.svelte';
+  import InformationView from '$lib/components/InformationView.svelte';
+  import SpecGatedModeView from '$lib/components/SpecGatedModeView.svelte';
+  import LocationSelector from '$lib/components/LocationSelector.svelte';
   import { layout, type Mode, showOpenExportOverlay, getSelectedChart, chartDataToComputePayload, type ChartData, setMode } from '$lib/state/layout';
-  import { invoke } from '@tauri-apps/api/core';
+  import { isTauriRuntime } from '$lib/tauri/runtime';
+  import { computeTransitSeries, createChart, resolveLocation, searchLocations, updateChart } from '$lib/tauri/workspace';
+  import type { ResolvedLocation, TransitSeriesEntry, TransitSeriesResult } from '$lib/tauri/types';
   import { reapplyCurrentPreset } from '$lib/state/theme.svelte';
   import { timeNavigation } from '$lib/stores/timeNavigation.svelte';
   import { t } from '$lib/i18n/index.svelte';
-  import * as Accordion from '$lib/components/ui/accordion/index.js';
   import * as Select from '$lib/components/ui/select/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
-  import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import { getGlyphContent, signIdFromLongitude } from '$lib/stores/glyphs.svelte';
   import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
@@ -27,6 +30,7 @@
   import * as Dialog from '$lib/components/ui/dialog/index.js';
   import { onMount } from 'svelte';
   import { stepForward, stepBackward } from '$lib/stores/timeNavigation.svelte';
+  import LocateFixed from '@lucide/svelte/icons/locate-fixed';
 
   let rightExpanded = $state(true);
   // Left column has three panels with independent states
@@ -44,14 +48,27 @@
   let newContextName = $state('');
   let newDate = $state('');
   let newTime = $state('');
+  let newTimeRegime = $state<'auto' | 'manual'>('auto');
   let newLocation = $state('');
   let newLatitude = $state('');
   let newLongitude = $state('');
+  let newTimezone = $state('');
   let newHouseSystem = $state('Placidus');
   let newZodiacType = $state('Tropical');
   let newTags = $state('');
   let editingChartId = $state<string | null>(null);
-  let advancedExpanded = $state<string | undefined>(undefined);
+  let isResolvingNewLocation = $state(false);
+  let newLocationStatus = $state<string | null>(null);
+  const newLocationOptions = $derived(
+    [
+      layout.workspaceDefaults.locationName,
+      'Prague, Czech Republic',
+      'Brno, Czech Republic',
+      'Pardubice, Czech Republic',
+      'Bratislava, Slovakia',
+      'Vienna, Austria'
+    ].filter(Boolean)
+  );
   
   // Open Chart mode state
   let openMode = $state<'my_radixes' | 'database'>('my_radixes');
@@ -119,17 +136,6 @@
   let transitSourceChartId = $state<string>('');
   let transitLoading = $state(false);
   let transitError = $state<string | null>(null);
-  type TransitSeriesEntry = {
-    datetime: string;
-    transit_positions?: Record<string, unknown>;
-    aspects?: Array<Record<string, unknown>>;
-  };
-  type TransitSeriesResult = {
-    source_chart_id?: string;
-    time_range?: { start: string; end: string };
-    time_step?: string;
-    results?: TransitSeriesEntry[];
-  };
   let transitSeries = $state<TransitSeriesEntry[]>([]);
   let transitMeta = $state<TransitSeriesResult | null>(null);
   
@@ -232,10 +238,9 @@
   ]);
 
   const newRadixMenuItems = $derived([
-    { id: 'NATAL', label: t('new_type_radix', {}, 'Radix') },
+    { id: 'NATAL', label: t('new_type_radix', {}, 'Nativity') },
     { id: 'EVENT', label: t('new_type_event', {}, 'Event') },
     { id: 'HORARY', label: t('new_type_horary', {}, 'Horary') },
-    { id: 'COMPOSITE', label: t('new_type_composite', {}, 'Composite') },
   ]);
 
   const dynamicMenuItems = $derived([
@@ -502,6 +507,9 @@
     newLocation = chart.location || '';
     newLatitude = chart.latitude?.toString() || '';
     newLongitude = chart.longitude?.toString() || '';
+    newTimezone = chart.timezone ?? '';
+    newTimeRegime =
+      chart.timezone && chart.timezone !== layout.workspaceDefaults.timezone ? 'manual' : 'auto';
     newHouseSystem = chart.houseSystem || 'Placidus';
     newZodiacType = chart.zodiacType || 'Tropical';
     newTags = chart.tags.join(', ');
@@ -515,6 +523,8 @@
     newLocation = '';
     newLatitude = '';
     newLongitude = '';
+    newTimezone = '';
+    newTimeRegime = 'auto';
     newTags = '';
     newChartType = 'NATAL';
     newHouseSystem = 'Placidus';
@@ -582,6 +592,43 @@
     return Number.isFinite(num) ? num : undefined;
   }
 
+  function formatCoordinate(value: number): string {
+    return value.toFixed(4);
+  }
+
+  function applyResolvedNewLocation(location: ResolvedLocation) {
+    newLocation = location.display_name;
+    newLatitude = formatCoordinate(location.latitude);
+    newLongitude = formatCoordinate(location.longitude);
+    newLocationStatus = `${t('toast_location_resolved', {}, 'Location resolved')}: ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`;
+  }
+
+  async function resolveNewLocation(): Promise<ResolvedLocation | null> {
+    const query = newLocation.trim();
+    if (!query) {
+      newLocationStatus = t('toast_location_required', {}, 'Enter a location first.');
+      return null;
+    }
+    if (!isTauriRuntime()) {
+      newLocationStatus = t('toast_location_resolve_failed', {}, 'Failed to resolve location');
+      return null;
+    }
+
+    isResolvingNewLocation = true;
+    newLocationStatus = null;
+    try {
+      const resolved = await resolveLocation(query);
+      applyResolvedNewLocation(resolved);
+      return resolved;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      newLocationStatus = `${t('toast_location_resolve_failed', {}, 'Failed to resolve location')}: ${message}`;
+      return null;
+    } finally {
+      isResolvingNewLocation = false;
+    }
+  }
+
   function buildChartFromForm(chartId: string): ChartData {
     const wsDefaults = layout.workspaceDefaults;
     const tags = newTags
@@ -600,7 +647,10 @@
       location: nonEmptyOr(newLocation, wsDefaults.locationName),
       latitude,
       longitude,
-      timezone: wsDefaults.timezone,
+      timezone:
+        newTimeRegime === 'manual'
+          ? nonEmptyOr(newTimezone, wsDefaults.timezone)
+          : wsDefaults.timezone,
       houseSystem: nonEmptyOr(newHouseSystem, wsDefaults.houseSystem),
       zodiacType: nonEmptyOr(newZodiacType, wsDefaults.zodiacType),
       engine: wsDefaults.engine,
@@ -616,22 +666,21 @@
     if (!n) return;
 
     const chartId = editingChartId ?? normalizeChartId(n);
-    const formChart = buildChartFromForm(chartId);
+    let formChart = buildChartFromForm(chartId);
+    if ((!newLatitude.trim() || !newLongitude.trim()) && newLocation.trim()) {
+      const resolved = await resolveNewLocation();
+      if (resolved) {
+        formChart = buildChartFromForm(chartId);
+      }
+    }
 
-    if (layout.workspacePath) {
+    if (layout.workspacePath && isTauriRuntime()) {
       const payload = chartDataToComputePayload(formChart);
       try {
         if (editingChartId) {
-          await invoke<string>('update_chart', {
-            workspacePath: layout.workspacePath,
-            chartId: editingChartId,
-            chart: payload,
-          });
+          await updateChart(layout.workspacePath, editingChartId, payload);
         } else {
-          await invoke<string>('create_chart', {
-            workspacePath: layout.workspacePath,
-            chart: payload,
-          });
+          await createChart(layout.workspacePath, payload);
         }
       } catch (err) {
         console.error('Failed to persist chart to workspace:', err);
@@ -789,6 +838,25 @@
                   placeholder={t('new_context_placeholder', {}, 'e.g. John Doe')}
                 />
               </div>
+
+              <!-- Chart Type -->
+              <div class="space-y-1">
+                <label class="block text-sm font-medium opacity-85" for="new-chart-type">
+                  {t('new_type', {}, 'Type')}
+                </label>
+                <Select.Root type="single" bind:value={newChartType}>
+                  <Select.Trigger id="new-chart-type" class="w-full h-9 px-3">
+                    {newRadixMenuItems.find((item) => item.id === newChartType)?.label ?? t('new_type_radix', {}, 'Nativity')}
+                  </Select.Trigger>
+                  <Select.Content>
+                    <Select.Group>
+                      {#each newRadixMenuItems as item}
+                        <Select.Item value={item.id} label={item.label}>{item.label}</Select.Item>
+                      {/each}
+                    </Select.Group>
+                  </Select.Content>
+                </Select.Root>
+              </div>
               
               <!-- Date and Time -->
               <div class="grid grid-cols-2 gap-4">
@@ -815,27 +883,115 @@
                   />
                 </div>
               </div>
+
+              <!-- Time Regime -->
+              <div class="space-y-2">
+                <div class="block text-sm font-medium opacity-85">
+                  {t('new_time_regime', {}, 'Time regime')}
+                </div>
+                <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t('new_time_regime', {}, 'Time regime')}>
+                  <Button
+                    type="button"
+                    variant={newTimeRegime === 'auto' ? 'default' : 'outline'}
+                    class="h-9"
+                    aria-pressed={newTimeRegime === 'auto'}
+                    onclick={() => {
+                      newTimeRegime = 'auto';
+                    }}
+                  >
+                    {t('new_time_regime_auto', {}, 'Auto')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={newTimeRegime === 'manual' ? 'default' : 'outline'}
+                    class="h-9"
+                    aria-pressed={newTimeRegime === 'manual'}
+                    onclick={() => {
+                      newTimeRegime = 'manual';
+                    }}
+                  >
+                    {t('new_time_regime_manual', {}, 'Manual')}
+                  </Button>
+                </div>
+              </div>
+
+              {#if newTimeRegime === 'manual'}
+                <div class="space-y-4 rounded-xl bg-muted/40 p-4">
+                  <div class="text-sm font-medium opacity-85">
+                    {t('new_manual_time_details', {}, 'Manual time details')}
+                  </div>
+                  <div class="space-y-2">
+                    <div class="text-xs font-medium opacity-75">
+                      {t('new_home_location_details', {}, 'Home location details')}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                      <Input
+                        type="text"
+                        class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
+                        placeholder={t('placeholder_latitude', {}, 'Latitude')}
+                        bind:value={newLatitude}
+                      />
+                      <Input
+                        type="text"
+                        class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
+                        placeholder={t('placeholder_longitude', {}, 'Longitude')}
+                        bind:value={newLongitude}
+                      />
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="block text-xs font-medium opacity-75">
+                      {t('new_utc_shift_definition', {}, 'UTC shift definition')}
+                    </div>
+                    <Input
+                      type="text"
+                      class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
+                      placeholder={t('new_timezone_placeholder', {}, 'Europe/Prague or UTC+01:00')}
+                      bind:value={newTimezone}
+                    />
+                  </div>
+                </div>
+              {/if}
               
               <!-- Location -->
               <div class="space-y-1">
                 <label class="block text-sm font-medium opacity-85" for="new-location">
                   {t('new_location', {}, 'Location')}
                 </label>
-                <div class="flex gap-2">
-                  <Input
+                <div class="space-y-2">
+                  <LocationSelector
                     id="new-location"
-                    type="text"
-                    class="flex-1 h-9 px-3 rounded-md bg-background text-foreground border"
                     bind:value={newLocation}
-                    placeholder={t('new_location_search', {}, 'Search')}
+                    onValueChange={() => {
+                      newLocationStatus = null;
+                    }}
+                    options={newLocationOptions}
+                    placeholder={t('new_placeholder_any_location', {}, 'Any searchable location…')}
+                    searchPlaceholder={t('new_location_search', {}, 'Search')}
+                    emptyLabel={t('new_placeholder_any_location', {}, 'Any searchable location…')}
+                    loadingLabel={t('new_resolving_location', {}, 'Resolving…')}
+                    searchLocations={isTauriRuntime() ? searchLocations : undefined}
+                    onResolvedLocationSelect={(location) => {
+                      applyResolvedNewLocation(location);
+                    }}
+                    class="bg-background"
                   />
-                  <Button 
-                    type="button" 
-                    class="px-3 py-1.5 rounded-md bg-transparent border hover:bg-white/10 text-sm"
-                    title={t('new_location_search', {}, 'Search')}
-                  >
-                    🔍
-                  </Button>
+                  <div class="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      class="h-9 px-3 text-sm"
+                      onclick={() => void resolveNewLocation()}
+                      disabled={isResolvingNewLocation || !newLocation.trim() || !isTauriRuntime()}
+                      title={t('new_resolve_location', {}, 'Resolve location')}
+                    >
+                      <LocateFixed class="h-4 w-4" />
+                      {isResolvingNewLocation ? t('new_resolving_location', {}, 'Resolving…') : t('new_resolve_location', {}, 'Resolve location')}
+                    </Button>
+                  </div>
+                  {#if newLocationStatus}
+                    <div class="text-xs opacity-75">{newLocationStatus}</div>
+                  {/if}
                 </div>
               </div>
               
@@ -852,106 +1008,7 @@
                   placeholder={t('placeholder_tags_example', {}, 'e.g. personal, important')}
                 />
               </div>
-              
-              <!-- Advanced Settings -->
-              <Accordion.Root bind:value={advancedExpanded} type="single">
-                <Accordion.Item value="advanced">
-                  <Accordion.Trigger class="text-sm font-medium opacity-85">
-                    {t('new_advanced', {}, 'Advanced')}
-                  </Accordion.Trigger>
-                  <Accordion.Content>
-                    <div class="space-y-3 pt-2">
-                      <div class="space-y-1">
-                        <div class="block text-xs font-medium opacity-75">
-                          {t('new_advanced_coords', {}, 'Coords')}
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                          <Input
-                            type="text"
-                            class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
-                            placeholder={t('placeholder_latitude', {}, 'Latitude')}
-                            bind:value={newLatitude}
-                          />
-                          <Input
-                            type="text"
-                            class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
-                            placeholder={t('placeholder_longitude', {}, 'Longitude')}
-                            bind:value={newLongitude}
-                          />
-                        </div>
-                      </div>
-                      <div class="space-y-1">
-                        <div class="block text-xs font-medium opacity-75">
-                          {t('house_system', {}, 'House System')}
-                        </div>
-                        <Select.Root type="single" bind:value={newHouseSystem}>
-                          <Select.Trigger class="w-full h-8 px-2 text-xs">{newHouseSystem}</Select.Trigger>
-                          <Select.Content>
-                            <Select.Group>
-                              <Select.Item value="Placidus" label="Placidus">Placidus</Select.Item>
-                              <Select.Item value="Whole Sign" label="Whole Sign">Whole Sign</Select.Item>
-                              <Select.Item value="Campanus" label="Campanus">Campanus</Select.Item>
-                              <Select.Item value="Koch" label="Koch">Koch</Select.Item>
-                              <Select.Item value="Equal" label="Equal">Equal</Select.Item>
-                              <Select.Item value="Regiomontanus" label="Regiomontanus">Regiomontanus</Select.Item>
-                              <Select.Item value="Vehlow" label="Vehlow">Vehlow</Select.Item>
-                              <Select.Item value="Porphyry" label="Porphyry">Porphyry</Select.Item>
-                              <Select.Item value="Alcabitius" label="Alcabitius">Alcabitius</Select.Item>
-                            </Select.Group>
-                          </Select.Content>
-                        </Select.Root>
-                      </div>
-                      <div class="space-y-1">
-                        <div class="block text-xs font-medium opacity-75">
-                          {t('zodiac_type', {}, 'Zodiac Type')}
-                        </div>
-                        <Select.Root type="single" bind:value={newZodiacType}>
-                          <Select.Trigger class="w-full h-8 px-2 text-xs">{newZodiacType}</Select.Trigger>
-                          <Select.Content>
-                            <Select.Group>
-                              <Select.Item value="Tropical" label="Tropical">Tropical</Select.Item>
-                              <Select.Item value="Sidereal" label="Sidereal">Sidereal</Select.Item>
-                            </Select.Group>
-                          </Select.Content>
-                        </Select.Root>
-                      </div>
-                      <div class="space-y-1">
-                        <div class="block text-xs font-medium opacity-75">
-                          {t('new_advanced_date', {}, 'Date')}
-                        </div>
-                        <div class="flex gap-2">
-                          <Button type="button" class="flex-1 px-2 py-1 text-xs rounded border hover:bg-white/10">
-                            {t('new_advanced_date_gregorian', {}, 'Gregorian')}
-                          </Button>
-                          <Button type="button" class="flex-1 px-2 py-1 text-xs rounded border hover:bg-white/10">
-                            {t('new_advanced_date_julian', {}, 'Julian')}
-                          </Button>
-                        </div>
-                      </div>
-                      <div class="space-y-1">
-                        <div class="block text-xs font-medium opacity-75">
-                          {t('new_advanced_timezone', {}, 'Timezone')}
-                        </div>
-                        <Input
-                          type="text"
-                          class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
-                          placeholder={t('placeholder_utc_offset', {}, 'UTC offset')}
-                        />
-                      </div>
-                      <div class="space-y-1">
-                        <div class="block text-xs font-medium opacity-75">
-                          {t('new_notes', {}, 'Notes')}
-                        </div>
-                        <Textarea
-                          class="w-full min-h-20 px-2 py-1 text-xs resize-none"
-                          placeholder={t('placeholder_notes', {}, 'Additional notes...')}
-                        ></Textarea>
-                      </div>
-                    </div>
-                  </Accordion.Content>
-                </Accordion.Item>
-              </Accordion.Root>
-              
+
               <!-- Submit buttons -->
               <div class="flex gap-2 pt-2">
                 <Button type="submit" class="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90">
@@ -973,11 +1030,10 @@
           <OpenWorkspaceView bind:openMode />
         {:else if mode === 'export'}
           <ExportWorkspaceView bind:exportType />
-        {:else if mode === 'info' || mode === 'dynamic' || mode === 'revolution' || mode === 'favorite'}
-          <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col items-start justify-start">
-            <h2 class="text-lg font-semibold mb-3">{t(mode, {}, mode.charAt(0).toUpperCase() + mode.slice(1))}</h2>
-            <div class="text-sm opacity-85">{t('mode_view_placeholder', { mode: t(mode, {}, mode) }, 'Content for {mode} view will be displayed here.')}</div>
-          </div>
+        {:else if mode === 'info'}
+          <InformationView />
+        {:else if mode === 'dynamic' || mode === 'revolution' || mode === 'favorite'}
+          <SpecGatedModeView {mode} />
         {:else if mode === 'settings'}
           <SettingsView section={selectedSettingsSection} />
         {:else}
@@ -1256,6 +1312,10 @@
                   transitError = 'Open a workspace to compute transits, or save your charts to a folder first.';
                   return;
                 }
+                if (!isTauriRuntime()) {
+                  transitError = 'Transit computation is only available in the desktop app.';
+                  return;
+                }
                 const chartId = transitSourceChartId || getSelectedChart()?.id;
                 if (!chartId) {
                   transitError = 'No chart selected for transit computation.';
@@ -1267,7 +1327,7 @@
                 transitMeta = null;
 
                 try {
-                  const result = await invoke<TransitSeriesResult>('compute_transit_series', {
+                  const result = await computeTransitSeries({
                     workspacePath: layout.workspacePath,
                     chartId: chartId,
                     startDatetime: timeNavigation.startTime.toISOString(),

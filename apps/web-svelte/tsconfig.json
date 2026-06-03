@@ -12,7 +12,6 @@
 		"strict": false,
 		"target": "ES2022",
 		"types": ["svelte", "vite/client"],
-		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"],
 			"$lib/*": ["./src/lib/*"]

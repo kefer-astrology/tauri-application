@@ -33,27 +33,19 @@
     type AspectLineTierStyleState
   } from '$lib/astrology/aspects';
   import BodySelector from '$lib/components/BodySelector.svelte';
+  import LocationSelector from '$lib/components/LocationSelector.svelte';
   import { layout, chartDataToComputePayload, updateChartComputationAtTime, setWorkspaceDefaults } from '$lib/state/layout';
   import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
-  import { invoke } from '@tauri-apps/api/core';
-
-  type MoonDetailsPayload = {
-    elongation_deg: number;
-    illuminated_fraction: number;
-    age_days: number;
-    waxing: boolean;
-    phase_id: string;
-    phase_label: string;
-  } | null;
-
-  type ComputeChartFromDataResult = {
-    positions?: Record<string, unknown>;
-    motion?: Record<string, { speed: number; retrograde: boolean }>;
-    aspects?: unknown[];
-    axes?: { asc: number; desc: number; mc: number; ic: number };
-    house_cusps?: number[];
-    moon_details?: MoonDetailsPayload;
-  };
+  import { isTauriRuntime } from '$lib/tauri/runtime';
+  import {
+    computeChartFromData,
+    computeResultToComputed,
+    resolveLocation,
+    searchLocations,
+    saveWorkspaceDefaults
+  } from '$lib/tauri/workspace';
+  import type { ResolvedLocation } from '$lib/tauri/types';
+  import LocateFixed from '@lucide/svelte/icons/locate-fixed';
 
   let {
     section
@@ -84,6 +76,18 @@
   let longitude = $state(String(layout.workspaceDefaults.locationLongitude));
   let timezone = $state(layout.workspaceDefaults.timezone);
   let houseSystem = $state(layout.workspaceDefaults.houseSystem);
+  let isResolvingLocation = $state(false);
+  let locationStatus = $state<string | null>(null);
+  const locationOptions = $derived(
+    [
+      layout.workspaceDefaults.locationName,
+      'Prague, Czech Republic',
+      'Brno, Czech Republic',
+      'Pardubice, Czech Republic',
+      'Bratislava, Slovakia',
+      'Vienna, Austria'
+    ].filter(Boolean)
+  );
 
   const languages = $derived(
     Object.keys(i18n.dicts).map((code) => ({
@@ -213,32 +217,9 @@
     options?: { recomputeCharts?: boolean }
   ) {
     setWorkspaceDefaults(patch);
-    if (layout.workspacePath) {
+    if (layout.workspacePath && isTauriRuntime()) {
       try {
-        await invoke('save_workspace_defaults', {
-          workspacePath: layout.workspacePath,
-          defaults: {
-            default_house_system: layout.workspaceDefaults.houseSystem,
-            default_timezone: layout.workspaceDefaults.timezone,
-            default_location_name: layout.workspaceDefaults.locationName,
-            default_location_latitude: layout.workspaceDefaults.locationLatitude,
-            default_location_longitude: layout.workspaceDefaults.locationLongitude,
-            default_engine: layout.workspaceDefaults.engine,
-            default_bodies: layout.workspaceDefaults.defaultBodies,
-            default_aspects: layout.workspaceDefaults.defaultAspects,
-            default_aspect_orbs: layout.workspaceDefaults.defaultAspectOrbs,
-            default_aspect_colors: layout.workspaceDefaults.defaultAspectColors,
-            aspect_line_tier_style: {
-              tight_threshold_pct: layout.workspaceDefaults.aspectLineTierStyle.tightThresholdPct,
-              medium_threshold_pct: layout.workspaceDefaults.aspectLineTierStyle.mediumThresholdPct,
-              loose_threshold_pct: layout.workspaceDefaults.aspectLineTierStyle.looseThresholdPct,
-              width_tight: layout.workspaceDefaults.aspectLineTierStyle.widthTight,
-              width_medium: layout.workspaceDefaults.aspectLineTierStyle.widthMedium,
-              width_loose: layout.workspaceDefaults.aspectLineTierStyle.widthLoose,
-              width_outer: layout.workspaceDefaults.aspectLineTierStyle.widthOuter
-            }
-          },
-        });
+        await saveWorkspaceDefaults(layout.workspacePath, layout.workspaceDefaults);
       } catch (err) {
         console.warn('Failed to persist workspace defaults', err);
       }
@@ -256,16 +237,12 @@
       };
 
       try {
-        const result = await invoke<ComputeChartFromDataResult>('compute_chart_from_data', { chartJson: chartDataToComputePayload(chartAtTime) });
+        if (!isTauriRuntime()) {
+          continue;
+        }
+        const result = await computeChartFromData(chartDataToComputePayload(chartAtTime));
 
-        updateChartComputationAtTime(chart.id, chartAtTime.dateTime, {
-          positions: result.positions ?? {},
-          motion: result.motion ?? {},
-          aspects: result.aspects ?? [],
-          axes: result.axes,
-          houseCusps: result.house_cusps,
-          moonDetails: result.moon_details
-        });
+        updateChartComputationAtTime(chart.id, chartAtTime.dateTime, computeResultToComputed(result));
       } catch (err) {
         console.warn(`Failed to refresh chart ${chart.id} after settings change`, err);
       }
@@ -311,6 +288,44 @@
       locationLongitude: Number.isFinite(parsedLongitude) ? parsedLongitude : layout.workspaceDefaults.locationLongitude,
       timezone: timezone.trim() || layout.workspaceDefaults.timezone
     });
+  }
+
+  function applyResolvedDefaultLocation(location: ResolvedLocation) {
+    defaultLocation = location.display_name;
+    latitude = location.latitude.toFixed(4);
+    longitude = location.longitude.toFixed(4);
+    locationStatus = `${t('toast_location_resolved', {}, 'Location resolved')}: ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`;
+    settingsChanged = true;
+  }
+
+  async function selectResolvedDefaultLocation(location: ResolvedLocation) {
+    applyResolvedDefaultLocation(location);
+    await persistLocationSettings();
+  }
+
+  async function resolveDefaultLocation() {
+    const query = defaultLocation.trim();
+    if (!query) {
+      locationStatus = t('toast_location_required', {}, 'Enter a location first.');
+      return;
+    }
+    if (!isTauriRuntime()) {
+      locationStatus = t('toast_location_resolve_failed', {}, 'Failed to resolve location');
+      return;
+    }
+
+    isResolvingLocation = true;
+    locationStatus = null;
+    try {
+      const resolved = await resolveLocation(query);
+      applyResolvedDefaultLocation(resolved);
+      await persistLocationSettings();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      locationStatus = `${t('toast_location_resolve_failed', {}, 'Failed to resolve location')}: ${message}`;
+    } finally {
+      isResolvingLocation = false;
+    }
   }
 
   function resetDraftsFromWorkspace() {
@@ -379,14 +394,39 @@
       <div class="space-y-4 max-w-md">
         <div class="space-y-2">
           <div class="block text-sm font-medium opacity-90">{t('default_location', {}, 'Default location')}</div>
-          <Input
-            type="text"
-            class="w-full h-9 px-3 rounded-md bg-background text-foreground border"
+          <LocationSelector
             bind:value={defaultLocation}
-            onblur={() => void persistLocationSettings()}
-            oninput={() => (settingsChanged = true)}
+            onValueChange={() => {
+              settingsChanged = true;
+              locationStatus = null;
+            }}
+            options={locationOptions}
             placeholder={t('placeholder_default_location', {}, 'Enter default location...')}
+            searchPlaceholder={t('new_location_search', {}, 'Search')}
+            emptyLabel={t('new_placeholder_any_location', {}, 'Any searchable location…')}
+            loadingLabel={t('new_resolving_location', {}, 'Resolving…')}
+            searchLocations={isTauriRuntime() ? searchLocations : undefined}
+            onResolvedLocationSelect={(location) => void selectResolvedDefaultLocation(location)}
+            class="bg-background"
           />
+          <div class="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              class="h-9 px-3 text-sm"
+              onclick={() => void resolveDefaultLocation()}
+              disabled={isResolvingLocation || !defaultLocation.trim() || !isTauriRuntime()}
+            >
+              <LocateFixed class="h-4 w-4" />
+              {isResolvingLocation ? t('new_resolving_location', {}, 'Resolving…') : t('new_resolve_location', {}, 'Resolve location')}
+            </Button>
+          </div>
+          {#if locationStatus}
+            <div class="text-xs opacity-75">{locationStatus}</div>
+          {/if}
+          <div class="text-xs opacity-70">
+            {t('settings_default_location_hint', {}, 'Choose a searched location to sync its coordinates, or adjust latitude and longitude manually below.')}
+          </div>
         </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="space-y-2">

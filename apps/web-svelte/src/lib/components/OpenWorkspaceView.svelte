@@ -1,13 +1,18 @@
 <script lang="ts">
-  import { invoke } from '@tauri-apps/api/core';
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import { t } from '$lib/i18n/index.svelte';
-  import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '$lib/astrology/aspects';
+  import { isTauriRuntime } from '$lib/tauri/runtime';
+  import {
+    initStorage,
+    openFolderDialog,
+    openWorkspaceFolder,
+    saveWorkspace,
+    workspaceDefaultsDtoToStatePatch
+  } from '$lib/tauri/workspace';
   import {
     layout,
     loadChartsFromWorkspace,
-    updateChartComputation,
     chartDataToComputePayload,
     type ChartData,
     setMode,
@@ -46,191 +51,28 @@
   }
 
   async function handleOpenWorkspace() {
+    if (!isTauriRuntime()) {
+      return;
+    }
     try {
-      const folderPath = await invoke<string | null>('open_folder_dialog');
+      const folderPath = await openFolderDialog();
       if (!folderPath) return;
 
-      const workspace = await invoke<{
-        path: string;
-        owner: string;
-        active_model: string | null;
-        charts: Array<{
-          id: string;
-          name: string;
-          chart_type: string;
-          date_time: string;
-          location: string;
-          tags: string[];
-        }>;
-      }>('load_workspace', { workspacePath: folderPath });
+      const workspace = await openWorkspaceFolder(folderPath, (defaults) => {
+        setWorkspaceDefaults(workspaceDefaultsDtoToStatePatch(defaults));
+      });
 
-      try {
-        const workspaceDefaults = await invoke<{
-          default_house_system?: string | null;
-          default_timezone?: string | null;
-          default_location_name?: string | null;
-          default_location_latitude?: number | null;
-          default_location_longitude?: number | null;
-          default_engine?: string | null;
-          default_bodies?: string[] | null;
-          default_aspects?: string[] | null;
-          default_aspect_orbs?: Record<string, number> | null;
-          default_aspect_colors?: Record<string, string> | null;
-          aspect_line_tier_style?: {
-            tight_threshold_pct?: number | null;
-            medium_threshold_pct?: number | null;
-            loose_threshold_pct?: number | null;
-            width_tight?: number | null;
-            width_medium?: number | null;
-            width_loose?: number | null;
-            width_outer?: number | null;
-          } | null;
-        }>('get_workspace_defaults', { workspacePath: folderPath });
-
-        setWorkspaceDefaults({
-          houseSystem: workspaceDefaults.default_house_system ?? undefined,
-          timezone: workspaceDefaults.default_timezone ?? undefined,
-          locationName: workspaceDefaults.default_location_name ?? undefined,
-          locationLatitude: workspaceDefaults.default_location_latitude ?? undefined,
-          locationLongitude: workspaceDefaults.default_location_longitude ?? undefined,
-          engine: workspaceDefaults.default_engine ?? undefined,
-          defaultBodies: workspaceDefaults.default_bodies ?? undefined,
-          defaultAspects: workspaceDefaults.default_aspects ?? undefined,
-          defaultAspectOrbs: workspaceDefaults.default_aspect_orbs ?? undefined,
-          defaultAspectColors: workspaceDefaults.default_aspect_colors ?? undefined,
-          aspectLineTierStyle: workspaceDefaults.aspect_line_tier_style
-            ? {
-                tightThresholdPct:
-                  workspaceDefaults.aspect_line_tier_style.tight_threshold_pct ??
-                  DEFAULT_ASPECT_LINE_TIER_STYLE.tightThresholdPct,
-                mediumThresholdPct:
-                  workspaceDefaults.aspect_line_tier_style.medium_threshold_pct ??
-                  DEFAULT_ASPECT_LINE_TIER_STYLE.mediumThresholdPct,
-                looseThresholdPct:
-                  workspaceDefaults.aspect_line_tier_style.loose_threshold_pct ??
-                  DEFAULT_ASPECT_LINE_TIER_STYLE.looseThresholdPct,
-                widthTight:
-                  workspaceDefaults.aspect_line_tier_style.width_tight ??
-                  DEFAULT_ASPECT_LINE_TIER_STYLE.widthTight,
-                widthMedium:
-                  workspaceDefaults.aspect_line_tier_style.width_medium ??
-                  DEFAULT_ASPECT_LINE_TIER_STYLE.widthMedium,
-                widthLoose:
-                  workspaceDefaults.aspect_line_tier_style.width_loose ??
-                  DEFAULT_ASPECT_LINE_TIER_STYLE.widthLoose,
-                widthOuter:
-                  workspaceDefaults.aspect_line_tier_style.width_outer ??
-                  DEFAULT_ASPECT_LINE_TIER_STYLE.widthOuter
-              }
-            : undefined,
-        });
-      } catch (defaultsErr) {
-        console.warn('Failed to load workspace defaults, using current defaults:', defaultsErr);
-      }
-
-      const charts: ChartData[] = [];
-      for (const ch of workspace.charts) {
-        try {
-          const fullChart = await invoke<{
-            id: string;
-            subject: {
-              id: string;
-              name: string;
-              event_time: string | null;
-              location: {
-                name: string;
-                latitude: number;
-                longitude: number;
-                timezone: string;
-              };
-            };
-            config: {
-              mode: string;
-              house_system: string | null;
-              zodiac_type: string;
-              engine: string | null;
-              model: string | null;
-              override_ephemeris: string | null;
-            };
-            tags: string[];
-          }>('get_chart_details', {
-            workspacePath: folderPath,
-            chartId: ch.id
-          });
-
-          charts.push({
-            id: fullChart.id,
-            name: fullChart.subject.name,
-            chartType: fullChart.config.mode,
-            dateTime: fullChart.subject.event_time || '',
-            location: fullChart.subject.location.name,
-            latitude: fullChart.subject.location.latitude,
-            longitude: fullChart.subject.location.longitude,
-            timezone: fullChart.subject.location.timezone,
-            houseSystem: fullChart.config.house_system,
-            zodiacType: fullChart.config.zodiac_type,
-            engine: fullChart.config.engine,
-            model: fullChart.config.model,
-            overrideEphemeris: fullChart.config.override_ephemeris,
-            tags: fullChart.tags,
-          });
-        } catch (err) {
-          console.error(`Failed to load full chart data for ${ch.id}:`, err);
-          charts.push({
-            id: ch.id,
-            name: ch.name,
-            chartType: ch.chart_type,
-            dateTime: ch.date_time,
-            location: ch.location,
-            tags: ch.tags,
-          });
-        }
-      }
-
-      loadChartsFromWorkspace(charts);
+      loadChartsFromWorkspace(workspace.charts);
       layout.workspacePath = workspace.path;
-      await invoke<string>('init_storage', { workspacePath: workspace.path });
-
-      for (const chart of charts) {
-        try {
-          const result = await invoke<{
-            positions?: Record<string, unknown>;
-            motion?: Record<string, { speed: number; retrograde: boolean }>;
-            aspects?: any[];
-            axes?: { asc: number; desc: number; mc: number; ic: number };
-            house_cusps?: number[];
-            moon_details?: {
-              elongation_deg: number;
-              illuminated_fraction: number;
-              age_days: number;
-              waxing: boolean;
-              phase_id: string;
-              phase_label: string;
-            } | null;
-            chart_id: string;
-          }>('compute_chart', {
-            workspacePath: workspace.path,
-            chartId: chart.id
-          });
-
-          updateChartComputation(chart.id, {
-            positions: result.positions ?? {},
-            motion: result.motion ?? {},
-            aspects: result.aspects ?? [],
-            axes: result.axes,
-            houseCusps: result.house_cusps,
-            moonDetails: result.moon_details
-          });
-        } catch (err) {
-          console.error(`Failed to compute chart ${chart.id}:`, err);
-        }
-      }
     } catch (err) {
       console.error('Failed to load workspace:', err);
     }
   }
 
   async function handleSaveWorkspace() {
+    if (!isTauriRuntime()) {
+      return;
+    }
     try {
       if (layout.contexts.length === 0) {
         console.warn('No charts to save');
@@ -239,39 +81,14 @@
 
       let folderPath: string | null = layout.workspacePath;
       if (!folderPath) {
-        folderPath = await invoke<string | null>('open_folder_dialog');
+        folderPath = await openFolderDialog();
       }
 
       if (!folderPath) return;
 
       const chartsPayload = layout.contexts.map((c) => chartDataToComputePayload(c));
-      await invoke<string>('save_workspace', {
-        workspacePath: folderPath,
-        owner: 'User',
-        charts: chartsPayload,
-        defaults: {
-          default_house_system: layout.workspaceDefaults.houseSystem,
-          default_timezone: layout.workspaceDefaults.timezone,
-          default_location_name: layout.workspaceDefaults.locationName,
-          default_location_latitude: layout.workspaceDefaults.locationLatitude,
-          default_location_longitude: layout.workspaceDefaults.locationLongitude,
-          default_engine: layout.workspaceDefaults.engine,
-          default_bodies: layout.workspaceDefaults.defaultBodies,
-          default_aspects: layout.workspaceDefaults.defaultAspects,
-          default_aspect_orbs: layout.workspaceDefaults.defaultAspectOrbs,
-          default_aspect_colors: layout.workspaceDefaults.defaultAspectColors,
-          aspect_line_tier_style: {
-            tight_threshold_pct: layout.workspaceDefaults.aspectLineTierStyle.tightThresholdPct,
-            medium_threshold_pct: layout.workspaceDefaults.aspectLineTierStyle.mediumThresholdPct,
-            loose_threshold_pct: layout.workspaceDefaults.aspectLineTierStyle.looseThresholdPct,
-            width_tight: layout.workspaceDefaults.aspectLineTierStyle.widthTight,
-            width_medium: layout.workspaceDefaults.aspectLineTierStyle.widthMedium,
-            width_loose: layout.workspaceDefaults.aspectLineTierStyle.widthLoose,
-            width_outer: layout.workspaceDefaults.aspectLineTierStyle.widthOuter
-          }
-        }
-      });
-      await invoke<string>('init_storage', { workspacePath: folderPath });
+      await saveWorkspace(folderPath, 'User', chartsPayload, layout.workspaceDefaults);
+      await initStorage(folderPath);
       layout.workspacePath = folderPath;
     } catch (err) {
       console.error('Failed to save workspace:', err);

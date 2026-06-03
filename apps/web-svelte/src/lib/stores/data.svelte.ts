@@ -1,83 +1,17 @@
 // Data Store - Svelte 5 runes-based
 // This file must be Svelte-compiled (.svelte.ts) to use runes
 
-import { invoke } from '@tauri-apps/api/core';
 import { layout } from '$lib/state/layout';
+import { isTauriRuntime } from '$lib/tauri/runtime';
+import {
+    computeWorkspaceAspects,
+    queryWorkspacePositions,
+    queryWorkspaceRadixRelative
+} from '$lib/tauri/workspace';
+import type { Aspect, Position, RadixRelativePosition } from '$lib/tauri/types';
+import { effectiveTime } from '$lib/stores/timeNavigation.svelte';
 
-/**
- * Position data structure matching DuckDB schema
- * All positions are relative to vernal equinox (longitude 0° = spring solstice)
- */
-export interface Position {
-    chart_id: string;
-    datetime: string;
-    object_id: string;
-    
-    // Ecliptic coordinates (always available)
-    longitude: number;
-    latitude?: number;
-    
-    // Equatorial coordinates (JPL - always computed)
-    declination?: number;
-    right_ascension?: number;
-    distance?: number;
-    
-    // Topocentric coordinates (JPL with location)
-    altitude?: number;
-    azimuth?: number;
-    
-    // Physical properties (JPL optional)
-    apparent_magnitude?: number;
-    phase_angle?: number;
-    elongation?: number;
-    light_time?: number;
-    
-    // Motion properties
-    speed?: number;
-    retrograde?: boolean;
-    
-    // Engine metadata
-    engine?: string;
-    ephemeris_file?: string;
-    
-    // Radix/relation tracking
-    radix_chart_id?: string;  // NULL for radix, chart_id for transits
-    is_radix: boolean;        // TRUE for base charts, FALSE for transits
-    
-    // Flags for which columns are populated
-    has_equatorial?: boolean;
-    has_topocentric?: boolean;
-    has_physical?: boolean;
-}
-
-/**
- * Aspect data structure
- */
-export interface Aspect {
-    from_object: string;
-    to_object: string;
-    aspect_type: string;
-    angle: number;
-    orb: number;
-    exact_datetime?: string;
-}
-
-/**
- * Radix-relative position data (transits vs base chart)
- */
-export interface RadixRelativePosition {
-    datetime: string;
-    object_id: string;
-    transit_longitude: number;
-    radix_longitude: number;
-    longitude_diff: number;
-    transit_declination?: number;
-    radix_declination?: number;
-    declination_diff?: number;
-    transit_distance?: number;
-    radix_distance?: number;
-    distance_diff?: number;
-}
+export type { Aspect, Position, RadixRelativePosition };
 
 /**
  * Convert in-memory computed positions (object_id -> longitude or position data) to Position[].
@@ -123,10 +57,20 @@ export async function queryPositions(
     }
 
     const workspacePath = layout.workspacePath;
+    const chart = layout.contexts.find((c) => c.id === chartId);
+    const computed = chart?.computed?.positions;
     if (!workspacePath) {
         // In-memory mode: use chart.computed.positions if available
-        const chart = layout.contexts.find((c) => c.id === chartId);
-        const computed = chart?.computed?.positions;
+        if (!computed || Object.keys(computed).length === 0) {
+            return [];
+        }
+        const datetime = chart?.dateTime
+            ? (chart.dateTime.includes('T') ? chart.dateTime : chart.dateTime.replace(' ', 'T') + 'Z')
+            : new Date().toISOString();
+        return positionsFromComputed(chartId, datetime, computed as Record<string, number | Record<string, unknown>>);
+    }
+
+    if (!isTauriRuntime()) {
         if (!computed || Object.keys(computed).length === 0) {
             return [];
         }
@@ -137,44 +81,17 @@ export async function queryPositions(
     }
 
     try {
-        // Convert undefined/empty strings to null for Rust Option<String>
-        // Tauri expects null (not undefined) for Option<String> parameters
-        const startDt = (startDatetime && startDatetime.trim() !== '') ? startDatetime : null;
-        const endDt = (endDatetime && endDatetime.trim() !== '') ? endDatetime : null;
-        
-        const positions = await invoke<Array<{
-            datetime: string;
-            object_id: string;
-            data: {
-                longitude: number;
-                latitude?: number;
-                declination?: number;
-                right_ascension?: number;
-                distance?: number;
-                altitude?: number;
-                azimuth?: number;
-                apparent_magnitude?: number;
-                phase_angle?: number;
-                elongation?: number;
-                light_time?: number;
-                speed?: number;
-                retrograde?: boolean;
-            };
-            radix_chart_id?: string;
-            is_radix: boolean;
-        }>>('query_positions', {
-            workspacePath: workspacePath,
-            chartId: chartId,
-            startDatetime: startDt,
-            endDatetime: endDt,
-            useParquet: useParquet,
+        const positions = await queryWorkspacePositions({
+            workspacePath,
+            chartId,
+            startDatetime,
+            endDatetime,
+            useParquet,
         });
 
         if (positions.length === 0) {
             // Workspace mode fallback: for radix charts we can still render immediate
             // in-memory computation even when nothing is persisted in DuckDB yet.
-            const chart = layout.contexts.find((c) => c.id === chartId);
-            const computed = chart?.computed?.positions;
             if (computed && Object.keys(computed).length > 0) {
                 const datetime = chart?.dateTime
                     ? (chart.dateTime.includes('T') ? chart.dateTime : chart.dateTime.replace(' ', 'T') + 'Z')
@@ -183,27 +100,7 @@ export async function queryPositions(
             }
         }
 
-        // Transform to Position interface
-        return positions.map(pos => ({
-            chart_id: chartId,
-            datetime: pos.datetime,
-            object_id: pos.object_id,
-            longitude: pos.data.longitude,
-            latitude: pos.data.latitude,
-            declination: pos.data.declination,
-            right_ascension: pos.data.right_ascension,
-            distance: pos.data.distance,
-            altitude: pos.data.altitude,
-            azimuth: pos.data.azimuth,
-            apparent_magnitude: pos.data.apparent_magnitude,
-            phase_angle: pos.data.phase_angle,
-            elongation: pos.data.elongation,
-            light_time: pos.data.light_time,
-            speed: pos.data.speed,
-            retrograde: pos.data.retrograde,
-            radix_chart_id: pos.radix_chart_id,
-            is_radix: pos.is_radix,
-        }));
+        return positions;
     } catch (error) {
         console.error('Failed to query positions:', {
             error,
@@ -240,35 +137,19 @@ export async function computeAspects(
     if (!layout.workspacePath) {
         return [];
     }
+    if (!isTauriRuntime()) {
+        return [];
+    }
     const workspacePath = layout.workspacePath;
 
     try {
-        const aspects = await invoke<Array<{
-            relation_id: string;
-            datetime: string;
-            source_object: string;
-            target_object: string;
-            aspect_type: string;
-            angle: number;
-            orb: number;
-            exact_datetime?: string;
-        }>>('compute_aspects', {
-            workspacePath: workspacePath,
-            chartId: chartId,
-            datetime: datetime,
-            aspectTypes: aspectTypes,
-            maxOrb: maxOrb,
+        return await computeWorkspaceAspects({
+            workspacePath,
+            chartId,
+            datetime,
+            aspectTypes,
+            maxOrb,
         });
-
-        // Transform to Aspect interface
-        return aspects.map(aspect => ({
-            from_object: aspect.source_object,
-            to_object: aspect.target_object,
-            aspect_type: aspect.aspect_type,
-            angle: aspect.angle,
-            orb: aspect.orb,
-            exact_datetime: aspect.exact_datetime,
-        }));
     } catch (error) {
         console.error('Failed to compute aspects:', error);
         throw error;
@@ -293,43 +174,19 @@ export async function queryRadixRelative(
     if (!layout.workspacePath) {
         return [];
     }
+    if (!isTauriRuntime()) {
+        return [];
+    }
     const workspacePath = layout.workspacePath;
 
     try {
-        const relative = await invoke<Array<{
-            datetime: string;
-            object_id: string;
-            transit_longitude: number;
-            radix_longitude: number;
-            longitude_diff: number;
-            transit_declination?: number;
-            radix_declination?: number;
-            declination_diff?: number;
-            transit_distance?: number;
-            radix_distance?: number;
-            distance_diff?: number;
-        }>>('query_radix_relative', {
-            workspacePath: workspacePath,
-            transitChartId: transitChartId,
-            radixChartId: radixChartId,
-            startDatetime: startDatetime ?? null,
-            endDatetime: endDatetime ?? null,
+        return await queryWorkspaceRadixRelative({
+            workspacePath,
+            transitChartId,
+            radixChartId,
+            startDatetime,
+            endDatetime,
         });
-
-        // Transform to RadixRelativePosition interface
-        return relative.map(pos => ({
-            datetime: pos.datetime,
-            object_id: pos.object_id,
-            transit_longitude: pos.transit_longitude,
-            radix_longitude: pos.radix_longitude,
-            longitude_diff: pos.longitude_diff,
-            transit_declination: pos.transit_declination,
-            radix_declination: pos.radix_declination,
-            declination_diff: pos.declination_diff,
-            transit_distance: pos.transit_distance,
-            radix_distance: pos.radix_distance,
-            distance_diff: pos.distance_diff,
-        }));
     } catch (error) {
         console.error('Failed to query radix-relative positions:', error);
         throw error;
@@ -385,8 +242,6 @@ export function clearPositionCache() {
  */
 export async function getCurrentPositions(chartId: string): Promise<Position[]> {
     try {
-        // Import effectiveTime dynamically to avoid circular dependency
-        const { effectiveTime } = await import('$lib/stores/timeNavigation.svelte');
         const time = effectiveTime();
         const timeStr = time.toISOString();
         return await queryPositionsCached(chartId, timeStr);

@@ -163,7 +163,7 @@
   }
 
   function getAspectColor(type: string): string {
-    return aspectColors[type] ?? '#64748b';
+    return aspectColors[type] ?? 'var(--token-viz-2)';
   }
 
   function getAspectStrokeWidth(type: string, orb: number | undefined): number {
@@ -222,7 +222,7 @@
     {/each}
   </defs>
 
-  <circle cx={center} cy={center} r={outerRadius + 60} fill="rgba(255,255,255,0.02)" />
+  <circle cx={center} cy={center} r={outerRadius + 60} fill="var(--token-surface-subtle)" />
 
   <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" />
   <circle cx={center} cy={center} r={innerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" />
@@ -317,7 +317,7 @@
     {@const pDsc = polar(outerRadius + 4, angleLongitudes.dsc!)}
     {@const pMc = polar(outerRadius + 4, angleLongitudes.mc!)}
     {@const pIc = polar(outerRadius + 4, angleLongitudes.ic!)}
-    <g stroke="rgba(59,130,246,0.78)">
+    <g stroke="var(--token-wheel-axis)">
       <line x1={pAsc.x} y1={pAsc.y} x2={pDsc.x} y2={pDsc.y} stroke-width="1.25" stroke-dasharray="4 3" />
       <line x1={pMc.x} y1={pMc.y} x2={pIc.x} y2={pIc.y} stroke-width="1.25" stroke-dasharray="2 2" opacity="0.85" />
     </g>

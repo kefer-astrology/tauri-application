@@ -29,6 +29,29 @@ export default defineConfig({
 	build: {
 		target: 'es2020',
 		minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
-		sourcemap: !!process.env.TAURI_ENV_DEBUG
+		sourcemap: !!process.env.TAURI_ENV_DEBUG,
+		rolldownOptions: {
+			output: {
+				codeSplitting: {
+					groups: [
+						{
+							name: 'svelte-vendor',
+							test: /node_modules[\\/](svelte|@sveltejs)[\\/]/,
+							priority: 30
+						},
+						{
+							name: 'ui-vendor',
+							test: /node_modules[\\/](bits-ui|@lucide|@internationalized)[\\/]/,
+							priority: 20
+						},
+						{
+							name: 'vendor',
+							test: /node_modules[\\/]/,
+							maxSize: 300 * 1024
+						}
+					]
+				}
+			}
+		}
 	}
 });
