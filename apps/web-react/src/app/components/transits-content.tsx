@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { computeTransitSeries } from '@/lib/tauri/workspace';
+import type { TransitSeriesEntry } from '@/lib/tauri/types';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Checkbox } from './ui/checkbox';
@@ -9,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
+import { useWorkspaceCharts } from '../providers/workspace-charts';
 import type { TransitSection } from './transits-secondary-sidebar';
 import { TransitsBodiesConfig } from './transits-bodies-config';
 import type { Theme } from './astrology-sidebar';
@@ -18,28 +21,74 @@ interface TransitsContentProps {
 	section: TransitSection;
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
+	workspacePath: string | null;
 }
 
 type DropdownOption = { id: string; label: string };
 
-const MAJOR_ASPECT_ROWS: { labelKey: string; glyph: string; angle: string; orb: string }[] = [
-	{ labelKey: 'aspect_conjunction', glyph: '☌', angle: '0°', orb: '8°' },
-	{ labelKey: 'aspect_opposition', glyph: '☍', angle: '180°', orb: '8°' },
-	{ labelKey: 'aspect_trine', glyph: '△', angle: '120°', orb: '8°' },
-	{ labelKey: 'aspect_square', glyph: '□', angle: '90°', orb: '8°' },
-	{ labelKey: 'aspect_sextile', glyph: '⚹', angle: '60°', orb: '6°' }
+const DEFAULT_TRANSIT_BODY_IDS = [
+	'sun',
+	'moon',
+	'mercury',
+	'venus',
+	'mars',
+	'jupiter',
+	'saturn',
+	'uranus',
+	'neptune',
+	'pluto'
 ];
 
-const MINOR_ASPECT_ROWS: { labelKey: string; angle: string; orb: string }[] = [
-	{ labelKey: 'aspect_quincunx', angle: '150°', orb: '3°' },
-	{ labelKey: 'transits_aspects_semisextile', angle: '30°', orb: '3°' },
-	{ labelKey: 'transits_aspects_semisquare', angle: '45°', orb: '3°' },
-	{ labelKey: 'transits_aspects_sesqui', angle: '135°', orb: '3°' }
+const DEFAULT_TRANSIT_ASPECT_IDS = ['conjunction', 'square', 'trine', 'opposition'];
+const SUPPORTED_TRANSIT_ASPECT_IDS = new Set([
+	'conjunction',
+	'sextile',
+	'square',
+	'trine',
+	'quincunx',
+	'opposition'
+]);
+
+const MAJOR_ASPECT_ROWS: { id: string; labelKey: string; glyph: string; angle: string; orb: string }[] = [
+	{ id: 'conjunction', labelKey: 'aspect_conjunction', glyph: '☌', angle: '0°', orb: '8°' },
+	{ id: 'opposition', labelKey: 'aspect_opposition', glyph: '☍', angle: '180°', orb: '8°' },
+	{ id: 'trine', labelKey: 'aspect_trine', glyph: '△', angle: '120°', orb: '8°' },
+	{ id: 'square', labelKey: 'aspect_square', glyph: '□', angle: '90°', orb: '8°' },
+	{ id: 'sextile', labelKey: 'aspect_sextile', glyph: '⚹', angle: '60°', orb: '6°' }
 ];
 
-export function TransitsContent({ section, theme, glyphSet }: TransitsContentProps) {
+const MINOR_ASPECT_ROWS: { id: string; labelKey: string; angle: string; orb: string }[] = [
+	{ id: 'quincunx', labelKey: 'aspect_quincunx', angle: '150°', orb: '3°' },
+	{ id: 'semisextile', labelKey: 'transits_aspects_semisextile', angle: '30°', orb: '3°' },
+	{ id: 'semisquare', labelKey: 'transits_aspects_semisquare', angle: '45°', orb: '3°' },
+	{ id: 'sesquiquadrate', labelKey: 'transits_aspects_sesqui', angle: '135°', orb: '3°' }
+];
+
+function formatDateInput(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+}
+
+function formatTimeInput(date: Date): string {
+	const hours = String(date.getHours()).padStart(2, '0');
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+	return `${hours}:${minutes}`;
+}
+
+function buildLocalIso(dateValue: string, timeValue: string): string {
+	const date = new Date(`${dateValue}T${timeValue || '00:00'}:00`);
+	if (Number.isNaN(date.getTime())) {
+		throw new Error('Invalid transit date or time.');
+	}
+	return date.toISOString();
+}
+
+export function TransitsContent({ section, theme, glyphSet, workspacePath }: TransitsContentProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
+	const { charts, selectedChartId } = useWorkspaceCharts();
 
 	const [selectedTypeId, setSelectedTypeId] = useState('transit');
 	const [periodModeId, setPeriodModeId] = useState('current');
@@ -49,6 +98,98 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 		transitLimits: false,
 		precessionCorrection: false
 	});
+	const now = useMemo(() => new Date(), []);
+	const tomorrow = useMemo(() => {
+		const date = new Date(now);
+		date.setDate(date.getDate() + 1);
+		return date;
+	}, [now]);
+	const [sourceChartId, setSourceChartId] = useState('');
+	const [fromDate, setFromDate] = useState(formatDateInput(now));
+	const [fromTime, setFromTime] = useState(formatTimeInput(now));
+	const [toDate, setToDate] = useState(formatDateInput(tomorrow));
+	const [toTime, setToTime] = useState(formatTimeInput(now));
+	const [transitingBodies, setTransitingBodies] = useState<string[]>(DEFAULT_TRANSIT_BODY_IDS);
+	const [transitedBodies, setTransitedBodies] = useState<string[]>(DEFAULT_TRANSIT_BODY_IDS);
+	const [selectedAspects, setSelectedAspects] = useState<string[]>(DEFAULT_TRANSIT_ASPECT_IDS);
+	const [transitLoading, setTransitLoading] = useState(false);
+	const [transitError, setTransitError] = useState<string | null>(null);
+	const [transitSeries, setTransitSeries] = useState<TransitSeriesEntry[]>([]);
+
+	const effectiveSourceChartId = sourceChartId || selectedChartId || charts[0]?.id || '';
+
+	useEffect(() => {
+		if (sourceChartId || charts.length === 0) return;
+		setSourceChartId(selectedChartId ?? charts[0].id);
+	}, [charts, selectedChartId, sourceChartId]);
+
+	const toggleAspect = (aspectId: string) => {
+		if (!SUPPORTED_TRANSIT_ASPECT_IDS.has(aspectId)) return;
+		setSelectedAspects((prev) =>
+			prev.includes(aspectId) ? prev.filter((id) => id !== aspectId) : [...prev, aspectId]
+		);
+	};
+
+	const transitResultsCountLabel = useMemo(
+		() => t('transit_results_count').replace('{count}', String(transitSeries.length)),
+		[t, transitSeries.length]
+	);
+
+	const handleComputeTransits = async () => {
+		if (!workspacePath) {
+			setTransitError('Open a workspace to compute transits, or save your charts to a folder first.');
+			return;
+		}
+		if (!effectiveSourceChartId) {
+			setTransitError('No chart selected for transit computation.');
+			return;
+		}
+		if (selectedAspects.length === 0) {
+			setTransitError('Select at least one aspect for transit computation.');
+			return;
+		}
+
+		let range: { startDatetime: string; endDatetime: string };
+		try {
+			range =
+				periodModeId === 'current'
+					? (() => {
+							const instant = new Date().toISOString();
+							return { startDatetime: instant, endDatetime: instant };
+						})()
+					: {
+							startDatetime: buildLocalIso(fromDate, fromTime),
+							endDatetime: buildLocalIso(toDate, toTime)
+						};
+		} catch (err) {
+			setTransitError(err instanceof Error ? err.message : 'Invalid transit date or time.');
+			return;
+		}
+
+		setTransitLoading(true);
+		setTransitError(null);
+		setTransitSeries([]);
+
+		try {
+			const result = await computeTransitSeries({
+				workspacePath,
+				chartId: effectiveSourceChartId,
+				startDatetime: range.startDatetime,
+				endDatetime: range.endDatetime,
+				timeStepSeconds: 3600,
+				transitingObjects: transitingBodies,
+				transitedObjects: transitedBodies,
+				aspectTypes: selectedAspects
+			});
+
+			setTransitSeries(result.results ?? []);
+		} catch (err) {
+			console.error('Failed to compute transits:', err);
+			setTransitError(err instanceof Error ? err.message : 'Transit computation failed.');
+		} finally {
+			setTransitLoading(false);
+		}
+	};
 
 	const typeOptions = useMemo<DropdownOption[]>(
 		() => [
@@ -68,7 +209,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 	);
 
 	const isPeriodDisabled = periodModeId === 'current';
-	const areCheckboxesDisabled = periodModeId === 'current';
+	const areCheckboxesDisabled = true;
+	const areTimezoneInputsDisabled = true;
 
 	const renderContent = () => {
 		switch (section) {
@@ -91,7 +233,12 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 									</SelectTrigger>
 									<SelectContent className={ft.selectContent}>
 										{typeOptions.map((option) => (
-											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+											<SelectItem
+												key={option.id}
+												value={option.id}
+												className={ft.selectItem}
+												disabled={option.id !== 'transit'}
+											>
 												{option.label}
 											</SelectItem>
 										))}
@@ -111,6 +258,33 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 												{option.label}
 											</SelectItem>
 										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div>
+								<Label className={cn('mb-2 block', ft.label)}>{t('sidebar_horoscope')}</Label>
+								<Select
+									value={effectiveSourceChartId || '__none'}
+									onValueChange={(value) => {
+										if (value !== '__none') setSourceChartId(value);
+									}}
+								>
+									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className={ft.selectContent}>
+										{charts.length === 0 ? (
+											<SelectItem value="__none" className={ft.selectItem} disabled>
+												{t('open_table_empty')}
+											</SelectItem>
+										) : (
+											charts.map((chart) => (
+												<SelectItem key={chart.id} value={chart.id} className={ft.selectItem}>
+													{chart.name}
+												</SelectItem>
+											))
+										)}
 									</SelectContent>
 								</Select>
 							</div>
@@ -226,6 +400,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										</Label>
 										<Input
 											type="date"
+											value={fromDate}
+											onChange={(event) => setFromDate(event.currentTarget.value)}
 											disabled={isPeriodDisabled}
 											className={cn(
 												ft.input,
@@ -240,6 +416,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										</Label>
 										<Input
 											type="time"
+											value={fromTime}
+											onChange={(event) => setFromTime(event.currentTarget.value)}
 											disabled={isPeriodDisabled}
 											className={cn(
 												ft.input,
@@ -255,11 +433,11 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										<Input
 											type="text"
 											placeholder={t('transits_timezone_placeholder')}
-											disabled={isPeriodDisabled}
+											disabled={areTimezoneInputsDisabled}
 											className={cn(
 												ft.input,
 												'h-10 py-2 text-sm shadow-inner',
-												isPeriodDisabled && ft.inputDisabled
+												areTimezoneInputsDisabled && ft.inputDisabled
 											)}
 										/>
 									</div>
@@ -275,6 +453,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										</Label>
 										<Input
 											type="date"
+											value={toDate}
+											onChange={(event) => setToDate(event.currentTarget.value)}
 											disabled={isPeriodDisabled}
 											className={cn(
 												ft.input,
@@ -289,6 +469,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										</Label>
 										<Input
 											type="time"
+											value={toTime}
+											onChange={(event) => setToTime(event.currentTarget.value)}
 											disabled={isPeriodDisabled}
 											className={cn(
 												ft.input,
@@ -304,11 +486,11 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										<Input
 											type="text"
 											placeholder={t('transits_timezone_placeholder')}
-											disabled={isPeriodDisabled}
+											disabled={areTimezoneInputsDisabled}
 											className={cn(
 												ft.input,
 												'h-10 py-2 text-sm shadow-inner',
-												isPeriodDisabled && ft.inputDisabled
+												areTimezoneInputsDisabled && ft.inputDisabled
 											)}
 										/>
 									</div>
@@ -319,8 +501,13 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								<Button type="button" variant="outline" className={cn(ft.footerCancel, '!flex-none')}>
 									{t('button_close')}
 								</Button>
-								<Button type="button" className={cn(ft.footerPrimary, '!flex-none')}>
-									{t('button_ok')}
+								<Button
+									type="button"
+									className={cn(ft.footerPrimary, '!flex-none')}
+									onClick={() => void handleComputeTransits()}
+									disabled={transitLoading}
+								>
+									{t('calculate')}
 								</Button>
 							</div>
 						</CardContent>
@@ -334,6 +521,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 						glyphSet={glyphSet}
 						titleKey="transits_heading_transiting"
 						subtitleKey="transits_subtitle_transiting"
+						selectedBodyIds={transitingBodies}
+						onSelectedBodyIdsChange={setTransitingBodies}
 					/>
 				);
 
@@ -344,6 +533,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 						glyphSet={glyphSet}
 						titleKey="transits_heading_transited"
 						subtitleKey="transits_subtitle_transited"
+						selectedBodyIds={transitedBodies}
+						onSelectedBodyIdsChange={setTransitedBodies}
 					/>
 				);
 
@@ -364,9 +555,13 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								</h3>
 								<div className="space-y-4">
 									{MAJOR_ASPECT_ROWS.map((aspect) => (
-										<div key={aspect.labelKey} className="flex items-center gap-4">
+										<div key={aspect.id} className="flex items-center gap-4">
 											<Label className="flex flex-1 cursor-pointer items-center gap-3">
-												<Checkbox className={ft.checkboxAccent} defaultChecked />
+												<Checkbox
+													className={ft.checkboxAccent}
+													checked={selectedAspects.includes(aspect.id)}
+													onCheckedChange={() => toggleAspect(aspect.id)}
+												/>
 												<span className={cn('text-sm font-medium', ft.bodyText)}>
 													{t(aspect.labelKey)} {aspect.glyph}
 												</span>
@@ -377,7 +572,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 												<Input
 													type="text"
 													defaultValue={aspect.orb}
-													className={cn(ft.inputCompact, 'h-9 w-16')}
+													disabled
+													className={cn(ft.inputCompact, ft.inputDisabled, 'h-9 w-16')}
 												/>
 											</div>
 										</div>
@@ -393,9 +589,21 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								</h3>
 								<div className="space-y-4">
 									{MINOR_ASPECT_ROWS.map((aspect) => (
-										<div key={aspect.labelKey} className="flex items-center gap-4">
-											<Label className="flex flex-1 cursor-pointer items-center gap-3">
-												<Checkbox className={ft.checkboxAccent} />
+										<div key={aspect.id} className="flex items-center gap-4">
+											<Label
+												className={cn(
+													'flex flex-1 items-center gap-3',
+													SUPPORTED_TRANSIT_ASPECT_IDS.has(aspect.id)
+														? 'cursor-pointer'
+														: 'cursor-not-allowed opacity-50'
+												)}
+											>
+												<Checkbox
+													className={ft.checkboxAccent}
+													checked={selectedAspects.includes(aspect.id)}
+													disabled={!SUPPORTED_TRANSIT_ASPECT_IDS.has(aspect.id)}
+													onCheckedChange={() => toggleAspect(aspect.id)}
+												/>
 												<span className={cn('text-sm font-medium', ft.bodyText)}>
 													{t(aspect.labelKey)}
 												</span>
@@ -406,7 +614,8 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 												<Input
 													type="text"
 													defaultValue={aspect.orb}
-													className={cn(ft.inputCompact, 'h-9 w-16')}
+													disabled
+													className={cn(ft.inputCompact, ft.inputDisabled, 'h-9 w-16')}
 												/>
 											</div>
 										</div>
@@ -420,6 +629,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 	};
 
 	const isWideBodiesSection = section === 'transiting-bodies' || section === 'transited-bodies';
+	const hasTransitFeedback = transitLoading || transitError || transitSeries.length > 0;
 
 	return (
 		<AppMainContentRoot>
@@ -428,6 +638,60 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 				maxWidth={isWideBodiesSection ? '6xl' : '4xl'}
 			>
 				{renderContent()}
+				{hasTransitFeedback && (
+					<Card variant="ghost" className="w-full rounded-xl">
+						<CardContent className="p-6 md:p-8">
+							{transitLoading && (
+								<div className={cn('text-xs', ft.muted)}>{t('transit_loading')}</div>
+							)}
+							{transitError && (
+								<div className="text-xs text-destructive">{transitError}</div>
+							)}
+							{transitSeries.length > 0 && (
+								<div>
+									<div className={cn('mb-2 text-xs font-medium', ft.muted)}>
+										{transitResultsCountLabel}
+									</div>
+									<div className="max-h-64 overflow-auto rounded-md border">
+										<table className="w-full border-collapse text-xs">
+											<thead className="sticky top-0 border-b bg-background">
+												<tr>
+													<th className={cn('p-2 text-left font-semibold', ft.bodyText)}>
+														{t('column_time')}
+													</th>
+													<th className={cn('p-2 text-left font-semibold', ft.bodyText)}>
+														{t('column_bodies')}
+													</th>
+													<th className={cn('p-2 text-left font-semibold', ft.bodyText)}>
+														{t('aspects')}
+													</th>
+												</tr>
+											</thead>
+											<tbody>
+												{transitSeries.slice(0, 50).map((entry) => (
+													<tr key={entry.datetime} className="border-b transition-colors hover:bg-accent/50">
+														<td className={cn('p-2', ft.bodyText)}>{entry.datetime}</td>
+														<td className={cn('p-2', ft.bodyText)}>
+															{Object.keys(entry.transit_positions ?? {}).length}
+														</td>
+														<td className={cn('p-2', ft.bodyText)}>
+															{(entry.aspects ?? []).length}
+														</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
+									{transitSeries.length > 50 && (
+										<div className={cn('mt-2 text-xs', ft.muted)}>
+											{t('transit_showing_first_50')}
+										</div>
+									)}
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				)}
 			</AppMainContentContainer>
 		</AppMainContentRoot>
 	);

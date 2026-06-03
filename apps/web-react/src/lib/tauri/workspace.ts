@@ -3,6 +3,8 @@ import type {
 	ChartDetails,
 	ComputeChartResult,
 	ResolvedLocation,
+	TransitSeriesRequest,
+	TransitSeriesResult,
 	WorkspaceDefaultsDto,
 	WorkspaceInfo
 } from './types';
@@ -49,6 +51,10 @@ export async function computeChartFromData(
 	chartJson: Record<string, unknown>
 ): Promise<ComputeChartResult> {
 	return invoke<ComputeChartResult>('compute_chart_from_data', { chartJson });
+}
+
+export function computeTransitSeries(params: TransitSeriesRequest): Promise<TransitSeriesResult> {
+	return invoke<TransitSeriesResult>('compute_transit_series', params);
 }
 
 export async function resolveLocation(query: string): Promise<ResolvedLocation> {

@@ -28,11 +28,13 @@ type TransitsBodiesConfigProps = {
 	glyphSet: AstrologyGlyphSetId;
 	titleKey: 'transits_heading_transiting' | 'transits_heading_transited';
 	subtitleKey: 'transits_subtitle_transiting' | 'transits_subtitle_transited';
+	selectedBodyIds: string[];
+	onSelectedBodyIdsChange: (ids: string[]) => void;
 };
 
 type TransitBodyItem =
-	| { labelKey: string; label?: never; glyphId?: string }
-	| { label: string; labelKey?: never; glyphId?: never };
+	| { labelKey: string; label?: never; glyphId?: string; bodyId?: string }
+	| { label: string; labelKey?: never; glyphId?: never; bodyId?: string };
 
 type TransitBodyGroup = {
 	id: string;
@@ -56,7 +58,10 @@ const TRANSIT_BODY_COLUMNS: TransitBodyGroup[][] = [
 			id: 'lunar-nodes',
 			labelKey: 'transits_group_lunar_nodes',
 			minHeightClass: 'min-h-[88px]',
-			items: [{ labelKey: 'transits_node_mean' }, { labelKey: 'transits_node_true' }]
+			items: [
+				{ labelKey: 'transits_node_mean', bodyId: 'north_node' },
+				{ labelKey: 'transits_node_true', bodyId: 'true_north_node' }
+			]
 		}
 	],
 	[
@@ -115,9 +120,14 @@ const TRANSIT_BODY_COLUMNS: TransitBodyGroup[][] = [
 			id: 'asteroids',
 			labelKey: 'transits_group_asteroids',
 			minHeightClass: 'min-h-[88px]',
-			items: ['⚳ Ceres', '⚴ Pallas', '⚵ Juno', '⚶ Vesta', '⚷ Chiron', '⯛ Pholus'].map(
-				(label) => ({ label })
-			)
+			items: [
+				{ label: '⚳ Ceres', bodyId: 'ceres' },
+				{ label: '⚴ Pallas', bodyId: 'pallas' },
+				{ label: '⚵ Juno', bodyId: 'juno' },
+				{ label: '⚶ Vesta', bodyId: 'vesta' },
+				{ label: '⚷ Chiron', bodyId: 'chiron' },
+				{ label: '⯛ Pholus' }
+			]
 		}
 	]
 ];
@@ -148,7 +158,20 @@ const TRANSIT_BOTTOM_GROUPS: TransitBodyGroup[] = [
 	}
 ];
 
-export function TransitsBodiesConfig({ theme, glyphSet, titleKey, subtitleKey }: TransitsBodiesConfigProps) {
+function getBodyId(item: TransitBodyItem): string | null {
+	if (item.bodyId) return item.bodyId;
+	if ('glyphId' in item && item.glyphId) return item.glyphId;
+	return null;
+}
+
+export function TransitsBodiesConfig({
+	theme,
+	glyphSet,
+	titleKey,
+	subtitleKey,
+	selectedBodyIds,
+	onSelectedBodyIdsChange
+}: TransitsBodiesConfigProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 
@@ -172,36 +195,82 @@ export function TransitsBodiesConfig({ theme, glyphSet, titleKey, subtitleKey }:
 	const renderCheckboxRow = (
 		id: string,
 		content: ReactNode,
-		options: { strong?: boolean; compact?: boolean } = {}
+		options: {
+			strong?: boolean;
+			compact?: boolean;
+			checked?: boolean;
+			disabled?: boolean;
+			onCheckedChange?: (checked: boolean) => void;
+		} = {}
 	) => (
 		<Label
 			key={id}
 			htmlFor={id}
 			className={cn(
-				'flex cursor-pointer items-center space-x-2',
+				'flex items-center space-x-2',
+				options.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
 				options.compact ? 'h-5' : 'mb-3',
 				options.strong ? ft.label : ft.bodyText
 			)}
 		>
-			<Checkbox id={id} className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)} />
+			<Checkbox
+				id={id}
+				className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
+				checked={options.checked}
+				disabled={options.disabled}
+				onCheckedChange={(checked) => options.onCheckedChange?.(checked === true)}
+			/>
 			<span className={cn('text-sm', options.strong && 'font-semibold')}>{content}</span>
 		</Label>
 	);
 
-	const renderGroup = (group: TransitBodyGroup) => (
-		<div key={group.id} className={group.minHeightClass}>
-			{renderCheckboxRow(`transit-group-${group.id}`, t(group.labelKey), { strong: true })}
-			<div className="ml-6 flex flex-col gap-2">
-				{group.items.map((item, index) =>
-					renderCheckboxRow(
-						`transit-item-${group.id}-${'label' in item ? item.label : item.labelKey}-${index}`,
-						renderItemLabel(item),
-						{ compact: true }
-					)
-				)}
+	const setBodySelection = (bodyId: string, checked: boolean) => {
+		const next = checked
+			? Array.from(new Set([...selectedBodyIds, bodyId]))
+			: selectedBodyIds.filter((id) => id !== bodyId);
+		onSelectedBodyIdsChange(next);
+	};
+
+	const setGroupSelection = (bodyIds: string[], checked: boolean) => {
+		const next = checked
+			? Array.from(new Set([...selectedBodyIds, ...bodyIds]))
+			: selectedBodyIds.filter((id) => !bodyIds.includes(id));
+		onSelectedBodyIdsChange(next);
+	};
+
+	const renderGroup = (group: TransitBodyGroup) => {
+		const groupBodyIds = group.items.map(getBodyId).filter((id): id is string => Boolean(id));
+		const groupSelected =
+			groupBodyIds.length > 0 && groupBodyIds.every((id) => selectedBodyIds.includes(id));
+
+		return (
+			<div key={group.id} className={group.minHeightClass}>
+				{renderCheckboxRow(`transit-group-${group.id}`, t(group.labelKey), {
+					strong: true,
+					checked: groupSelected,
+					disabled: groupBodyIds.length === 0,
+					onCheckedChange: (checked) => setGroupSelection(groupBodyIds, checked)
+				})}
+				<div className="ml-6 flex flex-col gap-2">
+					{group.items.map((item, index) => {
+						const bodyId = getBodyId(item);
+						return renderCheckboxRow(
+							`transit-item-${group.id}-${'label' in item ? item.label : item.labelKey}-${index}`,
+							renderItemLabel(item),
+							{
+								compact: true,
+								checked: bodyId ? selectedBodyIds.includes(bodyId) : false,
+								disabled: !bodyId,
+								onCheckedChange: bodyId
+									? (checked) => setBodySelection(bodyId, checked)
+									: undefined
+							}
+						);
+					})}
+				</div>
 			</div>
-		</div>
-	);
+		);
+	};
 
 	return (
 		<Card variant="ghost" className="w-full rounded-xl">
@@ -220,19 +289,38 @@ export function TransitsBodiesConfig({ theme, glyphSet, titleKey, subtitleKey }:
 				</div>
 
 				<div className="mb-8 grid grid-cols-2 gap-8">
-					{TRANSIT_BOTTOM_GROUPS.map((group) => (
-						<div key={group.id}>
-							{renderCheckboxRow(`transit-group-${group.id}`, t(group.labelKey), { strong: true })}
-							<div className="ml-6 grid grid-cols-2 gap-x-8 gap-y-2">
-								{group.items.map((item, index) =>
-									renderCheckboxRow(
-										`transit-item-${group.id}-${'label' in item ? item.label : item.labelKey}-${index}`,
-										renderItemLabel(item)
-									)
-								)}
+					{TRANSIT_BOTTOM_GROUPS.map((group) => {
+						const groupBodyIds = group.items.map(getBodyId).filter((id): id is string => Boolean(id));
+						const groupSelected =
+							groupBodyIds.length > 0 && groupBodyIds.every((id) => selectedBodyIds.includes(id));
+
+						return (
+							<div key={group.id}>
+								{renderCheckboxRow(`transit-group-${group.id}`, t(group.labelKey), {
+									strong: true,
+									checked: groupSelected,
+									disabled: groupBodyIds.length === 0,
+									onCheckedChange: (checked) => setGroupSelection(groupBodyIds, checked)
+								})}
+								<div className="ml-6 grid grid-cols-2 gap-x-8 gap-y-2">
+									{group.items.map((item, index) => {
+										const bodyId = getBodyId(item);
+										return renderCheckboxRow(
+											`transit-item-${group.id}-${'label' in item ? item.label : item.labelKey}-${index}`,
+											renderItemLabel(item),
+											{
+												checked: bodyId ? selectedBodyIds.includes(bodyId) : false,
+												disabled: !bodyId,
+												onCheckedChange: bodyId
+													? (checked) => setBodySelection(bodyId, checked)
+													: undefined
+											}
+										);
+									})}
+								</div>
 							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
 
 				<div className="flex items-center justify-center gap-4 pt-6">

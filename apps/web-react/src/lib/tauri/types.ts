@@ -95,6 +95,34 @@ export interface ComputeChartResult {
 	chart_id: string;
 }
 
+export interface TransitSeriesEntry {
+	datetime: string;
+	transit_positions?: Record<string, unknown>;
+	aspects?: Array<Record<string, unknown>>;
+}
+
+export interface TransitSeriesRequest extends Record<string, unknown> {
+	workspacePath: string;
+	chartId: string;
+	startDatetime: string;
+	endDatetime: string;
+	timeStepSeconds: number;
+	transitingObjects: string[];
+	transitedObjects: string[];
+	aspectTypes: string[];
+}
+
+export interface TransitSeriesResult {
+	source_chart_id?: string;
+	time_range?: { start: string; end: string };
+	time_step?: string;
+	results?: TransitSeriesEntry[];
+	backend_used?: string;
+	fallback_used?: boolean;
+	ephemeris_source?: string;
+	warnings?: string[];
+}
+
 export interface ResolvedLocation {
 	query: string;
 	display_name: string;
