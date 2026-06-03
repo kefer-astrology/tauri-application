@@ -1,0 +1,24 @@
+apps/web-react/vite.config.ts
+  s_ad847b4d1263cf::t_6b5fcdeb21a2e0 33-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "fd38584c1c1c2ee2c9603528086541fbde5b33de",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_ad847b4d1263cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7aa1-ba28-7323-829a-7e15fd094b43",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
