@@ -30,6 +30,39 @@ export default defineConfig({
 	build: {
 		target: process.env.TAURI_ENV_PLATFORM == 'windows' ? 'chrome105' : 'safari13',
 		minify: !process.env.TAURI_ENV_DEBUG ? 'oxc' : false,
-		sourcemap: !!process.env.TAURI_ENV_DEBUG
+		sourcemap: !!process.env.TAURI_ENV_DEBUG,
+		rolldownOptions: {
+			output: {
+				codeSplitting: {
+					groups: [
+						{
+							name: 'react-vendor',
+							test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+							priority: 30
+						},
+						{
+							name: 'radix-vendor',
+							test: /node_modules[\\/]@radix-ui[\\/]/,
+							priority: 20
+						},
+						{
+							name: 'ui-vendor',
+							test: /node_modules[\\/](lucide-react|cmdk|sonner|vaul|react-day-picker|date-fns)[\\/]/,
+							priority: 15
+						},
+						{
+							name: 'i18n-vendor',
+							test: /node_modules[\\/](i18next|react-i18next)[\\/]/,
+							priority: 10
+						},
+						{
+							name: 'vendor',
+							test: /node_modules[\\/]/,
+							maxSize: 300 * 1024
+						}
+					]
+				}
+			}
+		}
 	}
 });
