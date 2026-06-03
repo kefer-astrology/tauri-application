@@ -1,0 +1,61 @@
+docs/content/docs/architecture.md
+  s_ad847b4d1263cf::t_860c2df5a42843 42,146,213
+docs/content/llm/project-context.md
+  s_ad847b4d1263cf::t_afc5e7b76af93a 77
+docs/content/llm/_index.md
+  s_a6642f6a4933da::t_c33902cba083aa 15
+docs/content/llm/frontend-workflow-baseline.md
+  s_ad847b4d1263cf::t_a028200e32df12 67,94,105
+  s_a6642f6a4933da::t_a2645a4466dc3b 45-52
+  s_a6642f6a4933da::t_40f93b76a4f2d0 2
+  s_ad847b4d1263cf::t_81fdf2301053b8 15-24,34,93,104
+  s_ad847b4d1263cf::t_bb001fa2811234 57
+  s_a6642f6a4933da::t_c33902cba083aa 66
+docs/content/llm/development-driver.md
+  s_ad847b4d1263cf::t_31b3e4915d5c36 20-29,68
+docs/content/llm/transit-series-contract.md
+  s_a6642f6a4933da::t_c33902cba083aa 1-81
+docs/content/docs/ui-conventions.md
+  s_ad847b4d1263cf::t_860c2df5a42843 42
+docs/content/llm/frontend-gap-implementation-plan.md
+  s_a6642f6a4933da::t_a2645a4466dc3b 114,141
+  s_a6642f6a4933da::t_40f93b76a4f2d0 2
+docs/content/docs/frontend-svelte.md
+  s_ad847b4d1263cf::t_109d6212eba8d0 11,60,70
+  s_ad847b4d1263cf::t_860c2df5a42843 12,44,58-59,61,63,78-79,95,97,125-128,136-138
+docs/content/docs/house-systems.md
+  s_a6642f6a4933da::t_0baefe074145ae 1-131
+docs/content/docs/_index.md
+  s_a6642f6a4933da::t_0baefe074145ae 15
+docs/content/docs/time-navigation.md
+  s_ad847b4d1263cf::t_860c2df5a42843 48,130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "2cd2b25b2c71b50f4188504d623add88e0bfc332",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a6642f6a4933da": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e819a-55d9-78a2-829b-c039b3e8dc6d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_ad847b4d1263cf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e7aa1-ba28-7323-829a-7e15fd094b43",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
