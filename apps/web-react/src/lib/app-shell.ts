@@ -29,7 +29,7 @@ export const APP_SHELL_ICON_SET_OPTIONS = [
 	{
 		id: 'default' as const,
 		label: 'Default',
-		description: 'Heritage React app-shell icon family.'
+		description: 'Default app-shell SVG family.'
 	},
 	{
 		id: 'modern' as const,
