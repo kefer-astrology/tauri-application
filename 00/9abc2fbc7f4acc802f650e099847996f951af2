@@ -1,0 +1,40 @@
+apps/web-react/src/locales/cs.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 159-165
+apps/web-react/src/locales/fr.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 158-165
+apps/web-react/src/locales/en.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 158-165
+apps/web-svelte/src/lib/i18n/cs.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 159-165
+apps/web-react/src/locales/es.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 158-165
+apps/web-svelte/src/lib/i18n/es.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 158-165
+translations.csv
+  s_a6642f6a4933da::t_f292a0dd1562ef 158-165
+apps/web-svelte/src/lib/i18n/en.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 158-165
+apps/web-svelte/src/lib/i18n/fr.json
+  s_a6642f6a4933da::t_ff2c2a091ff655 158-165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "009abc2fbc7f4acc802f650e099847996f951af2",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a6642f6a4933da": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e819a-55d9-78a2-829b-c039b3e8dc6d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
