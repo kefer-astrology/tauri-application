@@ -1,0 +1,43 @@
+apps/web-react/src/app/components/location-selector.tsx
+  s_eb9e2bfa10c943::t_1a16d09817f25d 198
+  s_eb9e2bfa10c943::t_fc410e67280090 142
+apps/web-react/src/app/components/information-view.tsx
+  s_eb9e2bfa10c943::t_3934e7d071c3a9 40-42
+  s_eb9e2bfa10c943::t_d482a6c07ead54 785,862,885
+  s_eb9e2bfa10c943::t_c729220ddef531 541,663
+  s_eb9e2bfa10c943::t_9762c3a570398b 343,552
+  s_eb9e2bfa10c943::t_4ecb126fae5edd 364
+  s_eb9e2bfa10c943::t_f272740f700488 140
+  s_eb9e2bfa10c943::t_d9fa5253ce117b 915
+  s_eb9e2bfa10c943::t_28a307fe0b642c 939
+  s_eb9e2bfa10c943::t_906d1f4ea4247c 701
+  s_eb9e2bfa10c943::t_623962e51ef639 212,253,289,300,318,329,352,462,465,494,565,600,689,751,769,803,852,884,914,916,919,944,954
+apps/web-react/src/app/components/time-roller-picker.tsx
+  s_eb9e2bfa10c943::t_87f58937baf067 173
+apps/web-react/src/app/components/form-field-theme.ts
+  s_eb9e2bfa10c943::t_590af82335a3b8 41-42
+  s_eb9e2bfa10c943::t_af98bfef587f93 83,86,90
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_eb9e2bfa10c943::t_facd7a5d554ca6 608
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "4a3e6fb2c77a37d253143da08c159fd14887fa18",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_eb9e2bfa10c943": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a97cb7cf-5b47-440f-ab53-24d9744550f7",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
