@@ -1,0 +1,14 @@
+translations.csv
+  h_0907ec034f4a17 157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "38bdb4a41956f37e7a13339edf5b097517715bf7",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
