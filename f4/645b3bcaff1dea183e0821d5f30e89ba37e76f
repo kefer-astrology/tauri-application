@@ -1,0 +1,24 @@
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_eb9e2bfa10c943::t_177529abfd55d2 54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "f4645b3bcaff1dea183e0821d5f30e89ba37e76f",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_eb9e2bfa10c943": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a97cb7cf-5b47-440f-ab53-24d9744550f7",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
