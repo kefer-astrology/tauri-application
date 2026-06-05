@@ -139,7 +139,7 @@ export function LocationSelector({
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
-				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] p-2"
+				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] p-2 border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm"
 				align="start"
 				sideOffset={6}
 			>
@@ -195,7 +195,7 @@ export function LocationSelector({
 								);
 							})}
 							{!hasAnyResults ? (
-								<div className="text-muted-foreground py-6 text-center text-sm">
+								<div className="text-[color:var(--theme-content-muted)] py-6 text-center text-sm">
 									{isSearching ? loadingLabel : emptyLabel}
 								</div>
 							) : null}

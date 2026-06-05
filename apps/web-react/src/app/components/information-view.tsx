@@ -37,9 +37,9 @@ function chipStateClass(
 	hover: boolean,
 	base: string
 ): string {
-	if (locked) return cn(base, 'border-primary bg-primary/10 text-foreground shadow-sm ring-2 ring-primary/25');
-	if (hover) return cn(base, 'border-primary/50 bg-accent/80');
-	return cn(base, 'border-border bg-card hover:bg-muted/60');
+	if (locked) return cn(base, 'border-[color:var(--theme-accent)] bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)] shadow-sm ring-2 ring-[color:var(--theme-accent)]/25');
+	if (hover) return cn(base, 'border-[color:var(--theme-accent)]/50 bg-[color:var(--theme-soft-bg)]');
+	return cn(base, 'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] hover:bg-[color:var(--theme-soft-bg)]');
 }
 
 export function InformationView({ theme, glyphSet, elementColors, lightPlanetFill }: InformationViewProps) {
@@ -137,7 +137,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 			{/* TopBar — app PrimarySidebar is outside this view */}
 			<header
 				data-handoff="TopBar"
-				className="flex h-9 flex-shrink-0 items-center border-b border-border px-4"
+				className="flex h-9 flex-shrink-0 items-center border-b border-[color:var(--theme-panel-border)] px-4"
 			>
 				<span className={cn('text-sm font-medium', ft.title)}>{t('sidebar_information')}</span>
 				<span className={cn('ml-2 text-xs', ft.muted)}>— syntéza & struktura</span>
@@ -209,7 +209,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 											]}
 											positive={false}
 										/>
-										<p className="text-muted-foreground mt-1 text-[10px]">neobsazeno (outline)</p>
+										<p className="text-[color:var(--theme-content-muted)] mt-1 text-[10px]">neobsazeno (outline)</p>
 									</TabsContent>
 								</Tabs>
 							</CardContent>
@@ -250,7 +250,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 											]}
 											positive={false}
 										/>
-										<p className="text-muted-foreground text-[10px]">neobsazeno</p>
+										<p className="text-[color:var(--theme-content-muted)] text-[10px]">neobsazeno</p>
 									</TabsContent>
 								</Tabs>
 							</CardContent>
@@ -286,7 +286,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 											onMouseEnter={() => setHemiGaugeHover('ew-east')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
-											Východ <span className="text-muted-foreground">7/10 · 70 %</span>
+											Východ <span className="text-[color:var(--theme-content-muted)]">7/10 · 70 %</span>
 										</Button>
 										<Button
 											type="button"
@@ -297,7 +297,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 											onMouseEnter={() => setHemiGaugeHover('ew-west')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
-											Západ <span className="text-muted-foreground">3/10 · 30 %</span>
+											Západ <span className="text-[color:var(--theme-content-muted)]">3/10 · 30 %</span>
 										</Button>
 									</div>
 									<HemiBalanceBar leftPct={70} />
@@ -315,7 +315,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 											onMouseEnter={() => setHemiGaugeHover('ns-north')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
-											Nahoře <span className="text-muted-foreground">6/10 · 60 %</span>
+											Nahoře <span className="text-[color:var(--theme-content-muted)]">6/10 · 60 %</span>
 										</Button>
 										<Button
 											type="button"
@@ -326,7 +326,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 											onMouseEnter={() => setHemiGaugeHover('ns-south')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
-											Dole <span className="text-muted-foreground">4/10 · 40 %</span>
+											Dole <span className="text-[color:var(--theme-content-muted)]">4/10 · 40 %</span>
 										</Button>
 									</div>
 									<HemiBalanceBar leftPct={60} />
@@ -340,7 +340,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 								<CardDescription className="text-xs">Dummy balance · orientace hemisfér</CardDescription>
 							</CardHeader>
 							<CardContent className="px-3">
-								<div className="relative h-8 w-full overflow-hidden rounded-full border bg-muted/40">
+								<div className="relative h-8 w-full overflow-hidden rounded-full border bg-[color:var(--theme-soft-bg)]">
 									<div
 										className="absolute top-0 left-0 h-full w-1/2"
 										style={{ width: '58%', backgroundColor: 'var(--token-viz-1)' }}
@@ -349,7 +349,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 										58 % extro · 42 % intro
 									</div>
 								</div>
-								<p className="text-muted-foreground mt-1 text-[10px]">
+								<p className="text-[color:var(--theme-content-muted)] mt-1 text-[10px]">
 									Východní hemisféra + horní · dummy váha
 								</p>
 							</CardContent>
@@ -361,7 +361,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 				<div
 					data-handoff="Center_Horoscope"
 					data-hemisphere-overlay={hemisphereOverlay}
-					className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card/30"
+					className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)]"
 				>
 					<div className="flex flex-shrink-0 flex-wrap items-start justify-end gap-1.5 px-2 pt-2">
 						<Badge
@@ -459,10 +459,10 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 							<CardContent className="flex items-center justify-between gap-3 px-3 py-2">
 								<div>
 									<p className={cn('text-xs font-medium', ft.title)}>Tvarový diagram horoskopu</p>
-									<p className="text-muted-foreground text-[11px]">Pattern: Bucket</p>
+									<p className="text-[color:var(--theme-content-muted)] text-[11px]">Pattern: Bucket</p>
 								</div>
 								<div
-									className="text-muted-foreground flex h-10 w-14 items-end justify-center gap-0.5 rounded-lg border border-dashed p-1"
+									className="text-[color:var(--theme-content-muted)] flex h-10 w-14 items-end justify-center gap-0.5 rounded-lg border border-dashed p-1"
 									aria-hidden
 								>
 									<span className="bg-primary/40 h-3 w-1 rounded-md" />
@@ -491,7 +491,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 											checked={dynamicsMode}
 											onCheckedChange={setDynamicsMode}
 										/>
-										<Label htmlFor="dynamics-mode" className="text-muted-foreground text-[10px]">
+										<Label htmlFor="dynamics-mode" className="text-[color:var(--theme-content-muted)] text-[10px]">
 											Dynamika v kruhu
 										</Label>
 									</div>
@@ -538,7 +538,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 													'h-auto justify-start rounded-lg px-2 py-1 text-left text-[11px] transition-colors',
 													selectedConfig === c.id
 														? 'bg-primary/15 text-foreground font-medium'
-														: 'hover:bg-muted'
+														: 'hover:bg-[color:var(--theme-soft-bg)]'
 												)}
 												onClick={() => setSelectedConfig(c.id)}
 											>
@@ -549,7 +549,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 								</ScrollArea>
 								<div
 									data-handoff="ConfigPreview_MiniDiagram"
-									className="bg-muted/40 mt-2 flex h-16 items-center justify-center rounded-lg border border-dashed text-[10px] text-muted-foreground"
+									className="bg-[color:var(--theme-soft-bg)] mt-2 flex h-16 items-center justify-center rounded-lg border border-dashed text-[10px] text-[color:var(--theme-content-muted)]"
 								>
 									Preview: {configs.find((c) => c.id === selectedConfig)?.label ?? '—'}
 								</div>
@@ -562,7 +562,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 							</CardHeader>
 							<CardContent className="space-y-1 px-3">
 								<p className="text-sm font-medium">Stellium: 10. dům (3 planety)</p>
-								<p className="text-muted-foreground flex items-center gap-1 text-[11px]">
+								<p className="text-[color:var(--theme-content-muted)] flex items-center gap-1 text-[11px]">
 									<AstrologyGlyph
 										glyphId="sun"
 										glyphSet={glyphSet}
@@ -597,7 +597,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 								<p className="text-[12px] leading-snug">
 									Singleton: <span className="font-medium">Saturn</span> – Východní hemisféra
 								</p>
-								<p className="text-muted-foreground mt-1 text-[10px]">
+								<p className="text-[color:var(--theme-content-muted)] mt-1 text-[10px]">
 									Hover: halo planety + hemisférický overlay (ASC–DSC)
 								</p>
 							</CardContent>
@@ -660,7 +660,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 										<Badge
 											key={label}
 											variant="outline"
-											className="hover:bg-muted cursor-default px-1.5 py-0 text-[9px]"
+											className="hover:bg-[color:var(--theme-soft-bg)] cursor-default px-1.5 py-0 text-[9px]"
 											onMouseEnter={() =>
 												setFocalFilterHover(label === 'Neaspektovaná' ? 'una' : null)
 											}
@@ -686,7 +686,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 										onRowHover={(h) => setFocalFilterHover(h ? 'una' : null)}
 									/>
 								</ul>
-								<p className="text-muted-foreground text-[10px]">
+								<p className="text-[color:var(--theme-content-muted)] text-[10px]">
 									Una: při aktivaci zvýraznit planetu bez hlavních aspektů v kruhu (koncept).
 								</p>
 							</CardContent>
@@ -698,7 +698,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 			{/* BOTTOM HIGHLIGHTS */}
 			<div
 				data-handoff="BottomHighlights"
-				className="flex h-11 flex-shrink-0 items-center gap-1.5 overflow-x-auto border-t border-border bg-muted/20 px-2"
+				className="flex h-11 flex-shrink-0 items-center gap-1.5 overflow-x-auto border-t border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] px-2"
 			>
 				{bottomChips.map((c) => {
 					const locked = lockedChipId === c.id;
@@ -748,7 +748,7 @@ function ElementBars({ positive }: { positive: boolean }) {
 								r.n === 0 ? 'h-[72%]' : 'h-[8%]'
 							)}
 						/>
-						<span className="text-[9px] text-muted-foreground">0</span>
+						<span className="text-[9px] text-[color:var(--theme-content-muted)]">0</span>
 						<span className="text-[9px]">{r.label}</span>
 					</div>
 				))}
@@ -766,7 +766,7 @@ function ElementBars({ positive }: { positive: boolean }) {
 					<span className="text-[10px] font-medium">
 						{r.n} · {r.pct}%
 					</span>
-					<span className="text-muted-foreground text-[9px]">{r.label}</span>
+					<span className="text-[color:var(--theme-content-muted)] text-[9px]">{r.label}</span>
 				</div>
 			))}
 		</div>
@@ -782,7 +782,7 @@ function StackedBar({
 }) {
 	return (
 		<div>
-			<div className="flex h-3 w-full overflow-hidden rounded-full border bg-muted">
+			<div className="flex h-3 w-full overflow-hidden rounded-full border bg-[color:var(--theme-soft-bg)]">
 				{segments.map((s) => (
 					<div
 						key={s.label}
@@ -800,7 +800,7 @@ function StackedBar({
 					/>
 				))}
 			</div>
-			<div className="text-muted-foreground mt-1 flex justify-between text-[9px]">
+			<div className="text-[color:var(--theme-content-muted)] mt-1 flex justify-between text-[9px]">
 				{segments.map((s) => (
 					<span key={s.label}>
 						{s.label} {positive ? `${s.count} (${s.pct}%)` : s.pct === 100 ? 'neobsazeno' : '0'}
@@ -849,7 +849,7 @@ function QuadrantDonut() {
 				{parts.map((p) => (
 					<div key={p.q} className="flex items-center justify-between rounded-lg border px-1 py-0.5">
 						<span>{p.q}</span>
-						<span className="text-muted-foreground">{p.pct}%</span>
+						<span className="text-[color:var(--theme-content-muted)]">{p.pct}%</span>
 					</div>
 				))}
 			</div>
@@ -859,7 +859,7 @@ function QuadrantDonut() {
 
 function HemiBalanceBar({ leftPct }: { leftPct: number }) {
 	return (
-		<div className="bg-muted mt-1 h-2 w-full overflow-hidden rounded-full">
+		<div className="bg-[color:var(--theme-soft-bg)] mt-1 h-2 w-full overflow-hidden rounded-full">
 			<div
 				className="bg-primary/70 h-full rounded-l-full transition-all"
 				style={{ width: `${leftPct}%` }}
@@ -881,8 +881,8 @@ function AspectHistogram({ positive: _positive }: { positive: boolean }) {
 		<div className="space-y-1">
 			{rows.map((r) => (
 				<div key={r.k} className="flex items-center gap-2">
-					<span className="text-muted-foreground w-20 text-[10px]">{r.k}</span>
-					<div className="bg-muted h-5 flex-1 overflow-hidden rounded-md">
+					<span className="text-[color:var(--theme-content-muted)] w-20 text-[10px]">{r.k}</span>
+					<div className="bg-[color:var(--theme-soft-bg)] h-5 flex-1 overflow-hidden rounded-md">
 						<div
 							className="bg-primary/80 h-full rounded-r"
 							style={{ width: `${(r.n / max) * 100}%` }}
@@ -911,12 +911,12 @@ function AspectNegativeAbsence() {
 		<div className="space-y-2">
 			{rows.map((r) => (
 				<div key={r.k} className="flex items-center gap-2">
-					<span className="text-muted-foreground w-28 text-[10px] leading-tight">{r.k}</span>
-					<div className="bg-muted/30 h-4 flex-1 rounded-lg border border-dashed" />
-					<span className="text-muted-foreground w-6 text-[10px]">0</span>
+					<span className="text-[color:var(--theme-content-muted)] w-28 text-[10px] leading-tight">{r.k}</span>
+					<div className="bg-[color:var(--theme-soft-bg)] h-4 flex-1 rounded-lg border border-dashed" />
+					<span className="text-[color:var(--theme-content-muted)] w-6 text-[10px]">0</span>
 				</div>
 			))}
-			<p className="text-muted-foreground text-[10px]">Neobsazenost · neutrální styl</p>
+			<p className="text-[color:var(--theme-content-muted)] text-[10px]">Neobsazenost · neutrální styl</p>
 		</div>
 	);
 }
@@ -936,12 +936,12 @@ function FocalRow({
 }) {
 	return (
 		<li
-			className="hover:bg-muted/50 flex items-start justify-between rounded-lg border border-transparent px-1 py-1"
+			className="hover:bg-[color:var(--theme-soft-bg)] flex items-start justify-between rounded-lg border border-transparent px-1 py-1"
 			onMouseEnter={() => onRowHover?.(true)}
 			onMouseLeave={() => onRowHover?.(false)}
 		>
 			<div>
-				<span className="text-muted-foreground text-[10px]">#{rank}</span>{' '}
+				<span className="text-[color:var(--theme-content-muted)] text-[10px]">#{rank}</span>{' '}
 				<span className="font-medium">{name}</span>
 				<div className="mt-0.5 flex flex-wrap gap-0.5">
 					{badges.map((b) => (
@@ -951,7 +951,7 @@ function FocalRow({
 					))}
 				</div>
 			</div>
-			<span className="text-muted-foreground text-[10px] tabular-nums">{score}</span>
+			<span className="text-[color:var(--theme-content-muted)] text-[10px] tabular-nums">{score}</span>
 		</li>
 	);
 }

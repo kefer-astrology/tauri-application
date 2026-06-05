@@ -170,7 +170,7 @@ function TimeColumn({
 }) {
 	return (
 		<div className="space-y-2">
-			<div className="text-muted-foreground text-center text-xs font-medium uppercase tracking-[0.14em]">
+			<div className="text-[color:var(--theme-content-muted)] text-center text-xs font-medium uppercase tracking-[0.14em]">
 				{label}
 			</div>
 			<ScrollArea className="h-56 rounded-lg border">

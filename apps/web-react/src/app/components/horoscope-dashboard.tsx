@@ -605,7 +605,7 @@ export function HoroscopeDashboard({
 
 			{/* Position Selection Modal */}
 			{showPositionModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--theme-overlay-bg)] backdrop-blur-sm">
 					<Card
 						variant="themed"
 						theme={theme}
