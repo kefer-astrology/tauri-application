@@ -63,6 +63,7 @@ export interface ChartDetails {
 		override_ephemeris: string | null;
 	};
 	tags: string[];
+	roden_rating?: string;
 }
 
 export interface MoonDetails {

@@ -47,6 +47,29 @@ function formatCoordinateMagnitude(value: number): string {
 	return Math.abs(value).toFixed(4);
 }
 
+function chartTypeToKind(chartType: string): ChartKind {
+	if (chartType === 'NATAL') return 'radix';
+	if (chartType === 'EVENT') return 'event';
+	if (chartType === 'HORARY') return 'horary';
+	return 'radix';
+}
+
+function parseDateTimeString(dateTime: string): Date {
+	if (!dateTime) return new Date();
+	const normalized = dateTime.includes('T') ? dateTime : dateTime.replace(' ', 'T');
+	const d = new Date(normalized);
+	return isNaN(d.getTime()) ? new Date() : d;
+}
+
+const RODEN_RATINGS: { id: string; labelKey: string }[] = [
+	{ id: 'AA', labelKey: 'new_roden_rating_aa' },
+	{ id: 'A', labelKey: 'new_roden_rating_a' },
+	{ id: 'B', labelKey: 'new_roden_rating_b' },
+	{ id: 'C', labelKey: 'new_roden_rating_c' },
+	{ id: 'DD', labelKey: 'new_roden_rating_dd' },
+	{ id: 'X', labelKey: 'new_roden_rating_x' }
+];
+
 const CHART_TYPE_ORDER: { id: ChartKind; labelKey: string }[] = [
 	{ id: 'radix', labelKey: 'new_type_radix' },
 	{ id: 'event', labelKey: 'new_type_event' },
@@ -239,6 +262,10 @@ interface NewHoroscopeProps {
 	existingChartIds: ReadonlySet<string>;
 	/** Persist + navigate home; chart is appended to workspace context tabs. */
 	onCreated?: (chart: AppChart) => void | Promise<void>;
+	/** Pre-fill the form with an existing chart for editing. */
+	initialValues?: AppChart;
+	/** Called instead of onCreated when editing an existing chart. */
+	onSaved?: (chart: AppChart) => void | Promise<void>;
 }
 
 export function NewHoroscope({
@@ -246,22 +273,41 @@ export function NewHoroscope({
 	onBack,
 	workspaceDefaults,
 	existingChartIds,
-	onCreated
+	onCreated,
+	initialValues,
+	onSaved
 }: NewHoroscopeProps) {
 	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 
-	const [locationName, setLocationName] = useState('');
-	const [location, setLocation] = useState(() => workspaceDefaults.locationName ?? '');
-	const [tags, setTags] = useState<string[]>([]);
-	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() => new Date());
-	const [chartKind, setChartKind] = useState<ChartKind>('radix');
-	const [locationRegime, setLocationRegime] = useState<LocationRegime>('auto');
-	const [latitude, setLatitude] = useState('');
-	const [longitude, setLongitude] = useState('');
-	const [timezone, setTimezone] = useState('');
-	const [latitudeDir, setLatitudeDir] = useState<LatDir>('north');
-	const [longitudeDir, setLongitudeDir] = useState<LonDir>('east');
+	const isEditMode = initialValues != null;
+
+	const [locationName, setLocationName] = useState(() => initialValues?.name ?? '');
+	const [location, setLocation] = useState(() => initialValues?.location ?? workspaceDefaults.locationName ?? '');
+	const [tags, setTags] = useState<string[]>(() => initialValues?.tags ?? []);
+	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() =>
+		initialValues?.dateTime ? parseDateTimeString(initialValues.dateTime) : new Date()
+	);
+	const [chartKind, setChartKind] = useState<ChartKind>(() =>
+		initialValues ? chartTypeToKind(initialValues.chartType) : 'radix'
+	);
+	const [locationRegime, setLocationRegime] = useState<LocationRegime>(() =>
+		initialValues?.latitude != null ? 'manual' : 'auto'
+	);
+	const [latitude, setLatitude] = useState(() =>
+		initialValues?.latitude != null ? formatCoordinateMagnitude(initialValues.latitude) : ''
+	);
+	const [longitude, setLongitude] = useState(() =>
+		initialValues?.longitude != null ? formatCoordinateMagnitude(initialValues.longitude) : ''
+	);
+	const [timezone, setTimezone] = useState(() => initialValues?.timezone ?? workspaceDefaults.timezone ?? '');
+	const [latitudeDir, setLatitudeDir] = useState<LatDir>(() =>
+		(initialValues?.latitude ?? 0) >= 0 ? 'north' : 'south'
+	);
+	const [longitudeDir, setLongitudeDir] = useState<LonDir>(() =>
+		(initialValues?.longitude ?? 0) >= 0 ? 'east' : 'west'
+	);
+	const [rodenRating, setRodenRating] = useState(() => initialValues?.rodenRating ?? '');
 	const [isResolvingLocation, setIsResolvingLocation] = useState(false);
 
 	const [datePopoverOpen, setDatePopoverOpen] = useState(false);
@@ -377,16 +423,24 @@ export function NewHoroscope({
 			longitudeDir: resolvedLongitudeDir,
 			timezone,
 			advancedMode: locationRegime === 'manual',
+			rodenRating: rodenRating || undefined,
 			workspaceDefaults,
 			existingIds: existingChartIds
 		});
-		await onCreated?.(chart);
+
+		if (isEditMode && initialValues) {
+			await onSaved?.({ ...chart, id: initialValues.id });
+		} else {
+			await onCreated?.(chart);
+		}
 	};
 
 	return (
 		<AppMainContentRoot className={cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')}>
 			<AppMainContentContainer layout="center-column">
-				<h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>{t('new_radix_title')}</h1>
+				{/* <h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>
+						{isEditMode ? t('edit_radix_title', { defaultValue: 'Edit Chart' }) : t('new_radix_title')}
+					</h1> */}
 
 				<div className="space-y-4">
 					<div>
@@ -623,22 +677,43 @@ export function NewHoroscope({
 						/>
 					</div>
 
+					{/* Roden Rating */}
+					<div>
+						<Label htmlFor="roden-rating" className={cn('mb-1.5 block', ft.label)}>
+							{t('new_roden_rating', { defaultValue: 'Roden Rating' })}
+						</Label>
+						<Select value={rodenRating} onValueChange={setRodenRating}>
+							<SelectTrigger id="roden-rating" className={cn(ft.selectTrigger, 'shadow-inner')}>
+								<SelectValue placeholder={t('new_roden_rating_placeholder', { defaultValue: 'Select rating…' })} />
+							</SelectTrigger>
+							<SelectContent className={ft.selectContent}>
+								{RODEN_RATINGS.map((opt) => (
+									<SelectItem key={opt.id} value={opt.id} className={ft.selectItem}>
+										{opt.id} – {t(opt.labelKey, { defaultValue: opt.id })}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
 					<div className="flex gap-4 pt-4">
+						{isEditMode && (
+							<Button
+								type="button"
+								variant="ghost"
+								className={ft.footerCancel}
+								onClick={() => onBack?.()}
+							>
+								{t('new_back')}
+							</Button>
+						)}
 						<Button
 							type="button"
 							variant="ghost"
-							className={ft.footerCancel}
-							onClick={() => onBack?.()}
-						>
-							{t('new_back')}
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							className={ft.footerPrimary}
+							className={cn(ft.footerPrimary, !isEditMode && 'flex-1')}
 							onClick={() => void handleCreate()}
 						>
-							{t('new_create_submit')}
+							{isEditMode ? t('edit_save_submit', { defaultValue: 'Save Chart' }) : t('new_create_submit')}
 						</Button>
 					</div>
 				</div>

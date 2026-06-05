@@ -34,6 +34,7 @@ interface HoroscopeDashboardProps {
 	glyphSet: AstrologyGlyphSetId;
 	elementColors: ElementColors;
 	lightPlanetFill: string;
+	onEdit?: (chart: import('@/lib/tauri/chartPayload').AppChart) => void;
 }
 
 interface PlanetPosition {
@@ -189,7 +190,8 @@ export function HoroscopeDashboard({
 	workspaceDefaults,
 	glyphSet,
 	elementColors,
-	lightPlanetFill
+	lightPlanetFill,
+	onEdit
 }: HoroscopeDashboardProps) {
 	const { t, i18n } = useTranslation();
 	const { selectedChart, shiftSelectedChartTime } = useWorkspaceCharts();
@@ -332,7 +334,11 @@ export function HoroscopeDashboard({
 								variant="ghost"
 								size="icon"
 								className={cn('rounded-lg', hoverBg)}
-								onClick={(e) => e.stopPropagation()}
+								disabled={!selectedChart}
+								onClick={(e) => {
+									e.stopPropagation();
+									if (selectedChart) onEdit?.(selectedChart);
+								}}
 							>
 								<Pencil className={`h-4 w-4 ${mutedColor}`} />
 							</Button>

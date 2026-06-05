@@ -19,6 +19,7 @@ export interface AppChart {
 	latitude?: number;
 	longitude?: number;
 	timezone?: string;
+	rodenRating?: string;
 	computed?: {
 		positions?: Record<string, unknown>;
 		motion?: Record<
@@ -201,7 +202,8 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		engine: full.config.engine,
 		model: full.config.model,
 		overrideEphemeris: full.config.override_ephemeris,
-		tags: full.tags
+		tags: full.tags,
+		rodenRating: full.roden_rating
 	};
 }
 
@@ -272,7 +274,8 @@ export function chartDataToComputePayload(
 			selected_aspects: selectedAspects,
 			aspect_orbs: defaults.defaultAspectOrbs
 		},
-		tags: chart.tags ?? []
+		tags: chart.tags ?? [],
+		...(chart.rodenRating ? { roden_rating: chart.rodenRating } : {})
 	};
 }
 
@@ -350,6 +353,7 @@ export function appChartFromNewHoroscopeInput(input: {
 	longitudeDir: LongitudeDirection;
 	timezone: string;
 	advancedMode: boolean;
+	rodenRating?: string;
 	workspaceDefaults: WorkspaceDefaultsState;
 	existingIds: ReadonlySet<string>;
 }): AppChart {
@@ -386,7 +390,8 @@ export function appChartFromNewHoroscopeInput(input: {
 		houseSystem: input.workspaceDefaults.houseSystem,
 		zodiacType: input.workspaceDefaults.zodiacType,
 		engine: input.workspaceDefaults.engine,
-		tags: tagList
+		tags: tagList,
+		rodenRating: input.rodenRating || undefined
 	};
 }
 

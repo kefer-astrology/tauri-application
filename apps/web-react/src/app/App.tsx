@@ -204,6 +204,7 @@ export default function App() {
 	]);
 	const [selectedChartId, setSelectedChartId] = useState<string | null>(BOOTSTRAP_CHART_ID);
 	const [selectedChartPreview, setSelectedChartPreview] = useState<AppChart | null>(null);
+	const [editingChart, setEditingChart] = useState<AppChart | null>(null);
 	const [workspaceDefaults, setWorkspaceDefaults] = useState<WorkspaceDefaultsState>(() => ({
 		...DEFAULT_WORKSPACE_DEFAULTS
 	}));
@@ -374,6 +375,28 @@ export default function App() {
 		void computeChartInBackground(chart, persistedWorkspacePath);
 	};
 
+	const handleChartSaved = async (chart: AppChart) => {
+		if (workspacePath) {
+			try {
+				await invoke<string>('update_chart', {
+					workspacePath,
+					chartId: chart.id,
+					chart: chartDataToComputePayload(chart, workspaceDefaults)
+				});
+			} catch (e) {
+				console.error(e);
+				toast.error(t('toast_save_failed'), {
+					description: e instanceof Error ? e.message : String(e)
+				});
+				return;
+			}
+		}
+		setCharts((prev) => prev.map((c) => (c.id === chart.id ? { ...c, ...chart } : c)));
+		setEditingChart(null);
+		setActiveView('horoskop');
+		void computeChartInBackground(chart, workspacePath);
+	};
+
 	const shadcnDark = theme === 'twilight' || theme === 'midnight';
 
 	useLayoutEffect(() => {
@@ -514,6 +537,10 @@ export default function App() {
 								glyphSet={astrologyGlyphSet}
 								elementColors={elementWheelColors}
 								lightPlanetFill={lightPlanetFill}
+								onEdit={(chart) => {
+									setEditingChart(chart);
+									setActiveView('edit');
+								}}
 							/>
 						) : activeView === 'otevrit' ? (
 							<OpenWorkspaceView
@@ -541,6 +568,18 @@ export default function App() {
 								existingChartIds={new Set(charts.map((c) => c.id))}
 								onCreated={handleChartCreated}
 								onBack={() => setActiveView('horoskop')}
+							/>
+						) : activeView === 'edit' && editingChart ? (
+							<NewHoroscope
+								theme={theme}
+								workspaceDefaults={workspaceDefaults}
+								existingChartIds={new Set(charts.map((c) => c.id))}
+								initialValues={editingChart}
+								onSaved={handleChartSaved}
+								onBack={() => {
+									setEditingChart(null);
+									setActiveView('horoskop');
+								}}
 							/>
 						) : activeView === 'aspektarium' ? (
 							<Aspectarium

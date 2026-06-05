@@ -226,6 +226,8 @@ pub struct ChartInstance {
     pub config: ChartConfig,
     #[serde(default)]
     pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub roden_rating: Option<String>,
 }
 
 /// Line weight on the radix wheel from orb tightness vs the configured max orb for that aspect type.
