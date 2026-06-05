@@ -252,7 +252,7 @@ export function NewHoroscope({
 	const ft = useAppFormFieldTheme(theme);
 
 	const [locationName, setLocationName] = useState('');
-	const [location, setLocation] = useState('');
+	const [location, setLocation] = useState(() => workspaceDefaults.locationName ?? '');
 	const [tags, setTags] = useState<string[]>([]);
 	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() => new Date());
 	const [chartKind, setChartKind] = useState<ChartKind>('radix');

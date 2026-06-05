@@ -320,7 +320,9 @@ type LatitudeDirection = 'north' | 'south';
 type LongitudeDirection = 'east' | 'west';
 
 function parseOptionalNumber(value: string): number | undefined {
-	const n = Number(value.trim());
+	const trimmed = value.trim();
+	if (!trimmed) return undefined;
+	const n = Number(trimmed);
 	return Number.isFinite(n) ? n : undefined;
 }
 
