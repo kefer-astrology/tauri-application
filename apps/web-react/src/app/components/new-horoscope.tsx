@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, isValid, parse } from 'date-fns';
 import { cs, enUS, es, fr } from 'date-fns/locale';
-import { Calendar as CalendarIcon, LocateFixed } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, ChevronDown, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { LocationSelector } from './location-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Switch } from './ui/switch';
 import { TimeRollerPicker } from './time-roller-picker';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { cn } from './ui/utils';
@@ -26,7 +28,14 @@ import { resolveLocation, searchLocations } from '@/lib/tauri/workspace';
 type ChartKind = 'radix' | 'event' | 'horary';
 type LatDir = 'north' | 'south';
 type LonDir = 'east' | 'west';
-type TimeRegime = 'auto' | 'manual';
+type LocationRegime = 'auto' | 'manual';
+
+const TIMEZONES: string[] =
+	typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl
+		? (Intl as unknown as { supportedValuesOf: (k: string) => string[] }).supportedValuesOf(
+				'timeZone'
+			)
+		: [];
 
 function mergeDatePart(target: Date, pickedDate: Date): Date {
 	const next = new Date(target);
@@ -54,6 +63,174 @@ const LON_DIRS: { id: LonDir; labelKey: string }[] = [
 	{ id: 'west', labelKey: 'new_dir_west' }
 ];
 
+function TagInput({
+	tags,
+	onChange,
+	placeholder,
+	panelBg,
+	panelBorder,
+	contentPrimary,
+	contentMuted,
+	softBg,
+	accent
+}: {
+	tags: string[];
+	onChange: (tags: string[]) => void;
+	placeholder?: string;
+	panelBg: string;
+	panelBorder: string;
+	contentPrimary: string;
+	contentMuted: string;
+	softBg: string;
+	accent: string;
+}) {
+	const [input, setInput] = useState('');
+
+	const commit = (raw: string) => {
+		const next = raw
+			.split(',')
+			.map((t) => t.trim())
+			.filter((t) => t.length > 0 && !tags.includes(t));
+		if (next.length > 0) onChange([...tags, ...next]);
+		setInput('');
+	};
+
+	return (
+		<div
+			className={cn(
+				'flex min-h-10 flex-wrap items-center gap-1.5 rounded-xl border px-3 py-2 transition-all',
+				'focus-within:ring-2 focus-within:border-transparent',
+				panelBg,
+				panelBorder
+			)}
+			style={
+				{
+					'--tw-ring-color': `var(--theme-accent)`
+				} as React.CSSProperties
+			}
+		>
+			{tags.map((tag) => (
+				<span
+					key={tag}
+					className={cn(
+						'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium',
+						'bg-[color:var(--theme-selected-bg)]',
+						contentPrimary
+					)}
+				>
+					{tag}
+					<button
+						type="button"
+						onClick={() => onChange(tags.filter((t) => t !== tag))}
+						className={cn('ml-0.5 rounded-full p-0.5 transition-colors', `hover:text-[color:var(--theme-accent)]`, contentMuted)}
+					>
+						<X className="h-3 w-3" />
+					</button>
+				</span>
+			))}
+			<input
+				value={input}
+				onChange={(e) => setInput(e.target.value)}
+				onKeyDown={(e) => {
+					if (e.key === 'Enter' || e.key === ',') {
+						e.preventDefault();
+						commit(input);
+					}
+					if (e.key === 'Backspace' && !input && tags.length > 0) {
+						onChange(tags.slice(0, -1));
+					}
+				}}
+				onBlur={() => {
+					if (input.trim()) commit(input);
+				}}
+				placeholder={tags.length === 0 ? placeholder : undefined}
+				className={cn(
+					'min-w-[6rem] flex-1 bg-transparent text-base outline-none md:text-sm',
+					`placeholder:${contentMuted}`,
+					contentPrimary
+				)}
+			/>
+		</div>
+	);
+}
+
+function TimezoneSelect({
+	value,
+	onValueChange,
+	placeholder,
+	triggerClassName,
+	contentClassName,
+	itemClassName
+}: {
+	value: string;
+	onValueChange: (v: string) => void;
+	placeholder?: string;
+	triggerClassName?: string;
+	contentClassName?: string;
+	itemClassName?: string;
+}) {
+	const [open, setOpen] = useState(false);
+	const [search, setSearch] = useState('');
+
+	const filtered = useMemo(() => {
+		const q = search.trim().toLowerCase();
+		if (!q) return TIMEZONES.slice(0, 120);
+		return TIMEZONES.filter((tz) => tz.toLowerCase().includes(q)).slice(0, 120);
+	}, [search]);
+
+	return (
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger asChild>
+				<button
+					type="button"
+					role="combobox"
+					aria-expanded={open}
+					className={cn(
+						'flex h-auto min-h-10 w-full items-center justify-between gap-2 text-left',
+						triggerClassName
+					)}
+				>
+					<span className={value ? '' : 'opacity-50'}>{value || placeholder}</span>
+					<ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+				</button>
+			</PopoverTrigger>
+			<PopoverContent className={cn('w-[var(--radix-popover-trigger-width)] p-0', contentClassName)} align="end">
+				<Command className="bg-transparent text-[color:var(--theme-content-primary)]">
+					<CommandInput
+						value={search}
+						onValueChange={setSearch}
+						placeholder={placeholder ?? 'Search…'}
+						className="text-[color:var(--theme-content-primary)] placeholder:text-[color:var(--theme-content-muted)]"
+					/>
+					<CommandList>
+						{filtered.length === 0 && <CommandEmpty>No timezone found.</CommandEmpty>}
+						{filtered.map((tz) => (
+							<CommandItem
+								key={tz}
+								value={tz}
+								onSelect={() => {
+									onValueChange(tz);
+									setOpen(false);
+									setSearch('');
+								}}
+								className={cn(
+									'data-[selected=true]:bg-[color:var(--theme-soft-bg)] data-[selected=true]:text-[color:var(--theme-content-primary)]',
+									itemClassName
+								)}
+							>
+								<Check
+									className={cn('mr-2 h-4 w-4', value === tz ? 'opacity-100' : 'opacity-0')}
+								/>
+								{tz}
+							</CommandItem>
+						))}
+					</CommandList>
+				</Command>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
 interface NewHoroscopeProps {
 	theme?: Theme;
 	/** Return to main horoscope view (sidebar **Horoskop**). */
@@ -76,10 +253,10 @@ export function NewHoroscope({
 
 	const [locationName, setLocationName] = useState('');
 	const [location, setLocation] = useState('');
-	const [tags, setTags] = useState('');
+	const [tags, setTags] = useState<string[]>([]);
 	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() => new Date());
 	const [chartKind, setChartKind] = useState<ChartKind>('radix');
-	const [timeRegime, setTimeRegime] = useState<TimeRegime>('auto');
+	const [locationRegime, setLocationRegime] = useState<LocationRegime>('auto');
 	const [latitude, setLatitude] = useState('');
 	const [longitude, setLongitude] = useState('');
 	const [timezone, setTimezone] = useState('');
@@ -193,13 +370,13 @@ export function NewHoroscope({
 			chartKind,
 			dateTime: selectedDateTime,
 			location: resolvedLocation,
-			tags,
+			tags: tags.join(', '),
 			latitude: resolvedLatitude,
 			longitude: resolvedLongitude,
 			latitudeDir: resolvedLatitudeDir,
 			longitudeDir: resolvedLongitudeDir,
 			timezone,
-			advancedMode: timeRegime === 'manual',
+			advancedMode: locationRegime === 'manual',
 			workspaceDefaults,
 			existingIds: existingChartIds
 		});
@@ -281,7 +458,7 @@ export function NewHoroscope({
 										</Button>
 									</PopoverTrigger>
 								</div>
-								<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="start">
+								<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="end">
 									<Calendar
 										mode="single"
 										selected={selectedDateTime}
@@ -310,139 +487,29 @@ export function NewHoroscope({
 						</div>
 					</div>
 
+					{/* Location regime */}
 					<div>
-						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
-						<div
-							className="grid grid-cols-2 gap-2"
-							role="radiogroup"
-							aria-label={t('new_time_regime')}
-						>
-							<Button
-								type="button"
-								variant={timeRegime === 'auto' ? 'default' : 'outline'}
-								className={cn(
-									'justify-center shadow-inner',
-									timeRegime !== 'auto' && ft.selectTrigger
-								)}
-								onClick={() => setTimeRegime('auto')}
-								aria-pressed={timeRegime === 'auto'}
-							>
-								{t('new_time_regime_auto')}
-							</Button>
-							<Button
-								type="button"
-								variant={timeRegime === 'manual' ? 'default' : 'outline'}
-								className={cn(
-									'justify-center shadow-inner',
-									timeRegime !== 'manual' && ft.selectTrigger
-								)}
-								onClick={() => setTimeRegime('manual')}
-								aria-pressed={timeRegime === 'manual'}
-							>
-								{t('new_time_regime_manual')}
-							</Button>
-						</div>
-					</div>
-
-					{timeRegime === 'manual' && (
-						<div className={cn('space-y-4', ft.advancedPanel)}>
-							<div className={cn('text-sm font-medium', ft.label)}>
-								{t('new_manual_time_details')}
-							</div>
-							<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-								<div className="space-y-4">
-									<div className={cn('text-xs font-medium', ft.muted)}>
-										{t('new_home_location_details')}
-									</div>
-									<div>
-										<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
-											{t('current_info_latitude')}
-										</Label>
-										<Input
-											type="text"
-											id="latitude"
-											value={latitude}
-											onChange={(e) => setLatitude(e.target.value)}
-											placeholder="50.0755"
-											className={cn(ft.input, 'shadow-inner')}
-										/>
-									</div>
-									<div>
-										<Label htmlFor="longitude" className={cn('mb-1.5 block', ft.label)}>
-											{t('current_info_longitude')}
-										</Label>
-										<Input
-											type="text"
-											id="longitude"
-											value={longitude}
-											onChange={(e) => setLongitude(e.target.value)}
-											placeholder="14.4378"
-											className={cn(ft.input, 'shadow-inner')}
-										/>
-									</div>
-									<div>
-										<Label htmlFor="timezone" className={cn('mb-1.5 block', ft.label)}>
-											{t('new_utc_shift_definition')}
-										</Label>
-										<Input
-											type="text"
-											id="timezone"
-											value={timezone}
-											onChange={(e) => setTimezone(e.target.value)}
-											placeholder={t('new_timezone_placeholder')}
-											className={cn(ft.input, 'shadow-inner')}
-										/>
-									</div>
-								</div>
-
-								<div className="space-y-4">
-									<div>
-										<Label htmlFor="lat-dir" className={cn('mb-1.5 block', ft.label)}>
-											{t('new_lat_direction')}
-										</Label>
-										<Select value={latitudeDir} onValueChange={(v) => setLatitudeDir(v as LatDir)}>
-											<SelectTrigger id="lat-dir" className={cn(ft.selectTrigger, 'shadow-inner')}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												{LAT_DIRS.map((dir) => (
-													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
-														{t(dir.labelKey)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-									<div>
-										<Label htmlFor="lon-dir" className={cn('mb-1.5 block', ft.label)}>
-											{t('new_lon_direction')}
-										</Label>
-										<Select
-											value={longitudeDir}
-											onValueChange={(v) => setLongitudeDir(v as LonDir)}
-										>
-											<SelectTrigger id="lon-dir" className={cn(ft.selectTrigger, 'shadow-inner')}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												{LON_DIRS.map((dir) => (
-													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
-														{t(dir.labelKey)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
+						<div className="mb-3 flex items-center justify-between">
+							<Label className={ft.label}>{t('new_location')}</Label>
+							<div className="flex items-center gap-2">
+								<span className={cn('text-sm', ft.muted)}>
+									{locationRegime === 'auto' ? t('new_time_regime_auto') : t('new_time_regime_manual')}
+								</span>
+								<Switch
+									id="location-regime"
+									checked={locationRegime === 'manual'}
+									onCheckedChange={(checked) =>
+										setLocationRegime(checked ? 'manual' : 'auto')
+									}
+									className={cn(
+										'data-[state=checked]:bg-[color:var(--theme-accent)]',
+										ft.switchUnchecked
+									)}
+								/>
 							</div>
 						</div>
-					)}
 
-					<div>
-						<Label htmlFor="location" className={cn('mb-1.5 block', ft.label)}>
-							{t('new_location')}
-						</Label>
-						<div className="space-y-2">
+						{locationRegime === 'auto' ? (
 							<LocationSelector
 								id="location"
 								value={location}
@@ -459,32 +526,100 @@ export function NewHoroscope({
 									applyResolvedLocation(result.display_name, result.latitude, result.longitude)
 								}
 							/>
-							<div className="flex justify-end">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => void resolveCurrentLocation()}
-									disabled={isResolvingLocation || !location.trim()}
-									className={cn('shadow-inner', ft.selectTrigger)}
-								>
-									<LocateFixed className={cn('mr-2 h-4 w-4', ft.iconColor)} />
-									{isResolvingLocation ? t('new_resolving_location') : t('new_resolve_location')}
-								</Button>
+						) : (
+							<div className={cn('space-y-3', ft.advancedPanel)}>
+								{/* Latitude */}
+								<div>
+									<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
+										{t('current_info_latitude')}
+									</Label>
+									<div className="flex gap-2">
+										<Input
+											type="text"
+											id="latitude"
+											value={latitude}
+											onChange={(e) => setLatitude(e.target.value)}
+											placeholder="50.0755"
+											className={cn(ft.input, 'shadow-inner flex-1')}
+										/>
+										<Select value={latitudeDir} onValueChange={(v) => setLatitudeDir(v as LatDir)}>
+											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner w-28 shrink-0')}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												{LAT_DIRS.map((dir) => (
+													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
+														{t(dir.labelKey)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+
+								{/* Longitude */}
+								<div>
+									<Label htmlFor="longitude" className={cn('mb-1.5 block', ft.label)}>
+										{t('current_info_longitude')}
+									</Label>
+									<div className="flex gap-2">
+										<Input
+											type="text"
+											id="longitude"
+											value={longitude}
+											onChange={(e) => setLongitude(e.target.value)}
+											placeholder="14.4378"
+											className={cn(ft.input, 'shadow-inner flex-1')}
+										/>
+										<Select
+											value={longitudeDir}
+											onValueChange={(v) => setLongitudeDir(v as LonDir)}
+										>
+											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner w-28 shrink-0')}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												{LON_DIRS.map((dir) => (
+													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
+														{t(dir.labelKey)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+
+								{/* Timezone */}
+								<div>
+									<Label htmlFor="timezone" className={cn('mb-1.5 block', ft.label)}>
+										{t('new_utc_shift_definition')}
+									</Label>
+									<TimezoneSelect
+										value={timezone}
+										onValueChange={setTimezone}
+										placeholder={t('new_timezone_placeholder')}
+										triggerClassName={cn(ft.selectTrigger, 'shadow-inner px-4 py-2.5')}
+										contentClassName={ft.selectContent}
+										itemClassName={ft.selectItem}
+									/>
+								</div>
 							</div>
-						</div>
+						)}
 					</div>
 
+					{/* Tags */}
 					<div>
-						<Label htmlFor="tags" className={cn('mb-1.5 block', ft.label)}>
-							{t('new_tags')}
-						</Label>
-						<Input
-							type="text"
-							id="tags"
-							value={tags}
-							onChange={(e) => setTags(e.target.value)}
+						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_tags')}</Label>
+						<TagInput
+							tags={tags}
+							onChange={setTags}
 							placeholder={t('new_tags_comma_hint')}
-							className={cn(ft.input, 'shadow-inner')}
+							panelBg="bg-[color:var(--theme-panel-bg)] backdrop-blur-sm"
+							panelBorder="border border-[color:var(--theme-panel-border)]"
+							contentPrimary="text-[color:var(--theme-content-primary)]"
+							contentMuted="text-[color:var(--theme-content-muted)]"
+							softBg="bg-[color:var(--theme-soft-bg)]"
+							accent="text-[color:var(--theme-accent)]"
 						/>
 					</div>
 

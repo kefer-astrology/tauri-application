@@ -130,7 +130,7 @@ export function TimeRollerPicker({
 						</Button>
 					</PopoverTrigger>
 				</div>
-				<PopoverContent align="start" className={cn('w-[280px] p-3', panelClassName)}>
+				<PopoverContent align="end" className={cn('w-[280px] p-3', panelClassName)}>
 					<div className="grid grid-cols-3 gap-3">
 						<TimeColumn
 							label="Hour"
