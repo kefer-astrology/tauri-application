@@ -27,14 +27,14 @@ const APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY = 'app_shell_icon_set_swap_v1';
 
 export const APP_SHELL_ICON_SET_OPTIONS = [
 	{
-		id: 'default' as const,
+		id: 'modern' as const,
 		label: 'Default',
 		description: 'Default app-shell SVG family.'
 	},
 	{
-		id: 'modern' as const,
-		label: 'Modern',
-		description: 'Current shared app-shell SVG family.'
+		id: 'default' as const,
+		label: 'Alternative',
+		description: 'Alternative app-shell SVG family.'
 	}
 ];
 
@@ -144,5 +144,5 @@ export function readStoredAppShellIconSet(): AppShellIconSetId {
 	} catch {
 		/* ignore */
 	}
-	return 'default';
+	return 'modern';
 }
