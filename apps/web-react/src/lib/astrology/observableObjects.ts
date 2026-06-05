@@ -51,7 +51,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 
 export const DEFAULT_OBSERVABLE_OBJECT_IDS = OBSERVABLE_OBJECTS.map((item) => item.id);
 export const DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS = OBSERVABLE_OBJECTS.filter(
-	(item) => item.category !== 'asteroids'
+	(item) => item.category !== 'asteroids' && item.id !== 'true_north_node' && item.id !== 'true_south_node'
 ).map((item) => item.id);
 
 export const OBSERVABLE_OBJECT_CATEGORY_LABELS: Record<
