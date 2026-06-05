@@ -1,0 +1,26 @@
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_eb9e2bfa10c943::t_85a9218b61cb06 255
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_eb9e2bfa10c943::t_61ee4c9476585b 323-325
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "d897d79e9834a310fc999c07578dc0d321807f5c",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_eb9e2bfa10c943": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a97cb7cf-5b47-440f-ab53-24d9744550f7",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
