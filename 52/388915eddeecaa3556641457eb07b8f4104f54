@@ -1,0 +1,36 @@
+apps/web-react/src/app/components/detail-side-panel.tsx
+  s_eb9e2bfa10c943::t_3a57983295776a 44
+apps/web-react/src/app/components/horoscope-wheel.tsx
+  s_eb9e2bfa10c943::t_04bcb74909e5cd 295
+  s_eb9e2bfa10c943::t_20518cc2d51e70 413-443
+  s_eb9e2bfa10c943::t_497a62184acf92 696
+  s_eb9e2bfa10c943::t_d108afea34f375 686-693
+  s_eb9e2bfa10c943::t_682d7556cd6cee 815
+  s_eb9e2bfa10c943::t_5fc862c9debb4f 36
+  s_eb9e2bfa10c943::t_e2c89dd0aa4e9b 805-812
+apps/web-react/src/app/App.tsx
+  s_eb9e2bfa10c943::t_afaa4716530c71 458
+apps/web-react/src/lib/themePalettes.ts
+  s_eb9e2bfa10c943::t_e81ae2a240bf56 221-222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "52388915eddeecaa3556641457eb07b8f4104f54",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_eb9e2bfa10c943": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a97cb7cf-5b47-440f-ab53-24d9744550f7",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
