@@ -33,7 +33,7 @@ function WheelPlanetImageDark({ href, x, y, size }: { href: string; x: number; y
 			preserveAspectRatio="xMidYMid meet"
 			style={{
 				pointerEvents: 'none',
-				filter: 'invert(1) brightness(0.42) contrast(1.1)'
+				filter: 'grayscale(1) invert(1) brightness(0.9) contrast(1.1)'
 			}}
 		/>
 	);
@@ -292,6 +292,7 @@ export function HoroscopeWheel({
 	const isDark = theme === 'midnight' || theme === 'twilight';
 	const wheelFilterUid = useId().replace(/:/g, '');
 	const planetLightFilterId = `${wheelFilterUid}-pl`;
+	const planetDarkFilterId = `${wheelFilterUid}-pd`;
 	const wheelSize = 800;
 	const center = wheelSize / 2;
 	const outerRadius = 320;
@@ -409,21 +410,37 @@ export function HoroscopeWheel({
 						<feMergeNode in="SourceGraphic" />
 					</feMerge>
 				</filter>
-				{!isDark && glyphSet ? (
-					<filter
-						id={planetLightFilterId}
-						colorInterpolationFilters="sRGB"
-						x="-50%"
-						y="-50%"
-						width="200%"
-						height="200%"
-					>
-						<feFlood floodColor={lightPlanetFill} floodOpacity="1" result="c" />
-						<feComposite in="c" in2="SourceGraphic" operator="in" result="r" />
-						<feMerge>
-							<feMergeNode in="r" />
-						</feMerge>
-					</filter>
+				{glyphSet ? (
+					<>
+						{!isDark && (
+							<filter
+								id={planetLightFilterId}
+								colorInterpolationFilters="sRGB"
+								x="-50%"
+								y="-50%"
+								width="200%"
+								height="200%"
+							>
+								<feFlood floodColor={lightPlanetFill} floodOpacity="1" result="c" />
+								<feComposite in="c" in2="SourceGraphic" operator="in" result="r" />
+								<feMerge><feMergeNode in="r" /></feMerge>
+							</filter>
+						)}
+						{isDark && (
+							<filter
+								id={planetDarkFilterId}
+								colorInterpolationFilters="sRGB"
+								x="-50%"
+								y="-50%"
+								width="200%"
+								height="200%"
+							>
+								<feFlood floodColor={lightPlanetFill} floodOpacity="1" result="c" />
+								<feComposite in="c" in2="SourceGraphic" operator="in" result="r" />
+								<feMerge><feMergeNode in="r" /></feMerge>
+							</filter>
+						)}
+					</>
 				) : null}
 				{glyphSet
 					? zodiacSigns.map((sign) => {
@@ -666,9 +683,17 @@ export function HoroscopeWheel({
 							<g key={key} data-handoff={`Angle_${key}`}>
 								{angleHref ? (
 									isDark ? (
-										<WheelPlanetImageDark href={angleHref} x={p.x} y={p.y} size={18} />
+										<WheelTintedGlyphImage
+											key="dark"
+											href={angleHref}
+											x={p.x}
+											y={p.y}
+											size={18}
+											filterId={planetDarkFilterId}
+										/>
 									) : (
 										<WheelTintedGlyphImage
+											key="light"
 											href={angleHref}
 											x={p.x}
 											y={p.y}
@@ -777,9 +802,17 @@ export function HoroscopeWheel({
 								)}
 								{planetHref ? (
 									isDark ? (
-										<WheelPlanetImageDark href={planetHref} x={p.x} y={p.y} size={18} />
+										<WheelTintedGlyphImage
+											key="dark"
+											href={planetHref}
+											x={p.x}
+											y={p.y}
+											size={18}
+											filterId={planetDarkFilterId}
+										/>
 									) : (
 										<WheelTintedGlyphImage
+											key="light"
 											href={planetHref}
 											x={p.x}
 											y={p.y}

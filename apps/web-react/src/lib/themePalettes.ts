@@ -218,8 +218,8 @@ export function themePaletteVars(palette: ThemePalette): CSSProperties {
 		['--theme-selected-bg' as string]: palette.selectedBackground,
 		['--theme-sidebar-border' as string]: alpha(palette.navTextPrimary, 0.08, 'rgba(255,255,255,0.08)'),
 		['--theme-separator' as string]: alpha(palette.navTextPrimary, 0.1, 'rgba(255,255,255,0.10)'),
-		['--theme-panel-bg' as string]: light ? 'rgba(255,255,255,0.95)' : 'rgba(15,23,42,0.36)',
-		['--theme-panel-bg-strong' as string]: light ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.55)',
+		['--theme-panel-bg' as string]: light ? 'rgba(255,255,255,0.95)' : 'rgba(15,23,42,0.82)',
+		['--theme-panel-bg-strong' as string]: light ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
 		['--theme-panel-bg-solid' as string]: light ? '#ffffff' : '#0f172a',
 		['--theme-panel-border' as string]: light
 			? alpha(palette.contentTextSecondary, 0.18, 'rgba(75,85,99,0.18)')

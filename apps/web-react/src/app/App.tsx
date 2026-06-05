@@ -189,16 +189,7 @@ export default function App() {
 	const [elementWheelColors, setElementWheelColors] = useState<ElementColors>(() =>
 		readStoredElementColors()
 	);
-	const [lightPlanetFill, setLightPlanetFill] = useState('var(--theme-content-primary)');
 	const formTheme = useAppFormFieldTheme(theme);
-
-	useLayoutEffect(() => {
-		const style = getComputedStyle(document.documentElement);
-		const raw =
-			style.getPropertyValue('--theme-content-primary').trim() ||
-			style.getPropertyValue('--theme-accent').trim();
-		if (raw) setLightPlanetFill(raw);
-	}, [theme]);
 
 	const commitElementWheelColors = useCallback((next: ElementColors) => {
 		setElementWheelColors(next);
@@ -464,6 +455,7 @@ export default function App() {
 	};
 
 	const currentThemePalette = themePalettes[theme];
+	const lightPlanetFill = currentThemePalette.contentTextPrimary;
 	const themeVars = useMemo(() => themePaletteVars(currentThemePalette), [currentThemePalette]);
 
 	useEffect(() => {

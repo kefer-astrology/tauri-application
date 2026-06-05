@@ -41,6 +41,7 @@ export function DetailSidePanel({
 				className={cn(
 					'w-full gap-0 p-0 sm:max-w-md lg:w-[min(28rem,22vw)]',
 					'border-[color:var(--theme-panel-border)] shadow-2xl',
+					'bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]',
 					surfaceClassName
 				)}
 			>
