@@ -1,0 +1,72 @@
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_eb9e2bfa10c943::t_afc7380dc38276 277-278
+  s_eb9e2bfa10c943::t_d9a999d579cb04 356
+  s_eb9e2bfa10c943::t_eee5c71e56bd0a 393-394
+  s_eb9e2bfa10c943::t_8d1c50b646a95d 22
+  s_eb9e2bfa10c943::t_cb678809a33ddd 205-206
+apps/web-svelte/src/lib/i18n/en.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+apps/web-react/src/lib/tauri/types.ts
+  s_eb9e2bfa10c943::t_3a842428bb7d10 66
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_eb9e2bfa10c943::t_9d6f469c3d6a06 430-435
+  s_eb9e2bfa10c943::t_baa4d1bc51cd35 680-698
+  s_eb9e2bfa10c943::t_31a1208b008a27 265-268,276-278,283-302,304-309
+  s_eb9e2bfa10c943::t_7b1cec2af64c38 442
+  s_eb9e2bfa10c943::t_532b194d5939d7 303
+  h_0907ec034f4a17 441,443
+  s_eb9e2bfa10c943::t_63b774b7fbcdce 50-63
+  s_eb9e2bfa10c943::t_d97e16da9b910d 64-72
+  s_eb9e2bfa10c943::t_6e5c7cf1fe45af 426
+  s_eb9e2bfa10c943::t_0441fb4acda7a9 700-709,713
+  s_eb9e2bfa10c943::t_01fd1bfc666e41 716
+  s_eb9e2bfa10c943::t_c73e436f0400e2 310
+apps/web-react/src/locales/es.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+src-tauri/src/workspace/models.rs
+  s_eb9e2bfa10c943::t_34b8360d046bd4 229-230
+apps/web-react/src/locales/fr.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+apps/web-react/src/app/App.tsx
+  s_eb9e2bfa10c943::t_e1db91ce5a9818 207
+  s_eb9e2bfa10c943::t_d8111c0415fb72 378-399
+  s_eb9e2bfa10c943::t_a10f8383fb4ccc 572-583
+  s_eb9e2bfa10c943::t_f9b2a13b597b55 540-543
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_eb9e2bfa10c943::t_daa4927af9f20a 193-194
+  s_eb9e2bfa10c943::t_f59e3ce03324e3 337-341
+  s_eb9e2bfa10c943::t_9d4d23d6e25439 37
+apps/web-svelte/src/lib/i18n/es.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+apps/web-svelte/src/lib/i18n/fr.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+apps/web-react/src/locales/en.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+apps/web-svelte/src/lib/i18n/cs.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+translations.csv
+  s_eb9e2bfa10c943::t_eb910c99cdeff9 153-160
+apps/web-react/src/locales/cs.json
+  s_eb9e2bfa10c943::t_0b8694f9ff3cc4 153-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "f53fa7a193ed5eb1eaec857de0bdd4df9404998e",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_eb9e2bfa10c943": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a97cb7cf-5b47-440f-ab53-24d9744550f7",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
