@@ -464,9 +464,17 @@ export default function App() {
 	};
 
 	const currentThemePalette = themePalettes[theme];
+	const themeVars = useMemo(() => themePaletteVars(currentThemePalette), [currentThemePalette]);
+
+	useEffect(() => {
+		const root = document.documentElement;
+		for (const [key, value] of Object.entries(themeVars)) {
+			root.style.setProperty(key, value as string);
+		}
+	}, [themeVars]);
+
 	const currentThemeStyle = useMemo<CSSProperties>(
 		() => ({
-			...themePaletteVars(currentThemePalette),
 			background: `linear-gradient(to bottom right, ${currentThemePalette.canvasStart} 0%, ${currentThemePalette.canvasEnd} 100%)`,
 			color: currentThemePalette.contentTextPrimary
 		}),
