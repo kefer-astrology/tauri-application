@@ -1,0 +1,26 @@
+apps/web-react/src/app/components/time-roller-picker.tsx
+  s_eb9e2bfa10c943::t_1398e0ea728c06 133
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_eb9e2bfa10c943::t_e2fad84f4d36df 4,9,15,31-38,66-233,256,259,373,379,461,490,492-509,512-536,543,546,558-573,578,592-605,607,610,612-615,617-622
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "9cb794b479fd5bb7ca3a755a8d9ada30229850b9",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_eb9e2bfa10c943": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a97cb7cf-5b47-440f-ab53-24d9744550f7",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
