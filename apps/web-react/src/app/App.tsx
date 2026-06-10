@@ -375,6 +375,29 @@ export default function App() {
 		void computeChartInBackground(chart, persistedWorkspacePath);
 	};
 
+	const handleObservableObjectsChange = async (chartId: string, bodies: string[]) => {
+		const chart = charts.find((c) => c.id === chartId);
+		if (!chart) return;
+		const updated: AppChart = { ...chart, observableObjects: bodies };
+		if (workspacePath) {
+			try {
+				await invoke<string>('update_chart', {
+					workspacePath,
+					chartId,
+					chart: chartDataToComputePayload(updated, workspaceDefaults)
+				});
+			} catch (e) {
+				console.error(e);
+				toast.error(t('toast_save_failed'), {
+					description: e instanceof Error ? e.message : String(e)
+				});
+				return;
+			}
+		}
+		setCharts((prev) => prev.map((c) => (c.id === chartId ? updated : c)));
+		void computeChartInBackground(updated, workspacePath);
+	};
+
 	const handleChartSaved = async (chart: AppChart) => {
 		if (workspacePath) {
 			try {
@@ -541,6 +564,7 @@ export default function App() {
 									setEditingChart(chart);
 									setActiveView('edit');
 								}}
+								onObservableObjectsChange={handleObservableObjectsChange}
 							/>
 						) : activeView === 'otevrit' ? (
 							<OpenWorkspaceView

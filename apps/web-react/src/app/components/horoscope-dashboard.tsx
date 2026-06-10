@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
 	ChevronDown,
 	ChevronRight,
@@ -22,7 +22,15 @@ import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { HoroscopeWheel, type HoroscopeWheelBody, type RadixAspectDrawInput } from './horoscope-wheel';
 import { toast } from 'sonner';
-import { DEFAULT_OBSERVABLE_OBJECT_IDS, OBSERVABLE_OBJECTS } from '@/lib/astrology/observableObjects';
+import {
+	DEFAULT_OBSERVABLE_OBJECT_IDS,
+	OBSERVABLE_OBJECTS,
+	getObservableObjectLabel,
+	getObservableCategoryLabel,
+	type ObservableObjectCategory
+} from '@/lib/astrology/observableObjects';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
@@ -35,6 +43,7 @@ interface HoroscopeDashboardProps {
 	elementColors: ElementColors;
 	lightPlanetFill: string;
 	onEdit?: (chart: import('@/lib/tauri/chartPayload').AppChart) => void;
+	onObservableObjectsChange?: (chartId: string, bodies: string[]) => void;
 }
 
 interface PlanetPosition {
@@ -191,7 +200,8 @@ export function HoroscopeDashboard({
 	glyphSet,
 	elementColors,
 	lightPlanetFill,
-	onEdit
+	onEdit,
+	onObservableObjectsChange
 }: HoroscopeDashboardProps) {
 	const { t, i18n } = useTranslation();
 	const { selectedChart, shiftSelectedChartTime } = useWorkspaceCharts();
@@ -202,7 +212,25 @@ export function HoroscopeDashboard({
 	const [timeUnit, setTimeUnit] = useState<'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'>('day');
 	const [timeAmount, setTimeAmount] = useState(1);
 	const [showPositionModal, setShowPositionModal] = useState(false);
+	const [pickerBodies, setPickerBodies] = useState<string[]>([]);
 	const [isSteppingTime, setIsSteppingTime] = useState(false);
+
+	const observableCategories = useMemo(() => {
+		const categoryOrder: ObservableObjectCategory[] = [
+			'luminaries',
+			'personal_planets',
+			'social_outer_planets',
+			'angles',
+			'lunar_nodes',
+			'calculated_points',
+			'asteroids'
+		];
+		return categoryOrder.map((category) => ({
+			id: category,
+			label: getObservableCategoryLabel(category, t),
+			items: OBSERVABLE_OBJECTS.filter((item) => item.category === category)
+		}));
+	}, [t]);
 
 	const borderColor = 'border-[color:var(--token-border-subtle)]';
 	const textColor = ft.title;
@@ -248,9 +276,11 @@ export function HoroscopeDashboard({
 	const computedMotion = selectedChart?.computed?.motion ?? {};
 	const computedAxes = selectedChart?.computed?.axes;
 	const positionOrder =
-		workspaceDefaults.defaultBodies.length > 0
-			? workspaceDefaults.defaultBodies
-			: DEFAULT_OBSERVABLE_OBJECT_IDS;
+		(selectedChart?.observableObjects && selectedChart.observableObjects.length > 0)
+			? selectedChart.observableObjects
+			: workspaceDefaults.defaultBodies.length > 0
+				? workspaceDefaults.defaultBodies
+				: DEFAULT_OBSERVABLE_OBJECT_IDS;
 	const enabledPositionIds = new Set(positionOrder);
 	const showAsc = enabledPositionIds.has('asc');
 	const showDsc = enabledPositionIds.has('desc');
@@ -534,6 +564,10 @@ export function HoroscopeDashboard({
 								className={cn('rounded-lg', hoverBg)}
 								onClick={(e) => {
 									e.stopPropagation();
+									setPickerBodies(
+										selectedChart?.observableObjects ??
+										workspaceDefaults.defaultBodies
+									);
 									setShowPositionModal(true);
 								}}
 							>
@@ -632,7 +666,38 @@ export function HoroscopeDashboard({
 						</div>
 						<div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-4">
 							<p className={`text-sm ${mutedColor}`}>{t('dashboard_positions_picker_hint')}</p>
-							{/* Add checkboxes similar to Transit settings */}
+							<div className="grid gap-4 md:grid-cols-2">
+								{observableCategories.map((category) => (
+									<div key={category.id} className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 p-4">
+										<h3 className={`mb-3 text-sm font-semibold ${textColor}`}>{category.label}</h3>
+										<div className="space-y-2">
+											{category.items.map((item) => (
+												<Label key={item.id} className="flex items-center gap-3 text-sm cursor-pointer">
+													<Checkbox
+														checked={pickerBodies.includes(item.id)}
+														onCheckedChange={() =>
+															setPickerBodies((prev) =>
+																prev.includes(item.id)
+																	? prev.filter((id) => id !== item.id)
+																	: [...prev, item.id]
+															)
+														}
+													/>
+													<AstrologyGlyph
+														glyphId={item.id}
+														glyphSet={glyphSet}
+														fallback={item.icon}
+														size={18}
+														className="text-foreground"
+														title={getObservableObjectLabel(item, t)}
+													/>
+													<span className={mutedColor}>{getObservableObjectLabel(item, t)}</span>
+												</Label>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
 						</div>
 						<div className={cn('flex justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}>
 							<Button
@@ -645,8 +710,13 @@ export function HoroscopeDashboard({
 							</Button>
 							<Button
 								type="button"
-								onClick={() => setShowPositionModal(false)}
 								className={cn(ft.footerPrimary, '!flex-none')}
+								onClick={() => {
+									if (selectedChart) {
+										onObservableObjectsChange?.(selectedChart.id, pickerBodies);
+									}
+									setShowPositionModal(false);
+								}}
 							>
 								{t('sidebar_save')}
 							</Button>

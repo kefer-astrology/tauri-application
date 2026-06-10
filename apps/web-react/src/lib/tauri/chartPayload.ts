@@ -20,6 +20,7 @@ export interface AppChart {
 	longitude?: number;
 	timezone?: string;
 	rodenRating?: string;
+	observableObjects?: string[];
 	computed?: {
 		positions?: Record<string, unknown>;
 		motion?: Record<
@@ -203,7 +204,8 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		model: full.config.model,
 		overrideEphemeris: full.config.override_ephemeris,
 		tags: full.tags,
-		rodenRating: full.roden_rating
+		rodenRating: full.roden_rating,
+		observableObjects: full.config.observable_objects
 	};
 }
 
@@ -247,7 +249,10 @@ export function chartDataToComputePayload(
 	const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);
 	const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
 	const model = asNonEmpty(chart.model);
-	const observableObjects = defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined;
+	const observableObjects =
+		(chart.observableObjects && chart.observableObjects.length > 0)
+			? chart.observableObjects
+			: (defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined);
 	const selectedAspects = [...defaults.defaultAspects];
 
 	return {

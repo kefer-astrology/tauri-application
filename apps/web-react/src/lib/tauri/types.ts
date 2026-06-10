@@ -61,6 +61,7 @@ export interface ChartDetails {
 		engine: string | null;
 		model: string | null;
 		override_ephemeris: string | null;
+		observable_objects?: string[];
 	};
 	tags: string[];
 	roden_rating?: string;
