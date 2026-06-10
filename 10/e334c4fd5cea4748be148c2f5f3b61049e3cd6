@@ -1,0 +1,40 @@
+apps/web-react/src/lib/tauri/types.ts
+  s_eb9e2bfa10c943::t_76f527f72216f4 64
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_eb9e2bfa10c943::t_a71d60b1888b54 279-283
+  s_eb9e2bfa10c943::t_adb221527f3e49 215,218-233
+  s_eb9e2bfa10c943::t_81e85907dee608 669-700,714-719
+  s_eb9e2bfa10c943::t_03451349e74167 1
+  s_eb9e2bfa10c943::t_446825b03a1656 46
+  s_eb9e2bfa10c943::t_708f94855197b5 567-570
+  s_eb9e2bfa10c943::t_2db6fa755438f5 25-33
+  s_eb9e2bfa10c943::t_943c7ae43909b3 203-204
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_eb9e2bfa10c943::t_6aa9f7c48877b4 207-208
+  s_eb9e2bfa10c943::t_857bf3bdd324d8 23
+  s_eb9e2bfa10c943::t_8872527ac6feab 252-255
+apps/web-react/src/app/App.tsx
+  s_eb9e2bfa10c943::t_7ea90aceabdd9b 378-400
+  s_eb9e2bfa10c943::t_bbfb555e53a512 567
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "10e334c4fd5cea4748be148c2f5f3b61049e3cd6",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_eb9e2bfa10c943": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a97cb7cf-5b47-440f-ab53-24d9744550f7",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
