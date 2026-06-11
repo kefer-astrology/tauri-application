@@ -7,6 +7,7 @@ export interface WorkspaceChartSummary {
 	date_time: string;
 	location: string;
 	tags: string[];
+	tag_colors?: Record<string, string>;
 }
 
 export interface WorkspaceInfo {
@@ -64,6 +65,7 @@ export interface ChartDetails {
 		observable_objects?: string[];
 	};
 	tags: string[];
+	tag_colors?: Record<string, string>;
 	roden_rating?: string;
 }
 

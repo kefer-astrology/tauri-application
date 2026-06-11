@@ -14,6 +14,7 @@ import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import type { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
+import { tagColor } from '@/lib/chartTags';
 import type { AppChart } from '@/lib/tauri/chartPayload';
 
 type OpenMode = 'my_radixes' | 'database' | 'favorites' | 'history';
@@ -592,12 +593,16 @@ export function OpenWorkspaceView({
 												</div>
 												<div className="min-w-0">
 													<div className="flex flex-wrap gap-1">
-														{(chart.tags ?? []).map((tag) => (
+														{(chart.tags ?? []).map((tag, index) => (
 															<Badge
 																key={`${chart.id}-${tag}`}
 																variant="outline"
-																className="px-2 py-0.5 text-xs"
+																className="gap-1.5 px-2 py-0.5 text-xs"
 															>
+																<span
+																	className="h-2 w-2 rounded-full"
+																	style={{ backgroundColor: tagColor(chart.tagColors, tag, index) }}
+																/>
 																{tag}
 															</Badge>
 														))}

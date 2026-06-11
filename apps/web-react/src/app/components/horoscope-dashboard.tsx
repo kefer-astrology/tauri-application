@@ -36,6 +36,7 @@ import {
 } from '@/lib/astrology/observableObjects';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
+import { tagColor } from '@/lib/chartTags';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
@@ -482,8 +483,16 @@ export function HoroscopeDashboard({
 
 								{chartTags.length > 0 ? (
 									<div className="flex flex-wrap gap-2 pt-2">
-										{chartTags.map((tag) => (
-											<Badge key={tag} variant="outline" className="px-2 py-1 text-xs">
+										{chartTags.map((tag, index) => (
+											<Badge
+												key={tag}
+												variant="outline"
+												className="gap-1.5 px-2 py-1 text-xs"
+											>
+												<span
+													className="h-2 w-2 rounded-full"
+													style={{ backgroundColor: tagColor(selectedChart?.tagColors, tag, index) }}
+												/>
 												{tag}
 											</Badge>
 										))}

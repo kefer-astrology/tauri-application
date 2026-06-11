@@ -226,6 +226,8 @@ pub struct ChartInstance {
     pub config: ChartConfig,
     #[serde(default)]
     pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub tag_colors: HashMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub roden_rating: Option<String>,
 }
@@ -354,6 +356,8 @@ pub struct ChartSummary {
     pub date_time: String,
     pub location: String,
     pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub tag_colors: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

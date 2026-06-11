@@ -79,6 +79,7 @@ pub fn chart_to_summary(chart: &ChartInstance) -> ChartSummary {
         date_time,
         location: chart.subject.location.name.clone(),
         tags: chart.tags.clone(),
+        tag_colors: chart.tag_colors.clone(),
     }
 }
 

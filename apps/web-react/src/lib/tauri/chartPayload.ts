@@ -11,6 +11,7 @@ export interface AppChart {
 	dateTime: string;
 	location: string;
 	tags: string[];
+	tagColors?: Record<string, string>;
 	houseSystem?: string | null;
 	zodiacType?: string;
 	engine?: string | null;
@@ -204,6 +205,7 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		model: full.config.model,
 		overrideEphemeris: full.config.override_ephemeris,
 		tags: full.tags,
+		tagColors: full.tag_colors,
 		rodenRating: full.roden_rating,
 		observableObjects: full.config.observable_objects
 	};
@@ -216,6 +218,7 @@ export function summaryToAppChart(s: {
 	date_time: string;
 	location: string;
 	tags: string[];
+	tag_colors?: Record<string, string>;
 }): AppChart {
 	return {
 		id: s.id,
@@ -223,7 +226,8 @@ export function summaryToAppChart(s: {
 		chartType: s.chart_type,
 		dateTime: s.date_time,
 		location: s.location,
-		tags: s.tags
+		tags: s.tags,
+		tagColors: s.tag_colors
 	};
 }
 
@@ -254,6 +258,8 @@ export function chartDataToComputePayload(
 			? chart.observableObjects
 			: (defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined);
 	const selectedAspects = [...defaults.defaultAspects];
+	const tagColors =
+		chart.tagColors && Object.keys(chart.tagColors).length > 0 ? chart.tagColors : undefined;
 
 	return {
 		id: chart.id,
@@ -280,6 +286,7 @@ export function chartDataToComputePayload(
 			aspect_orbs: defaults.defaultAspectOrbs
 		},
 		tags: chart.tags ?? [],
+		...(tagColors ? { tag_colors: tagColors } : {}),
 		...(chart.rodenRating ? { roden_rating: chart.rodenRating } : {})
 	};
 }
@@ -352,6 +359,7 @@ export function appChartFromNewHoroscopeInput(input: {
 	dateTime: Date;
 	location: string;
 	tags: string;
+	tagColors?: Record<string, string>;
 	latitude: string;
 	longitude: string;
 	latitudeDir: LatitudeDirection;
@@ -396,6 +404,7 @@ export function appChartFromNewHoroscopeInput(input: {
 		zodiacType: input.workspaceDefaults.zodiacType,
 		engine: input.workspaceDefaults.engine,
 		tags: tagList,
+		tagColors: input.tagColors,
 		rodenRating: input.rodenRating || undefined
 	};
 }

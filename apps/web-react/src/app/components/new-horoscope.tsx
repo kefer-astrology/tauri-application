@@ -1,23 +1,33 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { format, isValid, parse } from 'date-fns';
 import { cs, enUS, es, fr } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Check, ChevronDown, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, ChevronDown, Pencil, Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from './ui/command';
+import { ColorInput } from './ui/color-input';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { LocationSelector } from './location-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle
+} from './ui/sheet';
 import { Switch } from './ui/switch';
 import { TimeRollerPicker } from './time-roller-picker';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import type { Theme } from './astrology-sidebar';
+import { tagColor, tagDefaultColor } from '@/lib/chartTags';
 import {
 	appChartFromNewHoroscopeInput,
 	type AppChart,
@@ -86,42 +96,58 @@ const LON_DIRS: { id: LonDir; labelKey: string }[] = [
 	{ id: 'west', labelKey: 'new_dir_west' }
 ];
 
+function parseTags(raw: string): string[] {
+	return raw
+		.split(/[,\n]/)
+		.map((t) => t.trim())
+		.filter((t) => t.length > 0);
+}
+
+function mergeTags(existing: string[], incoming: string[]): string[] {
+	const next = [...existing];
+	for (const tag of incoming) {
+		if (!next.includes(tag)) next.push(tag);
+	}
+	return next;
+}
+
 function TagInput({
 	tags,
+	tagColors,
 	onChange,
+	onOpenAdvanced,
+	advancedLabel,
 	placeholder,
 	panelBg,
 	panelBorder,
 	contentPrimary,
 	contentMuted,
-	softBg,
-	accent
+	iconClassName
 }: {
 	tags: string[];
+	tagColors: Record<string, string>;
 	onChange: (tags: string[]) => void;
+	onOpenAdvanced: () => void;
+	advancedLabel: string;
 	placeholder?: string;
 	panelBg: string;
 	panelBorder: string;
 	contentPrimary: string;
 	contentMuted: string;
-	softBg: string;
-	accent: string;
+	iconClassName: string;
 }) {
 	const [input, setInput] = useState('');
 
 	const commit = (raw: string) => {
-		const next = raw
-			.split(',')
-			.map((t) => t.trim())
-			.filter((t) => t.length > 0 && !tags.includes(t));
-		if (next.length > 0) onChange([...tags, ...next]);
+		const next = parseTags(raw);
+		if (next.length > 0) onChange(mergeTags(tags, next));
 		setInput('');
 	};
 
 	return (
 		<div
 			className={cn(
-				'flex min-h-10 flex-wrap items-center gap-1.5 rounded-xl border px-3 py-2 transition-all',
+				'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
 				'focus-within:ring-2 focus-within:border-transparent',
 				panelBg,
 				panelBorder
@@ -129,51 +155,239 @@ function TagInput({
 			style={
 				{
 					'--tw-ring-color': `var(--theme-accent)`
-				} as React.CSSProperties
+				} as CSSProperties
 			}
 		>
-			{tags.map((tag) => (
-				<span
-					key={tag}
+			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 px-3 py-2">
+				{tags.map((tag, index) => (
+					<span
+						key={tag}
+						className={cn(
+							'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium',
+							'bg-[color:var(--theme-selected-bg)]',
+							contentPrimary
+						)}
+					>
+						<span
+							className="h-2.5 w-2.5 rounded-full"
+							style={{ backgroundColor: tagColor(tagColors, tag, index) }}
+						/>
+						{tag}
+						<button
+							type="button"
+							onClick={() => onChange(tags.filter((t) => t !== tag))}
+							className={cn(
+								'ml-0.5 rounded-full p-0.5 transition-colors',
+								`hover:text-[color:var(--theme-accent)]`,
+								contentMuted
+							)}
+						>
+							<X className="h-3 w-3" />
+						</button>
+					</span>
+				))}
+				<input
+					value={input}
+					onChange={(e) => setInput(e.target.value)}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter' || e.key === ',') {
+							e.preventDefault();
+							commit(input);
+						}
+						if (e.key === 'Backspace' && !input && tags.length > 0) {
+							onChange(tags.slice(0, -1));
+						}
+					}}
+					onBlur={() => {
+						if (input.trim()) commit(input);
+					}}
+					placeholder={tags.length === 0 ? placeholder : undefined}
 					className={cn(
-						'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium',
-						'bg-[color:var(--theme-selected-bg)]',
+						'min-w-[6rem] flex-1 bg-transparent text-base outline-none md:text-sm',
+						`placeholder:${contentMuted}`,
 						contentPrimary
 					)}
-				>
-					{tag}
-					<button
-						type="button"
-						onClick={() => onChange(tags.filter((t) => t !== tag))}
-						className={cn('ml-0.5 rounded-full p-0.5 transition-colors', `hover:text-[color:var(--theme-accent)]`, contentMuted)}
-					>
-						<X className="h-3 w-3" />
-					</button>
-				</span>
-			))}
-			<input
-				value={input}
-				onChange={(e) => setInput(e.target.value)}
-				onKeyDown={(e) => {
-					if (e.key === 'Enter' || e.key === ',') {
-						e.preventDefault();
-						commit(input);
-					}
-					if (e.key === 'Backspace' && !input && tags.length > 0) {
-						onChange(tags.slice(0, -1));
-					}
-				}}
-				onBlur={() => {
-					if (input.trim()) commit(input);
-				}}
-				placeholder={tags.length === 0 ? placeholder : undefined}
-				className={cn(
-					'min-w-[6rem] flex-1 bg-transparent text-base outline-none md:text-sm',
-					`placeholder:${contentMuted}`,
-					contentPrimary
-				)}
-			/>
+				/>
+			</div>
+			<Button
+				type="button"
+				variant="ghost"
+				onClick={onOpenAdvanced}
+				className="h-auto min-h-10 self-stretch rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+				aria-label={advancedLabel}
+			>
+				<Pencil className={cn('h-4 w-4 shrink-0', iconClassName)} />
+			</Button>
 		</div>
+	);
+}
+
+function AdvancedTagSheet({
+	open,
+	onOpenChange,
+	tags,
+	tagColors,
+	onChange,
+	onRename,
+	onColorChange,
+	theme
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	tags: string[];
+	tagColors: Record<string, string>;
+	onChange: (tags: string[]) => void;
+	onRename: (tag: string, nextName: string) => void;
+	onColorChange: (tag: string, color: string) => void;
+	theme: Theme;
+}) {
+	const { t } = useTranslation();
+	const ft = useAppFormFieldTheme(theme);
+	const [draft, setDraft] = useState('');
+	const [draftNames, setDraftNames] = useState<Record<string, string>>({});
+
+	useEffect(() => {
+		if (!open) return;
+		setDraftNames(Object.fromEntries(tags.map((tag) => [tag, tag])));
+	}, [open, tags]);
+
+	const addDraftTags = () => {
+		const next = parseTags(draft);
+		if (next.length === 0) return;
+		onChange(mergeTags(tags, next));
+		setDraft('');
+	};
+
+	const commitTagName = (tag: string) => {
+		const nextName = (draftNames[tag] ?? tag).trim();
+		if (!nextName || nextName === tag) {
+			setDraftNames((prev) => ({ ...prev, [tag]: tag }));
+			return;
+		}
+		onRename(tag, nextName);
+	};
+
+	return (
+		<Sheet open={open} onOpenChange={onOpenChange}>
+			<SheetContent
+				side="right"
+				className={cn(
+					'w-full gap-0 p-0 sm:max-w-md',
+					'border-[color:var(--theme-panel-border)] shadow-2xl',
+					'bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]'
+				)}
+			>
+				<div className="flex h-full min-h-0 flex-col">
+					<SheetHeader className="shrink-0 px-5 py-4">
+						<SheetTitle className={cn('text-lg font-semibold', ft.title)}>
+							{t('new_tags')}
+						</SheetTitle>
+						<SheetDescription className={cn('text-sm', ft.muted)}>
+							{t('new_tags_comma_hint')}
+						</SheetDescription>
+					</SheetHeader>
+
+					<div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+						<div className="space-y-2">
+							<Label htmlFor="advanced-tags" className={ft.label}>
+								{t('new_tags')}
+							</Label>
+							<div className="flex gap-2">
+								<Input
+									id="advanced-tags"
+									value={draft}
+									onChange={(event) => setDraft(event.target.value)}
+									onKeyDown={(event) => {
+										if (event.key === 'Enter') {
+											event.preventDefault();
+											addDraftTags();
+										}
+									}}
+									placeholder={t('placeholder_tags_example')}
+									className={cn(ft.input, 'shadow-inner')}
+								/>
+								<Button
+									type="button"
+									size="icon"
+									className={cn(ft.footerPrimary, 'h-10 w-10 flex-none rounded-xl')}
+									onClick={addDraftTags}
+									aria-label={t('new_tags')}
+								>
+									<Plus className="h-4 w-4" />
+								</Button>
+							</div>
+						</div>
+
+						<div className="space-y-2">
+							<div className={cn('text-sm font-medium', ft.label)}>{t('table_tags')}</div>
+							{tags.length > 0 ? (
+								<div className="space-y-2">
+									{tags.map((tag, index) => (
+										<div
+											key={tag}
+											className={cn(
+												'flex items-center gap-2 rounded-xl border px-3 py-2',
+												'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]'
+											)}
+										>
+											<ColorInput
+												value={tagColor(tagColors, tag, index)}
+												onChange={(event) => onColorChange(tag, event.currentTarget.value)}
+												className="h-8 w-9 rounded-lg"
+												aria-label={`${t('new_tags')} ${tag}`}
+											/>
+											<Input
+												value={draftNames[tag] ?? tag}
+												onChange={(event) =>
+													setDraftNames((prev) => ({ ...prev, [tag]: event.target.value }))
+												}
+												onBlur={() => commitTagName(tag)}
+												onKeyDown={(event) => {
+													if (event.key === 'Enter') {
+														event.preventDefault();
+														commitTagName(tag);
+													}
+													if (event.key === 'Escape') {
+														setDraftNames((prev) => ({ ...prev, [tag]: tag }));
+													}
+												}}
+												className={cn(ft.input, 'h-8 min-w-0 flex-1 rounded-lg shadow-inner')}
+												aria-label={`${t('new_tags')} ${tag}`}
+											/>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className={cn('h-8 w-8 flex-none rounded-lg', ft.muted)}
+												onClick={() => onChange(tags.filter((item) => item !== tag))}
+												aria-label={`${t('button_close')} ${tag}`}
+											>
+												<X className="h-4 w-4" />
+											</Button>
+										</div>
+									))}
+								</div>
+							) : (
+								<div className={cn('rounded-xl border border-dashed px-3 py-4 text-sm', ft.muted)}>
+									{t('placeholder_tags_example')}
+								</div>
+							)}
+						</div>
+					</div>
+
+					<SheetFooter className="shrink-0 border-t border-[color:var(--theme-panel-border)] px-5 py-4">
+						<Button
+							type="button"
+							variant="outline"
+							className={cn(ft.footerCancel, '!flex-none')}
+							onClick={() => onOpenChange(false)}
+						>
+							{t('button_close')}
+						</Button>
+					</SheetFooter>
+				</div>
+			</SheetContent>
+		</Sheet>
 	);
 }
 
@@ -285,6 +499,10 @@ export function NewHoroscope({
 	const [locationName, setLocationName] = useState(() => initialValues?.name ?? '');
 	const [location, setLocation] = useState(() => initialValues?.location ?? workspaceDefaults.locationName ?? '');
 	const [tags, setTags] = useState<string[]>(() => initialValues?.tags ?? []);
+	const [tagColors, setTagColors] = useState<Record<string, string>>(
+		() => initialValues?.tagColors ?? {}
+	);
+	const [tagSheetOpen, setTagSheetOpen] = useState(false);
 	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() =>
 		initialValues?.dateTime ? parseDateTimeString(initialValues.dateTime) : new Date()
 	);
@@ -323,6 +541,45 @@ export function NewHoroscope({
 	const [draftDateValue, setDraftDateValue] = useState(() =>
 		format(selectedDateTime, 'P', { locale: dateFnsLocale })
 	);
+
+	const applyTags = (nextTags: string[]) => {
+		const uniqueTags = mergeTags([], nextTags);
+		setTags(uniqueTags);
+		setTagColors((prev) => {
+			const next: Record<string, string> = {};
+			uniqueTags.forEach((tag, index) => {
+				next[tag] = prev[tag] ?? tagDefaultColor(index);
+			});
+			return next;
+		});
+	};
+
+	const applyTagColor = (tag: string, color: string) => {
+		setTagColors((prev) => ({ ...prev, [tag]: color }));
+	};
+
+	const applyTagRename = (tag: string, nextName: string) => {
+		const normalized = nextName.trim();
+		if (!normalized || normalized === tag) return;
+
+		const nextTags = tags.reduce<string[]>((acc, current) => {
+			const value = current === tag ? normalized : current;
+			if (!acc.includes(value)) acc.push(value);
+			return acc;
+		}, []);
+
+		setTags(nextTags);
+		setTagColors((prev) => {
+			const next: Record<string, string> = {};
+			nextTags.forEach((nextTag, index) => {
+				next[nextTag] =
+					nextTag === normalized
+						? (prev[normalized] ?? prev[tag] ?? tagDefaultColor(index))
+						: (prev[nextTag] ?? tagDefaultColor(index));
+			});
+			return next;
+		});
+	};
 
 	useEffect(() => {
 		setDraftDateValue(format(selectedDateTime, 'P', { locale: dateFnsLocale }));
@@ -417,6 +674,9 @@ export function NewHoroscope({
 			dateTime: selectedDateTime,
 			location: resolvedLocation,
 			tags: tags.join(', '),
+			tagColors: Object.fromEntries(
+				tags.map((tag, index) => [tag, tagColors[tag] ?? tagDefaultColor(index)])
+			),
 			latitude: resolvedLatitude,
 			longitude: resolvedLongitude,
 			latitudeDir: resolvedLatitudeDir,
@@ -666,14 +926,16 @@ export function NewHoroscope({
 						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_tags')}</Label>
 						<TagInput
 							tags={tags}
-							onChange={setTags}
+							tagColors={tagColors}
+							onChange={applyTags}
+							onOpenAdvanced={() => setTagSheetOpen(true)}
+							advancedLabel={t('new_tags')}
 							placeholder={t('new_tags_comma_hint')}
 							panelBg="bg-[color:var(--theme-panel-bg)] backdrop-blur-sm"
 							panelBorder="border border-[color:var(--theme-panel-border)]"
 							contentPrimary="text-[color:var(--theme-content-primary)]"
 							contentMuted="text-[color:var(--theme-content-muted)]"
-							softBg="bg-[color:var(--theme-soft-bg)]"
-							accent="text-[color:var(--theme-accent)]"
+							iconClassName={ft.iconColor}
 						/>
 					</div>
 
@@ -717,6 +979,16 @@ export function NewHoroscope({
 						</Button>
 					</div>
 				</div>
+				<AdvancedTagSheet
+					open={tagSheetOpen}
+					onOpenChange={setTagSheetOpen}
+					tags={tags}
+					tagColors={tagColors}
+					onChange={applyTags}
+					onRename={applyTagRename}
+					onColorChange={applyTagColor}
+					theme={theme}
+				/>
 			</AppMainContentContainer>
 		</AppMainContentRoot>
 	);
