@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { AppChart } from '@/lib/tauri/chartPayload';
+import type { TransitOverlay } from '@/lib/astrology/transits';
 
 export type WorkspaceChartsValue = {
 	charts: AppChart[];
@@ -7,12 +8,18 @@ export type WorkspaceChartsValue = {
 	selectedChart: AppChart | undefined;
 	selectedPersistedChart: AppChart | undefined;
 	isSelectedChartPreview: boolean;
+	transitOverlay: TransitOverlay | null;
 	setSelectedChartId: (id: string | null) => void;
 	setCharts: React.Dispatch<React.SetStateAction<AppChart[]>>;
 	addChart: (chart: AppChart) => void;
 	replaceChartsFromWorkspace: (loaded: AppChart[]) => void;
-	shiftSelectedChartTime: (step: { unit: 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'; amount: number }) => Promise<void>;
+	shiftSelectedChartTime: (step: {
+		unit: 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr';
+		amount: number;
+	}) => Promise<void>;
 	resetSelectedChartPreview: () => void;
+	setTransitOverlay: (overlay: TransitOverlay | null) => void;
+	clearTransitOverlay: () => void;
 };
 
 const WorkspaceChartsContext = createContext<WorkspaceChartsValue | null>(null);

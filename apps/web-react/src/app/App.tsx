@@ -1,11 +1,4 @@
-import {
-	useCallback,
-	useEffect,
-	useLayoutEffect,
-	useMemo,
-	useRef,
-	useState
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,25 +44,20 @@ import {
 	saveWorkspaceDefaults
 } from '@/lib/tauri/workspace';
 import type { WorkspaceDefaultsDto } from '@/lib/tauri/types';
-import {
-	readStoredAppShellIconSet,
-	type AppShellIconSetId
-} from '@/lib/app-shell';
+import { readStoredAppShellIconSet, type AppShellIconSetId } from '@/lib/app-shell';
 import {
 	persistElementColors,
 	readStoredElementColors,
 	type ElementColors
 } from '@/lib/astrology/elementColors';
-import {
-	readStoredGlyphSet,
-	type AstrologyGlyphSetId
-} from '@/lib/astrology/glyphs';
+import { readStoredGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import {
 	persistThemePalettes,
 	readStoredThemePalettes,
 	themePaletteVars,
 	type ThemePalettes
 } from '@/lib/themePalettes';
+import type { TransitOverlay } from '@/lib/astrology/transits';
 
 function mergeWorkspaceDefaults(
 	prev: WorkspaceDefaultsState,
@@ -114,8 +102,12 @@ function mergeWorkspaceDefaultsPatch(
 	return {
 		...prev,
 		...patch,
-		defaultBodies: Array.isArray(patch.defaultBodies) ? [...patch.defaultBodies] : prev.defaultBodies,
-		defaultAspects: Array.isArray(patch.defaultAspects) ? [...patch.defaultAspects] : prev.defaultAspects,
+		defaultBodies: Array.isArray(patch.defaultBodies)
+			? [...patch.defaultBodies]
+			: prev.defaultBodies,
+		defaultAspects: Array.isArray(patch.defaultAspects)
+			? [...patch.defaultAspects]
+			: prev.defaultAspects,
 		defaultAspectOrbs: patch.defaultAspectOrbs
 			? { ...prev.defaultAspectOrbs, ...patch.defaultAspectOrbs }
 			: prev.defaultAspectOrbs,
@@ -179,7 +171,9 @@ function formatChartDateTimeUtc(value: Date): string {
 export default function App() {
 	const { t } = useTranslation();
 	const [theme, setTheme] = useState<Theme>('noon');
-	const [themePalettes, setThemePalettes] = useState<ThemePalettes>(() => readStoredThemePalettes());
+	const [themePalettes, setThemePalettes] = useState<ThemePalettes>(() =>
+		readStoredThemePalettes()
+	);
 	const [appShellIconSet, setAppShellIconSet] = useState<AppShellIconSetId>(() =>
 		readStoredAppShellIconSet()
 	);
@@ -205,6 +199,7 @@ export default function App() {
 	const [selectedChartId, setSelectedChartId] = useState<string | null>(BOOTSTRAP_CHART_ID);
 	const [selectedChartPreview, setSelectedChartPreview] = useState<AppChart | null>(null);
 	const [editingChart, setEditingChart] = useState<AppChart | null>(null);
+	const [transitOverlay, setTransitOverlayState] = useState<TransitOverlay | null>(null);
 	const [workspaceDefaults, setWorkspaceDefaults] = useState<WorkspaceDefaultsState>(() => ({
 		...DEFAULT_WORKSPACE_DEFAULTS
 	}));
@@ -220,24 +215,28 @@ export default function App() {
 		(loaded: AppChart[]) => {
 			const list = loaded.length > 0 ? loaded : [createBootstrapChart(workspaceDefaults)];
 			setSelectedChartPreview(null);
+			setTransitOverlayState(null);
 			setCharts(list);
 			setSelectedChartId(list[0]!.id);
 		},
 		[workspaceDefaults]
 	);
 
-	const applyComputedChartResult = useCallback((chartId: string, result: Awaited<ReturnType<typeof computeChart>>) => {
-		setCharts((prev) =>
-			prev.map((chart) =>
-				chart.id === chartId
-					? {
-							...chart,
-							computed: normalizeComputedChartPayload(result)
-						}
-					: chart
-			)
-		);
-	}, []);
+	const applyComputedChartResult = useCallback(
+		(chartId: string, result: Awaited<ReturnType<typeof computeChart>>) => {
+			setCharts((prev) =>
+				prev.map((chart) =>
+					chart.id === chartId
+						? {
+								...chart,
+								computed: normalizeComputedChartPayload(result)
+							}
+						: chart
+				)
+			);
+		},
+		[]
+	);
 
 	const shiftSelectedChartTime = useCallback(
 		async (step: { unit: 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'; amount: number }) => {
@@ -253,7 +252,9 @@ export default function App() {
 			const shiftedDateTime = formatChartDateTimeUtc(shiftedTime);
 			const shiftedChart: AppChart = { ...selectedChart, dateTime: shiftedDateTime };
 
-			const result = await computeChartFromData(chartDataToComputePayload(shiftedChart, workspaceDefaults));
+			const result = await computeChartFromData(
+				chartDataToComputePayload(shiftedChart, workspaceDefaults)
+			);
 			setSelectedChartPreview({
 				...shiftedChart,
 				computed: normalizeComputedChartPayload(result)
@@ -264,6 +265,14 @@ export default function App() {
 
 	const resetSelectedChartPreview = useCallback(() => {
 		setSelectedChartPreview(null);
+	}, []);
+
+	const setTransitOverlay = useCallback((overlay: TransitOverlay | null) => {
+		setTransitOverlayState(overlay);
+	}, []);
+
+	const clearTransitOverlay = useCallback(() => {
+		setTransitOverlayState(null);
 	}, []);
 
 	const handleSelectChartId = useCallback((id: string | null) => {
@@ -282,22 +291,28 @@ export default function App() {
 			selectedPersistedChart: charts.find((c) => c.id === selectedChartId),
 			isSelectedChartPreview:
 				selectedChartPreview !== null && selectedChartPreview.id === selectedChartId,
+			transitOverlay,
 			setSelectedChartId: handleSelectChartId,
 			setCharts,
 			addChart,
 			replaceChartsFromWorkspace,
 			shiftSelectedChartTime,
-			resetSelectedChartPreview
+			resetSelectedChartPreview,
+			setTransitOverlay,
+			clearTransitOverlay
 		}),
 		[
 			charts,
 			selectedChartId,
 			selectedChartPreview,
+			transitOverlay,
 			handleSelectChartId,
 			addChart,
 			replaceChartsFromWorkspace,
 			shiftSelectedChartTime,
-			resetSelectedChartPreview
+			resetSelectedChartPreview,
+			setTransitOverlay,
+			clearTransitOverlay
 		]
 	);
 
@@ -430,8 +445,7 @@ export default function App() {
 		if (workspacePath) return;
 		const bootstrapChart = charts.find((chart) => chart.id === BOOTSTRAP_CHART_ID);
 		if (!bootstrapChart) return;
-		const hasComputedPositions =
-			Object.keys(bootstrapChart.computed?.positions ?? {}).length > 0;
+		const hasComputedPositions = Object.keys(bootstrapChart.computed?.positions ?? {}).length > 0;
 		if (hasComputedPositions) return;
 		void computeChartInBackground(bootstrapChart, null);
 	}, [charts, computeChartInBackground, workspacePath]);
@@ -550,9 +564,7 @@ export default function App() {
 					)}
 
 					{/* Main Content Area */}
-					<main
-						className="flex-1 overflow-auto transition-colors duration-500 text-[color:var(--theme-content-primary)]"
-					>
+					<main className="flex-1 overflow-auto text-[color:var(--theme-content-primary)] transition-colors duration-500">
 						{activeView === 'horoskop' ? (
 							<HoroscopeDashboard
 								theme={theme}
@@ -617,6 +629,7 @@ export default function App() {
 								theme={theme}
 								glyphSet={astrologyGlyphSet}
 								workspacePath={workspacePath}
+								workspaceDefaults={workspaceDefaults}
 							/>
 						) : activeView === 'nastaveni' ? (
 							<SettingsView
@@ -642,19 +655,19 @@ export default function App() {
 						) : (
 							<AppMainContentRoot>
 								<AppMainContentContainer layout="center-column">
-								<Card variant="ghost" className="gap-0 p-0">
-									<CardContent className="space-y-3 p-6 md:p-8">
-										<h1 className={cn('text-xl font-semibold', formTheme.title)}>
-											{t('placeholder_view_title')}
-										</h1>
-										<p className={cn('text-sm', formTheme.muted)}>
-											{t('placeholder_view_subtitle')}
-										</p>
-										<p className={cn('text-sm leading-relaxed', formTheme.muted)}>
-											{t('placeholder_view_body')}
-										</p>
-									</CardContent>
-								</Card>
+									<Card variant="ghost" className="gap-0 p-0">
+										<CardContent className="space-y-3 p-6 md:p-8">
+											<h1 className={cn('text-xl font-semibold', formTheme.title)}>
+												{t('placeholder_view_title')}
+											</h1>
+											<p className={cn('text-sm', formTheme.muted)}>
+												{t('placeholder_view_subtitle')}
+											</p>
+											<p className={cn('text-sm leading-relaxed', formTheme.muted)}>
+												{t('placeholder_view_body')}
+											</p>
+										</CardContent>
+									</Card>
 								</AppMainContentContainer>
 							</AppMainContentRoot>
 						)}

@@ -20,7 +20,12 @@ import { useAppFormFieldTheme } from './form-field-theme';
 import { HoroscopeContextTabs } from './horoscope-context-tabs';
 import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
-import { HoroscopeWheel, type HoroscopeWheelBody, type RadixAspectDrawInput } from './horoscope-wheel';
+import {
+	HoroscopeWheel,
+	type HoroscopeWheelBody,
+	type HoroscopeWheelObjectHover,
+	type RadixAspectDrawInput
+} from './horoscope-wheel';
 import { toast } from 'sonner';
 import {
 	DEFAULT_OBSERVABLE_OBJECT_IDS,
@@ -90,8 +95,16 @@ const POSITION_META: Record<string, { labelKey?: string; fallbackLabel: string; 
 	ic: { labelKey: 'point_ic', fallbackLabel: 'IC', icon: 'IC' },
 	north_node: { labelKey: 'point_north_node', fallbackLabel: 'North Node', icon: '☊' },
 	south_node: { labelKey: 'point_south_node', fallbackLabel: 'South Node', icon: '☋' },
-	true_north_node: { labelKey: 'point_true_north_node', fallbackLabel: 'True North Node', icon: '☊' },
-	true_south_node: { labelKey: 'point_true_south_node', fallbackLabel: 'True South Node', icon: '☋' },
+	true_north_node: {
+		labelKey: 'point_true_north_node',
+		fallbackLabel: 'True North Node',
+		icon: '☊'
+	},
+	true_south_node: {
+		labelKey: 'point_true_south_node',
+		fallbackLabel: 'True South Node',
+		icon: '☋'
+	},
 	lilith: { labelKey: 'point_lilith', fallbackLabel: 'Lilith', icon: '⚸' },
 	chiron: { labelKey: 'point_chiron', fallbackLabel: 'Chiron', icon: '⚷' },
 	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
@@ -108,11 +121,7 @@ function parseRadixAspect(raw: unknown): RadixAspectDrawInput | null {
 	const type = typeof o.type === 'string' ? o.type : null;
 	const orbRaw = o.orb;
 	const orb =
-		typeof orbRaw === 'number'
-			? orbRaw
-			: typeof orbRaw === 'string'
-				? Number(orbRaw)
-				: NaN;
+		typeof orbRaw === 'number' ? orbRaw : typeof orbRaw === 'string' ? Number(orbRaw) : NaN;
 	if (!from || !to || !type || !Number.isFinite(orb)) return null;
 	return { from, to, type, orb };
 }
@@ -173,20 +182,11 @@ function parseChartDateTime(value?: string): Date | null {
 	const normalizedDate = new Date(normalized);
 	if (!Number.isNaN(normalizedDate.getTime())) return normalizedDate;
 
-	const match = value.match(
-		/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
-	);
+	const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
 	if (!match) return null;
 
 	const [, dd, mm, yyyy, hh = '00', min = '00', ss = '00'] = match;
-	return new Date(
-		Number(yyyy),
-		Number(mm) - 1,
-		Number(dd),
-		Number(hh),
-		Number(min),
-		Number(ss)
-	);
+	return new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(ss));
 }
 
 function formatCoords(latitude?: number, longitude?: number) {
@@ -204,7 +204,8 @@ export function HoroscopeDashboard({
 	onObservableObjectsChange
 }: HoroscopeDashboardProps) {
 	const { t, i18n } = useTranslation();
-	const { selectedChart, shiftSelectedChartTime } = useWorkspaceCharts();
+	const { selectedChart, shiftSelectedChartTime, transitOverlay, clearTransitOverlay } =
+		useWorkspaceCharts();
 	const ft = useAppFormFieldTheme(theme);
 	const [profileCollapsed, setProfileCollapsed] = useState(false);
 	const [astrolabeCollapsed, setAstrolabeCollapsed] = useState(false);
@@ -214,6 +215,8 @@ export function HoroscopeDashboard({
 	const [showPositionModal, setShowPositionModal] = useState(false);
 	const [pickerBodies, setPickerBodies] = useState<string[]>([]);
 	const [isSteppingTime, setIsSteppingTime] = useState(false);
+	const [hoveredWheelObject, setHoveredWheelObject] =
+		useState<HoroscopeWheelObjectHover | null>(null);
 
 	const observableCategories = useMemo(() => {
 		const categoryOrder: ObservableObjectCategory[] = [
@@ -247,6 +250,9 @@ export function HoroscopeDashboard({
 	);
 	const panelCardClass = 'gap-0 overflow-hidden transition-all duration-300';
 	const parsedChartDateTime = parseChartDateTime(selectedChart?.dateTime);
+	const activeTransitOverlay =
+		transitOverlay && transitOverlay.sourceChartId === selectedChart?.id ? transitOverlay : null;
+	const parsedTransitDateTime = parseChartDateTime(activeTransitOverlay?.dateTime);
 	const chartTypeLabel =
 		selectedChart?.chartType === 'EVENT'
 			? t('new_type_event')
@@ -258,13 +264,27 @@ export function HoroscopeDashboard({
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric'
-		}) ?? selectedChart?.dateTime?.split(' ')[0] ?? t('demo_chart_date_line');
+		}) ??
+		selectedChart?.dateTime?.split(' ')[0] ??
+		t('demo_chart_date_line');
 	const chartTimeLabel =
 		parsedChartDateTime?.toLocaleTimeString(i18n.language, {
 			hour: '2-digit',
 			minute: '2-digit',
 			second: '2-digit'
-		}) ?? selectedChart?.dateTime?.split(' ').slice(1).join(' ') ?? t('demo_chart_time_line');
+		}) ??
+		selectedChart?.dateTime?.split(' ').slice(1).join(' ') ??
+		t('demo_chart_time_line');
+	const transitDateTimeLabel =
+		parsedTransitDateTime?.toLocaleString(i18n.language, {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		}) ??
+		activeTransitOverlay?.dateTime ??
+		'';
 	const chartLocationLabel = selectedChart?.location || t('demo_chart_location');
 	const chartCoordsLabel =
 		formatCoords(selectedChart?.latitude, selectedChart?.longitude) ?? t('demo_chart_coords');
@@ -276,7 +296,7 @@ export function HoroscopeDashboard({
 	const computedMotion = selectedChart?.computed?.motion ?? {};
 	const computedAxes = selectedChart?.computed?.axes;
 	const positionOrder =
-		(selectedChart?.observableObjects && selectedChart.observableObjects.length > 0)
+		selectedChart?.observableObjects && selectedChart.observableObjects.length > 0
 			? selectedChart.observableObjects
 			: workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
@@ -286,14 +306,23 @@ export function HoroscopeDashboard({
 	const showDsc = enabledPositionIds.has('desc');
 	const showMc = enabledPositionIds.has('mc');
 	const showIc = enabledPositionIds.has('ic');
-	const chartAscLongitude = normalizeLongitude(computedAxes?.asc ?? computedPositions.asc) ?? undefined;
+	const chartAscLongitude =
+		normalizeLongitude(computedAxes?.asc ?? computedPositions.asc) ?? undefined;
 	const axisLongitudes = {
 		asc: showAsc ? chartAscLongitude : undefined,
-		dsc: showDsc ? (normalizeLongitude(computedAxes?.desc ?? computedPositions.desc) ?? undefined) : undefined,
-		mc: showMc ? (normalizeLongitude(computedAxes?.mc ?? computedPositions.mc) ?? undefined) : undefined,
-		ic: showIc ? (normalizeLongitude(computedAxes?.ic ?? computedPositions.ic) ?? undefined) : undefined
+		dsc: showDsc
+			? (normalizeLongitude(computedAxes?.desc ?? computedPositions.desc) ?? undefined)
+			: undefined,
+		mc: showMc
+			? (normalizeLongitude(computedAxes?.mc ?? computedPositions.mc) ?? undefined)
+			: undefined,
+		ic: showIc
+			? (normalizeLongitude(computedAxes?.ic ?? computedPositions.ic) ?? undefined)
+			: undefined
 	};
-	const wheelBodyOrder: HoroscopeWheelBody[] = positionOrder.filter((id) => !ANGLE_POSITION_IDS.has(id));
+	const wheelBodyOrder: HoroscopeWheelBody[] = positionOrder.filter(
+		(id) => !ANGLE_POSITION_IDS.has(id)
+	);
 	const wheelBodyLongitudes = Object.fromEntries(
 		wheelBodyOrder
 			.map((body) => {
@@ -312,6 +341,72 @@ export function HoroscopeDashboard({
 	const radixAspects: RadixAspectDrawInput[] = (selectedChart?.computed?.aspects ?? [])
 		.map(parseRadixAspect)
 		.filter((a): a is RadixAspectDrawInput => a !== null);
+	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
+		string,
+		unknown
+	>;
+	const transitWheelBodyOrder: HoroscopeWheelBody[] = activeTransitOverlay?.transitingBodies ?? [];
+	const transitWheelBodyLongitudes = Object.fromEntries(
+		transitWheelBodyOrder
+			.map((body) => {
+				const longitude = normalizeLongitude(transitPositions[body]);
+				return [body, longitude];
+			})
+			.filter((entry): entry is [HoroscopeWheelBody, number] => entry[1] !== null)
+	) as Partial<Record<string, number>>;
+	const hoveredWheelDetails = useMemo(() => {
+		if (!hoveredWheelObject) return null;
+		const sourcePositions =
+			hoveredWheelObject.layer === 'transit' ? transitPositions : computedPositions;
+		const sourceMotion =
+			hoveredWheelObject.layer === 'transit'
+				? (activeTransitOverlay?.transitChart.computed?.motion ?? {})
+				: computedMotion;
+		const longitude = normalizeLongitude(sourcePositions[hoveredWheelObject.bodyId]);
+		if (longitude === null) return null;
+		const position = longitudeToPosition(
+			hoveredWheelObject.bodyId,
+			longitude,
+			sourceMotion[hoveredWheelObject.bodyId]?.retrograde ?? false,
+			t
+		);
+		const layerLabel =
+			hoveredWheelObject.layer === 'transit'
+				? t('transits_general_transit_transit')
+				: (selectedChart?.name ?? t('new_type_radix'));
+		return {
+			...hoveredWheelObject,
+			longitude,
+			position,
+			layerLabel
+		};
+	}, [
+		activeTransitOverlay?.transitChart.computed?.motion,
+		computedMotion,
+		computedPositions,
+		hoveredWheelObject,
+		selectedChart?.name,
+		t,
+		transitPositions
+	]);
+	const hoveredWheelTooltipStyle = hoveredWheelDetails
+		? {
+				left: Math.max(
+					8,
+					Math.min(
+						hoveredWheelDetails.clientX + 14,
+						(typeof window === 'undefined' ? 1200 : window.innerWidth) - 260
+					)
+				),
+				top: Math.max(
+					8,
+					Math.min(
+						hoveredWheelDetails.clientY + 14,
+						(typeof window === 'undefined' ? 800 : window.innerHeight) - 142
+					)
+				)
+			}
+		: undefined;
 
 	const getMaxAmount = () => {
 		if (timeUnit === 'sec' || timeUnit === 'min' || timeUnit === 'yr') return 10;
@@ -394,6 +489,37 @@ export function HoroscopeDashboard({
 										))}
 									</div>
 								) : null}
+								{activeTransitOverlay ? (
+									<div
+										className={cn(
+											'mt-3 flex items-center justify-between gap-3 rounded-xl border px-3 py-2',
+											borderColor,
+											'bg-[color:var(--theme-soft-bg)]/50'
+										)}
+									>
+										<div className="min-w-0">
+											<div className={cn('truncate text-xs font-semibold', textColor)}>
+												{t('transit_overlay_label')}
+											</div>
+											<div className={cn('truncate text-xs', mutedColor)}>
+												{t('transits_period_to')}: {transitDateTimeLabel}
+											</div>
+										</div>
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon"
+											className={cn('h-7 w-7 shrink-0 rounded-lg', hoverBg)}
+											onClick={(event) => {
+												event.stopPropagation();
+												clearTransitOverlay();
+											}}
+											aria-label={t('transit_overlay_clear')}
+										>
+											<X className={cn('h-3.5 w-3.5', mutedColor)} />
+										</Button>
+									</div>
+								) : null}
 							</div>
 						)}
 					</Card>
@@ -454,12 +580,24 @@ export function HoroscopeDashboard({
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent className={ft.selectContent}>
-											<SelectItem value="sec" className={ft.selectItem}>{t('astrolabe_unit_sec')}</SelectItem>
-											<SelectItem value="min" className={ft.selectItem}>{t('astrolabe_unit_min')}</SelectItem>
-											<SelectItem value="hr" className={ft.selectItem}>{t('astrolabe_unit_hr')}</SelectItem>
-											<SelectItem value="day" className={ft.selectItem}>{t('astrolabe_unit_day')}</SelectItem>
-											<SelectItem value="month" className={ft.selectItem}>{t('astrolabe_unit_month')}</SelectItem>
-											<SelectItem value="yr" className={ft.selectItem}>{t('astrolabe_unit_yr')}</SelectItem>
+											<SelectItem value="sec" className={ft.selectItem}>
+												{t('astrolabe_unit_sec')}
+											</SelectItem>
+											<SelectItem value="min" className={ft.selectItem}>
+												{t('astrolabe_unit_min')}
+											</SelectItem>
+											<SelectItem value="hr" className={ft.selectItem}>
+												{t('astrolabe_unit_hr')}
+											</SelectItem>
+											<SelectItem value="day" className={ft.selectItem}>
+												{t('astrolabe_unit_day')}
+											</SelectItem>
+											<SelectItem value="month" className={ft.selectItem}>
+												{t('astrolabe_unit_month')}
+											</SelectItem>
+											<SelectItem value="yr" className={ft.selectItem}>
+												{t('astrolabe_unit_yr')}
+											</SelectItem>
 										</SelectContent>
 									</Select>
 
@@ -517,7 +655,7 @@ export function HoroscopeDashboard({
 
 				{/* Center Column - Full middle track */}
 				<div className="flex min-h-0 min-w-0 items-center justify-center overflow-hidden">
-					<div className="aspect-square h-full w-full max-h-full max-w-full">
+					<div className="aspect-square h-full max-h-full w-full max-w-full">
 						<HoroscopeWheel
 							theme={theme}
 							glyphSet={glyphSet}
@@ -525,6 +663,8 @@ export function HoroscopeDashboard({
 							lightPlanetFill={lightPlanetFill}
 							bodyLongitudes={wheelBodyLongitudes}
 							bodyOrder={wheelBodyOrder}
+							transitBodyLongitudes={transitWheelBodyLongitudes}
+							transitBodyOrder={transitWheelBodyOrder}
 							axisLongitudes={axisLongitudes}
 							houseCusps={selectedChart?.computed?.houseCusps}
 							ascRotationLongitude={chartAscLongitude}
@@ -535,6 +675,8 @@ export function HoroscopeDashboard({
 							aspectOrbsForRadix={workspaceDefaults.defaultAspectOrbs}
 							aspectColorsForRadix={workspaceDefaults.defaultAspectColors}
 							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
+							onObjectHover={setHoveredWheelObject}
+							onObjectHoverEnd={() => setHoveredWheelObject(null)}
 						/>
 					</div>
 				</div>
@@ -565,8 +707,7 @@ export function HoroscopeDashboard({
 								onClick={(e) => {
 									e.stopPropagation();
 									setPickerBodies(
-										selectedChart?.observableObjects ??
-										workspaceDefaults.defaultBodies
+										selectedChart?.observableObjects ?? workspaceDefaults.defaultBodies
 									);
 									setShowPositionModal(true);
 								}}
@@ -586,7 +727,7 @@ export function HoroscopeDashboard({
 													className={cn(
 														'flex items-center gap-0.5',
 														textColor,
-														'font-mono text-sm tabular-nums leading-none'
+														'font-mono text-sm leading-none tabular-nums'
 													)}
 													title={pos.label}
 												>
@@ -619,7 +760,7 @@ export function HoroscopeDashboard({
 													</span>
 													<span className="w-10 text-right">{pos.minutes}'</span>
 													<span className="w-10 text-right">{pos.seconds}"</span>
-													<span className="w-6 text-center text-[10px] font-semibold uppercase text-[color:var(--theme-accent)]">
+													<span className="w-6 text-center text-[10px] font-semibold text-[color:var(--theme-accent)] uppercase">
 														{pos.retrograde ? 'R' : ''}
 													</span>
 												</div>
@@ -638,10 +779,66 @@ export function HoroscopeDashboard({
 						)}
 					</Card>
 				</div>
-
 			</div>
 
 			<HoroscopeContextTabs theme={theme} />
+
+			{hoveredWheelDetails && hoveredWheelTooltipStyle ? (
+				<div
+					className={cn(
+						'pointer-events-none fixed z-[60] w-64 rounded-lg border px-3 py-2.5 shadow-xl backdrop-blur-md',
+						borderColor,
+						'bg-[color:var(--theme-panel-bg)]/95'
+					)}
+					style={hoveredWheelTooltipStyle}
+				>
+					<div className="mb-2 flex items-center justify-between gap-3">
+						<div className="flex min-w-0 items-center gap-2">
+							<AstrologyGlyph
+								glyphId={hoveredWheelDetails.bodyId}
+								glyphSet={glyphSet}
+								fallback={hoveredWheelDetails.position.icon}
+								size={18}
+								title={hoveredWheelDetails.position.label}
+								className="shrink-0"
+							/>
+							<div className={cn('truncate text-sm font-semibold', textColor)}>
+								{hoveredWheelDetails.position.label}
+							</div>
+						</div>
+						<div className={cn('shrink-0 text-[11px] font-medium', mutedColor)}>
+							{hoveredWheelDetails.layerLabel}
+						</div>
+					</div>
+					<div className="space-y-1 font-mono text-xs tabular-nums">
+						<div className="flex items-center justify-between gap-3">
+							<span className={mutedColor}>{t('aspectarium_position')}</span>
+							<span className={cn('flex items-center gap-1', textColor)}>
+								{hoveredWheelDetails.position.degrees}°
+								<AstrologyGlyph
+									glyphId={hoveredWheelDetails.position.signZodiacId}
+									glyphSet={glyphSet}
+									domain="zodiac"
+									fallback={hoveredWheelDetails.position.signGlyphFallback}
+									size={16}
+									title={hoveredWheelDetails.position.signZodiacId}
+								/>
+								{hoveredWheelDetails.position.minutes}' {hoveredWheelDetails.position.seconds}"
+							</span>
+						</div>
+						<div className="flex items-center justify-between gap-3">
+							<span className={mutedColor}>{t('aspectarium_absolute_longitude')}</span>
+							<span className={textColor}>{hoveredWheelDetails.longitude.toFixed(2)}°</span>
+						</div>
+						<div className="flex items-center justify-between gap-3">
+							<span className={mutedColor}>{t('open_filter_motion')}</span>
+							<span className={textColor}>
+								{hoveredWheelDetails.position.retrograde ? 'R' : 'D'}
+							</span>
+						</div>
+					</div>
+				</div>
+			) : null}
 
 			{/* Position Selection Modal */}
 			{showPositionModal && (
@@ -668,11 +865,17 @@ export function HoroscopeDashboard({
 							<p className={`text-sm ${mutedColor}`}>{t('dashboard_positions_picker_hint')}</p>
 							<div className="grid gap-4 md:grid-cols-2">
 								{observableCategories.map((category) => (
-									<div key={category.id} className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 p-4">
+									<div
+										key={category.id}
+										className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 p-4"
+									>
 										<h3 className={`mb-3 text-sm font-semibold ${textColor}`}>{category.label}</h3>
 										<div className="space-y-2">
 											{category.items.map((item) => (
-												<Label key={item.id} className="flex items-center gap-3 text-sm cursor-pointer">
+												<Label
+													key={item.id}
+													className="flex cursor-pointer items-center gap-3 text-sm"
+												>
 													<Checkbox
 														checked={pickerBodies.includes(item.id)}
 														onCheckedChange={() =>

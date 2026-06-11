@@ -2,26 +2,36 @@
  * Horoscope wheel SVG — single source shared with Horoskop tab (`HoroscopeDashboard`).
  * Developer handoff id: HoroscopeWheel
  */
-import { useId } from 'react';
+import { useId, type PointerEvent } from 'react';
 import {
 	DEFAULT_ELEMENT_COLORS,
 	elementForZodiacId,
 	wheelZodiacFillOnDark,
 	type ElementColors
 } from '@/lib/astrology/elementColors';
-import {
-	ASPECT_ROWS,
-	DEFAULT_ASPECT_COLORS,
-	DEFAULT_ASPECT_ORBS
-} from '@/lib/astrology/aspects';
+import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import { OBSERVABLE_OBJECTS } from '@/lib/astrology/observableObjects';
-import { getAstrologyGlyphSrc, getZodiacGlyphSrc, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import {
+	getAstrologyGlyphSrc,
+	getZodiacGlyphSrc,
+	type AstrologyGlyphSetId
+} from '@/lib/astrology/glyphs';
 import type { AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
 import type { Theme } from './astrology-sidebar';
 
 /** Dark themes: planet SVGs (no per-color filter assets). */
-function WheelPlanetImageDark({ href, x, y, size }: { href: string; x: number; y: number; size: number }) {
+function WheelPlanetImageDark({
+	href,
+	x,
+	y,
+	size
+}: {
+	href: string;
+	x: number;
+	y: number;
+	size: number;
+}) {
 	const half = size / 2;
 	return (
 		<image
@@ -229,6 +239,15 @@ export interface RadixAspectDrawInput {
 	orb: number;
 }
 
+export type HoroscopeWheelObjectLayer = 'radix' | 'transit';
+
+export interface HoroscopeWheelObjectHover {
+	bodyId: string;
+	layer: HoroscopeWheelObjectLayer;
+	clientX: number;
+	clientY: number;
+}
+
 export interface HoroscopeWheelProps {
 	theme: Theme;
 	/**
@@ -242,6 +261,9 @@ export interface HoroscopeWheelProps {
 	lightPlanetFill?: string;
 	bodyLongitudes?: Partial<Record<string, number>>;
 	bodyOrder?: readonly HoroscopeWheelBody[];
+	/** Optional event/transit positions rendered as an outer extension of the radix wheel. */
+	transitBodyLongitudes?: Partial<Record<string, number>>;
+	transitBodyOrder?: readonly HoroscopeWheelBody[];
 	axisLongitudes?: Partial<HoroscopeWheelAxis>;
 	/** House cusps 1-12 in ecliptic longitude, from backend/Swiss/JPL. */
 	houseCusps?: readonly number[];
@@ -264,6 +286,8 @@ export interface HoroscopeWheelProps {
 	/** Horoskop tab uses radix-only wheel; Informace view enables glyphs + axes */
 	showPlanetGlyphs?: boolean;
 	showAxisLines?: boolean;
+	onObjectHover?: (hover: HoroscopeWheelObjectHover) => void;
+	onObjectHoverEnd?: () => void;
 	className?: string;
 }
 
@@ -272,6 +296,8 @@ export function HoroscopeWheel({
 	glyphSet,
 	bodyLongitudes,
 	bodyOrder,
+	transitBodyLongitudes,
+	transitBodyOrder,
 	axisLongitudes,
 	houseCusps,
 	ascRotationLongitude,
@@ -287,12 +313,15 @@ export function HoroscopeWheel({
 	showAxisLines = false,
 	elementColors: elementColorsProp = DEFAULT_ELEMENT_COLORS,
 	lightPlanetFill = 'var(--theme-content-primary)',
+	onObjectHover,
+	onObjectHoverEnd,
 	className
 }: HoroscopeWheelProps) {
 	const isDark = theme === 'midnight' || theme === 'twilight';
 	const wheelFilterUid = useId().replace(/:/g, '');
 	const planetLightFilterId = `${wheelFilterUid}-pl`;
 	const planetDarkFilterId = `${wheelFilterUid}-pd`;
+	const transitFilterId = `${wheelFilterUid}-tr`;
 	const wheelSize = 800;
 	const center = wheelSize / 2;
 	const outerRadius = 320;
@@ -306,9 +335,12 @@ export function HoroscopeWheel({
 	const glyphRadialOutset = 3;
 	const planetRadius = (houseInnerRadius + innerCenterRing) / 2 - 8 + glyphRadialOutset;
 	const houseLabelRadius = (houseInnerRadius + houseOuterRadius) / 2;
-	/** Aspect chords on the inner radix band (between core and inner ring), not at glyph radius. */
-	const radixAspectChordRadius = (innerCenterCore + innerCenterRing) / 2;
+	/** Aspect chords stop at the first inner circle, keeping the band to the second circle clear. */
+	const radixAspectChordRadius = innerCenterCore;
 	const zodiacRadius = (innerRadius + outerRadius) / 2 + glyphRadialOutset;
+	const transitRingInnerRadius = outerRadius + 18;
+	const transitRingOuterRadius = outerRadius + 58;
+	const transitGlyphRadius = outerRadius + 38;
 	const wheelBodyLongitudes = useFallbackData
 		? { ...DEFAULT_BODY_LONGITUDE, ...bodyLongitudes }
 		: (bodyLongitudes ?? {});
@@ -328,24 +360,45 @@ export function HoroscopeWheel({
 	const strokeMain = 'var(--token-wheel-stroke-main)';
 	const strokeSoft = 'var(--token-wheel-stroke-soft)';
 	const fillBg = 'var(--token-wheel-bg)';
-	const wheelRotationOffset = typeof ascRotationLongitude === 'number' && Number.isFinite(ascRotationLongitude)
-		? -normalizeDeg(ascRotationLongitude)
-		: 0;
+	const wheelRotationOffset =
+		typeof ascRotationLongitude === 'number' && Number.isFinite(ascRotationLongitude)
+			? -normalizeDeg(ascRotationLongitude)
+			: 0;
 	const displayLon = (lon: number) => normalizeDeg(lon + wheelRotationOffset);
 	const wheelHouseCusps = normalizeHouseCusps(houseCusps);
 
-	const bodies: { key: HoroscopeWheelBody; icon: string }[] = (bodyOrder ?? DEFAULT_WHEEL_BODY_ORDER).map(
+	const bodies: { key: HoroscopeWheelBody; icon: string }[] = (
+		bodyOrder ?? DEFAULT_WHEEL_BODY_ORDER
+	).map((key) => ({
+		key,
+		icon: OBSERVABLE_OBJECT_META.get(key)?.icon ?? key.slice(0, 3)
+	}));
+	const transitBodies: { key: HoroscopeWheelBody; icon: string }[] = (transitBodyOrder ?? []).map(
 		(key) => ({
 			key,
 			icon: OBSERVABLE_OBJECT_META.get(key)?.icon ?? key.slice(0, 3)
 		})
 	);
+	const hasTransitBodies = transitBodies.some(
+		({ key }) => typeof transitBodyLongitudes?.[key] === 'number'
+	);
 	const anglePoints: { key: 'asc' | 'dsc' | 'mc' | 'ic'; icon: string; longitude: number }[] = [
-		typeof axisAsc === 'number' ? { key: 'asc', icon: OBSERVABLE_OBJECT_META.get('asc')?.icon ?? 'Asc', longitude: axisAsc } : null,
-		typeof axisDsc === 'number' ? { key: 'dsc', icon: OBSERVABLE_OBJECT_META.get('desc')?.icon ?? 'Dsc', longitude: axisDsc } : null,
-		typeof axisMc === 'number' ? { key: 'mc', icon: OBSERVABLE_OBJECT_META.get('mc')?.icon ?? 'MC', longitude: axisMc } : null,
-		typeof axisIc === 'number' ? { key: 'ic', icon: OBSERVABLE_OBJECT_META.get('ic')?.icon ?? 'IC', longitude: axisIc } : null
-	].filter((item): item is { key: 'asc' | 'dsc' | 'mc' | 'ic'; icon: string; longitude: number } => item !== null);
+		typeof axisAsc === 'number'
+			? { key: 'asc', icon: OBSERVABLE_OBJECT_META.get('asc')?.icon ?? 'Asc', longitude: axisAsc }
+			: null,
+		typeof axisDsc === 'number'
+			? { key: 'dsc', icon: OBSERVABLE_OBJECT_META.get('desc')?.icon ?? 'Dsc', longitude: axisDsc }
+			: null,
+		typeof axisMc === 'number'
+			? { key: 'mc', icon: OBSERVABLE_OBJECT_META.get('mc')?.icon ?? 'MC', longitude: axisMc }
+			: null,
+		typeof axisIc === 'number'
+			? { key: 'ic', icon: OBSERVABLE_OBJECT_META.get('ic')?.icon ?? 'IC', longitude: axisIc }
+			: null
+	].filter(
+		(item): item is { key: 'asc' | 'dsc' | 'mc' | 'ic'; icon: string; longitude: number } =>
+			item !== null
+	);
 	const planetGlyphColor = isDark ? 'var(--token-wheel-glyph)' : lightPlanetFill;
 	const elementColors = elementColorsProp;
 	const angleMarkerRadius = outerRadius + 22;
@@ -392,6 +445,18 @@ export function HoroscopeWheel({
 		...(aspectColorsForRadix ?? {})
 	};
 	const aspectList = radixAspects ?? [];
+	const emitObjectHover = (
+		event: PointerEvent<SVGElement>,
+		bodyId: string,
+		layer: HoroscopeWheelObjectLayer
+	) => {
+		onObjectHover?.({
+			bodyId,
+			layer,
+			clientX: event.clientX,
+			clientY: event.clientY
+		});
+	};
 
 	return (
 		<svg
@@ -423,7 +488,9 @@ export function HoroscopeWheel({
 							>
 								<feFlood floodColor={lightPlanetFill} floodOpacity="1" result="c" />
 								<feComposite in="c" in2="SourceGraphic" operator="in" result="r" />
-								<feMerge><feMergeNode in="r" /></feMerge>
+								<feMerge>
+									<feMergeNode in="r" />
+								</feMerge>
 							</filter>
 						)}
 						{isDark && (
@@ -437,7 +504,9 @@ export function HoroscopeWheel({
 							>
 								<feFlood floodColor={lightPlanetFill} floodOpacity="1" result="c" />
 								<feComposite in="c" in2="SourceGraphic" operator="in" result="r" />
-								<feMerge><feMergeNode in="r" /></feMerge>
+								<feMerge>
+									<feMergeNode in="r" />
+								</feMerge>
 							</filter>
 						)}
 					</>
@@ -468,12 +537,116 @@ export function HoroscopeWheel({
 							);
 						})
 					: null}
+				<filter
+					id={transitFilterId}
+					colorInterpolationFilters="sRGB"
+					x="-50%"
+					y="-50%"
+					width="200%"
+					height="200%"
+				>
+					<feFlood floodColor="var(--theme-accent)" floodOpacity="1" result="tc" />
+					<feComposite in="tc" in2="SourceGraphic" operator="in" result="tr" />
+					<feMerge>
+						<feMergeNode in="tr" />
+					</feMerge>
+				</filter>
 			</defs>
 
-			<circle cx={center} cy={center} r={outerRadius + 60} fill={fillBg} />
+			<circle cx={center} cy={center} r={outerRadius + 72} fill={fillBg} />
 
-			<circle cx={center} cy={center} r={outerRadius} fill="none" stroke={strokeMain} strokeWidth="1.5" />
-			<circle cx={center} cy={center} r={innerRadius} fill="none" stroke={strokeMain} strokeWidth="1.5" />
+			{hasTransitBodies && (
+				<g data-handoff="Layer_TransitRing">
+					<circle
+						cx={center}
+						cy={center}
+						r={transitRingOuterRadius}
+						fill="none"
+						stroke="var(--theme-accent)"
+						strokeWidth="1.1"
+						opacity={0.52}
+					/>
+					<circle
+						cx={center}
+						cy={center}
+						r={transitRingInnerRadius}
+						fill="none"
+						stroke="var(--theme-accent)"
+						strokeWidth="0.9"
+						opacity={0.28}
+					/>
+					{transitBodies.flatMap(({ key, icon }) => {
+						const lon = transitBodyLongitudes?.[key];
+						if (typeof lon !== 'number') return [];
+						const p = polar(center, center, transitGlyphRadius, displayLon(lon));
+						const planetHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						return [
+							<g
+								key={`transit-${key}`}
+								data-handoff={`TransitPlanet_${key}`}
+								style={{ cursor: 'help' }}
+								onPointerEnter={(event) => emitObjectHover(event, key, 'transit')}
+								onPointerMove={(event) => emitObjectHover(event, key, 'transit')}
+								onPointerLeave={onObjectHoverEnd}
+							>
+								<circle
+									cx={p.x}
+									cy={p.y}
+									r="20"
+									fill="transparent"
+								/>
+								<circle
+									cx={p.x}
+									cy={p.y}
+									r="14"
+									fill="var(--theme-panel-bg)"
+									stroke="var(--theme-accent)"
+									strokeWidth="1"
+									opacity={0.92}
+								/>
+								{planetHref ? (
+									<WheelTintedGlyphImage
+										href={planetHref}
+										x={p.x}
+										y={p.y}
+										size={15}
+										filterId={transitFilterId}
+									/>
+								) : (
+									<text
+										x={p.x}
+										y={p.y}
+										textAnchor="middle"
+										dominantBaseline="middle"
+										fontSize={icon.length > 2 ? 8 : 14}
+										fontWeight="700"
+										fill="var(--theme-accent)"
+									>
+										{icon}
+									</text>
+								)}
+							</g>
+						];
+					})}
+				</g>
+			)}
+
+			<circle
+				cx={center}
+				cy={center}
+				r={outerRadius}
+				fill="none"
+				stroke={strokeMain}
+				strokeWidth="1.5"
+			/>
+			<circle
+				cx={center}
+				cy={center}
+				r={innerRadius}
+				fill="none"
+				stroke={strokeMain}
+				strokeWidth="1.5"
+			/>
 
 			{zodiacSigns.map((sign, idx) => {
 				const rad = longitudeToScreenRadians(displayLon(sign.angle));
@@ -495,7 +668,7 @@ export function HoroscopeWheel({
 			})}
 
 			<g>
-			{Array.from({ length: 360 }, (_, i) => {
+				{Array.from({ length: 360 }, (_, i) => {
 					const rad = longitudeToScreenRadians(displayLon(i));
 					const is10Degree = i % 10 === 0;
 					const is5Degree = i % 5 === 0;
@@ -680,7 +853,24 @@ export function HoroscopeWheel({
 						const p = polar(center, center, angleMarkerRadius, displayLon(longitude));
 						const angleHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
 						return (
-							<g key={key} data-handoff={`Angle_${key}`}>
+							<g
+								key={key}
+								data-handoff={`Angle_${key}`}
+								style={{ cursor: 'help' }}
+								onPointerEnter={(event) =>
+									emitObjectHover(event, key === 'dsc' ? 'desc' : key, 'radix')
+								}
+								onPointerMove={(event) =>
+									emitObjectHover(event, key === 'dsc' ? 'desc' : key, 'radix')
+								}
+								onPointerLeave={onObjectHoverEnd}
+							>
+								<circle
+									cx={p.x}
+									cy={p.y}
+									r="18"
+									fill="transparent"
+								/>
 								{angleHref ? (
 									isDark ? (
 										<WheelTintedGlyphImage
@@ -727,7 +917,11 @@ export function HoroscopeWheel({
 				style={{ pointerEvents: 'none' }}
 			>
 				{aspectList.flatMap((aspect, idx) => {
-					const aLon = longitudeForAspectPoint(aspect.from, wheelBodyLongitudes, wheelAxisLongitudes);
+					const aLon = longitudeForAspectPoint(
+						aspect.from,
+						wheelBodyLongitudes,
+						wheelAxisLongitudes
+					);
 					const bLon = longitudeForAspectPoint(aspect.to, wheelBodyLongitudes, wheelAxisLongitudes);
 					if (aLon === null || bLon === null) return [];
 					const pa = polar(center, center, radixAspectChordRadius, displayLon(aLon));
@@ -784,13 +978,22 @@ export function HoroscopeWheel({
 										? 0.62
 										: 1) * hemiDim;
 						const planetHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
-						return [(
+						return [
 							<g
 								key={key}
 								data-handoff={`Planet_${key}`}
 								opacity={dim}
-								style={{ transition: 'opacity 0.2s ease' }}
+								style={{ cursor: 'help', transition: 'opacity 0.2s ease' }}
+								onPointerEnter={(event) => emitObjectHover(event, key, 'radix')}
+								onPointerMove={(event) => emitObjectHover(event, key, 'radix')}
+								onPointerLeave={onObjectHoverEnd}
 							>
+								<circle
+									cx={p.x}
+									cy={p.y}
+									r="22"
+									fill="transparent"
+								/>
 								{hi && (
 									<circle
 										cx={p.x}
@@ -834,7 +1037,7 @@ export function HoroscopeWheel({
 									</text>
 								)}
 							</g>
-						)];
+						];
 					})}
 				</g>
 			)}

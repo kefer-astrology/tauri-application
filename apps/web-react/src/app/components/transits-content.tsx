@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { computeTransitSeries } from '@/lib/tauri/workspace';
+import { computeChartFromData, computeTransitSeries } from '@/lib/tauri/workspace';
 import type { TransitSeriesEntry } from '@/lib/tauri/types';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -16,12 +16,20 @@ import type { TransitSection } from './transits-secondary-sidebar';
 import { TransitsBodiesConfig } from './transits-bodies-config';
 import type { Theme } from './astrology-sidebar';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import {
+	chartDataToComputePayload,
+	normalizeComputedChartPayload,
+	type AppChart,
+	type WorkspaceDefaultsState
+} from '@/lib/tauri/chartPayload';
+import { computeTransitAspects } from '@/lib/astrology/transits';
 
 interface TransitsContentProps {
 	section: TransitSection;
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
 	workspacePath: string | null;
+	workspaceDefaults: WorkspaceDefaultsState;
 }
 
 type DropdownOption = { id: string; label: string };
@@ -49,7 +57,13 @@ const SUPPORTED_TRANSIT_ASPECT_IDS = new Set([
 	'opposition'
 ]);
 
-const MAJOR_ASPECT_ROWS: { id: string; labelKey: string; glyph: string; angle: string; orb: string }[] = [
+const MAJOR_ASPECT_ROWS: {
+	id: string;
+	labelKey: string;
+	glyph: string;
+	angle: string;
+	orb: string;
+}[] = [
 	{ id: 'conjunction', labelKey: 'aspect_conjunction', glyph: '☌', angle: '0°', orb: '8°' },
 	{ id: 'opposition', labelKey: 'aspect_opposition', glyph: '☍', angle: '180°', orb: '8°' },
 	{ id: 'trine', labelKey: 'aspect_trine', glyph: '△', angle: '120°', orb: '8°' },
@@ -85,10 +99,23 @@ function buildLocalIso(dateValue: string, timeValue: string): string {
 	return date.toISOString();
 }
 
-export function TransitsContent({ section, theme, glyphSet, workspacePath }: TransitsContentProps) {
+export function TransitsContent({
+	section,
+	theme,
+	glyphSet,
+	workspacePath,
+	workspaceDefaults
+}: TransitsContentProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
-	const { charts, selectedChartId } = useWorkspaceCharts();
+	const {
+		charts,
+		selectedChartId,
+		setCharts,
+		setSelectedChartId,
+		setTransitOverlay,
+		clearTransitOverlay
+	} = useWorkspaceCharts();
 
 	const [selectedTypeId, setSelectedTypeId] = useState('transit');
 	const [periodModeId, setPeriodModeId] = useState('current');
@@ -135,13 +162,28 @@ export function TransitsContent({ section, theme, glyphSet, workspacePath }: Tra
 		[t, transitSeries.length]
 	);
 
-	const handleComputeTransits = async () => {
-		if (!workspacePath) {
-			setTransitError('Open a workspace to compute transits, or save your charts to a folder first.');
-			return;
+	const ensureChartComputed = async (
+		chart: AppChart
+	): Promise<NonNullable<AppChart['computed']>> => {
+		if (Object.keys(chart.computed?.positions ?? {}).length > 0) {
+			return chart.computed!;
 		}
+		const result = await computeChartFromData(chartDataToComputePayload(chart, workspaceDefaults));
+		const computed = normalizeComputedChartPayload(result);
+		setCharts((prev) =>
+			prev.map((existing) => (existing.id === chart.id ? { ...existing, computed } : existing))
+		);
+		return computed;
+	};
+
+	const handleComputeTransits = async () => {
 		if (!effectiveSourceChartId) {
 			setTransitError('No chart selected for transit computation.');
+			return;
+		}
+		const sourceChart = charts.find((chart) => chart.id === effectiveSourceChartId);
+		if (!sourceChart) {
+			setTransitError('Selected chart was not found.');
 			return;
 		}
 		if (selectedAspects.length === 0) {
@@ -171,18 +213,81 @@ export function TransitsContent({ section, theme, glyphSet, workspacePath }: Tra
 		setTransitSeries([]);
 
 		try {
-			const result = await computeTransitSeries({
-				workspacePath,
-				chartId: effectiveSourceChartId,
-				startDatetime: range.startDatetime,
-				endDatetime: range.endDatetime,
-				timeStepSeconds: 3600,
-				transitingObjects: transitingBodies,
-				transitedObjects: transitedBodies,
-				aspectTypes: selectedAspects
+			const radixComputed = await ensureChartComputed(sourceChart);
+			const transitDateTime = range.endDatetime;
+			const transitChart: AppChart = {
+				...sourceChart,
+				id: `${sourceChart.id}__transit__${transitDateTime.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+				name: `${sourceChart.name} ${t('transits_general_transit_transit')}`,
+				chartType: 'EVENT',
+				dateTime: transitDateTime,
+				observableObjects:
+					transitingBodies.length > 0 ? transitingBodies : DEFAULT_TRANSIT_BODY_IDS,
+				tags: [...(sourceChart.tags ?? []), 'transit']
+			};
+			const transitResult = await computeChartFromData(
+				chartDataToComputePayload(transitChart, workspaceDefaults)
+			);
+			const transitComputed = normalizeComputedChartPayload(transitResult);
+			const computedTransitChart = { ...transitChart, computed: transitComputed };
+			const effectiveTransitedBodies =
+				transitedBodies.length > 0
+					? transitedBodies
+					: (sourceChart.observableObjects ?? workspaceDefaults.defaultBodies);
+			const crossAspects = computeTransitAspects({
+				transitPositions: transitComputed.positions ?? {},
+				radixPositions: radixComputed.positions ?? {},
+				transitingBodies,
+				transitedBodies: effectiveTransitedBodies,
+				aspectTypes: selectedAspects,
+				aspectOrbs: workspaceDefaults.defaultAspectOrbs
 			});
+			const overlay = {
+				sourceChartId: sourceChart.id,
+				sourceChartName: sourceChart.name,
+				dateTime: transitDateTime,
+				transitChart: computedTransitChart,
+				transitingBodies,
+				transitedBodies: effectiveTransitedBodies,
+				aspectTypes: selectedAspects,
+				aspects: crossAspects
+			};
+			setTransitOverlay(overlay);
+			setSelectedChartId(sourceChart.id);
 
-			setTransitSeries(result.results ?? []);
+			const singleEntry: TransitSeriesEntry = {
+				datetime: transitDateTime,
+				transit_positions: transitComputed.positions,
+				aspects: crossAspects
+			};
+
+			if (!workspacePath) {
+				setTransitSeries([singleEntry]);
+				return;
+			}
+
+			try {
+				const result = await computeTransitSeries({
+					workspacePath,
+					chartId: effectiveSourceChartId,
+					startDatetime: range.startDatetime,
+					endDatetime: range.endDatetime,
+					timeStepSeconds: 3600,
+					transitingObjects: transitingBodies,
+					transitedObjects: effectiveTransitedBodies,
+					aspectTypes: selectedAspects
+				});
+
+				setTransitSeries(result.results ?? [singleEntry]);
+			} catch (seriesErr) {
+				console.error('Failed to compute transit series:', seriesErr);
+				setTransitSeries([singleEntry]);
+				setTransitError(
+					seriesErr instanceof Error
+						? seriesErr.message
+						: 'Transit series failed; showing the end timestamp overlay.'
+				);
+			}
 		} catch (err) {
 			console.error('Failed to compute transits:', err);
 			setTransitError(err instanceof Error ? err.message : 'Transit computation failed.');
@@ -498,7 +603,16 @@ export function TransitsContent({ section, theme, glyphSet, workspacePath }: Tra
 							</div>
 
 							<div className="flex items-center justify-center gap-4 pt-6">
-								<Button type="button" variant="outline" className={cn(ft.footerCancel, '!flex-none')}>
+								<Button
+									type="button"
+									variant="outline"
+									className={cn(ft.footerCancel, '!flex-none')}
+									onClick={() => {
+										setTransitError(null);
+										setTransitSeries([]);
+										clearTransitOverlay();
+									}}
+								>
 									{t('button_close')}
 								</Button>
 								<Button
@@ -644,9 +758,7 @@ export function TransitsContent({ section, theme, glyphSet, workspacePath }: Tra
 							{transitLoading && (
 								<div className={cn('text-xs', ft.muted)}>{t('transit_loading')}</div>
 							)}
-							{transitError && (
-								<div className="text-xs text-destructive">{transitError}</div>
-							)}
+							{transitError && <div className="text-destructive text-xs">{transitError}</div>}
 							{transitSeries.length > 0 && (
 								<div>
 									<div className={cn('mb-2 text-xs font-medium', ft.muted)}>
@@ -654,7 +766,7 @@ export function TransitsContent({ section, theme, glyphSet, workspacePath }: Tra
 									</div>
 									<div className="max-h-64 overflow-auto rounded-md border">
 										<table className="w-full border-collapse text-xs">
-											<thead className="sticky top-0 border-b bg-background">
+											<thead className="bg-background sticky top-0 border-b">
 												<tr>
 													<th className={cn('p-2 text-left font-semibold', ft.bodyText)}>
 														{t('column_time')}
@@ -669,7 +781,10 @@ export function TransitsContent({ section, theme, glyphSet, workspacePath }: Tra
 											</thead>
 											<tbody>
 												{transitSeries.slice(0, 50).map((entry) => (
-													<tr key={entry.datetime} className="border-b transition-colors hover:bg-accent/50">
+													<tr
+														key={entry.datetime}
+														className="hover:bg-accent/50 border-b transition-colors"
+													>
 														<td className={cn('p-2', ft.bodyText)}>{entry.datetime}</td>
 														<td className={cn('p-2', ft.bodyText)}>
 															{Object.keys(entry.transit_positions ?? {}).length}

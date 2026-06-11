@@ -15,10 +15,7 @@ import {
 	DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS,
 	OBSERVABLE_OBJECTS
 } from '@/lib/astrology/observableObjects';
-import {
-	ASPECT_ROWS,
-	DEFAULT_ASPECT_COLORS
-} from '@/lib/astrology/aspects';
+import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS } from '@/lib/astrology/aspects';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 
 interface AspectariumProps {
@@ -36,6 +33,15 @@ interface ParsedAspect {
 	exactAngle?: number;
 	applying?: boolean;
 	separating?: boolean;
+}
+
+type AspectLayer = 'radix' | 'transit';
+
+interface AspectEntry {
+	id: string;
+	aspect: ParsedAspect;
+	fromLayer: AspectLayer;
+	toLayer: AspectLayer;
 }
 
 const ZODIAC_UNICODE_FALLBACK = [
@@ -73,8 +79,16 @@ const BODY_META: Record<
 	ic: { labelKey: 'point_ic', fallbackLabel: 'IC', icon: 'IC' },
 	north_node: { labelKey: 'point_north_node', fallbackLabel: 'North Node', icon: '☊' },
 	south_node: { labelKey: 'point_south_node', fallbackLabel: 'South Node', icon: '☋' },
-	true_north_node: { labelKey: 'point_true_north_node', fallbackLabel: 'True North Node', icon: '☊' },
-	true_south_node: { labelKey: 'point_true_south_node', fallbackLabel: 'True South Node', icon: '☋' },
+	true_north_node: {
+		labelKey: 'point_true_north_node',
+		fallbackLabel: 'True North Node',
+		icon: '☊'
+	},
+	true_south_node: {
+		labelKey: 'point_true_south_node',
+		fallbackLabel: 'True South Node',
+		icon: '☋'
+	},
 	lilith: { labelKey: 'point_lilith', fallbackLabel: 'Lilith', icon: '⚸' },
 	chiron: { labelKey: 'point_chiron', fallbackLabel: 'Chiron', icon: '⚷' },
 	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
@@ -92,7 +106,9 @@ const ASPECT_GLYPHS: Record<string, string> = {
 	opposition: '☍'
 };
 
-const OBSERVABLE_OBJECT_ICON_MAP = new Map(OBSERVABLE_OBJECTS.map((item) => [item.id, item.icon] as const));
+const OBSERVABLE_OBJECT_ICON_MAP = new Map(
+	OBSERVABLE_OBJECTS.map((item) => [item.id, item.icon] as const)
+);
 const ASPECT_LABEL_KEY_MAP = new Map<string, string>(
 	ASPECT_ROWS.map((aspect) => [aspect.id, aspect.labelKey] as const)
 );
@@ -121,11 +137,7 @@ function parseAspect(raw: unknown): ParsedAspect | null {
 	const exactAngleRaw = aspect.exact_angle;
 	if (!from || !to || !type) return null;
 	const orb =
-		typeof orbRaw === 'number'
-			? orbRaw
-			: typeof orbRaw === 'string'
-				? Number(orbRaw)
-				: NaN;
+		typeof orbRaw === 'number' ? orbRaw : typeof orbRaw === 'string' ? Number(orbRaw) : NaN;
 	if (!Number.isFinite(orb)) return null;
 	return {
 		from,
@@ -134,7 +146,9 @@ function parseAspect(raw: unknown): ParsedAspect | null {
 		orb,
 		angle: typeof angleRaw === 'number' && Number.isFinite(angleRaw) ? angleRaw : undefined,
 		exactAngle:
-			typeof exactAngleRaw === 'number' && Number.isFinite(exactAngleRaw) ? exactAngleRaw : undefined,
+			typeof exactAngleRaw === 'number' && Number.isFinite(exactAngleRaw)
+				? exactAngleRaw
+				: undefined,
 		applying: aspect.applying === true,
 		separating: aspect.separating === true
 	};
@@ -156,8 +170,14 @@ function canonicalPairKey(idA: string, idB: string, orderIndex: Map<string, numb
 	return idxA <= idxB ? `${idA}::${idB}` : `${idB}::${idA}`;
 }
 
-function aspectIdentity(aspect: ParsedAspect, orderIndex: Map<string, number>) {
-	return `${canonicalPairKey(aspect.from, aspect.to, orderIndex)}::${aspect.type}`;
+function directionalPairKey(from: string, to: string) {
+	return `${from}::${to}`;
+}
+
+function aspectIdentity(aspect: ParsedAspect, orderIndex: Map<string, number>, layer: AspectLayer) {
+	return layer === 'transit'
+		? `transit::${directionalPairKey(aspect.from, aspect.to)}::${aspect.type}`
+		: `radix::${canonicalPairKey(aspect.from, aspect.to, orderIndex)}::${aspect.type}`;
 }
 
 function formatDegrees(value: number | undefined, digits = 2) {
@@ -255,13 +275,7 @@ function AspectCellButton({
 	);
 }
 
-function DetailRow({
-	label,
-	value
-}: {
-	label: string;
-	value: string | null;
-}) {
+function DetailRow({ label, value }: { label: string; value: string | null }) {
 	return (
 		<div className="flex items-start justify-between gap-3 text-sm">
 			<span className="text-[color:var(--theme-content-muted)]">{label}</span>
@@ -273,11 +287,18 @@ function DetailRow({
 export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
-	const { selectedChart } = useWorkspaceCharts();
+	const { selectedChart, transitOverlay } = useWorkspaceCharts();
 	const [selectedAspectId, setSelectedAspectId] = useState<string | null>(null);
 
 	const positions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
 	const motion = selectedChart?.computed?.motion ?? {};
+	const activeTransitOverlay =
+		transitOverlay && transitOverlay.sourceChartId === selectedChart?.id ? transitOverlay : null;
+	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
+		string,
+		unknown
+	>;
+	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? {};
 	const configuredBodyOrder = useMemo(
 		() =>
 			workspaceDefaults.defaultBodies.length > 0
@@ -287,13 +308,24 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 	);
 	const bodyOrder = useMemo(
 		() =>
-			configuredBodyOrder.filter((id) => {
+			(activeTransitOverlay?.transitedBodies ?? configuredBodyOrder).filter((id) => {
 				const value = positions[id];
 				return normalizeLongitude(value) !== null;
 			}),
-		[configuredBodyOrder, positions]
+		[activeTransitOverlay?.transitedBodies, configuredBodyOrder, positions]
 	);
+	const transitBodyOrder = useMemo(
+		() =>
+			(activeTransitOverlay?.transitingBodies ?? []).filter((id) => {
+				const value = transitPositions[id];
+				return normalizeLongitude(value) !== null;
+			}),
+		[activeTransitOverlay?.transitingBodies, transitPositions]
+	);
+	const rowBodyOrder = activeTransitOverlay ? transitBodyOrder : bodyOrder;
+	const columnBodyOrder = bodyOrder;
 	const enabledBodySet = useMemo(() => new Set(bodyOrder), [bodyOrder]);
+	const enabledTransitBodySet = useMemo(() => new Set(transitBodyOrder), [transitBodyOrder]);
 	const enabledAspectSet = useMemo(
 		() =>
 			new Set(
@@ -308,7 +340,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 		[bodyOrder]
 	);
 
-	const visibleAspects = useMemo(() => {
+	const visibleRadixAspects = useMemo(() => {
 		return (selectedChart?.computed?.aspects ?? [])
 			.map(parseAspect)
 			.filter((aspect): aspect is ParsedAspect => aspect !== null)
@@ -320,25 +352,48 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 			);
 	}, [enabledAspectSet, enabledBodySet, selectedChart?.computed?.aspects]);
 
+	const visibleTransitAspects = useMemo(() => {
+		return (activeTransitOverlay?.aspects ?? [])
+			.map(parseAspect)
+			.filter((aspect): aspect is ParsedAspect => aspect !== null)
+			.filter(
+				(aspect) =>
+					enabledAspectSet.has(aspect.type) &&
+					enabledTransitBodySet.has(aspect.from) &&
+					enabledBodySet.has(aspect.to)
+			);
+	}, [activeTransitOverlay?.aspects, enabledAspectSet, enabledBodySet, enabledTransitBodySet]);
+
+	const visibleAspects = activeTransitOverlay ? visibleTransitAspects : visibleRadixAspects;
+
 	const aspectMap = useMemo(() => {
-		const next = new Map<string, ParsedAspect>();
-		for (const aspect of visibleAspects) {
-			next.set(canonicalPairKey(aspect.from, aspect.to, bodyOrderIndex), aspect);
+		const next = new Map<string, AspectEntry>();
+		if (activeTransitOverlay) {
+			for (const aspect of visibleTransitAspects) {
+				next.set(directionalPairKey(aspect.from, aspect.to), {
+					id: aspectIdentity(aspect, bodyOrderIndex, 'transit'),
+					aspect,
+					fromLayer: 'transit',
+					toLayer: 'radix'
+				});
+			}
+		} else {
+			for (const aspect of visibleRadixAspects) {
+				next.set(canonicalPairKey(aspect.from, aspect.to, bodyOrderIndex), {
+					id: aspectIdentity(aspect, bodyOrderIndex, 'radix'),
+					aspect,
+					fromLayer: 'radix',
+					toLayer: 'radix'
+				});
+			}
 		}
 		return next;
-	}, [bodyOrderIndex, visibleAspects]);
+	}, [activeTransitOverlay, bodyOrderIndex, visibleRadixAspects, visibleTransitAspects]);
 
-	const aspectEntries = useMemo(
-		() =>
-			visibleAspects.map((aspect) => ({
-				id: aspectIdentity(aspect, bodyOrderIndex),
-				aspect
-			})),
-		[bodyOrderIndex, visibleAspects]
-	);
+	const aspectEntries = useMemo(() => Array.from(aspectMap.values()), [aspectMap]);
 
-	const selectedAspect =
-		aspectEntries.find((entry) => entry.id === selectedAspectId)?.aspect ?? null;
+	const selectedAspectEntry = aspectEntries.find((entry) => entry.id === selectedAspectId) ?? null;
+	const selectedAspect = selectedAspectEntry?.aspect ?? null;
 
 	useEffect(() => {
 		if (selectedAspectId && !aspectEntries.some((entry) => entry.id === selectedAspectId)) {
@@ -350,6 +405,33 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 		theme === 'midnight' || theme === 'twilight'
 			? 'bg-[color:var(--token-surface-subtle)]/35'
 			: 'bg-[color:var(--theme-panel-bg)]/82';
+
+	const positionsForLayer = (layer: AspectLayer) =>
+		layer === 'transit' ? transitPositions : positions;
+
+	const renderBodyLabel = (bodyId: string, layer: AspectLayer, compact = false) => (
+		<div
+			className={cn(
+				'flex items-center gap-3 rounded-lg backdrop-blur-sm',
+				compact ? 'min-w-20 flex-col gap-1 px-2 py-2 text-center' : 'min-w-36 px-3 py-2',
+				panelSurface
+			)}
+		>
+			<BodyGlyph
+				bodyId={bodyId}
+				glyphSet={glyphSet}
+				size={compact ? 18 : 22}
+				className="text-[color:var(--theme-content-primary)]"
+			/>
+			<div className="min-w-0">
+				<p className={cn('truncate text-sm font-medium', ft.title)}>{bodyLabel(bodyId, t)}</p>
+				<p className={cn('truncate text-xs', ft.muted)}>
+					{formatPosition(normalizeLongitude(positionsForLayer(layer)[bodyId])) ??
+						t('loading_positions')}
+				</p>
+			</div>
+		</div>
+	);
 
 	const renderMatrix = () => (
 		<Card
@@ -365,99 +447,100 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 
 				<div
 					dir="rtl"
-					className="min-h-0 flex-1 overflow-auto rounded-2xl bg-[color:var(--theme-panel-bg)]/74 pr-2 pl-0 pt-2 pb-2 md:pr-2.5 md:pl-0 md:pt-2.5 md:pb-2.5"
+					className="min-h-0 flex-1 overflow-auto rounded-2xl bg-[color:var(--theme-panel-bg)]/74 pt-2 pr-2 pb-2 pl-0 md:pt-2.5 md:pr-2.5 md:pb-2.5 md:pl-0"
 				>
-					<div dir="ltr" className="w-max mr-auto">
+					<div dir="ltr" className="mr-auto w-max">
 						<Table className="w-auto border-separate border-spacing-1.5 md:border-spacing-1">
 							<TableBody>
-								{bodyOrder.map((rowId, rowIndex) => (
-									<TableRow key={rowId} className="border-0 hover:bg-transparent">
-									<TableCell className="sticky left-0 z-10 p-0 pr-1.5 align-middle">
-										<div
-											className={cn(
-												'flex min-w-36 items-center gap-3 rounded-lg px-3 py-2 backdrop-blur-sm',
-												panelSurface
-											)}
-										>
-											<BodyGlyph
-												bodyId={rowId}
-												glyphSet={glyphSet}
-												size={22}
-												className="text-[color:var(--theme-content-primary)]"
-											/>
-											<div className="min-w-0">
-												<p className={cn('truncate text-sm font-medium', ft.title)}>
-													{bodyLabel(rowId, t)}
-												</p>
-												<p className={cn('truncate text-xs', ft.muted)}>
-													{formatPosition(normalizeLongitude(positions[rowId])) ??
-														t('loading_positions')}
-												</p>
+								{activeTransitOverlay ? (
+									<TableRow className="border-0 hover:bg-transparent">
+										<TableCell className="sticky left-0 z-20 p-0 pr-1.5 align-middle">
+											<div
+												className={cn(
+													'flex min-w-36 items-center rounded-lg px-3 py-2 text-xs font-semibold backdrop-blur-sm',
+													panelSurface,
+													ft.muted
+												)}
+											>
+												{t('transit_overlay_aspectarium_hint')}
 											</div>
-										</div>
-									</TableCell>
-
-									{bodyOrder.map((colId, colIndex) => {
-										if (colIndex > rowIndex) {
-											return <TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0" />;
-										}
-
-										if (colIndex === rowIndex) {
-											return (
-												<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
-													<div
-														className={cn(
-															'flex aspect-square items-center justify-center rounded-lg text-[color:var(--theme-content-muted)]',
-															panelSurface
-														)}
-													>
-														<BodyGlyph
-															bodyId={rowId}
-															glyphSet={glyphSet}
-															size={22}
-															className="opacity-80"
-														/>
-													</div>
-												</TableCell>
-											);
-										}
-
-										const pairKey = canonicalPairKey(rowId, colId, bodyOrderIndex);
-										const aspect = aspectMap.get(pairKey);
-										if (!aspect) {
-											return (
-												<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
-													<div
-														className={cn(
-															'flex aspect-square items-center justify-center rounded-lg text-[11px] text-[color:var(--theme-content-muted)] opacity-34',
-															panelSurface
-														)}
-													>
-														•
-													</div>
-												</TableCell>
-											);
-										}
-
-										const aspectId = aspectIdentity(aspect, bodyOrderIndex);
-										const aspectColor =
-											workspaceDefaults.defaultAspectColors[aspect.type] ??
-											DEFAULT_ASPECT_COLORS[
-												aspect.type as keyof typeof DEFAULT_ASPECT_COLORS
-											] ??
-											'var(--theme-accent)';
-
-										return (
-											<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
-												<AspectCellButton
-													aspect={aspect}
-													isSelected={selectedAspectId === aspectId}
-													onSelect={() => setSelectedAspectId(aspectId)}
-													color={aspectColor}
-												/>
+										</TableCell>
+										{columnBodyOrder.map((colId) => (
+											<TableCell key={`head:${colId}`} className="p-0 align-bottom">
+												{renderBodyLabel(colId, 'radix', true)}
 											</TableCell>
-										);
-									})}
+										))}
+									</TableRow>
+								) : null}
+								{rowBodyOrder.map((rowId, rowIndex) => (
+									<TableRow key={rowId} className="border-0 hover:bg-transparent">
+										<TableCell className="sticky left-0 z-10 p-0 pr-1.5 align-middle">
+											{renderBodyLabel(rowId, activeTransitOverlay ? 'transit' : 'radix')}
+										</TableCell>
+
+										{columnBodyOrder.map((colId, colIndex) => {
+											if (!activeTransitOverlay && colIndex > rowIndex) {
+												return (
+													<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0" />
+												);
+											}
+
+											if (!activeTransitOverlay && colIndex === rowIndex) {
+												return (
+													<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
+														<div
+															className={cn(
+																'flex aspect-square items-center justify-center rounded-lg text-[color:var(--theme-content-muted)]',
+																panelSurface
+															)}
+														>
+															<BodyGlyph
+																bodyId={rowId}
+																glyphSet={glyphSet}
+																size={22}
+																className="opacity-80"
+															/>
+														</div>
+													</TableCell>
+												);
+											}
+
+											const pairKey = activeTransitOverlay
+												? directionalPairKey(rowId, colId)
+												: canonicalPairKey(rowId, colId, bodyOrderIndex);
+											const entry = aspectMap.get(pairKey);
+											if (!entry) {
+												return (
+													<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
+														<div
+															className={cn(
+																'flex aspect-square items-center justify-center rounded-lg text-[11px] text-[color:var(--theme-content-muted)] opacity-34',
+																panelSurface
+															)}
+														>
+															•
+														</div>
+													</TableCell>
+												);
+											}
+
+											const { aspect } = entry;
+											const aspectColor =
+												workspaceDefaults.defaultAspectColors[aspect.type] ??
+												DEFAULT_ASPECT_COLORS[aspect.type as keyof typeof DEFAULT_ASPECT_COLORS] ??
+												'var(--theme-accent)';
+
+											return (
+												<TableCell key={`${rowId}:${colId}`} className="h-14 w-14 min-w-14 p-0">
+													<AspectCellButton
+														aspect={aspect}
+														isSelected={selectedAspectId === entry.id}
+														onSelect={() => setSelectedAspectId(entry.id)}
+														color={aspectColor}
+													/>
+												</TableCell>
+											);
+										})}
 									</TableRow>
 								))}
 							</TableBody>
@@ -468,14 +551,16 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 				<div className={cn('shrink-0 text-xs', ft.muted)}>
 					{visibleAspects.length > 0
 						? t('aspectarium_select_aspect_hint')
-						: t('aspectarium_no_aspects')}
+						: activeTransitOverlay
+							? t('transit_overlay_no_aspects')
+							: t('aspectarium_no_aspects')}
 				</div>
 			</CardContent>
 		</Card>
 	);
 
 	const renderDetailContent = () =>
-		selectedAspect ? (
+		selectedAspect && selectedAspectEntry ? (
 			<div className="h-full min-h-0 overflow-y-auto rounded-2xl bg-[color:var(--theme-soft-bg)]/42 pr-2">
 				<div className="space-y-5 p-4">
 					<div>
@@ -549,11 +634,28 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 					</div>
 					<Separator className="bg-[color:var(--theme-panel-border)]" />
 
-					{[selectedAspect.from, selectedAspect.to].map((bodyId, index) => {
-						const longitude = normalizeLongitude(positions[bodyId]);
-						const motionInfo = motion[bodyId];
+					{[
+						{
+							bodyId: selectedAspect.from,
+							layer: selectedAspectEntry.fromLayer,
+							label: t('aspectarium_body_a')
+						},
+						{
+							bodyId: selectedAspect.to,
+							layer: selectedAspectEntry.toLayer,
+							label: t('aspectarium_body_b')
+						}
+					].map(({ bodyId, layer, label }) => {
+						const sourcePositions = layer === 'transit' ? transitPositions : positions;
+						const sourceMotion = layer === 'transit' ? transitMotion : motion;
+						const longitude = normalizeLongitude(sourcePositions[bodyId]);
+						const motionInfo = sourceMotion[bodyId];
+						const layerLabel =
+							layer === 'transit'
+								? t('transits_general_transit_transit')
+								: (selectedChart?.name ?? 'Radix');
 						return (
-							<div key={`${selectedAspectId}:${bodyId}`} className="space-y-3">
+							<div key={`${selectedAspectId}:${layer}:${bodyId}`} className="space-y-3">
 								<div className="flex items-center gap-3">
 									<BodyGlyph
 										bodyId={bodyId}
@@ -561,11 +663,9 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 										size={18}
 										className="text-[color:var(--theme-content-primary)]"
 									/>
-									<p className={cn('text-sm font-medium', ft.title)}>
-										{index === 0 ? t('aspectarium_body_a') : t('aspectarium_body_b')}
-									</p>
+									<p className={cn('text-sm font-medium', ft.title)}>{label}</p>
 								</div>
-								<DetailRow label={t('charts')} value={bodyLabel(bodyId, t)} />
+								<DetailRow label={t('charts')} value={`${bodyLabel(bodyId, t)} · ${layerLabel}`} />
 								<DetailRow label={t('aspectarium_position')} value={formatPosition(longitude)} />
 								<DetailRow
 									label={t('aspectarium_absolute_longitude')}
@@ -593,7 +693,11 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 					if (!open) setSelectedAspectId(null);
 				}}
 				title={t('details')}
-				description={t('aspectarium_reported_aspects')}
+				description={
+					activeTransitOverlay
+						? t('transit_overlay_aspectarium_hint')
+						: t('aspectarium_reported_aspects')
+				}
 			>
 				{renderDetailContent()}
 			</DetailSidePanel>
