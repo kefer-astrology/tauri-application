@@ -1,0 +1,63 @@
+apps/web-react/src/lib/astrology/transits.ts
+  s_bc17ab7df944ae::t_ef82e33c8bf7eb 4-12,60-61,67
+  s_bc17ab7df944ae::t_8cb45d40d51055 1-3,14-21,23-59,62-66,68-134
+  s_bc17ab7df944ae::t_eed2a1a8e9ff3c 13,22
+apps/web-react/src/locales/es.json
+  s_bc17ab7df944ae::t_86e8f0384dd397 346-349
+apps/web-react/src/app/providers/workspace-charts.tsx
+  s_bc17ab7df944ae::t_2c16e0f5b2e006 16-19
+  s_bc17ab7df944ae::t_f79c520ce8d704 3,11,21-22
+apps/web-react/src/locales/en.json
+  s_bc17ab7df944ae::t_86e8f0384dd397 346-349
+apps/web-react/src/locales/cs.json
+  s_bc17ab7df944ae::t_86e8f0384dd397 346-349
+apps/web-react/src/locales/fr.json
+  s_bc17ab7df944ae::t_86e8f0384dd397 346-349
+translations.csv
+  s_bc17ab7df944ae::t_c1bbfeae40b110 346-349
+apps/web-react/src/app/App.tsx
+  s_bc17ab7df944ae::t_2c16e0f5b2e006 1,47,53,105-110,174-176,225-239,255-257,448,567,658-670
+  s_bc17ab7df944ae::t_51309c20bfbe4b 60,202,218,270-277,294,300-302,308,313-315,632
+apps/web-react/src/app/components/transits-content.tsx
+  s_bc17ab7df944ae::t_636a331e2860d7 3,19-25,32,102-108,111-118,165-169,171-179,184-188,216-223,226-243,245-290,606-615
+  s_bc17ab7df944ae::t_2c16e0f5b2e006 60-66,224-225,761,769,784-787
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_bc17ab7df944ae::t_03f68ae0d3a762 253-255,278-284,348-356,492,500-520,666-667
+  s_bc17ab7df944ae::t_2c16e0f5b2e006 23-25,27-28,98-107,124,185,189,207-208,267-269,275-277,285-287,299,309-310,313-321,323-325,344-347,493-499,583-600,658,710,730,763,868-871,875-878
+  s_bc17ab7df944ae::t_f46b4e2c5e9031 678-679,786-841
+  s_bc17ab7df944ae::t_215caf7d2d167d 26,218-219,357-409
+apps/web-react/src/app/components/aspectarium.tsx
+  s_bc17ab7df944ae::t_42e115888001ca 409-426,428-435,455-465,467-475,554-556
+  s_bc17ab7df944ae::t_f3a07482886db1 696-700
+  s_bc17ab7df944ae::t_fb278bb5111492 290,295-296,301,311,315-323,325-326,328,343,355-368,370-388,391,393,396
+  s_bc17ab7df944ae::t_41302a36fe4051 38-46,173-180
+  s_bc17ab7df944ae::t_61f7de0d03f318 563,637-656,658,668
+  s_bc17ab7df944ae::t_2c16e0f5b2e006 18,82-91,109-111,140,149-151,278,297-300,395,427,450,452,477-531,535-540,543,666
+apps/web-react/src/app/components/horoscope-wheel.tsx
+  s_bc17ab7df944ae::t_c60823462e9125 584-591,856-867,986-989
+  s_bc17ab7df944ae::t_8bc3efe3342088 5,242-250,289-290,316-317,448-459,559,592-597,868-873,991-996
+  s_bc17ab7df944ae::t_947bb0bed0c0c3 264-266,299-300,324,341-343,376,540-553,556-558,560-582,598-628,630-632
+  s_bc17ab7df944ae::t_7fc01cbf9708ae 338-339
+  s_bc17ab7df944ae::t_2c16e0f5b2e006 12,14-18,24-34,363-366,370-375,382-384,386-401,491-493,507-509,583,629,634-649,671,920-924,981,1040
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "eb759d4a6a2bd76524fec3871001003666b55455",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_bc17ab7df944ae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb374-fd74-75c3-ad2b-76ea281f1858",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
