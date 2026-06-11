@@ -1,0 +1,50 @@
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_bc17ab7df944ae::t_259a5e7341c6c7 39,486-495
+src-tauri/src/workspace/models.rs
+  s_bc17ab7df944ae::t_831d823f3110c4 359-360
+  s_bc17ab7df944ae::t_8374a90af36143 229-230
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_bc17ab7df944ae::t_3668bd450f52b5 14,208,261-262,289,362,407
+  s_bc17ab7df944ae::t_4850b61124c70a 221,229-230
+apps/web-react/src/lib/chartTags.ts
+  s_bc17ab7df944ae::t_ee8e03619d114a 1-22
+src-tauri/src/workspace/loader.rs
+  s_bc17ab7df944ae::t_873fd3d3b10756 82
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_bc17ab7df944ae::t_5e1105c1485f4a 1,30
+  s_bc17ab7df944ae::t_597dd72693cbc0 231,240,247,249-253,259-267,329,337-354
+  s_bc17ab7df944ae::t_c8e7b86f060f7d 932,938
+  s_bc17ab7df944ae::t_bc177223df878e 502-504,545-559,677-679,929-931,986-987,989
+  s_bc17ab7df944ae::t_6bfa7f917e76b3 4,16-23,99-112,142-143,222-228,230,233-237,239,242-246,248,254-258,268-273,275-277,279-323,327-328,331-332,358,362-364,368-390
+  s_bc17ab7df944ae::t_dfdf762a703efb 505,982-985,990-991
+  s_bc17ab7df944ae::t_de42207e6da515 119,125,131,137,158,173,212,214,216-217,219-220
+  s_bc17ab7df944ae::t_e76c9447914e13 334
+  s_bc17ab7df944ae::t_43bb4dc69e9b6b 10,116,118,128,130,150,161-172,174-204,206-207,210-211,213,215,218,229,232,238,241,324-326,330,333,335-336,355-357,359-361,365-367
+  s_bc17ab7df944ae::t_bdfbf7a6cd564b 561-583,988
+apps/web-react/src/app/components/open-workspace-view.tsx
+  s_bc17ab7df944ae::t_605b13f6c67e49 17,596,600,602-605
+apps/web-react/src/lib/tauri/types.ts
+  s_bc17ab7df944ae::t_37dd1612d108a2 68
+  s_bc17ab7df944ae::t_b87c8180e0ae92 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "ef14e2803f18a5a61d2df1ece9e69bd6521d12ec",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_bc17ab7df944ae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019eb374-fd74-75c3-ad2b-76ea281f1858",
+        "model": "gpt-5.5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
