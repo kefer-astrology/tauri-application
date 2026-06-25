@@ -1,6 +1,9 @@
 name: docs-pages
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -43,6 +46,7 @@ jobs:
           path: dist-docs
 
   deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
     environment:
