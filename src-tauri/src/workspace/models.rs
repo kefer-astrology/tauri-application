@@ -121,6 +121,33 @@ pub enum TimeSystem {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RelationType {
+    Transit,
+    Synastry,
+    Progression,
+    Composite,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ViewModuleType {
+    WheelView,
+    TransitTimeline,
+    AspectGrid,
+    SummaryTable,
+    InterpretationText,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LayoutStyle {
+    Single,
+    TimelineOverlay,
+    DualWheel,
+    Comparison,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Location {
     pub name: String,
     pub latitude: f64,
@@ -230,6 +257,58 @@ pub struct ChartInstance {
     pub tag_colors: HashMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub roden_rating: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChartPreset {
+    pub name: String,
+    pub config: ChartConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DateRange {
+    pub start: chrono::DateTime<chrono::Utc>,
+    pub end: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChartRelation {
+    #[serde(rename = "type")]
+    pub relation_type: RelationType,
+    pub source: String,
+    pub target: String,
+    pub method: String,
+    #[serde(default)]
+    pub time_span: Option<DateRange>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ViewModule {
+    #[serde(rename = "type")]
+    pub module_type: ViewModuleType,
+    #[serde(default)]
+    pub config: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ViewLayout {
+    pub name: String,
+    pub layout_style: LayoutStyle,
+    #[serde(default)]
+    pub chart_instances: Vec<String>,
+    #[serde(default)]
+    pub relations: Vec<ChartRelation>,
+    #[serde(default)]
+    pub modules: Vec<ViewModule>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Annotation {
+    pub title: String,
+    pub content: String,
+    #[serde(default)]
+    pub created: Option<chrono::DateTime<chrono::Utc>>,
+    pub author: String,
 }
 
 /// Line weight on the radix wheel from orb tightness vs the configured max orb for that aspect type.

@@ -1,10 +1,10 @@
 use crate::workspace::loader::load_chart;
 use crate::workspace::{
-    chart_to_summary, load_all_charts, load_workspace_manifest, ChartSummary, WorkspaceInfo,
+    chart_to_summary, load_all_charts, load_workspace_manifest, ChartSummary, CurrentModelReport,
+    WorkspaceInfo, WorkspaceValidationReport,
 };
-use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 use tauri::{AppHandle, State};
@@ -560,6 +560,18 @@ pub async fn load_workspace(workspace_path: String) -> Result<WorkspaceInfo, Str
     })
 }
 
+/// Validate the complete typed workspace aggregate without silently dropping
+/// malformed referenced items.
+#[tauri::command]
+pub async fn validate_workspace(
+    workspace_path: String,
+) -> Result<WorkspaceValidationReport, String> {
+    Ok(crate::workspace::load_workspace_aggregate(Path::new(
+        &workspace_path,
+    ))?
+    .validation_report())
+}
+
 /// Load workspace default settings from workspace.yaml.
 #[tauri::command]
 pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json::Value, String> {
@@ -622,6 +634,29 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
         "aspect_line_tier_style": defaults.aspect_line_tier_style,
         "time_system": defaults.time_system,
     }))
+}
+
+/// Report the resolved workspace/chart model catalog and effective settings.
+#[tauri::command]
+pub async fn get_current_model_report(
+    workspace_path: String,
+    chart_id: Option<String>,
+) -> Result<CurrentModelReport, String> {
+    let workspace_dir = Path::new(&workspace_path);
+    let manifest = load_workspace_manifest(workspace_dir)?;
+    let chart = match chart_id.as_deref().and_then(non_empty_str) {
+        Some(chart_id) => {
+            let rel = find_chart_ref_by_id(workspace_dir, &manifest, chart_id)?
+                .ok_or_else(|| format!("Chart {} not found in workspace", chart_id))?;
+            Some(load_chart(workspace_dir, &rel)?)
+        }
+        None => None,
+    };
+
+    Ok(crate::workspace::current_model_report(
+        &manifest,
+        chart.as_ref().map(|chart| &chart.config),
+    ))
 }
 
 /// Get full chart details including all settings
@@ -705,6 +740,7 @@ pub async fn compute_chart_from_data(
     app: AppHandle,
     backend_state: State<'_, crate::backend::BackendState>,
     chart_json: serde_json::Value,
+    settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
     let backend = selected_compute_backend();
     let fallback_to_python = python_fallback_enabled();
@@ -713,39 +749,65 @@ pub async fn compute_chart_from_data(
         backend_state.availability()?,
         crate::backend::BackendAvailability::Available
     );
-    match select_chart_compute_route(backend, backend_available, force_python)? {
-        ComputeRoute::Rust => compute_chart_from_data_rust(chart_json),
+    let route = select_chart_compute_route(backend, backend_available, force_python)?;
+    match route {
+        ComputeRoute::Rust => {
+            compute_chart_from_data_rust(chart_json, settings_overrides.as_ref())
+        }
         ComputeRoute::Python if matches!(backend, ComputeBackend::Auto) && !force_python => {
-            match compute_chart_from_data_python(&app, &backend_state, chart_json.clone()).await {
+            match compute_chart_from_data_python(
+                &app,
+                &backend_state,
+                chart_json.clone(),
+                settings_overrides.as_ref(),
+            )
+            .await
+            {
                 Ok(result) => Ok(normalize_chart_response(result, Some("python"))),
                 Err(_err) if fallback_to_python => Ok(annotate_chart_fallback(
-                    compute_chart_from_data_rust(chart_json)?,
+                    compute_chart_from_data_rust(chart_json, settings_overrides.as_ref())?,
                     "python_compute_failed_auto_fallback",
                 )),
                 Err(err) => Err(err),
             }
         }
-        ComputeRoute::Python => compute_chart_from_data_python(&app, &backend_state, chart_json)
-            .await
-            .map(|result| normalize_chart_response(result, Some("python"))),
+        ComputeRoute::Python => compute_chart_from_data_python(
+            &app,
+            &backend_state,
+            chart_json,
+            settings_overrides.as_ref(),
+        )
+        .await
+        .map(|result| normalize_chart_response(result, Some("python"))),
     }
 }
 
 fn compute_chart_from_data_rust(
     chart_json: serde_json::Value,
+    settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
     let chart: crate::workspace::models::ChartInstance =
         serde_json::from_value(chart_json).map_err(|e| format!("Invalid chart payload: {}", e))?;
-    build_chart_result(&chart, None)
+    let report = crate::workspace::settings::standalone_model_report_with_operation(
+        &chart.config,
+        settings_overrides,
+    );
+    let request = crate::application::computation::ChartComputeRequest::for_resolved_chart(
+        crate::application::computation::ResolvedChart::from_report(chart, report),
+    );
+    let calculation = crate::application::computation::compute_chart(request)?;
+    chart_calculation_to_map(calculation)
 }
 
 async fn compute_chart_from_data_python(
     app: &AppHandle,
     backend_state: &crate::backend::BackendState,
     chart_json: serde_json::Value,
+    settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
     let payload = serde_json::json!({
         "chart_json": chart_json,
+        "settings_overrides": settings_overrides,
     });
     let response =
         crate::backend::post_json(app, backend_state, "/charts/compute-from-data", &payload).await?;
@@ -760,6 +822,8 @@ pub async fn compute_chart(
     backend_state: State<'_, crate::backend::BackendState>,
     workspace_path: String,
     chart_id: String,
+    preset_id: Option<String>,
+    settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
     let backend = selected_compute_backend();
     let fallback_to_python = python_fallback_enabled();
@@ -768,38 +832,74 @@ pub async fn compute_chart(
         backend_state.availability()?,
         crate::backend::BackendAvailability::Available
     );
-    match select_chart_compute_route(backend, backend_available, force_python)? {
-        ComputeRoute::Rust => compute_chart_rust(&workspace_path, &chart_id),
+    let route = select_chart_compute_route(backend, backend_available, force_python)?;
+    match route {
+        ComputeRoute::Rust => compute_chart_rust(
+            &workspace_path,
+            &chart_id,
+            preset_id.as_deref(),
+            settings_overrides.as_ref(),
+        ),
         ComputeRoute::Python if matches!(backend, ComputeBackend::Auto) && !force_python => {
-            match compute_chart_python(&app, &backend_state, &workspace_path, &chart_id).await {
+            match compute_chart_python(
+                &app,
+                &backend_state,
+                &workspace_path,
+                &chart_id,
+                preset_id.as_deref(),
+                settings_overrides.as_ref(),
+            )
+            .await
+            {
                 Ok(result) => Ok(normalize_chart_response(result, Some("python"))),
                 Err(_err) if fallback_to_python => Ok(annotate_chart_fallback(
-                    compute_chart_rust(&workspace_path, &chart_id)?,
+                    compute_chart_rust(
+                        &workspace_path,
+                        &chart_id,
+                        preset_id.as_deref(),
+                        settings_overrides.as_ref(),
+                    )?,
                     "python_compute_failed_auto_fallback",
                 )),
                 Err(err) => Err(err),
             }
         }
-        ComputeRoute::Python => compute_chart_python(&app, &backend_state, &workspace_path, &chart_id)
-            .await
-            .map(|result| normalize_chart_response(result, Some("python"))),
+        ComputeRoute::Python => compute_chart_python(
+            &app,
+            &backend_state,
+            &workspace_path,
+            &chart_id,
+            preset_id.as_deref(),
+            settings_overrides.as_ref(),
+        )
+        .await
+        .map(|result| normalize_chart_response(result, Some("python"))),
     }
 }
 
 fn compute_chart_rust(
     workspace_path: &str,
     chart_id: &str,
+    preset_id: Option<&str>,
+    settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
     let base = Path::new(workspace_path);
     let manifest = load_workspace_manifest(base)?;
     let chart_rel = find_chart_ref_by_id(base, &manifest, chart_id)?
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
-    let mut chart = load_chart(base, &chart_rel)?;
-    apply_default_observable_objects(
-        &mut chart,
-        manifest.default.default_bodies.as_ref(),
+    let chart = load_chart(base, &chart_rel)?;
+    let preset = resolve_settings_preset(base, &manifest, preset_id)?;
+    let report = crate::workspace::settings::current_model_report_with_layers(
+        &manifest,
+        preset.as_ref(),
+        Some(&chart.config),
+        settings_overrides,
     );
-    build_chart_result(&chart, None)
+    let request = crate::application::computation::ChartComputeRequest::for_resolved_chart(
+        crate::application::computation::ResolvedChart::from_report(chart, report),
+    );
+    let calculation = crate::application::computation::compute_chart(request)?;
+    chart_calculation_to_map(calculation)
 }
 
 async fn compute_chart_python(
@@ -807,6 +907,8 @@ async fn compute_chart_python(
     backend_state: &crate::backend::BackendState,
     workspace_path: &str,
     chart_id: &str,
+    preset_id: Option<&str>,
+    settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
     let payload = serde_json::json!({
         "workspace_path": Path::new(workspace_path)
@@ -814,6 +916,8 @@ async fn compute_chart_python(
             .to_str()
             .ok_or("Invalid workspace manifest path")?,
         "chart_id": chart_id,
+        "preset_id": preset_id,
+        "settings_overrides": settings_overrides,
     });
     let response =
         crate::backend::post_json(app, backend_state, "/charts/compute", &payload).await?;
@@ -835,6 +939,8 @@ pub async fn compute_transit_series(
     transiting_objects: Vec<String>,
     transited_objects: Vec<String>,
     aspect_types: Vec<String>,
+    preset_id: Option<String>,
+    settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
 ) -> Result<serde_json::Value, String> {
     let backend = selected_compute_backend();
     let fallback_to_python = python_fallback_enabled();
@@ -843,7 +949,8 @@ pub async fn compute_transit_series(
         crate::backend::BackendAvailability::Available
     );
 
-    match select_transit_compute_route(backend, backend_available)? {
+    let route = select_transit_compute_route(backend, backend_available)?;
+    match route {
         ComputeRoute::Rust => compute_transit_series_rust(
             &workspace_path,
             &chart_id,
@@ -853,6 +960,8 @@ pub async fn compute_transit_series(
             &transiting_objects,
             &transited_objects,
             &aspect_types,
+            preset_id.as_deref(),
+            settings_overrides.as_ref(),
         ),
         ComputeRoute::Python if matches!(backend, ComputeBackend::Auto) => {
             match compute_transit_series_python(
@@ -866,6 +975,8 @@ pub async fn compute_transit_series(
                 transiting_objects.clone(),
                 transited_objects.clone(),
                 aspect_types.clone(),
+                preset_id.as_deref(),
+                settings_overrides.as_ref(),
             )
             .await
             {
@@ -880,6 +991,8 @@ pub async fn compute_transit_series(
                         &transiting_objects,
                         &transited_objects,
                         &aspect_types,
+                        preset_id.as_deref(),
+                        settings_overrides.as_ref(),
                     )?,
                     "python_transit_compute_failed_auto_fallback",
                 )),
@@ -898,6 +1011,8 @@ pub async fn compute_transit_series(
                 transiting_objects,
                 transited_objects,
                 aspect_types,
+                preset_id.as_deref(),
+                settings_overrides.as_ref(),
             )
             .await
             .map(|result| normalize_transit_response(result, Some("python")))
@@ -915,87 +1030,44 @@ fn compute_transit_series_rust(
     transiting_objects: &[String],
     transited_objects: &[String],
     aspect_types: &[String],
+    preset_id: Option<&str>,
+    settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<serde_json::Value, String> {
     if time_step_seconds <= 0 {
         return Err("time_step_seconds must be > 0".to_string());
     }
 
-    let start_dt = parse_datetime_input(start_datetime)?;
-    let end_dt = parse_datetime_input(end_datetime)?;
-    if end_dt < start_dt {
-        return Err("end_datetime must be greater than or equal to start_datetime".to_string());
-    }
+    let start_dt = crate::application::transit::parse_datetime_input(start_datetime)?;
+    let end_dt = crate::application::transit::parse_datetime_input(end_datetime)?;
 
     let base = Path::new(workspace_path);
     let manifest = load_workspace_manifest(base)?;
     let chart_rel = find_chart_ref_by_id(base, &manifest, chart_id)?
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
-    let mut source_chart = load_chart(base, &chart_rel)?;
-    apply_default_observable_objects(
-        &mut source_chart,
-        manifest.default.default_bodies.as_ref(),
+    let source_chart = load_chart(base, &chart_rel)?;
+    let preset = resolve_settings_preset(base, &manifest, preset_id)?;
+    let report = crate::workspace::settings::current_model_report_with_layers(
+        &manifest,
+        preset.as_ref(),
+        Some(&source_chart.config),
+        settings_overrides,
     );
-    let backend = crate::astronomy::backend_for_chart(&source_chart);
-
-    let transited_filter = if transited_objects.is_empty() {
-        source_chart.config.observable_objects.clone()
-    } else {
-        Some(transited_objects.to_vec())
+    let request = crate::application::transit::TransitSeriesRequest {
+        resolved_chart: crate::application::computation::ResolvedChart::from_report(
+            source_chart,
+            report,
+        ),
+        start: start_dt,
+        end: end_dt,
+        time_step_seconds,
+        transiting_objects: transiting_objects.to_vec(),
+        transited_objects: transited_objects.to_vec(),
+        aspect_types: aspect_types.to_vec(),
     };
-    let radix_positions =
-        compute_positions_for_chart_rust(&source_chart, transited_filter.as_ref())?;
-
-    let mut current = start_dt;
-    let step = Duration::seconds(time_step_seconds);
-    let max_steps = 50_000_i64;
-    let mut step_count = 0_i64;
-    let mut results = Vec::new();
-    while current <= end_dt {
-        step_count += 1;
-        if step_count > max_steps {
-            return Err(format!(
-                "Transit range too large (>{max_steps} steps). Increase time step or reduce range."
-            ));
-        }
-
-        let mut transit_chart = source_chart.clone();
-        transit_chart.subject.event_time = Some(current);
-        let transiting_filter = if transiting_objects.is_empty() {
-            transit_chart.config.observable_objects.clone()
-        } else {
-            Some(transiting_objects.to_vec())
-        };
-        let transit_positions =
-            compute_positions_for_chart_rust(&transit_chart, transiting_filter.as_ref())?;
-        let aspects = compute_cross_aspects(
-            &transit_positions,
-            &radix_positions,
-            &source_chart.config.aspect_orbs,
-            aspect_types,
-        );
-
-        results.push(serde_json::json!({
-            "datetime": current.to_rfc3339(),
-            "transit_positions": transit_positions,
-            "aspects": aspects,
-        }));
-
-        current += step;
-    }
-
-    Ok(serde_json::json!({
-        "source_chart_id": chart_id,
-        "time_range": {
-            "start": start_dt.to_rfc3339(),
-            "end": end_dt.to_rfc3339(),
-        },
-        "time_step": format!("{}s", time_step_seconds),
-        "results": results,
-        "backend_used": backend.backend_id(),
-        "fallback_used": false,
-        "ephemeris_source": rust_ephemeris_source(&source_chart),
-        "warnings": [],
-    }))
+    serde_json::to_value(crate::application::transit::compute_transit_series(
+        request,
+    )?)
+    .map_err(|error| format!("Failed to serialize transit calculation: {error}"))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1010,6 +1082,8 @@ async fn compute_transit_series_python(
     transiting_objects: Vec<String>,
     transited_objects: Vec<String>,
     aspect_types: Vec<String>,
+    preset_id: Option<&str>,
+    settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<serde_json::Value, String> {
     let payload = serde_json::json!({
         "workspace_path": Path::new(workspace_path)
@@ -1023,49 +1097,11 @@ async fn compute_transit_series_python(
         "transiting_objects": transiting_objects,
         "transited_objects": transited_objects,
         "aspect_types": aspect_types,
+        "preset_id": preset_id,
+        "settings_overrides": settings_overrides,
     });
     crate::backend::post_json(app, backend_state, "/transits/compute-series", &payload).await
 }
-
-#[derive(Clone, Copy)]
-struct AspectSpec {
-    id: &'static str,
-    angle: f64,
-    default_orb: f64,
-}
-
-const MAJOR_ASPECTS: [AspectSpec; 6] = [
-    AspectSpec {
-        id: "conjunction",
-        angle: 0.0,
-        default_orb: 8.0,
-    },
-    AspectSpec {
-        id: "sextile",
-        angle: 60.0,
-        default_orb: 6.0,
-    },
-    AspectSpec {
-        id: "square",
-        angle: 90.0,
-        default_orb: 8.0,
-    },
-    AspectSpec {
-        id: "trine",
-        angle: 120.0,
-        default_orb: 8.0,
-    },
-    AspectSpec {
-        id: "quincunx",
-        angle: 150.0,
-        default_orb: 3.0,
-    },
-    AspectSpec {
-        id: "opposition",
-        angle: 180.0,
-        default_orb: 8.0,
-    },
-];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct RadixAxes {
@@ -1075,8 +1111,30 @@ struct RadixAxes {
     ic: f64,
 }
 
-fn rust_ephemeris_source(chart: &crate::workspace::models::ChartInstance) -> Option<String> {
-    crate::astronomy::backend_for_chart(chart).ephemeris_source(chart)
+fn chart_calculation_to_map(
+    calculation: crate::application::computation::ChartCalculation,
+) -> Result<HashMap<String, serde_json::Value>, String> {
+    match serde_json::to_value(calculation)
+        .map_err(|error| format!("Failed to serialize chart calculation: {error}"))?
+    {
+        serde_json::Value::Object(values) => Ok(values.into_iter().collect()),
+        _ => Err("Chart calculation did not serialize as an object".to_string()),
+    }
+}
+
+fn resolve_settings_preset(
+    workspace_dir: &Path,
+    manifest: &crate::workspace::models::WorkspaceManifest,
+    preset_id: Option<&str>,
+) -> Result<Option<crate::workspace::settings::SettingsLayer>, String> {
+    let Some(preset_id) = preset_id.and_then(non_empty_str) else {
+        return Ok(None);
+    };
+    let preset = crate::workspace::find_chart_preset(workspace_dir, manifest, preset_id)?
+        .ok_or_else(|| format!("Chart preset not found: {preset_id}"))?;
+    Ok(Some(
+        crate::workspace::settings::SettingsLayer::from_chart_config(&preset.config),
+    ))
 }
 
 fn merge_chart_warnings(
@@ -1166,54 +1224,6 @@ fn annotate_transit_fallback(mut result: serde_json::Value, warning: &str) -> se
     result
 }
 
-fn build_chart_result(
-    chart: &crate::workspace::models::ChartInstance,
-    aspect_types: Option<&[String]>,
-) -> Result<HashMap<String, serde_json::Value>, String> {
-    let backend = crate::astronomy::backend_for_chart(chart);
-    let requested_objects = normalize_requested_objects(chart.config.observable_objects.as_ref());
-    let computed = backend.compute_chart_data(
-        chart,
-        requested_objects,
-    )?;
-    let axes = RadixAxes {
-        asc: computed.axes.asc,
-        desc: computed.axes.desc,
-        mc: computed.axes.mc,
-        ic: computed.axes.ic,
-    };
-    let house_cusps = computed.house_cusps;
-    let motion = computed.motion;
-    let positions = computed.positions;
-    let warnings = computed.warnings;
-    let selected_aspects = aspect_types.or(chart.config.selected_aspects.as_deref());
-    let aspects = compute_chart_aspects(&positions, &chart.config.aspect_orbs, selected_aspects);
-
-    let moon_details = crate::lunar_phase::from_position_map(&positions)
-        .map(|d| serde_json::to_value(d).unwrap_or(serde_json::Value::Null))
-        .unwrap_or(serde_json::Value::Null);
-
-    Ok(HashMap::from([
-        ("positions".to_string(), serde_json::json!(positions)),
-        ("motion".to_string(), serde_json::json!(motion)),
-        ("aspects".to_string(), serde_json::json!(aspects)),
-        ("axes".to_string(), serde_json::json!(axes)),
-        ("house_cusps".to_string(), serde_json::json!(house_cusps)),
-        ("moon_details".to_string(), moon_details),
-        ("chart_id".to_string(), serde_json::json!(chart.id)),
-        (
-            "backend_used".to_string(),
-            serde_json::json!(backend.backend_id()),
-        ),
-        ("fallback_used".to_string(), serde_json::json!(false)),
-        (
-            "ephemeris_source".to_string(),
-            serde_json::json!(rust_ephemeris_source(chart)),
-        ),
-        ("warnings".to_string(), serde_json::json!(warnings)),
-    ]))
-}
-
 #[cfg(test)]
 fn compute_radix_axes(
     chart: &crate::workspace::models::ChartInstance,
@@ -1237,193 +1247,6 @@ fn compute_house_cusps(
         .compute_chart_data(chart, None)
         .map(|computed| computed.house_cusps)
         .unwrap_or_default()
-}
-
-fn compute_positions_for_chart_rust(
-    chart: &crate::workspace::models::ChartInstance,
-    requested_objects: Option<&Vec<String>>,
-) -> Result<HashMap<String, f64>, String> {
-    crate::astronomy::backend_for_chart(chart)
-        .compute_chart_data(chart, normalize_requested_objects(requested_objects))
-        .map(|computed| computed.positions)
-}
-
-fn normalize_requested_objects(
-    requested_objects: Option<&Vec<String>>,
-) -> Option<&Vec<String>> {
-    match requested_objects {
-        Some(list) if list.is_empty() => None,
-        other => other,
-    }
-}
-
-fn apply_default_observable_objects(
-    chart: &mut crate::workspace::models::ChartInstance,
-    workspace_default_bodies: Option<&Vec<String>>,
-) {
-    if matches!(
-        normalize_requested_objects(chart.config.observable_objects.as_ref()),
-        Some(_)
-    ) {
-        return;
-    }
-
-    if let Some(defaults) = normalize_requested_objects(workspace_default_bodies) {
-        chart.config.observable_objects = Some(defaults.clone());
-    }
-}
-
-fn compute_chart_aspects(
-    positions: &HashMap<String, f64>,
-    aspect_orbs: &HashMap<String, f64>,
-    aspect_types: Option<&[String]>,
-) -> Vec<serde_json::Value> {
-    let specs = selected_aspects(aspect_orbs, aspect_types);
-    let mut ids: Vec<&String> = positions.keys().collect();
-    ids.sort();
-
-    let mut out = Vec::new();
-    for i in 0..ids.len() {
-        for j in (i + 1)..ids.len() {
-            let from = ids[i];
-            let to = ids[j];
-            let angle = shortest_arc_deg(
-                *positions.get(from).unwrap_or(&0.0),
-                *positions.get(to).unwrap_or(&0.0),
-            );
-
-            if let Some((aspect_id, exact_angle, orb)) = detect_aspect(angle, &specs) {
-                out.push(serde_json::json!({
-                    "from": from,
-                    "to": to,
-                    "type": aspect_id,
-                    "angle": angle,
-                    "orb": orb,
-                    "exact_angle": exact_angle,
-                    "applying": false,
-                    "separating": false,
-                }));
-            }
-        }
-    }
-    out
-}
-
-fn compute_cross_aspects(
-    transiting_positions: &HashMap<String, f64>,
-    transited_positions: &HashMap<String, f64>,
-    aspect_orbs: &HashMap<String, f64>,
-    aspect_types: &[String],
-) -> Vec<serde_json::Value> {
-    let specs = selected_aspects(aspect_orbs, Some(aspect_types));
-    let mut transiting_ids: Vec<&String> = transiting_positions.keys().collect();
-    let mut transited_ids: Vec<&String> = transited_positions.keys().collect();
-    transiting_ids.sort();
-    transited_ids.sort();
-
-    let mut out = Vec::new();
-    for from in transiting_ids {
-        let from_lon = *transiting_positions.get(from).unwrap_or(&0.0);
-        for to in &transited_ids {
-            let to_lon = *transited_positions.get(*to).unwrap_or(&0.0);
-            let angle = shortest_arc_deg(from_lon, to_lon);
-            if let Some((aspect_id, exact_angle, orb)) = detect_aspect(angle, &specs) {
-                out.push(serde_json::json!({
-                    "from": from,
-                    "to": to,
-                    "type": aspect_id,
-                    "angle": angle,
-                    "orb": orb,
-                    "exact_angle": exact_angle,
-                    "applying": false,
-                    "separating": false,
-                }));
-            }
-        }
-    }
-    out
-}
-
-fn selected_aspects(
-    aspect_orbs: &HashMap<String, f64>,
-    selected_types: Option<&[String]>,
-) -> Vec<(String, f64, f64)> {
-    let selected: Option<HashSet<String>> = selected_types.map(|types| {
-        types
-            .iter()
-            .map(|t| t.trim().to_ascii_lowercase())
-            .collect()
-    });
-
-    MAJOR_ASPECTS
-        .iter()
-        .filter_map(|spec| {
-            let id = spec.id.to_string();
-            if let Some(filter) = &selected {
-                if !filter.contains(&id) {
-                    return None;
-                }
-            }
-            let orb = aspect_orbs
-                .get(spec.id)
-                .copied()
-                .unwrap_or(spec.default_orb)
-                .max(0.0);
-            Some((id, spec.angle, orb))
-        })
-        .collect()
-}
-
-fn detect_aspect(angle: f64, specs: &[(String, f64, f64)]) -> Option<(String, f64, f64)> {
-    for (id, exact_angle, allowed_orb) in specs {
-        let normalized_exact = if *exact_angle > 180.0 {
-            360.0 - *exact_angle
-        } else {
-            *exact_angle
-        };
-        let orb = (angle - normalized_exact).abs();
-        if orb <= *allowed_orb {
-            return Some((id.clone(), *exact_angle, orb));
-        }
-    }
-    None
-}
-
-fn parse_datetime_input(value: &str) -> Result<DateTime<Utc>, String> {
-    if let Ok(dt) = DateTime::parse_from_rfc3339(value) {
-        return Ok(dt.with_timezone(&Utc));
-    }
-
-    let naive_formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M"];
-    for fmt in naive_formats {
-        if let Ok(dt) = NaiveDateTime::parse_from_str(value, fmt) {
-            return Ok(dt.and_utc());
-        }
-    }
-
-    if let Ok(date) = NaiveDate::parse_from_str(value, "%Y-%m-%d") {
-        if let Some(dt) = date.and_hms_opt(0, 0, 0) {
-            return Ok(dt.and_utc());
-        }
-    }
-
-    Err(format!("Invalid datetime format: {}", value))
-}
-
-fn shortest_arc_deg(a: f64, b: f64) -> f64 {
-    let mut diff = (normalize_deg(a) - normalize_deg(b)).abs();
-    if diff > 180.0 {
-        diff = 360.0 - diff;
-    }
-    diff
-}
-
-fn normalize_deg(value: f64) -> f64 {
-    let mut out = value % 360.0;
-    if out < 0.0 {
-        out += 360.0;
-    }
-    out
 }
 
 /// Only Jyotish and Custom require Python; JPL and Swisseph can run through Rust.
@@ -1620,6 +1443,15 @@ fn parse_engine_type(value: &str) -> Option<crate::workspace::models::EngineType
     }
 }
 
+fn non_empty_str(value: &str) -> Option<&str> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed)
+    }
+}
+
 fn apply_workspace_defaults_patch(
     defaults: &mut crate::workspace::models::WorkspaceDefaults,
     patch: SaveWorkspaceDefaultsInput,
@@ -1796,6 +1628,20 @@ mod tests {
     }
 
     #[test]
+    fn layered_requests_use_the_selected_backend_after_python_parity() {
+        assert_eq!(
+            select_chart_compute_route(ComputeBackend::Auto, true, false)
+                .expect("auto should route layered computation normally"),
+            ComputeRoute::Python
+        );
+        assert_eq!(
+            select_transit_compute_route(ComputeBackend::Python, true)
+                .expect("python should accept layered transit computation"),
+            ComputeRoute::Python
+        );
+    }
+
+    #[test]
     fn compute_chart_rust_reads_sample_workspace() {
         let workspace_path = sample_workspace_path();
         let base = std::path::Path::new(&workspace_path);
@@ -1805,7 +1651,7 @@ mod tests {
             .expect("Base Chart should exist");
         let chart = load_chart(base, &chart_rel).expect("sample chart should load");
 
-        let result = compute_chart_rust(&workspace_path, "Base Chart")
+        let result = compute_chart_rust(&workspace_path, "Base Chart", None, None)
             .expect("sample workspace chart should compute");
 
         assert_eq!(result.get("chart_id"), Some(&serde_json::json!("Base Chart")));
@@ -1839,6 +1685,8 @@ mod tests {
             .expect("positions should be an object");
         assert!(positions.contains_key("sun"));
         assert!(positions.contains_key("moon"));
+        assert!(positions.contains_key("asc"));
+        assert!(positions.contains_key("mc"));
 
         let moon = result.get("moon_details").expect("moon_details key");
         assert!(!moon.is_null(), "moon_details should be populated when sun and moon exist");
@@ -1865,6 +1713,118 @@ mod tests {
             .and_then(Value::as_array)
             .expect("aspects should be an array");
         assert!(aspects.iter().all(Value::is_object));
+    }
+
+    #[test]
+    fn standalone_compute_materializes_resolved_model_defaults() {
+        let mut payload = sample_chart_payload("standalone-defaults");
+        let config = payload
+            .get_mut("config")
+            .and_then(Value::as_object_mut)
+            .expect("sample chart config should be an object");
+        config.insert("house_system".to_string(), Value::Null);
+        config.insert("engine".to_string(), Value::Null);
+        config.insert("observable_objects".to_string(), Value::Null);
+        config.insert("selected_aspects".to_string(), Value::Null);
+        config.insert("aspect_orbs".to_string(), serde_json::json!({}));
+
+        let result = compute_chart_from_data_rust(payload, None)
+            .expect("standalone chart should compute");
+
+        assert_eq!(result.get("backend_used"), Some(&serde_json::json!("jpl")));
+        let positions = result
+            .get("positions")
+            .and_then(Value::as_object)
+            .expect("positions should be an object");
+        assert!(positions.contains_key("sun"));
+        assert!(positions.contains_key("asc"));
+        let aspects = result
+            .get("aspects")
+            .and_then(Value::as_array)
+            .expect("aspects should be an array");
+        assert!(aspects.iter().all(Value::is_object));
+    }
+
+    #[test]
+    fn standalone_operation_overrides_are_applied_by_the_resolver() {
+        let payload = sample_chart_payload("standalone-operation");
+        let overrides = crate::workspace::settings::SettingsLayer {
+            bodies: Some(vec!["sun".to_string()]),
+            aspects: Some(Vec::new()),
+            ..crate::workspace::settings::SettingsLayer::default()
+        };
+
+        let result = compute_chart_from_data_rust(payload, Some(&overrides))
+            .expect("standalone chart with operation overrides should compute");
+        let positions = result
+            .get("positions")
+            .and_then(Value::as_object)
+            .expect("positions should be an object");
+        assert_eq!(positions.len(), 1);
+        assert!(positions.contains_key("sun"));
+        assert_eq!(result.get("aspects"), Some(&serde_json::json!([])));
+    }
+
+    #[test]
+    fn workspace_chart_preset_is_loaded_and_applied_before_chart_settings() {
+        let temp = TestWorkspaceDir::new("chart-preset");
+        let workspace_path = temp.path.join("project");
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path.to_string_lossy().into_owned(),
+            "Preset Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+        let mut persisted_chart = sample_chart_payload("Preset Chart");
+        let persisted_config = persisted_chart
+            .get_mut("config")
+            .and_then(Value::as_object_mut)
+            .expect("chart config");
+        persisted_config.insert("observable_objects".to_string(), Value::Null);
+        persisted_config.insert("selected_aspects".to_string(), Value::Null);
+        tauri::async_runtime::block_on(create_chart(
+            workspace_path.to_string_lossy().into_owned(),
+            persisted_chart,
+        ))
+        .expect("chart should be created");
+
+        let chart: crate::workspace::models::ChartInstance =
+            serde_json::from_value(sample_chart_payload("preset-template"))
+                .expect("preset source chart should deserialize");
+        let mut preset_config = chart.config;
+        preset_config.observable_objects = Some(vec!["sun".to_string()]);
+        preset_config.selected_aspects = Some(Vec::new());
+        let preset = crate::workspace::models::ChartPreset {
+            name: "Minimal".to_string(),
+            config: preset_config,
+        };
+        fs::create_dir_all(workspace_path.join("presets")).expect("preset directory");
+        fs::write(
+            workspace_path.join("presets/minimal.yml"),
+            serde_yaml::to_string(&preset).expect("preset should serialize"),
+        )
+        .expect("preset should be written");
+        let mut manifest =
+            load_workspace_manifest(&workspace_path).expect("manifest should load");
+        manifest
+            .chart_presets
+            .push("presets/minimal.yml".to_string());
+        write_workspace_manifest(&workspace_path, &manifest)
+            .expect("manifest should include preset");
+
+        let result = compute_chart_rust(
+            workspace_path.to_string_lossy().as_ref(),
+            "Preset Chart",
+            Some("Minimal"),
+            None,
+        )
+        .expect("chart with preset should compute");
+        let positions = result
+            .get("positions")
+            .and_then(Value::as_object)
+            .expect("positions should be an object");
+
+        assert_eq!(positions.len(), 1);
+        assert!(positions.contains_key("sun"));
     }
 
     #[test]
@@ -1927,7 +1887,9 @@ mod tests {
         assert_eq!(cusps.len(), 12);
         let expected_first = (axes.asc / 30.0).floor() * 30.0;
         assert!((cusps[0] - expected_first).abs() < 0.000_1);
-        assert!((normalize_deg(cusps[1] - cusps[0]) - 30.0).abs() < 0.000_1);
+        assert!(
+            (crate::houses::normalize_deg(cusps[1] - cusps[0]) - 30.0).abs() < 0.000_1
+        );
     }
 
     #[test]
@@ -1953,6 +1915,8 @@ mod tests {
             &transiting_objects,
             &transited_objects,
             &aspect_types,
+            None,
+            None,
         )
         .expect("sample transit series should compute");
 
@@ -1969,7 +1933,12 @@ mod tests {
         );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
         assert!(result.get("ephemeris_source").is_some());
-        assert_eq!(result.get("warnings"), Some(&serde_json::json!([])));
+        let expected_warnings =
+            crate::workspace::current_model_report(&manifest, Some(&chart.config)).warnings;
+        assert_eq!(
+            result.get("warnings"),
+            Some(&serde_json::json!(expected_warnings))
+        );
 
         for entry in results {
             let positions = entry
@@ -2012,11 +1981,49 @@ mod tests {
     }
 
     #[test]
+    fn workspace_validation_reports_missing_references_and_duplicate_ids() {
+        let temp = TestWorkspaceDir::new("workspace-validation");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_string = workspace_path.to_string_lossy().into_owned();
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_string.clone(),
+            "Validator".to_string(),
+        ))
+        .expect("workspace should be created");
+        tauri::async_runtime::block_on(create_chart(
+            workspace_path_string.clone(),
+            sample_chart_payload("Validation Chart"),
+        ))
+        .expect("chart should be created");
+
+        let mut manifest =
+            load_workspace_manifest(&workspace_path).expect("manifest should load");
+        let existing_chart = manifest.charts[0].clone();
+        manifest.charts.push(existing_chart);
+        manifest.charts.push("charts/missing.yml".to_string());
+        write_workspace_manifest(&workspace_path, &manifest)
+            .expect("invalid fixture manifest should be written");
+
+        let report = tauri::async_runtime::block_on(validate_workspace(workspace_path_string))
+            .expect("validation should return a report");
+        let codes: std::collections::HashSet<&str> = report
+            .diagnostics
+            .iter()
+            .map(|diagnostic| diagnostic.code.as_str())
+            .collect();
+
+        assert!(!report.valid);
+        assert_eq!(report.counts.charts, 2);
+        assert!(codes.contains("duplicate_chart_id"));
+        assert!(codes.contains("referenced_item_load_failed"));
+    }
+
+    #[test]
     fn get_workspace_defaults_reads_sample_workspace_defaults() {
         let defaults = tauri::async_runtime::block_on(get_workspace_defaults(sample_workspace_path()))
             .expect("sample defaults should load");
 
-        assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("jpl")));
+        assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("swisseph")));
         assert_eq!(defaults.get("default_bodies"), Some(&serde_json::Value::Null));
         assert_eq!(defaults.get("default_aspects"), Some(&serde_json::Value::Null));
     }

@@ -386,6 +386,11 @@ impl AstronomyBackend for JplAstronomyBackend {
             .map_err(|e| format!("Failed to compute axes: {e}"))?;
 
         let axes = AstronomyAxes { asc, desc, mc, ic };
+        for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
+            if wanted(id) {
+                positions.insert(id.to_string(), longitude);
+            }
+        }
 
         let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
             Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
@@ -506,6 +511,12 @@ mod tests {
         }
         println!("  {:<20} {:.4}°  (asc)", "asc", data.axes.asc);
         println!("  {:<20} {:.4}°  (mc)", "mc", data.axes.mc);
+        for body in ["asc", "mc", "desc", "ic"] {
+            assert!(
+                data.positions.contains_key(body),
+                "derived body {body} missing"
+            );
+        }
 
         for body in ["sun", "moon", "mercury", "venus", "mars",
                      "jupiter", "saturn", "uranus", "neptune", "pluto"] {

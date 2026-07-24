@@ -173,7 +173,6 @@ fn compute_chart_data_locked(
     let house_cusps = (1..=12).map(|index| normalize_deg(cusps[index])).collect::<Vec<_>>();
 
     let requested = requested_objects
-        .filter(|items| !items.is_empty())
         .map(|items| items.iter().map(|item| normalize_object_id(item)).collect::<HashSet<_>>());
     let wanted = |id: &str| requested.as_ref().map(|set| set.contains(id)).unwrap_or(true);
     let should_compute = |id: &str| match id {
