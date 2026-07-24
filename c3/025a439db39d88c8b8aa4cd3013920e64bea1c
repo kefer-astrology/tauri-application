@@ -1,28 +1,12 @@
-.github/workflows/tauri-react.yml
-  s_a1c79cf133aa79::t_776fd57a40aa7f 5-7
-.github/workflows/tauri-svelte.yml
-  s_a1c79cf133aa79::t_776fd57a40aa7f 5-7
-.github/workflows/docs-pages.yml
-  s_a1c79cf133aa79::t_776fd57a40aa7f 4-6,49
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.6.1",
+  "git_ai_version": "1.6.15",
   "base_commit_sha": "c3025a439db39d88c8b8aa4cd3013920e64bea1c",
   "prompts": {},
   "humans": {
     "h_0907ec034f4a17": {
       "author": "kubow <kube.kubow@gmail.com>"
-    }
-  },
-  "sessions": {
-    "s_a1c79cf133aa79": {
-      "agent_id": {
-        "tool": "codex",
-        "id": "019efff5-f2fe-7b61-aa0e-e03edc914dba",
-        "model": "gpt-5.5"
-      },
-      "human_author": "kubow <kube.kubow@gmail.com>"
     }
   }
 }
