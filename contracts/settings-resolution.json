@@ -1,0 +1,74 @@
+{
+  "workspace": {
+    "houseSystem": "Whole Sign",
+    "bodies": ["sun", "moon"],
+    "aspects": ["conjunction", "square"],
+    "aspectOrbs": {
+      "conjunction": 5.0
+    },
+    "engine": "swisseph",
+    "timeSystem": "gregorian"
+  },
+  "preset": {
+    "houseSystem": "Campanus",
+    "bodies": ["sun"],
+    "aspects": ["square"],
+    "aspectOrbs": {
+      "square": 4.0
+    }
+  },
+  "chart": {
+    "mode": "NATAL",
+    "house_system": "Placidus",
+    "zodiac_type": "Sidereal",
+    "included_points": [],
+    "aspect_orbs": {
+      "trine": 3.0
+    },
+    "selected_aspects": ["trine"],
+    "display_style": "",
+    "color_theme": "",
+    "model": "standard",
+    "engine": "swisseph",
+    "ayanamsa": "Lahiri",
+    "observable_objects": ["moon"],
+    "time_system": "gregorian"
+  },
+  "operation": {
+    "bodies": [],
+    "aspects": [],
+    "aspectOrbs": {
+      "square": 2.0
+    },
+    "engine": "jpl",
+    "timeSystem": "unix_timestamp"
+  },
+  "expected": {
+    "houseSystem": "Placidus",
+    "bodies": [],
+    "aspects": [],
+    "aspectOrbs": {
+      "conjunction": 5.0,
+      "square": 2.0,
+      "trine": 3.0
+    },
+    "engine": "jpl",
+    "zodiacType": "Sidereal",
+    "ayanamsa": "Lahiri",
+    "timeSystem": "unix_timestamp",
+    "sources": {
+      "houseSystem": "chart",
+      "bodies": "operation",
+      "aspects": "operation",
+      "engine": "operation",
+      "zodiacType": "chart",
+      "ayanamsa": "chart",
+      "timeSystem": "operation",
+      "aspectOrbs": {
+        "conjunction": "workspace",
+        "square": "operation",
+        "trine": "chart"
+      }
+    }
+  }
+}
