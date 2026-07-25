@@ -1,0 +1,33 @@
+docs/content/docs/architecture.md
+  s_54cd80964c0221::t_454231d39a3458 53-57,79-82,90-99,158,162-167
+  s_54cd80964c0221::t_c99f822905b141 135-136
+  s_54cd80964c0221::t_d1e8a70045972b 168
+docs/content/docs/tauri-command-contracts.md
+  s_54cd80964c0221::t_454231d39a3458 114-124,130-139,175,180-189,200,204-207,209-210,224-225,233-235
+docs/content/docs/_index.md
+  s_54cd80964c0221::t_454231d39a3458 10
+docs/content/docs/backend-structure.md
+  s_54cd80964c0221::t_c99f822905b141 275-285
+  s_54cd80964c0221::t_f29f4457ce0336 1-274,286-385
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "d35d4c2ee56a5a74c2b9b03aeee2c5c4ce641ad8",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_54cd80964c0221": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9354-4394-74c3-a2e8-ee409a8a781e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
