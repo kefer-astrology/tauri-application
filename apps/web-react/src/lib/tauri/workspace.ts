@@ -2,11 +2,14 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
 	ChartDetails,
 	ComputeChartResult,
+	ComputeSettingsOverrides,
+	CurrentModelReport,
 	ResolvedLocation,
 	TransitSeriesRequest,
 	TransitSeriesResult,
 	WorkspaceDefaultsDto,
-	WorkspaceInfo
+	WorkspaceInfo,
+	WorkspaceValidationReport
 } from './types';
 import {
 	aspectLineTierStyleToDto,
@@ -25,12 +28,25 @@ export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInf
 	return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
 }
 
+export async function validateWorkspace(
+	workspacePath: string
+): Promise<WorkspaceValidationReport> {
+	return invoke<WorkspaceValidationReport>('validate_workspace', { workspacePath });
+}
+
 export async function initStorage(workspacePath: string): Promise<string> {
 	return invoke<string>('init_storage', { workspacePath });
 }
 
 export async function getWorkspaceDefaults(workspacePath: string): Promise<WorkspaceDefaultsDto> {
 	return invoke<WorkspaceDefaultsDto>('get_workspace_defaults', { workspacePath });
+}
+
+export async function getCurrentModelReport(
+	workspacePath: string,
+	chartId?: string | null
+): Promise<CurrentModelReport> {
+	return invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId });
 }
 
 export async function getChartDetails(
@@ -42,19 +58,36 @@ export async function getChartDetails(
 
 export async function computeChart(
 	workspacePath: string,
-	chartId: string
+	chartId: string,
+	options?: {
+		presetId?: string | null;
+		settingsOverrides?: ComputeSettingsOverrides | null;
+	}
 ): Promise<ComputeChartResult> {
-	return invoke<ComputeChartResult>('compute_chart', { workspacePath, chartId });
+	return invoke<ComputeChartResult>('compute_chart', {
+		workspacePath,
+		chartId,
+		presetId: options?.presetId ?? null,
+		settingsOverrides: options?.settingsOverrides ?? null
+	});
 }
 
 export async function computeChartFromData(
-	chartJson: Record<string, unknown>
+	chartJson: Record<string, unknown>,
+	settingsOverrides?: ComputeSettingsOverrides | null
 ): Promise<ComputeChartResult> {
-	return invoke<ComputeChartResult>('compute_chart_from_data', { chartJson });
+	return invoke<ComputeChartResult>('compute_chart_from_data', {
+		chartJson,
+		settingsOverrides: settingsOverrides ?? null
+	});
 }
 
 export function computeTransitSeries(params: TransitSeriesRequest): Promise<TransitSeriesResult> {
-	return invoke<TransitSeriesResult>('compute_transit_series', params);
+	return invoke<TransitSeriesResult>('compute_transit_series', {
+		...params,
+		presetId: params.presetId ?? null,
+		settingsOverrides: params.settingsOverrides ?? null
+	});
 }
 
 export async function resolveLocation(query: string): Promise<ResolvedLocation> {

@@ -5,6 +5,8 @@ import type {
   Aspect,
   ChartDetails,
   ComputeChartResult,
+  ComputeSettingsOverrides,
+  CurrentModelReport,
   Position,
   RadixRelativePosition,
   ResolvedLocation,
@@ -12,7 +14,8 @@ import type {
   TransitSeriesResult,
   WorkspaceChartSummary,
   WorkspaceDefaultsDto,
-  WorkspaceInfo
+  WorkspaceInfo,
+  WorkspaceValidationReport
 } from './types';
 
 export function workspaceDefaultsToDto(defaults: WorkspaceDefaultsState): WorkspaceDefaultsDto {
@@ -130,6 +133,10 @@ export function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
   return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
 }
 
+export function validateWorkspace(workspacePath: string): Promise<WorkspaceValidationReport> {
+  return invoke<WorkspaceValidationReport>('validate_workspace', { workspacePath });
+}
+
 export function initStorage(workspacePath: string): Promise<string> {
   return invoke<string>('init_storage', { workspacePath });
 }
@@ -138,18 +145,41 @@ export function getWorkspaceDefaults(workspacePath: string): Promise<WorkspaceDe
   return invoke<WorkspaceDefaultsDto>('get_workspace_defaults', { workspacePath });
 }
 
+export function getCurrentModelReport(
+  workspacePath: string,
+  chartId?: string | null
+): Promise<CurrentModelReport> {
+  return invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId });
+}
+
 export function getChartDetails(workspacePath: string, chartId: string): Promise<ChartDetails> {
   return invoke<ChartDetails>('get_chart_details', { workspacePath, chartId });
 }
 
-export function computeChart(workspacePath: string, chartId: string): Promise<ComputeChartResult> {
-  return invoke<ComputeChartResult>('compute_chart', { workspacePath, chartId });
+export function computeChart(
+  workspacePath: string,
+  chartId: string,
+  options?: {
+    presetId?: string | null;
+    settingsOverrides?: ComputeSettingsOverrides | null;
+  }
+): Promise<ComputeChartResult> {
+  return invoke<ComputeChartResult>('compute_chart', {
+    workspacePath,
+    chartId,
+    presetId: options?.presetId ?? null,
+    settingsOverrides: options?.settingsOverrides ?? null
+  });
 }
 
 export function computeChartFromData(
-  chartJson: Record<string, unknown>
+  chartJson: Record<string, unknown>,
+  settingsOverrides?: ComputeSettingsOverrides | null
 ): Promise<ComputeChartResult> {
-  return invoke<ComputeChartResult>('compute_chart_from_data', { chartJson });
+  return invoke<ComputeChartResult>('compute_chart_from_data', {
+    chartJson,
+    settingsOverrides: settingsOverrides ?? null
+  });
 }
 
 export function resolveLocation(query: string): Promise<ResolvedLocation> {
@@ -200,7 +230,11 @@ export function saveWorkspaceDefaults(
 }
 
 export function computeTransitSeries(params: TransitSeriesRequest): Promise<TransitSeriesResult> {
-  return invoke<TransitSeriesResult>('compute_transit_series', params);
+  return invoke<TransitSeriesResult>('compute_transit_series', {
+    ...params,
+    presetId: params.presetId ?? null,
+    settingsOverrides: params.settingsOverrides ?? null
+  });
 }
 
 export async function queryWorkspacePositions(params: {
