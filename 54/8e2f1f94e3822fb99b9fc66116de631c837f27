@@ -1,0 +1,30 @@
+apps/web-react/src/lib/tauri/workspace.ts
+  s_54cd80964c0221::t_454231d39a3458 5-6,11-12,31-36,45-51,61-65,67-72,76-77,79-82,86-90
+apps/web-react/src/lib/tauri/types.ts
+  s_54cd80964c0221::t_454231d39a3458 20-42,68-208,281-282
+apps/web-svelte/src/lib/tauri/workspace.ts
+  s_54cd80964c0221::t_454231d39a3458 8-9,17-18,136-139,148-154,159-172,176-177,179-182,233-237
+apps/web-svelte/src/lib/tauri/types.ts
+  s_54cd80964c0221::t_454231d39a3458 19-41,66-206,270-271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "548e2f1f94e3822fb99b9fc66116de631c837f27",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_54cd80964c0221": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9354-4394-74c3-a2e8-ee409a8a781e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
