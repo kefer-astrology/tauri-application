@@ -1,0 +1,34 @@
+src-tauri/src/event_time.rs
+  s_54cd80964c0221::t_8d7b7fa8d4f62c 1-7,10-68
+  s_54cd80964c0221::t_2fb96f285e0af4 8-9
+src-tauri/src/application/transit.rs
+  s_54cd80964c0221::t_8d7b7fa8d4f62c 51
+  s_54cd80964c0221::t_99849c29925ae5 5
+src-tauri/src/workspace/settings.rs
+  s_54cd80964c0221::t_660f42ffa91caa 890-894,905-907,964-965,967,969
+src-tauri/src/workspace/models.rs
+  s_54cd80964c0221::t_3ec3d131b90638 175,178-180
+src-tauri/src/lib.rs
+  s_54cd80964c0221::t_8d7b7fa8d4f62c 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "edc8bac5238c4a2561638ab30c117c12f24d9d7b",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_54cd80964c0221": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9354-4394-74c3-a2e8-ee409a8a781e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
