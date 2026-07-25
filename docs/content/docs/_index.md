@@ -7,6 +7,7 @@ weight: 10
 ## Architecture foundation
 
 - **[System architecture](./architecture/)** — cross-layer model definition.
+- **[Backend structure and data ownership](./backend-structure/)** — Rust boundaries, workspace representations, layered overrides, provenance, and Python parity.
 - **[Tauri command contracts](./tauri-command-contracts/)** — normative frontend-facing command contract.
 
 ## Backend and astronomy engine

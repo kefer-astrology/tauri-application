@@ -111,10 +111,31 @@ Acceptance criteria:
 - Loads all registered charts and returns chart summaries.
 - Does not compute chart positions.
 
+### `validate_workspace(workspace_path) -> Result<WorkspaceValidationReport, String>`
+
+- Strictly attempts every subject, chart, preset, layout, and annotation
+  reference under the workspace root.
+- Returns `valid`, typed entity counts, workspace identity, and all structured
+  diagnostics.
+- Missing or malformed referenced items use
+  `referenced_item_load_failed`; duplicate identifiers and broken catalog
+  references have specific stable codes.
+- An invalid referenced item does not prevent other items from being inspected.
+
 ### `get_workspace_defaults(workspace_path) -> Result<Value, String>`
 
 - Returns normalized default workspace values from `workspace.yaml`.
 - Includes house system, engine, location, bodies, aspects, and time system fields when present.
+
+### `get_current_model_report(workspace_path, chart_id?) -> Result<CurrentModelReport, String>`
+
+- Returns one canonical model envelope for the workspace, optionally resolved through a specific chart.
+- Includes the requested model name, resolved model name, available model names, model catalog, effective settings, model overrides, source, and warnings.
+- Includes structured `diagnostics` for catalog, selection, override, and
+  chart-level invariants.
+- `effective_settings.sources` identifies whether each effective setting came from the application fallback, model, workspace, preset, chart, or operation layer. Aspect-orb sources are reported per aspect id.
+- If `workspace.yaml` has no usable `models` entry, returns a built-in standard model catalog so callers still receive the same structure.
+- When `chart_id` is supplied, chart-level model/settings fields override workspace defaults in `effective_settings`.
 
 ### `resolve_location(query) -> Result<Value, String>`
 
@@ -151,11 +172,21 @@ Recommended response metadata:
 - `warnings`
 - `ephemeris_source` when known
 
-### `compute_chart_from_data(chart_json) -> Result<Map<String, Value>, String>`
+### `compute_chart_from_data(chart_json, settings_overrides?) -> Result<Map<String, Value>, String>`
 
 - Computes positions and aspects from an in-memory chart payload.
 - `chart_json.subject.event_time` must be parseable as `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`, `YYYY-MM-DDTHH:mm:ssZ`, or RFC3339.
 - Returns an object with `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `moon_details`, `chart_id`, and backend provenance fields when available.
+- Rust standalone computation resolves built-in model defaults and chart
+  overrides through the same settings service used by workspace charts.
+- Resolved house system, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
+  time system are materialized only on the in-memory computation copy.
+- Legacy `included_points` is accepted as a chart-level body selection and
+  produces a deprecation warning; new payloads should use
+  `observable_objects`.
+- `settings_overrides` is an optional operation layer with `houseSystem`,
+  `bodies`, `aspects`, `aspectOrbs`, `engine`, `zodiacType`, `ayanamsa`, and
+  `timeSystem`.
 - Uses Python or Rust depending on backend selection and availability.
 
 Acceptance criteria:
@@ -166,11 +197,17 @@ Acceptance criteria:
 - When `positions.sun` and `positions.moon` exist, `moon_details` should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See [lunar-phase](../lunar-phase/).
 - When fallback occurs, the response should expose that fact instead of failing silently.
 
-### `compute_chart(workspace_path, chart_id) -> Result<Map<String, Value>, String>`
+### `compute_chart(workspace_path, chart_id, preset_id?, settings_overrides?) -> Result<Map<String, Value>, String>`
 
 - Loads a chart from workspace storage and computes positions and aspects.
 - Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `moon_details` (when Sun and Moon are present), `chart_id`, and backend provenance fields when available.
+- Rust aspect detection uses the resolved workspace/chart model definitions and effective orb overrides.
+- `preset_id` may identify a referenced workspace preset by its name or manifest
+  path. The chart layer overrides the preset layer.
+- `settings_overrides` is the highest-precedence ephemeral operation layer.
 - Uses Python or Rust depending on backend selection and availability.
+- Preset and operation layers are forwarded to either backend. `Auto` follows
+  normal backend selection, and fallback preserves the same layers.
 
 ### `compute_transit_series(...) -> Result<Value, String>`
 
@@ -184,6 +221,8 @@ Inputs:
 - `transiting_objects`
 - `transited_objects`
 - `aspect_types`
+- optional `preset_id`
+- optional `settings_overrides`
 
 Behavior:
 
@@ -191,6 +230,9 @@ Behavior:
 - `end_datetime` must be greater than or equal to `start_datetime`.
 - Rust mode enforces a hard cap of `50_000` generated steps.
 - Returns a response with `source_chart_id`, `time_range`, `time_step`, `results`, and backend provenance fields.
+- Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.
+- Preset and operation settings use the same precedence and temporary Rust-only
+  routing described for `compute_chart`.
 
 Acceptance criteria:
 
