@@ -1,0 +1,25 @@
+src-tauri/tauri.conf.json
+  s_8ffa42fec2d59b::t_cc6dad94859d23 16-17
+  s_8ffa42fec2d59b::t_3700be4fba6972 18-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "81038f9a3a049e299818656d9d3700cda79c1607",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8ffa42fec2d59b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cef0e486-ffc9-4a2f-9563-2b353fd9eadd",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
