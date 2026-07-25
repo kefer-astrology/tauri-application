@@ -4,6 +4,7 @@ mod application;
 mod backend;
 mod commands;
 mod ephemeris_manager;
+mod event_time;
 mod houses;
 mod lunar_phase;
 mod jpl_backend;

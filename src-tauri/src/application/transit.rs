@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 
 use crate::astrology::ComputedAspect;
@@ -48,24 +48,7 @@ pub struct TransitSeriesCalculation {
 }
 
 pub fn parse_datetime_input(value: &str) -> Result<DateTime<Utc>, String> {
-    if let Ok(datetime) = DateTime::parse_from_rfc3339(value) {
-        return Ok(datetime.with_timezone(&Utc));
-    }
-
-    let naive_formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M"];
-    for format in naive_formats {
-        if let Ok(datetime) = NaiveDateTime::parse_from_str(value, format) {
-            return Ok(datetime.and_utc());
-        }
-    }
-
-    if let Ok(date) = NaiveDate::parse_from_str(value, "%Y-%m-%d") {
-        if let Some(datetime) = date.and_hms_opt(0, 0, 0) {
-            return Ok(datetime.and_utc());
-        }
-    }
-
-    Err(format!("Invalid datetime format: {value}"))
+    crate::event_time::parse_event_time(value)
 }
 
 pub fn compute_transit_series(

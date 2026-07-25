@@ -84,7 +84,6 @@ pub enum ObjectType {
     Part,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AspectContext {
@@ -173,32 +172,12 @@ fn deserialize_datetime<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    use serde::Deserialize;
+    use serde::{de::Error, Deserialize};
     let s: Option<String> = Option::deserialize(deserializer)?;
     match s {
-        Some(ref s) if !s.is_empty() => {
-            // Try multiple datetime formats
-            let formats = [
-                "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%dT%H:%M:%S",
-                "%Y-%m-%dT%H:%M:%SZ",
-                "%Y-%m-%d %H:%M",
-                "%Y-%m-%d",
-            ];
-
-            for format in &formats {
-                if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, format) {
-                    return Ok(Some(dt.and_utc()));
-                }
-            }
-
-            // Try parsing as ISO8601
-            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(s) {
-                return Ok(Some(dt.with_timezone(&chrono::Utc)));
-            }
-
-            Ok(None)
-        }
+        Some(ref s) if !s.trim().is_empty() => crate::event_time::parse_event_time(s)
+            .map(Some)
+            .map_err(D::Error::custom),
         _ => Ok(None),
     }
 }
