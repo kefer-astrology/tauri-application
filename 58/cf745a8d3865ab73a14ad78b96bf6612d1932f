@@ -1,0 +1,53 @@
+apps/web-react/src/lib/tauri/workspace.ts
+  s_8ffa42fec2d59b::t_1ce1ccf318fe37 147-148,157
+  s_8ffa42fec2d59b::t_ae318c5a19db00 153-156
+  s_8ffa42fec2d59b::t_eebfdf2f1a2b43 11
+  s_8ffa42fec2d59b::t_951257a0c8249b 152
+  s_8ffa42fec2d59b::t_14dc55aa038c32 158
+apps/web-react/src/lib/astrology/aspects.ts
+  s_8ffa42fec2d59b::t_ed24834cb7c50b 24,26-32
+  s_8ffa42fec2d59b::t_1c2214e2a8c582 25
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_8ffa42fec2d59b::t_80124850d5d986 53-59
+  s_8ffa42fec2d59b::t_1248ad46b6c0ea 307-309
+  s_8ffa42fec2d59b::t_810fd989556d0a 25-28
+  s_8ffa42fec2d59b::t_1bc2c610fd4781 274-281
+  s_8ffa42fec2d59b::t_598c6633debedc 220-224
+apps/web-react/src/app/components/aspectarium.tsx
+  s_8ffa42fec2d59b::t_cebaa89fb3a8f0 16-17,19
+  s_8ffa42fec2d59b::t_b1a57fad124ff3 63
+  s_8ffa42fec2d59b::t_3baae32b450ab9 112-115,119
+apps/web-react/src/app/components/transits-bodies-config.tsx
+  s_8ffa42fec2d59b::t_1ba35854d45a55 259,272
+  s_8ffa42fec2d59b::t_19ae6b2503dbe6 312,324
+  s_8ffa42fec2d59b::t_9e35f2ecd0d26f 203,210,226-230
+apps/web-react/src/lib/tauri/types.ts
+  s_8ffa42fec2d59b::t_1cf66f9e91c302 216-219
+apps/web-react/src/app/App.tsx
+  s_8ffa42fec2d59b::t_c84a427efdb981 76
+  s_8ffa42fec2d59b::t_0edb725f0e7d02 46
+  s_8ffa42fec2d59b::t_6149af9c99cb4a 225
+  s_8ffa42fec2d59b::t_23df58534993d3 477-491
+  s_8ffa42fec2d59b::t_0c2085e317725e 124-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "58cf745a8d3865ab73a14ad78b96bf6612d1932f",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8ffa42fec2d59b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cef0e486-ffc9-4a2f-9563-2b353fd9eadd",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
