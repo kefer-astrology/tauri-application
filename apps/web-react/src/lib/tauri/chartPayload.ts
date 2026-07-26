@@ -22,6 +22,10 @@ export interface AppChart {
 	timezone?: string;
 	rodenRating?: string;
 	observableObjects?: string[];
+	aspectOrbs?: Record<string, number>;
+	selectedAspects?: string[];
+	ayanamsa?: string | null;
+	timeSystem?: string | null;
 	computed?: {
 		positions?: Record<string, unknown>;
 		motion?: Record<
@@ -46,7 +50,13 @@ export interface AppChart {
 export const SUPPORTED_RUST_HOUSE_SYSTEMS = [
 	'Placidus',
 	'Whole Sign',
-	'Campanus'
+	'Campanus',
+	'Koch',
+	'Equal',
+	'Regiomontanus',
+	'Vehlow',
+	'Porphyry',
+	'Alcabitius'
 ] as const;
 
 export type SupportedRustHouseSystem = (typeof SUPPORTED_RUST_HOUSE_SYSTEMS)[number];
@@ -207,7 +217,11 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		tags: full.tags,
 		tagColors: full.tag_colors,
 		rodenRating: full.roden_rating,
-		observableObjects: full.config.observable_objects
+		observableObjects: full.config.observable_objects,
+		aspectOrbs: full.config.aspect_orbs,
+		selectedAspects: full.config.selected_aspects,
+		ayanamsa: full.config.ayanamsa,
+		timeSystem: full.config.time_system
 	};
 }
 
@@ -257,7 +271,14 @@ export function chartDataToComputePayload(
 		(chart.observableObjects && chart.observableObjects.length > 0)
 			? chart.observableObjects
 			: (defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined);
-	const selectedAspects = [...defaults.defaultAspects];
+	const selectedAspects =
+		chart.selectedAspects && chart.selectedAspects.length > 0
+			? chart.selectedAspects
+			: [...defaults.defaultAspects];
+	const aspectOrbs =
+		chart.aspectOrbs && Object.keys(chart.aspectOrbs).length > 0
+			? chart.aspectOrbs
+			: defaults.defaultAspectOrbs;
 	const tagColors =
 		chart.tagColors && Object.keys(chart.tagColors).length > 0 ? chart.tagColors : undefined;
 
@@ -283,7 +304,9 @@ export function chartDataToComputePayload(
 			model,
 			observable_objects: observableObjects,
 			selected_aspects: selectedAspects,
-			aspect_orbs: defaults.defaultAspectOrbs
+			aspect_orbs: aspectOrbs,
+			...(chart.ayanamsa ? { ayanamsa: chart.ayanamsa } : {}),
+			...(chart.timeSystem ? { time_system: chart.timeSystem } : {})
 		},
 		tags: chart.tags ?? [],
 		...(tagColors ? { tag_colors: tagColors } : {}),

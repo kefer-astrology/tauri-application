@@ -13,9 +13,10 @@ import { DetailSidePanel } from './detail-side-panel';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import {
 	DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS,
-	OBSERVABLE_OBJECTS
+	OBSERVABLE_OBJECTS,
+	getObservableObjectLabel
 } from '@/lib/astrology/observableObjects';
-import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS } from '@/lib/astrology/aspects';
+import { ASPECT_GLYPHS, ASPECT_ROWS, DEFAULT_ASPECT_COLORS } from '@/lib/astrology/aspects';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 
 interface AspectariumProps {
@@ -59,53 +60,7 @@ const ZODIAC_UNICODE_FALLBACK = [
 	'♓'
 ] as const;
 
-const BODY_META: Record<
-	string,
-	{ labelKey?: string; fallbackLabel: string; icon: string; glyphDomain?: 'planet' | 'zodiac' }
-> = {
-	sun: { labelKey: 'planet_sun', fallbackLabel: 'Sun', icon: '☉' },
-	moon: { labelKey: 'planet_moon', fallbackLabel: 'Moon', icon: '☽' },
-	mercury: { labelKey: 'planet_mercury', fallbackLabel: 'Mercury', icon: '☿' },
-	venus: { labelKey: 'planet_venus', fallbackLabel: 'Venus', icon: '♀' },
-	mars: { labelKey: 'planet_mars', fallbackLabel: 'Mars', icon: '♂' },
-	jupiter: { labelKey: 'planet_jupiter', fallbackLabel: 'Jupiter', icon: '♃' },
-	saturn: { labelKey: 'planet_saturn', fallbackLabel: 'Saturn', icon: '♄' },
-	uranus: { labelKey: 'planet_uranus', fallbackLabel: 'Uranus', icon: '♅' },
-	neptune: { labelKey: 'planet_neptune', fallbackLabel: 'Neptune', icon: '♆' },
-	pluto: { labelKey: 'planet_pluto', fallbackLabel: 'Pluto', icon: '♇' },
-	asc: { labelKey: 'point_asc', fallbackLabel: 'Asc', icon: 'Asc' },
-	desc: { labelKey: 'point_dsc', fallbackLabel: 'Dsc', icon: 'Dsc' },
-	mc: { labelKey: 'point_mc', fallbackLabel: 'MC', icon: 'MC' },
-	ic: { labelKey: 'point_ic', fallbackLabel: 'IC', icon: 'IC' },
-	north_node: { labelKey: 'point_north_node', fallbackLabel: 'North Node', icon: '☊' },
-	south_node: { labelKey: 'point_south_node', fallbackLabel: 'South Node', icon: '☋' },
-	true_north_node: {
-		labelKey: 'point_true_north_node',
-		fallbackLabel: 'True North Node',
-		icon: '☊'
-	},
-	true_south_node: {
-		labelKey: 'point_true_south_node',
-		fallbackLabel: 'True South Node',
-		icon: '☋'
-	},
-	lilith: { labelKey: 'point_lilith', fallbackLabel: 'Lilith', icon: '⚸' },
-	chiron: { labelKey: 'point_chiron', fallbackLabel: 'Chiron', icon: '⚷' },
-	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
-	pallas: { labelKey: 'point_pallas', fallbackLabel: 'Pallas', icon: 'Pa' },
-	juno: { labelKey: 'point_juno', fallbackLabel: 'Juno', icon: 'Ju' },
-	vesta: { labelKey: 'point_vesta', fallbackLabel: 'Vesta', icon: 'Ve' }
-};
-
-const ASPECT_GLYPHS: Record<string, string> = {
-	conjunction: '☌',
-	sextile: '⚹',
-	square: '□',
-	trine: '△',
-	quincunx: '⚻',
-	opposition: '☍'
-};
-
+const OBSERVABLE_OBJECT_MAP = new Map(OBSERVABLE_OBJECTS.map((item) => [item.id, item] as const));
 const OBSERVABLE_OBJECT_ICON_MAP = new Map(
 	OBSERVABLE_OBJECTS.map((item) => [item.id, item.icon] as const)
 );
@@ -154,14 +109,14 @@ function parseAspect(raw: unknown): ParsedAspect | null {
 	};
 }
 
-function bodyLabel(id: string, t: (key: string) => string) {
-	const meta = BODY_META[id];
-	if (!meta) return id;
-	return meta.labelKey ? t(meta.labelKey) : meta.fallbackLabel;
+function bodyLabel(id: string, t: (key: string, options?: Record<string, unknown>) => string) {
+	const item = OBSERVABLE_OBJECT_MAP.get(id);
+	if (!item) return id;
+	return getObservableObjectLabel(item, t);
 }
 
 function bodyIcon(id: string) {
-	return BODY_META[id]?.icon ?? OBSERVABLE_OBJECT_ICON_MAP.get(id) ?? id.slice(0, 3);
+	return OBSERVABLE_OBJECT_ICON_MAP.get(id) ?? id.slice(0, 3);
 }
 
 function canonicalPairKey(idA: string, idB: string, orderIndex: Map<string, number>) {

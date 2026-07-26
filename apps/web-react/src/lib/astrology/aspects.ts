@@ -21,3 +21,12 @@ export const DEFAULT_ASPECT_COLORS: Record<AspectRowId, string> = {
 	quincunx: '#8b5cf6',
 	opposition: '#f97316'
 };
+
+export const ASPECT_GLYPHS: Record<string, string> = {
+	conjunction: '☌',
+	sextile: '⚹',
+	square: '□',
+	trine: '△',
+	quincunx: '⚻',
+	opposition: '☍'
+};

@@ -26,20 +26,6 @@ export interface BackendDiagnostic {
 	path?: string | null;
 }
 
-export interface WorkspaceValidationReport {
-	owner: string;
-	active_model?: string | null;
-	valid: boolean;
-	counts: {
-		subjects: number;
-		charts: number;
-		chart_presets: number;
-		layouts: number;
-		annotations: number;
-	};
-	diagnostics: BackendDiagnostic[];
-}
-
 /** Orb tightness tiers for radix aspect line stroke width (percent of configured max orb). */
 export interface AspectLineTierStyleDto {
 	tight_threshold_pct?: number | null;
@@ -227,6 +213,10 @@ export interface ChartDetails {
 		model: string | null;
 		override_ephemeris: string | null;
 		observable_objects?: string[];
+		aspect_orbs?: Record<string, number>;
+		selected_aspects?: string[];
+		ayanamsa?: string | null;
+		time_system?: string | null;
 	};
 	tags: string[];
 	tag_colors?: Record<string, string>;

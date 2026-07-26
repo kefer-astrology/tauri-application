@@ -8,8 +8,7 @@ import type {
 	TransitSeriesRequest,
 	TransitSeriesResult,
 	WorkspaceDefaultsDto,
-	WorkspaceInfo,
-	WorkspaceValidationReport
+	WorkspaceInfo
 } from './types';
 import {
 	aspectLineTierStyleToDto,
@@ -26,12 +25,6 @@ export async function openFolderDialog(): Promise<string | null> {
 
 export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
 	return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
-}
-
-export async function validateWorkspace(
-	workspacePath: string
-): Promise<WorkspaceValidationReport> {
-	return invoke<WorkspaceValidationReport>('validate_workspace', { workspacePath });
 }
 
 export async function initStorage(workspacePath: string): Promise<string> {
@@ -151,9 +144,17 @@ export async function saveWorkspaceDefaults(
 /** Load workspace folder: summaries → full chart rows where possible, init DB, compute each chart. */
 export async function openWorkspaceFolder(
 	folderPath: string,
-	onDefaults?: (d: WorkspaceDefaultsDto) => void
+	onDefaults?: (d: WorkspaceDefaultsDto) => void,
+	onModelReport?: (r: CurrentModelReport) => void
 ): Promise<{ path: string; charts: AppChart[] }> {
 	const workspace = await loadWorkspace(folderPath);
+
+	try {
+		const report = await getCurrentModelReport(folderPath);
+		onModelReport?.(report);
+	} catch (e) {
+		console.warn('get_current_model_report failed:', e);
+	}
 
 	try {
 		const defaults = await getWorkspaceDefaults(folderPath);
