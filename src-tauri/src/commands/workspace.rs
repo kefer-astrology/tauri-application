@@ -709,6 +709,25 @@ pub async fn get_chart_details(
         crate::workspace::models::EngineType::Custom => "custom",
     });
 
+    let ayanamsa_str = chart.config.ayanamsa.as_ref().map(|a| match a {
+        crate::workspace::models::Ayanamsa::Lahiri => "Lahiri",
+        crate::workspace::models::Ayanamsa::Raman => "Raman",
+        crate::workspace::models::Ayanamsa::Krishnamurti => "Krishnamurti",
+        crate::workspace::models::Ayanamsa::FaganBradley => "FaganBradley",
+        crate::workspace::models::Ayanamsa::DeLuce => "DeLuce",
+        crate::workspace::models::Ayanamsa::UserDefined => "UserDefined",
+    });
+
+    let time_system_str = chart.config.time_system.as_ref().map(|t| match t {
+        crate::workspace::models::TimeSystem::Gregorian => "gregorian",
+        crate::workspace::models::TimeSystem::JulianDay => "julian_day",
+        crate::workspace::models::TimeSystem::JulianCalendar => "julian_calendar",
+        crate::workspace::models::TimeSystem::UnixTimestamp => "unix_timestamp",
+        crate::workspace::models::TimeSystem::OrdinalDate => "ordinal_date",
+        crate::workspace::models::TimeSystem::IsoWeekDate => "iso_week_date",
+        crate::workspace::models::TimeSystem::CompactDate => "compact_date",
+    });
+
     Ok(json!({
         "id": chart.id,
         "subject": {
@@ -729,8 +748,15 @@ pub async fn get_chart_details(
             "engine": engine_str,
             "model": chart.config.model,
             "override_ephemeris": chart.config.override_ephemeris,
+            "observable_objects": chart.config.observable_objects,
+            "aspect_orbs": chart.config.aspect_orbs,
+            "selected_aspects": chart.config.selected_aspects,
+            "ayanamsa": ayanamsa_str,
+            "time_system": time_system_str,
         },
         "tags": chart.tags,
+        "tag_colors": chart.tag_colors,
+        "roden_rating": chart.roden_rating,
     }))
 }
 
@@ -1103,6 +1129,7 @@ async fn compute_transit_series_python(
     crate::backend::post_json(app, backend_state, "/transits/compute-series", &payload).await
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct RadixAxes {
     asc: f64,

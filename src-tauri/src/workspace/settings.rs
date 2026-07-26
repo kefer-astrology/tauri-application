@@ -145,6 +145,7 @@ pub fn current_model_report(
 ///
 /// Standalone charts have application and built-in model defaults followed by
 /// chart overrides. They intentionally have no workspace or preset scope.
+#[cfg(test)]
 pub fn standalone_model_report(chart_config: &ChartConfig) -> CurrentModelReport {
     standalone_model_report_with_operation(chart_config, None)
 }
