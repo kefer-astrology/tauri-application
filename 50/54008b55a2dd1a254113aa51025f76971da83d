@@ -1,0 +1,54 @@
+apps/web-react/src/locales/fr.json
+  s_8ffa42fec2d59b::t_43702ff0aef598 389
+  s_8ffa42fec2d59b::t_41178dadda1f51 120
+  s_8ffa42fec2d59b::t_7ddda776de3bd4 343
+translations.csv
+  s_8ffa42fec2d59b::t_66e68d28e5139c 389
+  s_8ffa42fec2d59b::t_0400184d69b3b8 120
+  s_8ffa42fec2d59b::t_c53d48dffac2cb 343
+apps/web-svelte/src/lib/i18n/en.json
+  s_8ffa42fec2d59b::t_c58309f77354b7 120
+  s_8ffa42fec2d59b::t_41178dadda1f51 343,348-351,389
+apps/web-svelte/src/lib/i18n/cs.json
+  s_8ffa42fec2d59b::t_41178dadda1f51 343,348-351,389
+  s_8ffa42fec2d59b::t_28d092a6878038 120
+apps/web-react/src/locales/en.json
+  s_8ffa42fec2d59b::t_0d9fbb5a03fbfd 389
+  s_8ffa42fec2d59b::t_41178dadda1f51 120
+  s_8ffa42fec2d59b::t_dca9374f6acca9 343
+apps/web-react/src/locales/es.json
+  s_8ffa42fec2d59b::t_903d6b184653af 343
+  s_8ffa42fec2d59b::t_41178dadda1f51 120
+  s_8ffa42fec2d59b::t_62399818dda77b 389
+apps/web-react/src/locales/cs.json
+  s_8ffa42fec2d59b::t_41178dadda1f51 120
+  s_8ffa42fec2d59b::t_7eed3681984017 343
+  s_8ffa42fec2d59b::t_18605a40a78aab 389
+apps/web-svelte/src/lib/i18n/fr.json
+  s_8ffa42fec2d59b::t_90c056c4c14ddc 120
+  s_8ffa42fec2d59b::t_41178dadda1f51 343,348-351,389
+apps/web-svelte/src/lib/i18n/es.json
+  s_8ffa42fec2d59b::t_99b9edcccb0434 120
+  s_8ffa42fec2d59b::t_41178dadda1f51 343,348-351,389
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "5054008b55a2dd1a254113aa51025f76971da83d",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8ffa42fec2d59b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cef0e486-ffc9-4a2f-9563-2b353fd9eadd",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
