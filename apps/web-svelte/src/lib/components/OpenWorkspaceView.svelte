@@ -16,7 +16,8 @@
     chartDataToComputePayload,
     type ChartData,
     setMode,
-    setWorkspaceDefaults
+    setWorkspaceDefaults,
+    mergeModelReportDefaults
   } from '$lib/state/layout';
 
   export type OpenMode = 'my_radixes' | 'database';
@@ -58,9 +59,18 @@
       const folderPath = await openFolderDialog();
       if (!folderPath) return;
 
-      const workspace = await openWorkspaceFolder(folderPath, (defaults) => {
-        setWorkspaceDefaults(workspaceDefaultsDtoToStatePatch(defaults));
-      });
+      const workspace = await openWorkspaceFolder(
+        folderPath,
+        (defaults) => {
+          setWorkspaceDefaults(workspaceDefaultsDtoToStatePatch(defaults));
+        },
+        (report) => {
+          mergeModelReportDefaults(report);
+          if (report.warnings.length > 0) {
+            console.warn('Model report warnings:', report.warnings);
+          }
+        }
+      );
 
       loadChartsFromWorkspace(workspace.charts);
       layout.workspacePath = workspace.path;
@@ -105,15 +115,6 @@
         </Button>
         <Button variant="outline" class="px-4 py-2" onclick={handleSaveWorkspace}>
           {t('save_workspace', {}, 'Save Workspace')}
-        </Button>
-        <Button
-          variant="outline"
-          class="px-4 py-2"
-          onclick={async () => {
-            console.log('Open Radix - to be implemented');
-          }}
-        >
-          {t('open_radix', {}, 'Open Radix')}
         </Button>
         <Input
           type="text"

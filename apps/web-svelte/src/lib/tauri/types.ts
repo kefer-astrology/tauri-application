@@ -25,20 +25,6 @@ export interface BackendDiagnostic {
   path?: string | null;
 }
 
-export interface WorkspaceValidationReport {
-  owner: string;
-  active_model?: string | null;
-  valid: boolean;
-  counts: {
-    subjects: number;
-    charts: number;
-    chart_presets: number;
-    layouts: number;
-    annotations: number;
-  };
-  diagnostics: BackendDiagnostic[];
-}
-
 export interface AspectLineTierStyleDto {
   tight_threshold_pct?: number | null;
   medium_threshold_pct?: number | null;
@@ -224,6 +210,11 @@ export interface ChartDetails {
     engine: string | null;
     model: string | null;
     override_ephemeris: string | null;
+    observable_objects?: string[];
+    aspect_orbs?: Record<string, number>;
+    selected_aspects?: string[];
+    ayanamsa?: string | null;
+    time_system?: string | null;
   };
   tags: string[];
 }

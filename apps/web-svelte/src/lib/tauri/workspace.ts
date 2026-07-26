@@ -14,8 +14,7 @@ import type {
   TransitSeriesResult,
   WorkspaceChartSummary,
   WorkspaceDefaultsDto,
-  WorkspaceInfo,
-  WorkspaceValidationReport
+  WorkspaceInfo
 } from './types';
 
 export function workspaceDefaultsToDto(defaults: WorkspaceDefaultsState): WorkspaceDefaultsDto {
@@ -110,6 +109,11 @@ export function chartDetailsToChartData(details: ChartDetails): ChartData {
     engine: details.config.engine,
     model: details.config.model,
     overrideEphemeris: details.config.override_ephemeris,
+    observableObjects: details.config.observable_objects,
+    aspectOrbs: details.config.aspect_orbs,
+    selectedAspects: details.config.selected_aspects,
+    ayanamsa: details.config.ayanamsa,
+    timeSystem: details.config.time_system,
     tags: details.tags
   };
 }
@@ -131,10 +135,6 @@ export function openFolderDialog(): Promise<string | null> {
 
 export function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
   return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
-}
-
-export function validateWorkspace(workspacePath: string): Promise<WorkspaceValidationReport> {
-  return invoke<WorkspaceValidationReport>('validate_workspace', { workspacePath });
 }
 
 export function initStorage(workspacePath: string): Promise<string> {
@@ -377,9 +377,17 @@ export async function queryWorkspaceRadixRelative(params: {
 
 export async function openWorkspaceFolder(
   folderPath: string,
-  onDefaults?: (defaults: WorkspaceDefaultsDto) => void
+  onDefaults?: (defaults: WorkspaceDefaultsDto) => void,
+  onModelReport?: (report: CurrentModelReport) => void
 ): Promise<{ path: string; charts: ChartData[] }> {
   const workspace = await loadWorkspace(folderPath);
+
+  try {
+    const report = await getCurrentModelReport(folderPath);
+    onModelReport?.(report);
+  } catch (reportErr) {
+    console.warn('Failed to load current model report:', reportErr);
+  }
 
   try {
     const defaults = await getWorkspaceDefaults(folderPath);

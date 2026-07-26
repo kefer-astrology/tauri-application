@@ -9,6 +9,7 @@ import {
   normalizeAspectLineTierStyle,
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
+import type { CurrentModelReport } from '$lib/tauri/types';
 
 export interface MoonDetailsDto {
   elongation_deg: number;
@@ -39,6 +40,11 @@ export interface ChartData {
   latitude?: number;
   longitude?: number;
   timezone?: string;
+  observableObjects?: string[];
+  aspectOrbs?: Record<string, number>;
+  selectedAspects?: string[];
+  ayanamsa?: string | null;
+  timeSystem?: string | null;
   computed?: {
     positions?: Record<string, unknown>;
     motion?: Record<string, { speed: number; retrograde: boolean }>;
@@ -170,6 +176,26 @@ export function resetWorkspaceDefaults() {
   layout.workspaceDefaults = { ...DEFAULT_WORKSPACE_DEFAULTS };
 }
 
+/** Apply the backend's resolved model-layer defaults before the workspace-layer DTO overlay. */
+export function mergeModelReportDefaults(report: CurrentModelReport) {
+  const effective = report.effective_settings;
+  layout.workspaceDefaults = {
+    ...layout.workspaceDefaults,
+    defaultBodies:
+      effective.default_bodies.length > 0
+        ? effective.default_bodies
+        : layout.workspaceDefaults.defaultBodies,
+    defaultAspects:
+      effective.default_aspects.length > 0
+        ? effective.default_aspects
+        : layout.workspaceDefaults.defaultAspects,
+    defaultAspectOrbs:
+      Object.keys(effective.aspect_orbs).length > 0
+        ? { ...layout.workspaceDefaults.defaultAspectOrbs, ...effective.aspect_orbs }
+        : layout.workspaceDefaults.defaultAspectOrbs
+  };
+}
+
 export function addContext(name: string) {
   const n = name?.trim();
   if (!n) return;
@@ -270,7 +296,18 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
   const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);
   const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
   const model = asNonEmpty(chart.model);
-  const observableObjects = defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined;
+  const observableObjects =
+    chart.observableObjects && chart.observableObjects.length > 0
+      ? chart.observableObjects
+      : (defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined);
+  const selectedAspects =
+    chart.selectedAspects && chart.selectedAspects.length > 0
+      ? chart.selectedAspects
+      : [...defaults.defaultAspects];
+  const aspectOrbs =
+    chart.aspectOrbs && Object.keys(chart.aspectOrbs).length > 0
+      ? chart.aspectOrbs
+      : defaults.defaultAspectOrbs;
 
   return {
     id: chart.id,
@@ -293,8 +330,10 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
       override_ephemeris: overrideEphemeris,
       model,
       observable_objects: observableObjects,
-      selected_aspects: [...defaults.defaultAspects],
-      aspect_orbs: defaults.defaultAspectOrbs,
+      selected_aspects: selectedAspects,
+      aspect_orbs: aspectOrbs,
+      ...(chart.ayanamsa ? { ayanamsa: chart.ayanamsa } : {}),
+      ...(chart.timeSystem ? { time_system: chart.timeSystem } : {}),
     },
     tags: chart.tags ?? [],
   };

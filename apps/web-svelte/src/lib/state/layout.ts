@@ -12,6 +12,7 @@ export {
   addContext,
   setWorkspaceDefaults,
   resetWorkspaceDefaults,
+  mergeModelReportDefaults,
   loadChartsFromWorkspace,
   getSelectedChart,
   normalizeComputedPayload,

@@ -119,6 +119,18 @@
     return cusps;
   }
 
+  /** Which of the 12 houses (1-12) a longitude falls in, given ascending house cusps. */
+  function houseForLongitude(longitude: number, cusps: number[]): number {
+    const lon = ((longitude % 360) + 360) % 360;
+    for (let i = 0; i < 12; i++) {
+      const start = ((cusps[i] % 360) + 360) % 360;
+      const end = ((cusps[(i + 1) % 12] % 360) + 360) % 360;
+      const inRange = start <= end ? lon >= start && lon < end : lon >= start || lon < end;
+      if (inRange) return i + 1;
+    }
+    return 1;
+  }
+
   function parseComputedAspect(raw: unknown):
     | {
         from: string;
@@ -196,6 +208,23 @@
       'ic': 'ic',
     };
 
+    // House cusps: prefer the loaded (DB/in-memory) `house_N` entries, fall back to the
+    // selected chart's computed house cusps array.
+    const houseCusps: number[] = [];
+    for (const pos of loadedPositions) {
+      const match = /^house_(\d+)$/i.exec(pos.object_id);
+      if (match) {
+        const index = Number(match[1]) - 1;
+        if (index >= 0 && index < 12) houseCusps[index] = pos.longitude;
+      }
+    }
+    if (houseCusps.filter((cusp) => typeof cusp === 'number').length < 12) {
+      selectedChart?.computed?.houseCusps?.forEach((cusp, index) => {
+        if (typeof houseCusps[index] !== 'number') houseCusps[index] = cusp;
+      });
+    }
+    const hasFullHouseCusps = houseCusps.filter((cusp) => typeof cusp === 'number').length === 12;
+
     const addPosition = (rawName: string, rawLongitude: number) => {
       if (/^house_\d+$/i.test(rawName)) return;
       const longitude = ((rawLongitude % 360) + 360) % 360;
@@ -207,7 +236,7 @@
       result[planetName] = {
         degrees: longitude,
         sign: signIdFromLongitude(longitude),
-        house: 1 // TODO: calculate house from position and house cusps
+        house: hasFullHouseCusps ? houseForLongitude(longitude, houseCusps) : 1
       };
     };
 
@@ -672,15 +701,17 @@
       <!-- Aspects: Aspect grid SVG in a box -->
       <div class="flex-1 min-h-0 flex items-center justify-center p-4">
         <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm flex items-center justify-center" use:measureSquare>
-          {#if square > 0}
+          {#if square === 0}
+            <div class="text-sm opacity-60">{t('measuring_space', {}, 'Measuring available space…')}</div>
+          {:else if Object.keys(planetPositions()).length === 0}
+            <div class="text-sm opacity-60">{t('no_positions_yet', {}, 'No positions computed yet.')}</div>
+          {:else}
             <AspectMatrix
               size={square}
               planetPositions={planetPositions()}
               aspects={chartAspects}
               aspectColors={layout.workspaceDefaults.defaultAspectColors}
             />
-          {:else}
-            <div class="text-sm opacity-60">{t('measuring_space', {}, 'Measuring available space…')}</div>
           {/if}
         </div>
       </div>
