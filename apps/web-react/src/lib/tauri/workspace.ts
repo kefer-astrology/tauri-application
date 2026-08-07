@@ -87,6 +87,10 @@ export async function resolveLocation(query: string): Promise<ResolvedLocation> 
 	return invoke<ResolvedLocation>('resolve_location', { query });
 }
 
+export async function resolveTimezone(latitude: number, longitude: number): Promise<string> {
+	return invoke<string>('resolve_timezone', { latitude, longitude });
+}
+
 export async function searchLocations(query: string): Promise<ResolvedLocation[]> {
 	return invoke<ResolvedLocation[]>('search_locations', { query });
 }

@@ -13,6 +13,7 @@ import { Label } from './ui/label';
 import { LocationSelector } from './location-selector';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import {
 	Sheet,
 	SheetContent,
@@ -21,7 +22,6 @@ import {
 	SheetHeader,
 	SheetTitle
 } from './ui/sheet';
-import { Switch } from './ui/switch';
 import { TimeRollerPicker } from './time-roller-picker';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { cn } from './ui/utils';
@@ -33,12 +33,13 @@ import {
 	type AppChart,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
-import { resolveLocation, searchLocations } from '@/lib/tauri/workspace';
+import { resolveLocation, resolveTimezone, searchLocations } from '@/lib/tauri/workspace';
 
 type ChartKind = 'radix' | 'event' | 'horary';
 type LatDir = 'north' | 'south';
 type LonDir = 'east' | 'west';
 type LocationRegime = 'auto' | 'manual';
+type TimeRegime = 'auto' | 'manual';
 
 const TIMEZONES: string[] =
 	typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl
@@ -46,6 +47,21 @@ const TIMEZONES: string[] =
 				'timeZone'
 			)
 		: [];
+
+const TIMEZONE_REGIONS = Array.from(
+	new Set(TIMEZONES.map((timezone) => timezone.split('/')[0]).filter(Boolean))
+).sort((a, b) => a.localeCompare(b));
+
+const UTC_OFFSETS = Array.from({ length: 25 }, (_, index) => {
+	const hours = index - 12;
+	const sign = hours >= 0 ? '+' : '-';
+	return `UTC${sign}${String(Math.abs(hours)).padStart(2, '0')}:00`;
+});
+
+function timezoneRegion(timezone: string): string {
+	const region = timezone.split('/')[0] ?? '';
+	return TIMEZONE_REGIONS.includes(region) ? region : (TIMEZONE_REGIONS[0] ?? 'UTC');
+}
 
 function mergeDatePart(target: Date, pickedDate: Date): Date {
 	const next = new Date(target);
@@ -64,11 +80,67 @@ function chartTypeToKind(chartType: string): ChartKind {
 	return 'radix';
 }
 
-function parseDateTimeString(dateTime: string): Date {
+function parseUtcOffsetMinutes(value?: string): number | null {
+	if (!value) return null;
+	const match = /^UTC([+-])(\d{2}):(\d{2})$/.exec(value);
+	if (!match) return null;
+	const minutes = Number(match[2]) * 60 + Number(match[3]);
+	return match[1] === '+' ? minutes : -minutes;
+}
+
+function parseDateTimeString(dateTime: string, timezone?: string, utcOffset?: string): Date {
 	if (!dateTime) return new Date();
 	const normalized = dateTime.includes('T') ? dateTime : dateTime.replace(' ', 'T');
 	const d = new Date(normalized);
-	return isNaN(d.getTime()) ? new Date() : d;
+	if (isNaN(d.getTime())) return new Date();
+	if (!timezone || !/(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized)) return d;
+	const offsetMinutes = parseUtcOffsetMinutes(utcOffset);
+	if (offsetMinutes !== null) {
+		const wallTime = new Date(d.getTime() + offsetMinutes * 60_000);
+		return new Date(
+			wallTime.getUTCFullYear(),
+			wallTime.getUTCMonth(),
+			wallTime.getUTCDate(),
+			wallTime.getUTCHours(),
+			wallTime.getUTCMinutes(),
+			wallTime.getUTCSeconds()
+		);
+	}
+	try {
+		const parts = new Intl.DateTimeFormat('en-US', {
+			timeZone: timezone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hourCycle: 'h23'
+		}).formatToParts(d);
+		const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+		return new Date(
+			Number(values.year),
+			Number(values.month) - 1,
+			Number(values.day),
+			Number(values.hour),
+			Number(values.minute),
+			Number(values.second)
+		);
+	} catch {
+		return d;
+	}
+}
+
+function signedCoordinate(
+	value: string,
+	positiveDirection: LatDir | LonDir,
+	selectedDirection: LatDir | LonDir
+): number | null {
+	const normalized = value.trim();
+	if (!normalized) return null;
+	const parsed = Number(normalized);
+	if (!Number.isFinite(parsed)) return null;
+	return selectedDirection === positiveDirection ? Math.abs(parsed) : -Math.abs(parsed);
 }
 
 const RODEN_RATINGS: { id: string; labelKey: string }[] = [
@@ -148,7 +220,7 @@ function TagInput({
 		<div
 			className={cn(
 				'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-				'focus-within:ring-2 focus-within:border-transparent',
+				'focus-within:border-transparent focus-within:ring-2',
 				panelBg,
 				panelBorder
 			)}
@@ -394,14 +466,18 @@ function AdvancedTagSheet({
 function TimezoneSelect({
 	value,
 	onValueChange,
+	options = TIMEZONES,
 	placeholder,
+	emptyLabel,
 	triggerClassName,
 	contentClassName,
 	itemClassName
 }: {
 	value: string;
 	onValueChange: (v: string) => void;
-	placeholder?: string;
+	options?: string[];
+	placeholder: string;
+	emptyLabel: string;
 	triggerClassName?: string;
 	contentClassName?: string;
 	itemClassName?: string;
@@ -411,9 +487,9 @@ function TimezoneSelect({
 
 	const filtered = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		if (!q) return TIMEZONES.slice(0, 120);
-		return TIMEZONES.filter((tz) => tz.toLowerCase().includes(q)).slice(0, 120);
-	}, [search]);
+		if (!q) return options.slice(0, 120);
+		return options.filter((tz) => tz.toLowerCase().includes(q)).slice(0, 120);
+	}, [options, search]);
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -431,16 +507,19 @@ function TimezoneSelect({
 					<ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
 				</button>
 			</PopoverTrigger>
-			<PopoverContent className={cn('w-[var(--radix-popover-trigger-width)] p-0', contentClassName)} align="end">
+			<PopoverContent
+				className={cn('w-[var(--radix-popover-trigger-width)] p-0', contentClassName)}
+				align="end"
+			>
 				<Command className="bg-transparent text-[color:var(--theme-content-primary)]">
 					<CommandInput
 						value={search}
 						onValueChange={setSearch}
-						placeholder={placeholder ?? 'Search…'}
+						placeholder={placeholder}
 						className="text-[color:var(--theme-content-primary)] placeholder:text-[color:var(--theme-content-muted)]"
 					/>
 					<CommandList>
-						{filtered.length === 0 && <CommandEmpty>No timezone found.</CommandEmpty>}
+						{filtered.length === 0 && <CommandEmpty>{emptyLabel}</CommandEmpty>}
 						{filtered.map((tz) => (
 							<CommandItem
 								key={tz}
@@ -455,9 +534,7 @@ function TimezoneSelect({
 									itemClassName
 								)}
 							>
-								<Check
-									className={cn('mr-2 h-4 w-4', value === tz ? 'opacity-100' : 'opacity-0')}
-								/>
+								<Check className={cn('mr-2 h-4 w-4', value === tz ? 'opacity-100' : 'opacity-0')} />
 								{tz}
 							</CommandItem>
 						))}
@@ -495,16 +572,21 @@ export function NewHoroscope({
 	const ft = useAppFormFieldTheme(theme);
 
 	const isEditMode = initialValues != null;
+	const initialTimezone = initialValues?.timezone ?? workspaceDefaults.timezone;
 
 	const [locationName, setLocationName] = useState(() => initialValues?.name ?? '');
-	const [location, setLocation] = useState(() => initialValues?.location ?? workspaceDefaults.locationName ?? '');
+	const [location, setLocation] = useState(
+		() => initialValues?.location ?? workspaceDefaults.locationName ?? ''
+	);
 	const [tags, setTags] = useState<string[]>(() => initialValues?.tags ?? []);
 	const [tagColors, setTagColors] = useState<Record<string, string>>(
 		() => initialValues?.tagColors ?? {}
 	);
 	const [tagSheetOpen, setTagSheetOpen] = useState(false);
 	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() =>
-		initialValues?.dateTime ? parseDateTimeString(initialValues.dateTime) : new Date()
+		initialValues?.dateTime
+			? parseDateTimeString(initialValues.dateTime, initialTimezone, initialValues.utcOffset)
+			: new Date()
 	);
 	const [chartKind, setChartKind] = useState<ChartKind>(() =>
 		initialValues ? chartTypeToKind(initialValues.chartType) : 'radix'
@@ -512,13 +594,20 @@ export function NewHoroscope({
 	const [locationRegime, setLocationRegime] = useState<LocationRegime>(() =>
 		initialValues?.latitude != null ? 'manual' : 'auto'
 	);
+	const [timeRegime, setTimeRegime] = useState<TimeRegime>(() =>
+		initialValues?.timezone ? 'manual' : 'auto'
+	);
 	const [latitude, setLatitude] = useState(() =>
 		initialValues?.latitude != null ? formatCoordinateMagnitude(initialValues.latitude) : ''
 	);
 	const [longitude, setLongitude] = useState(() =>
 		initialValues?.longitude != null ? formatCoordinateMagnitude(initialValues.longitude) : ''
 	);
-	const [timezone, setTimezone] = useState(() => initialValues?.timezone ?? workspaceDefaults.timezone ?? '');
+	const [timezone, setTimezone] = useState(() => initialTimezone ?? '');
+	const [timezoneRegionValue, setTimezoneRegionValue] = useState(() =>
+		timezoneRegion(initialTimezone)
+	);
+	const [utcOffset, setUtcOffset] = useState(() => initialValues?.utcOffset ?? 'auto');
 	const [latitudeDir, setLatitudeDir] = useState<LatDir>(() =>
 		(initialValues?.latitude ?? 0) >= 0 ? 'north' : 'south'
 	);
@@ -527,8 +616,13 @@ export function NewHoroscope({
 	);
 	const [rodenRating, setRodenRating] = useState(() => initialValues?.rodenRating ?? '');
 	const [isResolvingLocation, setIsResolvingLocation] = useState(false);
+	const [resolvedLocationValue, setResolvedLocationValue] = useState('');
 
 	const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+	const timezonesInRegion = useMemo(
+		() => TIMEZONES.filter((candidate) => candidate.startsWith(`${timezoneRegionValue}/`)),
+		[timezoneRegionValue]
+	);
 
 	const dateFnsLocale = useMemo(() => {
 		const base = i18n.language.split('-')[0]?.toLowerCase() ?? 'en';
@@ -612,13 +706,19 @@ export function NewHoroscope({
 	const applyResolvedLocation = (
 		displayName: string,
 		resolvedLatitude: number,
-		resolvedLongitude: number
+		resolvedLongitude: number,
+		resolvedTimezone?: string
 	) => {
 		setLocation(displayName);
+		setResolvedLocationValue(displayName);
 		setLatitude(formatCoordinateMagnitude(resolvedLatitude));
 		setLongitude(formatCoordinateMagnitude(resolvedLongitude));
 		setLatitudeDir(resolvedLatitude >= 0 ? 'north' : 'south');
 		setLongitudeDir(resolvedLongitude >= 0 ? 'east' : 'west');
+		if (timeRegime === 'auto' && resolvedTimezone) setTimezone(resolvedTimezone);
+		if (timeRegime === 'auto' && resolvedTimezone) {
+			setTimezoneRegionValue(timezoneRegion(resolvedTimezone));
+		}
 	};
 
 	const resolveCurrentLocation = async () => {
@@ -630,7 +730,12 @@ export function NewHoroscope({
 		setIsResolvingLocation(true);
 		try {
 			const resolved = await resolveLocation(currentLocationQuery);
-			applyResolvedLocation(resolved.display_name, resolved.latitude, resolved.longitude);
+			applyResolvedLocation(
+				resolved.display_name,
+				resolved.latitude,
+				resolved.longitude,
+				resolved.timezone
+			);
 			toast.success(t('toast_location_resolved'), {
 				description: `${resolved.latitude.toFixed(4)}, ${resolved.longitude.toFixed(4)}`
 			});
@@ -650,6 +755,10 @@ export function NewHoroscope({
 			toast.error(t('toast_chart_name_required'));
 			return;
 		}
+		if (!currentLocationQuery) {
+			toast.error(t('toast_location_required'));
+			return;
+		}
 
 		let resolvedLocation = location;
 		let resolvedLatitude = latitude;
@@ -657,36 +766,73 @@ export function NewHoroscope({
 		let resolvedLatitudeDir = latitudeDir;
 		let resolvedLongitudeDir = longitudeDir;
 
-		if ((!resolvedLatitude.trim() || !resolvedLongitude.trim()) && currentLocationQuery) {
+		if (
+			locationRegime === 'auto' &&
+			currentLocationQuery &&
+			resolvedLocationValue !== currentLocationQuery
+		) {
 			const resolved = await resolveCurrentLocation();
-			if (resolved) {
-				resolvedLocation = resolved.display_name;
-				resolvedLatitude = formatCoordinateMagnitude(resolved.latitude);
-				resolvedLongitude = formatCoordinateMagnitude(resolved.longitude);
-				resolvedLatitudeDir = resolved.latitude >= 0 ? 'north' : 'south';
-				resolvedLongitudeDir = resolved.longitude >= 0 ? 'east' : 'west';
+			if (!resolved) return;
+			resolvedLocation = resolved.display_name;
+			resolvedLatitude = formatCoordinateMagnitude(resolved.latitude);
+			resolvedLongitude = formatCoordinateMagnitude(resolved.longitude);
+			resolvedLatitudeDir = resolved.latitude >= 0 ? 'north' : 'south';
+			resolvedLongitudeDir = resolved.longitude >= 0 ? 'east' : 'west';
+		}
+
+		const latitudeValue = signedCoordinate(resolvedLatitude, 'north', resolvedLatitudeDir);
+		const longitudeValue = signedCoordinate(resolvedLongitude, 'east', resolvedLongitudeDir);
+		if (
+			latitudeValue === null ||
+			longitudeValue === null ||
+			Math.abs(latitudeValue) > 90 ||
+			Math.abs(longitudeValue) > 180
+		) {
+			toast.error(t('toast_coordinates_invalid'));
+			return;
+		}
+
+		let resolvedTimezone = timezone;
+		if (timeRegime === 'auto') {
+			try {
+				resolvedTimezone = await resolveTimezone(latitudeValue, longitudeValue);
+				setTimezone(resolvedTimezone);
+				setTimezoneRegionValue(timezoneRegion(resolvedTimezone));
+			} catch (error) {
+				toast.error(t('toast_location_resolve_failed'), {
+					description: error instanceof Error ? error.message : String(error)
+				});
+				return;
 			}
 		}
 
-		const chart = appChartFromNewHoroscopeInput({
-			locationName,
-			chartKind,
-			dateTime: selectedDateTime,
-			location: resolvedLocation,
-			tags: tags.join(', '),
-			tagColors: Object.fromEntries(
-				tags.map((tag, index) => [tag, tagColors[tag] ?? tagDefaultColor(index)])
-			),
-			latitude: resolvedLatitude,
-			longitude: resolvedLongitude,
-			latitudeDir: resolvedLatitudeDir,
-			longitudeDir: resolvedLongitudeDir,
-			timezone,
-			advancedMode: locationRegime === 'manual',
-			rodenRating: rodenRating || undefined,
-			workspaceDefaults,
-			existingIds: existingChartIds
-		});
+		let chart: AppChart;
+		try {
+			chart = appChartFromNewHoroscopeInput({
+				locationName,
+				chartKind,
+				dateTime: selectedDateTime,
+				location: resolvedLocation,
+				tags: tags.join(', '),
+				tagColors: Object.fromEntries(
+					tags.map((tag, index) => [tag, tagColors[tag] ?? tagDefaultColor(index)])
+				),
+				latitude: resolvedLatitude,
+				longitude: resolvedLongitude,
+				latitudeDir: resolvedLatitudeDir,
+				longitudeDir: resolvedLongitudeDir,
+				timezone: resolvedTimezone,
+				utcOffset: timeRegime === 'manual' && utcOffset !== 'auto' ? utcOffset : undefined,
+				rodenRating: rodenRating || undefined,
+				workspaceDefaults,
+				existingIds: existingChartIds
+			});
+		} catch (error) {
+			toast.error(t('toast_timezone_invalid'), {
+				description: error instanceof Error ? error.message : String(error)
+			});
+			return;
+		}
 
 		if (isEditMode && initialValues) {
 			await onSaved?.({ ...chart, id: initialValues.id });
@@ -699,7 +845,7 @@ export function NewHoroscope({
 		<AppMainContentRoot className={cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')}>
 			<AppMainContentContainer layout="center-column">
 				{/* <h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>
-						{isEditMode ? t('edit_radix_title', { defaultValue: 'Edit Chart' }) : t('new_radix_title')}
+						{isEditMode ? t('edit_radix_title') : t('new_radix_title')}
 					</h1> */}
 
 				<div className="space-y-4">
@@ -801,47 +947,131 @@ export function NewHoroscope({
 						</div>
 					</div>
 
+					{/* Time regime */}
+					<div>
+						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
+						<Tabs
+							value={timeRegime}
+							onValueChange={(value) => setTimeRegime(value as TimeRegime)}
+							className="gap-3"
+						>
+							<TabsList className="grid h-10 w-full grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
+								<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
+								<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
+							</TabsList>
+							<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
+								<div>
+									<Label className={cn('mb-1.5 block', ft.label)}>{t('new_timezone_region')}</Label>
+									<Select
+										value={timezoneRegionValue}
+										onValueChange={(region) => {
+											setTimezoneRegionValue(region);
+											if (!timezone.startsWith(`${region}/`)) {
+												setTimezone(
+													TIMEZONES.find((candidate) => candidate.startsWith(`${region}/`)) ??
+														timezone
+												);
+											}
+										}}
+									>
+										<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent className={ft.selectContent}>
+											{TIMEZONE_REGIONS.map((region) => (
+												<SelectItem key={region} value={region} className={ft.selectItem}>
+													{region}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div>
+									<Label className={cn('mb-1.5 block', ft.label)}>{t('new_timezone')}</Label>
+									<TimezoneSelect
+										value={timezone}
+										onValueChange={setTimezone}
+										options={timezonesInRegion}
+										placeholder={t('new_timezone_placeholder')}
+										emptyLabel={t('new_timezone_no_results')}
+										triggerClassName={cn(ft.selectTrigger, 'shadow-inner px-4 py-2.5')}
+										contentClassName={ft.selectContent}
+										itemClassName={ft.selectItem}
+									/>
+								</div>
+								<div>
+									<Label className={cn('mb-1.5 block', ft.label)}>{t('new_utc_offset')}</Label>
+									<Select value={utcOffset} onValueChange={setUtcOffset}>
+										<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent className={ft.selectContent}>
+											<SelectItem value="auto" className={ft.selectItem}>
+												{t('new_time_regime_auto')}
+											</SelectItem>
+											{UTC_OFFSETS.map((offset) => (
+												<SelectItem key={offset} value={offset} className={ft.selectItem}>
+													{offset}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							</TabsContent>
+						</Tabs>
+					</div>
+
 					{/* Location regime */}
 					<div>
-						<div className="mb-3 flex items-center justify-between">
-							<Label className={ft.label}>{t('new_location')}</Label>
-							<div className="flex items-center gap-2">
-								<span className={cn('text-sm', ft.muted)}>
-									{locationRegime === 'auto' ? t('new_time_regime_auto') : t('new_time_regime_manual')}
-								</span>
-								<Switch
-									id="location-regime"
-									checked={locationRegime === 'manual'}
-									onCheckedChange={(checked) =>
-										setLocationRegime(checked ? 'manual' : 'auto')
+						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location')}</Label>
+						<Tabs
+							value={locationRegime}
+							onValueChange={(value) => setLocationRegime(value as LocationRegime)}
+							className="gap-3"
+						>
+							<TabsList className="grid h-10 w-full grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
+								<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
+								<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
+							</TabsList>
+							<TabsContent value="auto">
+								<LocationSelector
+									id="location"
+									value={location}
+									onValueChange={(value) => {
+										setLocation(value);
+										setResolvedLocationValue('');
+									}}
+									options={locationOptions}
+									placeholder={t('new_placeholder_any_location')}
+									searchPlaceholder={t('new_location_search')}
+									emptyLabel={t('new_placeholder_any_location')}
+									loadingLabel={t('new_resolving_location')}
+									className={ft.selectTrigger}
+									iconClassName={ft.iconColor}
+									searchLocations={searchLocations}
+									onResolvedLocationSelect={(result) =>
+										applyResolvedLocation(
+											result.display_name,
+											result.latitude,
+											result.longitude,
+											result.timezone
+										)
 									}
-									className={cn(
-										'data-[state=checked]:bg-[color:var(--theme-accent)]',
-										ft.switchUnchecked
-									)}
 								/>
-							</div>
-						</div>
-
-						{locationRegime === 'auto' ? (
-							<LocationSelector
-								id="location"
-								value={location}
-								onValueChange={setLocation}
-								options={locationOptions}
-								placeholder={t('new_placeholder_any_location')}
-								searchPlaceholder={t('new_location_search')}
-								emptyLabel={t('new_placeholder_any_location')}
-								loadingLabel={t('new_resolving_location')}
-								className={ft.selectTrigger}
-								iconClassName={ft.iconColor}
-								searchLocations={searchLocations}
-								onResolvedLocationSelect={(result) =>
-									applyResolvedLocation(result.display_name, result.latitude, result.longitude)
-								}
-							/>
-						) : (
-							<div className={cn('space-y-3', ft.advancedPanel)}>
+							</TabsContent>
+							<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
+								<div>
+									<Label htmlFor="manual-location" className={cn('mb-1.5 block', ft.label)}>
+										{t('new_location')}
+									</Label>
+									<Input
+										id="manual-location"
+										value={location}
+										onChange={(event) => setLocation(event.target.value)}
+										placeholder={t('new_placeholder_any_location')}
+										className={cn(ft.input, 'shadow-inner')}
+									/>
+								</div>
 								{/* Latitude */}
 								<div>
 									<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
@@ -854,10 +1084,10 @@ export function NewHoroscope({
 											value={latitude}
 											onChange={(e) => setLatitude(e.target.value)}
 											placeholder="50.0755"
-											className={cn(ft.input, 'shadow-inner flex-1')}
+											className={cn(ft.input, 'flex-1 shadow-inner')}
 										/>
 										<Select value={latitudeDir} onValueChange={(v) => setLatitudeDir(v as LatDir)}>
-											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner w-28 shrink-0')}>
+											<SelectTrigger className={cn(ft.selectTrigger, 'w-28 shrink-0 shadow-inner')}>
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent className={ft.selectContent}>
@@ -883,13 +1113,13 @@ export function NewHoroscope({
 											value={longitude}
 											onChange={(e) => setLongitude(e.target.value)}
 											placeholder="14.4378"
-											className={cn(ft.input, 'shadow-inner flex-1')}
+											className={cn(ft.input, 'flex-1 shadow-inner')}
 										/>
 										<Select
 											value={longitudeDir}
 											onValueChange={(v) => setLongitudeDir(v as LonDir)}
 										>
-											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner w-28 shrink-0')}>
+											<SelectTrigger className={cn(ft.selectTrigger, 'w-28 shrink-0 shadow-inner')}>
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent className={ft.selectContent}>
@@ -902,23 +1132,8 @@ export function NewHoroscope({
 										</Select>
 									</div>
 								</div>
-
-								{/* Timezone */}
-								<div>
-									<Label htmlFor="timezone" className={cn('mb-1.5 block', ft.label)}>
-										{t('new_utc_shift_definition')}
-									</Label>
-									<TimezoneSelect
-										value={timezone}
-										onValueChange={setTimezone}
-										placeholder={t('new_timezone_placeholder')}
-										triggerClassName={cn(ft.selectTrigger, 'shadow-inner px-4 py-2.5')}
-										contentClassName={ft.selectContent}
-										itemClassName={ft.selectItem}
-									/>
-								</div>
-							</div>
-						)}
+							</TabsContent>
+						</Tabs>
 					</div>
 
 					{/* Tags */}
@@ -942,16 +1157,16 @@ export function NewHoroscope({
 					{/* Roden Rating */}
 					<div>
 						<Label htmlFor="roden-rating" className={cn('mb-1.5 block', ft.label)}>
-							{t('new_roden_rating', { defaultValue: 'Roden Rating' })}
+							{t('new_roden_rating')}
 						</Label>
 						<Select value={rodenRating} onValueChange={setRodenRating}>
 							<SelectTrigger id="roden-rating" className={cn(ft.selectTrigger, 'shadow-inner')}>
-								<SelectValue placeholder={t('new_roden_rating_placeholder', { defaultValue: 'Select rating…' })} />
+								<SelectValue placeholder={t('new_roden_rating_placeholder')} />
 							</SelectTrigger>
 							<SelectContent className={ft.selectContent}>
 								{RODEN_RATINGS.map((opt) => (
 									<SelectItem key={opt.id} value={opt.id} className={ft.selectItem}>
-										{opt.id} – {t(opt.labelKey, { defaultValue: opt.id })}
+										{opt.id} – {t(opt.labelKey)}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -975,7 +1190,7 @@ export function NewHoroscope({
 							className={cn(ft.footerPrimary, !isEditMode && 'flex-1')}
 							onClick={() => void handleCreate()}
 						>
-							{isEditMode ? t('edit_save_submit', { defaultValue: 'Save Chart' }) : t('new_create_submit')}
+							{isEditMode ? t('edit_save_submit') : t('new_create_submit')}
 						</Button>
 					</div>
 				</div>

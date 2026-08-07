@@ -203,6 +203,7 @@ export interface ChartDetails {
 			latitude: number;
 			longitude: number;
 			timezone: string;
+			utc_offset?: string | null;
 		};
 	};
 	config: {
@@ -288,4 +289,5 @@ export interface ResolvedLocation {
 	display_name: string;
 	latitude: number;
 	longitude: number;
+	timezone: string;
 }
