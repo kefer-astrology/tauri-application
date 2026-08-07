@@ -1,0 +1,104 @@
+docs/content/llm/frontend-workflow-baseline.md
+  s_8ffa42fec2d59b::t_4c31a5e636cc86 96
+docs/content/docs/ci-todo.md
+  s_8ffa42fec2d59b::t_e20bb14cc6cfa8 7
+docs/content/docs/spice-backend.md
+  s_8ffa42fec2d59b::t_cafce8e84ffe4a 7
+docs/content/docs/frontend-svelte.md
+  s_8ffa42fec2d59b::t_44518ce425ffa8 130-132
+  s_8ffa42fec2d59b::t_9eb3d4eb4dbdcb 14-15
+docs/content/docs/tauri-command-contracts.md
+  s_8ffa42fec2d59b::t_dd3d5b35ace3f5 120
+  s_8ffa42fec2d59b::t_f6dc4a38e74da4 136
+  s_8ffa42fec2d59b::t_e44fcfb5f6af2f 7
+  s_8ffa42fec2d59b::t_a07b60d3bf90f7 154-156
+docs/content/docs/frontend-react.md
+  s_8ffa42fec2d59b::t_b65250dd2b2f1b 12-13
+docs/content/docs/architecture.md
+  s_8ffa42fec2d59b::t_3702d33999479e 43
+  s_8ffa42fec2d59b::t_3a00393ed0e9aa 214
+docs/content/docs/ui-conventions.md
+  s_8ffa42fec2d59b::t_dd5617141acc6c 40
+docs/content/llm/frontend-gap-implementation-plan.md
+  s_8ffa42fec2d59b::t_5e7b057e86e36f 123
+  s_8ffa42fec2d59b::t_7b2f8273cff9c2 48,50,52-53
+docs/content/docs/discussion-summary.md
+  s_8ffa42fec2d59b::t_d490c516efbed1 7
+docs/public/docs/architecture/index.html
+  s_8ffa42fec2d59b::t_5df26e3ae7aa84 3,63-64,75-76,78-79,97-99,106-115,149-150,172,176-181,185,216,242
+docs/public/docs/backend-structure/index.html
+  s_8ffa42fec2d59b::t_58a33cedeca0c3 1-420
+docs/public/docs/ci-todo/index.html
+  s_8ffa42fec2d59b::t_6a8d0967b8db05 3,30
+docs/public/docs/discussion-summary/index.html
+  s_8ffa42fec2d59b::t_244b1c8c527835 3,30
+docs/public/docs/ephemeris-manager/index.html
+  s_8ffa42fec2d59b::t_bb86e360efca21 3,30,62-137,153-176,183-221,252-290,304-327,336-355,432-500
+docs/public/docs/frontend-react/index.html
+  s_8ffa42fec2d59b::t_b792f852771262 3,35-36
+docs/public/docs/frontend-svelte/index.html
+  s_8ffa42fec2d59b::t_950e6bcddde6c8 3,34-35,37-38,60,74-77,79,86,94-95,110,112,139-144,154-156
+docs/public/docs/house-systems/index.html
+  s_8ffa42fec2d59b::t_8551b800c84f73 1-193
+docs/public/docs/index.html
+  s_8ffa42fec2d59b::t_70f9089149f8a4 3,23-30,41,47,73-100,132-136,157-161
+docs/public/docs/lunar-phase/index.html
+  s_8ffa42fec2d59b::t_de49606d3d94e3 3,30,35-66
+docs/public/docs/physical-properties/index.html
+  s_8ffa42fec2d59b::t_46b7445ab7c452 3,30
+docs/public/docs/python-package/index.html
+  s_8ffa42fec2d59b::t_37173907381cbd 3,30
+docs/public/docs/spice-backend/index.html
+  s_8ffa42fec2d59b::t_25ab5e8137a815 3,30
+docs/public/docs/tauri-command-contracts/index.html
+  s_8ffa42fec2d59b::t_13838882a32ceb 3,30,130-141,147-157,174-176,194,199-208,219,223-226,228-229,242-243,251-253
+docs/public/docs/time-navigation/index.html
+  s_8ffa42fec2d59b::t_5dce6979f6117a 3,67,139
+docs/public/docs/ui-conventions/index.html
+  s_8ffa42fec2d59b::t_de27f861f5111b 3,30,60,75-98,184-211
+docs/public/llm/chart-datetime-contract/index.html
+  s_8ffa42fec2d59b::t_2b5c032dcb9e4c 3,30
+docs/public/llm/continuation-guide/index.html
+  s_8ffa42fec2d59b::t_27f8bf0dd35fc3 3,35,48
+docs/public/llm/development-driver/index.html
+  s_8ffa42fec2d59b::t_5e0018c598951a 3,30-33,39,41-50,79-90,103
+docs/public/llm/frontend-gap-implementation-plan/index.html
+  s_8ffa42fec2d59b::t_9a6e79c409f121 3,30,76-77,79-80,119,135,147,159,164,166,184
+docs/public/llm/frontend-workflow-baseline/index.html
+  s_8ffa42fec2d59b::t_d4c8f985ed5286 3,30,37,39-46,54,68-78,83,92-93,124-125,129,134-135
+docs/public/llm/import-chart-contract/index.html
+  s_8ffa42fec2d59b::t_c19b2e60419600 3,30
+docs/public/llm/index.html
+  s_8ffa42fec2d59b::t_2680f26d4916fe 3,23-30,46,109-113
+docs/public/llm/project-context/index.html
+  s_8ffa42fec2d59b::t_c6f8df07ddd7b4 3,69,72,122
+docs/public/llm/radix-render-contract/index.html
+  s_8ffa42fec2d59b::t_e0e2c57fd7c6f4 3,30
+docs/public/llm/rust-workspace-contract/index.html
+  s_8ffa42fec2d59b::t_5cfa6a80712358 3,30
+docs/public/llm/specs-workflow/index.html
+  s_8ffa42fec2d59b::t_f5adab33aff411 3,30,35-36,44,50
+docs/public/llm/transit-series-contract/index.html
+  s_8ffa42fec2d59b::t_274ae2565b866c 1-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a3015ceb8eee9b6c40a50b797ee889a152fc3a64",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8ffa42fec2d59b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cef0e486-ffc9-4a2f-9563-2b353fd9eadd",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
