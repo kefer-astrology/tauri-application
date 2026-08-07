@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tauri command contracts | Kefer docs</title>
@@ -27,9 +27,7 @@
       <p class="lede">Normative command-level contract for the current desktop app.</p>
     </header>
     <div class="prose">
-      <h1 id="tauri-command-contracts">Tauri command contracts</h1>
-<p>This page is <strong>normative</strong> for the current command surface exposed by the Tauri desktop app.</p>
-<p>It focuses on what the frontend can rely on today, including current no-op behavior.</p>
+      <p>This page focuses on what the frontend can rely on today, including current no-op behavior.</p>
 <h2 id="contract-rules">Contract rules</h2>
 <ul>
 <li>All frontend actions must go through Tauri <code>invoke</code>.</li>
@@ -129,10 +127,33 @@
 <li>Loads all registered charts and returns chart summaries.</li>
 <li>Does not compute chart positions.</li>
 </ul>
+<h3 id="validate_workspaceworkspace_path---resultworkspacevalidationreport-string"><code>validate_workspace(workspace_path) -&gt; Result&lt;WorkspaceValidationReport, String&gt;</code></h3>
+<ul>
+<li>Strictly attempts every subject, chart, preset, layout, and annotation
+reference under the workspace root.</li>
+<li>Returns <code>valid</code>, typed entity counts, workspace identity, and all structured
+diagnostics.</li>
+<li>Missing or malformed referenced items use
+<code>referenced_item_load_failed</code>; duplicate identifiers and broken catalog
+references have specific stable codes.</li>
+<li>An invalid referenced item does not prevent other items from being inspected.</li>
+<li>Neither frontend currently calls this command; it remains a backend-only capability until a UI surface needs it.</li>
+</ul>
 <h3 id="get_workspace_defaultsworkspace_path---resultvalue-string"><code>get_workspace_defaults(workspace_path) -&gt; Result&lt;Value, String&gt;</code></h3>
 <ul>
 <li>Returns normalized default workspace values from <code>workspace.yaml</code>.</li>
 <li>Includes house system, engine, location, bodies, aspects, and time system fields when present.</li>
+</ul>
+<h3 id="get_current_model_reportworkspace_path-chart_id---resultcurrentmodelreport-string"><code>get_current_model_report(workspace_path, chart_id?) -&gt; Result&lt;CurrentModelReport, String&gt;</code></h3>
+<ul>
+<li>Returns one canonical model envelope for the workspace, optionally resolved through a specific chart.</li>
+<li>Includes the requested model name, resolved model name, available model names, model catalog, effective settings, model overrides, source, and warnings.</li>
+<li>Includes structured <code>diagnostics</code> for catalog, selection, override, and
+chart-level invariants.</li>
+<li><code>effective_settings.sources</code> identifies whether each effective setting came from the application fallback, model, workspace, preset, chart, or operation layer. Aspect-orb sources are reported per aspect id.</li>
+<li>If <code>workspace.yaml</code> has no usable <code>models</code> entry, returns a built-in standard model catalog so callers still receive the same structure.</li>
+<li>When <code>chart_id</code> is supplied, chart-level model/settings fields override workspace defaults in <code>effective_settings</code>.</li>
+<li>Both frontends call this without <code>chart_id</code> when a workspace is opened, and seed workspace defaults (default bodies, default aspects, aspect orbs) from <code>effective_settings</code> before applying the workspace-level DTO from <code>get_workspace_defaults</code>, so the model layer resolves before the workspace layer.</li>
 </ul>
 <h3 id="resolve_locationquery---resultvalue-string"><code>resolve_location(query) -&gt; Result&lt;Value, String&gt;</code></h3>
 <ul>
@@ -150,7 +171,9 @@
 </ul>
 <h3 id="get_chart_detailsworkspace_path-chart_id---resultvalue-string"><code>get_chart_details(workspace_path, chart_id) -&gt; Result&lt;Value, String&gt;</code></h3>
 <ul>
-<li>Returns the full chart payload needed by the React editor surface.</li>
+<li>Returns the full chart payload needed by the React and Svelte editor surfaces.</li>
+<li><code>config</code> includes <code>mode</code>, <code>house_system</code>, <code>zodiac_type</code>, <code>engine</code>, <code>model</code>, <code>override_ephemeris</code>, <code>observable_objects</code>, <code>aspect_orbs</code>, <code>selected_aspects</code>, <code>ayanamsa</code>, and <code>time_system</code> — the complete set of chart-level settings-layer fields, so callers can resolve chart-level overrides without falling back to workspace defaults.</li>
+<li>Also returns top-level <code>tags</code>, <code>tag_colors</code>, and <code>roden_rating</code>.</li>
 <li>Returns an error when the chart id is not found.</li>
 </ul>
 <h2 id="compute-commands">Compute commands</h2>
@@ -168,11 +191,21 @@
 <li><code>warnings</code></li>
 <li><code>ephemeris_source</code> when known</li>
 </ul>
-<h3 id="compute_chart_from_datachart_json---resultmapstring-value-string"><code>compute_chart_from_data(chart_json) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
+<h3 id="compute_chart_from_datachart_json-settings_overrides---resultmapstring-value-string"><code>compute_chart_from_data(chart_json, settings_overrides?) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
 <ul>
 <li>Computes positions and aspects from an in-memory chart payload.</li>
 <li><code>chart_json.subject.event_time</code> must be parseable as <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ssZ</code>, or RFC3339.</li>
 <li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>moon_details</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Rust standalone computation resolves built-in model defaults and chart
+overrides through the same settings service used by workspace charts.</li>
+<li>Resolved house system, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
+time system are materialized only on the in-memory computation copy.</li>
+<li>Legacy <code>included_points</code> is accepted as a chart-level body selection and
+produces a deprecation warning; new payloads should use
+<code>observable_objects</code>.</li>
+<li><code>settings_overrides</code> is an optional operation layer with <code>houseSystem</code>,
+<code>bodies</code>, <code>aspects</code>, <code>aspectOrbs</code>, <code>engine</code>, <code>zodiacType</code>, <code>ayanamsa</code>, and
+<code>timeSystem</code>.</li>
 <li>Uses Python or Rust depending on backend selection and availability.</li>
 </ul>
 <p>Acceptance criteria:</p>
@@ -183,11 +216,17 @@
 <li>When <code>positions.sun</code> and <code>positions.moon</code> exist, <code>moon_details</code> should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See <a href="../lunar-phase/">lunar-phase</a>.</li>
 <li>When fallback occurs, the response should expose that fact instead of failing silently.</li>
 </ul>
-<h3 id="compute_chartworkspace_path-chart_id---resultmapstring-value-string"><code>compute_chart(workspace_path, chart_id) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
+<h3 id="compute_chartworkspace_path-chart_id-preset_id-settings_overrides---resultmapstring-value-string"><code>compute_chart(workspace_path, chart_id, preset_id?, settings_overrides?) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
 <ul>
 <li>Loads a chart from workspace storage and computes positions and aspects.</li>
 <li>Returns <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>moon_details</code> (when Sun and Moon are present), <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Rust aspect detection uses the resolved workspace/chart model definitions and effective orb overrides.</li>
+<li><code>preset_id</code> may identify a referenced workspace preset by its name or manifest
+path. The chart layer overrides the preset layer.</li>
+<li><code>settings_overrides</code> is the highest-precedence ephemeral operation layer.</li>
 <li>Uses Python or Rust depending on backend selection and availability.</li>
+<li>Preset and operation layers are forwarded to either backend. <code>Auto</code> follows
+normal backend selection, and fallback preserves the same layers.</li>
 </ul>
 <h3 id="compute_transit_series---resultvalue-string"><code>compute_transit_series(...) -&gt; Result&lt;Value, String&gt;</code></h3>
 <p>Inputs:</p>
@@ -200,6 +239,8 @@
 <li><code>transiting_objects</code></li>
 <li><code>transited_objects</code></li>
 <li><code>aspect_types</code></li>
+<li>optional <code>preset_id</code></li>
+<li>optional <code>settings_overrides</code></li>
 </ul>
 <p>Behavior:</p>
 <ul>
@@ -207,6 +248,9 @@
 <li><code>end_datetime</code> must be greater than or equal to <code>start_datetime</code>.</li>
 <li>Rust mode enforces a hard cap of <code>50_000</code> generated steps.</li>
 <li>Returns a response with <code>source_chart_id</code>, <code>time_range</code>, <code>time_step</code>, <code>results</code>, and backend provenance fields.</li>
+<li>Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.</li>
+<li>Preset and operation settings use the same precedence and temporary Rust-only
+routing described for <code>compute_chart</code>.</li>
 </ul>
 <p>Acceptance criteria:</p>
 <ul>

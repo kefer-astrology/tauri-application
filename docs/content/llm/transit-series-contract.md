@@ -3,8 +3,6 @@ title: "Transit series contract"
 weight: 44
 ---
 
-# Transit series contract
-
 This page defines the frontend-visible contract for computing transit series.
 
 Use this contract before adding or changing transit-series UI in either frontend.

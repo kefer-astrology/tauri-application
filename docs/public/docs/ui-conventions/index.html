@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>UI conventions | Kefer docs</title>
@@ -27,8 +27,7 @@
       <p class="lede">Theme, layout, component, and i18n rules for the frontend shells.</p>
     </header>
     <div class="prose">
-      <h1 id="ui-conventions">UI conventions</h1>
-<p>Crisp reference for <strong>themes</strong>, <strong>secondary navigation</strong>, <strong>shared component strategy</strong>, and <strong>i18n</strong> so new work stays aligned with the app themes and a single source of styling truth.</p>
+      <p>Crisp reference for <strong>themes</strong>, <strong>secondary navigation</strong>, <strong>shared component strategy</strong>, and <strong>i18n</strong> so new work stays aligned with the app themes and a single source of styling truth.</p>
 <h2 id="ui-view-modes">UI View Modes</h2>
 <ul>
 <li><strong>Radix View</strong>: circular chart, houses, aspects (derived).</li>
@@ -58,7 +57,7 @@
 <li>React and Svelte feature components follow shared shadcn-style primitives for common controls.</li>
 <li>React <code>TransitsBodiesConfig</code> is data-driven and uses shared <code>Checkbox</code> + <code>Label</code>.</li>
 <li>React <code>Aspectarium</code> consumes shared <code>Table</code> primitives and theme tokens.</li>
-<li>Svelte matrix rendering is routed through <code>components/chart-matrix/AspectMatrix.svelte</code>, with <code>AspectGrid.svelte</code> kept as a compatibility wrapper.</li>
+<li>Svelte matrix rendering is routed through <code>components/chart-matrix/AspectMatrix.svelte</code>.</li>
 <li>Svelte mode content is split into feature components including <code>NewRadixView</code>, <code>InformationView</code>, <code>RadixDetailsPanel</code>, <code>RadixPositionPanel</code>, and <code>RadixTransitsView</code>.</li>
 <li>Ongoing work is driven from the <a href="../../llm/development-driver/">Development driver</a>. Future Dynamic/Revolution/Favorite behavior is spec-gated because the React reference is also placeholder/workbench-level there.</li>
 </ul>
@@ -73,30 +72,30 @@
 <h2 id="four-app-themes">Four app themes</h2>
 <p>The product uses exactly four named themes (no ad‑hoc palettes in feature code):</p>
 <table>
-  <thead>
-      <tr>
-          <th>Theme</th>
-          <th>Role (typical)</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><code>sunrise</code></td>
-          <td>Light, cool sky gradient</td>
-      </tr>
-      <tr>
-          <td><code>noon</code></td>
-          <td>Neutral light</td>
-      </tr>
-      <tr>
-          <td><code>twilight</code></td>
-          <td>Dark blue glass (photo background in main area)</td>
-      </tr>
-      <tr>
-          <td><code>midnight</code></td>
-          <td>Dark radial / slate glass</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Theme</th>
+					<th>Role (typical)</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>sunrise</code></td>
+					<td>Light, cool sky gradient</td>
+			</tr>
+			<tr>
+					<td><code>noon</code></td>
+					<td>Neutral light</td>
+			</tr>
+			<tr>
+					<td><code>twilight</code></td>
+					<td>Dark blue glass (photo background in main area)</td>
+			</tr>
+			<tr>
+					<td><code>midnight</code></td>
+					<td>Dark radial / slate glass</td>
+			</tr>
+	</tbody>
 </table>
 <p><strong>Type:</strong> <code>Theme</code> in <code>src/app/components/astrology-sidebar.tsx</code>.</p>
 <p><strong>Current source of truth</strong></p>
@@ -182,34 +181,34 @@
 </ul>
 <h2 id="internationalization-i18n">Internationalization (i18n)</h2>
 <table>
-  <thead>
-      <tr>
-          <th>Item</th>
-          <th>Location</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Source of truth</td>
-          <td>Repo root <strong><code>translations.csv</code></strong> (<code>internal_name</code> + <code>czech</code>, <code>english</code>, <code>french</code>, <code>spanish</code>)</td>
-      </tr>
-      <tr>
-          <td>Generated bundles</td>
-          <td><strong><code>src/locales/*.json</code></strong> — <strong>do not edit by hand</strong> for routine changes</td>
-      </tr>
-      <tr>
-          <td>Sync command</td>
-          <td><strong><code>npm run i18n:sync</code></strong> (runs <code>scripts/csv-to-locales.mjs</code>)</td>
-      </tr>
-      <tr>
-          <td>Prune checker</td>
-          <td><strong><code>npm run i18n:prune:dry</code></strong> / <strong><code>npm run i18n:prune</code></strong> (runs <code>scripts/prune-unused-translations.py</code>)</td>
-      </tr>
-      <tr>
-          <td>Runtime</td>
-          <td>React and Svelte both consume generated locale packs; keys are CSV <code>internal_name</code> values</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Item</th>
+					<th>Location</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Source of truth</td>
+					<td>Repo root <strong><code>translations.csv</code></strong> (<code>internal_name</code> + <code>czech</code>, <code>english</code>, <code>french</code>, <code>spanish</code>)</td>
+			</tr>
+			<tr>
+					<td>Generated bundles</td>
+					<td><strong><code>src/locales/*.json</code></strong> — <strong>do not edit by hand</strong> for routine changes</td>
+			</tr>
+			<tr>
+					<td>Sync command</td>
+					<td><strong><code>npm run i18n:sync</code></strong> (runs <code>scripts/csv-to-locales.mjs</code>)</td>
+			</tr>
+			<tr>
+					<td>Prune checker</td>
+					<td><strong><code>npm run i18n:prune:dry</code></strong> / <strong><code>npm run i18n:prune</code></strong> (runs <code>scripts/prune-unused-translations.py</code>)</td>
+			</tr>
+			<tr>
+					<td>Runtime</td>
+					<td>React and Svelte both consume generated locale packs; keys are CSV <code>internal_name</code> values</td>
+			</tr>
+	</tbody>
 </table>
 <p><strong>Workflow for new copy:</strong> add or edit a row in <strong><code>translations.csv</code></strong>, run <strong><code>npm run i18n:sync</code></strong>, then use <strong><code>t('internal_name')</code></strong> in components.</p>
 <p><strong>Cleanup workflow:</strong> run <strong><code>npm run i18n:prune:dry</code></strong> first. If the reported keys are truly unused in both <code>apps/web-react/src</code> and <code>apps/web-svelte/src</code>, run <strong><code>npm run i18n:prune</code></strong>, then <strong><code>npm run i18n:sync</code></strong> so both frontend bundles match the CSV.</p>

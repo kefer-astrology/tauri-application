@@ -3,8 +3,6 @@ title: "Development driver"
 weight: 15
 ---
 
-# Development driver
-
 This is the current high-level driver for specs-driven development.
 
 ## Motivation / Background

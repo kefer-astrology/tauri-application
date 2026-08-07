@@ -4,11 +4,7 @@ description: "JPL/SPICE backend contract, implementation boundary, and current s
 weight: 41
 ---
 
-# SPICE backend
-
-This page defines the role of the **JPL / SPICE backend** in Kefer.
-
-It is intentionally narrower than [architecture](../architecture/): this page is about the astronomy backend layer itself, not the whole app.
+This page is intentionally narrower than [architecture](../architecture/): it is about the astronomy backend layer itself, not the whole app.
 
 For BSP catalog, download, overlap, cache, and kernel-file lifecycle details, see [ephemeris-manager](../ephemeris-manager/).
 

@@ -9,6 +9,8 @@ weight: 20
 - React is the default desktop shell.
 - The main horoscope workflow is wired to real Tauri compute commands.
 - Workspace open/save/defaults persistence is wired.
+- `openWorkspaceFolder()` calls `get_current_model_report` and seeds workspace defaults from `effective_settings` before the workspace-level DTO is applied.
+- Chart-level `observable_objects`/`aspect_orbs`/`selected_aspects`/`ayanamsa`/`time_system` round-trip through `ChartDetails`/`AppChart` and take precedence over workspace defaults in `chartDataToComputePayload`.
 - The create-new flow uses app-owned popover controls for time and location search.
 - Some secondary views are still presentational or prototype-oriented rather than fully chart-backed.
 - React is still the clearer reference for app-shell decomposition and reusable input primitives.

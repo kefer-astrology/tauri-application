@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Frontend gap implementation plan | Kefer docs</title>
@@ -27,8 +27,7 @@
       
     </header>
     <div class="prose">
-      <h1 id="frontend-gap-implementation-plan">Frontend gap implementation plan</h1>
-<p>This plan turns the frontend workflow baseline into an implementation sequence.</p>
+      <p>This plan turns the frontend workflow baseline into an implementation sequence.</p>
 <p>Use it when closing the current gaps between React, Svelte, Tauri, and the compute backends.</p>
 <h2 id="goal">Goal</h2>
 <p>Make both frontends ready for these workflows:</p>
@@ -74,26 +73,11 @@
 <li>The spec says which Tauri commands own those operations.</li>
 </ul>
 <h2 id="phase-2-authoritative-settings-model">Phase 2: authoritative settings model</h2>
-<h3 id="shared-model-work">Shared model work</h3>
+<p>Both frontends call <code>get_current_model_report</code> on workspace open and resolve computed bodies, computed aspects, and aspect orbs from <code>effective_settings</code>, with the model layer resolving before the workspace layer. Chart data (<code>AppChart</code> in React, <code>ChartData</code> in Svelte) carries chart-level <code>observableObjects</code>/<code>aspectOrbs</code>/<code>selectedAspects</code>/<code>ayanamsa</code>/<code>timeSystem</code>, and each payload builder prefers the chart-level value over the workspace default. House-system lists match across both frontends (all 9 <code>HouseSystem</code> values).</p>
+<p>Still open:</p>
 <ul>
-<li>Create one authoritative frontend settings shape for:
-<ul>
-<li>default computed bodies</li>
-<li>default computed aspects</li>
-<li>aspect orbs</li>
-<li>default location</li>
-<li>default house system</li>
-<li>engine and zodiac settings as needed</li>
-</ul>
-</li>
-<li>Make both frontends use this shape instead of local-only widget state.</li>
-<li>Ensure the payload builder maps this shape into chart/workspace config consistently.</li>
-</ul>
-<h3 id="acceptance-checks-1">Acceptance checks</h3>
-<ul>
-<li>React and Svelte both have a single shared understanding of bodies/aspects settings.</li>
-<li>A confirmed settings change updates real state, not only local component state.</li>
-<li>Payload builders include the selected settings fields required by compute.</li>
+<li>Workspace-level default zodiac/ayanamsa settings — the backend <code>WorkspaceDefaults</code> model has no zodiac/ayanamsa field yet.</li>
+<li>Default location and engine settings as part of one authoritative shape.</li>
 </ul>
 <h2 id="phase-3-tauri-command-support">Phase 3: Tauri command support</h2>
 <h3 id="tauribackend-1">Tauri/backend</h3>
@@ -132,7 +116,7 @@
 </li>
 <li>Verify Rust and Python preserve the same instant for offset-aware datetimes.</li>
 </ul>
-<h3 id="acceptance-checks-2">Acceptance checks</h3>
+<h3 id="acceptance-checks-1">Acceptance checks</h3>
 <ul>
 <li>The chosen settings survive workspace reload.</li>
 <li>Rust compute and Python compute consume the same effective config.</li>
@@ -148,6 +132,7 @@
 <li>Bind settings sections to shared app/workspace state.</li>
 <li>Persist confirmed settings to the chosen storage scope.</li>
 <li>Ensure chart creation uses the same settings model as compute.</li>
+<li>Keep the create-new chart form ordered as chart name, chart type, date/time, time regime, location selector, and tags, with manual time-regime details only expanded in manual mode.</li>
 <li>Verify workspace open:
 <ul>
 <li>loads charts</li>
@@ -159,7 +144,7 @@
 <li>Ensure creating a new chart switches to the radix view and computes in the background without leaving the wheel on mock placements.</li>
 <li>Keep React and Svelte aligned on the same radix compute payload shape so one frontend does not rely on legacy-only fields.</li>
 </ul>
-<h3 id="acceptance-checks-3">Acceptance checks</h3>
+<h3 id="acceptance-checks-2">Acceptance checks</h3>
 <ul>
 <li>React users can open a workspace and immediately compute chart positions.</li>
 <li>React users can create a chart in a workspace and reload it later.</li>
@@ -171,13 +156,14 @@
 <h2 id="phase-5-svelte-implementation">Phase 5: Svelte implementation</h2>
 <h3 id="svelte-work">Svelte work</h3>
 <ul>
-<li>Replace the <code>Open Radix</code> placeholder with the real import-chart workflow for supported external file types.</li>
+<li>Add a real import-chart workflow for supported external file types.</li>
 <li>Bind settings sections to shared workspace/chart state.</li>
 <li>Decide whether <code>BodySelector</code> becomes the main UI for default computed bodies or remains transit-specific.</li>
 <li>Persist confirmed settings to the chosen storage scope.</li>
 <li>Ensure both workspace and in-memory compute use the same effective settings model.</li>
+<li>Keep the create-new chart form ordered as chart name, chart type, date/time, time regime, location selector, and tags, with manual time-regime details only expanded in manual mode.</li>
 </ul>
-<h3 id="acceptance-checks-4">Acceptance checks</h3>
+<h3 id="acceptance-checks-3">Acceptance checks</h3>
 <ul>
 <li>Svelte users can open a workspace and immediately compute chart positions.</li>
 <li>Svelte users can create a chart in a workspace and reload it later.</li>
@@ -195,7 +181,7 @@
 <li>Confirm the no-sidecar Rust fallback still works for supported charts.</li>
 <li>Confirm backend provenance reaches the frontend for debugging and user trust.</li>
 </ul>
-<h3 id="acceptance-checks-5">Acceptance checks</h3>
+<h3 id="acceptance-checks-4">Acceptance checks</h3>
 <ul>
 <li>Backend selection rules are covered by Rust tests:
 <ul>

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Frontend workflow baseline | Kefer docs</title>
@@ -27,15 +27,23 @@
       
     </header>
     <div class="prose">
-      <h1 id="frontend-workflow-baseline">Frontend workflow baseline</h1>
-<p>Both frontend shells should be judged against these baseline workflows:</p>
+      <p>Both frontend shells should be judged against these baseline workflows:</p>
 <ol>
 <li>Open a workspace folder or import a chart into a workspace.</li>
 <li>Create a new chart within the current workspace or project context.</li>
 <li>Read and expose settings that affect computation, especially calculated objects and calculated aspects.</li>
 <li>Calculate positions for the selected objects for the active chart.</li>
 <li>Resolve a typed event location into usable coordinates before chart creation when coordinates are not entered manually.</li>
+<li>Compute a transit series for a persisted source chart using the selected time range, transiting bodies, transited bodies, and aspect types.</li>
 </ol>
+<h2 id="parallel-implementation-rule">Parallel implementation rule</h2>
+<p>New frontend-visible workflow behavior must land through both shells unless a spec explicitly gates one shell. For compute-backed behavior this means:</p>
+<ul>
+<li>React and Svelte use the same Tauri command contract and typed bridge shape.</li>
+<li>React and Svelte expose the same computation inputs, or the spec names the missing input and acceptance criteria.</li>
+<li>Selected objects, selected aspects, date/time ranges, and workspace/chart IDs must feed the command payload rather than remaining local-only widget state.</li>
+<li>A partial frontend implementation is not &ldquo;parity-compliant&rdquo;; it is an intentional gap that must be documented in this file or the feature-specific <code>/llm/</code> contract.</li>
+</ul>
 <h2 id="readiness-rule">Readiness rule</h2>
 <p>A frontend is only &ldquo;ready&rdquo; for this baseline when:</p>
 <ul>
@@ -43,6 +51,7 @@
 <li>the workflow is wired to Tauri commands or the in-memory Rust path</li>
 <li>the settings used by compute are not just local widget state</li>
 <li>selected objects and selected aspects actually influence the compute payload or compute command behavior</li>
+<li>transit series inputs actually influence <code>compute_transit_series</code> command behavior</li>
 </ul>
 <h2 id="current-interpretation">Current interpretation</h2>
 <ul>
@@ -56,10 +65,22 @@
 </ul>
 </li>
 <li>Creating a chart counts only when the chart is persisted to workspace YAML when a workspace is active.</li>
+<li>Create-new chart forms in both frontends should expose fields in this order:
+<ul>
+<li>chart name</li>
+<li>chart type limited to nativity, event, and horary</li>
+<li>date and time selectors</li>
+<li>time regime switcher with <code>auto</code> and <code>manual</code></li>
+<li>manual time-regime details, expanded only in manual mode, for home-location coordinates and timezone/UTC-shift settings</li>
+<li>location selector</li>
+<li>tags</li>
+</ul>
+</li>
 <li>Settings count only when they feed the persisted workspace/chart configuration or the active compute payload.</li>
 <li>Frontend contracts should stay backend-neutral even when a specific backend is favored in the implementation.</li>
 <li><code>jpl</code> / SPICE should not block baseline frontend readiness, but the frontend contract should leave room for it to become the preferred long-term astronomy backend.</li>
 <li>React location entry should support explicit place-to-coordinate resolution without requiring manual latitude/longitude entry.</li>
+<li>Svelte location entry should support the same explicit place-to-coordinate resolution without requiring manual latitude/longitude entry.</li>
 <li>The React radix view should render from computed chart payloads, not mock wheel or mock position data.</li>
 <li>The default first-run React chart should compute positions for the current date/time automatically.</li>
 <li>Creating a new chart in React should switch to the radix view and start background computation immediately.</li>
@@ -68,6 +89,8 @@
 <li>Both frontends should emit canonical chart timestamps as <code>YYYY-MM-DD HH:mm:ss</code> or RFC3339.</li>
 <li>Frontends should not emit localized chart timestamps such as <code>DD/MM/YYYY HH:mm:ss</code> in compute or persistence payloads.</li>
 <li>Svelte should prefer <code>house_cusps</code> from compute output over legacy <code>house_1..house_12</code> fallback keys.</li>
+<li>Both frontends should compute transit series through the same <code>compute_transit_series</code> bridge, with source chart, time range, transiting objects, transited objects, and aspect types passed as command payload. The detailed payload and parity target live in <a href="../transit-series-contract/">transit-series-contract</a>.</li>
+<li>Current transit-series parity covers the command bridge, source chart, time range, body filters, aspect filters, loading/error state, and result summary table. Remaining parity work is to share one canonical observable-object selector and one time-step model across both shells.</li>
 <li>React should use two center-layout families:
 <ul>
 <li>edge-to-edge for radix, information/dashboard, aspectarium, and open-workspace flows</li>
@@ -98,15 +121,18 @@
 <li>Connect settings changes for house system, location, calculated objects, and calculated aspects to real app state instead of local-only component state.</li>
 <li>Persist confirmed settings either to workspace defaults or to per-chart config, depending on the chosen contract.</li>
 <li>Ensure compute payloads include the settings that should affect computation.</li>
+<li>Keep React transit-series controls wired to the same command payload fields as Svelte when extending transits behavior.</li>
+<li>Replace React&rsquo;s fixed one-hour transit-series step with the shared time-step model once that model is specified for both shells.</li>
 </ul>
 <h2 id="3-svelte-gaps">3. Svelte gaps</h2>
 <ul>
-<li>Replace the <code>Open Radix</code> placeholder with a real import/open-chart workflow or remove it.</li>
-<li>Replace the <code>Open Radix</code> placeholder with a real external chart import workflow for supported file types.</li>
+<li>Add a real external chart import workflow for supported file types.</li>
 <li>Connect settings controls for location, house system, and aspects to shared workspace/chart state.</li>
 <li>Decide whether <code>BodySelector</code> should also drive workspace-level default computed bodies, not only transit filters.</li>
 <li>Persist confirmed settings to workspace/chart config instead of leaving them as local view state.</li>
 <li>Ensure compute payloads include both selected objects and selected aspects where required.</li>
+<li>Keep Svelte transit-series controls wired to the same command payload fields as React when extending transits behavior.</li>
+<li>Keep Svelte&rsquo;s transit body selector aligned with the eventual shared canonical selector used by React.</li>
 </ul>
 <h2 id="4-recommended-implementation-order">4. Recommended implementation order</h2>
 <ol>

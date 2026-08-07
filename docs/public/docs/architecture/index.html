@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Architecture | Kefer docs</title>
@@ -60,7 +60,8 @@
 <li><strong>Geocoding</strong>: location lookup is handled in Rust through a configurable Nominatim-style endpoint.</li>
 <li><strong>Ephemeris downloads</strong>: BSP discovery, cache management, and download status are handled in Rust.</li>
 <li><strong>React status</strong>: the main horoscope flow is wired to real Tauri-backed compute; some secondary screens are still presentational.</li>
-<li><strong>Svelte status</strong>: radix/settings/transits parity is much better than before, but some compatibility-era storage helpers and in-memory fallbacks still remain.</li>
+<li><strong>Svelte status</strong>: radix/settings/transits and workspace query paths route through <code>apps/web-svelte/src/lib/tauri/</code>; in-memory fallbacks remain for static mode and workspaces without persisted computed rows.</li>
+<li><strong>Settings-model unification</strong>: both frontends call <code>get_current_model_report</code> on workspace open and resolve defaults from <code>effective_settings</code>, with the model layer resolving before the workspace layer. Chart data in both frontends carries chart-level <code>observable_objects</code>/<code>aspect_orbs</code>/<code>selected_aspects</code>/<code>ayanamsa</code>/<code>time_system</code>, so chart-level overrides persist across a workspace reload.</li>
 </ul>
 <h2 id="principles">Principles</h2>
 <ol>
@@ -71,7 +72,11 @@
 <li><strong>Astronomy vs astrology separation</strong>: zodiac, houses, ayanamsha, aspect rules, and tradition defaults belong above the astronomy backend.</li>
 <li><strong>Precision support</strong>: the architecture should support second-level and higher precision where the backend supports it.</li>
 <li><strong>License-clean default</strong>: new default compute paths should not reintroduce AGPL dependency.</li>
+<li><strong>One resolution policy</strong>: model, workspace, preset, chart, and operation settings resolve through one deterministic service.</li>
+<li><strong>Explainable configuration</strong>: effective settings expose the scope that supplied each value.</li>
 </ol>
+<p>The detailed responsibility map and configuration precedence are defined in
+<a href="../backend-structure/">Backend structure and data ownership</a>.</p>
 <h2 id="workspace-model">Workspace model</h2>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>workspace/
 </span></span><span style="display:flex;"><span>├── workspace.yaml
@@ -89,12 +94,25 @@
 <li><strong>Computed positions and aspects</strong>: are produced on demand in Rust or Python.</li>
 <li><strong>Storage compatibility commands</strong>: still exist, but should not be treated as a real computed-data persistence layer.</li>
 </ul>
+<p><code>WorkspaceManifest</code> is the persisted reference index. The target <code>Workspace</code>
+domain aggregate is the fully loaded, typed form. <code>WorkspaceInfo</code> is only a
+frontend projection and must not become a substitute for the aggregate.</p>
 <h2 id="compute-model">Compute model</h2>
 <p>The frontend should only call <code>invoke(...)</code>. Tauri owns backend selection and routes work to Rust or Python as needed.</p>
 <ul>
 <li><strong>Rust path</strong>: local chart and transit compute is real and active.</li>
 <li><strong>Python path</strong>: optional sidecar path for compatibility and backend-specific integrations.</li>
 <li><strong>Response provenance</strong>: callers should be able to see which backend actually handled the request.</li>
+<li><strong>Standalone charts</strong>: in-memory and workspace-backed charts pass through the same settings resolver; standalone charts simply have no workspace or preset scope.</li>
+<li><strong>Typed Rust services</strong>: radix and transit orchestration lives in
+<code>src-tauri/src/application/</code>; Tauri commands load inputs and serialize the
+typed calculation result.</li>
+<li><strong>Layered requests</strong>: workspace presets and ephemeral setting overrides are
+supported by both compute paths with the same precedence. Backend fallback
+preserves the requested layers.</li>
+<li><strong>Validation</strong>: <code>validate_workspace</code> loads the complete typed aggregate and
+returns stable error/warning diagnostics. Model reports include the same
+diagnostic structure for catalogs and effective settings.</li>
 </ul>
 <h3 id="backend-selection">Backend selection</h3>
 <ul>
@@ -128,8 +146,8 @@
 <h2 id="layering">Layering</h2>
 <h3 id="time-and-observer-layer">Time and observer layer</h3>
 <ul>
-<li>canonical event time</li>
-<li>timezone handling</li>
+<li>canonical RFC 3339 event time normalized to UTC</li>
+<li>explicit IANA timezone validation for locations</li>
 <li>location and observer model</li>
 <li>Julian/time-scale conversion</li>
 </ul>
@@ -151,13 +169,20 @@
 <ul>
 <li>zodiac sign mapping</li>
 <li>house interpretation</li>
-<li>aspect computation and orb policy</li>
+<li>aspect computation and orb policy sourced from the resolved <code>AstroModel</code></li>
 <li>tradition defaults</li>
 <li>derived points such as nodes, Lilith variants, and lots</li>
 </ul>
+<p>Pure aspect detection currently lives in <code>src-tauri/src/astrology.rs</code>; it has no
+Tauri, YAML, HTTP, or ephemeris dependency. The same module validates canonical
+body selections against model definitions and engine capability maps before an
+astronomy adapter is called. Derived angles (<code>asc</code>, <code>mc</code>, <code>desc</code>, and <code>ic</code>) are
+returned in the positions map when selected, so every selected body follows the
+same result contract.</p>
 <h2 id="frontend-integration">Frontend integration</h2>
 <ul>
 <li><strong>React Tauri layer</strong>: <code>apps/web-react/src/lib/tauri/</code></li>
+<li><strong>Svelte Tauri layer</strong>: <code>apps/web-svelte/src/lib/tauri/</code></li>
 <li><strong>React shell</strong>: <code>apps/web-react/src/app/App.tsx</code></li>
 <li><strong>Svelte shell</strong>: <code>apps/web-svelte/src/</code></li>
 <li><strong>Shared app-shell assets</strong>: <code>static/app-shell/</code></li>
@@ -188,6 +213,7 @@
 <li><code>save_workspace</code></li>
 <li><code>save_workspace_defaults</code></li>
 <li><code>get_workspace_defaults</code></li>
+<li><code>get_current_model_report</code></li>
 <li><code>get_chart_details</code></li>
 <li><code>init_storage</code></li>
 <li><code>compute_chart</code></li>
@@ -213,7 +239,7 @@
 <h2 id="non-final-areas">Non-final areas</h2>
 <ul>
 <li><code>InformationView</code> in React is still explicitly prototype-oriented.</li>
-<li>Some Svelte views still rely on compatibility storage commands and in-memory fallback behavior.</li>
+<li>Svelte still keeps in-memory fallback rendering for static mode and for workspaces without persisted computed query rows.</li>
 <li>Computed-data persistence is still not a fully settled architecture topic.</li>
 <li>Some import/storage directions are still under discussion.</li>
 </ul>

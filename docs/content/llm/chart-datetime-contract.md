@@ -3,8 +3,6 @@ title: "Chart datetime contract"
 weight: 42
 ---
 
-# Chart datetime contract
-
 This page defines the canonical chart datetime format shared by the frontends and Tauri commands.
 
 ## Canonical rule

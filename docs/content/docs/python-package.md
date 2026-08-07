@@ -4,8 +4,6 @@ description: 'Reference for the optional Python backend package and its role in 
 weight: 50
 ---
 
-# Python package
-
 The Python package is an optional computation backend used by the Tauri app.
 
 Some checkouts may omit the `backend-python/` source tree and run through the Rust/no-sidecar path. Treat this page as the contract for that optional sidecar, not as a required baseline for every local checkout.

@@ -40,6 +40,7 @@ The app has three main layers: frontend shells, the Tauri desktop boundary, and 
 - **Ephemeris downloads**: BSP discovery, cache management, and download status are handled in Rust.
 - **React status**: the main horoscope flow is wired to real Tauri-backed compute; some secondary screens are still presentational.
 - **Svelte status**: radix/settings/transits and workspace query paths route through `apps/web-svelte/src/lib/tauri/`; in-memory fallbacks remain for static mode and workspaces without persisted computed rows.
+- **Settings-model unification**: both frontends call `get_current_model_report` on workspace open and resolve defaults from `effective_settings`, with the model layer resolving before the workspace layer. Chart data in both frontends carries chart-level `observable_objects`/`aspect_orbs`/`selected_aspects`/`ayanamsa`/`time_system`, so chart-level overrides persist across a workspace reload.
 
 ## Principles
 
@@ -210,6 +211,7 @@ Frontend UI -> Tauri command -> compute over time range -> return in-memory resu
 - `save_workspace`
 - `save_workspace_defaults`
 - `get_workspace_defaults`
+- `get_current_model_report`
 - `get_chart_details`
 - `init_storage`
 - `compute_chart`

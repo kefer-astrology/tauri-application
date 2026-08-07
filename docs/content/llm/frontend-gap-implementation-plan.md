@@ -3,8 +3,6 @@ title: 'Frontend gap implementation plan'
 weight: 45
 ---
 
-# Frontend gap implementation plan
-
 This plan turns the frontend workflow baseline into an implementation sequence.
 
 Use it when closing the current gaps between React, Svelte, Tauri, and the compute backends.
@@ -47,23 +45,12 @@ Make both frontends ready for these workflows:
 
 ## Phase 2: authoritative settings model
 
-### Shared model work
+Both frontends call `get_current_model_report` on workspace open and resolve computed bodies, computed aspects, and aspect orbs from `effective_settings`, with the model layer resolving before the workspace layer. Chart data (`AppChart` in React, `ChartData` in Svelte) carries chart-level `observableObjects`/`aspectOrbs`/`selectedAspects`/`ayanamsa`/`timeSystem`, and each payload builder prefers the chart-level value over the workspace default. House-system lists match across both frontends (all 9 `HouseSystem` values).
 
-- Create one authoritative frontend settings shape for:
-  - default computed bodies
-  - default computed aspects
-  - aspect orbs
-  - default location
-  - default house system
-  - engine and zodiac settings as needed
-- Make both frontends use this shape instead of local-only widget state.
-- Ensure the payload builder maps this shape into chart/workspace config consistently.
+Still open:
 
-### Acceptance checks
-
-- React and Svelte both have a single shared understanding of bodies/aspects settings.
-- A confirmed settings change updates real state, not only local component state.
-- Payload builders include the selected settings fields required by compute.
+- Workspace-level default zodiac/ayanamsa settings — the backend `WorkspaceDefaults` model has no zodiac/ayanamsa field yet.
+- Default location and engine settings as part of one authoritative shape.
 
 ## Phase 3: Tauri command support
 
@@ -133,7 +120,7 @@ Make both frontends ready for these workflows:
 
 ### Svelte work
 
-- Replace the `Open Radix` placeholder with the real import-chart workflow for supported external file types.
+- Add a real import-chart workflow for supported external file types.
 - Bind settings sections to shared workspace/chart state.
 - Decide whether `BodySelector` becomes the main UI for default computed bodies or remains transit-specific.
 - Persist confirmed settings to the chosen storage scope.

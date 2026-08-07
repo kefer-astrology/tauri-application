@@ -3,8 +3,6 @@ title: "Radix render contract"
 weight: 43
 ---
 
-# Radix render contract
-
 This page defines the current compute output contract for rendering a radix view without mock data.
 
 ## Goal

@@ -11,6 +11,8 @@ weight: 25
 - Radix rendering, settings, location resolution, transit-series compute, and workspace query flows are routed through the Svelte Tauri bridge.
 - `stores/data.svelte.ts` keeps in-memory/static-mode fallbacks, but no longer owns Tauri query invocation.
 - `App.svelte` remains the biggest orchestration surface and should keep being decomposed.
+- Workspace open resolves the backend's model report (`get_current_model_report`); chart-level settings persist across a reload using the same shape as React.
+- The Aspects tab computes house placement from real house cusps, and the aspect matrix shows an empty state rather than fabricated positions (see [radix-render-contract](../../llm/radix-render-contract/)).
 
 ## Commands
 
@@ -125,8 +127,9 @@ See [ui-conventions](../ui-conventions/) for the shared translation workflow and
 - Svelte workspace, chart compute, transit-series, and storage-query commands are centralized in `apps/web-svelte/src/lib/tauri/workspace.ts`.
 - Tauri response shapes live in `apps/web-svelte/src/lib/tauri/types.ts`.
 - Feature components should consume bridge helpers rather than importing `@tauri-apps/api/core` directly.
-- Generic file read/write helpers still live in `commands.svelte.ts`; move them into `src/lib/tauri/` before expanding that surface.
-- Tauri frontend target switching still uses:
+- `openWorkspaceFolder()` calls `get_current_model_report` and seeds workspace defaults from `effective_settings` (`mergeModelReportDefaults` in `layout.svelte.ts`) before the workspace-level DTO is applied.
+- Chart-level `observableObjects`/`aspectOrbs`/`selectedAspects`/`ayanamsa`/`timeSystem` round-trip through `ChartData` and take precedence over workspace defaults in `chartDataToComputePayload`.
+- Tauri frontend target switching uses:
   - `src-tauri/tauri.react.conf.json`
   - `src-tauri/tauri.svelte.conf.json`
 

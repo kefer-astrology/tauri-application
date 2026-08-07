@@ -4,8 +4,6 @@ description: "Supported house-system names, calculation setup, and backend cover
 weight: 58
 ---
 
-# House systems
-
 House building is the astrology layer that turns a chart's time and place into the 12 house cusps used by the radix wheel and house placement logic.
 
 This app already carries a backend-neutral `house_system` field in workspace defaults and chart config. The first requirement is to keep one clear map of accepted names, required inputs, and backend behavior.

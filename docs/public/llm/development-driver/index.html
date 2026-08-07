@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Development driver | Kefer docs</title>
@@ -27,16 +27,27 @@
       
     </header>
     <div class="prose">
-      <h1 id="development-driver">Development driver</h1>
-<p>This is the current high-level driver for specs-driven development. Completed cleanup plans should not stay as active navigation items; fold their outcome into this page or the relevant contract docs.</p>
-<h2 id="current-baseline">Current Baseline</h2>
+      <p>This is the current high-level driver for specs-driven development.</p>
+<h2 id="motivation--background">Motivation / Background</h2>
+<p>Keep future work driven by explicit specs instead of scattered cleanup lists. New behavior should land through the relevant <code>/docs/content/llm/</code> contract first, then implementation, then docs/build verification.</p>
+<h2 id="current-state">Current State</h2>
 <ul>
 <li>React and Svelte follow the shared UI standard: shadcn-style primitives first, semantic tokens for theme behavior, and named domain components for chart/matrix rendering.</li>
 <li>Svelte is parity-compliant with the current React reference. Dynamic, Revolution, and Favorite remain spec-gated because the React reference is also placeholder/workbench-level there.</li>
 <li>Backend/Tauri availability must not decide layout. Static/docs mode keeps the app shell and treats unavailable backend actions as no-ops or explicit disabled states.</li>
 <li>New behavior starts from <code>/docs/content/llm/</code> specs before implementation.</li>
+<li>Dual-frontend parity is mandatory for frontend-visible behavior: implement React and Svelte in the same change, or mark one frontend as explicitly spec-gated with acceptance criteria before merging the feature.</li>
 </ul>
-<h2 id="active-lanes">Active Lanes</h2>
+<h2 id="dual-frontend-rule">Dual-Frontend Rule</h2>
+<ol>
+<li>Update the relevant <code>/docs/content/llm/</code> contract before adding or changing frontend-visible behavior.</li>
+<li>Keep React and Svelte on the same typed Tauri bridge contract under each frontend&rsquo;s <code>src/lib/tauri/</code> folder when commands or payloads are involved.</li>
+<li>Keep compute payload builders aligned when workspace, chart, transit, or settings configuration changes.</li>
+<li>Implement both frontend shells in the same change unless the spec names the deferred shell, the reason it is deferred, and the acceptance criteria for closing the gap.</li>
+<li>Do not add local-only UI state for values that affect computation unless the contract explicitly says the value is transient.</li>
+<li>Verification must include <code>npm run check</code>, <code>npm run check:svelte</code>, and the relevant build or docs command for the touched surface.</li>
+</ol>
+<h2 id="planned-state">Planned State</h2>
 <ol>
 <li>
 <p><strong>Bundle Size And Loading</strong></p>
@@ -65,6 +76,18 @@
 </ul>
 </li>
 <li>
+<p><strong>Backend Runtime Direction</strong></p>
+<ul>
+<li>Keep astronomy backend-pluggable, with JPL / SPICE as the preferred long-term direction and Swiss Ephemeris as compatibility/validation infrastructure.</li>
+<li>Audit true-node behavior outside the documented JPL/Rust path so labels and provenance distinguish mean-node, true-node, and backend-specific approximations.</li>
+<li>Decide the supported contract for Chiron, TNOs, and other auxiliary bodies: provide a reliable auxiliary source or surface them as unavailable with clear warnings.</li>
+<li>Remove or label any UI fallback geometry, compatibility path, or prototype surface that appears to expose computed astrology data without backend-backed provenance.</li>
+<li>Add an end-to-end no-Swiss/no-sidecar smoke path, not only compilation.</li>
+<li>Validate the optional Python environment end to end when that backend is provisioned.</li>
+<li>Make backend routing visible: Rust-backed, Python-backed, or auto-routed compute should be clear in docs and user/debug-facing provenance.</li>
+</ul>
+</li>
+<li>
 <p><strong>Docs And Generated Assets</strong></p>
 <ul>
 <li>Source docs live under <code>docs/content/</code>.</li>
@@ -77,7 +100,7 @@
 <ul>
 <li>The relevant <code>/llm/</code> spec exists or was updated.</li>
 <li>Feature UI uses shared primitives and existing domain components.</li>
-<li>React and Svelte parity impact is explicit.</li>
+<li>React and Svelte either both implement the behavior, or the spec names the intentional gap and the acceptance criteria for closing it.</li>
 <li>Static/docs mode still renders the standard shell.</li>
 <li><code>npm run check</code>, <code>npm run check:svelte</code>, and the relevant build/docs command pass.</li>
 </ul>

@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Backend structure and data ownership | Kefer docs</title>
+    <meta name="description" content="Target Rust boundaries, canonical data model, layered settings, and Python parity rules." />
+    
+    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer docs</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/docs/">Docs</a>
+          <a href="/llm/">LLM handoff</a>
+          <a href="/#frontend-builds">Frontend builds</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">docs</p>
+      <h1>Backend structure and data ownership</h1>
+      <p class="lede">Target Rust boundaries, canonical data model, layered settings, and Python parity rules.</p>
+    </header>
+    <div class="prose">
+      <h2 id="purpose">Purpose</h2>
+<p>The Rust backend is the canonical definition of application semantics. Python is
+an implementation peer for supported computations and integrations, but it must
+conform to the same persisted formats, resolved settings, result DTOs, and error
+behavior.</p>
+<p>The backend is organized around four responsibilities:</p>
+<ol>
+<li><strong>Domain</strong> — valid astrological and workspace concepts.</li>
+<li><strong>Application</strong> — use cases and setting resolution.</li>
+<li><strong>Infrastructure</strong> — YAML, ephemerides, astronomy engines, geocoding, and the
+Python process.</li>
+<li><strong>Commands</strong> — the thin Tauri transport boundary.</li>
+</ol>
+<p>Dependencies point inward. Domain code does not depend on Tauri, HTTP, YAML, or
+a particular astronomy engine.</p>
+<h2 id="rust-source-direction">Rust source direction</h2>
+<p>The migration is incremental. Existing command names remain stable while their
+implementation moves behind application services.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>src-tauri/src/
+</span></span><span style="display:flex;"><span>├── astrology.rs                    # current: body selection and pure aspect rules
+</span></span><span style="display:flex;"><span>├── domain/                         # target: backend-neutral concepts
+</span></span><span style="display:flex;"><span>│   ├── chart.rs
+</span></span><span style="display:flex;"><span>│   ├── model.rs
+</span></span><span style="display:flex;"><span>│   ├── calculation.rs
+</span></span><span style="display:flex;"><span>│   ├── relation.rs
+</span></span><span style="display:flex;"><span>│   ├── workspace.rs
+</span></span><span style="display:flex;"><span>│   └── error.rs
+</span></span><span style="display:flex;"><span>├── application/                    # current: typed use cases and orchestration
+</span></span><span style="display:flex;"><span>│   ├── computation.rs              # resolved radix request/result and service
+</span></span><span style="display:flex;"><span>│   └── transit.rs                  # typed transit-series request/result and service
+</span></span><span style="display:flex;"><span>├── infrastructure/                 # target: external mechanisms
+</span></span><span style="display:flex;"><span>│   ├── workspace_yaml/
+</span></span><span style="display:flex;"><span>│   ├── astronomy/
+</span></span><span style="display:flex;"><span>│   ├── ephemeris/
+</span></span><span style="display:flex;"><span>│   ├── geocoding/
+</span></span><span style="display:flex;"><span>│   └── python_sidecar/
+</span></span><span style="display:flex;"><span>├── commands/                       # Tauri DTO conversion only
+</span></span><span style="display:flex;"><span>└── workspace/                      # current migration boundary
+</span></span><span style="display:flex;"><span>    ├── models.rs                   # serializable definitions only
+</span></span><span style="display:flex;"><span>    ├── model_catalog.rs            # built-in fallback catalog
+</span></span><span style="display:flex;"><span>    ├── settings.rs                 # layered resolution and provenance
+</span></span><span style="display:flex;"><span>    ├── validation.rs               # stable diagnostics and invariants
+</span></span><span style="display:flex;"><span>    └── loader.rs                   # current YAML loading adapter
+</span></span></code></pre></div><p>The <code>workspace/</code> split is the first completed migration slice. It prevents
+catalog construction and resolution policy from accumulating in <code>models.rs</code>.</p>
+<p>Rust radix and transit aspect detection now consume the resolved
+<code>AstroModel.aspect_definitions</code>. There is no second command-local list of aspect
+IDs, angles, or default orbs. Standalone chart computation uses the same
+canonical built-in model catalog. The algorithm and typed <code>ComputedAspect</code>
+result live in <code>astrology.rs</code>, outside the Tauri command layer.</p>
+<p>Body selection follows the same boundary. Commands resolve one ordered list of
+canonical body IDs, <code>astrology::resolve_body_selection</code> validates it against the
+model catalog and the selected engine&rsquo;s capability map, and astronomy adapters
+receive only the validated IDs. Unsupported, unknown, duplicate, and
+engine-omitted bodies produce explicit warnings instead of disappearing.</p>
+<h2 id="python-source-direction">Python source direction</h2>
+<p>Python now mirrors the same contract instead of maintaining a second set of
+defaults inside route handlers:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>backend-python/module/
+</span></span><span style="display:flex;"><span>├── models.py          # persisted and calculation data structures
+</span></span><span style="display:flex;"><span>├── model_catalog.py   # canonical built-in fallback model
+</span></span><span style="display:flex;"><span>├── resolution.py      # model selection and layered settings with provenance
+</span></span><span style="display:flex;"><span>├── validation.py      # stable diagnostics and invariants
+</span></span><span style="display:flex;"><span>├── astronomy.py       # model-driven radix and cross-chart aspect rules
+</span></span><span style="display:flex;"><span>├── services.py        # engine adapters and computation mechanisms
+</span></span><span style="display:flex;"><span>├── workspace.py       # workspace YAML loading adapter
+</span></span><span style="display:flex;"><span>├── cli.py             # sidecar transport and use-case adapters
+</span></span><span style="display:flex;"><span>└── api/
+</span></span><span style="display:flex;"><span>    ├── schemas.py     # HTTP request DTOs
+</span></span><span style="display:flex;"><span>    └── app.py         # thin FastAPI transport
+</span></span></code></pre></div><p>The Python chart and transit routes accept the same preset and operation
+layers as Rust. Tauri therefore applies its normal backend selection rules;
+neither backend silently drops a supplied layer.</p>
+<h2 id="workspace-representations">Workspace representations</h2>
+<p>Two workspace representations have different responsibilities and must not be
+collapsed into one type.</p>
+<h3 id="workspacemanifest"><code>WorkspaceManifest</code></h3>
+<p>The persisted index stored in <code>workspace.yaml</code>. It contains:</p>
+<ul>
+<li>workspace identity</li>
+<li>active model and workspace defaults</li>
+<li>optional model catalogs and model-definition overrides</li>
+<li>relative references to charts, subjects, presets, layouts, and annotations</li>
+</ul>
+<p>It is an infrastructure/persistence representation. References are resolved
+under the workspace root and must not escape that root.</p>
+<h3 id="workspace"><code>Workspace</code></h3>
+<p>The loaded domain aggregate. It contains typed subjects, charts, presets,
+layouts, annotations, and resolved model catalogs. Loading either succeeds with
+an explicit set of diagnostics or fails; malformed referenced items must not
+silently disappear.</p>
+<p><code>WorkspaceInfo</code> remains a command projection for list/open screens. It is not
+the complete workspace model.</p>
+<p><code>loader::load_workspace_aggregate</code> is the strict typed loading path. It attempts
+every referenced subject, chart, preset, layout, and annotation and returns all
+successfully loaded entities alongside diagnostics. Unlike the legacy summary
+loader, it never logs and silently discards a malformed reference.</p>
+<p>The <code>validate_workspace</code> command exposes a compact report containing aggregate
+counts, validity, and diagnostics. Existing <code>load_workspace</code> behavior remains
+compatible while callers migrate to validation-aware loading.</p>
+<h2 id="structured-diagnostics">Structured diagnostics</h2>
+<p>Diagnostics have four stable fields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;code&#34;</span>: <span style="color:#e6db74">&#34;unknown_default_body&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;severity&#34;</span>: <span style="color:#e6db74">&#34;error&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Selection references unknown identifier &#39;example&#39;&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;path&#34;</span>: <span style="color:#e6db74">&#34;workspace.models.standard.settings.default_bodies&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Codes are machine-readable; messages are explanatory and may become localized.
+<code>error</code> means an invariant required for reliable computation is broken.
+<code>warning</code> means fallback or compatibility behavior remains possible.</p>
+<p>Current validation covers:</p>
+<ul>
+<li>duplicate and empty body, aspect, sign, chart, subject, preset, layout, and
+annotation identifiers</li>
+<li>model defaults and effective selections referencing unknown catalog items</li>
+<li>unknown orb keys and model-definition overrides</li>
+<li>invalid aspect angles, orbs, and computational constants</li>
+<li>missing body object types and engine capability maps</li>
+<li>malformed, missing, absolute, or path-traversing workspace references</li>
+<li>subject time/location validity</li>
+<li>layout relations referencing unknown charts</li>
+</ul>
+<p><code>CurrentModelReport.diagnostics</code> carries catalog, override, effective-setting,
+and chart-level diagnostics next to its existing resolution warnings.</p>
+<h2 id="configuration-scopes">Configuration scopes</h2>
+<p>Astrological configuration is intentionally layered:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>application fallback
+</span></span><span style="display:flex;"><span>  &lt; model defaults
+</span></span><span style="display:flex;"><span>  &lt; workspace defaults
+</span></span><span style="display:flex;"><span>  &lt; chart preset
+</span></span><span style="display:flex;"><span>  &lt; chart overrides
+</span></span><span style="display:flex;"><span>  &lt; operation overrides
+</span></span></code></pre></div><p>The highest explicitly supplied value wins. An absent value inherits from the
+previous scope.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Setting</th>
+					<th style="text-align: center">Model</th>
+					<th style="text-align: center">Workspace</th>
+					<th style="text-align: center">Preset</th>
+					<th style="text-align: center">Chart</th>
+					<th style="text-align: center">Operation</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>astronomy engine / ephemeris</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+			</tr>
+			<tr>
+					<td>house system</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+			</tr>
+			<tr>
+					<td>zodiac and ayanamsa</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+			</tr>
+			<tr>
+					<td>selected bodies</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+			</tr>
+			<tr>
+					<td>selected aspects and orbs</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+			</tr>
+			<tr>
+					<td>language, theme, colors</td>
+					<td style="text-align: center">no</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">yes</td>
+					<td style="text-align: center">no</td>
+			</tr>
+			<tr>
+					<td>subject event time</td>
+					<td style="text-align: center">no</td>
+					<td style="text-align: center">seed only</td>
+					<td style="text-align: center">template</td>
+					<td style="text-align: center">owns value</td>
+					<td style="text-align: center">temporary</td>
+			</tr>
+			<tr>
+					<td>subject location</td>
+					<td style="text-align: center">no</td>
+					<td style="text-align: center">seed only</td>
+					<td style="text-align: center">template</td>
+					<td style="text-align: center">owns value</td>
+					<td style="text-align: center">temporary</td>
+			</tr>
+			<tr>
+					<td>model definitions</td>
+					<td style="text-align: center">owns catalog</td>
+					<td style="text-align: center">may override</td>
+					<td style="text-align: center">no</td>
+					<td style="text-align: center">exceptional</td>
+					<td style="text-align: center">no</td>
+			</tr>
+	</tbody>
+</table>
+<p>The current <code>SettingsLayer</code> represents sparse preset and operation values.
+Chart and workspace persistence retain their existing compatible structures
+while the command layer is migrated.</p>
+<p>Workspace-backed and standalone/in-memory charts now use the same resolver.
+Standalone resolution explicitly omits workspace and preset scopes instead of
+constructing a fake manifest. Immediately before computation, the resolved
+settings are materialized onto a cloned chart configuration; the persisted or
+caller-owned chart remains unchanged.</p>
+<p><code>ResolvedChart</code> is the application input shared by radix and transit services.
+It owns a computation copy of the chart, the resolved model, effective settings,
+provenance-ready warnings, and no workspace path. <code>ChartComputeRequest</code> and
+<code>TransitSeriesRequest</code> add operation inputs. Their corresponding typed
+calculation structures are serialized only at the Tauri boundary.</p>
+<p>Workspace chart presets are loaded as typed <code>ChartPreset</code> items and converted
+to a sparse <code>SettingsLayer</code>. The existing compute commands accept additive
+<code>presetId</code> and <code>settingsOverrides</code> fields. Both Rust and Python resolve those
+fields with the same precedence, and a Python failure may fall back to Rust
+without losing the requested layers.</p>
+<h3 id="inheritance-versus-explicit-emptiness">Inheritance versus explicit emptiness</h3>
+<p>These states are distinct:</p>
+<ul>
+<li><strong>absent</strong> — inherit</li>
+<li><strong>value</strong> — override</li>
+<li><strong>empty collection</strong> — intentionally select no items, where the scope permits</li>
+<li><strong>clear</strong> — intentionally remove an optional inherited value</li>
+</ul>
+<p>Existing chart YAML historically treats an empty <code>observable_objects</code> list as
+inheritance. New preset and operation layers treat an explicitly supplied empty
+body or aspect list as “select none.” Patch DTOs that need <code>clear</code> semantics
+must represent it explicitly rather than relying on a plain Rust <code>Option&lt;T&gt;</code>.</p>
+<h2 id="resolution-output-and-provenance">Resolution output and provenance</h2>
+<p><code>workspace/settings.rs</code> produces <code>EffectiveModelSettings</code>. It contains usable
+values plus <code>EffectiveSettingsSources</code>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;default_house_system&#34;</span>: <span style="color:#e6db74">&#34;Whole Sign&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;engine&#34;</span>: <span style="color:#e6db74">&#34;jpl&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;default_bodies&#34;</span>: [<span style="color:#e6db74">&#34;sun&#34;</span>, <span style="color:#e6db74">&#34;moon&#34;</span>, <span style="color:#e6db74">&#34;asc&#34;</span>],
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;sources&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;default_house_system&#34;</span>: <span style="color:#e6db74">&#34;chart&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;engine&#34;</span>: <span style="color:#e6db74">&#34;workspace&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;default_bodies&#34;</span>: <span style="color:#e6db74">&#34;preset&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;default_aspects&#34;</span>: <span style="color:#e6db74">&#34;model&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;aspect_orbs&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;conjunction&#34;</span>: <span style="color:#e6db74">&#34;chart&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;square&#34;</span>: <span style="color:#e6db74">&#34;operation&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;standard_orb&#34;</span>: <span style="color:#e6db74">&#34;model&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;zodiac_type&#34;</span>: <span style="color:#e6db74">&#34;chart&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;ayanamsa&#34;</span>: <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;time_system&#34;</span>: <span style="color:#e6db74">&#34;workspace&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;computational_constants&#34;</span>: <span style="color:#e6db74">&#34;model&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Provenance is part of the diagnostic contract. It allows the UI, tests, and
+Python parity suite to explain a result instead of reverse-engineering the
+precedence chain.</p>
+<h2 id="location-and-time-ownership">Location and time ownership</h2>
+<p><code>ChartSubject.location</code> is the event or birth location. Workspace location is a
+default used when creating a chart; it does not retroactively change existing
+subjects.</p>
+<p>Relocated or topocentric computation uses an explicit operation-level observer
+location. It must not rewrite the subject location.</p>
+<p>Likewise, transit/progression times are operation inputs. They do not mutate the
+radix event time unless the caller explicitly saves an updated chart.</p>
+<p>Canonical event-time input is RFC 3339 with an explicit offset. Rust and Python
+normalize accepted values to UTC and execute the same
+<code>contracts/event-time.json</code> fixture. Invalid persisted values fail with the
+stable <code>invalid_event_time</code> category; they never become <code>None</code>, the current
+time, or another guessed value.</p>
+<p>Legacy <code>YYYY-MM-DD[ HH:MM[:SS]]</code> values remain readable and are interpreted as
+UTC in both implementations. This rule is intentionally deterministic. A local
+civil time must include its resolved offset before it enters persistence.
+Python additionally validates stored location timezone names against the IANA
+database and reports <code>invalid_timezone</code> rather than silently substituting UTC.</p>
+<h2 id="model-data-versus-selections">Model data versus selections</h2>
+<p>These concepts must remain separate:</p>
+<ul>
+<li><code>BodyDefinition</code> and <code>AspectDefinition</code> describe catalog items.</li>
+<li>Model settings select defaults from that catalog.</li>
+<li>Workspace, preset, chart, and operation layers select different items.</li>
+<li>Orb overrides change effective tolerances without creating a second aspect
+definition.</li>
+<li>Model-definition overrides intentionally modify catalog metadata or rules.</li>
+</ul>
+<p>Rust aspect computation and body selection consume the resolved model/settings.
+Each <code>BodyDefinition.computation_map</code> declares whether an engine supports the
+canonical body and, eventually, which engine-specific identifier it uses.
+Adapters implement astronomy but do not own a competing astrological catalog.</p>
+<p>Selected bodies use this precedence:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>operation selection
+</span></span><span style="display:flex;"><span>  &gt; resolved chart observable_objects
+</span></span><span style="display:flex;"><span>  &gt; legacy chart included_points
+</span></span><span style="display:flex;"><span>  &gt; model default_bodies
+</span></span><span style="display:flex;"><span>  &gt; all model body definitions
+</span></span></code></pre></div><p>An empty operation list currently inherits the resolved chart selection for
+compatibility with the transit command contract. <code>included_points</code> is a
+deprecated read alias; using it emits
+<code>included_points_deprecated: use observable_objects</code>. New persisted data should
+write only <code>observable_objects</code>.</p>
+<h2 id="persisted-and-derived-data">Persisted and derived data</h2>
+<p>Workspace YAML is primary. Positions, axes, houses, aspects, lunar details, and
+transit series are derived results unless a future storage design explicitly
+persists them.</p>
+<p>Compatibility storage commands must not report successful writes while
+discarding data. Each command must eventually be implemented, return an
+explicit unsupported error, or be removed together with its callers.</p>
+<h2 id="python-parity">Python parity</h2>
+<p>Python now has the first parity slice for the stable Rust contract:</p>
+<ul>
+<li>canonical built-in model data and model-definition overrides</li>
+<li>structured diagnostics with stable error and warning codes</li>
+<li>application, model, workspace, preset, chart, and operation precedence</li>
+<li>provenance for each effective setting and aspect orb</li>
+<li>explicit-empty body and aspect selections</li>
+<li>model-defined radix and cross-chart transit aspects</li>
+<li>preset and operation inputs on sidecar chart and transit routes</li>
+<li>typed radix and transit calculation structures, including motion and lunar
+details in chart responses</li>
+<li>a strict Python aggregate loader and <code>/workspace/validate</code> adapter that retain
+malformed-reference diagnostics</li>
+<li>one shared resolution fixture executed unchanged by Rust and Python</li>
+</ul>
+<p>The shared settings fixture compares:</p>
+<ul>
+<li>accepted input and validation behavior</li>
+<li>model/default/override resolution</li>
+<li>selected bodies, aspects, and orbs</li>
+<li>result DTO shape</li>
+<li>warning and provenance fields</li>
+<li>error category</li>
+<li>numerical results using field-specific tolerances</li>
+</ul>
+<p>Python may support additional engines or import formats, but it must adapt those
+results to the canonical contract. Shared policy such as precedence and default
+selection must not evolve independently in Python.</p>
+<h2 id="migration-order">Migration order</h2>
+<ol>
+<li>Complete canonical workspace, chart, model, and calculation types.</li>
+<li>Introduce typed compute and transit request/result DTOs.</li>
+<li>Move orchestration from Tauri commands into compute and transit services.</li>
+<li>Wire persisted presets and explicit operation overrides into those requests.</li>
+<li>Add catalog and persisted-aggregate validation with structured diagnostics.</li>
+<li>Move workspace YAML access behind a repository.</li>
+<li>Separate geocoding, ephemeris, and sidecar infrastructure services.</li>
+<li>Replace the permissive event-time parser with a canonical validated time type.</li>
+<li>Remove or implement compatibility no-ops.</li>
+<li>Add cross-language fixture and tolerance tests.</li>
+</ol>
+<h3 id="next-iteration">Next iteration</h3>
+<p>The remaining work is narrower and should not introduce another policy layer:</p>
+<ul>
+<li>extend the shared fixture suite from deterministic settings resolution to
+diagnostics, result structure, warnings, and numerical fields with explicit
+engine-specific tolerances</li>
+<li>migrate callers from the compatibility Python workspace loader to the strict
+aggregate entry point, then remove the permissive loader</li>
+<li>move Python orchestration out of <code>cli.py</code> into application services</li>
+<li>decide whether computed DuckDB/Parquet storage is a supported application
+feature, then implement its ownership or remove the compatibility paths</li>
+<li>continue the Rust <code>domain/</code> and <code>infrastructure/</code> extraction shown above</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

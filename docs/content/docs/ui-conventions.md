@@ -4,8 +4,6 @@ description: 'Theme, layout, component, and i18n rules for the frontend shells.'
 weight: 30
 ---
 
-# UI conventions
-
 Crisp reference for **themes**, **secondary navigation**, **shared component strategy**, and **i18n** so new work stays aligned with the app themes and a single source of styling truth.
 
 ## UI View Modes
@@ -39,7 +37,7 @@ Current alignment status:
 - React and Svelte feature components follow shared shadcn-style primitives for common controls.
 - React `TransitsBodiesConfig` is data-driven and uses shared `Checkbox` + `Label`.
 - React `Aspectarium` consumes shared `Table` primitives and theme tokens.
-- Svelte matrix rendering is routed through `components/chart-matrix/AspectMatrix.svelte`; `AspectGrid.svelte` is only a thin wrapper for existing imports.
+- Svelte matrix rendering is routed through `components/chart-matrix/AspectMatrix.svelte`.
 - Svelte mode content is split into feature components including `NewRadixView`, `InformationView`, `RadixDetailsPanel`, `RadixPositionPanel`, and `RadixTransitsView`.
 - Ongoing work is driven from the [Development driver](../../llm/development-driver/). Future Dynamic/Revolution/Favorite behavior is spec-gated because the React reference is also placeholder/workbench-level there.
 

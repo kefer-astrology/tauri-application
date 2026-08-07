@@ -4,10 +4,6 @@ description: "Reference notes for richer astronomy fields exposed by JPL-backed 
 weight: 70
 ---
 
-# Physical properties
-
-This page describes the richer astronomy fields that may be available from JPL-backed computation.
-
 These fields are additive. They should enrich the common result shape, not break it.
 
 ## Core extended fields

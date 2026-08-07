@@ -4,11 +4,7 @@ description: "Normative command-level contract for the current desktop app."
 weight: 45
 ---
 
-# Tauri command contracts
-
-This page is **normative** for the current command surface exposed by the Tauri desktop app.
-
-It focuses on what the frontend can rely on today, including current no-op behavior.
+This page focuses on what the frontend can rely on today, including current no-op behavior.
 
 ## Contract rules
 
@@ -121,6 +117,7 @@ Acceptance criteria:
   `referenced_item_load_failed`; duplicate identifiers and broken catalog
   references have specific stable codes.
 - An invalid referenced item does not prevent other items from being inspected.
+- Neither frontend currently calls this command; it remains a backend-only capability until a UI surface needs it.
 
 ### `get_workspace_defaults(workspace_path) -> Result<Value, String>`
 
@@ -136,6 +133,7 @@ Acceptance criteria:
 - `effective_settings.sources` identifies whether each effective setting came from the application fallback, model, workspace, preset, chart, or operation layer. Aspect-orb sources are reported per aspect id.
 - If `workspace.yaml` has no usable `models` entry, returns a built-in standard model catalog so callers still receive the same structure.
 - When `chart_id` is supplied, chart-level model/settings fields override workspace defaults in `effective_settings`.
+- Both frontends call this without `chart_id` when a workspace is opened, and seed workspace defaults (default bodies, default aspects, aspect orbs) from `effective_settings` before applying the workspace-level DTO from `get_workspace_defaults`, so the model layer resolves before the workspace layer.
 
 ### `resolve_location(query) -> Result<Value, String>`
 
@@ -153,7 +151,9 @@ Acceptance criteria:
 
 ### `get_chart_details(workspace_path, chart_id) -> Result<Value, String>`
 
-- Returns the full chart payload needed by the React editor surface.
+- Returns the full chart payload needed by the React and Svelte editor surfaces.
+- `config` includes `mode`, `house_system`, `zodiac_type`, `engine`, `model`, `override_ephemeris`, `observable_objects`, `aspect_orbs`, `selected_aspects`, `ayanamsa`, and `time_system` — the complete set of chart-level settings-layer fields, so callers can resolve chart-level overrides without falling back to workspace defaults.
+- Also returns top-level `tags`, `tag_colors`, and `roden_rating`.
 - Returns an error when the chart id is not found.
 
 ## Compute commands

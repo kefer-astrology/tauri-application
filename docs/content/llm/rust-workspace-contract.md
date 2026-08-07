@@ -3,8 +3,6 @@ title: 'Rust workspace contract'
 weight: 35
 ---
 
-# Rust workspace contract
-
 This page defines the current Rust-side implementation direction for the desktop app.
 
 ## Scope

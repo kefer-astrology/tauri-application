@@ -4,8 +4,6 @@ description: 'Multi-BSP catalog, automatic download, and asteroid body support v
 weight: 42
 ---
 
-# Ephemeris manager
-
 `EphemerisManager` is the Rust module that owns all BSP file lifecycle concerns: what files exist, where they live, which one to load, how to download a missing file, and how to hand multiple files to `anise` as a single chained `Almanac`.
 
 Source: [src-tauri/src/ephemeris_manager.rs](../../../src-tauri/src/ephemeris_manager.rs)
