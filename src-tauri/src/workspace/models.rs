@@ -152,6 +152,8 @@ pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
     pub timezone: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub utc_offset: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,7 +192,7 @@ where
     S: serde::Serializer,
 {
     match dt {
-        Some(dt) => serializer.serialize_str(&dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+        Some(dt) => serializer.serialize_str(&dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)),
         None => serializer.serialize_none(),
     }
 }

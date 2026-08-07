@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
+use std::sync::OnceLock;
 use tauri::{AppHandle, State};
 
 const DEFAULT_GEOCODER_SEARCH_URL: &str = "https://nominatim.openstreetmap.org/search";
@@ -18,6 +19,34 @@ pub struct GeocodedLocation {
     pub display_name: String,
     pub latitude: f64,
     pub longitude: f64,
+    pub timezone: String,
+}
+
+static TIMEZONE_FINDER: OnceLock<tzf_rs::DefaultFinder> = OnceLock::new();
+
+fn timezone_for_coordinates(latitude: f64, longitude: f64) -> Result<String, String> {
+    if !latitude.is_finite() || !(-90.0..=90.0).contains(&latitude) {
+        return Err("Latitude must be between -90 and 90 degrees".to_string());
+    }
+    if !longitude.is_finite() || !(-180.0..=180.0).contains(&longitude) {
+        return Err("Longitude must be between -180 and 180 degrees".to_string());
+    }
+
+    let finder = TIMEZONE_FINDER.get_or_init(tzf_rs::DefaultFinder::new);
+    let timezone = finder.get_tz_name(longitude, latitude).trim();
+    if timezone.is_empty() {
+        Err(format!(
+            "No timezone found for coordinates {latitude}, {longitude}"
+        ))
+    } else {
+        Ok(timezone.to_string())
+    }
+}
+
+/// Resolve an IANA timezone name from geographic coordinates.
+#[tauri::command]
+pub fn resolve_timezone(latitude: f64, longitude: f64) -> Result<String, String> {
+    timezone_for_coordinates(latitude, longitude)
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -322,6 +351,7 @@ pub async fn save_workspace(
             latitude,
             longitude,
             timezone,
+            utc_offset: None,
         }),
         _ => None,
     };
@@ -733,12 +763,13 @@ pub async fn get_chart_details(
         "subject": {
             "id": chart.subject.id,
             "name": chart.subject.name,
-            "event_time": chart.subject.event_time.map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string()),
+            "event_time": chart.subject.event_time.map(|dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)),
             "location": {
                 "name": chart.subject.location.name,
                 "latitude": chart.subject.location.latitude,
                 "longitude": chart.subject.location.longitude,
                 "timezone": chart.subject.location.timezone,
+                "utc_offset": chart.subject.location.utc_offset,
             }
         },
         "config": {
@@ -1503,6 +1534,7 @@ fn apply_workspace_defaults_patch(
             latitude: 0.0,
             longitude: 0.0,
             timezone: "UTC".to_string(),
+            utc_offset: None,
         });
 
         if let Some(value) = patch.default_location_name {
@@ -2284,6 +2316,15 @@ mod tests {
         assert_eq!(result.display_name, "Prague, Czechia");
         assert_eq!(result.latitude, 50.0875);
         assert_eq!(result.longitude, 14.4214);
+        assert_eq!(result.timezone, "Europe/Prague");
+    }
+
+    #[test]
+    fn timezone_resolution_uses_coordinate_order() {
+        assert_eq!(
+            timezone_for_coordinates(50.0875, 14.4214).expect("Prague timezone should resolve"),
+            "Europe/Prague"
+        );
     }
 
     #[test]
@@ -2360,6 +2401,7 @@ fn select_nominatim_results(
                 display_name: candidate.display_name.clone(),
                 latitude,
                 longitude,
+                timezone: timezone_for_coordinates(latitude, longitude)?,
             })
         })
         .collect()

@@ -23,7 +23,8 @@ use commands::workspace::{
     compute_chart, compute_chart_from_data, compute_transit_series, create_chart, create_workspace,
     delete_chart, delete_workspace, get_chart_details, get_current_model_report,
     get_workspace_defaults, import_chart, load_workspace, open_folder_dialog, resolve_location,
-    save_workspace, save_workspace_defaults, search_locations, update_chart, validate_workspace,
+    resolve_timezone, save_workspace, save_workspace_defaults, search_locations, update_chart,
+    validate_workspace,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -85,6 +86,7 @@ pub fn run() {
             compute_transit_series,
             open_folder_dialog,
             resolve_location,
+            resolve_timezone,
             search_locations,
             get_chart_details,
             get_current_model_report,
