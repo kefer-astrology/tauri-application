@@ -1,7 +1,7 @@
 {
 	"name": "kefer-astrology",
 	"private": true,
-	"version": "2.0.0",
+	"version": "0.1.0",
 	"description": "Kefer astrology monorepo: Tauri 2, React UI, Python sidecar.",
 	"type": "module",
 	"workspaces": [

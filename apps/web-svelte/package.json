@@ -1,7 +1,7 @@
 {
 	"name": "web-svelte",
 	"private": true,
-	"version": "2.0.0",
+	"version": "0.1.0",
 	"description": "Kefer astrology Svelte + Vite UI workspace with Tauri integration.",
 	"type": "module",
 	"scripts": {
