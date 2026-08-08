@@ -1,0 +1,26 @@
+apps/web-react/package.json
+  s_f5df4df7542fa6::t_7393390fc7697d 37
+package-lock.json
+  s_f5df4df7542fa6::t_d6be72eaee0b2b 68,1617-1619
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6320dfcdfa6c1804641e8f301ed47c7567f6f46f",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_f5df4df7542fa6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0f8e4a2-a4f5-4287-b58e-bf60f1aff61a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
