@@ -3,8 +3,6 @@ title: 'Frontend workflow baseline'
 weight: 40
 ---
 
-# Frontend workflow baseline
-
 Both frontend shells should be judged against these baseline workflows:
 
 1. Open a workspace folder or import a chart into a workspace.
@@ -95,8 +93,7 @@ A frontend is only "ready" for this baseline when:
 
 ## 3. Svelte gaps
 
-- Replace the `Open Radix` placeholder with a real import/open-chart workflow or remove it.
-- Replace the `Open Radix` placeholder with a real external chart import workflow for supported file types.
+- Add a real external chart import workflow for supported file types.
 - Connect settings controls for location, house system, and aspects to shared workspace/chart state.
 - Decide whether `BodySelector` should also drive workspace-level default computed bodies, not only transit filters.
 - Persist confirmed settings to workspace/chart config instead of leaving them as local view state.

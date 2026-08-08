@@ -4,8 +4,6 @@ description: "How Kefer derives geocentric lunar phase and illumination from cha
 weight: 43
 ---
 
-# Lunar phase (moon details)
-
 Chart compute commands attach a **`moon_details`** object to the JSON result whenever **`positions.sun`** and **`positions.moon`** are present (tropical longitude in degrees, same convention as the rest of the radix).
 
 Source: [src-tauri/src/lunar_phase.rs](../../../src-tauri/src/lunar_phase.rs)

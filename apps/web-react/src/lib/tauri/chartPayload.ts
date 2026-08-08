@@ -20,8 +20,13 @@ export interface AppChart {
 	latitude?: number;
 	longitude?: number;
 	timezone?: string;
+	utcOffset?: string;
 	rodenRating?: string;
 	observableObjects?: string[];
+	aspectOrbs?: Record<string, number>;
+	selectedAspects?: string[];
+	ayanamsa?: string | null;
+	timeSystem?: string | null;
 	computed?: {
 		positions?: Record<string, unknown>;
 		motion?: Record<
@@ -46,7 +51,13 @@ export interface AppChart {
 export const SUPPORTED_RUST_HOUSE_SYSTEMS = [
 	'Placidus',
 	'Whole Sign',
-	'Campanus'
+	'Campanus',
+	'Koch',
+	'Equal',
+	'Regiomontanus',
+	'Vehlow',
+	'Porphyry',
+	'Alcabitius'
 ] as const;
 
 export type SupportedRustHouseSystem = (typeof SUPPORTED_RUST_HOUSE_SYSTEMS)[number];
@@ -95,7 +106,9 @@ export function normalizeComputedChartPayload(
 		positions[`house_${index + 1}`] = cusp;
 	});
 	const moonDetails =
-		'moon_details' in payload ? (payload.moon_details as MoonDetails | null | undefined) : undefined;
+		'moon_details' in payload
+			? (payload.moon_details as MoonDetails | null | undefined)
+			: undefined;
 	return {
 		positions,
 		motion: payload.motion ?? {},
@@ -199,6 +212,7 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		latitude: full.subject.location.latitude,
 		longitude: full.subject.location.longitude,
 		timezone: full.subject.location.timezone,
+		utcOffset: full.subject.location.utc_offset ?? undefined,
 		houseSystem: full.config.house_system,
 		zodiacType: full.config.zodiac_type,
 		engine: full.config.engine,
@@ -207,7 +221,11 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		tags: full.tags,
 		tagColors: full.tag_colors,
 		rodenRating: full.roden_rating,
-		observableObjects: full.config.observable_objects
+		observableObjects: full.config.observable_objects,
+		aspectOrbs: full.config.aspect_orbs,
+		selectedAspects: full.config.selected_aspects,
+		ayanamsa: full.config.ayanamsa,
+		timeSystem: full.config.time_system
 	};
 }
 
@@ -254,10 +272,19 @@ export function chartDataToComputePayload(
 	const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
 	const model = asNonEmpty(chart.model);
 	const observableObjects =
-		(chart.observableObjects && chart.observableObjects.length > 0)
+		chart.observableObjects && chart.observableObjects.length > 0
 			? chart.observableObjects
-			: (defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined);
-	const selectedAspects = [...defaults.defaultAspects];
+			: defaults.defaultBodies.length > 0
+				? defaults.defaultBodies
+				: undefined;
+	const selectedAspects =
+		chart.selectedAspects && chart.selectedAspects.length > 0
+			? chart.selectedAspects
+			: [...defaults.defaultAspects];
+	const aspectOrbs =
+		chart.aspectOrbs && Object.keys(chart.aspectOrbs).length > 0
+			? chart.aspectOrbs
+			: defaults.defaultAspectOrbs;
 	const tagColors =
 		chart.tagColors && Object.keys(chart.tagColors).length > 0 ? chart.tagColors : undefined;
 
@@ -271,7 +298,8 @@ export function chartDataToComputePayload(
 				name: locationName,
 				latitude: chart.latitude ?? defaults.locationLatitude,
 				longitude: chart.longitude ?? defaults.locationLongitude,
-				timezone
+				timezone,
+				...(chart.utcOffset ? { utc_offset: chart.utcOffset } : {})
 			}
 		},
 		config: {
@@ -283,7 +311,9 @@ export function chartDataToComputePayload(
 			model,
 			observable_objects: observableObjects,
 			selected_aspects: selectedAspects,
-			aspect_orbs: defaults.defaultAspectOrbs
+			aspect_orbs: aspectOrbs,
+			...(chart.ayanamsa ? { ayanamsa: chart.ayanamsa } : {}),
+			...(chart.timeSystem ? { time_system: chart.timeSystem } : {})
 		},
 		tags: chart.tags ?? [],
 		...(tagColors ? { tag_colors: tagColors } : {}),
@@ -365,7 +395,7 @@ export function appChartFromNewHoroscopeInput(input: {
 	latitudeDir: LatitudeDirection;
 	longitudeDir: LongitudeDirection;
 	timezone: string;
-	advancedMode: boolean;
+	utcOffset?: string;
 	rodenRating?: string;
 	workspaceDefaults: WorkspaceDefaultsState;
 	existingIds: ReadonlySet<string>;
@@ -378,7 +408,8 @@ export function appChartFromNewHoroscopeInput(input: {
 	const baseId = normalizeChartId(name);
 	const id = uniqueChartId(baseId, input.existingIds);
 
-	const dateTime = `${formatDatePart(input.dateTime)} ${formatTimePart(input.dateTime)}`;
+	const timezone = input.timezone.trim() || input.workspaceDefaults.timezone;
+	const dateTime = wallTimeToUtcIso(input.dateTime, timezone, input.utcOffset);
 
 	const locText = input.location.trim();
 	const location = locText || input.workspaceDefaults.locationName;
@@ -399,7 +430,8 @@ export function appChartFromNewHoroscopeInput(input: {
 		location,
 		latitude: lat ?? input.workspaceDefaults.locationLatitude,
 		longitude: lon ?? input.workspaceDefaults.locationLongitude,
-		timezone: input.timezone.trim() || input.workspaceDefaults.timezone,
+		timezone,
+		utcOffset: input.utcOffset,
 		houseSystem: input.workspaceDefaults.houseSystem,
 		zodiacType: input.workspaceDefaults.zodiacType,
 		engine: input.workspaceDefaults.engine,
@@ -409,12 +441,57 @@ export function appChartFromNewHoroscopeInput(input: {
 	};
 }
 
-function formatDatePart(value: Date): string {
-	return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+function fixedUtcOffsetMilliseconds(timezone: string): number | null {
+	if (/^(UTC|GMT)$/i.test(timezone)) return 0;
+	const match = /^(?:UTC|GMT)([+-])(\d{1,2})(?::?(\d{2}))?$/i.exec(timezone);
+	if (!match) return null;
+	const hours = Number(match[2]);
+	const minutes = Number(match[3] ?? 0);
+	if (hours > 23 || minutes > 59) return null;
+	const milliseconds = (hours * 60 + minutes) * 60_000;
+	return match[1] === '+' ? milliseconds : -milliseconds;
 }
 
-function formatTimePart(value: Date): string {
-	return [value.getHours(), value.getMinutes(), value.getSeconds()]
-		.map((n) => String(n).padStart(2, '0'))
-		.join(':');
+function ianaOffsetMilliseconds(timezone: string, instant: Date): number {
+	const parts = new Intl.DateTimeFormat('en-US', {
+		timeZone: timezone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+		hourCycle: 'h23'
+	}).formatToParts(instant);
+	const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+	const representedAsUtc = Date.UTC(
+		Number(values.year),
+		Number(values.month) - 1,
+		Number(values.day),
+		Number(values.hour),
+		Number(values.minute),
+		Number(values.second)
+	);
+	return representedAsUtc - instant.getTime();
+}
+
+/** Convert the form's wall-clock fields in `timezone` into one unambiguous UTC instant. */
+export function wallTimeToUtcIso(value: Date, timezone: string, utcOffset?: string): string {
+	const wallTimeUtc = Date.UTC(
+		value.getFullYear(),
+		value.getMonth(),
+		value.getDate(),
+		value.getHours(),
+		value.getMinutes(),
+		value.getSeconds()
+	);
+	const fixedOffset = fixedUtcOffsetMilliseconds(utcOffset ?? timezone);
+	if (fixedOffset !== null) return new Date(wallTimeUtc - fixedOffset).toISOString();
+
+	let candidate = new Date(wallTimeUtc);
+	let offset = ianaOffsetMilliseconds(timezone, candidate);
+	candidate = new Date(wallTimeUtc - offset);
+	const correctedOffset = ianaOffsetMilliseconds(timezone, candidate);
+	if (correctedOffset !== offset) candidate = new Date(wallTimeUtc - correctedOffset);
+	return candidate.toISOString();
 }

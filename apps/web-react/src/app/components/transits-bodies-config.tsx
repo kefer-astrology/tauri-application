@@ -200,12 +200,14 @@ export function TransitsBodiesConfig({
 			compact?: boolean;
 			checked?: boolean;
 			disabled?: boolean;
+			unsupported?: boolean;
 			onCheckedChange?: (checked: boolean) => void;
 		} = {}
 	) => (
 		<Label
 			key={id}
 			htmlFor={id}
+			title={options.unsupported ? t('transits_body_unsupported_hint') : undefined}
 			className={cn(
 				'flex items-center space-x-2',
 				options.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
@@ -221,6 +223,11 @@ export function TransitsBodiesConfig({
 				onCheckedChange={(checked) => options.onCheckedChange?.(checked === true)}
 			/>
 			<span className={cn('text-sm', options.strong && 'font-semibold')}>{content}</span>
+			{options.unsupported && (
+				<span className={cn('text-xs italic', ft.muted)}>
+					({t('transits_body_unsupported_hint')})
+				</span>
+			)}
 		</Label>
 	);
 
@@ -249,6 +256,7 @@ export function TransitsBodiesConfig({
 					strong: true,
 					checked: groupSelected,
 					disabled: groupBodyIds.length === 0,
+					unsupported: groupBodyIds.length === 0,
 					onCheckedChange: (checked) => setGroupSelection(groupBodyIds, checked)
 				})}
 				<div className="ml-6 flex flex-col gap-2">
@@ -261,6 +269,7 @@ export function TransitsBodiesConfig({
 								compact: true,
 								checked: bodyId ? selectedBodyIds.includes(bodyId) : false,
 								disabled: !bodyId,
+								unsupported: !bodyId,
 								onCheckedChange: bodyId
 									? (checked) => setBodySelection(bodyId, checked)
 									: undefined
@@ -300,6 +309,7 @@ export function TransitsBodiesConfig({
 									strong: true,
 									checked: groupSelected,
 									disabled: groupBodyIds.length === 0,
+									unsupported: groupBodyIds.length === 0,
 									onCheckedChange: (checked) => setGroupSelection(groupBodyIds, checked)
 								})}
 								<div className="ml-6 grid grid-cols-2 gap-x-8 gap-y-2">
@@ -311,6 +321,7 @@ export function TransitsBodiesConfig({
 											{
 												checked: bodyId ? selectedBodyIds.includes(bodyId) : false,
 												disabled: !bodyId,
+												unsupported: !bodyId,
 												onCheckedChange: bodyId
 													? (checked) => setBodySelection(bodyId, checked)
 													: undefined

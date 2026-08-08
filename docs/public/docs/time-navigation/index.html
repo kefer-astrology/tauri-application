@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Time navigation | Kefer docs</title>
@@ -64,7 +64,7 @@
 <li>Svelte already supports UTC-safe stepping for the main navigation path</li>
 <li>Svelte already supports an Astrolabe-style shift model layered on top of current time</li>
 <li>React should follow the same behavior contract even where the exact UI differs</li>
-<li>some current update paths still mix live computed payloads with compatibility-era query helpers</li>
+<li>Svelte query helpers now route through <code>src/lib/tauri/workspace.ts</code>, with in-memory fallback rendering when persisted query rows are unavailable</li>
 </ul>
 <h2 id="supported-datetime-formats">Supported datetime formats</h2>
 <h3 id="backend-accepted-datetime-strings">Backend-accepted datetime strings</h3>
@@ -136,7 +136,7 @@
 </ul>
 <h2 id="current-caveats">Current caveats</h2>
 <ul>
-<li>some Svelte paths still rely on compatibility-era query helpers</li>
+<li>Svelte still falls back to the current in-memory computed payload when no persisted query rows are available</li>
 <li>performance work in this area is still partly about reducing reactive churn and repeated backend loads</li>
 <li>this page is the behavior reference, not a promise that one frontend’s code samples are canonical</li>
 <li>frontend-local parsing is currently a little broader than the Rust command contract, so docs and new UI flows should prefer the backend-safe formats above</li>

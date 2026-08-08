@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Project documentation | Kefer docs</title>
@@ -20,6 +20,14 @@
       </header>
       <main>
         
+  
+  
+    
+      
+        
+      
+    
+  
   <article class="content">
     <header class="page-header">
       <p class="eyebrow">docs</p>
@@ -30,11 +38,13 @@
       <h2 id="architecture-foundation">Architecture foundation</h2>
 <ul>
 <li><strong><a href="./architecture/">System architecture</a></strong> — cross-layer model definition.</li>
+<li><strong><a href="./backend-structure/">Backend structure and data ownership</a></strong> — Rust boundaries, workspace representations, layered overrides, provenance, and Python parity.</li>
 <li><strong><a href="./tauri-command-contracts/">Tauri command contracts</a></strong> — normative frontend-facing command contract.</li>
 </ul>
 <h2 id="backend-and-astronomy-engine">Backend and astronomy engine</h2>
 <ul>
 <li><strong><a href="./spice-backend/">SPICE backend</a></strong> — JPL/SPICE architecture, licensing rationale, and runtime status.</li>
+<li><strong><a href="./house-systems/">House systems</a></strong> — supported house-system names, setup inputs, and backend coverage.</li>
 <li><strong><a href="./ephemeris-manager/">Ephemeris manager</a></strong> — BSP catalog ownership, downloads, chaining, and asteroid support.</li>
 <li><strong><a href="./python-package/">Python package</a></strong> — optional Python compute seam and subprocess contract.</li>
 </ul>
@@ -58,41 +68,36 @@
 <li><code>npm run docs:dev</code> prepares those generated docs assets and starts Hugo locally; <code>npm run docs:build</code> prepares them and writes the production site to <code>dist-docs/</code>.</li>
 <li><code>translations.csv</code> feeds both frontend locale trees via <code>npm run i18n:sync</code>; <code>npm run i18n:prune:dry</code> and <code>npm run i18n:prune</code> check/remove keys unused by both frontends before syncing.</li>
 </ul>
-<h2 id="historical-context">Historical context</h2>
-<ul>
-<li><strong><a href="./discussion-summary/">Discussion summary</a></strong> — archival notes from the earlier UI phase.</li>
-<li>Root-level <strong><a href="../../../MIGRATION.md"><code>MIGRATION.md</code></a></strong> — remaining backend migration work and long-term JPL-centered direction.</li>
-</ul>
 <h2 id="folder-structure-description">Folder structure description</h2>
 <table>
-  <thead>
-      <tr>
-          <th>Layer</th>
-          <th>Role</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><strong>Frontends</strong> (<code>apps/web-react/</code>, <code>apps/web-svelte/</code>)</td>
-          <td>UI workspaces. React is the current primary shell; Svelte is the alternate shell and parity target.</td>
-      </tr>
-      <tr>
-          <td><strong>Documentation</strong> (<code>docs/content/</code>, <code>docs/public/</code>)</td>
-          <td>Internal documentation sources and generated doc pages.</td>
-      </tr>
-      <tr>
-          <td><strong>Tauri</strong> (<code>src-tauri/</code>)</td>
-          <td>Native window, <code>invoke</code> commands, workspace orchestration, and local compute routing.</td>
-      </tr>
-      <tr>
-          <td><strong>Python</strong> (<code>backend-python/</code>)</td>
-          <td>Optional sidecar source when present; not the sole compute owner.</td>
-      </tr>
-      <tr>
-          <td><strong>Static assets</strong> (<code>static/</code>)</td>
-          <td>Shared app-shell assets and astrology glyphs copied into frontend builds.</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Layer</th>
+					<th>Role</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>Frontends</strong> (<code>apps/web-react/</code>, <code>apps/web-svelte/</code>)</td>
+					<td>UI workspaces. React is the current primary shell; Svelte is the alternate shell and parity target.</td>
+			</tr>
+			<tr>
+					<td><strong>Documentation</strong> (<code>docs/content/</code>, <code>docs/public/</code>)</td>
+					<td>Internal documentation sources and generated doc pages.</td>
+			</tr>
+			<tr>
+					<td><strong>Tauri</strong> (<code>src-tauri/</code>)</td>
+					<td>Native window, <code>invoke</code> commands, workspace orchestration, and local compute routing.</td>
+			</tr>
+			<tr>
+					<td><strong>Python</strong> (<code>backend-python/</code>)</td>
+					<td>Optional sidecar source when present; not the sole compute owner.</td>
+			</tr>
+			<tr>
+					<td><strong>Static assets</strong> (<code>static/</code>)</td>
+					<td>Shared app-shell assets and astrology glyphs copied into frontend builds.</td>
+			</tr>
+	</tbody>
 </table>
 
     </div>
@@ -124,6 +129,11 @@
             <p>JPL/SPICE backend contract, implementation boundary, and current status.</p>
           </a>
         
+          <a class="card" href="/docs/backend-structure/">
+            <h2>Backend structure and data ownership</h2>
+            <p>Target Rust boundaries, canonical data model, layered settings, and Python parity rules.</p>
+          </a>
+        
           <a class="card" href="/docs/ephemeris-manager/">
             <h2>Ephemeris manager</h2>
             <p>Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.</p>
@@ -142,6 +152,11 @@
           <a class="card" href="/docs/python-package/">
             <h2>Python package</h2>
             <p>Reference for the optional Python backend package and its role in the current architecture.</p>
+          </a>
+        
+          <a class="card" href="/docs/house-systems/">
+            <h2>House systems</h2>
+            <p>Supported house-system names, calculation setup, and backend coverage.</p>
           </a>
         
           <a class="card" href="/docs/time-navigation/">

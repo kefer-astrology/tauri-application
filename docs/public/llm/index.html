@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LLM handoff | Kefer docs</title>
@@ -20,6 +20,14 @@
       </header>
       <main>
         
+  
+  
+    
+      
+        
+      
+    
+  
   <article class="content">
     <header class="page-header">
       <p class="eyebrow">llm</p>
@@ -35,6 +43,7 @@
 <li><a href="./rust-workspace-contract/">Rust workspace contract</a> defines the current Rust-side workspace and no-sidecar rules.</li>
 <li><a href="./frontend-workflow-baseline/">Frontend workflow baseline</a> defines the baseline workspace/settings/compute workflows both frontends should satisfy.</li>
 <li><a href="./chart-datetime-contract/">Chart datetime contract</a> defines the canonical timestamp shape shared by both frontends and Tauri commands.</li>
+<li><a href="./transit-series-contract/">Transit series contract</a> defines the shared React/Svelte command payload and parity target for transit-series computation.</li>
 <li><a href="./import-chart-contract/">Import chart contract</a> defines the current explicit import workflow and supported file formats.</li>
 <li><a href="./radix-render-contract/">Radix render contract</a> defines the current computed output required to render a radix view without mock geometry.</li>
 <li><a href="./frontend-gap-implementation-plan/">Frontend gap implementation plan</a> turns the current frontend gaps into a concrete execution sequence.</li>
@@ -47,7 +56,6 @@
 <li>treat JPL / SPICE as the preferred long-term astronomy direction</li>
 <li>treat Swiss Ephemeris as compatibility and validation infrastructure</li>
 </ul>
-<p>When the task is about staged migration rather than immediate contract behavior, also read <code>/MIGRATION.md</code>.</p>
 
     </div>
     
@@ -95,6 +103,11 @@
         
           <a class="card" href="/llm/radix-render-contract/">
             <h2>Radix render contract</h2>
+            <p>Open this section.</p>
+          </a>
+        
+          <a class="card" href="/llm/transit-series-contract/">
+            <h2>Transit series contract</h2>
             <p>Open this section.</p>
           </a>
         

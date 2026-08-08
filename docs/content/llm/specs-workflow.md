@@ -3,8 +3,6 @@ title: "Specs workflow"
 weight: 25
 ---
 
-# Specs workflow
-
 This page defines the LLM-facing workflow for specs-driven development in this repo.
 
 The main rule is:

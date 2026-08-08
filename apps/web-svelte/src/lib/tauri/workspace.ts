@@ -5,6 +5,8 @@ import type {
   Aspect,
   ChartDetails,
   ComputeChartResult,
+  ComputeSettingsOverrides,
+  CurrentModelReport,
   Position,
   RadixRelativePosition,
   ResolvedLocation,
@@ -107,6 +109,11 @@ export function chartDetailsToChartData(details: ChartDetails): ChartData {
     engine: details.config.engine,
     model: details.config.model,
     overrideEphemeris: details.config.override_ephemeris,
+    observableObjects: details.config.observable_objects,
+    aspectOrbs: details.config.aspect_orbs,
+    selectedAspects: details.config.selected_aspects,
+    ayanamsa: details.config.ayanamsa,
+    timeSystem: details.config.time_system,
     tags: details.tags
   };
 }
@@ -138,18 +145,41 @@ export function getWorkspaceDefaults(workspacePath: string): Promise<WorkspaceDe
   return invoke<WorkspaceDefaultsDto>('get_workspace_defaults', { workspacePath });
 }
 
+export function getCurrentModelReport(
+  workspacePath: string,
+  chartId?: string | null
+): Promise<CurrentModelReport> {
+  return invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId });
+}
+
 export function getChartDetails(workspacePath: string, chartId: string): Promise<ChartDetails> {
   return invoke<ChartDetails>('get_chart_details', { workspacePath, chartId });
 }
 
-export function computeChart(workspacePath: string, chartId: string): Promise<ComputeChartResult> {
-  return invoke<ComputeChartResult>('compute_chart', { workspacePath, chartId });
+export function computeChart(
+  workspacePath: string,
+  chartId: string,
+  options?: {
+    presetId?: string | null;
+    settingsOverrides?: ComputeSettingsOverrides | null;
+  }
+): Promise<ComputeChartResult> {
+  return invoke<ComputeChartResult>('compute_chart', {
+    workspacePath,
+    chartId,
+    presetId: options?.presetId ?? null,
+    settingsOverrides: options?.settingsOverrides ?? null
+  });
 }
 
 export function computeChartFromData(
-  chartJson: Record<string, unknown>
+  chartJson: Record<string, unknown>,
+  settingsOverrides?: ComputeSettingsOverrides | null
 ): Promise<ComputeChartResult> {
-  return invoke<ComputeChartResult>('compute_chart_from_data', { chartJson });
+  return invoke<ComputeChartResult>('compute_chart_from_data', {
+    chartJson,
+    settingsOverrides: settingsOverrides ?? null
+  });
 }
 
 export function resolveLocation(query: string): Promise<ResolvedLocation> {
@@ -200,7 +230,11 @@ export function saveWorkspaceDefaults(
 }
 
 export function computeTransitSeries(params: TransitSeriesRequest): Promise<TransitSeriesResult> {
-  return invoke<TransitSeriesResult>('compute_transit_series', params);
+  return invoke<TransitSeriesResult>('compute_transit_series', {
+    ...params,
+    presetId: params.presetId ?? null,
+    settingsOverrides: params.settingsOverrides ?? null
+  });
 }
 
 export async function queryWorkspacePositions(params: {
@@ -343,9 +377,17 @@ export async function queryWorkspaceRadixRelative(params: {
 
 export async function openWorkspaceFolder(
   folderPath: string,
-  onDefaults?: (defaults: WorkspaceDefaultsDto) => void
+  onDefaults?: (defaults: WorkspaceDefaultsDto) => void,
+  onModelReport?: (report: CurrentModelReport) => void
 ): Promise<{ path: string; charts: ChartData[] }> {
   const workspace = await loadWorkspace(folderPath);
+
+  try {
+    const report = await getCurrentModelReport(folderPath);
+    onModelReport?.(report);
+  } catch (reportErr) {
+    console.warn('Failed to load current model report:', reportErr);
+  }
 
   try {
     const defaults = await getWorkspaceDefaults(folderPath);

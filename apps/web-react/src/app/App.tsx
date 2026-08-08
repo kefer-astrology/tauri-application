@@ -43,7 +43,7 @@ import {
 	saveWorkspace,
 	saveWorkspaceDefaults
 } from '@/lib/tauri/workspace';
-import type { WorkspaceDefaultsDto } from '@/lib/tauri/types';
+import type { CurrentModelReport, WorkspaceDefaultsDto } from '@/lib/tauri/types';
 import { readStoredAppShellIconSet, type AppShellIconSetId } from '@/lib/app-shell';
 import {
 	persistElementColors,
@@ -73,6 +73,7 @@ function mergeWorkspaceDefaults(
 			: prev.locationLongitude;
 	return {
 		houseSystem: normalizeSupportedHouseSystem(dto.default_house_system) ?? prev.houseSystem,
+		// Backend has no workspace-level zodiac/ayanamsa default field yet (only per-chart).
 		zodiacType: prev.zodiacType,
 		timezone: dto.default_timezone?.trim() || prev.timezone,
 		locationName: dto.default_location_name?.trim() || prev.locationName,
@@ -117,6 +118,24 @@ function mergeWorkspaceDefaultsPatch(
 		aspectLineTierStyle: patch.aspectLineTierStyle
 			? { ...prev.aspectLineTierStyle, ...patch.aspectLineTierStyle }
 			: prev.aspectLineTierStyle
+	};
+}
+
+/** Apply the backend's resolved model-layer defaults before the workspace-layer DTO overlay. */
+function mergeModelReportDefaults(
+	prev: WorkspaceDefaultsState,
+	report: CurrentModelReport
+): WorkspaceDefaultsState {
+	const effective = report.effective_settings;
+	return {
+		...prev,
+		defaultBodies: effective.default_bodies.length > 0 ? effective.default_bodies : prev.defaultBodies,
+		defaultAspects:
+			effective.default_aspects.length > 0 ? effective.default_aspects : prev.defaultAspects,
+		defaultAspectOrbs:
+			Object.keys(effective.aspect_orbs).length > 0
+				? { ...prev.defaultAspectOrbs, ...effective.aspect_orbs }
+				: prev.defaultAspectOrbs
 	};
 }
 
@@ -203,6 +222,7 @@ export default function App() {
 	const [workspaceDefaults, setWorkspaceDefaults] = useState<WorkspaceDefaultsState>(() => ({
 		...DEFAULT_WORKSPACE_DEFAULTS
 	}));
+	const [currentModelReport, setCurrentModelReport] = useState<CurrentModelReport | null>(null);
 	const computingChartIdsRef = useRef<Set<string>>(new Set());
 
 	const addChart = useCallback((chart: AppChart) => {
@@ -454,9 +474,21 @@ export default function App() {
 		try {
 			const folder = await openFolderDialog();
 			if (!folder) return;
-			const { path, charts: loaded } = await openWorkspaceFolder(folder, (dto) => {
-				setWorkspaceDefaults((w) => mergeWorkspaceDefaults(w, dto));
-			});
+			const { path, charts: loaded } = await openWorkspaceFolder(
+				folder,
+				(dto) => {
+					setWorkspaceDefaults((w) => mergeWorkspaceDefaults(w, dto));
+				},
+				(report) => {
+					setCurrentModelReport(report);
+					setWorkspaceDefaults((w) => mergeModelReportDefaults(w, report));
+					if (report.warnings.length > 0) {
+						toast.message(t('toast_model_report_warnings'), {
+							description: report.warnings.join(', ')
+						});
+					}
+				}
+			);
 			setWorkspacePath(path);
 			replaceChartsFromWorkspace(loaded);
 			setActiveView('horoskop');

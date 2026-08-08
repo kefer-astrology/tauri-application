@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Specs workflow | Kefer docs</title>
@@ -27,14 +27,13 @@
       
     </header>
     <div class="prose">
-      <h1 id="specs-workflow">Specs workflow</h1>
-<p>This page defines the LLM-facing workflow for specs-driven development in this repo.</p>
+      <p>This page defines the LLM-facing workflow for specs-driven development in this repo.</p>
 <p>The main rule is:</p>
 <ul>
 <li>Always look for the spec in <code>docs/content/llm/</code> first.</li>
 <li>Use <code>docs/content/docs/</code> to understand the system, architecture, and current implementation behavior.</li>
-<li>Use <code>MIGRATION.md</code> when the task affects long-term compute architecture, backend boundaries, or staged migration decisions.</li>
-<li>When a migration task lands, update the progress ledger in <code>MIGRATION.md</code> in the same change set.</li>
+<li>Use <code>development-driver.md</code> when the task affects long-term compute architecture, backend boundaries, or staged migration decisions.</li>
+<li>When a migration task lands, update the development driver or the relevant task-specific <code>/llm/</code> contract in the same change set.</li>
 </ul>
 <h2 id="codex-rule">Codex rule</h2>
 <p>When starting a task, follow this order:</p>
@@ -42,13 +41,13 @@
 <li>Read <code>/llm/project-context/</code>.</li>
 <li>Read <code>/llm/specs-workflow/</code>.</li>
 <li>Look in <code>/llm/</code> for a task-specific spec or workflow note.</li>
-<li>Read <code>/MIGRATION.md</code> if the task affects backend ownership, astrology layering, or migration sequencing.</li>
+<li>Read <code>/llm/development-driver/</code> if the task affects backend ownership, astrology layering, or migration sequencing.</li>
 <li>Use <code>/docs/</code> to understand how the system fits together and to confirm current implementation details.</li>
 </ol>
 <p>For workspace import work, use <code>/llm/import-chart-contract/</code> as the task-specific spec before inferring behavior from code.
 For radix rendering work, use <code>/llm/radix-render-contract/</code> before inferring frontend geometry from existing components.</p>
 <p>When a runtime decision rule is established in <code>/llm/</code>, prefer carrying that rule through the whole app consistently instead of reintroducing per-feature ad hoc checks.</p>
-<p>When <code>/llm/</code> describes the current contract and <code>MIGRATION.md</code> describes the target direction, preserve the current contract unless the task explicitly moves the implementation forward and updates the relevant specs in the same change set.</p>
+<p>When one <code>/llm/</code> page describes the current contract and another describes the target direction, preserve the current contract unless the task explicitly moves the implementation forward and updates the relevant specs in the same change set.</p>
 <h2 id="repository-split">Repository split</h2>
 <ul>
 <li><code>docs/content/llm/</code>: Codex-facing workflow, specs, continuation rules, and task guidance.</li>

@@ -3,8 +3,6 @@ title: "Import chart contract"
 weight: 42
 ---
 
-# Import chart contract
-
 This page defines the current import behavior for bringing previously created charts into an existing workspace.
 
 ## Scope

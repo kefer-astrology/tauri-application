@@ -84,7 +84,6 @@ pub enum ObjectType {
     Part,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AspectContext {
@@ -121,11 +120,40 @@ pub enum TimeSystem {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RelationType {
+    Transit,
+    Synastry,
+    Progression,
+    Composite,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ViewModuleType {
+    WheelView,
+    TransitTimeline,
+    AspectGrid,
+    SummaryTable,
+    InterpretationText,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LayoutStyle {
+    Single,
+    TimelineOverlay,
+    DualWheel,
+    Comparison,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Location {
     pub name: String,
     pub latitude: f64,
     pub longitude: f64,
     pub timezone: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub utc_offset: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -146,32 +174,12 @@ fn deserialize_datetime<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    use serde::Deserialize;
+    use serde::{de::Error, Deserialize};
     let s: Option<String> = Option::deserialize(deserializer)?;
     match s {
-        Some(ref s) if !s.is_empty() => {
-            // Try multiple datetime formats
-            let formats = [
-                "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%dT%H:%M:%S",
-                "%Y-%m-%dT%H:%M:%SZ",
-                "%Y-%m-%d %H:%M",
-                "%Y-%m-%d",
-            ];
-
-            for format in &formats {
-                if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, format) {
-                    return Ok(Some(dt.and_utc()));
-                }
-            }
-
-            // Try parsing as ISO8601
-            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(s) {
-                return Ok(Some(dt.with_timezone(&chrono::Utc)));
-            }
-
-            Ok(None)
-        }
+        Some(ref s) if !s.trim().is_empty() => crate::event_time::parse_event_time(s)
+            .map(Some)
+            .map_err(D::Error::custom),
         _ => Ok(None),
     }
 }
@@ -184,7 +192,7 @@ where
     S: serde::Serializer,
 {
     match dt {
-        Some(dt) => serializer.serialize_str(&dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+        Some(dt) => serializer.serialize_str(&dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)),
         None => serializer.serialize_none(),
     }
 }
@@ -230,6 +238,58 @@ pub struct ChartInstance {
     pub tag_colors: HashMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub roden_rating: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChartPreset {
+    pub name: String,
+    pub config: ChartConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DateRange {
+    pub start: chrono::DateTime<chrono::Utc>,
+    pub end: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChartRelation {
+    #[serde(rename = "type")]
+    pub relation_type: RelationType,
+    pub source: String,
+    pub target: String,
+    pub method: String,
+    #[serde(default)]
+    pub time_span: Option<DateRange>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ViewModule {
+    #[serde(rename = "type")]
+    pub module_type: ViewModuleType,
+    #[serde(default)]
+    pub config: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ViewLayout {
+    pub name: String,
+    pub layout_style: LayoutStyle,
+    #[serde(default)]
+    pub chart_instances: Vec<String>,
+    #[serde(default)]
+    pub relations: Vec<ChartRelation>,
+    #[serde(default)]
+    pub modules: Vec<ViewModule>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Annotation {
+    pub title: String,
+    pub content: String,
+    #[serde(default)]
+    pub created: Option<chrono::DateTime<chrono::Utc>>,
+    pub author: String,
 }
 
 /// Line weight on the radix wheel from orb tightness vs the configured max orb for that aspect type.

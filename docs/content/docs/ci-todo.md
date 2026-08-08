@@ -4,11 +4,7 @@ description: 'Current automation follow-up for docs, i18n, and desktop builds.'
 weight: 110
 ---
 
-# CI todo
-
-This page tracks current automation follow-up only.
-
-It is not a frontend planning page and should not be used for general UI backlog notes.
+Not a frontend planning page — do not use it for general UI backlog notes.
 
 ## Translation sync
 

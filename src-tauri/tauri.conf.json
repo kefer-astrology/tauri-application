@@ -13,8 +13,10 @@
 		"windows": [
 			{
 				"title": "Kefer",
-				"width": 800,
-				"height": 600,
+				"width": 1024,
+				"height": 768,
+				"minWidth": 480,
+				"minHeight": 600,
 				"resizable": true,
 				"fullscreen": false
 			}

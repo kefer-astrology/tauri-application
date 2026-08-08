@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>React frontend | Kefer docs</title>
@@ -32,6 +32,8 @@
 <li>React is the default desktop shell.</li>
 <li>The main horoscope workflow is wired to real Tauri compute commands.</li>
 <li>Workspace open/save/defaults persistence is wired.</li>
+<li><code>openWorkspaceFolder()</code> calls <code>get_current_model_report</code> and seeds workspace defaults from <code>effective_settings</code> before the workspace-level DTO is applied.</li>
+<li>Chart-level <code>observable_objects</code>/<code>aspect_orbs</code>/<code>selected_aspects</code>/<code>ayanamsa</code>/<code>time_system</code> round-trip through <code>ChartDetails</code>/<code>AppChart</code> and take precedence over workspace defaults in <code>chartDataToComputePayload</code>.</li>
 <li>The create-new flow uses app-owned popover controls for time and location search.</li>
 <li>Some secondary views are still presentational or prototype-oriented rather than fully chart-backed.</li>
 <li>React is still the clearer reference for app-shell decomposition and reusable input primitives.</li>

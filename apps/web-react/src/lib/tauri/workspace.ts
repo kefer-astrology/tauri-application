@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
 	ChartDetails,
 	ComputeChartResult,
+	ComputeSettingsOverrides,
+	CurrentModelReport,
 	ResolvedLocation,
 	TransitSeriesRequest,
 	TransitSeriesResult,
@@ -33,6 +35,13 @@ export async function getWorkspaceDefaults(workspacePath: string): Promise<Works
 	return invoke<WorkspaceDefaultsDto>('get_workspace_defaults', { workspacePath });
 }
 
+export async function getCurrentModelReport(
+	workspacePath: string,
+	chartId?: string | null
+): Promise<CurrentModelReport> {
+	return invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId });
+}
+
 export async function getChartDetails(
 	workspacePath: string,
 	chartId: string
@@ -42,23 +51,44 @@ export async function getChartDetails(
 
 export async function computeChart(
 	workspacePath: string,
-	chartId: string
+	chartId: string,
+	options?: {
+		presetId?: string | null;
+		settingsOverrides?: ComputeSettingsOverrides | null;
+	}
 ): Promise<ComputeChartResult> {
-	return invoke<ComputeChartResult>('compute_chart', { workspacePath, chartId });
+	return invoke<ComputeChartResult>('compute_chart', {
+		workspacePath,
+		chartId,
+		presetId: options?.presetId ?? null,
+		settingsOverrides: options?.settingsOverrides ?? null
+	});
 }
 
 export async function computeChartFromData(
-	chartJson: Record<string, unknown>
+	chartJson: Record<string, unknown>,
+	settingsOverrides?: ComputeSettingsOverrides | null
 ): Promise<ComputeChartResult> {
-	return invoke<ComputeChartResult>('compute_chart_from_data', { chartJson });
+	return invoke<ComputeChartResult>('compute_chart_from_data', {
+		chartJson,
+		settingsOverrides: settingsOverrides ?? null
+	});
 }
 
 export function computeTransitSeries(params: TransitSeriesRequest): Promise<TransitSeriesResult> {
-	return invoke<TransitSeriesResult>('compute_transit_series', params);
+	return invoke<TransitSeriesResult>('compute_transit_series', {
+		...params,
+		presetId: params.presetId ?? null,
+		settingsOverrides: params.settingsOverrides ?? null
+	});
 }
 
 export async function resolveLocation(query: string): Promise<ResolvedLocation> {
 	return invoke<ResolvedLocation>('resolve_location', { query });
+}
+
+export async function resolveTimezone(latitude: number, longitude: number): Promise<string> {
+	return invoke<string>('resolve_timezone', { latitude, longitude });
 }
 
 export async function searchLocations(query: string): Promise<ResolvedLocation[]> {
@@ -118,9 +148,17 @@ export async function saveWorkspaceDefaults(
 /** Load workspace folder: summaries → full chart rows where possible, init DB, compute each chart. */
 export async function openWorkspaceFolder(
 	folderPath: string,
-	onDefaults?: (d: WorkspaceDefaultsDto) => void
+	onDefaults?: (d: WorkspaceDefaultsDto) => void,
+	onModelReport?: (r: CurrentModelReport) => void
 ): Promise<{ path: string; charts: AppChart[] }> {
 	const workspace = await loadWorkspace(folderPath);
+
+	try {
+		const report = await getCurrentModelReport(folderPath);
+		onModelReport?.(report);
+	} catch (e) {
+		console.warn('get_current_model_report failed:', e);
+	}
 
 	try {
 		const defaults = await getWorkspaceDefaults(folderPath);

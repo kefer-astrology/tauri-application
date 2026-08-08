@@ -4,11 +4,7 @@ description: "Historical architecture notes from the earlier UI phase."
 weight: 90
 ---
 
-# Discussion summary
-
-This page is archival background from the earlier UI phase.
-
-Do not treat it as the live implementation contract.
+Do not treat this page as the live implementation contract.
 
 For current behavior and current architecture, prefer:
 

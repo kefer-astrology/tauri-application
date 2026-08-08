@@ -30,43 +30,10 @@
     aspectColors = {}
   }: Props = $props();
 
-  const defaultPlanets = $derived({
-    sun: { degrees: 258, sign: 'sagittarius', house: 12 },
-    moon: { degrees: 253, sign: 'sagittarius', house: 12 },
-    mercury: { degrees: 265, sign: 'sagittarius', house: 12 },
-    venus: { degrees: 266, sign: 'sagittarius', house: 12 },
-    mars: { degrees: 153, sign: 'virgo', house: 5 },
-    jupiter: { degrees: 13, sign: 'aries', house: 9 },
-    saturn: { degrees: 323, sign: 'aquarius', house: 1 },
-    uranus: { degrees: 151, sign: 'virgo', house: 5 },
-    neptune: { degrees: 223, sign: 'scorpio', house: 8 },
-    pluto: { degrees: 159, sign: 'virgo', house: 5 },
-    meanNode: { degrees: 112, sign: 'cancer', house: 4 },
-    chiron: { degrees: 344, sign: 'pisces', house: 2 }
-  });
-
-  const defaultAspects = $derived<AspectMatrixAspect[]>([
-    { from: 'sun', to: 'moon', type: 'square', orb: 3, applying: false },
-    { from: 'sun', to: 'mars', type: 'square', orb: 0, applying: true },
-    { from: 'sun', to: 'jupiter', type: 'square', orb: 4, applying: false },
-    { from: 'moon', to: 'mars', type: 'square', orb: 0, applying: true },
-    { from: 'mars', to: 'jupiter', type: 'sextile', orb: 2, applying: false },
-    { from: 'jupiter', to: 'saturn', type: 'trine', orb: 3, applying: true },
-    { from: 'saturn', to: 'uranus', type: 'sextile', orb: 1, applying: false },
-    { from: 'uranus', to: 'pluto', type: 'square', orb: 0, applying: true },
-    { from: 'neptune', to: 'pluto', type: 'sextile', orb: 1, applying: false },
-    { from: 'mars', to: 'meanNode', type: 'quincunx', orb: 0, applying: false },
-    { from: 'jupiter', to: 'meanNode', type: 'square', orb: 2, applying: true },
-    { from: 'neptune', to: 'meanNode', type: 'trine', orb: 2, applying: false },
-    { from: 'sun', to: 'chiron', type: 'square', orb: 1, applying: true },
-    { from: 'moon', to: 'chiron', type: 'square', orb: 1, applying: true }
-  ]);
-
-  const planets = $derived<Record<string, { degrees: number; sign: string; house?: number }>>({
-    ...defaultPlanets,
-    ...planetPositions
-  });
-  const allAspects = $derived(aspects.length > 0 ? aspects : defaultAspects);
+  const planets = $derived<Record<string, { degrees: number; sign: string; house?: number }>>(
+    planetPositions
+  );
+  const allAspects = $derived(aspects);
   const planetOrder = [
     'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter',
     'saturn', 'uranus', 'neptune', 'pluto', 'meanNode', 'chiron'

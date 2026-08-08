@@ -53,8 +53,8 @@
   let newLatitude = $state('');
   let newLongitude = $state('');
   let newTimezone = $state('');
-  let newHouseSystem = $state('Placidus');
-  let newZodiacType = $state('Tropical');
+  let newHouseSystem = $state(layout.workspaceDefaults.houseSystem);
+  let newZodiacType = $state(layout.workspaceDefaults.zodiacType);
   let newTags = $state('');
   let editingChartId = $state<string | null>(null);
   let isResolvingNewLocation = $state(false);
@@ -115,14 +115,7 @@
     layout.contexts = [initialChart];
     layout.selectedContext = initialChart.id;
   });
-  
-  // Mock data for horoscopes table
-  const horoscopes = $state([
-    { name: 'John Doe', chartType: 'NATAL', dateTime: '1990-01-15 10:30', place: 'Prague', tags: 'personal, important' },
-    { name: 'Jane Smith', chartType: 'EVENT', dateTime: '2020-05-20 14:00', place: 'Brno', tags: 'work' },
-    { name: 'Test Chart', chartType: 'HORARY', dateTime: '2024-01-01 12:00', place: 'London', tags: 'test' }
-  ]);
-  
+
   let exportType = $state<'print' | 'pdf' | 'png'>('print');
   
   // Info mode state
@@ -130,9 +123,9 @@
   
   // Transits mode state
   let selectedTransitsSection = $state<string | undefined>('obecne');
-  let transitingBodies = $state<string[]>(['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto']);
-  let transitedBodies = $state<string[]>(['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto']);
-  let selectedAspects = $state<string[]>(['conjunction', 'square', 'trine', 'opposition']);
+  let transitingBodies = $state<string[]>([...layout.workspaceDefaults.defaultBodies]);
+  let transitedBodies = $state<string[]>([...layout.workspaceDefaults.defaultBodies]);
+  let selectedAspects = $state<string[]>([...layout.workspaceDefaults.defaultAspects]);
   let transitSourceChartId = $state<string>('');
   let transitLoading = $state(false);
   let transitError = $state<string | null>(null);

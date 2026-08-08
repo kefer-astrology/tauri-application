@@ -17,6 +17,15 @@ export interface WorkspaceInfo {
 	charts: WorkspaceChartSummary[];
 }
 
+export type DiagnosticSeverity = 'error' | 'warning';
+
+export interface BackendDiagnostic {
+	code: string;
+	severity: DiagnosticSeverity;
+	message: string;
+	path?: string | null;
+}
+
 /** Orb tightness tiers for radix aspect line stroke width (percent of configured max orb). */
 export interface AspectLineTierStyleDto {
 	tight_threshold_pct?: number | null;
@@ -42,6 +51,147 @@ export interface WorkspaceDefaultsDto {
 	aspect_line_tier_style?: AspectLineTierStyleDto | null;
 }
 
+export interface ModelOverrideEntryDto {
+	id: string;
+	glyph?: string | null;
+	angle?: number | null;
+	default_orb?: number | null;
+	only_for?: string[] | null;
+	i18n?: Record<string, string> | null;
+	computed?: boolean | null;
+}
+
+export interface ModelOverridesDto {
+	points: ModelOverrideEntryDto[];
+	aspects: ModelOverrideEntryDto[];
+	override_orbs: Record<string, number>;
+}
+
+export interface BodyDefinitionDto {
+	id: string;
+	glyph: string;
+	formula: string;
+	element?: string | null;
+	avg_speed: number;
+	max_orb: number;
+	i18n: Record<string, string>;
+	object_type?: string | null;
+	computation_map: Record<string, string | null>;
+	requires_location: boolean;
+	requires_house_system: boolean;
+}
+
+export interface AspectDefinitionDto {
+	id: string;
+	glyph: string;
+	angle: number;
+	default_orb: number;
+	i18n: Record<string, string>;
+	color?: string | null;
+	importance?: number | null;
+	line_style?: string | null;
+	line_width?: number | null;
+	show_label?: boolean | null;
+	valid_contexts?: string[] | null;
+}
+
+export interface SignDefinitionDto {
+	name: string;
+	glyph: string;
+	abbreviation: string;
+	element: string;
+	i18n: Record<string, string>;
+}
+
+export interface ModelSettingsDto {
+	default_house_system?: string | null;
+	default_aspects: string[];
+	default_bodies: string[];
+	standard_orb: number;
+	default_transit_aspects?: string[] | null;
+	default_direction_aspects?: string[] | null;
+	default_transit_bodies?: string[] | null;
+	default_direction_bodies?: string[] | null;
+	degrees_in_circle: number;
+	obliquity_j2000: number;
+	coordinate_tolerance: number;
+}
+
+export interface AstroModelDto {
+	name: string;
+	body_definitions: BodyDefinitionDto[];
+	aspect_definitions: AspectDefinitionDto[];
+	signs: SignDefinitionDto[];
+	settings?: ModelSettingsDto | null;
+	engine?: string | null;
+	zodiac_type?: string | null;
+	ayanamsa?: string | null;
+}
+
+export interface EffectiveModelSettingsDto {
+	default_house_system?: string | null;
+	default_bodies: string[];
+	default_aspects: string[];
+	default_transit_aspects?: string[] | null;
+	default_direction_aspects?: string[] | null;
+	default_transit_bodies?: string[] | null;
+	default_direction_bodies?: string[] | null;
+	aspect_orbs: Record<string, number>;
+	standard_orb: number;
+	engine?: string | null;
+	zodiac_type?: string | null;
+	ayanamsa?: string | null;
+	time_system?: string | null;
+	degrees_in_circle: number;
+	obliquity_j2000: number;
+	coordinate_tolerance: number;
+	sources: EffectiveSettingsSourcesDto;
+}
+
+export interface ComputeSettingsOverrides {
+	houseSystem?: string | null;
+	bodies?: string[] | null;
+	aspects?: string[] | null;
+	aspectOrbs?: Record<string, number>;
+	engine?: string | null;
+	zodiacType?: string | null;
+	ayanamsa?: string | null;
+	timeSystem?: string | null;
+}
+
+export type SettingSource =
+	| 'application'
+	| 'model'
+	| 'workspace'
+	| 'preset'
+	| 'chart'
+	| 'operation';
+
+export interface EffectiveSettingsSourcesDto {
+	default_house_system?: SettingSource | null;
+	default_bodies: SettingSource;
+	default_aspects: SettingSource;
+	aspect_orbs: Record<string, SettingSource>;
+	standard_orb: SettingSource;
+	engine?: SettingSource | null;
+	zodiac_type?: SettingSource | null;
+	ayanamsa?: SettingSource | null;
+	time_system?: SettingSource | null;
+	computational_constants: SettingSource;
+}
+
+export interface CurrentModelReport {
+	requested_model?: string | null;
+	resolved_model: string;
+	source: string;
+	available_models: string[];
+	model: AstroModelDto;
+	effective_settings: EffectiveModelSettingsDto;
+	model_overrides?: ModelOverridesDto | null;
+	warnings: string[];
+	diagnostics: BackendDiagnostic[];
+}
+
 export interface ChartDetails {
 	id: string;
 	subject: {
@@ -53,6 +203,7 @@ export interface ChartDetails {
 			latitude: number;
 			longitude: number;
 			timezone: string;
+			utc_offset?: string | null;
 		};
 	};
 	config: {
@@ -63,6 +214,10 @@ export interface ChartDetails {
 		model: string | null;
 		override_ephemeris: string | null;
 		observable_objects?: string[];
+		aspect_orbs?: Record<string, number>;
+		selected_aspects?: string[];
+		ayanamsa?: string | null;
+		time_system?: string | null;
 	};
 	tags: string[];
 	tag_colors?: Record<string, string>;
@@ -114,6 +269,8 @@ export interface TransitSeriesRequest extends Record<string, unknown> {
 	transitingObjects: string[];
 	transitedObjects: string[];
 	aspectTypes: string[];
+	presetId?: string | null;
+	settingsOverrides?: ComputeSettingsOverrides | null;
 }
 
 export interface TransitSeriesResult {
@@ -132,4 +289,5 @@ export interface ResolvedLocation {
 	display_name: string;
 	latitude: number;
 	longitude: number;
+	timezone: string;
 }

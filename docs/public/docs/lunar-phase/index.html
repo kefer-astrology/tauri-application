@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lunar phase (moon details) | Kefer docs</title>
@@ -27,44 +27,43 @@
       <p class="lede">How Kefer derives geocentric lunar phase and illumination from chart positions.</p>
     </header>
     <div class="prose">
-      <h1 id="lunar-phase-moon-details">Lunar phase (moon details)</h1>
-<p>Chart compute commands attach a <strong><code>moon_details</code></strong> object to the JSON result whenever <strong><code>positions.sun</code></strong> and <strong><code>positions.moon</code></strong> are present (tropical longitude in degrees, same convention as the rest of the radix).</p>
+      <p>Chart compute commands attach a <strong><code>moon_details</code></strong> object to the JSON result whenever <strong><code>positions.sun</code></strong> and <strong><code>positions.moon</code></strong> are present (tropical longitude in degrees, same convention as the rest of the radix).</p>
 <p>Source: <a href="../../../src-tauri/src/lunar_phase.rs">src-tauri/src/lunar_phase.rs</a></p>
 <hr>
 <h2 id="what-is-included">What is included</h2>
 <table>
-  <thead>
-      <tr>
-          <th>Field</th>
-          <th>Meaning</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><code>elongation_deg</code></td>
-          <td>Moon minus Sun in tropical longitude, in [0, 360). 0° = new (conjunction), 180° = full (opposition).</td>
-      </tr>
-      <tr>
-          <td><code>illuminated_fraction</code></td>
-          <td>Fraction of the lunar disk illuminated as seen from Earth, in [0, 1], from <code>(1 - cos(elongation_rad)) / 2</code>.</td>
-      </tr>
-      <tr>
-          <td><code>age_days</code></td>
-          <td>Rough age since new moon: <code>elongation / 360 × 29.530588853</code> days (mean synodic month).</td>
-      </tr>
-      <tr>
-          <td><code>waxing</code></td>
-          <td><code>true</code> when <code>0° &lt; elongation &lt; 180°</code> (waxing from new toward full).</td>
-      </tr>
-      <tr>
-          <td><code>phase_id</code></td>
-          <td>Stable id: <code>new_moon</code>, <code>waxing_crescent</code>, <code>first_quarter</code>, <code>waxing_gibbous</code>, <code>full_moon</code>, <code>waning_gibbous</code>, <code>third_quarter</code>, <code>waning_crescent</code>.</td>
-      </tr>
-      <tr>
-          <td><code>phase_label</code></td>
-          <td>Short English label (e.g. “First Quarter”).</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Field</th>
+					<th>Meaning</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>elongation_deg</code></td>
+					<td>Moon minus Sun in tropical longitude, in [0, 360). 0° = new (conjunction), 180° = full (opposition).</td>
+			</tr>
+			<tr>
+					<td><code>illuminated_fraction</code></td>
+					<td>Fraction of the lunar disk illuminated as seen from Earth, in [0, 1], from <code>(1 - cos(elongation_rad)) / 2</code>.</td>
+			</tr>
+			<tr>
+					<td><code>age_days</code></td>
+					<td>Rough age since new moon: <code>elongation / 360 × 29.530588853</code> days (mean synodic month).</td>
+			</tr>
+			<tr>
+					<td><code>waxing</code></td>
+					<td><code>true</code> when <code>0° &lt; elongation &lt; 180°</code> (waxing from new toward full).</td>
+			</tr>
+			<tr>
+					<td><code>phase_id</code></td>
+					<td>Stable id: <code>new_moon</code>, <code>waxing_crescent</code>, <code>first_quarter</code>, <code>waxing_gibbous</code>, <code>full_moon</code>, <code>waning_gibbous</code>, <code>third_quarter</code>, <code>waning_crescent</code>.</td>
+			</tr>
+			<tr>
+					<td><code>phase_label</code></td>
+					<td>Short English label (e.g. “First Quarter”).</td>
+			</tr>
+	</tbody>
 </table>
 <p>Eight equal 45° sectors around the principal phases are used for <code>phase_id</code> / <code>phase_label</code>.</p>
 <hr>

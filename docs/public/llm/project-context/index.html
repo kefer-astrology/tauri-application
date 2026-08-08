@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Project context | Kefer docs</title>
@@ -66,10 +66,10 @@
 <ul>
 <li><code>docs/content/llm/</code> is the primary home for Codex-facing workflow, specs, and continuation rules.</li>
 <li><code>docs/content/docs/</code> is the primary home for human-readable project documentation and system description.</li>
-<li><code>MIGRATION.md</code> is the primary root-level note for long-term compute/backend migration direction.</li>
+<li><code>docs/content/llm/development-driver.md</code> is the active high-level task driver, including backend/runtime direction.</li>
 <li>When starting implementation, look for specs in <code>docs/content/llm/</code> first.</li>
 <li>Use <code>docs/content/docs/</code> to understand the current system and confirm how the pieces fit together.</li>
-<li>Use <code>MIGRATION.md</code> when the task touches staged movement from Swiss-centered implementation toward backend-neutral and JPL-centered architecture.</li>
+<li>Use the development driver and task-specific <code>/llm/</code> specs when the task touches staged movement from Swiss-centered implementation toward backend-neutral and JPL-centered architecture.</li>
 </ul>
 <h2 id="implementation-principles">Implementation principles</h2>
 <ul>
@@ -119,7 +119,7 @@
 <li>extracted <code>src/lib/components/</code> feature pieces instead of growing <code>App.svelte</code> with more inline feature branches</li>
 </ul>
 </li>
-<li>Treat <code>apps/web-svelte/src/lib/icons/</code> as legacy residue rather than an approved source of truth for shell/navigation icons.</li>
+<li>Treat <code>apps/web-svelte/src/lib/icons/</code> as an unapproved source for shell/navigation icons.</li>
 </ul>
 <h2 id="best-entrypoints">Best entrypoints</h2>
 <ul>

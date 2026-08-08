@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ephemeris manager | Kefer docs</title>
@@ -27,8 +27,7 @@
       <p class="lede">Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.</p>
     </header>
     <div class="prose">
-      <h1 id="ephemeris-manager">Ephemeris manager</h1>
-<p><code>EphemerisManager</code> is the Rust module that owns all BSP file lifecycle concerns: what files exist, where they live, which one to load, how to download a missing file, and how to hand multiple files to <code>anise</code> as a single chained <code>Almanac</code>.</p>
+      <p><code>EphemerisManager</code> is the Rust module that owns all BSP file lifecycle concerns: what files exist, where they live, which one to load, how to download a missing file, and how to hand multiple files to <code>anise</code> as a single chained <code>Almanac</code>.</p>
 <p>Source: <a href="../../../src-tauri/src/ephemeris_manager.rs">src-tauri/src/ephemeris_manager.rs</a></p>
 <hr>
 <h2 id="why-it-exists">Why it exists</h2>
@@ -60,82 +59,82 @@
 <h2 id="bsp-catalog">BSP catalog</h2>
 <p>The static catalog and <code>available_bsp_paths()</code> define which files Kefer can download and which kernels are chained for JPL compute. Planetary kernels live under NAIF <code>spk/planets/</code>; asteroid kernels under <code>spk/asteroids/</code> (single-body archives use <code>asteroids/a_old_versions/</code>).</p>
 <table>
-  <thead>
-      <tr>
-          <th>id</th>
-          <th>filename</th>
-          <th>size (approx.)</th>
-          <th>date range</th>
-          <th>queryable bodies</th>
-          <th>notes</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><code>de440s</code> <em>(default)</em></td>
-          <td><code>de440s.bsp</code></td>
-          <td>32 MB</td>
-          <td>1900–2050</td>
-          <td>10 planets + Moon</td>
-          <td>bundled primary default</td>
-      </tr>
-      <tr>
-          <td><code>de440</code></td>
-          <td><code>de440.bsp</code></td>
-          <td>115 MB</td>
-          <td>1550–2650</td>
-          <td>10 planets + Moon</td>
-          <td>downloadable upgrade</td>
-      </tr>
-      <tr>
-          <td><code>de441_part1</code></td>
-          <td><code>de441_part-1.bsp</code></td>
-          <td>~1.5 GB</td>
-          <td>−13 200 to 0</td>
-          <td>10 planets + Moon</td>
-          <td>supplementary (cache)</td>
-      </tr>
-      <tr>
-          <td><code>de441_part2</code></td>
-          <td><code>de441_part-2.bsp</code></td>
-          <td>~1.5 GB</td>
-          <td>0 to +17 191</td>
-          <td>10 planets + Moon</td>
-          <td>supplementary (cache)</td>
-      </tr>
-      <tr>
-          <td><code>ceres_spk</code></td>
-          <td><code>ceres_1900_2100.bsp</code></td>
-          <td>~1.1 MB</td>
-          <td>1900–2100</td>
-          <td><code>ceres</code></td>
-          <td>bundled with the app; also downloadable if missing</td>
-      </tr>
-      <tr>
-          <td><code>pallas_spk</code></td>
-          <td><code>pallas_1900_2100.bsp</code></td>
-          <td>~1.1 MB</td>
-          <td>1900–2100</td>
-          <td><code>pallas</code></td>
-          <td>optional download</td>
-      </tr>
-      <tr>
-          <td><code>vesta_spk</code></td>
-          <td><code>vesta_1900_2100.bsp</code></td>
-          <td>~1.1 MB</td>
-          <td>1900–2100</td>
-          <td><code>vesta</code></td>
-          <td>optional download</td>
-      </tr>
-      <tr>
-          <td><code>codes_300ast</code></td>
-          <td><code>codes_300ast_20100725.bsp</code></td>
-          <td>~59 MB</td>
-          <td>Baer 2010 solution window</td>
-          <td>subset of 300 asteroids (see below)</td>
-          <td>optional download; includes <strong>Juno</strong> (<code>2000003</code>)</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>id</th>
+					<th>filename</th>
+					<th>size (approx.)</th>
+					<th>date range</th>
+					<th>queryable bodies</th>
+					<th>notes</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>de440s</code> <em>(default)</em></td>
+					<td><code>de440s.bsp</code></td>
+					<td>32 MB</td>
+					<td>1900–2050</td>
+					<td>10 planets + Moon</td>
+					<td>bundled primary default</td>
+			</tr>
+			<tr>
+					<td><code>de440</code></td>
+					<td><code>de440.bsp</code></td>
+					<td>115 MB</td>
+					<td>1550–2650</td>
+					<td>10 planets + Moon</td>
+					<td>downloadable upgrade</td>
+			</tr>
+			<tr>
+					<td><code>de441_part1</code></td>
+					<td><code>de441_part-1.bsp</code></td>
+					<td>~1.5 GB</td>
+					<td>−13 200 to 0</td>
+					<td>10 planets + Moon</td>
+					<td>supplementary (cache)</td>
+			</tr>
+			<tr>
+					<td><code>de441_part2</code></td>
+					<td><code>de441_part-2.bsp</code></td>
+					<td>~1.5 GB</td>
+					<td>0 to +17 191</td>
+					<td>10 planets + Moon</td>
+					<td>supplementary (cache)</td>
+			</tr>
+			<tr>
+					<td><code>ceres_spk</code></td>
+					<td><code>ceres_1900_2100.bsp</code></td>
+					<td>~1.1 MB</td>
+					<td>1900–2100</td>
+					<td><code>ceres</code></td>
+					<td>bundled with the app; also downloadable if missing</td>
+			</tr>
+			<tr>
+					<td><code>pallas_spk</code></td>
+					<td><code>pallas_1900_2100.bsp</code></td>
+					<td>~1.1 MB</td>
+					<td>1900–2100</td>
+					<td><code>pallas</code></td>
+					<td>optional download</td>
+			</tr>
+			<tr>
+					<td><code>vesta_spk</code></td>
+					<td><code>vesta_1900_2100.bsp</code></td>
+					<td>~1.1 MB</td>
+					<td>1900–2100</td>
+					<td><code>vesta</code></td>
+					<td>optional download</td>
+			</tr>
+			<tr>
+					<td><code>codes_300ast</code></td>
+					<td><code>codes_300ast_20100725.bsp</code></td>
+					<td>~59 MB</td>
+					<td>Baer 2010 solution window</td>
+					<td>subset of 300 asteroids (see below)</td>
+					<td>optional download; includes <strong>Juno</strong> (<code>2000003</code>)</td>
+			</tr>
+	</tbody>
 </table>
 <p>Current status:</p>
 <ul>
@@ -151,75 +150,75 @@
 <p>The 343 asteroids integrated alongside the planets in DE440/441 (Ceres, Pallas, Vesta, Juno, etc.) are <strong>integration perturbers only</strong>. They improve planetary accuracy but their positions are <strong>not stored as queryable SPK segments</strong> in any of the DE planetary files. Querying <code>NAIF 2000001</code> (Ceres) from <code>de440s.bsp</code> will fail.</p>
 <p>To get asteroid positions, a <strong>separate dedicated asteroid SPK kernel</strong> is required:</p>
 <table>
-  <thead>
-      <tr>
-          <th>source</th>
-          <th>what it provides</th>
-          <th>notes</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Individual NAIF files (<code>ceres_1900_2100.bsp</code> etc.)</td>
-          <td>single-body, 200-year window</td>
-          <td>publicly archived on NAIF</td>
-      </tr>
-      <tr>
-          <td><code>codes_300ast_20100725.bsp</code> (59 MB)</td>
-          <td>300 asteroids, Baer 2010 solution</td>
-          <td>one download covers most</td>
-      </tr>
-      <tr>
-          <td>JPL Horizons REST API</td>
-          <td>any NAIF body, on demand</td>
-          <td>no file to bundle; query at compute time</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>source</th>
+					<th>what it provides</th>
+					<th>notes</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Individual NAIF files (<code>ceres_1900_2100.bsp</code> etc.)</td>
+					<td>single-body, 200-year window</td>
+					<td>publicly archived on NAIF</td>
+			</tr>
+			<tr>
+					<td><code>codes_300ast_20100725.bsp</code> (59 MB)</td>
+					<td>300 asteroids, Baer 2010 solution</td>
+					<td>one download covers most</td>
+			</tr>
+			<tr>
+					<td>JPL Horizons REST API</td>
+					<td>any NAIF body, on demand</td>
+					<td>no file to bundle; query at compute time</td>
+			</tr>
+	</tbody>
 </table>
 <p>Asteroid <strong>Kefer IDs</strong> and matching NAIF <code>2000xxx</code> frames are wired in <code>jpl_backend.rs</code> (small-body table). The backend calls <code>almanac.translate(...)</code> per body; if no SPK segment exists for that epoch, the chart still succeeds and a per-body <code>{id}_unavailable</code> warning is recorded.</p>
 <p><strong>Default chart</strong> (<code>included_points</code> / requested objects unspecified): only the <strong>four classical</strong> asteroids (Ceres, Pallas, Juno, Vesta) are evaluated automatically. If <code>codes_300ast_*.bsp</code> is on the load path, the backend also evaluates an extended list (<code>CODES_300AST_MAJOR_BODIES</code> in <code>ephemeris_manager.rs</code> — Astraea through Massalia) so optional downloads do not spam warnings for bodies that were never requested. When the client passes an explicit object list, every listed body is attempted.</p>
 <h3 id="naif-body-ids">NAIF body IDs</h3>
 <p>Standard planets use named constants from <code>anise::constants::frames</code>. Asteroid frames use <code>Frame::from_ephem_j2000(...)</code> in <code>ephemeris_manager.rs</code>:</p>
 <table>
-  <thead>
-      <tr>
-          <th>Kefer ID</th>
-          <th>NAIF ID</th>
-          <th>Typical kernel</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><code>ceres</code></td>
-          <td>2 000 001</td>
-          <td><code>ceres_1900_2100.bsp</code> (bundled) or <code>codes_300ast</code></td>
-      </tr>
-      <tr>
-          <td><code>pallas</code></td>
-          <td>2 000 002</td>
-          <td><code>pallas_1900_2100.bsp</code> or <code>codes_300ast</code></td>
-      </tr>
-      <tr>
-          <td><code>juno</code></td>
-          <td>2 000 003</td>
-          <td><strong><code>codes_300ast</code> only</strong> (no standalone <code>juno_1900_2100.bsp</code> in NAIF <code>a_old_versions</code>)</td>
-      </tr>
-      <tr>
-          <td><code>vesta</code></td>
-          <td>2 000 004</td>
-          <td><code>vesta_1900_2100.bsp</code> or <code>codes_300ast</code></td>
-      </tr>
-      <tr>
-          <td><code>astraea</code> … <code>massalia</code></td>
-          <td>2 000 005 … 2 000 020</td>
-          <td><code>codes_300ast_20100725.bsp</code></td>
-      </tr>
-      <tr>
-          <td><code>chiron</code></td>
-          <td>2 000 060</td>
-          <td>not in DE or <code>codes_300ast</code>; JPL Horizons API still planned</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Kefer ID</th>
+					<th>NAIF ID</th>
+					<th>Typical kernel</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>ceres</code></td>
+					<td>2 000 001</td>
+					<td><code>ceres_1900_2100.bsp</code> (bundled) or <code>codes_300ast</code></td>
+			</tr>
+			<tr>
+					<td><code>pallas</code></td>
+					<td>2 000 002</td>
+					<td><code>pallas_1900_2100.bsp</code> or <code>codes_300ast</code></td>
+			</tr>
+			<tr>
+					<td><code>juno</code></td>
+					<td>2 000 003</td>
+					<td><strong><code>codes_300ast</code> only</strong> (no standalone <code>juno_1900_2100.bsp</code> in NAIF <code>a_old_versions</code>)</td>
+			</tr>
+			<tr>
+					<td><code>vesta</code></td>
+					<td>2 000 004</td>
+					<td><code>vesta_1900_2100.bsp</code> or <code>codes_300ast</code></td>
+			</tr>
+			<tr>
+					<td><code>astraea</code> … <code>massalia</code></td>
+					<td>2 000 005 … 2 000 020</td>
+					<td><code>codes_300ast_20100725.bsp</code></td>
+			</tr>
+			<tr>
+					<td><code>chiron</code></td>
+					<td>2 000 060</td>
+					<td>not in DE or <code>codes_300ast</code>; JPL Horizons API still planned</td>
+			</tr>
+	</tbody>
 </table>
 <hr>
 <h2 id="file-resolution">File resolution</h2>
@@ -250,45 +249,45 @@ de440                   │          │         ├─────────�
 de440s                  │          │         │     ├────────┤       │         │
 </code></pre><h3 id="overlap-pairs">Overlap pairs</h3>
 <table>
-  <thead>
-      <tr>
-          <th>Pair</th>
-          <th>Overlap range</th>
-          <th>Consequence</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>de440s ∩ de441_part2</td>
-          <td>1900–2050</td>
-          <td>de440s is entirely inside de441_part2</td>
-      </tr>
-      <tr>
-          <td>de440 ∩ de441_part2</td>
-          <td>1550–2650</td>
-          <td>de440 is entirely inside de441_part2</td>
-      </tr>
-      <tr>
-          <td>de440s ∩ de440</td>
-          <td>1900–2050</td>
-          <td>de440s is entirely inside de440</td>
-      </tr>
-      <tr>
-          <td>de441_part1 ∩ de440</td>
-          <td>none</td>
-          <td>de441_part1 ends at year 0; de440 starts at 1550</td>
-      </tr>
-      <tr>
-          <td>de441_part1 ∩ de440s</td>
-          <td>none</td>
-          <td>same reason</td>
-      </tr>
-      <tr>
-          <td>de441_part1 ∩ de441_part2</td>
-          <td>year 0 only</td>
-          <td>one-epoch boundary; negligible</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Pair</th>
+					<th>Overlap range</th>
+					<th>Consequence</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>de440s ∩ de441_part2</td>
+					<td>1900–2050</td>
+					<td>de440s is entirely inside de441_part2</td>
+			</tr>
+			<tr>
+					<td>de440 ∩ de441_part2</td>
+					<td>1550–2650</td>
+					<td>de440 is entirely inside de441_part2</td>
+			</tr>
+			<tr>
+					<td>de440s ∩ de440</td>
+					<td>1900–2050</td>
+					<td>de440s is entirely inside de440</td>
+			</tr>
+			<tr>
+					<td>de441_part1 ∩ de440</td>
+					<td>none</td>
+					<td>de441_part1 ends at year 0; de440 starts at 1550</td>
+			</tr>
+			<tr>
+					<td>de441_part1 ∩ de440s</td>
+					<td>none</td>
+					<td>same reason</td>
+			</tr>
+			<tr>
+					<td>de441_part1 ∩ de441_part2</td>
+					<td>year 0 only</td>
+					<td>one-epoch boundary; negligible</td>
+			</tr>
+	</tbody>
 </table>
 <h3 id="what-happens-when-overlapping-files-are-loaded-together">What happens when overlapping files are loaded together</h3>
 <p>SPICE (and <code>anise</code> following the same convention) resolves duplicate segments using <strong>last-loaded wins</strong>: when two loaded BSP files both have a segment for the same body at the same epoch, the segment from the file loaded most recently takes effect.</p>
@@ -302,30 +301,30 @@ de440s                  │          │         │     ├──────�
 <p>For normal astrological use (1900–2050), this is acceptable: DE441 was derived from the same initial conditions as DE440 and the accuracy difference in the modern range is sub-arcsecond. A future optimisation could detect the chart&rsquo;s date and skip the de441 supplement when the primary already covers it — but this is not currently implemented.</p>
 <h3 id="when-to-download-de441-parts">When to download de441 parts</h3>
 <table>
-  <thead>
-      <tr>
-          <th>Intended use</th>
-          <th>File needed</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Modern charts (1900–2050)</td>
-          <td>de440s (bundled, no download)</td>
-      </tr>
-      <tr>
-          <td>Renaissance / medieval (1550–1899 or 2051–2650)</td>
-          <td>de440</td>
-      </tr>
-      <tr>
-          <td>Ancient charts (before 1550 / before 1 AD)</td>
-          <td>de441_part1</td>
-      </tr>
-      <tr>
-          <td>Far-future charts (after 2650)</td>
-          <td>de441_part2</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Intended use</th>
+					<th>File needed</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Modern charts (1900–2050)</td>
+					<td>de440s (bundled, no download)</td>
+			</tr>
+			<tr>
+					<td>Renaissance / medieval (1550–1899 or 2051–2650)</td>
+					<td>de440</td>
+			</tr>
+			<tr>
+					<td>Ancient charts (before 1550 / before 1 AD)</td>
+					<td>de441_part1</td>
+			</tr>
+			<tr>
+					<td>Far-future charts (after 2650)</td>
+					<td>de441_part2</td>
+			</tr>
+	</tbody>
 </table>
 <p>You do <strong>not</strong> need to download de441 if all your charts fall inside de440s&rsquo;s 1900–2050 window.</p>
 <h3 id="per-chart-override">Per-chart override</h3>
@@ -334,26 +333,26 @@ de440s                  │          │         │     ├──────�
 <h2 id="cache-directory">Cache directory</h2>
 <p>Downloaded files are stored in the platform app-data directory:</p>
 <table>
-  <thead>
-      <tr>
-          <th>Platform</th>
-          <th>Path</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Linux</td>
-          <td><code>~/.local/share/kefer/ephemeris/</code></td>
-      </tr>
-      <tr>
-          <td>macOS</td>
-          <td><code>~/Library/Application Support/dev.kefer.astrology/ephemeris/</code></td>
-      </tr>
-      <tr>
-          <td>Windows</td>
-          <td><code>%APPDATA%\dev.kefer.astrology\ephemeris\</code></td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Platform</th>
+					<th>Path</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Linux</td>
+					<td><code>~/.local/share/kefer/ephemeris/</code></td>
+			</tr>
+			<tr>
+					<td>macOS</td>
+					<td><code>~/Library/Application Support/dev.kefer.astrology/ephemeris/</code></td>
+			</tr>
+			<tr>
+					<td>Windows</td>
+					<td><code>%APPDATA%\dev.kefer.astrology\ephemeris\</code></td>
+			</tr>
+	</tbody>
 </table>
 <p>Downloads use a <code>.partial</code> suffix while in progress and are atomically renamed on completion. A partially downloaded file is never loaded.</p>
 <hr>
@@ -430,75 +429,75 @@ de440s                  │          │         │     ├──────�
 <hr>
 <h2 id="remaining-gaps">Remaining gaps</h2>
 <table>
-  <thead>
-      <tr>
-          <th>Body / Feature</th>
-          <th>Status</th>
-          <th>Notes</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Ceres</td>
-          <td>✅ done (JPL Rust)</td>
-          <td>Bundled <code>ceres_1900_2100.bsp</code>; <code>get_available_bodies</code> includes <code>ceres</code></td>
-      </tr>
-      <tr>
-          <td>Pallas, Vesta</td>
-          <td>optional</td>
-          <td>Download <code>pallas_spk</code> / <code>vesta_spk</code> or use <code>codes_300ast</code></td>
-      </tr>
-      <tr>
-          <td>Juno</td>
-          <td>optional</td>
-          <td>Requires <code>codes_300ast</code> (no standalone NAIF <code>juno_1900_2100.bsp</code> in the archived set Kefer links)</td>
-      </tr>
-      <tr>
-          <td>Extended main-belt (Astraea–Massalia)</td>
-          <td>optional</td>
-          <td><code>codes_300ast</code> + explicit chart object list or default extended path when that kernel is present</td>
-      </tr>
-      <tr>
-          <td>South Node</td>
-          <td>✅ done</td>
-          <td>Mean Node + 180°</td>
-      </tr>
-      <tr>
-          <td>True Node</td>
-          <td>✅ done</td>
-          <td>osculating node from geocentric Moon position + velocity (Rust JPL path); Python JPL path uses the same vector method</td>
-      </tr>
-      <tr>
-          <td>Part of Fortune</td>
-          <td>pending</td>
-          <td>Lot / Pars formula using ASC + Moon − Sun (or night variant); <strong>not</strong> lunar phase — a single derived longitude</td>
-      </tr>
-      <tr>
-          <td>Lunar phase (“moon shape”), illumination, age</td>
-          <td>✅ done</td>
-          <td>See <a href="../lunar-phase/">lunar-phase</a>: <code>moon_details</code> on <code>compute_chart</code> / <code>compute_chart_from_data</code> (tropical Sun–Moon elongation); not Part of Fortune</td>
-      </tr>
-      <tr>
-          <td>Chiron (2060)</td>
-          <td>pending</td>
-          <td>not in any standard DE file; JPL Horizons API planned</td>
-      </tr>
-      <tr>
-          <td>Eris, Sedna</td>
-          <td>out of scope</td>
-          <td>TNOs not in standard NAIF kernels</td>
-      </tr>
-      <tr>
-          <td>Black Moon Lilith</td>
-          <td>pending</td>
-          <td>mean lunar apogee formula; no BSP needed</td>
-      </tr>
-      <tr>
-          <td>Minor aspects (Sesquisquare 135°, Semisquare 45°, Semisextile 30°)</td>
-          <td>pending</td>
-          <td>pure angle constants</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Body / Feature</th>
+					<th>Status</th>
+					<th>Notes</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Ceres</td>
+					<td>✅ done (JPL Rust)</td>
+					<td>Bundled <code>ceres_1900_2100.bsp</code>; <code>get_available_bodies</code> includes <code>ceres</code></td>
+			</tr>
+			<tr>
+					<td>Pallas, Vesta</td>
+					<td>optional</td>
+					<td>Download <code>pallas_spk</code> / <code>vesta_spk</code> or use <code>codes_300ast</code></td>
+			</tr>
+			<tr>
+					<td>Juno</td>
+					<td>optional</td>
+					<td>Requires <code>codes_300ast</code> (no standalone NAIF <code>juno_1900_2100.bsp</code> in the archived set Kefer links)</td>
+			</tr>
+			<tr>
+					<td>Extended main-belt (Astraea–Massalia)</td>
+					<td>optional</td>
+					<td><code>codes_300ast</code> + explicit chart object list or default extended path when that kernel is present</td>
+			</tr>
+			<tr>
+					<td>South Node</td>
+					<td>✅ done</td>
+					<td>Mean Node + 180°</td>
+			</tr>
+			<tr>
+					<td>True Node</td>
+					<td>✅ done</td>
+					<td>osculating node from geocentric Moon position + velocity (Rust JPL path); Python JPL path uses the same vector method</td>
+			</tr>
+			<tr>
+					<td>Part of Fortune</td>
+					<td>pending</td>
+					<td>Lot / Pars formula using ASC + Moon − Sun (or night variant); <strong>not</strong> lunar phase — a single derived longitude</td>
+			</tr>
+			<tr>
+					<td>Lunar phase (“moon shape”), illumination, age</td>
+					<td>✅ done</td>
+					<td>See <a href="../lunar-phase/">lunar-phase</a>: <code>moon_details</code> on <code>compute_chart</code> / <code>compute_chart_from_data</code> (tropical Sun–Moon elongation); not Part of Fortune</td>
+			</tr>
+			<tr>
+					<td>Chiron (2060)</td>
+					<td>pending</td>
+					<td>not in any standard DE file; JPL Horizons API planned</td>
+			</tr>
+			<tr>
+					<td>Eris, Sedna</td>
+					<td>out of scope</td>
+					<td>TNOs not in standard NAIF kernels</td>
+			</tr>
+			<tr>
+					<td>Black Moon Lilith</td>
+					<td>pending</td>
+					<td>mean lunar apogee formula; no BSP needed</td>
+			</tr>
+			<tr>
+					<td>Minor aspects (Sesquisquare 135°, Semisquare 45°, Semisextile 30°)</td>
+					<td>pending</td>
+					<td>pure angle constants</td>
+			</tr>
+	</tbody>
 </table>
 
     </div>
