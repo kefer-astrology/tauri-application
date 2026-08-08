@@ -1,0 +1,24 @@
+apps/web-react/src/app/components/ui/sheet.tsx
+  s_f5df4df7542fa6::t_31790b6ef5dd14 33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "66f631cdcf02938d4b5f8c18cb0ee1384572b0c8",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_f5df4df7542fa6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0f8e4a2-a4f5-4287-b58e-bf60f1aff61a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
