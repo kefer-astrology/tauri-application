@@ -879,161 +879,156 @@ export function NewHoroscope({
 						</Select>
 					</div>
 
-					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-						<div className="flex flex-col gap-2">
-							<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
-								{t('new_date')}
-							</Label>
-							<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-								<div
-									className={cn(
-										'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-										'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
-										'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
-									)}
-								>
-									<Input
-										id="new-chart-date"
-										type="text"
-										inputMode="numeric"
-										value={draftDateValue}
-										onChange={(event) => setDraftDateValue(event.target.value)}
-										onBlur={commitDraftDateValue}
-										onKeyDown={(event) => {
-											if (event.key === 'Enter') {
-												commitDraftDateValue();
-												setDatePopoverOpen(false);
-											}
-										}}
-										className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
-										placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
-									/>
-									<PopoverTrigger asChild>
-										<Button
-											type="button"
-											variant="ghost"
-											className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
-										>
-											<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
-										</Button>
-									</PopoverTrigger>
-								</div>
-								<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="end">
-									<Calendar
-										mode="single"
-										selected={selectedDateTime}
-										onSelect={(d) => {
-											if (d) setSelectedDateTime((prev) => mergeDatePart(prev, d));
-											setDatePopoverOpen(false);
-										}}
-										locale={dateFnsLocale}
-										initialFocus
-										defaultMonth={selectedDateTime}
-									/>
-								</PopoverContent>
-							</Popover>
-						</div>
-
-						<div className="flex flex-col gap-2">
-							<TimeRollerPicker
-								id="new-chart-time"
-								label={t('new_time')}
-								value={selectedDateTime}
-								onValueChange={setSelectedDateTime}
-								labelClassName={ft.label}
-								iconClassName={ft.iconColor}
-								panelClassName={ft.selectContent}
-							/>
-						</div>
-					</div>
-
-					{/* Time regime */}
-					<div>
-						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
-						<Tabs
-							value={timeRegime}
-							onValueChange={(value) => setTimeRegime(value as TimeRegime)}
-							className="gap-3"
-						>
-							<TabsList className="grid h-10 w-full grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
-								<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
-								<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
-							</TabsList>
-							<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
-								<div>
-									<Label className={cn('mb-1.5 block', ft.label)}>{t('new_timezone_region')}</Label>
-									<Select
-										value={timezoneRegionValue}
-										onValueChange={(region) => {
-											setTimezoneRegionValue(region);
-											if (!timezone.startsWith(`${region}/`)) {
-												setTimezone(
-													TIMEZONES.find((candidate) => candidate.startsWith(`${region}/`)) ??
-														timezone
-												);
-											}
-										}}
+					<Tabs
+						value={timeRegime}
+						onValueChange={(value) => setTimeRegime(value as TimeRegime)}
+						className="gap-3"
+					>
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
+									{t('new_date')}
+								</Label>
+								<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+									<div
+										className={cn(
+											'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
+											'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
+											'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
+										)}
 									>
-										<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent className={ft.selectContent}>
-											{TIMEZONE_REGIONS.map((region) => (
-												<SelectItem key={region} value={region} className={ft.selectItem}>
-													{region}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label className={cn('mb-1.5 block', ft.label)}>{t('new_timezone')}</Label>
-									<TimezoneSelect
-										value={timezone}
-										onValueChange={setTimezone}
-										options={timezonesInRegion}
-										placeholder={t('new_timezone_placeholder')}
-										emptyLabel={t('new_timezone_no_results')}
-										triggerClassName={cn(ft.selectTrigger, 'shadow-inner px-4 py-2.5')}
-										contentClassName={ft.selectContent}
-										itemClassName={ft.selectItem}
-									/>
-								</div>
-								<div>
-									<Label className={cn('mb-1.5 block', ft.label)}>{t('new_utc_offset')}</Label>
-									<Select value={utcOffset} onValueChange={setUtcOffset}>
-										<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent className={ft.selectContent}>
-											<SelectItem value="auto" className={ft.selectItem}>
-												{t('new_time_regime_auto')}
-											</SelectItem>
-											{UTC_OFFSETS.map((offset) => (
-												<SelectItem key={offset} value={offset} className={ft.selectItem}>
-													{offset}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							</TabsContent>
-						</Tabs>
-					</div>
+										<Input
+											id="new-chart-date"
+											type="text"
+											inputMode="numeric"
+											value={draftDateValue}
+											onChange={(event) => setDraftDateValue(event.target.value)}
+											onBlur={commitDraftDateValue}
+											onKeyDown={(event) => {
+												if (event.key === 'Enter') {
+													commitDraftDateValue();
+													setDatePopoverOpen(false);
+												}
+											}}
+											className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
+											placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
+										/>
+										<PopoverTrigger asChild>
+											<Button
+												type="button"
+												variant="ghost"
+												className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+											>
+												<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
+											</Button>
+										</PopoverTrigger>
+									</div>
+									<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="end">
+										<Calendar
+											mode="single"
+											selected={selectedDateTime}
+											onSelect={(d) => {
+												if (d) setSelectedDateTime((prev) => mergeDatePart(prev, d));
+												setDatePopoverOpen(false);
+											}}
+											locale={dateFnsLocale}
+											initialFocus
+											defaultMonth={selectedDateTime}
+										/>
+									</PopoverContent>
+								</Popover>
+							</div>
 
-					{/* Location regime */}
-					<div>
-						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location')}</Label>
-						<Tabs
-							value={locationRegime}
-							onValueChange={(value) => setLocationRegime(value as LocationRegime)}
-							className="gap-3"
-						>
-							<TabsList className="grid h-10 w-full grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
-								<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
-								<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
-							</TabsList>
-							<TabsContent value="auto">
+							<div className="flex flex-col gap-2">
+								<TimeRollerPicker
+									id="new-chart-time"
+									label={t('new_time')}
+									value={selectedDateTime}
+									onValueChange={setSelectedDateTime}
+									labelClassName={ft.label}
+									iconClassName={ft.iconColor}
+									panelClassName={ft.selectContent}
+								/>
+							</div>
+
+							<div className="flex flex-col gap-2">
+								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
+								<TabsList className="grid h-10 w-full min-w-[11rem] grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
+									<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
+									<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
+								</TabsList>
+							</div>
+						</div>
+
+						<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
+							<div>
+								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_timezone_region')}</Label>
+								<Select
+									value={timezoneRegionValue}
+									onValueChange={(region) => {
+										setTimezoneRegionValue(region);
+										if (!timezone.startsWith(`${region}/`)) {
+											setTimezone(
+												TIMEZONES.find((candidate) => candidate.startsWith(`${region}/`)) ??
+													timezone
+											);
+										}
+									}}
+								>
+									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className={ft.selectContent}>
+										{TIMEZONE_REGIONS.map((region) => (
+											<SelectItem key={region} value={region} className={ft.selectItem}>
+												{region}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div>
+								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_timezone')}</Label>
+								<TimezoneSelect
+									value={timezone}
+									onValueChange={setTimezone}
+									options={timezonesInRegion}
+									placeholder={t('new_timezone_placeholder')}
+									emptyLabel={t('new_timezone_no_results')}
+									triggerClassName={cn(ft.selectTrigger, 'shadow-inner px-4 py-2.5')}
+									contentClassName={ft.selectContent}
+									itemClassName={ft.selectItem}
+								/>
+							</div>
+							<div>
+								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_utc_offset')}</Label>
+								<Select value={utcOffset} onValueChange={setUtcOffset}>
+									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className={ft.selectContent}>
+										<SelectItem value="auto" className={ft.selectItem}>
+											{t('new_time_regime_auto')}
+										</SelectItem>
+										{UTC_OFFSETS.map((offset) => (
+											<SelectItem key={offset} value={offset} className={ft.selectItem}>
+												{offset}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</TabsContent>
+					</Tabs>
+
+					<Tabs
+						value={locationRegime}
+						onValueChange={(value) => setLocationRegime(value as LocationRegime)}
+						className="gap-3"
+					>
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
+							<TabsContent value="auto" className="flex flex-col gap-2">
+								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location')}</Label>
 								<LocationSelector
 									id="location"
 									value={location}
@@ -1059,82 +1054,88 @@ export function NewHoroscope({
 									}
 								/>
 							</TabsContent>
-							<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
-								<div>
-									<Label htmlFor="manual-location" className={cn('mb-1.5 block', ft.label)}>
-										{t('new_location')}
-									</Label>
-									<Input
-										id="manual-location"
-										value={location}
-										onChange={(event) => setLocation(event.target.value)}
-										placeholder={t('new_placeholder_any_location')}
-										className={cn(ft.input, 'shadow-inner')}
-									/>
-								</div>
-								{/* Latitude */}
-								<div>
-									<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
-										{t('current_info_latitude')}
-									</Label>
-									<div className="flex gap-2">
-										<Input
-											type="text"
-											id="latitude"
-											value={latitude}
-											onChange={(e) => setLatitude(e.target.value)}
-											placeholder="50.0755"
-											className={cn(ft.input, 'flex-1 shadow-inner')}
-										/>
-										<Select value={latitudeDir} onValueChange={(v) => setLatitudeDir(v as LatDir)}>
-											<SelectTrigger className={cn(ft.selectTrigger, 'w-28 shrink-0 shadow-inner')}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												{LAT_DIRS.map((dir) => (
-													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
-														{t(dir.labelKey)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
 
-								{/* Longitude */}
-								<div>
-									<Label htmlFor="longitude" className={cn('mb-1.5 block', ft.label)}>
-										{t('current_info_longitude')}
-									</Label>
-									<div className="flex gap-2">
-										<Input
-											type="text"
-											id="longitude"
-											value={longitude}
-											onChange={(e) => setLongitude(e.target.value)}
-											placeholder="14.4378"
-											className={cn(ft.input, 'flex-1 shadow-inner')}
-										/>
-										<Select
-											value={longitudeDir}
-											onValueChange={(v) => setLongitudeDir(v as LonDir)}
-										>
-											<SelectTrigger className={cn(ft.selectTrigger, 'w-28 shrink-0 shadow-inner')}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												{LON_DIRS.map((dir) => (
-													<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
-														{t(dir.labelKey)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
+							<div className="flex flex-col gap-2 md:col-start-2">
+								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location_regime')}</Label>
+								<TabsList className="grid h-10 w-full min-w-[11rem] grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
+									<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
+									<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
+								</TabsList>
+							</div>
+						</div>
+
+						<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
+							<div>
+								<Label htmlFor="manual-location" className={cn('mb-1.5 block', ft.label)}>
+									{t('new_location')}
+								</Label>
+								<Input
+									id="manual-location"
+									value={location}
+									onChange={(event) => setLocation(event.target.value)}
+									placeholder={t('new_placeholder_any_location')}
+									className={cn(ft.input, 'shadow-inner')}
+								/>
+							</div>
+							{/* Latitude */}
+							<div>
+								<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
+									{t('current_info_latitude')}
+								</Label>
+								<div className="flex gap-2">
+									<Input
+										type="text"
+										id="latitude"
+										value={latitude}
+										onChange={(e) => setLatitude(e.target.value)}
+										placeholder="50.0755"
+										className={cn(ft.input, 'flex-1 shadow-inner')}
+									/>
+									<Select value={latitudeDir} onValueChange={(v) => setLatitudeDir(v as LatDir)}>
+										<SelectTrigger className={cn(ft.selectTrigger, 'w-28 shrink-0 shadow-inner')}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent className={ft.selectContent}>
+											{LAT_DIRS.map((dir) => (
+												<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
+													{t(dir.labelKey)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
 								</div>
-							</TabsContent>
-						</Tabs>
-					</div>
+							</div>
+
+							{/* Longitude */}
+							<div>
+								<Label htmlFor="longitude" className={cn('mb-1.5 block', ft.label)}>
+									{t('current_info_longitude')}
+								</Label>
+								<div className="flex gap-2">
+									<Input
+										type="text"
+										id="longitude"
+										value={longitude}
+										onChange={(e) => setLongitude(e.target.value)}
+										placeholder="14.4378"
+										className={cn(ft.input, 'flex-1 shadow-inner')}
+									/>
+									<Select value={longitudeDir} onValueChange={(v) => setLongitudeDir(v as LonDir)}>
+										<SelectTrigger className={cn(ft.selectTrigger, 'w-28 shrink-0 shadow-inner')}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent className={ft.selectContent}>
+											{LON_DIRS.map((dir) => (
+												<SelectItem key={dir.id} value={dir.id} className={ft.selectItem}>
+													{t(dir.labelKey)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
+						</TabsContent>
+					</Tabs>
 
 					{/* Tags */}
 					<div>

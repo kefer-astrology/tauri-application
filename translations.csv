@@ -157,6 +157,7 @@ internal_name,czech,english,french,spanish
 "new_ephemeris_label","Efemeridy","Ephemeris","Éphémérides","Efemérides"
 "new_lat_direction","Směr šířky","Latitude direction","Sens de la latitude","Dirección latitud"
 "new_location","Lokace","Location","Lieu","Lugar"
+"new_location_regime","Režim lokace","Location regime","Régime de lieu","Régimen de ubicación"
 "new_location_search","fulltextově","Search","Recherche","Búsqueda"
 "new_lon_direction","Směr délky","Longitude direction","Sens de la longitude","Dirección longitud"
 "new_name","Název Horoskopu","Name","Nom","Nombre"
