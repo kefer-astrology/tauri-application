@@ -1,0 +1,46 @@
+apps/web-react/src/locales/en.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+apps/web-svelte/src/lib/i18n/es.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+apps/web-react/src/locales/es.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+translations.csv
+  s_f5df4df7542fa6::t_1e07cbd97e9be9 160
+apps/web-svelte/src/lib/i18n/fr.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+apps/web-react/src/locales/fr.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+apps/web-svelte/src/lib/i18n/cs.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+apps/web-react/src/locales/cs.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_f5df4df7542fa6::t_4b8e629043820a 882-886,888-931,933-952,954-955,957-960,963-984,986-1022,1024-1028,1030-1031,1057-1059,1061-1085,1087-1092,1094-1105,1107,1109-1122,1124-1134,1136-1138
+  s_f5df4df7542fa6::t_606824e48012c3 956,1060
+  s_f5df4df7542fa6::t_f7a584cf7d4f5d 887
+  s_f5df4df7542fa6::t_3f2e1edbd5b917 1029
+  s_f5df4df7542fa6::t_ea1a4836c4caa3 1123
+apps/web-svelte/src/lib/i18n/en.json
+  s_f5df4df7542fa6::t_d83398ad49981f 160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "3eb6ea7978c76a64b342d08bda7cdd49b8fbbba7",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_f5df4df7542fa6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0f8e4a2-a4f5-4287-b58e-bf60f1aff61a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": null
+    }
+  }
+}
