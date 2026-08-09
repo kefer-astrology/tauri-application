@@ -13,7 +13,7 @@ import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import type { TransitSection } from './transits-secondary-sidebar';
-import { TransitsBodiesConfig } from './transits-bodies-config';
+import { BodySelector } from './body-selector';
 import type { Theme } from './astrology-sidebar';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import {
@@ -323,12 +323,7 @@ export function TransitsContent({
 				return (
 					<Card variant="ghost" className="w-full rounded-xl">
 						<CardContent className="flex flex-col space-y-6 p-6 md:p-8">
-							<div>
-								<h1 className={cn('mb-2 text-2xl font-semibold', ft.title)}>
-									{t('transits_heading_general')}
-								</h1>
-								<p className={cn('text-sm', ft.muted)}>{t('transits_subtitle_general')}</p>
-							</div>
+							<p className={cn('text-sm', ft.muted)}>{t('transits_subtitle_general')}</p>
 
 							<div>
 								<Label className={cn('mb-2 block', ft.label)}>{t('transits_label_type')}</Label>
@@ -630,10 +625,9 @@ export function TransitsContent({
 
 			case 'transiting-bodies':
 				return (
-					<TransitsBodiesConfig
+					<BodySelector
 						theme={theme}
 						glyphSet={glyphSet}
-						titleKey="transits_heading_transiting"
 						subtitleKey="transits_subtitle_transiting"
 						selectedBodyIds={transitingBodies}
 						onSelectedBodyIdsChange={setTransitingBodies}
@@ -642,10 +636,9 @@ export function TransitsContent({
 
 			case 'transited-bodies':
 				return (
-					<TransitsBodiesConfig
+					<BodySelector
 						theme={theme}
 						glyphSet={glyphSet}
-						titleKey="transits_heading_transited"
 						subtitleKey="transits_subtitle_transited"
 						selectedBodyIds={transitedBodies}
 						onSelectedBodyIdsChange={setTransitedBodies}
@@ -655,12 +648,7 @@ export function TransitsContent({
 			case 'aspects':
 				return (
 					<div className="space-y-6">
-						<div>
-							<h1 className={cn('mb-2 text-2xl font-semibold', ft.title)}>
-								{t('transits_menu_aspects_used')}
-							</h1>
-							<p className={cn('text-sm', ft.muted)}>{t('transits_aspects_subtitle')}</p>
-						</div>
+						<p className={cn('text-sm', ft.muted)}>{t('transits_aspects_subtitle')}</p>
 
 						<Card variant="ghost" className="rounded-xl">
 							<CardContent className="p-6 md:p-8">
