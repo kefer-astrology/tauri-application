@@ -1,0 +1,47 @@
+apps/web-react/src/app/components/ui/checkbox.tsx
+  s_f5df4df7542fa6::t_328219b1d1833a 5
+  s_f5df4df7542fa6::t_eeb4396a32871a 23-27
+apps/web-react/src/app/components/body-selector.tsx
+  s_f5df4df7542fa6::t_8f769ef589b95d 1-51,53-119,123-185,187-203,209-246,253-262,273-278,281-287,292-307,309-314,343,356-398,400-405,407-446
+  s_f5df4df7542fa6::t_bcf960665e4861 52
+  s_f5df4df7542fa6::t_b3da9314e061cf 120-122,204-208,247-252,288-291,320-321,399,406
+  s_f5df4df7542fa6::t_8bcef452d6ec30 263-272,279-280
+  s_f5df4df7542fa6::t_68726abf7a5741 186
+  s_f5df4df7542fa6::t_4b39d01370a94a 308,315-319,322-342,344-355
+apps/web-react/src/app/components/transits-content.tsx
+  s_f5df4df7542fa6::t_4dfb178163f1d1 326
+  s_f5df4df7542fa6::t_97382694e0eda2 651
+  s_f5df4df7542fa6::t_fa72cf49523094 16
+  s_f5df4df7542fa6::t_c49c66e375dd04 628,639
+apps/web-react/src/app/components/settings-view.tsx
+  s_f5df4df7542fa6::t_e6579b9619857c 483
+  s_f5df4df7542fa6::t_c8423596c522a4 499-505
+  s_f5df4df7542fa6::t_b9bda035e213ac 54-59,64-67
+  s_f5df4df7542fa6::t_b3da9314e061cf 34,60-63,133-146,168,170-171,244,246-247,333-335,356-360,491,559,592-594,939-960,972-978
+  s_f5df4df7542fa6::t_19c7118b5996b1 1
+  s_f5df4df7542fa6::t_a0a28993944f3e 35,43
+  s_f5df4df7542fa6::t_5fff503a8667c0 193-200
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_f5df4df7542fa6::t_5cce6c83633837 8-15,21,24-30,38-54,58-674,679-683,696-701
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "4f6c10451f5eb9f6a76978243d2a05d44c766acd",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_f5df4df7542fa6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0f8e4a2-a4f5-4287-b58e-bf60f1aff61a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
