@@ -176,7 +176,7 @@ Recommended response metadata:
 
 - Computes positions and aspects from an in-memory chart payload.
 - `chart_json.subject.event_time` must be parseable as `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`, `YYYY-MM-DDTHH:mm:ssZ`, or RFC3339.
-- Returns an object with `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `moon_details`, `chart_id`, and backend provenance fields when available.
+- Returns an object with `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `shapes`, `configurations`, `moon_details`, `chart_id`, and backend provenance fields when available.
 - Rust standalone computation resolves built-in model defaults and chart
   overrides through the same settings service used by workspace charts.
 - Resolved house system, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
@@ -194,13 +194,23 @@ Acceptance criteria:
 - A valid chart payload returns `positions`, `aspects`, and `chart_id`.
 - Rust-supported radix output should also include `axes` and `house_cusps`.
 - Rust-supported radix output should include `motion` when the selected backend can derive it.
+- Rust-supported radix output should also include `shapes` (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and `configurations` (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed `house_cusps`, and the computed `aspects`. See `detect_chart_shapes`/`detect_chart_configurations` in `astrology.rs`.
 - When `positions.sun` and `positions.moon` exist, `moon_details` should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See [lunar-phase](../lunar-phase/).
 - When fallback occurs, the response should expose that fact instead of failing silently.
+
+### `compute_cross_aspects_from_data(chart_json, transiting_positions, transited_positions, aspect_types, settings_overrides?) -> Result<Vec<ComputedAspect>, String>`
+
+- Detects cross-chart aspects (e.g. a transit overlay) between two already-computed position maps (`transiting_positions`, `transited_positions`, both `Map<String, f64>`), without requiring a persisted workspace chart id.
+- Resolves the aspect catalog and effective orb overrides the same way `compute_chart_from_data` resolves them: `chart_json` is deserialized into a `ChartInstance` and passed through the same settings service (`standalone_model_report_with_operation`).
+- `aspect_types` filters which aspect ids to detect, same semantics as `compute_transit_series`'s `aspect_types`.
+- Returns a list of `ComputedAspect` objects: `from`, `to`, `type`, `angle`, `orb`, `exact_angle`, `applying`, `separating` — the same shape used by `compute_chart`/`compute_chart_from_data`'s `aspects` field and by `compute_transit_series`'s per-entry `aspects`.
+- Rust-only; no Python route exists for this command.
+- This is the command any frontend code computing an "instant" (non-persisted) transit overlay should call instead of re-implementing aspect-detection geometry client-side.
 
 ### `compute_chart(workspace_path, chart_id, preset_id?, settings_overrides?) -> Result<Map<String, Value>, String>`
 
 - Loads a chart from workspace storage and computes positions and aspects.
-- Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `moon_details` (when Sun and Moon are present), `chart_id`, and backend provenance fields when available.
+- Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `shapes`, `configurations`, `moon_details` (when Sun and Moon are present), `chart_id`, and backend provenance fields when available.
 - Rust aspect detection uses the resolved workspace/chart model definitions and effective orb overrides.
 - `preset_id` may identify a referenced workspace preset by its name or manifest
   path. The chart layer overrides the preset layer.
@@ -306,7 +316,7 @@ Acceptance criteria:
 
 - Frontend code may invoke these commands without crashing.
 - Frontend code must treat storage query results as empty unless a future spec introduces persisted computed storage.
-- Frontend code should use `compute_chart` / `compute_chart_from_data` / `compute_transit_series` for live computation, not these storage compatibility commands.
+- Frontend code should use `compute_chart` / `compute_chart_from_data` / `compute_transit_series` / `compute_cross_aspects_from_data` for live computation, not these storage compatibility commands.
 
 ## Spec maintenance rule
 

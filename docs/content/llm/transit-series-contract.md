@@ -7,6 +7,10 @@ This page defines the frontend-visible contract for computing transit series.
 
 Use this contract before adding or changing transit-series UI in either frontend.
 
+## Related: instant transit overlay
+
+This page covers only the persisted-workspace series path (`compute_transit_series`). React's Transits view also has a second, previously-undocumented path: an "instant" overlay for the current moment (or an arbitrary single datetime) that does not require a persisted source chart id. That path computes the transit chart's positions via `compute_chart_from_data`, then detects cross-chart aspects between those positions and the radix chart's positions via `compute_cross_aspects_from_data` (see [tauri-command-contracts](../../docs/tauri-command-contracts/)) — the same Rust aspect-detection geometry `compute_transit_series` uses, not a client-side reimplementation. Both transit-aspect code paths therefore resolve through Rust; neither frontend duplicates the angle/orb geometry.
+
 ## Command
 
 Both frontends call the same Tauri command:
@@ -65,7 +69,7 @@ The parity target for the current implementation is:
 
 Known follow-up work:
 
-- share one canonical observable-object selector across both shells
+- ~~share one canonical observable-object selector across both shells~~ — done for React: `transiting-bodies`/`transited-bodies` (Transits) and the "Observable objects" section (Settings) all render the same `body-selector.tsx` component, backed by the shared `OBSERVABLE_OBJECTS` catalog (`lib/astrology/observableObjects.ts`); Aspectarium's own selector reads the same catalog too, though through its own lighter-weight `MultiSelectFilter` UI rather than `body-selector.tsx`. **Svelte has no Transits UI at all yet** (no transiting/transited pages exist) — this shell remains spec-gated pending a dedicated Svelte Transits implementation; the mirrored `observableObjects.ts` data file exists there so the contract stays aligned, but no UI consumes it. Acceptance criteria for closing this gap: a Svelte Transits view exists with the same two body-selection pages, backed by the same catalog and the same `compute_transit_series` bridge helper.
 - share one canonical transit time-step model across both shells
 - expose backend provenance in the transit results UI instead of only carrying it in the typed response
 
