@@ -1,6 +1,10 @@
 import type { ChartDetails, MoonDetails } from './types';
 import { DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
-import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
+import {
+	DEFAULT_ASPECT_COLORS,
+	DEFAULT_ASPECT_ORBS,
+	DEFAULT_ENABLED_ASPECT_IDS
+} from '@/lib/astrology/aspects';
 import type { AspectLineTierStyleDto } from './types';
 
 /** In-memory chart row used by the React shell (until views own full editor state). */
@@ -44,6 +48,8 @@ export interface AppChart {
 			ic: number;
 		};
 		houseCusps?: number[];
+		shapes?: string[];
+		configurations?: string[];
 		moonDetails?: MoonDetails | null;
 	};
 }
@@ -87,6 +93,8 @@ export interface ComputedChartPayload {
 		ic: number;
 	};
 	house_cusps?: number[];
+	shapes?: string[];
+	configurations?: string[];
 	moon_details?: MoonDetails | null;
 }
 
@@ -115,6 +123,8 @@ export function normalizeComputedChartPayload(
 		aspects: payload.aspects ?? [],
 		axes,
 		houseCusps,
+		shapes: payload.shapes ?? [],
+		configurations: payload.configurations ?? [],
 		...(moonDetails !== undefined ? { moonDetails } : {})
 	};
 }
@@ -196,7 +206,7 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	locationLongitude: 14.4214,
 	engine: 'jpl',
 	defaultBodies: [...DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS],
-	defaultAspects: ASPECT_ROWS.map((aspect) => aspect.id),
+	defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
 	defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
 	defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
 	aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }

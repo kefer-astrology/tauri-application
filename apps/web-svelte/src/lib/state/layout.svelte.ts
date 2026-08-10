@@ -2,10 +2,10 @@
 
 import { DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
 import {
-  ASPECT_ROWS,
   DEFAULT_ASPECT_COLORS,
   DEFAULT_ASPECT_LINE_TIER_STYLE,
   DEFAULT_ASPECT_ORBS,
+  DEFAULT_ENABLED_ASPECT_IDS,
   normalizeAspectLineTierStyle,
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
@@ -84,7 +84,7 @@ const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
   locationLongitude: 14.4214,
   engine: 'swisseph',
   defaultBodies: [...DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS],
-  defaultAspects: ASPECT_ROWS.map((aspect) => aspect.id),
+  defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
   defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
   defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
   aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }

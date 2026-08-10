@@ -17,6 +17,7 @@ import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { DetailSidePanel } from './detail-side-panel';
+import { HighlightText } from './highlight-text';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import type { Theme } from './astrology-sidebar';
@@ -53,21 +54,6 @@ type BodySelectorProps = {
 	selectedBodyIds: string[];
 	onSelectedBodyIdsChange: (ids: string[]) => void;
 };
-
-function Highlight({ text, query }: { text: string; query: string }) {
-	if (!query) return <>{text}</>;
-	const idx = text.toLowerCase().indexOf(query.toLowerCase());
-	if (idx === -1) return <>{text}</>;
-	return (
-		<>
-			{text.slice(0, idx)}
-			<mark className="rounded-[2px] bg-[color:var(--theme-accent)]/25 text-inherit">
-				{text.slice(idx, idx + query.length)}
-			</mark>
-			{text.slice(idx + query.length)}
-		</>
-	);
-}
 
 function matchesQuery(item: ObservableObjectDefinition, label: string, query: string): boolean {
 	const q = query.toLowerCase();
@@ -290,7 +276,7 @@ export function BodySelector({
 															ft.bodyText
 														)}
 													>
-														<Highlight text={labelFor(item)} query={trimmedQuery} />
+														<HighlightText text={labelFor(item)} query={trimmedQuery} />
 														{item.altName && (
 															<span className={cn('ml-1 text-xs italic', ft.muted)}>
 																({item.altName})
@@ -339,11 +325,11 @@ export function BodySelector({
 																	className={cn('shrink-0', ft.iconColor)}
 																/>
 																<span className={cn('text-sm', ft.bodyText)}>
-																	<Highlight text={labelFor(item)} query={trimmedQuery} />
+																	<HighlightText text={labelFor(item)} query={trimmedQuery} />
 																</span>
 																{item.altName && (
 																	<span className={cn('truncate text-xs italic', ft.muted)}>
-																		<Highlight text={item.altName} query={trimmedQuery} />
+																		<HighlightText text={item.altName} query={trimmedQuery} />
 																	</span>
 																)}
 																{isPlanned && (

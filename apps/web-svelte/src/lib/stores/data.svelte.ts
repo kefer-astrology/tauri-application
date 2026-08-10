@@ -10,7 +10,7 @@ import {
 } from '$lib/tauri/workspace';
 import type { Aspect, Position, RadixRelativePosition } from '$lib/tauri/types';
 import { effectiveTime } from '$lib/stores/timeNavigation.svelte';
-import { ASPECT_ROWS } from '$lib/astrology/aspects';
+import { DEFAULT_ENABLED_ASPECT_IDS } from '$lib/astrology/aspects';
 
 export type { Aspect, Position, RadixRelativePosition };
 
@@ -132,7 +132,7 @@ export async function queryPositions(
 export async function computeAspects(
     chartId: string,
     datetime: string,
-    aspectTypes: string[] = ASPECT_ROWS.map((aspect) => aspect.id),
+    aspectTypes: string[] = [...DEFAULT_ENABLED_ASPECT_IDS],
     maxOrb: number = 10.0
 ): Promise<Aspect[]> {
     if (!layout.workspacePath) {

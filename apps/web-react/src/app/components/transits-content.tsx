@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { computeChartFromData, computeTransitSeries } from '@/lib/tauri/workspace';
+import {
+	computeChartFromData,
+	computeCrossAspectsFromData,
+	computeTransitSeries
+} from '@/lib/tauri/workspace';
 import type { TransitSeriesEntry } from '@/lib/tauri/types';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -13,7 +17,9 @@ import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import type { TransitSection } from './transits-secondary-sidebar';
+import { AspectSelector } from './aspect-selector';
 import { BodySelector } from './body-selector';
+import { ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { Theme } from './astrology-sidebar';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import {
@@ -22,7 +28,7 @@ import {
 	type AppChart,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
-import { computeTransitAspects } from '@/lib/astrology/transits';
+import { normalizeLongitude } from '@/lib/astrology/transits';
 
 interface TransitsContentProps {
 	section: TransitSection;
@@ -47,36 +53,9 @@ const DEFAULT_TRANSIT_BODY_IDS = [
 	'pluto'
 ];
 
-const DEFAULT_TRANSIT_ASPECT_IDS = ['conjunction', 'square', 'trine', 'opposition'];
-const SUPPORTED_TRANSIT_ASPECT_IDS = new Set([
-	'conjunction',
-	'sextile',
-	'square',
-	'trine',
-	'quincunx',
-	'opposition'
-]);
-
-const MAJOR_ASPECT_ROWS: {
-	id: string;
-	labelKey: string;
-	glyph: string;
-	angle: string;
-	orb: string;
-}[] = [
-	{ id: 'conjunction', labelKey: 'aspect_conjunction', glyph: '☌', angle: '0°', orb: '8°' },
-	{ id: 'opposition', labelKey: 'aspect_opposition', glyph: '☍', angle: '180°', orb: '8°' },
-	{ id: 'trine', labelKey: 'aspect_trine', glyph: '△', angle: '120°', orb: '8°' },
-	{ id: 'square', labelKey: 'aspect_square', glyph: '□', angle: '90°', orb: '8°' },
-	{ id: 'sextile', labelKey: 'aspect_sextile', glyph: '⚹', angle: '60°', orb: '6°' }
-];
-
-const MINOR_ASPECT_ROWS: { id: string; labelKey: string; angle: string; orb: string }[] = [
-	{ id: 'quincunx', labelKey: 'aspect_quincunx', angle: '150°', orb: '3°' },
-	{ id: 'semisextile', labelKey: 'transits_aspects_semisextile', angle: '30°', orb: '3°' },
-	{ id: 'semisquare', labelKey: 'transits_aspects_semisquare', angle: '45°', orb: '3°' },
-	{ id: 'sesquiquadrate', labelKey: 'transits_aspects_sesqui', angle: '135°', orb: '3°' }
-];
+const DEFAULT_TRANSIT_ASPECT_IDS = ASPECT_ROWS.filter((row) => row.type === 'major').map(
+	(row) => row.id
+);
 
 function formatDateInput(date: Date): string {
 	const year = date.getFullYear();
@@ -97,6 +76,18 @@ function buildLocalIso(dateValue: string, timeValue: string): string {
 		throw new Error('Invalid transit date or time.');
 	}
 	return date.toISOString();
+}
+
+function positionsForIds(
+	positions: Record<string, unknown>,
+	ids: readonly string[]
+): Record<string, number> {
+	const result: Record<string, number> = {};
+	for (const id of new Set(ids)) {
+		const longitude = normalizeLongitude(positions[id]);
+		if (longitude !== null) result[id] = longitude;
+	}
+	return result;
 }
 
 export function TransitsContent({
@@ -149,13 +140,6 @@ export function TransitsContent({
 		if (sourceChartId || charts.length === 0) return;
 		setSourceChartId(selectedChartId ?? charts[0].id);
 	}, [charts, selectedChartId, sourceChartId]);
-
-	const toggleAspect = (aspectId: string) => {
-		if (!SUPPORTED_TRANSIT_ASPECT_IDS.has(aspectId)) return;
-		setSelectedAspects((prev) =>
-			prev.includes(aspectId) ? prev.filter((id) => id !== aspectId) : [...prev, aspectId]
-		);
-	};
 
 	const transitResultsCountLabel = useMemo(
 		() => t('transit_results_count').replace('{count}', String(transitSeries.length)),
@@ -234,14 +218,12 @@ export function TransitsContent({
 				transitedBodies.length > 0
 					? transitedBodies
 					: (sourceChart.observableObjects ?? workspaceDefaults.defaultBodies);
-			const crossAspects = computeTransitAspects({
-				transitPositions: transitComputed.positions ?? {},
-				radixPositions: radixComputed.positions ?? {},
-				transitingBodies,
-				transitedBodies: effectiveTransitedBodies,
-				aspectTypes: selectedAspects,
-				aspectOrbs: workspaceDefaults.defaultAspectOrbs
-			});
+			const crossAspects = await computeCrossAspectsFromData(
+				chartDataToComputePayload(sourceChart, workspaceDefaults),
+				positionsForIds(transitComputed.positions ?? {}, transitingBodies),
+				positionsForIds(radixComputed.positions ?? {}, effectiveTransitedBodies),
+				selectedAspects
+			);
 			const overlay = {
 				sourceChartId: sourceChart.id,
 				sourceChartName: sourceChart.name,
@@ -649,82 +631,11 @@ export function TransitsContent({
 				return (
 					<div className="space-y-6">
 						<p className={cn('text-sm', ft.muted)}>{t('transits_aspects_subtitle')}</p>
-
-						<Card variant="ghost" className="rounded-xl">
-							<CardContent className="p-6 md:p-8">
-								<h3 className={cn('mb-4 text-lg font-semibold', ft.title)}>
-									{t('transits_aspects_major')}
-								</h3>
-								<div className="space-y-4">
-									{MAJOR_ASPECT_ROWS.map((aspect) => (
-										<div key={aspect.id} className="flex items-center gap-4">
-											<Label className="flex flex-1 cursor-pointer items-center gap-3">
-												<Checkbox
-													className={ft.checkboxAccent}
-													checked={selectedAspects.includes(aspect.id)}
-													onCheckedChange={() => toggleAspect(aspect.id)}
-												/>
-												<span className={cn('text-sm font-medium', ft.bodyText)}>
-													{t(aspect.labelKey)} {aspect.glyph}
-												</span>
-												<span className={cn('text-xs', ft.muted)}>{aspect.angle}</span>
-											</Label>
-											<div className="flex items-center gap-2">
-												<span className={cn('text-xs', ft.label)}>{t('label_orb')}:</span>
-												<Input
-													type="text"
-													defaultValue={aspect.orb}
-													disabled
-													className={cn(ft.inputCompact, ft.inputDisabled, 'h-9 w-16')}
-												/>
-											</div>
-										</div>
-									))}
-								</div>
-							</CardContent>
-						</Card>
-
-						<Card variant="ghost" className="rounded-xl">
-							<CardContent className="p-6 md:p-8">
-								<h3 className={cn('mb-4 text-lg font-semibold', ft.title)}>
-									{t('transits_aspects_minor')}
-								</h3>
-								<div className="space-y-4">
-									{MINOR_ASPECT_ROWS.map((aspect) => (
-										<div key={aspect.id} className="flex items-center gap-4">
-											<Label
-												className={cn(
-													'flex flex-1 items-center gap-3',
-													SUPPORTED_TRANSIT_ASPECT_IDS.has(aspect.id)
-														? 'cursor-pointer'
-														: 'cursor-not-allowed opacity-50'
-												)}
-											>
-												<Checkbox
-													className={ft.checkboxAccent}
-													checked={selectedAspects.includes(aspect.id)}
-													disabled={!SUPPORTED_TRANSIT_ASPECT_IDS.has(aspect.id)}
-													onCheckedChange={() => toggleAspect(aspect.id)}
-												/>
-												<span className={cn('text-sm font-medium', ft.bodyText)}>
-													{t(aspect.labelKey)}
-												</span>
-												<span className={cn('text-xs', ft.muted)}>{aspect.angle}</span>
-											</Label>
-											<div className="flex items-center gap-2">
-												<span className={cn('text-xs', ft.label)}>{t('label_orb')}:</span>
-												<Input
-													type="text"
-													defaultValue={aspect.orb}
-													disabled
-													className={cn(ft.inputCompact, ft.inputDisabled, 'h-9 w-16')}
-												/>
-											</div>
-										</div>
-									))}
-								</div>
-							</CardContent>
-						</Card>
+						<AspectSelector
+							theme={theme}
+							selectedAspectIds={selectedAspects}
+							onSelectedAspectIdsChange={setSelectedAspects}
+						/>
 					</div>
 				);
 		}

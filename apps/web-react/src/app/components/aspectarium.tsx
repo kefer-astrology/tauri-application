@@ -20,10 +20,16 @@ import { DetailSidePanel } from './detail-side-panel';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import {
 	DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS,
+	DEFAULT_OBSERVABLE_OBJECT_IDS,
 	OBSERVABLE_OBJECTS,
 	getObservableObjectLabel
 } from '@/lib/astrology/observableObjects';
-import { ASPECT_GLYPHS, ASPECT_ROWS, DEFAULT_ASPECT_COLORS } from '@/lib/astrology/aspects';
+import {
+	ASPECT_GLYPHS,
+	ASPECT_ROWS,
+	DEFAULT_ASPECT_COLORS,
+	DEFAULT_ENABLED_ASPECT_IDS
+} from '@/lib/astrology/aspects';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 
 interface AspectariumProps {
@@ -385,10 +391,30 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 			new Set(
 				workspaceDefaults.defaultAspects.length > 0
 					? workspaceDefaults.defaultAspects
-					: ASPECT_ROWS.map((aspect) => aspect.id)
+					: DEFAULT_ENABLED_ASPECT_IDS
 			)
 	);
 	const [orbPreset, setOrbPreset] = useState<OrbPreset>('default');
+
+	useEffect(() => {
+		setSelectedBodyIds(
+			new Set(
+				workspaceDefaults.defaultBodies.length > 0
+					? workspaceDefaults.defaultBodies
+					: DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS
+			)
+		);
+	}, [workspaceDefaults.defaultBodies]);
+
+	useEffect(() => {
+		setSelectedAspectTypes(
+			new Set(
+				workspaceDefaults.defaultAspects.length > 0
+					? workspaceDefaults.defaultAspects
+					: DEFAULT_ENABLED_ASPECT_IDS
+			)
+		);
+	}, [workspaceDefaults.defaultAspects]);
 
 	const positions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
 	const motion = selectedChart?.computed?.motion ?? {};
@@ -399,20 +425,13 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 		unknown
 	>;
 	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? {};
-	const configuredBodyOrder = useMemo(
-		() =>
-			workspaceDefaults.defaultBodies.length > 0
-				? workspaceDefaults.defaultBodies
-				: DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS,
-		[workspaceDefaults.defaultBodies]
-	);
 	const availableBodyOrder = useMemo(
 		() =>
-			(activeTransitOverlay?.transitedBodies ?? configuredBodyOrder).filter((id) => {
+			(activeTransitOverlay?.transitedBodies ?? DEFAULT_OBSERVABLE_OBJECT_IDS).filter((id) => {
 				const value = positions[id];
 				return normalizeLongitude(value) !== null;
 			}),
-		[activeTransitOverlay?.transitedBodies, configuredBodyOrder, positions]
+		[activeTransitOverlay?.transitedBodies, positions]
 	);
 	const availableTransitBodyOrder = useMemo(
 		() =>
