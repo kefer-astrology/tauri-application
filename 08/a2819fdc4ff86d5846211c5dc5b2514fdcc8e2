@@ -1,0 +1,28 @@
+docs/public/apps/web-react/assets/index-BUXntAoG.css
+  s_6ff4eee92487ec::t_4c92e97d785d37 1-2
+docs/public/apps/web-react/assets/index-CpJ57wmr.js
+  s_6ff4eee92487ec::t_93f26783baf52f 1
+docs/public/apps/web-svelte/assets/index-GDk29YtT.js
+  s_6ff4eee92487ec::t_2f70911437f65a 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "08a2819fdc4ff86d5846211c5dc5b2514fdcc8e2",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_6ff4eee92487ec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a83b0c9e4cd4191ac",
+        "model": "unknown"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
