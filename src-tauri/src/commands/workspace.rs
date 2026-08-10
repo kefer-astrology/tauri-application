@@ -856,6 +856,33 @@ fn compute_chart_from_data_rust(
     chart_calculation_to_map(calculation)
 }
 
+/// Detect cross-chart aspects (e.g. a transit overlay) between two already-computed
+/// position maps, using the same resolved model definitions and orb overrides as
+/// `compute_chart_from_data`. Callers that have no persisted workspace chart id should
+/// use this instead of re-implementing aspect-detection geometry client-side.
+#[tauri::command]
+pub async fn compute_cross_aspects_from_data(
+    chart_json: serde_json::Value,
+    transiting_positions: HashMap<String, f64>,
+    transited_positions: HashMap<String, f64>,
+    aspect_types: Vec<String>,
+    settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
+) -> Result<Vec<crate::astrology::ComputedAspect>, String> {
+    let chart: crate::workspace::models::ChartInstance =
+        serde_json::from_value(chart_json).map_err(|e| format!("Invalid chart payload: {}", e))?;
+    let report = crate::workspace::settings::standalone_model_report_with_operation(
+        &chart.config,
+        settings_overrides.as_ref(),
+    );
+    Ok(crate::astrology::compute_cross_aspects(
+        &transiting_positions,
+        &transited_positions,
+        &report.model.aspect_definitions,
+        &report.effective_settings.aspect_orbs,
+        &aspect_types,
+    ))
+}
+
 async fn compute_chart_from_data_python(
     app: &AppHandle,
     backend_state: &crate::backend::BackendState,
@@ -1239,6 +1266,7 @@ fn normalize_chart_response(
         result.insert("warnings".to_string(), serde_json::json!([]));
     }
     crate::lunar_phase::inject_moon_details_into_chart_map(&mut result);
+    crate::astrology::inject_shapes_and_configurations_into_chart_map(&mut result);
     result
 }
 

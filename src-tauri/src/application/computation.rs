@@ -68,6 +68,8 @@ pub struct ChartCalculation {
     pub aspects: Vec<ComputedAspect>,
     pub axes: ChartAxes,
     pub house_cusps: Vec<f64>,
+    pub shapes: Vec<String>,
+    pub configurations: Vec<String>,
     pub moon_details: Option<LunarPhaseDetails>,
     pub chart_id: String,
     pub backend_used: String,
@@ -99,6 +101,9 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         Some(selected_aspects),
     );
     let moon_details = crate::lunar_phase::from_position_map(&computed.positions);
+    let shapes = crate::astrology::detect_chart_shapes(&computed.positions, &computed.house_cusps);
+    let configurations =
+        crate::astrology::detect_chart_configurations(&computed.positions, &aspects);
 
     Ok(ChartCalculation {
         positions: computed.positions,
@@ -106,6 +111,8 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         aspects,
         axes: computed.axes,
         house_cusps: computed.house_cusps,
+        shapes,
+        configurations,
         moon_details,
         chart_id: resolved.chart.id,
         backend_used: computed.backend_used,
