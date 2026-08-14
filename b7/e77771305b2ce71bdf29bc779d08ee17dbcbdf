@@ -1,0 +1,78 @@
+apps/web-svelte/src/lib/state/layout.svelte.ts
+  s_435b457605acfa::t_eeee870f05d3d3 102
+apps/web-svelte/src/App.svelte
+  s_435b457605acfa::t_c44ccdcd8c7fcc 140,758,1036,1067,1077,1158
+  s_435b457605acfa::t_0ffba21b63fa14 12-13,770,1032-1035
+  s_435b457605acfa::t_a7916c31718fde 234-243,1079
+apps/web-react/src/app/components/revolution-view.tsx
+  s_435b457605acfa::t_71801744dcb9d6 1-47,49-74,79-84,86-108,111-136,141-150,155-156,165-166,171-172,181-191
+  s_435b457605acfa::t_26b687a47bf088 48,75-78,85,109-110,137-140,151-154,157-164,167-170,173-180
+apps/web-react/src/locales/es.json
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+  s_435b457605acfa::t_50b382240161ca 578-579
+apps/web-react/src/locales/en.json
+  s_435b457605acfa::t_50b382240161ca 578-579
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+apps/web-svelte/src/lib/i18n/fr.json
+  s_435b457605acfa::t_50b382240161ca 578-579
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+apps/web-react/src/app/components/synastry-view.tsx
+  s_435b457605acfa::t_dbe6f36a3db004 50-54,202,338
+  s_435b457605acfa::t_26b687a47bf088 76,85-87,94-96,119-125,128-131,134-141,144-147,150-158,162-165,168-175,193-200,204-205,214-216,220-223,226-232,241-246,252-264,275-280,286-292,301-303,311-317,320-325,327-337,339-342,347-351
+  s_435b457605acfa::t_31cfd58c1a8c31 1-49,55-75,77-84,88-93,97-118,126-127,132-133,142-143,148-149,159-161,166-167,176-192,201,203,206-213,217-219,224-225,233-240,247-251,265-274,281-285,293-300,304-310,318-319,326,343-346,352-357
+apps/web-react/src/locales/cs.json
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+  s_435b457605acfa::t_50b382240161ca 578-579
+apps/web-react/src/app/App.tsx
+  s_435b457605acfa::t_1b8aafeaadb7c5 543,583-584,589,665
+  s_435b457605acfa::t_0601fcd4093880 20-21,661-664
+apps/web-svelte/src/lib/i18n/en.json
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+  s_435b457605acfa::t_50b382240161ca 578-579
+apps/web-svelte/src/lib/i18n/es.json
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+  s_435b457605acfa::t_50b382240161ca 578-579
+translations.csv
+  s_435b457605acfa::t_8b05ea2337b728 530-578
+  s_435b457605acfa::t_1b8aafeaadb7c5 579
+apps/web-svelte/src/lib/components/RevolutionView.svelte
+  s_435b457605acfa::t_84524cbdfaa4c9 1-68,70-119,121-143
+  s_435b457605acfa::t_9e01c3835963c5 69,120
+apps/web-svelte/src/lib/components/SynastryPersonFields.svelte
+  s_435b457605acfa::t_f305c5868535aa 1-100
+apps/web-svelte/src/lib/components/SynastryView.svelte
+  s_435b457605acfa::t_cb8a674faa16c9 1-160
+apps/web-svelte/src/lib/components/TopBar.svelte
+  s_435b457605acfa::t_0ffba21b63fa14 40,60,78,99,121
+  s_435b457605acfa::t_746b0db9a17339 16
+apps/web-react/src/app/components/transits-secondary-sidebar.tsx
+  s_435b457605acfa::t_9fea54ee90ea34 23-24,29-31
+  s_435b457605acfa::t_1b8aafeaadb7c5 12,18-19,36,40
+apps/web-react/src/locales/fr.json
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+  s_435b457605acfa::t_50b382240161ca 578-579
+apps/web-svelte/src/lib/i18n/cs.json
+  s_435b457605acfa::t_50b382240161ca 578-579
+  s_435b457605acfa::t_8b05ea2337b728 529-577
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b7e77771305b2ce71bdf29bc779d08ee17dbcbdf",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_435b457605acfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffd15-8815-7822-aab3-ea1af9c781bc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
