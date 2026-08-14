@@ -409,6 +409,22 @@ fn validate_subject(
             Some(format!("{path}.location.longitude")),
         ));
     }
+    if let Err(error) = super::models::validate_timezone_identifier(&subject.location.timezone) {
+        diagnostics.push(super::validation::Diagnostic::error(
+            "invalid_location_timezone",
+            format!("Subject '{}': {error}", subject.id),
+            Some(format!("{path}.location.timezone")),
+        ));
+    }
+    if let Some(offset) = subject.location.utc_offset.as_deref() {
+        if let Err(error) = super::models::validate_utc_offset(offset) {
+            diagnostics.push(super::validation::Diagnostic::error(
+                "invalid_location_utc_offset",
+                format!("Subject '{}': {error}", subject.id),
+                Some(format!("{path}.location.utc_offset")),
+            ));
+        }
+    }
 }
 
 fn validate_layout_chart_reference(
