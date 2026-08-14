@@ -1,0 +1,110 @@
+docs/public/apps/web-react/assets/radix-vendor-CH1qTPES.js
+  s_435b457605acfa::t_4e2028849646b9 1-45
+docs/public/docs/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/apps/web-svelte/assets/ui-vendor-DNoveDLg.js
+  s_435b457605acfa::t_4e2028849646b9 1-5
+docs/public/docs/backend-structure/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/apps/web-svelte/assets/index-DdHZopLP.js
+  s_435b457605acfa::t_4e2028849646b9 1
+docs/public/apps/web-svelte/index.html
+  s_435b457605acfa::t_4ed9d4ea957236 8-10,13
+docs/public/llm/development-driver/index.html
+  s_435b457605acfa::t_4e2028849646b9 3,83
+docs/public/apps/web-react/index.html
+  s_435b457605acfa::t_4e2028849646b9 17-18
+  s_435b457605acfa::t_c9afa591be1c90 14,21
+docs/public/docs/spice-backend/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/architecture/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/apps/web-svelte/assets/index-Dku7lNwd.css
+  s_435b457605acfa::t_4e2028849646b9 1-2
+docs/public/docs/ephemeris-manager/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/apps/web-react/assets/index-DCBC8Vcu.css
+  s_435b457605acfa::t_4e2028849646b9 1-2
+docs/public/docs/python-package/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/llm/continuation-guide/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/ui-conventions/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/apps/web-react/assets/ui-vendor-ReSxhIgI.js
+  s_435b457605acfa::t_4e2028849646b9 1
+docs/public/docs/lunar-phase/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/llm/project-context/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/apps/web-svelte/assets/svelte-vendor-kS7FXysf.js
+  s_435b457605acfa::t_4e2028849646b9 1-6
+docs/public/llm/import-chart-contract/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/llm/radix-render-contract/index.html
+  s_435b457605acfa::t_4e2028849646b9 3,41-42,67-72
+  s_435b457605acfa::t_1af17d08146731 73
+docs/public/llm/frontend-workflow-baseline/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/house-systems/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/apps/web-svelte/assets/index-CpXVJdod.js
+  s_435b457605acfa::t_4ed9d4ea957236 1
+docs/public/docs/discussion-summary/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/versioning/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/llm/rust-workspace-contract/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/frontend-react/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/ci-todo/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/frontend-svelte/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/time-navigation/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/physical-properties/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/llm/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/llm/transit-series-contract/index.html
+  s_435b457605acfa::t_4e2028849646b9 3,32-33,88
+docs/public/llm/frontend-gap-implementation-plan/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/llm/specs-workflow/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+docs/public/docs/tauri-command-contracts/index.html
+  s_435b457605acfa::t_4e2028849646b9 3,198,216,220-228,232,333
+docs/public/index.html
+  s_435b457605acfa::t_4e2028849646b9 4
+docs/public/apps/web-react/assets/index-BEMOBK6o.js
+  s_435b457605acfa::t_4e2028849646b9 1
+docs/public/apps/web-react/assets/index-DN2YY1KV.js
+  s_435b457605acfa::t_c9afa591be1c90 1
+docs/public/apps/web-react/assets/index-BVctbQF0.css
+  s_435b457605acfa::t_c9afa591be1c90 1-2
+docs/public/llm/chart-datetime-contract/index.html
+  s_435b457605acfa::t_4e2028849646b9 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "7d78b1573128c81165b5db9af798058cfdaafdcc",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_435b457605acfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffd15-8815-7822-aab3-ea1af9c781bc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
