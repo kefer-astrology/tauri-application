@@ -25,6 +25,8 @@ export interface AppChart {
 	longitude?: number;
 	timezone?: string;
 	utcOffset?: string;
+	locationRegime?: 'auto' | 'manual';
+	timeRegime?: 'auto' | 'manual';
 	rodenRating?: string;
 	observableObjects?: string[];
 	aspectOrbs?: Record<string, number>;
@@ -223,6 +225,8 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		longitude: full.subject.location.longitude,
 		timezone: full.subject.location.timezone,
 		utcOffset: full.subject.location.utc_offset ?? undefined,
+		locationRegime: full.subject.location.location_mode ?? undefined,
+		timeRegime: full.subject.location.timezone_mode ?? undefined,
 		houseSystem: full.config.house_system,
 		zodiacType: full.config.zodiac_type,
 		engine: full.config.engine,
@@ -309,7 +313,9 @@ export function chartDataToComputePayload(
 				latitude: chart.latitude ?? defaults.locationLatitude,
 				longitude: chart.longitude ?? defaults.locationLongitude,
 				timezone,
-				...(chart.utcOffset ? { utc_offset: chart.utcOffset } : {})
+				...(chart.utcOffset ? { utc_offset: chart.utcOffset } : {}),
+				...(chart.locationRegime ? { location_mode: chart.locationRegime } : {}),
+				...(chart.timeRegime ? { timezone_mode: chart.timeRegime } : {})
 			}
 		},
 		config: {
@@ -366,11 +372,14 @@ export function createBootstrapChart(defaults: WorkspaceDefaultsState): AppChart
 		houseSystem: defaults.houseSystem,
 		zodiacType: defaults.zodiacType,
 		engine: defaults.engine ?? 'jpl',
+		locationRegime: 'auto',
+		timeRegime: 'auto',
 		tags: ['auto']
 	};
 }
 
 export type NewHoroscopeChartKind = 'radix' | 'event' | 'horary';
+export type NewHoroscopeTimeSystem = 'gregorian' | 'julian_day' | 'julian_calendar';
 type LatitudeDirection = 'north' | 'south';
 type LongitudeDirection = 'east' | 'west';
 
@@ -397,6 +406,9 @@ export function appChartFromNewHoroscopeInput(input: {
 	locationName: string;
 	chartKind: NewHoroscopeChartKind;
 	dateTime: Date;
+	timeSystem: NewHoroscopeTimeSystem;
+	julianDay?: string;
+	julianCalendarDate?: string;
 	location: string;
 	tags: string;
 	tagColors?: Record<string, string>;
@@ -406,6 +418,8 @@ export function appChartFromNewHoroscopeInput(input: {
 	longitudeDir: LongitudeDirection;
 	timezone: string;
 	utcOffset?: string;
+	locationRegime: 'auto' | 'manual';
+	timeRegime: 'auto' | 'manual';
 	rodenRating?: string;
 	workspaceDefaults: WorkspaceDefaultsState;
 	existingIds: ReadonlySet<string>;
@@ -419,7 +433,16 @@ export function appChartFromNewHoroscopeInput(input: {
 	const id = uniqueChartId(baseId, input.existingIds);
 
 	const timezone = input.timezone.trim() || input.workspaceDefaults.timezone;
-	const dateTime = wallTimeToUtcIso(input.dateTime, timezone, input.utcOffset);
+	const dateTime =
+		input.timeSystem === 'julian_day'
+			? julianDayToUtcIso(input.julianDay ?? '')
+			: wallTimeToUtcIso(
+					input.timeSystem === 'julian_calendar'
+						? julianCalendarDateToGregorianWallDate(input.julianCalendarDate ?? '', input.dateTime)
+						: input.dateTime,
+					timezone,
+					input.utcOffset
+				);
 
 	const locText = input.location.trim();
 	const location = locText || input.workspaceDefaults.locationName;
@@ -442,13 +465,103 @@ export function appChartFromNewHoroscopeInput(input: {
 		longitude: lon ?? input.workspaceDefaults.locationLongitude,
 		timezone,
 		utcOffset: input.utcOffset,
+		locationRegime: input.locationRegime,
+		timeRegime: input.timeRegime,
 		houseSystem: input.workspaceDefaults.houseSystem,
 		zodiacType: input.workspaceDefaults.zodiacType,
 		engine: input.workspaceDefaults.engine,
 		tags: tagList,
 		tagColors: input.tagColors,
-		rodenRating: input.rodenRating || undefined
+		rodenRating: input.rodenRating || undefined,
+		timeSystem: input.timeSystem
 	};
+}
+
+const UNIX_EPOCH_JULIAN_DAY = 2_440_587.5;
+const MILLISECONDS_PER_DAY = 86_400_000;
+
+export function utcDateToJulianDay(value: Date): number {
+	if (!Number.isFinite(value.getTime())) throw new Error('Invalid date or time.');
+	return value.getTime() / MILLISECONDS_PER_DAY + UNIX_EPOCH_JULIAN_DAY;
+}
+
+export function julianDayToUtcIso(value: string | number): string {
+	const julianDay = typeof value === 'number' ? value : Number(value.trim());
+	if (!Number.isFinite(julianDay)) throw new Error('Julian Day must be a finite number.');
+	const result = new Date((julianDay - UNIX_EPOCH_JULIAN_DAY) * MILLISECONDS_PER_DAY);
+	if (!Number.isFinite(result.getTime()))
+		throw new Error('Julian Day is outside the supported range.');
+	return result.toISOString();
+}
+
+function parseJulianCalendarDate(value: string): { year: number; month: number; day: number } {
+	const match = /^(\d{1,4})-(\d{2})-(\d{2})$/.exec(value.trim());
+	if (!match) throw new Error('Julian calendar date must use YYYY-MM-DD.');
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const monthLengths = [31, year % 4 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	if (year < 1 || month < 1 || month > 12 || day < 1 || day > monthLengths[month - 1]!) {
+		throw new Error('Invalid Julian calendar date.');
+	}
+	return { year, month, day };
+}
+
+function julianCalendarJdn(year: number, month: number, day: number): number {
+	const a = Math.floor((14 - month) / 12);
+	const y = year + 4800 - a;
+	const m = month + 12 * a - 3;
+	return day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - 32083;
+}
+
+function gregorianDateFromJdn(jdn: number): { year: number; month: number; day: number } {
+	const a = jdn + 32044;
+	const b = Math.floor((4 * a + 3) / 146097);
+	const c = a - Math.floor((146097 * b) / 4);
+	const d = Math.floor((4 * c + 3) / 1461);
+	const e = c - Math.floor((1461 * d) / 4);
+	const m = Math.floor((5 * e + 2) / 153);
+	return {
+		day: e - Math.floor((153 * m + 2) / 5) + 1,
+		month: m + 3 - 12 * Math.floor(m / 10),
+		year: 100 * b + d - 4800 + Math.floor(m / 10)
+	};
+}
+
+export function julianCalendarDateToGregorianWallDate(value: string, time: Date): Date {
+	const julian = parseJulianCalendarDate(value);
+	const gregorian = gregorianDateFromJdn(julianCalendarJdn(julian.year, julian.month, julian.day));
+	const result = new Date(time);
+	result.setDate(1);
+	result.setFullYear(gregorian.year, gregorian.month - 1, gregorian.day);
+	if (!Number.isFinite(result.getTime())) throw new Error('Julian calendar date is unsupported.');
+	return result;
+}
+
+export function gregorianWallDateToJulianCalendarDate(value: Date): string {
+	if (!Number.isFinite(value.getTime())) throw new Error('Invalid date or time.');
+	const year = value.getFullYear();
+	const month = value.getMonth() + 1;
+	const day = value.getDate();
+	const a = Math.floor((14 - month) / 12);
+	const y = year + 4800 - a;
+	const m = month + 12 * a - 3;
+	const jdn =
+		day +
+		Math.floor((153 * m + 2) / 5) +
+		365 * y +
+		Math.floor(y / 4) -
+		Math.floor(y / 100) +
+		Math.floor(y / 400) -
+		32045;
+	const c = jdn + 32082;
+	const d = Math.floor((4 * c + 3) / 1461);
+	const e = c - Math.floor((1461 * d) / 4);
+	const jm = Math.floor((5 * e + 2) / 153);
+	const julianDay = e - Math.floor((153 * jm + 2) / 5) + 1;
+	const julianMonth = jm + 3 - 12 * Math.floor(jm / 10);
+	const julianYear = d - 4800 + Math.floor(jm / 10);
+	return `${String(julianYear).padStart(4, '0')}-${String(julianMonth).padStart(2, '0')}-${String(julianDay).padStart(2, '0')}`;
 }
 
 function fixedUtcOffsetMilliseconds(timezone: string): number | null {
@@ -457,12 +570,12 @@ function fixedUtcOffsetMilliseconds(timezone: string): number | null {
 	if (!match) return null;
 	const hours = Number(match[2]);
 	const minutes = Number(match[3] ?? 0);
-	if (hours > 23 || minutes > 59) return null;
+	if (hours > 14 || minutes > 59 || (hours === 14 && minutes !== 0)) return null;
 	const milliseconds = (hours * 60 + minutes) * 60_000;
 	return match[1] === '+' ? milliseconds : -milliseconds;
 }
 
-function ianaOffsetMilliseconds(timezone: string, instant: Date): number {
+function ianaWallTimeParts(timezone: string, instant: Date): number[] {
 	const parts = new Intl.DateTimeFormat('en-US', {
 		timeZone: timezone,
 		year: 'numeric',
@@ -474,19 +587,50 @@ function ianaOffsetMilliseconds(timezone: string, instant: Date): number {
 		hourCycle: 'h23'
 	}).formatToParts(instant);
 	const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-	const representedAsUtc = Date.UTC(
+	return [
 		Number(values.year),
 		Number(values.month) - 1,
 		Number(values.day),
 		Number(values.hour),
 		Number(values.minute),
 		Number(values.second)
+	];
+}
+
+function ianaOffsetMilliseconds(timezone: string, instant: Date): number {
+	const values = ianaWallTimeParts(timezone, instant);
+	const representedAsUtc = Date.UTC(
+		values[0]!,
+		values[1]!,
+		values[2]!,
+		values[3]!,
+		values[4]!,
+		values[5]!
 	);
 	return representedAsUtc - instant.getTime();
 }
 
+function wallTimeParts(value: Date): number[] {
+	return [
+		value.getFullYear(),
+		value.getMonth(),
+		value.getDate(),
+		value.getHours(),
+		value.getMinutes(),
+		value.getSeconds()
+	];
+}
+
+function sameWallTime(left: number[], right: number[]): boolean {
+	return left.every((value, index) => value === right[index]);
+}
+
 /** Convert the form's wall-clock fields in `timezone` into one unambiguous UTC instant. */
 export function wallTimeToUtcIso(value: Date, timezone: string, utcOffset?: string): string {
+	if (!Number.isFinite(value.getTime())) throw new Error('Invalid date or time.');
+	const normalizedTimezone = timezone.trim();
+	if (!normalizedTimezone) throw new Error('Timezone is required.');
+
 	const wallTimeUtc = Date.UTC(
 		value.getFullYear(),
 		value.getMonth(),
@@ -495,13 +639,32 @@ export function wallTimeToUtcIso(value: Date, timezone: string, utcOffset?: stri
 		value.getMinutes(),
 		value.getSeconds()
 	);
-	const fixedOffset = fixedUtcOffsetMilliseconds(utcOffset ?? timezone);
+	const explicitOffset = utcOffset?.trim();
+	const fixedOffset = fixedUtcOffsetMilliseconds(explicitOffset ?? normalizedTimezone);
+	if (explicitOffset && fixedOffset === null) {
+		throw new Error(`Invalid UTC offset: ${explicitOffset}`);
+	}
 	if (fixedOffset !== null) return new Date(wallTimeUtc - fixedOffset).toISOString();
 
 	let candidate = new Date(wallTimeUtc);
-	let offset = ianaOffsetMilliseconds(timezone, candidate);
+	let offset = ianaOffsetMilliseconds(normalizedTimezone, candidate);
 	candidate = new Date(wallTimeUtc - offset);
-	const correctedOffset = ianaOffsetMilliseconds(timezone, candidate);
+	const correctedOffset = ianaOffsetMilliseconds(normalizedTimezone, candidate);
 	if (correctedOffset !== offset) candidate = new Date(wallTimeUtc - correctedOffset);
+
+	const expectedWallTime = wallTimeParts(value);
+	if (!sameWallTime(ianaWallTimeParts(normalizedTimezone, candidate), expectedWallTime)) {
+		throw new Error(`The selected local time does not exist in ${normalizedTimezone}.`);
+	}
+
+	for (let deltaMinutes = -180; deltaMinutes <= 180; deltaMinutes += 15) {
+		if (deltaMinutes === 0) continue;
+		const alternative = new Date(candidate.getTime() + deltaMinutes * 60_000);
+		if (sameWallTime(ianaWallTimeParts(normalizedTimezone, alternative), expectedWallTime)) {
+			throw new Error(
+				`The selected local time occurs twice in ${normalizedTimezone}; choose a UTC offset.`
+			);
+		}
+	}
 	return candidate.toISOString();
 }

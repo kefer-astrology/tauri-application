@@ -349,11 +349,14 @@ export default function App() {
 				applyComputedChartResult(chart.id, result);
 			} catch (e) {
 				console.error(`Background compute failed for ${chart.id}:`, e);
+				toast.error(t('toast_compute_failed'), {
+					description: e instanceof Error ? e.message : String(e)
+				});
 			} finally {
 				computingChartIdsRef.current.delete(chart.id);
 			}
 		},
-		[applyComputedChartResult, workspaceDefaults]
+		[applyComputedChartResult, workspaceDefaults, t]
 	);
 
 	const applyWorkspaceDefaultsPatch = useCallback(

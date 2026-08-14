@@ -19,8 +19,69 @@ import {
 	type WorkspaceDefaultsState
 } from './chartPayload';
 import type { TransitAspect } from '@/lib/astrology/transits';
+import { isTauriRuntime } from './runtime';
+
+const DEMO_LOCATIONS: ResolvedLocation[] = [
+	{
+		query: 'Prague',
+		display_name: 'Prague, Czech Republic',
+		latitude: 50.0875,
+		longitude: 14.4213,
+		timezone: 'Europe/Prague'
+	},
+	{
+		query: 'Brno',
+		display_name: 'Brno, Czech Republic',
+		latitude: 49.1951,
+		longitude: 16.6068,
+		timezone: 'Europe/Prague'
+	},
+	{
+		query: 'Pardubice',
+		display_name: 'Pardubice, Czech Republic',
+		latitude: 50.0343,
+		longitude: 15.7812,
+		timezone: 'Europe/Prague'
+	},
+	{
+		query: 'Bratislava',
+		display_name: 'Bratislava, Slovakia',
+		latitude: 48.1486,
+		longitude: 17.1077,
+		timezone: 'Europe/Bratislava'
+	},
+	{
+		query: 'Vienna',
+		display_name: 'Vienna, Austria',
+		latitude: 48.2082,
+		longitude: 16.3738,
+		timezone: 'Europe/Vienna'
+	}
+];
+
+function demoChartId(chartJson: Record<string, unknown>): string {
+	if (typeof chartJson.id === 'string') return chartJson.id;
+	const subject = chartJson.subject;
+	if (
+		subject &&
+		typeof subject === 'object' &&
+		typeof (subject as { id?: unknown }).id === 'string'
+	) {
+		return (subject as { id: string }).id;
+	}
+	return 'demo-chart';
+}
+
+function findDemoLocations(query: string): ResolvedLocation[] {
+	const normalized = query.trim().toLocaleLowerCase();
+	if (!normalized) return [];
+	return DEMO_LOCATIONS.filter((location) =>
+		`${location.query} ${location.display_name}`.toLocaleLowerCase().includes(normalized)
+	);
+}
 
 export async function openFolderDialog(): Promise<string | null> {
+	if (!isTauriRuntime()) return null;
 	return invoke<string | null>('open_folder_dialog');
 }
 
@@ -70,6 +131,13 @@ export async function computeChartFromData(
 	chartJson: Record<string, unknown>,
 	settingsOverrides?: ComputeSettingsOverrides | null
 ): Promise<ComputeChartResult> {
+	if (!isTauriRuntime()) {
+		return {
+			chart_id: demoChartId(chartJson),
+			positions: {},
+			aspects: []
+		};
+	}
 	return invoke<ComputeChartResult>('compute_chart_from_data', {
 		chartJson,
 		settingsOverrides: settingsOverrides ?? null
@@ -83,6 +151,7 @@ export async function computeCrossAspectsFromData(
 	aspectTypes: string[],
 	settingsOverrides?: ComputeSettingsOverrides | null
 ): Promise<TransitAspect[]> {
+	if (!isTauriRuntime()) return [];
 	return invoke<TransitAspect[]>('compute_cross_aspects_from_data', {
 		chartJson,
 		transitingPositions,
@@ -101,14 +170,38 @@ export function computeTransitSeries(params: TransitSeriesRequest): Promise<Tran
 }
 
 export async function resolveLocation(query: string): Promise<ResolvedLocation> {
+	if (!isTauriRuntime()) {
+		const location = findDemoLocations(query)[0];
+		if (location) return { ...location, query };
+		return {
+			query,
+			display_name: query.trim(),
+			latitude: 0,
+			longitude: 0,
+			timezone: 'UTC'
+		};
+	}
 	return invoke<ResolvedLocation>('resolve_location', { query });
 }
 
 export async function resolveTimezone(latitude: number, longitude: number): Promise<string> {
+	if (!isTauriRuntime()) {
+		const nearest = DEMO_LOCATIONS.reduce((best, candidate) => {
+			const bestDistance = Math.hypot(best.latitude - latitude, best.longitude - longitude);
+			const candidateDistance = Math.hypot(
+				candidate.latitude - latitude,
+				candidate.longitude - longitude
+			);
+			return candidateDistance < bestDistance ? candidate : best;
+		});
+		const nearestDistance = Math.hypot(nearest.latitude - latitude, nearest.longitude - longitude);
+		return nearestDistance <= 5 ? nearest.timezone : 'UTC';
+	}
 	return invoke<string>('resolve_timezone', { latitude, longitude });
 }
 
 export async function searchLocations(query: string): Promise<ResolvedLocation[]> {
+	if (!isTauriRuntime()) return findDemoLocations(query);
 	return invoke<ResolvedLocation[]>('search_locations', { query });
 }
 

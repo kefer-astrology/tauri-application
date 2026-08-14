@@ -30,7 +30,13 @@ import type { Theme } from './astrology-sidebar';
 import { tagColor, tagDefaultColor } from '@/lib/chartTags';
 import {
 	appChartFromNewHoroscopeInput,
+	gregorianWallDateToJulianCalendarDate,
+	julianCalendarDateToGregorianWallDate,
+	julianDayToUtcIso,
 	type AppChart,
+	type NewHoroscopeTimeSystem,
+	utcDateToJulianDay,
+	wallTimeToUtcIso,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
 import { resolveLocation, resolveTimezone, searchLocations } from '@/lib/tauri/workspace';
@@ -41,26 +47,57 @@ type LonDir = 'east' | 'west';
 type LocationRegime = 'auto' | 'manual';
 type TimeRegime = 'auto' | 'manual';
 
-const TIMEZONES: string[] =
+const TIME_SYSTEMS: { id: NewHoroscopeTimeSystem; labelKey: string }[] = [
+	{ id: 'gregorian', labelKey: 'new_time_system_gregorian' },
+	{ id: 'julian_calendar', labelKey: 'new_time_system_julian_calendar' },
+	{ id: 'julian_day', labelKey: 'new_time_system_julian_day' }
+];
+
+function supportedTimeSystem(value?: string | null): NewHoroscopeTimeSystem {
+	return value === 'julian_day' || value === 'julian_calendar' ? value : 'gregorian';
+}
+
+const DISCOVERED_TIMEZONES: string[] =
 	typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl
 		? (Intl as unknown as { supportedValuesOf: (k: string) => string[] }).supportedValuesOf(
 				'timeZone'
 			)
 		: [];
 
+const TIMEZONES = Array.from(
+	new Set([
+		'UTC',
+		'Europe/Prague',
+		'Europe/London',
+		'America/New_York',
+		'America/Los_Angeles',
+		'Asia/Kolkata',
+		'Asia/Kathmandu',
+		'Australia/Sydney',
+		...DISCOVERED_TIMEZONES
+	])
+).sort((a, b) => a.localeCompare(b));
+
 const TIMEZONE_REGIONS = Array.from(
 	new Set(TIMEZONES.map((timezone) => timezone.split('/')[0]).filter(Boolean))
 ).sort((a, b) => a.localeCompare(b));
 
-const UTC_OFFSETS = Array.from({ length: 25 }, (_, index) => {
-	const hours = index - 12;
-	const sign = hours >= 0 ? '+' : '-';
-	return `UTC${sign}${String(Math.abs(hours)).padStart(2, '0')}:00`;
+const UTC_OFFSETS = Array.from({ length: 113 }, (_, index) => {
+	const totalMinutes = index * 15 - 14 * 60;
+	const sign = totalMinutes >= 0 ? '+' : '-';
+	const magnitude = Math.abs(totalMinutes);
+	const hours = Math.floor(magnitude / 60);
+	const minutes = magnitude % 60;
+	return `UTC${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 });
 
 function timezoneRegion(timezone: string): string {
 	const region = timezone.split('/')[0] ?? '';
 	return TIMEZONE_REGIONS.includes(region) ? region : (TIMEZONE_REGIONS[0] ?? 'UTC');
+}
+
+function timezoneMatchesRegion(timezone: string, region: string): boolean {
+	return timezone === region || timezone.startsWith(`${region}/`);
 }
 
 function mergeDatePart(target: Date, pickedDate: Date): Date {
@@ -94,7 +131,7 @@ function parseDateTimeString(dateTime: string, timezone?: string, utcOffset?: st
 	const d = new Date(normalized);
 	if (isNaN(d.getTime())) return new Date();
 	if (!timezone || !/(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized)) return d;
-	const offsetMinutes = parseUtcOffsetMinutes(utcOffset);
+	const offsetMinutes = parseUtcOffsetMinutes(utcOffset ?? timezone);
 	if (offsetMinutes !== null) {
 		const wallTime = new Date(d.getTime() + offsetMinutes * 60_000);
 		return new Date(
@@ -573,6 +610,10 @@ export function NewHoroscope({
 
 	const isEditMode = initialValues != null;
 	const initialTimezone = initialValues?.timezone ?? workspaceDefaults.timezone;
+	const initialTimeSystem = supportedTimeSystem(initialValues?.timeSystem);
+	const initialSelectedDateTime = initialValues?.dateTime
+		? parseDateTimeString(initialValues.dateTime, initialTimezone, initialValues.utcOffset)
+		: new Date();
 
 	const [locationName, setLocationName] = useState(() => initialValues?.name ?? '');
 	const [location, setLocation] = useState(
@@ -583,19 +624,24 @@ export function NewHoroscope({
 		() => initialValues?.tagColors ?? {}
 	);
 	const [tagSheetOpen, setTagSheetOpen] = useState(false);
-	const [selectedDateTime, setSelectedDateTime] = useState<Date>(() =>
-		initialValues?.dateTime
-			? parseDateTimeString(initialValues.dateTime, initialTimezone, initialValues.utcOffset)
-			: new Date()
+	const [selectedDateTime, setSelectedDateTime] = useState<Date>(initialSelectedDateTime);
+	const [timeSystem, setTimeSystem] = useState<NewHoroscopeTimeSystem>(initialTimeSystem);
+	const [julianDay, setJulianDay] = useState(() =>
+		utcDateToJulianDay(
+			initialValues?.dateTime ? new Date(initialValues.dateTime) : new Date()
+		).toFixed(8)
+	);
+	const [julianCalendarDate, setJulianCalendarDate] = useState(() =>
+		gregorianWallDateToJulianCalendarDate(initialSelectedDateTime)
 	);
 	const [chartKind, setChartKind] = useState<ChartKind>(() =>
 		initialValues ? chartTypeToKind(initialValues.chartType) : 'radix'
 	);
-	const [locationRegime, setLocationRegime] = useState<LocationRegime>(() =>
-		initialValues?.latitude != null ? 'manual' : 'auto'
+	const [locationRegime, setLocationRegime] = useState<LocationRegime>(
+		() => initialValues?.locationRegime ?? (initialValues?.latitude != null ? 'manual' : 'auto')
 	);
-	const [timeRegime, setTimeRegime] = useState<TimeRegime>(() =>
-		initialValues?.timezone ? 'manual' : 'auto'
+	const [timeRegime, setTimeRegime] = useState<TimeRegime>(
+		() => initialValues?.timeRegime ?? (initialValues?.timezone ? 'manual' : 'auto')
 	);
 	const [latitude, setLatitude] = useState(() =>
 		initialValues?.latitude != null ? formatCoordinateMagnitude(initialValues.latitude) : ''
@@ -620,7 +666,7 @@ export function NewHoroscope({
 
 	const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 	const timezonesInRegion = useMemo(
-		() => TIMEZONES.filter((candidate) => candidate.startsWith(`${timezoneRegionValue}/`)),
+		() => TIMEZONES.filter((candidate) => timezoneMatchesRegion(candidate, timezoneRegionValue)),
 		[timezoneRegionValue]
 	);
 
@@ -719,6 +765,9 @@ export function NewHoroscope({
 		if (timeRegime === 'auto' && resolvedTimezone) {
 			setTimezoneRegionValue(timezoneRegion(resolvedTimezone));
 		}
+		toast.success(t('toast_location_resolved'), {
+			description: `${resolvedLatitude.toFixed(4)}, ${resolvedLongitude.toFixed(4)}`
+		});
 	};
 
 	const resolveCurrentLocation = async () => {
@@ -736,9 +785,6 @@ export function NewHoroscope({
 				resolved.longitude,
 				resolved.timezone
 			);
-			toast.success(t('toast_location_resolved'), {
-				description: `${resolved.latitude.toFixed(4)}, ${resolved.longitude.toFixed(4)}`
-			});
 			return resolved;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -746,6 +792,47 @@ export function NewHoroscope({
 			return null;
 		} finally {
 			setIsResolvingLocation(false);
+		}
+	};
+
+	const handleTimeSystemChange = (next: NewHoroscopeTimeSystem) => {
+		try {
+			if (next === 'julian_day') {
+				const instant =
+					timeSystem === 'julian_day'
+						? new Date(julianDayToUtcIso(julianDay))
+						: new Date(
+								wallTimeToUtcIso(
+									timeSystem === 'julian_calendar'
+										? julianCalendarDateToGregorianWallDate(julianCalendarDate, selectedDateTime)
+										: selectedDateTime,
+									timezone,
+									timeRegime === 'manual' && utcOffset !== 'auto' ? utcOffset : undefined
+								)
+							);
+				setJulianDay(utcDateToJulianDay(instant).toFixed(8));
+			} else if (timeSystem === 'julian_day') {
+				const wallTime = parseDateTimeString(
+					julianDayToUtcIso(julianDay),
+					timezone,
+					timeRegime === 'manual' && utcOffset !== 'auto' ? utcOffset : undefined
+				);
+				setSelectedDateTime(wallTime);
+				if (next === 'julian_calendar') {
+					setJulianCalendarDate(gregorianWallDateToJulianCalendarDate(wallTime));
+				}
+			} else if (next === 'julian_calendar') {
+				setJulianCalendarDate(gregorianWallDateToJulianCalendarDate(selectedDateTime));
+			} else if (timeSystem === 'julian_calendar') {
+				setSelectedDateTime(
+					julianCalendarDateToGregorianWallDate(julianCalendarDate, selectedDateTime)
+				);
+			}
+			setTimeSystem(next);
+		} catch (error) {
+			toast.error(t('toast_time_invalid'), {
+				description: error instanceof Error ? error.message : String(error)
+			});
 		}
 	};
 
@@ -812,6 +899,9 @@ export function NewHoroscope({
 				locationName,
 				chartKind,
 				dateTime: selectedDateTime,
+				timeSystem,
+				julianDay,
+				julianCalendarDate,
 				location: resolvedLocation,
 				tags: tags.join(', '),
 				tagColors: Object.fromEntries(
@@ -823,12 +913,14 @@ export function NewHoroscope({
 				longitudeDir: resolvedLongitudeDir,
 				timezone: resolvedTimezone,
 				utcOffset: timeRegime === 'manual' && utcOffset !== 'auto' ? utcOffset : undefined,
+				locationRegime,
+				timeRegime,
 				rodenRating: rodenRating || undefined,
 				workspaceDefaults,
 				existingIds: existingChartIds
 			});
 		} catch (error) {
-			toast.error(t('toast_timezone_invalid'), {
+			toast.error(t('toast_time_invalid'), {
 				description: error instanceof Error ? error.message : String(error)
 			});
 			return;
@@ -879,6 +971,25 @@ export function NewHoroscope({
 						</Select>
 					</div>
 
+					<div>
+						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
+						<Select
+							value={timeSystem}
+							onValueChange={(value) => handleTimeSystemChange(value as NewHoroscopeTimeSystem)}
+						>
+							<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent className={ft.selectContent}>
+								{TIME_SYSTEMS.map((option) => (
+									<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+										{t(option.labelKey)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
 					<Tabs
 						value={timeRegime}
 						onValueChange={(value) => setTimeRegime(value as TimeRegime)}
@@ -887,59 +998,85 @@ export function NewHoroscope({
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
-									{t('new_date')}
+									{timeSystem === 'julian_day'
+										? t('new_julian_day')
+										: timeSystem === 'julian_calendar'
+											? t('new_julian_calendar_date')
+											: t('new_date')}
 								</Label>
-								<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-									<div
-										className={cn(
-											'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-											'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
-											'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
-										)}
-									>
-										<Input
-											id="new-chart-date"
-											type="text"
-											inputMode="numeric"
-											value={draftDateValue}
-											onChange={(event) => setDraftDateValue(event.target.value)}
-											onBlur={commitDraftDateValue}
-											onKeyDown={(event) => {
-												if (event.key === 'Enter') {
-													commitDraftDateValue();
+								{timeSystem === 'julian_day' ? (
+									<Input
+										id="new-chart-date"
+										type="text"
+										inputMode="decimal"
+										value={julianDay}
+										onChange={(event) => setJulianDay(event.target.value)}
+										placeholder="2451545.0"
+										className={cn(ft.input, 'shadow-inner')}
+									/>
+								) : timeSystem === 'julian_calendar' ? (
+									<Input
+										id="new-chart-date"
+										type="text"
+										inputMode="numeric"
+										value={julianCalendarDate}
+										onChange={(event) => setJulianCalendarDate(event.target.value)}
+										placeholder="YYYY-MM-DD"
+										className={cn(ft.input, 'shadow-inner')}
+									/>
+								) : (
+									<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+										<div
+											className={cn(
+												'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
+												'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
+												'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
+											)}
+										>
+											<Input
+												id="new-chart-date"
+												type="text"
+												inputMode="numeric"
+												value={draftDateValue}
+												onChange={(event) => setDraftDateValue(event.target.value)}
+												onBlur={commitDraftDateValue}
+												onKeyDown={(event) => {
+													if (event.key === 'Enter') {
+														commitDraftDateValue();
+														setDatePopoverOpen(false);
+													}
+												}}
+												className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
+												placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
+											/>
+											<PopoverTrigger asChild>
+												<Button
+													type="button"
+													variant="ghost"
+													className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+												>
+													<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
+												</Button>
+											</PopoverTrigger>
+										</div>
+										<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="end">
+											<Calendar
+												mode="single"
+												selected={selectedDateTime}
+												onSelect={(d) => {
+													if (d) setSelectedDateTime((prev) => mergeDatePart(prev, d));
 													setDatePopoverOpen(false);
-												}
-											}}
-											className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
-											placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
-										/>
-										<PopoverTrigger asChild>
-											<Button
-												type="button"
-												variant="ghost"
-												className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
-											>
-												<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
-											</Button>
-										</PopoverTrigger>
-									</div>
-									<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="end">
-										<Calendar
-											mode="single"
-											selected={selectedDateTime}
-											onSelect={(d) => {
-												if (d) setSelectedDateTime((prev) => mergeDatePart(prev, d));
-												setDatePopoverOpen(false);
-											}}
-											locale={dateFnsLocale}
-											initialFocus
-											defaultMonth={selectedDateTime}
-										/>
-									</PopoverContent>
-								</Popover>
+												}}
+												locale={dateFnsLocale}
+												initialFocus
+												defaultMonth={selectedDateTime}
+											/>
+										</PopoverContent>
+									</Popover>
+								)}
 							</div>
 
-							<div className="flex flex-col gap-2">
+							<div className={cn('flex flex-col gap-2', timeSystem === 'julian_day' && 'hidden')}>
 								<TimeRollerPicker
 									id="new-chart-time"
 									label={t('new_time')}
@@ -967,9 +1104,9 @@ export function NewHoroscope({
 									value={timezoneRegionValue}
 									onValueChange={(region) => {
 										setTimezoneRegionValue(region);
-										if (!timezone.startsWith(`${region}/`)) {
+										if (!timezoneMatchesRegion(timezone, region)) {
 											setTimezone(
-												TIMEZONES.find((candidate) => candidate.startsWith(`${region}/`)) ??
+												TIMEZONES.find((candidate) => timezoneMatchesRegion(candidate, region)) ??
 													timezone
 											);
 										}
@@ -1072,7 +1209,10 @@ export function NewHoroscope({
 								<Input
 									id="manual-location"
 									value={location}
-									onChange={(event) => setLocation(event.target.value)}
+									onChange={(event) => {
+										setLocation(event.target.value);
+										setResolvedLocationValue('');
+									}}
 									placeholder={t('new_placeholder_any_location')}
 									className={cn(ft.input, 'shadow-inner')}
 								/>
