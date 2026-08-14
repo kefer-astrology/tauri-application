@@ -1,0 +1,158 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BUILD_BACKEND_SIDECAR: ${{ vars.BUILD_BACKEND_SIDECAR || 'false' }}
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Read version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether a release tag already exists
+        id: check
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null 2>&1; then
+            echo "Tag v$VERSION already exists — skipping release."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag v$VERSION not found — this push is a new release."
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        frontend: [react, svelte]
+        platform: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Build backend sidecar
+        if: env.BUILD_BACKEND_SIDECAR == 'true' && hashFiles('backend-python/pyproject.toml') != ''
+        run: python scripts/build-backend-sidecar.py
+
+      - name: Sidecar status
+        if: env.BUILD_BACKEND_SIDECAR != 'true' || hashFiles('backend-python/pyproject.toml') == ''
+        run: echo "Skipping backend sidecar build."
+
+      - name: Build React Tauri app
+        if: matrix.frontend == 'react'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          retry_wait_seconds: 15
+          command: npm run tauri:build
+
+      - name: Build Svelte Tauri app
+        if: matrix.frontend == 'svelte'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          retry_wait_seconds: 15
+          command: npm run tauri:build:svelte
+
+      - name: Prefix bundle filenames with frontend flavor
+        shell: bash
+        run: |
+          find src-tauri/target/release/bundle -type f -print0 | \
+            xargs -0 -I{} bash -c '
+              f="{}"; dir=$(dirname "$f"); base=$(basename "$f");
+              mv "$f" "$dir/${{ matrix.frontend }}-$base"
+            '
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: tauri-${{ matrix.frontend }}-${{ matrix.platform }}
+          path: src-tauri/target/release/bundle
+
+  publish:
+    needs: [check-version, build]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all bundle artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: tauri-*
+          path: dist-bundles
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: v${{ needs.check-version.outputs.version }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist-bundles/**/*.deb
+            dist-bundles/**/*.rpm
+            dist-bundles/**/*.AppImage
+            dist-bundles/**/*.msi
+            dist-bundles/**/*.exe
+            dist-bundles/**/*.dmg
+            dist-bundles/**/*.app.tar.gz

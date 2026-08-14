@@ -18,6 +18,7 @@ import {
 	type AppChart,
 	type WorkspaceDefaultsState
 } from './chartPayload';
+import type { TransitAspect } from '@/lib/astrology/transits';
 
 export async function openFolderDialog(): Promise<string | null> {
 	return invoke<string | null>('open_folder_dialog');
@@ -71,6 +72,22 @@ export async function computeChartFromData(
 ): Promise<ComputeChartResult> {
 	return invoke<ComputeChartResult>('compute_chart_from_data', {
 		chartJson,
+		settingsOverrides: settingsOverrides ?? null
+	});
+}
+
+export async function computeCrossAspectsFromData(
+	chartJson: Record<string, unknown>,
+	transitingPositions: Record<string, number>,
+	transitedPositions: Record<string, number>,
+	aspectTypes: string[],
+	settingsOverrides?: ComputeSettingsOverrides | null
+): Promise<TransitAspect[]> {
+	return invoke<TransitAspect[]>('compute_cross_aspects_from_data', {
+		chartJson,
+		transitingPositions,
+		transitedPositions,
+		aspectTypes,
 		settingsOverrides: settingsOverrides ?? null
 	});
 }

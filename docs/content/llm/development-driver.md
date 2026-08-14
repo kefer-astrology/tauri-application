@@ -48,7 +48,7 @@ Keep future work driven by explicit specs instead of scattered cleanup lists. Ne
 4. **Backend Runtime Direction**
    - Keep astronomy backend-pluggable, with JPL / SPICE as the preferred long-term direction and Swiss Ephemeris as compatibility/validation infrastructure.
    - Audit true-node behavior outside the documented JPL/Rust path so labels and provenance distinguish mean-node, true-node, and backend-specific approximations.
-   - Decide the supported contract for Chiron, TNOs, and other auxiliary bodies: provide a reliable auxiliary source or surface them as unavailable with clear warnings.
+   - Decide the supported contract for Chiron, TNOs, and other auxiliary bodies: provide a reliable auxiliary source or surface them as unavailable with clear warnings. Partially addressed: `ObservableObjectDefinition.status` (`available` | `planned`) now distinguishes backend-computable bodies from catalog-only placeholders (TNOs, geocentric planetary nodes, hypothetical/Uranian bodies, fixed stars, extra Lilith variants), and every consumer (Settings, Aspectarium, Transits) renders `planned` entries disabled with a shared hint. The actual backend-support decision for each `planned` category is still open.
    - Remove or label any UI fallback geometry, compatibility path, or prototype surface that appears to expose computed astrology data without backend-backed provenance.
    - Add an end-to-end no-Swiss/no-sidecar smoke path, not only compilation.
    - Validate the optional Python environment end to end when that backend is provisioned.

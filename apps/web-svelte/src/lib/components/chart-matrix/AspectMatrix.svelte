@@ -40,7 +40,7 @@
   ];
   const visiblePlanets = $derived(planetOrder.filter((planet) => planets[planet]));
 
-  const aspectSymbols: Record<AspectRowId, string> = {
+  const aspectSymbols: Partial<Record<AspectRowId, string>> = {
     conjunction: '☌',
     sextile: '*',
     square: '□',
@@ -51,7 +51,7 @@
 
   function getAspectSymbol(type: AspectRowId): { symbol: string; color: string } {
     return {
-      symbol: aspectSymbols[type],
+      symbol: aspectSymbols[type] ?? '•',
       color: aspectColors[type] ?? DEFAULT_ASPECT_COLORS[type] ?? 'var(--token-viz-2)'
     };
   }

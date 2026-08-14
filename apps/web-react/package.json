@@ -1,7 +1,7 @@
 {
 	"name": "web-react",
 	"private": true,
-	"version": "2.0.0",
+	"version": "0.1.0",
 	"description": "Kefer astrology React + Vite UI (Tauri shell at repo root).",
 	"type": "module",
 	"scripts": {

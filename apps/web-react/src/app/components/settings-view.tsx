@@ -1,5 +1,4 @@
-import { Languages } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { useAppFormFieldTheme } from './form-field-theme';
@@ -32,17 +31,8 @@ import {
 } from '@/lib/app-shell';
 import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import { type ElementColors, type ElementId } from '@/lib/astrology/elementColors';
-import {
-	persistGlyphSet,
-	type AstrologyGlyphSetId
-} from '@/lib/astrology/glyphs';
-import {
-	DEFAULT_OBSERVABLE_OBJECT_IDS,
-	OBSERVABLE_OBJECTS,
-	getObservableCategoryLabel,
-	getObservableObjectLabel,
-	type ObservableObjectCategory
-} from '@/lib/astrology/observableObjects';
+import { persistGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
 import {
 	SUPPORTED_RUST_HOUSE_SYSTEMS,
@@ -50,7 +40,7 @@ import {
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
 import { searchLocations } from '@/lib/tauri/workspace';
-import { AstrologyGlyph } from '@/ui/astrology-glyph';
+import { BodySelector } from './body-selector';
 
 const LANG_BUBBLES: { code: AppLanguage; label: string }[] = [
 	{ code: 'cs', label: 'CS' },
@@ -60,6 +50,20 @@ const LANG_BUBBLES: { code: AppLanguage; label: string }[] = [
 ];
 
 const HOUSE_SYSTEMS = SUPPORTED_RUST_HOUSE_SYSTEMS;
+
+/** Historical house-system names stay untranslated across languages; only real words get a key. */
+const HOUSE_SYSTEM_LABEL_KEYS: Partial<Record<(typeof HOUSE_SYSTEMS)[number], string>> = {
+	'Whole Sign': 'house_system_whole_sign',
+	Equal: 'house_system_equal'
+};
+
+function houseSystemLabel(
+	name: (typeof HOUSE_SYSTEMS)[number],
+	t: (key: string, options?: Record<string, unknown>) => string
+): string {
+	const key = HOUSE_SYSTEM_LABEL_KEYS[name];
+	return key ? t(key, { defaultValue: name }) : name;
+}
 
 const PRESET_OPTIONS = [
 	{ value: 'default', label: 'Default' },
@@ -126,19 +130,20 @@ function SettingsView({
 			? workspaceDefaults.defaultBodies
 			: DEFAULT_OBSERVABLE_OBJECT_IDS
 	);
-	const [aspects, setAspects] = useState<Record<string, { enabled: boolean; orb: number; color: string }>>(
-		() =>
-			Object.fromEntries(
-				ASPECT_ROWS.map((aspect) => [
-					aspect.id,
-					{
-						enabled:
-							workspaceDefaults.defaultAspects.includes(aspect.id),
-						orb: workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-						color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
-					}
-				])
-			)
+	const [aspects, setAspects] = useState<
+		Record<string, { enabled: boolean; orb: number; color: string }>
+	>(() =>
+		Object.fromEntries(
+			ASPECT_ROWS.map((aspect) => [
+				aspect.id,
+				{
+					enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
+					orb: workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
+					color:
+						workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
+				}
+			])
+		)
 	);
 	const [aspectLineTiers, setAspectLineTiers] = useState<AspectLineTierStyleState>(() => ({
 		...workspaceDefaults.aspectLineTierStyle
@@ -160,10 +165,10 @@ function SettingsView({
 				ASPECT_ROWS.map((aspect) => [
 					aspect.id,
 					{
-						enabled:
-							workspaceDefaults.defaultAspects.includes(aspect.id),
+						enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
 						orb: workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-						color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
+						color:
+							workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
 					}
 				])
 			)
@@ -185,22 +190,14 @@ function SettingsView({
 
 	const markChanged = useCallback(() => setSettingsChanged(true), []);
 
-	const observableCategories = useMemo(() => {
-		const categoryOrder: ObservableObjectCategory[] = [
-			'luminaries',
-			'personal_planets',
-			'social_outer_planets',
-			'angles',
-			'lunar_nodes',
-			'calculated_points',
-			'asteroids'
-		];
-		return categoryOrder.map((category) => ({
-			id: category,
-			label: getObservableCategoryLabel(category, t),
-			items: OBSERVABLE_OBJECTS.filter((item) => item.category === category)
-		}));
-	}, [t]);
+	const applyObservableObjectSelection = useCallback(
+		(next: string[]) => {
+			setSelectedBodies(next);
+			markChanged();
+			void onWorkspaceDefaultsChange({ defaultBodies: next });
+		},
+		[markChanged, onWorkspaceDefaultsChange]
+	);
 
 	const onGlyphSetChange = useCallback(
 		(value: string) => {
@@ -244,10 +241,10 @@ function SettingsView({
 				ASPECT_ROWS.map((aspect) => [
 					aspect.id,
 					{
-						enabled:
-							workspaceDefaults.defaultAspects.includes(aspect.id),
+						enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
 						orb: workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-						color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
+						color:
+							workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
 					}
 				])
 			)
@@ -294,18 +291,6 @@ function SettingsView({
 		]
 	);
 
-	const toggleObservableObject = useCallback(
-		async (id: string) => {
-			const next = selectedBodies.includes(id)
-				? selectedBodies.filter((item) => item !== id)
-				: [...selectedBodies, id];
-			setSelectedBodies(next);
-			markChanged();
-			await onWorkspaceDefaultsChange({ defaultBodies: next });
-		},
-		[markChanged, onWorkspaceDefaultsChange, selectedBodies]
-	);
-
 	const commitAspectLineTiers = useCallback(
 		(patch: Partial<AspectLineTierStyleState>) => {
 			setAspectLineTiers((prev) => {
@@ -345,7 +330,9 @@ function SettingsView({
 		[onWorkspaceDefaultsChange]
 	);
 
-	const glyphDescription = GLYPH_SET_OPTIONS.find((option) => option.id === glyphSetValue)?.description;
+	const glyphDescription = GLYPH_SET_OPTIONS.find(
+		(option) => option.id === glyphSetValue
+	)?.description;
 	const appShellDescription = APP_SHELL_ICON_SET_OPTIONS.find(
 		(option) => option.id === appShellIconSet
 	)?.description;
@@ -354,10 +341,6 @@ function SettingsView({
 		<AppMainContentRoot className="min-h-full">
 			<AppMainContentContainer layout="center-column">
 				<div className="flex min-h-0 w-full min-w-0 flex-col space-y-6">
-					<h1 className={cn('text-2xl font-semibold tracking-tight', ft.title)}>
-						{t('app_settings')}
-					</h1>
-
 					<Card
 						variant="ghost"
 						className={cn(
@@ -367,17 +350,14 @@ function SettingsView({
 						<CardContent className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
 							{section === 'jazyk' && (
 								<div className="max-w-xl space-y-4">
-									<div className="flex items-center gap-2">
-										<Languages
-											className={cn('h-6 w-6 shrink-0', ft.iconColor)}
-											aria-hidden
-										/>
-										<h2 className={ft.sectionTitle}>{t('section_jazyk')}</h2>
-									</div>
 									<div className="space-y-2">
 										<p className={ft.label}>{t('language')}</p>
 										<p className={cn('text-sm', ft.muted)}>{t('select_language')}</p>
-										<div className="mt-3 flex flex-wrap gap-3" role="group" aria-label={t('label_languages')}>
+										<div
+											className="mt-3 flex flex-wrap gap-3"
+											role="group"
+											aria-label={t('label_languages')}
+										>
 											{LANG_BUBBLES.map(({ code, label }) => {
 												const active =
 													i18n.language === code || i18n.language.startsWith(`${code}-`);
@@ -403,7 +383,6 @@ function SettingsView({
 
 							{section === 'lokace' && (
 								<div className="max-w-xl space-y-4">
-									<h2 className={ft.sectionTitle}>{t('section_lokace')}</h2>
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('default_location')}</Label>
 										<LocationSelector
@@ -484,7 +463,6 @@ function SettingsView({
 
 							{section === 'system_domu' && (
 								<div className="max-w-md space-y-4">
-									<h2 className={ft.sectionTitle}>{t('section_system_domu')}</h2>
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('house_system')}</Label>
 										<Select
@@ -502,7 +480,7 @@ function SettingsView({
 												<SelectGroup>
 													{HOUSE_SYSTEMS.map((name) => (
 														<SelectItem key={name} value={name} className={ft.selectItem}>
-															{name}
+															{houseSystemLabel(name, t)}
 														</SelectItem>
 													))}
 												</SelectGroup>
@@ -510,8 +488,7 @@ function SettingsView({
 										</Select>
 										<p className={cn('text-xs', ft.muted)}>
 											{t('settings_house_system_hint', {
-												defaultValue:
-													'Shown options are computed by the current Rust JPL backend.'
+												defaultValue: 'Shown options are computed by the current Rust JPL backend.'
 											})}
 										</p>
 									</div>
@@ -519,48 +496,17 @@ function SettingsView({
 							)}
 
 							{section === 'pozorovane_objekty' && (
-								<div className="max-w-3xl space-y-4">
-									<h2 className={ft.sectionTitle}>
-										{t('section_observable_objects', { defaultValue: 'Observable objects' })}
-									</h2>
-									<p className={cn('text-sm', ft.muted)}>
-										{t('settings_observable_objects_hint', {
-											defaultValue:
-												'Select the celestial bodies and points that should be computed and shown across the app.'
-										})}
-									</p>
-									<div className="grid gap-4 md:grid-cols-2">
-										{observableCategories.map((category) => (
-											<div key={category.id} className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 p-4">
-												<h3 className={cn('mb-3 text-sm font-semibold', ft.label)}>{category.label}</h3>
-												<div className="space-y-2">
-													{category.items.map((item) => (
-														<Label key={item.id} className="flex items-center gap-3 text-sm">
-															<Checkbox
-																checked={selectedBodies.includes(item.id)}
-																onCheckedChange={() => void toggleObservableObject(item.id)}
-															/>
-															<AstrologyGlyph
-																glyphId={item.id}
-																glyphSet={glyphSetValue}
-																fallback={item.icon}
-																size={18}
-																className="text-foreground"
-																title={getObservableObjectLabel(item, t)}
-															/>
-															<span>{getObservableObjectLabel(item, t)}</span>
-														</Label>
-													))}
-												</div>
-											</div>
-										))}
-									</div>
-								</div>
+								<BodySelector
+									theme={theme}
+									glyphSet={glyphSetValue}
+									subtitleKey="settings_observable_objects_hint"
+									selectedBodyIds={selectedBodies}
+									onSelectedBodyIdsChange={applyObservableObjectSelection}
+								/>
 							)}
 
 							{section === 'nastaveni_aspektu' && (
 								<div className="max-w-2xl space-y-4">
-									<h2 className={ft.sectionTitle}>{t('section_nastaveni_aspektu')}</h2>
 									<div className="space-y-2">
 										<p className={ft.label}>{t('default_aspects')}</p>
 										<div className="space-y-3">
@@ -610,7 +556,7 @@ function SettingsView({
 																}}
 																aria-label={`${t(aspect.labelKey)} ${t('color_theme')}`}
 															/>
-															<span className={cn('text-xs uppercase tracking-wide', ft.muted)}>
+															<span className={cn('text-xs tracking-wide uppercase', ft.muted)}>
 																{t('label_orb')}
 															</span>
 															<Input
@@ -643,7 +589,9 @@ function SettingsView({
 									<Separator className="bg-[color:var(--theme-panel-border)]" />
 									<div className="space-y-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
 										<p className={ft.label}>{t('settings_radix_aspect_lines_title')}</p>
-										<p className={cn('text-xs', ft.muted)}>{t('settings_radix_aspect_lines_hint')}</p>
+										<p className={cn('text-xs', ft.muted)}>
+											{t('settings_radix_aspect_lines_hint')}
+										</p>
 										<div className="grid gap-3 sm:grid-cols-2">
 											<div className="space-y-1">
 												<Label className="text-xs">{t('settings_aspect_line_tight_pct')}</Label>
@@ -813,7 +761,6 @@ function SettingsView({
 
 							{section === 'vzhled' && (
 								<div className="flex flex-col gap-8 lg:max-w-2xl">
-									<h2 className={ft.sectionTitle}>{t('section_vzhled')}</h2>
 									<div className="space-y-2">
 										<Label htmlFor="settings-preset" className={ft.label}>
 											{t('label_color_preset')}
@@ -989,40 +936,46 @@ function SettingsView({
 										<p className={cn('text-xs leading-relaxed', ft.muted)}>
 											{t('settings_element_wheel_blurb')}
 										</p>
-										{(['fire', 'earth', 'air', 'water'] as const satisfies readonly ElementId[]).map(
-											(el) => (
-												<div key={el} className="flex flex-wrap items-center gap-3">
-													<Label className={cn(ft.label, 'min-w-[8rem] shrink-0')}>
-														{t(`settings_element_${el}`)}
-													</Label>
-													<ColorInput
-														className="w-14"
-														value={elementDraft[el]}
-														onChange={(e) => {
-															const v = e.target.value;
-															setElementDraft((d) => ({ ...d, [el]: v }));
-															markChanged();
-														}}
-														aria-label={t(`settings_element_${el}`)}
-													/>
-													<span className={cn('font-mono text-xs', ft.muted)}>{elementDraft[el]}</span>
-												</div>
-											)
-										)}
+										{(
+											['fire', 'earth', 'air', 'water'] as const satisfies readonly ElementId[]
+										).map((el) => (
+											<div key={el} className="flex flex-wrap items-center gap-3">
+												<Label className={cn(ft.label, 'min-w-[8rem] shrink-0')}>
+													{t(`settings_element_${el}`)}
+												</Label>
+												<ColorInput
+													className="w-14"
+													value={elementDraft[el]}
+													onChange={(e) => {
+														const v = e.target.value;
+														setElementDraft((d) => ({ ...d, [el]: v }));
+														markChanged();
+													}}
+													aria-label={t(`settings_element_${el}`)}
+												/>
+												<span className={cn('font-mono text-xs', ft.muted)}>
+													{elementDraft[el]}
+												</span>
+											</div>
+										))}
 									</div>
 								</div>
 							)}
 
 							{section === 'manual' && (
 								<div className="max-w-2xl space-y-4">
-									<h2 className={ft.sectionTitle}>{t('section_manual')}</h2>
 									<p className={cn('text-sm leading-relaxed', ft.muted)}>{t('settings_guide')}</p>
 								</div>
 							)}
 						</CardContent>
 
-						<CardFooter className="shrink-0 flex-col gap-2 border-0 bg-transparent px-6 py-4 md:px-8 sm:flex-row">
-							<Button type="button" variant="outline" className={ft.footerCancel} onClick={handleCancel}>
+						<CardFooter className="shrink-0 flex-col gap-2 border-0 bg-transparent px-6 py-4 sm:flex-row md:px-8">
+							<Button
+								type="button"
+								variant="outline"
+								className={ft.footerCancel}
+								onClick={handleCancel}
+							>
 								{t('cancel')}
 							</Button>
 							<Button

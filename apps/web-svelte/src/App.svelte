@@ -9,6 +9,8 @@
   import SettingsView from '$lib/components/SettingsView.svelte';
   import TimeNavigationPanel from '$lib/components/TimeNavigationPanel.svelte';
   import InformationView from '$lib/components/InformationView.svelte';
+  import RevolutionView from '$lib/components/RevolutionView.svelte';
+  import SynastryView from '$lib/components/SynastryView.svelte';
   import SpecGatedModeView from '$lib/components/SpecGatedModeView.svelte';
   import LocationSelector from '$lib/components/LocationSelector.svelte';
   import { layout, type Mode, showOpenExportOverlay, getSelectedChart, chartDataToComputePayload, type ChartData, setMode } from '$lib/state/layout';
@@ -135,8 +137,7 @@
   // Settings mode state
   let selectedSettingsSection = $state<string | undefined>('jazyk');
 
-  // Dynamic / Revolution mode state (left menu selection)
-  let selectedDynamicSection = $state<string | undefined>(undefined);
+  // Revolution mode state (left menu selection)
   let selectedRevolutionSection = $state<string | undefined>(undefined);
   let timeNavigationSeededChartId = $state<string | null>(null);
   
@@ -230,15 +231,20 @@
     { id: 'aspects', label: t('transits_menu_aspects_used', {}, 'Aspects used') },
   ]);
 
+  const dynamicTransitsMenuItems = $derived(
+    transitsMenuItems.filter((item) => item.id !== 'transited')
+  );
+
+  $effect(() => {
+    if (mode === 'dynamic' && selectedTransitsSection === 'transited') {
+      selectedTransitsSection = 'obecne';
+    }
+  });
+
   const newRadixMenuItems = $derived([
     { id: 'NATAL', label: t('new_type_radix', {}, 'Nativity') },
     { id: 'EVENT', label: t('new_type_event', {}, 'Event') },
     { id: 'HORARY', label: t('new_type_horary', {}, 'Horary') },
-  ]);
-
-  const dynamicMenuItems = $derived([
-    { id: 'overview', label: t('overview', {}, 'Overview') },
-    { id: 'charts', label: t('charts', {}, 'Charts') },
   ]);
 
   const revolutionMenuItems = $derived([
@@ -749,7 +755,7 @@
   </header>
 
   <!-- Middle: 75% height -->
-  {#if mode === 'new_radix' || mode === 'open' || mode === 'info' || mode === 'dynamic' || mode === 'revolution' || mode === 'favorite' || mode === 'settings' || mode === 'export'}
+  {#if mode === 'new_radix' || mode === 'open' || mode === 'info' || mode === 'revolution' || mode === 'synastry' || mode === 'favorite' || mode === 'settings' || mode === 'export'}
     <!-- Left 20% + middle stretched to 80% -->
     <section class="row-span-1 grid gap-x-3 gap-y-3 px-3 pb-3 overflow-hidden w-full" style:grid-template-columns="minmax(0,20%) minmax(0,80%)">
       <!-- Left single panel -->
@@ -760,8 +766,8 @@
               mode === 'settings' ? t('settings', {}, 'Settings')
               : mode === 'open' ? t('open_chart', {}, 'Open Chart')
               : mode === 'info' ? t('info', {}, 'Info')
-              : mode === 'dynamic' ? t('dynamic', {}, 'Dynamic')
               : mode === 'revolution' ? t('revolution', {}, 'Revolution')
+              : mode === 'synastry' ? t('sidebar_synastry', {}, 'Synastry')
               : mode === 'favorite' ? t('favorite', {}, 'Favorite')
               : t('new', {}, 'New')
             } 
@@ -787,8 +793,6 @@
                 <PanelMenu items={infoItems} bind:selectedId={selectedInfoItem} />
               {:else if mode === 'settings'}
                 <PanelMenu items={settingsMenuItems} bind:selectedId={selectedSettingsSection} />
-              {:else if mode === 'dynamic'}
-                <PanelMenu items={dynamicMenuItems} bind:selectedId={selectedDynamicSection} />
               {:else if mode === 'revolution'}
                 <PanelMenu items={revolutionMenuItems} bind:selectedId={selectedRevolutionSection} />
               {:else}
@@ -1025,7 +1029,11 @@
           <ExportWorkspaceView bind:exportType />
         {:else if mode === 'info'}
           <InformationView />
-        {:else if mode === 'dynamic' || mode === 'revolution' || mode === 'favorite'}
+        {:else if mode === 'revolution'}
+          <RevolutionView />
+        {:else if mode === 'synastry'}
+          <SynastryView />
+        {:else if mode === 'favorite'}
           <SpecGatedModeView {mode} />
         {:else if mode === 'settings'}
           <SettingsView section={selectedSettingsSection} />
@@ -1056,7 +1064,7 @@
   {:else}
     <!-- radix_view and radix_transits: fixed split 20% / 60% / 20% (or 20% / 80% for Aspects, or 20% / 80% for Transits) -->
     {@const isAspectsView = layout.selectedTab === 'Aspects'}
-    {@const isTransitsView = mode === 'radix_transits'}
+    {@const isTransitsView = mode === 'radix_transits' || mode === 'dynamic'}
     <section 
       class="row-span-1 grid gap-x-3 gap-y-3 px-3 pb-3 overflow-hidden w-full" 
       style:grid-template-columns={(isAspectsView || isTransitsView) ? "minmax(0,20%) minmax(0,80%)" : "minmax(0,20%) minmax(0,60%) minmax(0,20%)"}
@@ -1066,9 +1074,9 @@
         <!-- Transits mode: only show transits selector -->
         <div class="h-full min-w-0 flex flex-col gap-2 min-h-0 bg-panel rounded-md overflow-hidden">
           <div class="min-h-0" class:flex-1={leftMiddleExpanded}>
-            <ExpandablePanel title={t('transits', {}, 'Transits')} bind:expanded={leftMiddleExpanded}>
+            <ExpandablePanel title={mode === 'dynamic' ? t('dynamic_transits', {}, 'Dynamic Transits') : t('transits', {}, 'Transits')} bind:expanded={leftMiddleExpanded}>
               {#snippet children()}
-                <PanelMenu items={transitsMenuItems} bind:selectedId={selectedTransitsSection} />
+                <PanelMenu items={mode === 'dynamic' ? dynamicTransitsMenuItems : transitsMenuItems} bind:selectedId={selectedTransitsSection} />
               {/snippet}
             </ExpandablePanel>
           </div>
@@ -1147,7 +1155,7 @@
       {/if}
 
       <!-- Middle content -->
-      {#if mode === 'radix_transits' && selectedTransitsSection}
+      {#if isTransitsView && selectedTransitsSection}
         <div class="h-full min-w-0 rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col overflow-hidden">
           <div class="flex-1 min-h-0 overflow-y-auto">
             {#if selectedTransitsSection === 'obecne'}
