@@ -1,0 +1,25 @@
+.github/workflows/release.yml
+  s_435b457605acfa::t_f5272692093543 144,147-169,172,181
+  s_435b457605acfa::t_457c3722e5df16 145-146,170-171,173,175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "85325a1ec0e0ed2c4587a883edf1701dc8e20ef4",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_435b457605acfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffd15-8815-7822-aab3-ea1af9c781bc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
