@@ -1,0 +1,49 @@
+src-tauri/src/ephemeris_manager.rs
+  s_435b457605acfa::t_5c9ced3f3d4145 70,77-81,351-354
+  s_435b457605acfa::t_35258490a11237 355
+src-tauri/src/commands/workspace.rs
+  s_435b457605acfa::t_7de9ad679af54a 2377-2386
+  s_435b457605acfa::t_b02b1ca4111993 356-357,785-786,1582-1583
+  s_435b457605acfa::t_d833e6e9fd4770 2437-2453
+  s_435b457605acfa::t_4d8e9fa023ce1d 361-363,416-418
+  s_435b457605acfa::t_dc3e5fd37a6f53 291,476,519,548,816,886,2416-2436,2454
+  s_435b457605acfa::t_fee832bd3806a6 2376
+  s_435b457605acfa::t_57cd2d962e75ee 2455
+src-tauri/src/lib.rs
+  s_435b457605acfa::t_5c9ced3f3d4145 49-51
+src-tauri/src/main.rs
+  s_435b457605acfa::t_c7351312112fbc 4-48,50-52,59
+src-tauri/src/workspace/models.rs
+  s_435b457605acfa::t_886e14945b46f8 226
+  s_435b457605acfa::t_cf6fb0a8e31a2a 168,693-727,732,737-739
+  s_435b457605acfa::t_10330088a1b296 728-731,733-736
+  s_435b457605acfa::t_b02b1ca4111993 150-155,164-167
+  s_435b457605acfa::t_821ddc1b9ba965 170-177,181-203,210-225,227-243
+  s_435b457605acfa::t_5d8eafc12ffbe8 204-209
+  s_435b457605acfa::t_b754d2a5ae9d78 178-180
+  s_435b457605acfa::t_edea5960a3f2fe 149
+  s_435b457605acfa::t_5e83e3af29619a 169
+src-tauri/src/workspace/loader.rs
+  s_435b457605acfa::t_587bc40abfb2af 412-427
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "61c834bceb961385199ef8e2638ec245a4793617",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_435b457605acfa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffd15-8815-7822-aab3-ea1af9c781bc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
