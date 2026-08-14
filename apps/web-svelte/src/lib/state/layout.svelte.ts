@@ -99,6 +99,7 @@ export type Mode =
   | 'info'
   | 'dynamic'
   | 'revolution'
+  | 'synastry'
   | 'favorite'
   | 'settings'
   | 'export';

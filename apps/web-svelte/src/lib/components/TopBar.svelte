@@ -13,7 +13,7 @@
   import { scale } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
 
-  type ActionId = 'new' | 'load' | 'save' | 'export' | 'radix' | 'aspects' | 'info' | 'transits' | 'dynamic' | 'revolution' | 'favorite' | 'settings' | 'about';
+  type ActionId = 'new' | 'load' | 'save' | 'export' | 'radix' | 'aspects' | 'info' | 'transits' | 'dynamic' | 'revolution' | 'synastry' | 'favorite' | 'settings' | 'about';
 
   type Action = {
     id: ActionId;
@@ -37,6 +37,7 @@
       case 'radix': return 'new_type_radix';
       case 'dynamic': return 'dynamic';
       case 'revolution': return 'revolution';
+      case 'synastry': return 'sidebar_synastry';
       case 'favorite': return 'favorite';
       case 'settings': return 'settings';
       case 'about': return 'settings_about';
@@ -56,6 +57,7 @@
     { id: 'transits', onClick: () => { setMode('radix_transits'); setTab('Transits'); }, group: 'view' },
     { id: 'dynamic', onClick: () => { setMode('dynamic'); }, group: 'view' },
     { id: 'revolution', onClick: () => { setMode('revolution'); }, group: 'view' },
+    { id: 'synastry', onClick: () => { setMode('synastry'); }, group: 'view' },
 
     { id: 'favorite', onClick: () => { setMode('favorite'); }, group: 'meta' },
     { id: 'settings', onClick: () => { setMode('settings'); setTab('Settings'); }, group: 'meta' },
@@ -73,6 +75,7 @@
       transits: 'transits',
       dynamic: 'dynamics',
       revolution: 'revolution',
+      synastry: 'synastry',
       favorite: 'favorite',
       settings: 'settings'
     } as const;
@@ -93,6 +96,7 @@
       transits: 'transits',
       dynamic: 'dynamics',
       revolution: 'revolution',
+      synastry: 'synastry',
       favorite: 'favorite',
       settings: 'settings'
     } as const;
@@ -114,6 +118,7 @@
       case 'info': return mode === 'info';
       case 'dynamic': return mode === 'dynamic';
       case 'revolution': return mode === 'revolution';
+      case 'synastry': return mode === 'synastry';
       case 'favorite': return mode === 'favorite';
       case 'settings': return mode === 'settings';
       case 'export': return mode === 'export';

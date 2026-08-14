@@ -17,6 +17,8 @@ import { TransitsContent } from './components/transits-content';
 import { Aspectarium } from './components/aspectarium';
 import { HoroscopeDashboard } from './components/horoscope-dashboard';
 import { InformationView } from './components/information-view';
+import { RevolutionView } from './components/revolution-view';
+import { SynastryView } from './components/synastry-view';
 import SettingsView from './components/settings-view';
 import { OpenWorkspaceView } from './components/open-workspace-view';
 import { ExportWorkspaceView } from './components/export-workspace-view';
@@ -538,7 +540,7 @@ export default function App() {
 			return;
 		}
 		setActiveView(view);
-		if (view === 'tranzity') {
+		if (view === 'tranzity' || view === 'dynamika') {
 			setActiveTransitSection('general');
 		}
 		if (view === 'nastaveni') {
@@ -578,12 +580,13 @@ export default function App() {
 						activeMenuItem={activeView}
 					/>
 
-					{/* Secondary Sidebar for Transits */}
-					{activeView === 'tranzity' && (
+					{/* Secondary Sidebar for Transits and Dynamic Transits */}
+					{(activeView === 'tranzity' || activeView === 'dynamika') && (
 						<TransitsSecondarySidebar
 							activeSection={activeTransitSection}
 							onSectionChange={setActiveTransitSection}
 							theme={theme}
+							dynamic={activeView === 'dynamika'}
 						/>
 					)}
 
@@ -655,7 +658,11 @@ export default function App() {
 								glyphSet={astrologyGlyphSet}
 								workspaceDefaults={workspaceDefaults}
 							/>
-						) : activeView === 'tranzity' ? (
+						) : activeView === 'revoluce' ? (
+							<RevolutionView theme={theme} />
+						) : activeView === 'synastrie' ? (
+							<SynastryView theme={theme} />
+						) : activeView === 'tranzity' || activeView === 'dynamika' ? (
 							<TransitsContent
 								section={activeTransitSection}
 								theme={theme}
