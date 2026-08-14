@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Transit series contract | Kefer docs</title>
@@ -29,6 +29,8 @@
     <div class="prose">
       <p>This page defines the frontend-visible contract for computing transit series.</p>
 <p>Use this contract before adding or changing transit-series UI in either frontend.</p>
+<h2 id="related-instant-transit-overlay">Related: instant transit overlay</h2>
+<p>This page covers only the persisted-workspace series path (<code>compute_transit_series</code>). React&rsquo;s Transits view also has a second, previously-undocumented path: an &ldquo;instant&rdquo; overlay for the current moment (or an arbitrary single datetime) that does not require a persisted source chart id. That path computes the transit chart&rsquo;s positions via <code>compute_chart_from_data</code>, then detects cross-chart aspects between those positions and the radix chart&rsquo;s positions via <code>compute_cross_aspects_from_data</code> (see <a href="../../docs/tauri-command-contracts/">tauri-command-contracts</a>) — the same Rust aspect-detection geometry <code>compute_transit_series</code> uses, not a client-side reimplementation. Both transit-aspect code paths therefore resolve through Rust; neither frontend duplicates the angle/orb geometry.</p>
 <h2 id="command">Command</h2>
 <p>Both frontends call the same Tauri command:</p>
 <p><code>compute_transit_series</code></p>
@@ -83,7 +85,7 @@
 </ul>
 <p>Known follow-up work:</p>
 <ul>
-<li>share one canonical observable-object selector across both shells</li>
+<li><del>share one canonical observable-object selector across both shells</del> — done for React: <code>transiting-bodies</code>/<code>transited-bodies</code> (Transits) and the &ldquo;Observable objects&rdquo; section (Settings) all render the same <code>body-selector.tsx</code> component, backed by the shared <code>OBSERVABLE_OBJECTS</code> catalog (<code>lib/astrology/observableObjects.ts</code>); Aspectarium&rsquo;s own selector reads the same catalog too, though through its own lighter-weight <code>MultiSelectFilter</code> UI rather than <code>body-selector.tsx</code>. <strong>Svelte has no Transits UI at all yet</strong> (no transiting/transited pages exist) — this shell remains spec-gated pending a dedicated Svelte Transits implementation; the mirrored <code>observableObjects.ts</code> data file exists there so the contract stays aligned, but no UI consumes it. Acceptance criteria for closing this gap: a Svelte Transits view exists with the same two body-selection pages, backed by the same catalog and the same <code>compute_transit_series</code> bridge helper.</li>
 <li>share one canonical transit time-step model across both shells</li>
 <li>expose backend provenance in the transit results UI instead of only carrying it in the typed response</li>
 </ul>

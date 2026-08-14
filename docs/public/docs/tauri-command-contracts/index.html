@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tauri command contracts | Kefer docs</title>
@@ -195,7 +195,7 @@ chart-level invariants.</li>
 <ul>
 <li>Computes positions and aspects from an in-memory chart payload.</li>
 <li><code>chart_json.subject.event_time</code> must be parseable as <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ssZ</code>, or RFC3339.</li>
-<li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>moon_details</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>shapes</code>, <code>configurations</code>, <code>moon_details</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
 <li>Rust standalone computation resolves built-in model defaults and chart
 overrides through the same settings service used by workspace charts.</li>
 <li>Resolved house system, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
@@ -213,13 +213,23 @@ produces a deprecation warning; new payloads should use
 <li>A valid chart payload returns <code>positions</code>, <code>aspects</code>, and <code>chart_id</code>.</li>
 <li>Rust-supported radix output should also include <code>axes</code> and <code>house_cusps</code>.</li>
 <li>Rust-supported radix output should include <code>motion</code> when the selected backend can derive it.</li>
+<li>Rust-supported radix output should also include <code>shapes</code> (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and <code>configurations</code> (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed <code>house_cusps</code>, and the computed <code>aspects</code>. See <code>detect_chart_shapes</code>/<code>detect_chart_configurations</code> in <code>astrology.rs</code>.</li>
 <li>When <code>positions.sun</code> and <code>positions.moon</code> exist, <code>moon_details</code> should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See <a href="../lunar-phase/">lunar-phase</a>.</li>
 <li>When fallback occurs, the response should expose that fact instead of failing silently.</li>
+</ul>
+<h3 id="compute_cross_aspects_from_datachart_json-transiting_positions-transited_positions-aspect_types-settings_overrides---resultveccomputedaspect-string"><code>compute_cross_aspects_from_data(chart_json, transiting_positions, transited_positions, aspect_types, settings_overrides?) -&gt; Result&lt;Vec&lt;ComputedAspect&gt;, String&gt;</code></h3>
+<ul>
+<li>Detects cross-chart aspects (e.g. a transit overlay) between two already-computed position maps (<code>transiting_positions</code>, <code>transited_positions</code>, both <code>Map&lt;String, f64&gt;</code>), without requiring a persisted workspace chart id.</li>
+<li>Resolves the aspect catalog and effective orb overrides the same way <code>compute_chart_from_data</code> resolves them: <code>chart_json</code> is deserialized into a <code>ChartInstance</code> and passed through the same settings service (<code>standalone_model_report_with_operation</code>).</li>
+<li><code>aspect_types</code> filters which aspect ids to detect, same semantics as <code>compute_transit_series</code>&rsquo;s <code>aspect_types</code>.</li>
+<li>Returns a list of <code>ComputedAspect</code> objects: <code>from</code>, <code>to</code>, <code>type</code>, <code>angle</code>, <code>orb</code>, <code>exact_angle</code>, <code>applying</code>, <code>separating</code> — the same shape used by <code>compute_chart</code>/<code>compute_chart_from_data</code>&rsquo;s <code>aspects</code> field and by <code>compute_transit_series</code>&rsquo;s per-entry <code>aspects</code>.</li>
+<li>Rust-only; no Python route exists for this command.</li>
+<li>This is the command any frontend code computing an &ldquo;instant&rdquo; (non-persisted) transit overlay should call instead of re-implementing aspect-detection geometry client-side.</li>
 </ul>
 <h3 id="compute_chartworkspace_path-chart_id-preset_id-settings_overrides---resultmapstring-value-string"><code>compute_chart(workspace_path, chart_id, preset_id?, settings_overrides?) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
 <ul>
 <li>Loads a chart from workspace storage and computes positions and aspects.</li>
-<li>Returns <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>moon_details</code> (when Sun and Moon are present), <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Returns <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>shapes</code>, <code>configurations</code>, <code>moon_details</code> (when Sun and Moon are present), <code>chart_id</code>, and backend provenance fields when available.</li>
 <li>Rust aspect detection uses the resolved workspace/chart model definitions and effective orb overrides.</li>
 <li><code>preset_id</code> may identify a referenced workspace preset by its name or manifest
 path. The chart layer overrides the preset layer.</li>
@@ -320,7 +330,7 @@ workspace data continues to live in YAML and live computations come from the cha
 <ul>
 <li>Frontend code may invoke these commands without crashing.</li>
 <li>Frontend code must treat storage query results as empty unless a future spec introduces persisted computed storage.</li>
-<li>Frontend code should use <code>compute_chart</code> / <code>compute_chart_from_data</code> / <code>compute_transit_series</code> for live computation, not these storage compatibility commands.</li>
+<li>Frontend code should use <code>compute_chart</code> / <code>compute_chart_from_data</code> / <code>compute_transit_series</code> / <code>compute_cross_aspects_from_data</code> for live computation, not these storage compatibility commands.</li>
 </ul>
 <h2 id="spec-maintenance-rule">Spec maintenance rule</h2>
 <p>When any command signature or behavior changes, update this page in the same change set.</p>

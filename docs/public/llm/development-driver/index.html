@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Development driver | Kefer docs</title>
@@ -80,7 +80,7 @@
 <ul>
 <li>Keep astronomy backend-pluggable, with JPL / SPICE as the preferred long-term direction and Swiss Ephemeris as compatibility/validation infrastructure.</li>
 <li>Audit true-node behavior outside the documented JPL/Rust path so labels and provenance distinguish mean-node, true-node, and backend-specific approximations.</li>
-<li>Decide the supported contract for Chiron, TNOs, and other auxiliary bodies: provide a reliable auxiliary source or surface them as unavailable with clear warnings.</li>
+<li>Decide the supported contract for Chiron, TNOs, and other auxiliary bodies: provide a reliable auxiliary source or surface them as unavailable with clear warnings. Partially addressed: <code>ObservableObjectDefinition.status</code> (<code>available</code> | <code>planned</code>) now distinguishes backend-computable bodies from catalog-only placeholders (TNOs, geocentric planetary nodes, hypothetical/Uranian bodies, fixed stars, extra Lilith variants), and every consumer (Settings, Aspectarium, Transits) renders <code>planned</code> entries disabled with a shared hint. The actual backend-support decision for each <code>planned</code> category is still open.</li>
 <li>Remove or label any UI fallback geometry, compatibility path, or prototype surface that appears to expose computed astrology data without backend-backed provenance.</li>
 <li>Add an end-to-end no-Swiss/no-sidecar smoke path, not only compilation.</li>
 <li>Validate the optional Python environment end to end when that backend is provisioned.</li>
