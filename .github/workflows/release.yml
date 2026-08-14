@@ -141,18 +141,41 @@ jobs:
           pattern: tauri-*
           path: dist-bundles
 
+      - name: Stage and verify release assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+
+          while IFS= read -r -d '' file; do
+            destination="release-assets/$(basename "$file")"
+            if [[ -e "$destination" ]]; then
+              echo "Duplicate release asset: $(basename "$file")"
+              exit 1
+            fi
+            cp "$file" "$destination"
+          done < <(
+            find dist-bundles -type f \( \
+              -name '*.deb' -o \
+              -name '*.rpm' -o \
+              -name '*.AppImage' -o \
+              -name '*.msi' -o \
+              -name '*.exe' -o \
+              -name '*.dmg' -o \
+              -name '*.app.tar.gz' \
+            \) -print0
+          )
+
+          if ! find release-assets -type f -print -quit | grep -q .; then
+            echo "No supported release assets were downloaded."
+            exit 1
+          fi
+          find release-assets -type f -print
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.check-version.outputs.version }}
           name: v${{ needs.check-version.outputs.version }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: |
-            dist-bundles/**/*.deb
-            dist-bundles/**/*.rpm
-            dist-bundles/**/*.AppImage
-            dist-bundles/**/*.msi
-            dist-bundles/**/*.exe
-            dist-bundles/**/*.dmg
-            dist-bundles/**/*.app.tar.gz
+          files: release-assets/*
