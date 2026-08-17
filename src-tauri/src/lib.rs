@@ -46,6 +46,9 @@ pub fn run() {
             if let Ok(data_dir) = app.path().app_data_dir() {
                 ephemeris_manager::init_cache_dir(data_dir.join("ephemeris"));
             }
+            if let Ok(resource_dir) = app.path().resource_dir() {
+                ephemeris_manager::init_resource_dir(resource_dir);
+            }
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {

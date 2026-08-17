@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Radix render contract | Kefer docs</title>
@@ -38,6 +38,8 @@
 <li><code>aspects</code></li>
 <li><code>axes</code></li>
 <li><code>house_cusps</code></li>
+<li><code>shapes</code></li>
+<li><code>configurations</code></li>
 </ul>
 <h2 id="field-meanings">Field meanings</h2>
 <h3 id="positions"><code>positions</code></h3>
@@ -61,6 +63,13 @@
 <ul>
 <li>Array of 12 longitudes in degrees.</li>
 <li>Ordered from house 1 through house 12.</li>
+</ul>
+<h3 id="shapes-and-configurations"><code>shapes</code> and <code>configurations</code></h3>
+<ul>
+<li><code>shapes</code>: array of distribution-shape ids (<code>bundle</code>, <code>bowl</code>, <code>bowl_east</code>, <code>bowl_west</code>, <code>bowl_day</code>, <code>bowl_night</code>, <code>bucket</code>, <code>bucket_&lt;planet&gt;</code>, <code>locomotive</code>, <code>locomotive_leader_&lt;planet&gt;</code>, <code>seesaw</code>, <code>splash</code>, <code>splay</code>, <code>shifted_center</code>, <code>stellium</code>), derived from the 10 classical bodies (Sun through Pluto) and, for the bowl sub-variants, <code>house_cusps</code>.</li>
+<li><code>configurations</code>: array of aspect-pattern ids (<code>t_square</code>, <code>t_square_&lt;modality&gt;</code>, <code>grand_trine</code>, <code>grand_trine_&lt;element&gt;</code>, <code>grand_cross</code>, <code>grand_cross_&lt;modality&gt;</code>, <code>kite</code>, <code>kite_&lt;element&gt;</code>, <code>mystic_rectangle</code>, <code>double_quincunx</code>, <code>double_biquintile</code>, <code>hexagram</code>, <code>pentagram</code>), derived from the same 10 bodies and the computed <code>aspects</code>.</li>
+<li>Computed once in Rust (<code>detect_chart_shapes</code>/<code>detect_chart_configurations</code> in <code>astrology.rs</code>) and shared by every compute route — including the Python route, which gets them injected from its own <code>positions</code>/<code>house_cusps</code>/<code>aspects</code> response fields — so frontends never need to re-derive them.</li>
+<li><code>shapes</code> requires at least 7 of the 10 classical bodies present in <code>positions</code>; otherwise it is empty. <code>configurations</code> has no such minimum — it simply finds no matching pattern among however many of the 10 are present.</li>
 </ul>
 <h2 id="support-rule">Support rule</h2>
 <p>House support must follow two rules:</p>

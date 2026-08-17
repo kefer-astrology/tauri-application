@@ -288,6 +288,7 @@ pub async fn save_workspace(
 
     let mut chart_refs = Vec::new();
     for chart in &charts {
+        validate_chart_payload(chart)?;
         let id = chart.get("id").and_then(|v| v.as_str()).unwrap_or("chart");
         let safe_name: String = id
             .chars()
@@ -352,9 +353,14 @@ pub async fn save_workspace(
             longitude,
             timezone,
             utc_offset: None,
+            location_mode: None,
+            timezone_mode: None,
         }),
         _ => None,
     };
+    if let Some(location) = default_location.as_ref() {
+        crate::workspace::models::validate_location(location)?;
+    }
 
     let default = WorkspaceDefaults {
         ephemeris_engine,
@@ -407,6 +413,9 @@ pub async fn save_workspace_defaults(
     let base = Path::new(&workspace_path);
     let mut manifest = load_workspace_manifest(base)?;
     apply_workspace_defaults_patch(&mut manifest.default, defaults);
+    if let Some(location) = manifest.default.default_location.as_ref() {
+        crate::workspace::models::validate_location(location)?;
+    }
     write_workspace_manifest(base, &manifest)?;
     get_workspace_defaults(workspace_path).await
 }
@@ -464,6 +473,7 @@ pub async fn create_chart(
     }
 
     upsert_chart_id(&mut chart, &chart_id)?;
+    validate_chart_payload(&chart)?;
     let rel = chart_relative_path(&chart_id);
     write_chart_yaml(base, &rel, &chart)?;
 
@@ -506,6 +516,7 @@ pub async fn import_chart(workspace_path: String, source_path: String) -> Result
     };
 
     let chart_id = chart.id.clone();
+    validate_chart_instance(&chart)?;
     if find_chart_ref_by_id(base, &manifest, &chart_id)?.is_some() {
         return Err(format!("Chart {} already exists", chart_id));
     }
@@ -534,6 +545,7 @@ pub async fn update_chart(
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
 
     upsert_chart_id(&mut chart, &chart_id)?;
+    validate_chart_payload(&chart)?;
     write_chart_yaml(base, &rel, &chart)?;
     Ok(chart_id)
 }
@@ -770,6 +782,8 @@ pub async fn get_chart_details(
                 "longitude": chart.subject.location.longitude,
                 "timezone": chart.subject.location.timezone,
                 "utc_offset": chart.subject.location.utc_offset,
+                "location_mode": chart.subject.location.location_mode,
+                "timezone_mode": chart.subject.location.timezone_mode,
             }
         },
         "config": {
@@ -799,6 +813,7 @@ pub async fn compute_chart_from_data(
     chart_json: serde_json::Value,
     settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
+    validate_chart_payload(&chart_json)?;
     let backend = selected_compute_backend();
     let fallback_to_python = python_fallback_enabled();
     let force_python = chart_json_requires_python_precision(&chart_json);
@@ -868,6 +883,7 @@ pub async fn compute_cross_aspects_from_data(
     aspect_types: Vec<String>,
     settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
 ) -> Result<Vec<crate::astrology::ComputedAspect>, String> {
+    validate_chart_payload(&chart_json)?;
     let chart: crate::workspace::models::ChartInstance =
         serde_json::from_value(chart_json).map_err(|e| format!("Invalid chart payload: {}", e))?;
     let report = crate::workspace::settings::standalone_model_report_with_operation(
@@ -1563,6 +1579,8 @@ fn apply_workspace_defaults_patch(
             longitude: 0.0,
             timezone: "UTC".to_string(),
             utc_offset: None,
+            location_mode: None,
+            timezone_mode: None,
         });
 
         if let Some(value) = patch.default_location_name {
@@ -2356,6 +2374,17 @@ mod tests {
     }
 
     #[test]
+    fn auto_timezone_must_match_chart_coordinates() {
+        let mut payload = sample_chart_payload("auto-timezone");
+        payload["subject"]["location"]["timezone_mode"] = serde_json::json!("auto");
+        payload["subject"]["location"]["timezone"] = serde_json::json!("UTC");
+
+        let error = validate_chart_payload(&payload)
+            .expect_err("mismatched auto timezone should be rejected");
+        assert!(error.contains("expected 'Europe/Prague'"));
+    }
+
+    #[test]
     fn select_nominatim_result_rejects_empty_candidate_list() {
         let err = select_nominatim_result("Unknown", &[])
             .expect_err("empty result list should fail");
@@ -2382,6 +2411,46 @@ fn extract_chart_id(chart: &serde_json::Value) -> Result<&str, String> {
         .and_then(|v| v.as_str())
         .filter(|v| !v.trim().is_empty())
         .ok_or_else(|| "Chart id is required".to_string())
+}
+
+fn validate_chart_payload(
+    chart: &serde_json::Value,
+) -> Result<crate::workspace::models::ChartInstance, String> {
+    let parsed: crate::workspace::models::ChartInstance = serde_json::from_value(chart.clone())
+        .map_err(|error| format!("Invalid chart payload: {error}"))?;
+    validate_chart_instance(&parsed)?;
+    Ok(parsed)
+}
+
+fn validate_chart_instance(
+    chart: &crate::workspace::models::ChartInstance,
+) -> Result<(), String> {
+    if chart.id.trim().is_empty() {
+        return Err("Chart id is required".to_string());
+    }
+    if chart.subject.name.trim().is_empty() {
+        return Err("Chart name is required".to_string());
+    }
+    if chart.subject.event_time.is_none() {
+        return Err("Chart event time is required".to_string());
+    }
+    crate::workspace::models::validate_location(&chart.subject.location)?;
+    if matches!(
+        chart.subject.location.timezone_mode.as_ref(),
+        Some(crate::workspace::models::InputMode::Auto)
+    ) {
+        let expected = timezone_for_coordinates(
+            chart.subject.location.latitude,
+            chart.subject.location.longitude,
+        )?;
+        if chart.subject.location.timezone != expected {
+            return Err(format!(
+                "Timezone '{}' does not match coordinates in auto mode; expected '{expected}'",
+                chart.subject.location.timezone
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn read_importable_chart_yaml(path: &Path) -> Result<crate::workspace::models::ChartInstance, String> {

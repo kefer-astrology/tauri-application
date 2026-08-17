@@ -922,6 +922,13 @@ mod tests {
         let settings = &report.effective_settings;
 
         assert_eq!(
+            report.model.aspect_definitions.len() as u64,
+            fixture["catalog"]["aspectCount"]
+                .as_u64()
+                .expect("catalog aspect count should be an unsigned integer")
+        );
+
+        assert_eq!(
             serde_json::to_value(&settings.default_house_system).unwrap(),
             expected["houseSystem"]
         );

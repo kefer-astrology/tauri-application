@@ -13,6 +13,7 @@
   import SynastryView from '$lib/components/SynastryView.svelte';
   import SpecGatedModeView from '$lib/components/SpecGatedModeView.svelte';
   import LocationSelector from '$lib/components/LocationSelector.svelte';
+  import ModeSwitcher from '$lib/components/ModeSwitcher.svelte';
   import { layout, type Mode, showOpenExportOverlay, getSelectedChart, chartDataToComputePayload, type ChartData, setMode } from '$lib/state/layout';
   import { isTauriRuntime } from '$lib/tauri/runtime';
   import { computeTransitSeries, createChart, resolveLocation, searchLocations, updateChart } from '$lib/tauri/workspace';
@@ -886,30 +887,14 @@
                 <div class="block text-sm font-medium opacity-85">
                   {t('new_time_regime', {}, 'Time regime')}
                 </div>
-                <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t('new_time_regime', {}, 'Time regime')}>
-                  <Button
-                    type="button"
-                    variant={newTimeRegime === 'auto' ? 'default' : 'outline'}
-                    class="h-9"
-                    aria-pressed={newTimeRegime === 'auto'}
-                    onclick={() => {
-                      newTimeRegime = 'auto';
-                    }}
-                  >
-                    {t('new_time_regime_auto', {}, 'Auto')}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={newTimeRegime === 'manual' ? 'default' : 'outline'}
-                    class="h-9"
-                    aria-pressed={newTimeRegime === 'manual'}
-                    onclick={() => {
-                      newTimeRegime = 'manual';
-                    }}
-                  >
-                    {t('new_time_regime_manual', {}, 'Manual')}
-                  </Button>
-                </div>
+                <ModeSwitcher
+                  bind:value={newTimeRegime}
+                  options={[
+                    { value: 'auto', label: t('new_time_regime_auto', {}, 'Auto') },
+                    { value: 'manual', label: t('new_time_regime_manual', {}, 'Manual') }
+                  ]}
+                  ariaLabel={t('new_time_regime', {}, 'Time regime')}
+                />
               </div>
 
               {#if newTimeRegime === 'manual'}

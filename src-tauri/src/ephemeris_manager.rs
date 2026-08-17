@@ -67,10 +67,16 @@ pub const CODES_300AST_MAJOR_BODIES: &[&str] = &[
 // ─── Global cache-dir initialisation ─────────────────────────────────────────
 
 static CACHE_DIR: OnceLock<PathBuf> = OnceLock::new();
+static RESOURCE_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 /// Called once during Tauri app setup with the platform app-data directory.
 pub fn init_cache_dir(dir: PathBuf) {
     CACHE_DIR.set(dir).ok();
+}
+
+/// Called once during Tauri setup with the package's resolved resource directory.
+pub fn init_resource_dir(dir: PathBuf) {
+    RESOURCE_DIR.set(dir).ok();
 }
 
 fn resolved_cache_dir() -> PathBuf {
@@ -341,6 +347,11 @@ impl EphemerisManager {
             PathBuf::from(&py_src),
             PathBuf::from(&py_src_up),
         ];
+
+        if let Some(resource_dir) = RESOURCE_DIR.get() {
+            candidates.push(resource_dir.join(filename));
+            candidates.push(resource_dir.join(&resources));
+        }
 
         if let Ok(exe) = std::env::current_exe() {
             for base in exe.ancestors() {

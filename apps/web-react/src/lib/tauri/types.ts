@@ -204,6 +204,8 @@ export interface ChartDetails {
 			longitude: number;
 			timezone: string;
 			utc_offset?: string | null;
+			location_mode?: 'auto' | 'manual' | null;
+			timezone_mode?: 'auto' | 'manual' | null;
 		};
 	};
 	config: {

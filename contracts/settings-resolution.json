@@ -1,4 +1,7 @@
 {
+  "catalog": {
+    "aspectCount": 17
+  },
   "workspace": {
     "houseSystem": "Whole Sign",
     "bodies": ["sun", "moon"],
