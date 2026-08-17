@@ -287,6 +287,8 @@ pub fn load_workspace_aggregate(
         }
     }
 
+    deduplicate_diagnostics(&mut diagnostics);
+
     Ok(LoadedWorkspace {
         manifest,
         subjects,
@@ -296,6 +298,11 @@ pub fn load_workspace_aggregate(
         annotations,
         diagnostics,
     })
+}
+
+fn deduplicate_diagnostics(diagnostics: &mut Vec<super::validation::Diagnostic>) {
+    let mut seen = std::collections::HashSet::new();
+    diagnostics.retain(|diagnostic| seen.insert(diagnostic.clone()));
 }
 
 fn load_yaml_reference<T: DeserializeOwned>(
@@ -440,5 +447,31 @@ fn validate_layout_chart_reference(
             format!("Layout '{layout_name}' references unknown chart '{chart_id}'"),
             Some(format!("layouts.{layout_name}.{field}")),
         ));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::workspace::validation::Diagnostic;
+
+    #[test]
+    fn identical_workspace_diagnostics_are_returned_once() {
+        let duplicate = Diagnostic::error(
+            "duplicate_body_id",
+            "Duplicate body identifier 'sun'",
+            Some("workspace.models.standard.body_definitions".to_string()),
+        );
+        let distinct_path = Diagnostic::error(
+            "duplicate_body_id",
+            "Duplicate body identifier 'sun'",
+            Some("workspace.models.custom.body_definitions".to_string()),
+        );
+        let mut diagnostics = vec![duplicate.clone(), duplicate, distinct_path.clone()];
+
+        deduplicate_diagnostics(&mut diagnostics);
+
+        assert_eq!(diagnostics.len(), 2);
+        assert_eq!(diagnostics[1], distinct_path);
     }
 }
