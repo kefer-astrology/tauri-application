@@ -1,0 +1,24 @@
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_441a592d3caf33::t_dc6c7f101096e0 1139-1158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "73c36901d597be731f58f6b794ba9c1a1582944f",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_441a592d3caf33": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fff73-6775-7c10-a30f-612a805ac1c0",
+        "model": "unknown"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
