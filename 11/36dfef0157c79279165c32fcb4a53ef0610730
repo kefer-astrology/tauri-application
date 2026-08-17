@@ -1,0 +1,27 @@
+apps/web-svelte/src/lib/components/ModeSwitcher.svelte
+  s_441a592d3caf33::t_f4753c623d726c 1-43
+apps/web-react/src/app/components/mode-switcher.tsx
+  s_441a592d3caf33::t_f4753c623d726c 1-17,47-56,58-60
+  s_441a592d3caf33::t_f1cbcdb100dcb7 18-46,57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1136dfef0157c79279165c32fcb4a53ef0610730",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_441a592d3caf33": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fff73-6775-7c10-a30f-612a805ac1c0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
