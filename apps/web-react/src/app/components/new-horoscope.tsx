@@ -971,25 +971,6 @@ export function NewHoroscope({
 						</Select>
 					</div>
 
-					<div>
-						<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
-						<Select
-							value={timeSystem}
-							onValueChange={(value) => handleTimeSystemChange(value as NewHoroscopeTimeSystem)}
-						>
-							<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent className={ft.selectContent}>
-								{TIME_SYSTEMS.map((option) => (
-									<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
-										{t(option.labelKey)}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
 					<Tabs
 						value={timeRegime}
 						onValueChange={(value) => setTimeRegime(value as TimeRegime)}
@@ -1150,6 +1131,26 @@ export function NewHoroscope({
 										{UTC_OFFSETS.map((offset) => (
 											<SelectItem key={offset} value={offset} className={ft.selectItem}>
 												{offset}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div>
+								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
+								<Select
+									value={timeSystem}
+									onValueChange={(value) =>
+										handleTimeSystemChange(value as NewHoroscopeTimeSystem)
+									}
+								>
+									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className={ft.selectContent}>
+										{TIME_SYSTEMS.map((option) => (
+											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+												{t(option.labelKey)}
 											</SelectItem>
 										))}
 									</SelectContent>
