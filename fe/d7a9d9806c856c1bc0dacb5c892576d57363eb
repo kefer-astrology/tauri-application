@@ -1,0 +1,71 @@
+apps/web-react/src/locales/en.json
+  s_441a592d3caf33::t_382632e7d14216 556
+  s_441a592d3caf33::t_742c76d6799ffa 558
+apps/web-svelte/src/lib/i18n/fr.json
+  s_441a592d3caf33::t_382632e7d14216 556
+  s_441a592d3caf33::t_742c76d6799ffa 558
+translations.csv
+  s_441a592d3caf33::t_38821100b4dbbd 558
+  s_441a592d3caf33::t_c611d9cad7e54a 556
+apps/web-react/src/locales/cs.json
+  s_441a592d3caf33::t_742c76d6799ffa 558
+  s_441a592d3caf33::t_382632e7d14216 556
+TODO.md
+  s_441a592d3caf33::t_b7820917a1cee7 1-58
+apps/web-react/src/locales/es.json
+  s_441a592d3caf33::t_742c76d6799ffa 558
+  s_441a592d3caf33::t_382632e7d14216 556
+apps/web-react/src/locales/fr.json
+  s_441a592d3caf33::t_742c76d6799ffa 558
+  s_441a592d3caf33::t_382632e7d14216 556
+apps/web-svelte/src/lib/i18n/es.json
+  s_441a592d3caf33::t_382632e7d14216 556
+  s_441a592d3caf33::t_742c76d6799ffa 558
+apps/web-svelte/src/lib/i18n/cs.json
+  s_441a592d3caf33::t_382632e7d14216 556
+  s_441a592d3caf33::t_742c76d6799ffa 558
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_441a592d3caf33::t_f1cbcdb100dcb7 13,16,1012,1138
+  s_441a592d3caf33::t_2c9cbb425747a8 1013-1019,1139-1145
+  s_441a592d3caf33::t_b23e11cc5fcc83 3,11
+  s_441a592d3caf33::t_ff25dad6eda466 985-994
+  s_441a592d3caf33::t_10cfa6e4788451 1085
+apps/web-svelte/src/lib/i18n/en.json
+  s_441a592d3caf33::t_742c76d6799ffa 558
+  s_441a592d3caf33::t_382632e7d14216 556
+apps/web-react/src/app/components/synastry-view.tsx
+  s_441a592d3caf33::t_8eb2b1ecfef160 181-182,205,208-209,212
+  s_441a592d3caf33::t_b8a873635d1a2c 127-149,151-155,157-160,171
+  s_441a592d3caf33::t_eb3e6c88ede218 110
+  s_441a592d3caf33::t_4c8cf541664ac0 204
+  s_441a592d3caf33::t_f4753c623d726c 16,161-170
+  s_441a592d3caf33::t_2e931f7f877b40 2,12,15,19,21,52-59,67-94,106,111-121,183,185-200,207,210-211,213-216,218
+apps/web-svelte/src/App.svelte
+  s_441a592d3caf33::t_2c9cbb425747a8 16,890-897
+apps/web-svelte/src/lib/components/SynastryPersonFields.svelte
+  s_441a592d3caf33::t_f4753c623d726c 8,62-71
+  s_441a592d3caf33::t_b8a873635d1a2c 34-56,58-61,72
+  s_441a592d3caf33::t_d68599cd39065e 7,9-10,30,82-88,94-101,108,111,113-117
+  s_441a592d3caf33::t_8eb2b1ecfef160 75-81,89-93,102,105-106,109-110,112,118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "fed7a9d9806c856c1bc0dacb5c892576d57363eb",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_441a592d3caf33": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fff73-6775-7c10-a30f-612a805ac1c0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
