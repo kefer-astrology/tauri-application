@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { format, isValid, parse } from 'date-fns';
 import { cs, enUS, es, fr } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Check, ChevronDown, Pencil, Plus, X } from 'lucide-react';
+import { Check, ChevronDown, Pencil, Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
-import { Calendar } from './ui/calendar';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from './ui/command';
 import { ColorInput } from './ui/color-input';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { DatePickerInput } from './date-picker-input';
 import { LocationSelector } from './location-selector';
+import { ModeSwitcherList } from './mode-switcher';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsContent } from './ui/tabs';
 import {
 	Sheet,
 	SheetContent,
@@ -98,12 +98,6 @@ function timezoneRegion(timezone: string): string {
 
 function timezoneMatchesRegion(timezone: string, region: string): boolean {
 	return timezone === region || timezone.startsWith(`${region}/`);
-}
-
-function mergeDatePart(target: Date, pickedDate: Date): Date {
-	const next = new Date(target);
-	next.setFullYear(pickedDate.getFullYear(), pickedDate.getMonth(), pickedDate.getDate());
-	return next;
 }
 
 function formatCoordinateMagnitude(value: number): string {
@@ -664,7 +658,6 @@ export function NewHoroscope({
 	const [isResolvingLocation, setIsResolvingLocation] = useState(false);
 	const [resolvedLocationValue, setResolvedLocationValue] = useState('');
 
-	const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 	const timezonesInRegion = useMemo(
 		() => TIMEZONES.filter((candidate) => timezoneMatchesRegion(candidate, timezoneRegionValue)),
 		[timezoneRegionValue]
@@ -677,10 +670,6 @@ export function NewHoroscope({
 		if (base === 'es') return es;
 		return enUS;
 	}, [i18n.language]);
-
-	const [draftDateValue, setDraftDateValue] = useState(() =>
-		format(selectedDateTime, 'P', { locale: dateFnsLocale })
-	);
 
 	const applyTags = (nextTags: string[]) => {
 		const uniqueTags = mergeTags([], nextTags);
@@ -719,19 +708,6 @@ export function NewHoroscope({
 			});
 			return next;
 		});
-	};
-
-	useEffect(() => {
-		setDraftDateValue(format(selectedDateTime, 'P', { locale: dateFnsLocale }));
-	}, [selectedDateTime, dateFnsLocale]);
-
-	const commitDraftDateValue = () => {
-		const parsed = parse(draftDateValue.trim(), 'P', new Date(), { locale: dateFnsLocale });
-		if (!isValid(parsed)) {
-			setDraftDateValue(format(selectedDateTime, 'P', { locale: dateFnsLocale }));
-			return;
-		}
-		setSelectedDateTime((prev) => mergeDatePart(prev, parsed));
 	};
 
 	const locationOptions = useMemo(
@@ -1006,54 +982,16 @@ export function NewHoroscope({
 										className={cn(ft.input, 'shadow-inner')}
 									/>
 								) : (
-									<Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-										<div
-											className={cn(
-												'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-												'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
-												'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
-											)}
-										>
-											<Input
-												id="new-chart-date"
-												type="text"
-												inputMode="numeric"
-												value={draftDateValue}
-												onChange={(event) => setDraftDateValue(event.target.value)}
-												onBlur={commitDraftDateValue}
-												onKeyDown={(event) => {
-													if (event.key === 'Enter') {
-														commitDraftDateValue();
-														setDatePopoverOpen(false);
-													}
-												}}
-												className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus-visible:ring-0"
-												placeholder={format(new Date(), 'P', { locale: dateFnsLocale })}
-											/>
-											<PopoverTrigger asChild>
-												<Button
-													type="button"
-													variant="ghost"
-													className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
-												>
-													<CalendarIcon className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
-												</Button>
-											</PopoverTrigger>
-										</div>
-										<PopoverContent className={cn('w-auto p-0', ft.datePicker)} align="end">
-											<Calendar
-												mode="single"
-												selected={selectedDateTime}
-												onSelect={(d) => {
-													if (d) setSelectedDateTime((prev) => mergeDatePart(prev, d));
-													setDatePopoverOpen(false);
-												}}
-												locale={dateFnsLocale}
-												initialFocus
-												defaultMonth={selectedDateTime}
-											/>
-										</PopoverContent>
-									</Popover>
+									<DatePickerInput
+										id="new-chart-date"
+										label={t('new_date')}
+										value={selectedDateTime}
+										onValueChange={setSelectedDateTime}
+										locale={dateFnsLocale}
+										showLabel={false}
+										iconClassName={ft.iconColor}
+										panelClassName={ft.datePicker}
+									/>
 								)}
 							</div>
 
@@ -1071,10 +1009,14 @@ export function NewHoroscope({
 
 							<div className="flex flex-col gap-2">
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
-								<TabsList className="grid h-10 w-full min-w-[11rem] grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
-									<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
-									<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
-								</TabsList>
+								<ModeSwitcherList
+									ariaLabel={t('new_time_regime')}
+									options={[
+										{ value: 'auto', label: t('new_time_regime_auto') },
+										{ value: 'manual', label: t('new_time_regime_manual') }
+									]}
+									className="min-w-[11rem]"
+								/>
 							</div>
 						</div>
 
@@ -1140,9 +1082,7 @@ export function NewHoroscope({
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
 								<Select
 									value={timeSystem}
-									onValueChange={(value) =>
-										handleTimeSystemChange(value as NewHoroscopeTimeSystem)
-									}
+									onValueChange={(value) => handleTimeSystemChange(value as NewHoroscopeTimeSystem)}
 								>
 									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
 										<SelectValue />
@@ -1195,10 +1135,14 @@ export function NewHoroscope({
 
 							<div className="flex flex-col gap-2 md:col-start-2">
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location_regime')}</Label>
-								<TabsList className="grid h-10 w-full min-w-[11rem] grid-cols-2 border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]">
-									<TabsTrigger value="auto">{t('new_time_regime_auto')}</TabsTrigger>
-									<TabsTrigger value="manual">{t('new_time_regime_manual')}</TabsTrigger>
-								</TabsList>
+								<ModeSwitcherList
+									ariaLabel={t('new_location_regime')}
+									options={[
+										{ value: 'auto', label: t('new_time_regime_auto') },
+										{ value: 'manual', label: t('new_time_regime_manual') }
+									]}
+									className="min-w-[11rem]"
+								/>
 							</div>
 						</div>
 

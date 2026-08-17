@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { cs, enUS, es, fr } from 'date-fns/locale';
 import { ArrowLeftRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -8,12 +9,16 @@ import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Button } from './ui/button';
+import { DatePickerInput } from './date-picker-input';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { LocationSelector } from './location-selector';
+import { ModeSwitcher } from './mode-switcher';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Separator } from './ui/separator';
-import { Switch } from './ui/switch';
+import { TimeRollerPicker } from './time-roller-picker';
 import { cn } from './ui/utils';
+import { searchLocations } from '@/lib/tauri/workspace';
 
 type PersonMode = 'database' | 'manual';
 type Person = {
@@ -44,12 +49,47 @@ const CALCULATION_TYPES: CalculationType[] = [
 ];
 
 function emptyPerson(): Person {
-	return { mode: 'database', chartId: '', date: '', time: '', location: '' };
+	const now = new Date();
+	return {
+		mode: 'database',
+		chartId: '',
+		date: localDateValue(now),
+		time: localTimeValue(now),
+		location: ''
+	};
 }
 
 function todayInputValue(): string {
 	const now = new Date();
 	return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+function localDateValue(value: Date): string {
+	const year = value.getFullYear();
+	const month = String(value.getMonth() + 1).padStart(2, '0');
+	const day = String(value.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+}
+
+function localTimeValue(value: Date): string {
+	const hours = String(value.getHours()).padStart(2, '0');
+	const minutes = String(value.getMinutes()).padStart(2, '0');
+	const seconds = String(value.getSeconds()).padStart(2, '0');
+	return `${hours}:${minutes}:${seconds}`;
+}
+
+function personDateTime(person: Person): Date {
+	const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(person.date);
+	const timeMatch = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(person.time);
+	if (!dateMatch || !timeMatch) return new Date();
+	return new Date(
+		Number(dateMatch[1]),
+		Number(dateMatch[2]) - 1,
+		Number(dateMatch[3]),
+		Number(timeMatch[1]),
+		Number(timeMatch[2]),
+		Number(timeMatch[3] ?? 0)
+	);
 }
 
 function PersonFields({
@@ -63,57 +103,72 @@ function PersonFields({
 	theme: Theme;
 	personLabel: string;
 }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const { charts } = useWorkspaceCharts();
 	const ft = useAppFormFieldTheme(theme);
 	const manual = person.mode === 'manual';
+	const dateTime = useMemo(() => personDateTime(person), [person.date, person.time]);
+	const dateFnsLocale = useMemo(() => {
+		const language = i18n.language.split('-')[0]?.toLowerCase() ?? 'en';
+		if (language === 'cs') return cs;
+		if (language === 'fr') return fr;
+		if (language === 'es') return es;
+		return enUS;
+	}, [i18n.language]);
+	const locationOptions = useMemo(
+		() => charts.map((chart) => chart.location).filter(Boolean),
+		[charts]
+	);
 	const set = <K extends keyof Person>(key: K, value: Person[K]) =>
 		onChange({ ...person, [key]: value });
 
 	return (
 		<div className="space-y-4">
-			<div>
-				<Label className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}>
-					{t('synastry_chart')}
-				</Label>
-				<Select
-					value={person.chartId}
-					onValueChange={(value) => set('chartId', value)}
-					disabled={manual || charts.length === 0}
-				>
-					<SelectTrigger className={cn(ft.selectTrigger, 'min-h-11')} aria-label={personLabel}>
-						<SelectValue
-							placeholder={charts.length ? t('synastry_choose_chart') : t('synastry_no_charts')}
-						/>
-					</SelectTrigger>
-					<SelectContent className={ft.selectContent}>
-						{charts.map((chart) => (
-							<SelectItem key={chart.id} value={chart.id} className={ft.selectItem}>
-								<span className="flex min-w-0 flex-col">
-									<span className="truncate">{chart.name}</span>
-									<span className={cn('truncate text-xs', ft.muted)}>
-										{chart.dateTime} · {chart.location}
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+				<div className="sm:col-span-2">
+					<Label className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}>
+						{t('synastry_chart')}
+					</Label>
+					<Select
+						value={person.chartId}
+						onValueChange={(value) => set('chartId', value)}
+						disabled={manual || charts.length === 0}
+					>
+						<SelectTrigger className={cn(ft.selectTrigger, 'min-h-11')} aria-label={personLabel}>
+							<SelectValue
+								placeholder={charts.length ? t('synastry_choose_chart') : t('synastry_no_charts')}
+							/>
+						</SelectTrigger>
+						<SelectContent className={ft.selectContent}>
+							{charts.map((chart) => (
+								<SelectItem key={chart.id} value={chart.id} className={ft.selectItem}>
+									<span className="flex min-w-0 flex-col">
+										<span className="truncate">{chart.name}</span>
+										<span className={cn('truncate text-xs', ft.muted)}>
+											{chart.dateTime} · {chart.location}
+										</span>
 									</span>
-								</span>
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 
-			<div className="flex items-center gap-3">
-				<span className={cn('text-sm font-medium', !manual ? ft.iconColor : ft.muted)}>
-					{t('synastry_from_database')}
-				</span>
-				<Switch
-					checked={manual}
-					onCheckedChange={(checked) => set('mode', checked ? 'manual' : 'database')}
-					aria-label={t('synastry_manual_toggle')}
-					className={cn('data-[state=checked]:bg-[color:var(--theme-accent)]', ft.switchUnchecked)}
-				/>
-				<span className={cn('text-sm font-medium', manual ? ft.iconColor : ft.muted)}>
-					{t('synastry_manual')}
-				</span>
+				<div>
+					<Label className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}>
+						{t('synastry_input_mode')}
+					</Label>
+					<ModeSwitcher
+						value={person.mode}
+						onValueChange={(value) => set('mode', value)}
+						ariaLabel={t('synastry_input_mode')}
+						options={[
+							{ value: 'database', label: t('synastry_database') },
+							{ value: 'manual', label: t('synastry_manual') }
+						]}
+						listClassName="h-11"
+					/>
+				</div>
 			</div>
 
 			<div
@@ -123,56 +178,46 @@ function PersonFields({
 				)}
 				aria-hidden={!manual}
 			>
-				<div className="grid gap-3 sm:grid-cols-2">
-					<div>
-						<Label
-							className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}
-							htmlFor={`${personLabel}-date`}
-						>
-							{t('synastry_date')}
-						</Label>
-						<Input
+				<div className={cn('space-y-3', ft.advancedPanel)}>
+					<div className="grid gap-3 sm:grid-cols-2">
+						<DatePickerInput
 							id={`${personLabel}-date`}
-							type="date"
-							value={person.date}
-							onChange={(event) => set('date', event.target.value)}
-							className={ft.input}
-							tabIndex={manual ? 0 : -1}
+							label={t('synastry_date')}
+							value={dateTime}
+							onValueChange={(value) => set('date', localDateValue(value))}
+							locale={dateFnsLocale}
+							labelClassName={ft.label}
+							iconClassName={ft.iconColor}
+							panelClassName={ft.datePicker}
+						/>
+						<TimeRollerPicker
+							id={`${personLabel}-time`}
+							label={t('synastry_time')}
+							value={dateTime}
+							onValueChange={(value) => set('time', localTimeValue(value))}
+							labelClassName={ft.label}
+							iconClassName={ft.iconColor}
+							panelClassName={ft.selectContent}
 						/>
 					</div>
 					<div>
-						<Label
-							className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}
-							htmlFor={`${personLabel}-time`}
-						>
-							{t('synastry_time')}
+						<Label className={cn('mb-1.5 block', ft.label)} htmlFor={`${personLabel}-location`}>
+							{t('synastry_location')}
 						</Label>
-						<Input
-							id={`${personLabel}-time`}
-							type="time"
-							step="1"
-							value={person.time}
-							onChange={(event) => set('time', event.target.value)}
+						<LocationSelector
+							id={`${personLabel}-location`}
+							value={person.location}
+							onValueChange={(value) => set('location', value)}
+							options={locationOptions}
+							placeholder={t('synastry_location_placeholder')}
+							searchPlaceholder={t('new_location_search')}
+							emptyLabel={t('synastry_location_placeholder')}
+							loadingLabel={t('new_resolving_location')}
+							searchLocations={searchLocations}
 							className={ft.input}
-							tabIndex={manual ? 0 : -1}
+							iconClassName={ft.iconColor}
 						/>
 					</div>
-				</div>
-				<div>
-					<Label
-						className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}
-						htmlFor={`${personLabel}-location`}
-					>
-						{t('synastry_location')}
-					</Label>
-					<Input
-						id={`${personLabel}-location`}
-						value={person.location}
-						onChange={(event) => set('location', event.target.value)}
-						placeholder={t('synastry_location_placeholder')}
-						className={ft.input}
-						tabIndex={manual ? 0 : -1}
-					/>
 				</div>
 			</div>
 		</div>
