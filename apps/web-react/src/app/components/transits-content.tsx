@@ -328,7 +328,7 @@ export function TransitsContent({
 								</Select>
 							</div>
 
-							<div>
+							<div data-tour="transits-period">
 								<Label className={cn('mb-2 block', ft.label)}>{t('transits_label_period')}</Label>
 								<Select value={periodModeId} onValueChange={setPeriodModeId}>
 									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
@@ -593,6 +593,7 @@ export function TransitsContent({
 									{t('button_close')}
 								</Button>
 								<Button
+									data-tour="transits-calculate"
 									type="button"
 									className={cn(ft.footerPrimary, '!flex-none')}
 									onClick={() => void handleComputeTransits()}

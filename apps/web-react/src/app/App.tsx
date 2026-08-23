@@ -22,6 +22,7 @@ import { SynastryView } from './components/synastry-view';
 import SettingsView from './components/settings-view';
 import { OpenWorkspaceView } from './components/open-workspace-view';
 import { ExportWorkspaceView } from './components/export-workspace-view';
+import { GuidedTour } from './components/guided-tour';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 import {
@@ -131,7 +132,8 @@ function mergeModelReportDefaults(
 	const effective = report.effective_settings;
 	return {
 		...prev,
-		defaultBodies: effective.default_bodies.length > 0 ? effective.default_bodies : prev.defaultBodies,
+		defaultBodies:
+			effective.default_bodies.length > 0 ? effective.default_bodies : prev.defaultBodies,
 		defaultAspects:
 			effective.default_aspects.length > 0 ? effective.default_aspects : prev.defaultAspects,
 		defaultAspectOrbs:
@@ -226,6 +228,7 @@ export default function App() {
 	}));
 	const [currentModelReport, setCurrentModelReport] = useState<CurrentModelReport | null>(null);
 	const computingChartIdsRef = useRef<Set<string>>(new Set());
+	const bootstrapComputeAttemptedRef = useRef(false);
 
 	const addChart = useCallback((chart: AppChart) => {
 		setSelectedChartPreview(null);
@@ -468,10 +471,10 @@ export default function App() {
 
 	useEffect(() => {
 		if (workspacePath) return;
+		if (bootstrapComputeAttemptedRef.current) return;
 		const bootstrapChart = charts.find((chart) => chart.id === BOOTSTRAP_CHART_ID);
 		if (!bootstrapChart) return;
-		const hasComputedPositions = Object.keys(bootstrapChart.computed?.positions ?? {}).length > 0;
-		if (hasComputedPositions) return;
+		bootstrapComputeAttemptedRef.current = true;
 		void computeChartInBackground(bootstrapChart, null);
 	}, [charts, computeChartInBackground, workspacePath]);
 
@@ -717,6 +720,7 @@ export default function App() {
 				</div>
 			</WorkspaceChartsProvider>
 			<Toaster theme={shadcnDark ? 'dark' : 'light'} />
+			<GuidedTour />
 		</>
 	);
 }

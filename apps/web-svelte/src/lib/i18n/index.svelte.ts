@@ -56,8 +56,13 @@ export function setLang(l: Lang) {
   }
 }
 
-// Restore persisted language if available
+// URL `?lang=` overrides the persisted language (used by docs previews); otherwise restore persisted language.
 try {
-  const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (saved && saved in i18n.dicts) i18n.lang = saved;
+  const fromUrl = new URLSearchParams(window.location.search).get('lang');
+  if (fromUrl && fromUrl in i18n.dicts) {
+    i18n.lang = fromUrl;
+  } else {
+    const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (saved && saved in i18n.dicts) i18n.lang = saved;
+  }
 } catch (_) {}

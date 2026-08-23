@@ -435,13 +435,13 @@ export function HoroscopeDashboard({
 	};
 
 	return (
-		<div className="flex h-screen flex-col overflow-hidden">
+		<div className="flex h-screen flex-col overflow-hidden" data-tour="radix-workspace">
 			{/* Main Content - 3 Column Layout */}
 			<div className="grid min-h-0 flex-1 grid-cols-[288px_minmax(0,1fr)_224px] gap-6 overflow-hidden p-4">
 				{/* Left Column */}
 				<div className="flex min-h-0 min-w-0 flex-col gap-4">
 					{/* Profile Panel */}
-					<Card variant="themed" theme={theme} className={panelCardClass}>
+					<Card variant="themed" theme={theme} className={panelCardClass} data-tour="radix-profile">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setProfileCollapsed(!profileCollapsed)}
@@ -534,7 +534,7 @@ export function HoroscopeDashboard({
 					</Card>
 
 					{/* Astrolabe Panel */}
-					<Card variant="themed" theme={theme} className={panelCardClass}>
+					<Card variant="themed" theme={theme} className={panelCardClass} data-tour="radix-astrolabe">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
@@ -663,7 +663,10 @@ export function HoroscopeDashboard({
 				</div>
 
 				{/* Center Column - Full middle track */}
-				<div className="flex min-h-0 min-w-0 items-center justify-center overflow-hidden">
+				<div
+					className="flex min-h-0 min-w-0 items-center justify-center overflow-hidden"
+					data-tour="radix-wheel"
+				>
 					<div className="aspect-square h-full max-h-full w-full max-w-full">
 						<HoroscopeWheel
 							theme={theme}
@@ -693,6 +696,7 @@ export function HoroscopeDashboard({
 				{/* Right Column */}
 				<div className="min-h-0 min-w-0">
 					<Card
+						data-tour="radix-positions"
 						variant="themed"
 						theme={theme}
 						className={cn(panelCardClass, positionsCollapsed ? '' : 'flex h-full flex-col')}

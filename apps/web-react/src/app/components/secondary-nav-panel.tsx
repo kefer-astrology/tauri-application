@@ -38,6 +38,7 @@ export function SecondaryNavPanel({
 
 	return (
 		<aside
+			data-tour="secondary-navigation"
 			className={cn(
 				'flex h-full min-h-0 w-[220px] shrink-0 flex-col border-r pt-2 transition-all duration-300 ease-in-out',
 				st.bg,
@@ -61,6 +62,7 @@ export function SecondaryNavPanel({
 					return (
 						<Button
 							key={item.id}
+							data-tour={`secondary-nav-${item.id}`}
 							type="button"
 							variant="ghost"
 							onClick={() => onSelect(item.id)}

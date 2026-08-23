@@ -1,125 +1,75 @@
 <!doctype html>
 <html lang="en">
   <head>
-	<meta name="generator" content="Hugo 0.164.0">
+	<meta name="generator" content="Hugo 0.164.0"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kefer docs | Kefer docs</title>
-    <meta name="description" content="Main documentation hub, published frontend builds, and LLM continuation context." />
+    <title>Kefer Astrology</title>
+    <meta name="description" content="Learn the application, explore it interactively, or work with its technical contracts." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <link rel="stylesheet" href="/css/site.min.d00ff9d5e526d03c81c93322245940000cb99805acb2e000b4194000f6ef78b1.css" integrity="sha256-0A/51eUm0DyByTMiJFlAAAy5mAWssuAAtBlAAPbveLE=" />
+    <link rel="stylesheet" href="/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css" integrity="sha256-OAfbqZKJaBkqBpUre/S5HixSCIiVbh6YvTdTpnVh48c=" />
   </head>
   <body>
     <div class="shell">
       <header class="site-header">
-        <a class="brand" href="/">Kefer docs</a>
-        <nav class="top-nav" aria-label="Primary">
-          <a href="/docs/">Docs</a>
-          <a href="/llm/">LLM handoff</a>
-          <a href="/#frontend-builds">Frontend builds</a>
-        </nav>
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/" aria-current="page">English</a>
+            
+              <a href="/cs/" >Čeština</a>
+            
+              <a href="/es/" >Español</a>
+            
+              <a href="/fr/" >Français</a>
+            
+          </nav>
+        </div>
       </header>
       <main>
         
-  
-  
-    
-      
-        
-      
-    
-  
   <article class="content">
     <header class="page-header">
       <p class="eyebrow"></p>
-      <h1>Kefer docs</h1>
-      <p class="lede">Main documentation hub, published frontend builds, and LLM continuation context.</p>
+      <h1>Kefer Astrology</h1>
+      <p class="lede">Learn the application, explore it interactively, or work with its technical contracts.</p>
     </header>
     <div class="prose">
-      <p>The <code>docs/</code> directory is now the shared source for three things:</p>
-<ol>
-<li>Human-readable project documentation.</li>
-<li>A Hugo site that can publish to GitHub Pages.</li>
-<li>LLM handoff material for future contributors and agents.</li>
-</ol>
-<h2 id="start-here">Start here</h2>
+      <p>Kefer Astrology is a desktop workspace for creating, examining, and comparing astrological charts.</p>
+<p>Choose the path that matches what you want to do:</p>
 <ul>
-<li><a href="./docs/">Project docs</a> for architecture, backend, frontend, UI, and reference docs.</li>
-<li><a href="./llm/">LLM handoff</a> for concise project context and continuation guidance.</li>
-<li><a href="#frontend-builds">Published frontends</a> for static builds copied from workspace apps during <code>npm run docs:prepare</code>.</li>
+<li><strong><a href="/manual/">Manual</a></strong> explains the application through practical tasks and familiar astrological workflows.</li>
+<li><strong><a href="/developer/">Developer Manual</a></strong> documents architecture, contracts, implementation rules, and development workflows.</li>
+<li><strong><a href="/guides/">Guides</a></strong> open either browser-safe frontend build freely, or follow scripted walkthroughs for Quickstart, radix features, transit computation, and settings.</li>
 </ul>
-<h2 id="local-docs-workflow">Local docs workflow</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm run docs:prepare
-</span></span><span style="display:flex;"><span>npm run docs:dev
-</span></span><span style="display:flex;"><span>npm run docs:build
-</span></span></code></pre></div><p><code>docs:prepare</code> rebuilds both frontend workspaces in static docs mode and copies any <code>apps/*/dist/</code> output into the docs site under <code>/apps/&lt;workspace&gt;/</code>.
-It also regenerates <code>docs/data/generated/frontends.json</code>, which Hugo uses to list published frontends on the home page.</p>
-<p>The app build flows are intentionally separate:</p>
-<ul>
-<li>React is the primary app: <code>npm run dev</code>, <code>npm run tauri:dev</code>, <code>npm run build</code>, <code>npm run tauri:build</code>.</li>
-<li>Svelte is the alternate app: <code>npm run dev:svelte</code>, <code>npm run tauri:dev:svelte</code>, <code>npm run build:svelte</code>, <code>npm run tauri:build:svelte</code>.</li>
-<li>Docs builds call both static frontend builds before Hugo runs.</li>
-</ul>
-<p>The shared translation flow starts from repo-root <code>translations.csv</code>, which is intended to mirror a public Google Sheet later. Run <code>npm run i18n:sync</code> to regenerate both frontend locale directories; use <code>npm run i18n:prune:dry</code> and <code>npm run i18n:prune</code> before syncing when cleaning unused keys.</p>
-<h2 id="generated-docs-assets">Generated docs assets</h2>
-<ul>
-<li><code>docs/static/apps/</code> is generated by <code>npm run docs:prepare</code>.</li>
-<li><code>docs/data/generated/frontends.json</code> is generated by the same step and is part of the docs build logic.</li>
-<li>These generated files should not be edited by hand.</li>
-</ul>
-<h2 id="current-ui-target">Current UI target</h2>
-<p>The next major UI migration target is the React <code>Aspectarium</code>.</p>
-<ul>
-<li>Vision source: <code>inspiration-source/aspektarium/Kefer - Aspektárium/</code></li>
-<li>Working implementation file: <code>apps/web-react/src/app/components/aspectarium.tsx</code></li>
-<li>Normative UI rules live in <a href="./docs/ui-conventions/">UI conventions</a></li>
-</ul>
-<p>Current target behavior:</p>
-<ul>
-<li>rows come from the selected objects-to-compute list, like the radix position report</li>
-<li>the diagonal repeats the same objects; transit/event-range mode may expand this into a square</li>
-<li>clicking a computed aspect cell opens the detail view on the right</li>
-<li>desktop layout should default to an 80/20 matrix-to-detail split</li>
-<li>shared shadcn-style primitives should be reused before introducing new bespoke UI</li>
-</ul>
+<p>The Manual is the right starting point when you want to use Kefer Astrology. The Developer Manual is the source of truth when you want to understand or change how it works.</p>
 
     </div>
     
       <section class="card-grid">
         
-          <a class="card" href="/llm/">
-            <h2>LLM handoff</h2>
-            <p>High-signal context for future coding sessions.</p>
+          <a class="card" href="/manual/">
+            <h2>Manual</h2>
+            <p>Task-oriented help for working with charts, time, workspaces, and application settings.</p>
           </a>
         
-          <a class="card" href="/docs/">
-            <h2>Project documentation</h2>
-            <p>Chaptered map of the current Kefer Astrology stack.</p>
+          <a class="card" href="/developer/">
+            <h2>Developer Manual</h2>
+            <p>Architecture, contracts, implementation guidance, and project direction for people and coding agents.</p>
           </a>
         
-      </section>
-    
-    
-      <section id="frontend-builds" class="frontend-section">
-        <div class="section-heading">
-          <p class="eyebrow">Static frontends</p>
-          <h2>Published frontend builds</h2>
-        </div>
-        <div class="card-grid">
-          
-            <a class="card" href="/apps/web-react/">
-              <h3>web-react</h3>
-              <p>Kefer astrology React &#43; Vite UI (Tauri shell at repo root).</p>
-              <p class="meta">apps/web-react</p>
-            </a>
-          
-            <a class="card" href="/apps/web-svelte/">
-              <h3>web-svelte</h3>
-              <p>Kefer astrology Svelte &#43; Vite UI workspace with Tauri integration.</p>
-              <p class="meta">apps/web-svelte</p>
-            </a>
-          
-        </div>
+          <a class="card" href="/guides/">
+            <h2>Guides</h2>
+            <p>Preview either frontend build freely, or follow a focused walkthrough of a specific area.</p>
+          </a>
+        
       </section>
     
   </article>

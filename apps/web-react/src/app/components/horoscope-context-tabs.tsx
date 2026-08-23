@@ -26,7 +26,7 @@ export function HoroscopeContextTabs({ theme }: HoroscopeContextTabsProps) {
 	const ft = useAppFormFieldTheme(theme);
 
 	return (
-		<div className={ft.contextRail}>
+		<div className={ft.contextRail} data-tour="radix-chart-tabs">
 			<Breadcrumb className="min-w-0">
 				<BreadcrumbList className={cn('flex-nowrap items-center gap-0.5 sm:gap-1', ft.muted)}>
 					{charts.map((chart, i) => {

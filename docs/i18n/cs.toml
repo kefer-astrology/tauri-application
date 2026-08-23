@@ -1,0 +1,11 @@
+[nav_manual]
+other = "Manuál"
+
+[nav_developer_manual]
+other = "Manuál pro vývojáře"
+
+[nav_guides]
+other = "Průvodci"
+
+[open_full_page]
+other = "Otevřít na celou stránku ↗"

@@ -4,15 +4,15 @@ Astrology desktop app: **Tauri 2**, **React** and **Svelte** frontend workspaces
 
 ## Documentation
 
-Project docs live in **[`docs/`](docs/)** as a Hugo site source. The main entrypoints are **[`docs/content/_index.md`](docs/content/_index.md)** for the site landing page, **[`docs/content/docs/_index.md`](docs/content/docs/_index.md)** for the documentation index, and **[`docs/content/llm/_index.md`](docs/content/llm/_index.md)** for LLM continuation notes.
+Project documentation lives in **[`docs/`](docs/)** as a Hugo site source. The main entrypoints are **[`docs/content/_index.md`](docs/content/_index.md)** for Kefer Astrology, **[`docs/content/manual/_index.md`](docs/content/manual/_index.md)** for user help, **[`docs/content/developer/_index.md`](docs/content/developer/_index.md)** for shared technical contracts and development guidance, and **[`docs/content/guides/_index.md`](docs/content/guides/_index.md)** for the free-form previews and React-backed Guided Tours.
 
-| Guide                                                   | Topic                                                                     |
-| ------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [frontend-react](docs/content/docs/frontend-react.md)   | Commands, `apps/web-react/` layout, Tauri bridge, i18n, assets            |
-| [frontend-svelte](docs/content/docs/frontend-svelte.md) | Commands, `apps/web-svelte/` layout, shared assets, docs-build behavior   |
-| [ui-conventions](docs/content/docs/ui-conventions.md)   | Themes, sidebar, i18n workflow (`translations.csv` → `npm run i18n:sync`) |
-| [architecture](docs/content/docs/architecture.md)       | Workspace layout, storage, Rust ↔ Python flow                             |
-| [python-package](docs/content/docs/python-package.md)   | Python module and CLI used by the app                                     |
+| Guide                                                        | Topic                                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| [frontend-react](docs/content/developer/frontend-react.md)   | Commands, `apps/web-react/` layout, Tauri bridge, i18n, assets            |
+| [frontend-svelte](docs/content/developer/frontend-svelte.md) | Commands, `apps/web-svelte/` layout, shared assets, site-build behavior   |
+| [ui-conventions](docs/content/developer/ui-conventions.md)   | Themes, sidebar, i18n workflow (`translations.csv` → `npm run i18n:sync`) |
+| [architecture](docs/content/developer/architecture.md)       | Workspace layout, storage, Rust ↔ Python flow                             |
+| [python-package](docs/content/developer/python-package.md)   | Python module and CLI used by the app                                     |
 
 ## Stack
 
@@ -35,7 +35,7 @@ JPL / SPICE is the preferred long-term runtime direction. Swiss Ephemeris remain
 ### Current State
 
 - Rust/no-sidecar support is the baseline for supported desktop flows; the Python backend remains optional when provisioned.
-- React and Svelte share the UI standard and are driven by `docs/content/llm/` specs before new behavior is implemented.
+- React and Svelte share the UI standard and are driven by contracts in `docs/content/developer/` before new behavior is implemented.
 - Structured chart payloads, provenance fields, workspace defaults, and static/docs rendering are part of the current frontend/backend contract.
 
 ### Planned State
@@ -53,9 +53,9 @@ At a high level, the repo is split by responsibility:
 - `static/` is the shared source of truth for public assets used by frontends, especially app-shell icons, logos, and glyph families.
 - `src-tauri/` contains the native shell, command handlers, packaging config, and sidecar integration.
 - `backend-python/`, when present, contains the optional astrology computation package and CLI that get built into the desktop sidecar.
-- `docs/` is the Hugo documentation site source, including both developer docs and LLM continuation notes.
+- `docs/` is the Hugo site source for the user Manual, Developer Manual, and Guided Tour.
 
-If you need more than this overview, start with [frontend-react](docs/content/docs/frontend-react.md) or [frontend-svelte](docs/content/docs/frontend-svelte.md) for workspace structure, then use [architecture](docs/content/docs/architecture.md) for the Rust/Python flow.
+If you need more than this overview, start with [frontend-react](docs/content/developer/frontend-react.md) or [frontend-svelte](docs/content/developer/frontend-svelte.md) for workspace structure, then use [architecture](docs/content/developer/architecture.md) for the Rust/Python flow.
 
 ## Requirements
 
@@ -77,26 +77,26 @@ npm install
 
 React is the main app flow. Svelte is a separate alternate frontend flow with its own Vite and Tauri commands.
 
-| Flow           | Command                                   | Purpose                                                                      |
-| -------------- | ----------------------------------------- | ---------------------------------------------------------------------------- |
-| React app      | `npm run dev`                             | Run the React Vite dev server.                                               |
-| React app      | `npm run tauri:dev`                       | Run the React-backed desktop app with Tauri hot reload.                      |
-| React app      | `npm run build`                           | Build `apps/web-react/dist/`.                                                |
-| React app      | `npm run tauri:build`                     | Build the React-backed desktop bundle.                                       |
-| React app      | `npm run check`                           | Type-check the React workspace.                                              |
-| Svelte app     | `npm run dev:svelte`                      | Run the Svelte Vite dev server.                                              |
-| Svelte app     | `npm run tauri:dev:svelte`                | Run the Svelte-backed desktop app with Tauri hot reload.                     |
-| Svelte app     | `npm run build:svelte`                    | Build `apps/web-svelte/dist/`.                                               |
-| Svelte app     | `npm run tauri:build:svelte`              | Build the Svelte-backed desktop bundle.                                      |
-| Svelte app     | `npm run check:svelte`                    | Type-check the Svelte workspace.                                             |
-| Docs           | `npm run docs:prepare`                    | Build both frontends for static docs mode and stage them into the Hugo site. |
-| Docs           | `npm run docs:dev`                        | Prepare docs assets, then run the Hugo dev server for `docs/`.               |
-| Docs           | `npm run docs:build`                      | Prepare docs assets, then build the production Hugo site into `dist-docs/`.  |
-| i18n           | `npm run i18n:prune:dry`                  | Show unused `translations.csv` rows not referenced by either frontend.       |
-| i18n           | `npm run i18n:prune`                      | Remove unused `translations.csv` rows.                                       |
-| i18n           | `npm run i18n:sync`                       | Regenerate locale JSON for both frontend workspaces from `translations.csv`. |
-| Shared         | `npm run lint`                            | Run Prettier check and ESLint.                                               |
-| Python sidecar | `python scripts/build-backend-sidecar.py` | Optional: build and stage `kefer-backend` into `src-tauri/binaries/`.        |
+| Flow           | Command                                   | Purpose                                                                       |
+| -------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
+| React app      | `npm run dev`                             | Run the React Vite dev server.                                                |
+| React app      | `npm run tauri:dev`                       | Run the React-backed desktop app with Tauri hot reload.                       |
+| React app      | `npm run build`                           | Build `apps/web-react/dist/`.                                                 |
+| React app      | `npm run tauri:build`                     | Build the React-backed desktop bundle.                                        |
+| React app      | `npm run check`                           | Type-check the React workspace.                                               |
+| Svelte app     | `npm run dev:svelte`                      | Run the Svelte Vite dev server.                                               |
+| Svelte app     | `npm run tauri:dev:svelte`                | Run the Svelte-backed desktop app with Tauri hot reload.                      |
+| Svelte app     | `npm run build:svelte`                    | Build `apps/web-svelte/dist/`.                                                |
+| Svelte app     | `npm run tauri:build:svelte`              | Build the Svelte-backed desktop bundle.                                       |
+| Svelte app     | `npm run check:svelte`                    | Type-check the Svelte workspace.                                              |
+| Site           | `npm run docs:prepare`                    | Build both frontends for browser-safe mode and stage them into the Hugo site. |
+| Site           | `npm run docs:dev`                        | Prepare site assets, then run the Hugo development server.                    |
+| Site           | `npm run docs:build`                      | Prepare site assets, then build the production site into `dist-docs/`.        |
+| i18n           | `npm run i18n:prune:dry`                  | Show unused `translations.csv` rows not referenced by either frontend.        |
+| i18n           | `npm run i18n:prune`                      | Remove unused `translations.csv` rows.                                        |
+| i18n           | `npm run i18n:sync`                       | Regenerate locale JSON for both frontend workspaces from `translations.csv`.  |
+| Shared         | `npm run lint`                            | Run Prettier check and ESLint.                                                |
+| Python sidecar | `python scripts/build-backend-sidecar.py` | Optional: build and stage `kefer-backend` into `src-tauri/binaries/`.         |
 
 ## Troubleshooting
 

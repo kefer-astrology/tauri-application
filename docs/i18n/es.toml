@@ -1,0 +1,11 @@
+[nav_manual]
+other = "Manual"
+
+[nav_developer_manual]
+other = "Manual para desarrolladores"
+
+[nav_guides]
+other = "Guías"
+
+[open_full_page]
+other = "Abrir a pantalla completa ↗"
