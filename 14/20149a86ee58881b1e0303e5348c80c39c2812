@@ -1,0 +1,27 @@
+apps/web-react/src/lib/i18n/i18n.ts
+  s_2a7edd0a1995cc::t_c966506e53dfc6 15-21
+  s_2a7edd0a1995cc::t_b5aa7113606be8 14
+apps/web-svelte/src/lib/i18n/index.svelte.ts
+  s_2a7edd0a1995cc::t_2f4ee809ad24fc 59,61-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "1420149a86ee58881b1e0303e5348c80c39c2812",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2a7edd0a1995cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "228809ae-ec58-4fd6-9b4c-774802ad634e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
