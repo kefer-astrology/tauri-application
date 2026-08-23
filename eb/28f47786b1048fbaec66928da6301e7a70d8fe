@@ -1,0 +1,153 @@
+docs/content/manual/settings-and-appearance.es.md
+  s_2a7edd0a1995cc::t_af29837e74f9ae 1-13
+docs/content/guides/preview-react.md
+  s_2a7edd0a1995cc::t_6acb4bb79caf7c 12
+docs/content/manual/getting-started.cs.md
+  s_2a7edd0a1995cc::t_1fbe5e1bd1166d 1-26
+docs/content/manual/_index.es.md
+  s_2a7edd0a1995cc::t_a8ea5739ee0054 1-23
+docs/i18n/en.toml
+  s_2a7edd0a1995cc::t_d612ea17a9acc6 1-11
+docs/content/manual/_index.cs.md
+  s_2a7edd0a1995cc::t_918d649b83b912 1-23
+docs/content/manual/charts-and-workspaces.es.md
+  s_2a7edd0a1995cc::t_2973c9d0ad48e8 1-23
+docs/content/_index.fr.md
+  s_2a7edd0a1995cc::t_3fc933482952a2 1-14
+docs/content/manual/charts-and-workspaces.cs.md
+  s_2a7edd0a1995cc::t_45f0a566860538 1-23
+docs/content/manual/chart-views.cs.md
+  s_2a7edd0a1995cc::t_d5bad72c6f3fc4 1-21
+docs/content/manual/getting-started.fr.md
+  s_2a7edd0a1995cc::t_6159b2a7066aa3 1-26
+docs/content/guides/radix-features.es.md
+  s_2a7edd0a1995cc::t_4efc1e6ee8f3fe 1-16
+docs/content/guides/quickstart.md
+  s_2a7edd0a1995cc::t_dae50e45e85766 14
+docs/content/manual/settings-and-appearance.cs.md
+  s_2a7edd0a1995cc::t_a64e18a80b1638 1-13
+docs/content/_index.es.md
+  s_2a7edd0a1995cc::t_00a50d4f9f96b6 1-14
+docs/content/manual/_index.fr.md
+  s_2a7edd0a1995cc::t_0ab1e23fc16951 1-23
+docs/content/guides/preview-svelte.md
+  s_2a7edd0a1995cc::t_d2c999d6576d5d 12
+docs/content/guides/_index.fr.md
+  s_2a7edd0a1995cc::t_56a99356db6b44 1-27
+docs/content/guides/preview-react.fr.md
+  s_2a7edd0a1995cc::t_31b02e7348f4f3 1-14
+docs/content/guides/transit-computation.md
+  s_2a7edd0a1995cc::t_104c6b0c2821b0 14
+docs/content/guides/preview-svelte.es.md
+  s_2a7edd0a1995cc::t_916c92c5e882c7 1-14
+docs/content/guides/radix-features.fr.md
+  s_2a7edd0a1995cc::t_0b2d15a4bcaf3b 1-16
+docs/content/manual/transits-and-time.cs.md
+  s_2a7edd0a1995cc::t_3d19d9b6033d34 1-13
+docs/public/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css
+  s_2a7edd0a1995cc::t_27cd11327a6447 1
+docs/content/guides/radix-features.md
+  s_2a7edd0a1995cc::t_ea72de2637bbb9 14
+docs/layouts/_default/baseof.html
+  s_2a7edd0a1995cc::t_92112f3843acd3 24
+  s_2a7edd0a1995cc::t_66f119cb5e95cb 18-20
+  s_2a7edd0a1995cc::t_caa7fff2f10b0c 16-17,21-23,25-27
+  s_2a7edd0a1995cc::t_a9b2e5d8f6c395 2
+docs/content/manual/_index.md
+  s_2a7edd0a1995cc::t_e7f07f4a584d5e 23
+docs/content/guides/preview-svelte.cs.md
+  s_2a7edd0a1995cc::t_69e0c32ab2d282 1-14
+docs/content/guides/quickstart.fr.md
+  s_2a7edd0a1995cc::t_1f1b2e22abf753 1-16
+docs/content/manual/charts-and-workspaces.fr.md
+  s_2a7edd0a1995cc::t_d82885edb82972 1-23
+docs/i18n/es.toml
+  s_2a7edd0a1995cc::t_a896b5e0ced24d 1-11
+docs/i18n/fr.toml
+  s_2a7edd0a1995cc::t_1ad6e369960801 1-11
+docs/public/fr/index.html
+  s_2a7edd0a1995cc::t_27cd11327a6447 1-53
+  s_2a7edd0a1995cc::t_c50974206b668f 54-56
+docs/content/guides/settings.md
+  s_2a7edd0a1995cc::t_84d4c35694d35e 14
+docs/content/guides/settings.es.md
+  s_2a7edd0a1995cc::t_b99790fa6abfc8 1-16
+docs/layouts/shortcodes/appframe.html
+  s_2a7edd0a1995cc::t_9df163cc29c571 1-14
+  s_2a7edd0a1995cc::t_02bb05458d9c42 15
+docs/hugo.toml
+  s_2a7edd0a1995cc::t_f61f97809c5a59 6-10,13-14,17-18,21-22,25
+  s_2a7edd0a1995cc::t_b8412d04291b84 15-16,19-20,23-24
+  s_2a7edd0a1995cc::t_9310f0e858c5c6 11-12
+  s_2a7edd0a1995cc::t_e3f2ede60def9a 26
+docs/content/guides/transit-computation.fr.md
+  s_2a7edd0a1995cc::t_12d077e4360eec 1-16
+docs/content/guides/_index.cs.md
+  s_2a7edd0a1995cc::t_26859f930a93f0 1-27
+docs/content/guides/preview-svelte.fr.md
+  s_2a7edd0a1995cc::t_87688dc91d3ade 1-14
+docs/public/es/index.html
+  s_2a7edd0a1995cc::t_27cd11327a6447 1-53
+  s_2a7edd0a1995cc::t_d8d2fbab4f0ce5 54-56
+docs/content/guides/radix-features.cs.md
+  s_2a7edd0a1995cc::t_955c0c0ea79da7 1-16
+docs/content/guides/settings.fr.md
+  s_2a7edd0a1995cc::t_7e88fc30b88c05 1-16
+docs/content/guides/transit-computation.es.md
+  s_2a7edd0a1995cc::t_3c29a59541e2c9 1-16
+docs/content/manual/chart-views.es.md
+  s_2a7edd0a1995cc::t_bf94455a16e21f 1-21
+docs/content/manual/transits-and-time.fr.md
+  s_2a7edd0a1995cc::t_771fffd1196d22 1-13
+docs/i18n/cs.toml
+  s_2a7edd0a1995cc::t_d97404ae7f64f8 1-11
+docs/content/manual/settings-and-appearance.fr.md
+  s_2a7edd0a1995cc::t_70cb422a6dbbba 1-13
+docs/content/manual/chart-views.fr.md
+  s_2a7edd0a1995cc::t_7fb9a1b51e8d36 1-21
+docs/content/guides/transit-computation.cs.md
+  s_2a7edd0a1995cc::t_be523e7fbc4d0c 1-16
+docs/public/cs/index.html
+  s_2a7edd0a1995cc::t_27cd11327a6447 1-53
+  s_2a7edd0a1995cc::t_f0193eabe62a85 54-56
+docs/public/en/index.html
+  s_2a7edd0a1995cc::t_27cd11327a6447 1-9
+docs/content/guides/settings.cs.md
+  s_2a7edd0a1995cc::t_41c54b194b2da5 1-16
+docs/content/guides/quickstart.cs.md
+  s_2a7edd0a1995cc::t_b9f089ec4da1ba 1-16
+docs/assets/css/site.css
+  s_2a7edd0a1995cc::t_20c5a68603c594 78-107
+  s_2a7edd0a1995cc::t_338f546f3b8067 272-279
+  s_2a7edd0a1995cc::t_e9acc83b82dcbc 280
+docs/content/guides/quickstart.es.md
+  s_2a7edd0a1995cc::t_c3fb3f089c2fc8 1-16
+docs/content/guides/preview-react.cs.md
+  s_2a7edd0a1995cc::t_8c1dffa57eb2f1 1-14
+docs/content/guides/_index.es.md
+  s_2a7edd0a1995cc::t_928416324c9a94 1-27
+docs/content/guides/preview-react.es.md
+  s_2a7edd0a1995cc::t_df220cf70fec17 1-14
+docs/content/manual/getting-started.es.md
+  s_2a7edd0a1995cc::t_8597bcb3c22614 1-26
+docs/content/_index.cs.md
+  s_2a7edd0a1995cc::t_19c91577d55fa1 1-14
+docs/content/manual/transits-and-time.es.md
+  s_2a7edd0a1995cc::t_10035dad65718e 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "eb28f47786b1048fbaec66928da6301e7a70d8fe",
+  "prompts": {},
+  "sessions": {
+    "s_2a7edd0a1995cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "228809ae-ec58-4fd6-9b4c-774802ad634e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
