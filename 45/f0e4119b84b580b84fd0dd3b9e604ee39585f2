@@ -1,0 +1,357 @@
+docs/content/developer/discussion-summary.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-39
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3
+docs/content/developer/physical-properties.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-59
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3
+docs/content/developer/project-context.md
+  s_3798fde393dc45::t_702e0df73f7f22 15,23-24,33,35-36,83
+  s_3798fde393dc45::t_60e765a52c7e5b 1-14,16-22,25-32,34,38-82,84,89
+  s_3798fde393dc45::t_b64620c5b6ab5c 85-88
+  s_2a7edd0a1995cc::t_33650f20fc3c23 37
+docs/content/_index.md
+  s_2a7edd0a1995cc::t_3da65ebd86e60a 12
+  s_3798fde393dc45::t_8fd9af204ab305 2-3,6,8,10-11,14
+docs/public/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 4,7-9,11,16,18-20,28-29,32-33,35-37,39,45-47,50-57
+docs/public/developer/frontend-svelte/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-173
+  s_2a7edd0a1995cc::t_46c0441c47a731 15,17-18
+docs/content/developer/continuation-guide.md
+  s_3798fde393dc45::t_3ecbb92da8f35f 2
+  s_3798fde393dc45::t_60e765a52c7e5b 1,3-9,11,19,21-33
+  s_3798fde393dc45::t_702e0df73f7f22 10,12-18,20
+docs/public/developer/radix-render-contract/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-106
+  s_2a7edd0a1995cc::t_002afceff0a72c 15,17-18
+docs/content/developer/radix-render-contract.md
+  s_3798fde393dc45::t_3ecbb92da8f35f 2
+  s_3798fde393dc45::t_60e765a52c7e5b 1,3-75
+docs/content/manual/transits-and-time.md
+  s_3798fde393dc45::t_e559e05776ea02 1-13
+docs/content/developer/time-navigation.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-133
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3
+docs/public/guides/quickstart/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 1-48
+docs/public/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css
+  s_3798fde393dc45::t_c380b834a6bf26 1
+docs/public/developer/versioning/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-58
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_54a084722ea014 15,17-18
+docs/content/manual/_index.md
+  s_3798fde393dc45::t_3ab9eb0bfd2ecf 23
+  s_3798fde393dc45::t_e559e05776ea02 1-22
+docs/public/developer/chart-datetime-contract/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-83
+  s_2a7edd0a1995cc::t_aca780a79c2d58 15,17-18
+docs/public/guides/preview-react/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 1-46
+docs/public/manual/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-55
+  s_2a7edd0a1995cc::t_e28829d8f4b835 2,4-5,13-18
+docs/public/apps/web-react/assets/index-D6amVL8s.css
+  s_3798fde393dc45::t_58283a0ae7ba68 1-2
+docs/content/developer/backend-structure.md
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3,139-142,181-191,238-255
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-138,143-180,192-237,256-385
+docs/public/guides/transit-computation/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 1-48
+docs/public/developer/rust-workspace-contract/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-81
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_6f0b92d415e428 15,17-18
+docs/public/developer/frontend-react/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-157
+  s_2a7edd0a1995cc::t_ffe3a252af9d42 15,17-18
+docs/content/guides/_index.md
+  s_2a7edd0a1995cc::t_48657f67638240 1-27
+docs/public/apps/web-react/assets/ui-vendor-DxIMAbS-.js
+  s_3798fde393dc45::t_58283a0ae7ba68 1
+docs/public/developer/python-package/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-100
+  s_2a7edd0a1995cc::t_667686d5c28f9d 15,17-18
+docs/content/developer/ui-conventions.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-41,43-177
+  s_3798fde393dc45::t_b64620c5b6ab5c 42
+README.md
+  s_3798fde393dc45::t_6ddb59d856d7e8 11-15,38,58,92
+  s_3798fde393dc45::t_1d03d9fb448f76 56
+  s_3798fde393dc45::t_3ecbb92da8f35f 9-10,80-91,93-99
+  s_2a7edd0a1995cc::t_8881a1f779165a 7
+docs/content/developer/ephemeris-manager.md
+  s_3798fde393dc45::t_b64620c5b6ab5c 9
+  s_3798fde393dc45::t_60e765a52c7e5b 1-8,10-340
+docs/content/developer/development-driver.md
+  s_3798fde393dc45::t_3ecbb92da8f35f 2
+  s_3798fde393dc45::t_702e0df73f7f22 10,17,22
+  s_3798fde393dc45::t_60e765a52c7e5b 1,3-9,11-16,18-21,23-68
+docs/public/manual/transits-and-time/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-42
+  s_2a7edd0a1995cc::t_e9d91622b71946 2,4-5,13-18
+docs/public/apps/web-svelte/assets/index-DSDI-cUt.css
+  s_3798fde393dc45::t_58283a0ae7ba68 1-2
+docs/public/developer/project-context/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19,71
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-70,72-144
+  s_2a7edd0a1995cc::t_edc3733470f70a 15,17-18
+docs/content/developer/architecture.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-251
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3
+docs/content/developer/frontend-workflow-baseline.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-112
+docs/content/developer/python-package.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-74
+docs/public/developer/house-systems/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-194
+  s_2a7edd0a1995cc::t_32db4c55eafd98 15,17-18
+docs/hugo.toml
+  s_3798fde393dc45::t_8fd9af204ab305 2,8
+docs/content/manual/charts-and-workspaces.md
+  s_3798fde393dc45::t_e559e05776ea02 1-23
+docs/public/developer/specs-workflow/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-103
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_c5719efbc2de84 15,17-18
+docs/content/developer/_index.md
+  s_3798fde393dc45::t_75db64d601f28b 36
+  s_3798fde393dc45::t_e559e05776ea02 1-35,37-43
+docs/content/developer/frontend-svelte.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-14,16-148
+  s_3798fde393dc45::t_b64620c5b6ab5c 15
+docs/content/developer/tauri-command-contracts.md
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-323
+docs/content/developer/guided-tour.md
+  s_3798fde393dc45::t_75db64d601f28b 1-8,10,18-28,30-34,36-41
+  s_3798fde393dc45::t_3ab9eb0bfd2ecf 9,11-17,29,35
+docs/content/developer/lunar-phase.md
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3,15-22
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-8,10-14,23-48
+  s_3798fde393dc45::t_b64620c5b6ab5c 9
+docs/public/guides/preview-svelte/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 1-46
+docs/content/developer/import-chart-contract.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,3-64
+  s_3798fde393dc45::t_702e0df73f7f22 65
+  s_3798fde393dc45::t_3ecbb92da8f35f 2
+docs/content/developer/rust-workspace-contract.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-48
+docs/content/developer/versioning.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-30
+docs/public/developer/import-chart-contract/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-92
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_cc358b38adb5ea 15,17-18
+docs/public/developer/architecture/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_58283a0ae7ba68 99,109,112,115,178-181
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-98,100-108,110-111,113-114,116-177,182-262
+  s_2a7edd0a1995cc::t_e6b6803137b7f3 15,17-18
+docs/content/developer/frontend-react.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-136
+docs/content/developer/chart-datetime-contract.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,3-44
+  s_3798fde393dc45::t_3ecbb92da8f35f 2
+docs/layouts/_default/list.html
+  s_3798fde393dc45::t_bce2c3c44f54fc 11
+docs/public/developer/physical-properties/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-81
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_5f61f7ff1e1828 15,17-18
+docs/content/developer/frontend-gap-implementation-plan.md
+  s_3798fde393dc45::t_702e0df73f7f22 177
+  s_3798fde393dc45::t_60e765a52c7e5b 1-176
+docs/public/developer/ci-todo/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-71
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_936957d53b1a91 15,17-18
+docs/content/manual/chart-views.md
+  s_3798fde393dc45::t_e559e05776ea02 1-21
+docs/public/developer/discussion-summary/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-69
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_65a7a5d3aa4c1f 15,17-18
+docs/public/developer/backend-structure/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-32,35-48,75-76,80-81,85-88,103-118,121-124,127-128,130-132,141-157,165-252,254-255,259-260,264-265,269-278,283-285,308-310,312-317,321-322,326-337,340-341,351-353,355-356,358-385,387-404,406-421
+  s_3798fde393dc45::t_58283a0ae7ba68 33-34,74,77-79,82-84,101-102,119-120,125-126,129,139-140,164,253,256-258,261-263,266-268,279-280,306-307,311,318-320,323-325,338-339,347-350,354,357,386,405
+  s_2a7edd0a1995cc::t_af824d945b41f8 15,17-18,134-137,287-304
+docs/public/guides/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 1-54
+docs/content/developer/house-systems.md
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3,35-45
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-34,46-129
+docs/content/manual/settings-and-appearance.md
+  s_3798fde393dc45::t_e559e05776ea02 1-13
+docs/public/guides/radix-features/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 1-48
+docs/public/apps/web-react/assets/radix-vendor-D5335k7Y.js
+  s_3798fde393dc45::t_58283a0ae7ba68 1-45
+docs/public/developer/tauri-command-contracts/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-137,139-204,206-207,209-291,293-345
+  s_3798fde393dc45::t_58283a0ae7ba68 138,205,208,292
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_a90d340ca4fede 15,17-18
+docs/public/developer/time-navigation/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-152
+  s_2a7edd0a1995cc::t_a956256702c8d7 15,17-18
+docs/content/developer/specs-workflow.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,3-5,7-14,16-31,33,37-60,62-80
+  s_3798fde393dc45::t_3ecbb92da8f35f 2
+  s_3798fde393dc45::t_702e0df73f7f22 6,15,32,34-36,61
+docs/public/developer/guided-tour/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-63
+  s_2a7edd0a1995cc::t_0b5b1e17d4f167 2,4-5,13-18
+docs/public/manual/getting-started/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-57
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_e856ff59780711 2,4-5,13-18
+docs/public/manual/chart-views/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-46
+  s_2a7edd0a1995cc::t_8348da9885d49f 2,4-5,13-18
+docs/public/developer/lunar-phase/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-97
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_a3af9c6f84c6fb 15,17-18
+docs/public/developer/development-driver/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-115
+  s_2a7edd0a1995cc::t_1e2baa5bfbf314 15,17-18
+docs/public/developer/ephemeris-manager/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-42,58-228,233-243,252-510
+  s_3798fde393dc45::t_58283a0ae7ba68 45-51,230-232,246-250
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_527130c8910c90 15,17-18
+docs/public/developer/ui-conventions/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-233
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_e16154a993070d 15,17-18
+docs/content/developer/spice-backend.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1,4-146
+  s_3798fde393dc45::t_3ecbb92da8f35f 2-3
+docs/public/apps/web-svelte/assets/index-25TiOhLT.js
+  s_3798fde393dc45::t_58283a0ae7ba68 1
+docs/public/guides/settings/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 1-48
+docs/static/llms.txt
+  s_3798fde393dc45::t_702e0df73f7f22 1,4-10,14-15
+docs/content/developer/transit-series-contract.md
+  s_3798fde393dc45::t_b64620c5b6ab5c 12
+  s_3798fde393dc45::t_60e765a52c7e5b 1,3-11,13-83
+  s_3798fde393dc45::t_3ecbb92da8f35f 2
+docs/content/manual/getting-started.md
+  s_3798fde393dc45::t_e559e05776ea02 1-26
+docs/public/developer/spice-backend/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-154
+  s_2a7edd0a1995cc::t_b1a1ebc525938d 15,17-18
+docs/public/developer/transit-series-contract/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-109
+  s_2a7edd0a1995cc::t_f0e3ae628bc9af 15,17-18
+docs/content/guides/preview-svelte.md
+  s_2a7edd0a1995cc::t_4765739cbdb684 4-9
+  s_2a7edd0a1995cc::t_676c3f628f9740 1-3
+  s_2a7edd0a1995cc::t_5fd0643b52c863 10-12
+  s_2a7edd0a1995cc::t_b92f15f22517e7 13-16
+docs/public/manual/charts-and-workspaces/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-47
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_c4b1715d7a5c20 2,4-5,13-18
+docs/content/guides/preview-react.md
+  s_2a7edd0a1995cc::t_ef3fbd84231be3 4-9
+  s_2a7edd0a1995cc::t_2176de27520787 1-3
+  s_2a7edd0a1995cc::t_5d395b6ec400e8 10-12
+  s_2a7edd0a1995cc::t_dd2e7b19d62a3a 13-16
+docs/public/developer/frontend-gap-implementation-plan/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-224
+  s_2a7edd0a1995cc::t_992d8b0d887558 15,17-18
+docs/layouts/_default/baseof.html
+  s_3798fde393dc45::t_3d3bfeb279a1a1 6
+  s_3798fde393dc45::t_8fd9af204ab305 15,17-18
+  s_2a7edd0a1995cc::t_89622a298355dd 19
+  s_3798fde393dc45::t_b9892ed7626e17 8
+docs/assets/css/site.css
+  s_3798fde393dc45::t_d8f9bbc9ebf176 101,113
+  s_3798fde393dc45::t_02f7c47fa1b25c 44,48,59,68-69,201-232
+  s_3798fde393dc45::t_8fd9af204ab305 193,234
+  s_3798fde393dc45::t_8abc10d8ecd15f 63,75,194-200,235-239,250-253
+  s_3798fde393dc45::t_0a15d9b0b79327 233,254
+docs/public/developer/continuation-guide/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-67
+  s_2a7edd0a1995cc::t_d87ddcc8fbd2ca 15,17-18
+docs/public/developer/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-76
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_18eac992346c47 15,17-18
+docs/public/manual/settings-and-appearance/index.html
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-42
+  s_2a7edd0a1995cc::t_f063c7520e4593 2,4-5,13-18
+docs/public/developer/frontend-workflow-baseline/index.html
+  s_3798fde393dc45::t_3b9476d2505945 1,6-12,20-155
+  s_2a7edd0a1995cc::t_1e18f5186f6dec 3,19
+  s_2a7edd0a1995cc::t_59b83081d08067 15,17-18
+docs/content/developer/ci-todo.md
+  s_3798fde393dc45::t_60e765a52c7e5b 1-45
+docs/content/guides/quickstart.md
+  s_2a7edd0a1995cc::t_1d759b44d09e86 1-18
+docs/content/guides/radix-features.md
+  s_2a7edd0a1995cc::t_3f162288288be5 1-18
+docs/content/guides/settings.md
+  s_2a7edd0a1995cc::t_23bb12593b68b5 1-18
+docs/content/guides/transit-computation.md
+  s_2a7edd0a1995cc::t_9101628f749639 1-18
+docs/public/apps/web-react/assets/index-Do6MAnx2.js
+  s_2a7edd0a1995cc::t_365ba7576aa8a9 1
+docs/public/apps/web-react/index.html
+  s_2a7edd0a1995cc::t_fcec562c7a5532 14,17-18,21
+docs/public/apps/web-svelte/index.html
+  s_2a7edd0a1995cc::t_27651f2d573682 8,13
+docs/public/llms.txt
+  s_2a7edd0a1995cc::t_c509e51b83ae65 1,4-10,14-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "45f0e4119b84b580b84fd0dd3b9e604ee39585f2",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2a7edd0a1995cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "228809ae-ec58-4fd6-9b4c-774802ad634e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_3798fde393dc45": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02b36-65a9-7682-b604-abf2b83a40e7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
