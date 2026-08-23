@@ -1,8 +1,28 @@
 baseURL = "/"
 title = "Kefer Astrology"
-locale = "en-US"
 disableKinds = ["taxonomy", "term", "rss", "sitemap"]
 staticDir = ["static", "../static"]
+
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
+
+[languages]
+  [languages.en]
+    label = "English"
+    locale = "en-US"
+    weight = 1
+  [languages.cs]
+    label = "Čeština"
+    locale = "cs-CZ"
+    weight = 2
+  [languages.es]
+    label = "Español"
+    locale = "es-ES"
+    weight = 3
+  [languages.fr]
+    label = "Français"
+    locale = "fr-FR"
+    weight = 4
 
 [params]
   description = "The Kefer Astrology manual, developer reference, and guided product tour."

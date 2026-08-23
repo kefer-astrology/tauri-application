@@ -20,4 +20,4 @@ The Manual describes Kefer Astrology from the user’s point of view. You do not
 
 - **[Settings and appearance](./settings-and-appearance/)** — choose language, visual themes, glyphs, objects, aspects, and calculation defaults.
 
-If you prefer to learn by exploring the interface, choose one of the **[Guided Tours](../tour/)**.
+If you prefer to learn by exploring the interface, open the **[Guides](../guides/)** for a free preview or a scripted walkthrough.

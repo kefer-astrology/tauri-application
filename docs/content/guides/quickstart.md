@@ -11,8 +11,6 @@ weight: 10
   <a href="../settings/">Settings</a>
 </nav>
 
-<div class="tour-stage">
-  <iframe class="tour-frame" src="../../apps/web-react/?tour=quickstart" title="Kefer Astrology Quickstart tour" loading="eager"></iframe>
-</div>
+{{< appframe app="web-react" tour="quickstart" title="Kefer Astrology Quickstart tour" >}}
 
 This browser-safe scenario introduces navigation and chart creation. Native file dialogs and durable workspace persistence require the desktop application.

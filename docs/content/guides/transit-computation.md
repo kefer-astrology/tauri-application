@@ -11,8 +11,6 @@ weight: 30
   <a href="../settings/">Settings</a>
 </nav>
 
-<div class="tour-stage">
-  <iframe class="tour-frame" src="../../apps/web-react/?tour=transits" title="Kefer Astrology transit computation tour" loading="eager"></iframe>
-</div>
+{{< appframe app="web-react" tour="transits" title="Kefer Astrology transit computation tour" >}}
 
 The tour explains the computation workflow without submitting a backend calculation. Actual transit results require the supported desktop computation path.

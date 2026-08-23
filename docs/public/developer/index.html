@@ -1,23 +1,30 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Developer Manual | Kefer Astrology</title>
     <meta name="description" content="Architecture, contracts, implementation guidance, and project direction for people and coding agents." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+    <link rel="stylesheet" href="/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css" integrity="sha256-OAfbqZKJaBkqBpUre/S5HixSCIiVbh6YvTdTpnVh48c=" />
   </head>
   <body>
     <div class="shell">
       <header class="site-header">
         <a class="brand" href="/">Kefer Astrology</a>
-        <nav class="top-nav" aria-label="Primary">
-          <a href="/manual/">Manual</a>
-          <a href="/developer/">Developer Manual</a>
-          <a href="/guides/">Guides</a>
-        </nav>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/developer/" aria-current="page">English</a>
+            
+          </nav>
+        </div>
       </header>
       <main>
         
@@ -31,39 +38,39 @@
       <p>The Developer Manual is the shared technical source of truth for contributors and coding agents. Read normative contracts before inferring behavior from an implementation or historical note.</p>
 <h2 id="start-here">Start here</h2>
 <ul>
-<li><strong><a href="./project-context/">Project context</a></strong> — repository shape, technology choices, and reliable entry points.</li>
-<li><strong><a href="./development-driver/">Development driver</a></strong> — current direction and definition of done.</li>
-<li><strong><a href="./specs-workflow/">Contract workflow</a></strong> — how to distinguish binding behavior from guidance and plans.</li>
-<li><strong><a href="./continuation-guide/">Continuation guide</a></strong> — the shortest safe path for resuming work.</li>
+<li><strong><a href="/developer/project-context/">Project context</a></strong> — repository shape, technology choices, and reliable entry points.</li>
+<li><strong><a href="/developer/development-driver/">Development driver</a></strong> — current direction and definition of done.</li>
+<li><strong><a href="/developer/specs-workflow/">Contract workflow</a></strong> — how to distinguish binding behavior from guidance and plans.</li>
+<li><strong><a href="/developer/continuation-guide/">Continuation guide</a></strong> — the shortest safe path for resuming work.</li>
 </ul>
 <h2 id="contracts">Contracts</h2>
 <ul>
-<li><strong><a href="./tauri-command-contracts/">Tauri command contracts</a></strong> — frontend-facing native commands.</li>
-<li><strong><a href="./rust-workspace-contract/">Rust workspace contract</a></strong> — persistence and no-sidecar rules.</li>
-<li><strong><a href="./frontend-workflow-baseline/">Frontend workflow baseline</a></strong> — workflows both frontends are measured against.</li>
-<li><strong><a href="./chart-datetime-contract/">Chart datetime contract</a></strong> — canonical timestamps.</li>
-<li><strong><a href="./transit-series-contract/">Transit series contract</a></strong> — transit computation payload and result.</li>
-<li><strong><a href="./import-chart-contract/">Import chart contract</a></strong> — supported import behavior.</li>
-<li><strong><a href="./radix-render-contract/">Radix render contract</a></strong> — computed output required for a radix view.</li>
+<li><strong><a href="/developer/tauri-command-contracts/">Tauri command contracts</a></strong> — frontend-facing native commands.</li>
+<li><strong><a href="/developer/rust-workspace-contract/">Rust workspace contract</a></strong> — persistence and no-sidecar rules.</li>
+<li><strong><a href="/developer/frontend-workflow-baseline/">Frontend workflow baseline</a></strong> — workflows both frontends are measured against.</li>
+<li><strong><a href="/developer/chart-datetime-contract/">Chart datetime contract</a></strong> — canonical timestamps.</li>
+<li><strong><a href="/developer/transit-series-contract/">Transit series contract</a></strong> — transit computation payload and result.</li>
+<li><strong><a href="/developer/import-chart-contract/">Import chart contract</a></strong> — supported import behavior.</li>
+<li><strong><a href="/developer/radix-render-contract/">Radix render contract</a></strong> — computed output required for a radix view.</li>
 </ul>
 <h2 id="architecture-and-computation">Architecture and computation</h2>
 <ul>
-<li><strong><a href="./architecture/">System architecture</a></strong> and <strong><a href="./backend-structure/">backend structure</a></strong> describe system boundaries and data ownership.</li>
-<li><strong><a href="./spice-backend/">SPICE backend</a></strong>, <strong><a href="./ephemeris-manager/">ephemeris manager</a></strong>, and <strong><a href="./python-package/">Python package</a></strong> describe computation backends.</li>
-<li><strong><a href="./house-systems/">House systems</a></strong>, <strong><a href="./lunar-phase/">lunar phase</a></strong>, and <strong><a href="./physical-properties/">physical properties</a></strong> document domain calculations and data.</li>
+<li><strong><a href="/developer/architecture/">System architecture</a></strong> and <strong><a href="/developer/backend-structure/">backend structure</a></strong> describe system boundaries and data ownership.</li>
+<li><strong><a href="/developer/spice-backend/">SPICE backend</a></strong>, <strong><a href="/developer/ephemeris-manager/">ephemeris manager</a></strong>, and <strong><a href="/developer/python-package/">Python package</a></strong> describe computation backends.</li>
+<li><strong><a href="/developer/house-systems/">House systems</a></strong>, <strong><a href="/developer/lunar-phase/">lunar phase</a></strong>, and <strong><a href="/developer/physical-properties/">physical properties</a></strong> document domain calculations and data.</li>
 </ul>
 <h2 id="frontend-and-interface">Frontend and interface</h2>
 <ul>
-<li><strong><a href="./frontend-react/">React frontend</a></strong> — the primary desktop interface.</li>
-<li><strong><a href="./frontend-svelte/">Svelte frontend</a></strong> — the alternate implementation and parity surface.</li>
-<li><strong><a href="./guided-tour/">Guided Tour contract</a></strong> — tour mode, stable anchors, and overlay behavior.</li>
-<li><strong><a href="./ui-conventions/">UI conventions</a></strong> and <strong><a href="./time-navigation/">time navigation</a></strong> — shared interaction rules.</li>
+<li><strong><a href="/developer/frontend-react/">React frontend</a></strong> — the primary desktop interface.</li>
+<li><strong><a href="/developer/frontend-svelte/">Svelte frontend</a></strong> — the alternate implementation and parity surface.</li>
+<li><strong><a href="/developer/guided-tour/">Guided Tour contract</a></strong> — tour mode, stable anchors, and overlay behavior.</li>
+<li><strong><a href="/developer/ui-conventions/">UI conventions</a></strong> and <strong><a href="/developer/time-navigation/">time navigation</a></strong> — shared interaction rules.</li>
 </ul>
 <h2 id="plans-automation-and-historical-context">Plans, automation, and historical context</h2>
 <ul>
-<li><strong><a href="./frontend-gap-implementation-plan/">Frontend gap implementation plan</a></strong> and <strong><a href="./ci-todo/">CI todo</a></strong> are forward-looking work plans, not current contracts.</li>
-<li><strong><a href="./versioning/">Versioning</a></strong> defines the release-number policy.</li>
-<li><strong><a href="./discussion-summary/">Discussion summary</a></strong> preserves historical context and is explicitly non-normative.</li>
+<li><strong><a href="/developer/frontend-gap-implementation-plan/">Frontend gap implementation plan</a></strong> and <strong><a href="/developer/ci-todo/">CI todo</a></strong> are forward-looking work plans, not current contracts.</li>
+<li><strong><a href="/developer/versioning/">Versioning</a></strong> defines the release-number policy.</li>
+<li><strong><a href="/developer/discussion-summary/">Discussion summary</a></strong> preserves historical context and is explicitly non-normative.</li>
 </ul>
 
     </div>

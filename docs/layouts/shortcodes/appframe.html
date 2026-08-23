@@ -1,0 +1,15 @@
+{{- $app := .Get "app" -}}
+{{- $tour := .Get "tour" -}}
+{{- $title := .Get "title" | default (printf "Kefer Astrology %s" $app) -}}
+{{- $lang := .Page.Language.Lang -}}
+{{- $base := printf "apps/%s/" $app | relURL -}}
+{{- $params := slice -}}
+{{- if $tour }}{{ $params = $params | append (printf "tour=%s" $tour) }}{{ end -}}
+{{- if $lang }}{{ $params = $params | append (printf "lang=%s" $lang) }}{{ end -}}
+{{- $query := "" -}}
+{{- if gt (len $params) 0 }}{{ $query = printf "?%s" (delimit $params "&") }}{{ end -}}
+{{- $src := printf "%s%s" $base $query -}}
+<div class="tour-stage">
+  <iframe class="tour-frame" src="{{ $src }}" title="{{ $title }}" loading="eager"></iframe>
+</div>
+<p class="tour-fullpage"><a href="{{ $src }}" target="_blank" rel="noopener">{{ i18n "open_full_page" }}</a></p>

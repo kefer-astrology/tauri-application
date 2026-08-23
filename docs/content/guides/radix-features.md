@@ -11,8 +11,6 @@ weight: 20
   <a href="../settings/">Settings</a>
 </nav>
 
-<div class="tour-stage">
-  <iframe class="tour-frame" src="../../apps/web-react/?tour=radix" title="Kefer Astrology radix features tour" loading="eager"></iframe>
-</div>
+{{< appframe app="web-react" tour="radix" title="Kefer Astrology radix features tour" >}}
 
 The browser build demonstrates the full radix workspace structure. Calculated values depend on the available browser-safe demonstration data.
