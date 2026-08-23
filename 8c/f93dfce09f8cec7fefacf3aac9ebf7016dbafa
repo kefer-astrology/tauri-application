@@ -1,0 +1,55 @@
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_3798fde393dc45::t_bf94fb3540c513 438,444,537,666-669,699
+apps/web-react/src/app/components/secondary-nav-panel.tsx
+  s_3798fde393dc45::t_bf94fb3540c513 41,65
+apps/web-react/src/app/components/guided-tour.tsx
+  s_3798fde393dc45::t_3ecbb92da8f35f 272,292,294
+  s_3798fde393dc45::t_071500b0644fbf 12-50,52-86,88-105,108-138,140-190,192,194-197,201-202,205-207,210,236,240,246,253-256,262,286,291,293,312,316
+  s_3798fde393dc45::t_487a45f97a9e75 1-8,10-11,51,87,139,191,193,198-200,203-204,208-209,211-212,216-235,237-239,241-245,247-252,257-261,263-271,273-285,287-290,295-311,313-315,317-323
+  s_3798fde393dc45::t_d403c358d4c78b 9,106-107,213-215
+apps/web-react/src/app/components/astrology-sidebar.tsx
+  s_3798fde393dc45::t_3ecbb92da8f35f 62-63,68-69,77-78,83-84,92-93,98-99,107-108,113-114,205,212,222-224,227,229-232,262,292,324,344,348,368-374,376-378,385,396-403
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_3798fde393dc45::t_196989f319c82b 850-851
+  s_3798fde393dc45::t_5fada31a8acc2c 641-645,648-652,660,663,667-677,849,865-866,881
+  s_3798fde393dc45::t_df95ea819c2f9c 1299,1302-1306
+apps/web-react/src/app/App.tsx
+  s_3798fde393dc45::t_487a45f97a9e75 25,723
+  s_2a7edd0a1995cc::t_ebc81ce6098760 231
+  s_3798fde393dc45::t_3ecbb92da8f35f 135-136
+  s_2a7edd0a1995cc::t_3df20cc2b704dd 474,477
+apps/web-react/src/app/components/transits-content.tsx
+  s_3798fde393dc45::t_3b2759e41fc4f7 596
+  s_3798fde393dc45::t_bf94fb3540c513 331
+apps/web-react/src/app/components/horoscope-context-tabs.tsx
+  s_3798fde393dc45::t_bf94fb3540c513 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "8cf93dfce09f8cec7fefacf3aac9ebf7016dbafa",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2a7edd0a1995cc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "228809ae-ec58-4fd6-9b4c-774802ad634e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_3798fde393dc45": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02b36-65a9-7682-b604-abf2b83a40e7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
