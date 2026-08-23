@@ -21,7 +21,7 @@
           </nav>
           <nav class="lang-switch" aria-label="Language">
             {{ range .AllTranslations }}
-              <a href="{{ .RelPermalink }}" {{ if eq .Lang $.Lang }}aria-current="page"{{ end }}>{{ .Language.Label }}</a>
+              <a href="{{ .RelPermalink }}" {{ if eq .Lang $.Lang }}aria-current="page"{{ end }}>{{ .Language.LanguageName }}</a>
             {{ end }}
           </nav>
         </div>
