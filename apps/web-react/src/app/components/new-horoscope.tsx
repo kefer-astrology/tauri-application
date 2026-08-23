@@ -638,10 +638,18 @@ export function NewHoroscope({
 		() => initialValues?.timeRegime ?? (initialValues?.timezone ? 'manual' : 'auto')
 	);
 	const [latitude, setLatitude] = useState(() =>
-		initialValues?.latitude != null ? formatCoordinateMagnitude(initialValues.latitude) : ''
+		initialValues
+			? initialValues.latitude != null
+				? formatCoordinateMagnitude(initialValues.latitude)
+				: ''
+			: formatCoordinateMagnitude(workspaceDefaults.locationLatitude)
 	);
 	const [longitude, setLongitude] = useState(() =>
-		initialValues?.longitude != null ? formatCoordinateMagnitude(initialValues.longitude) : ''
+		initialValues
+			? initialValues.longitude != null
+				? formatCoordinateMagnitude(initialValues.longitude)
+				: ''
+			: formatCoordinateMagnitude(workspaceDefaults.locationLongitude)
 	);
 	const [timezone, setTimezone] = useState(() => initialTimezone ?? '');
 	const [timezoneRegionValue, setTimezoneRegionValue] = useState(() =>
@@ -649,14 +657,24 @@ export function NewHoroscope({
 	);
 	const [utcOffset, setUtcOffset] = useState(() => initialValues?.utcOffset ?? 'auto');
 	const [latitudeDir, setLatitudeDir] = useState<LatDir>(() =>
-		(initialValues?.latitude ?? 0) >= 0 ? 'north' : 'south'
+		(initialValues?.latitude ?? workspaceDefaults.locationLatitude) >= 0 ? 'north' : 'south'
 	);
 	const [longitudeDir, setLongitudeDir] = useState<LonDir>(() =>
-		(initialValues?.longitude ?? 0) >= 0 ? 'east' : 'west'
+		(initialValues?.longitude ?? workspaceDefaults.locationLongitude) >= 0 ? 'east' : 'west'
 	);
 	const [rodenRating, setRodenRating] = useState(() => initialValues?.rodenRating ?? '');
 	const [isResolvingLocation, setIsResolvingLocation] = useState(false);
-	const [resolvedLocationValue, setResolvedLocationValue] = useState('');
+	const [resolvedLocationValue, setResolvedLocationValue] = useState(() => {
+		if (initialValues) {
+			return initialValues.latitude != null && initialValues.longitude != null
+				? initialValues.location
+				: '';
+		}
+		return Number.isFinite(workspaceDefaults.locationLatitude) &&
+			Number.isFinite(workspaceDefaults.locationLongitude)
+			? workspaceDefaults.locationName
+			: '';
+	});
 
 	const timezonesInRegion = useMemo(
 		() => TIMEZONES.filter((candidate) => timezoneMatchesRegion(candidate, timezoneRegionValue)),
@@ -828,6 +846,9 @@ export function NewHoroscope({
 		let resolvedLongitude = longitude;
 		let resolvedLatitudeDir = latitudeDir;
 		let resolvedLongitudeDir = longitudeDir;
+		let resolvedTimezone = timezone;
+		let hasResolvedLocation =
+			locationRegime === 'auto' && resolvedLocationValue === currentLocationQuery;
 
 		if (
 			locationRegime === 'auto' &&
@@ -841,6 +862,8 @@ export function NewHoroscope({
 			resolvedLongitude = formatCoordinateMagnitude(resolved.longitude);
 			resolvedLatitudeDir = resolved.latitude >= 0 ? 'north' : 'south';
 			resolvedLongitudeDir = resolved.longitude >= 0 ? 'east' : 'west';
+			resolvedTimezone = resolved.timezone;
+			hasResolvedLocation = true;
 		}
 
 		const latitudeValue = signedCoordinate(resolvedLatitude, 'north', resolvedLatitudeDir);
@@ -855,8 +878,7 @@ export function NewHoroscope({
 			return;
 		}
 
-		let resolvedTimezone = timezone;
-		if (timeRegime === 'auto') {
+		if (timeRegime === 'auto' && (!hasResolvedLocation || !resolvedTimezone)) {
 			try {
 				resolvedTimezone = await resolveTimezone(latitudeValue, longitudeValue);
 				setTimezone(resolvedTimezone);
@@ -1274,9 +1296,14 @@ export function NewHoroscope({
 							type="button"
 							variant="ghost"
 							className={cn(ft.footerPrimary, !isEditMode && 'flex-1')}
+							disabled={isResolvingLocation}
 							onClick={() => void handleCreate()}
 						>
-							{isEditMode ? t('edit_save_submit') : t('new_create_submit')}
+							{isResolvingLocation
+								? t('new_resolving_location')
+								: isEditMode
+									? t('edit_save_submit')
+									: t('new_create_submit')}
 						</Button>
 					</div>
 				</div>

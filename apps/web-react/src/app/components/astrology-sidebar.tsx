@@ -59,12 +59,14 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		bg: '',
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
-		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		hover:
+			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',
 		customStyle: {
-			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			background:
+				'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
 			borderColor: 'var(--theme-sidebar-border)'
 		}
 	},
@@ -72,12 +74,14 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		bg: '',
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
-		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		hover:
+			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',
 		customStyle: {
-			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			background:
+				'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
 			borderColor: 'var(--theme-sidebar-border)'
 		}
 	},
@@ -85,12 +89,14 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		bg: '',
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
-		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		hover:
+			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',
 		customStyle: {
-			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			background:
+				'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
 			borderColor: 'var(--theme-sidebar-border)'
 		}
 	},
@@ -98,12 +104,14 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		bg: '',
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
-		hover: 'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+		hover:
+			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',
 		customStyle: {
-			background: 'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
+			background:
+				'linear-gradient(to bottom, var(--theme-main-sidebar-start) 0%, var(--theme-main-sidebar-end) 100%)',
 			borderColor: 'var(--theme-sidebar-border)'
 		}
 	}
@@ -194,15 +202,14 @@ export function AstrologySidebar({
 
 	return (
 		<aside
+			data-tour="app-shell"
 			className={cn(
 				'flex h-screen flex-col border-r transition-all duration-300 ease-in-out',
 				themeStyle.bg,
 				themeStyle.border,
 				isExpanded ? 'w-[220px]' : 'w-16'
 			)}
-			style={
-				{ paddingTop: '12px', ...themeStyle.customStyle }
-			}
+			style={{ paddingTop: '12px', ...themeStyle.customStyle }}
 		>
 			{/* Logo Area */}
 			<div className="mb-2.5 px-3">
@@ -212,21 +219,17 @@ export function AstrologySidebar({
 						isExpanded ? 'justify-start px-2.5' : 'justify-center'
 					)}
 				>
-						{isExpanded ? (
-							<div className={cn('flex items-center gap-2.5', themeStyle.text)}>
-								<AppShellLogoFull
-									iconSet={appShellIconSet}
-									className={themeStyle.text}
-									iconSize={32}
-								/>
-							</div>
-						) : (
-							<AppShellLogoMark
+					{isExpanded ? (
+						<div className={cn('flex items-center gap-2.5', themeStyle.text)}>
+							<AppShellLogoFull
 								iconSet={appShellIconSet}
 								className={themeStyle.text}
-								size={32}
+								iconSize={32}
 							/>
-						)}
+						</div>
+					) : (
+						<AppShellLogoMark iconSet={appShellIconSet} className={themeStyle.text} size={32} />
+					)}
 				</div>
 			</div>
 
@@ -256,6 +259,7 @@ export function AstrologySidebar({
 					return (
 						<Button
 							key={item.id}
+							data-tour={`nav-${item.id}`}
 							variant="ghost"
 							onClick={() => {
 								onMenuItemClick?.(item.id);
@@ -285,6 +289,7 @@ export function AstrologySidebar({
 					return (
 						<Button
 							key={item.id}
+							data-tour={`nav-${item.id}`}
 							variant="ghost"
 							onClick={() => {
 								onMenuItemClick?.(item.id);
@@ -316,6 +321,7 @@ export function AstrologySidebar({
 					return (
 						<Button
 							key={item.id}
+							data-tour={`nav-${item.id}`}
 							variant="ghost"
 							onClick={() => {
 								onMenuItemClick?.(item.id);
@@ -335,12 +341,11 @@ export function AstrologySidebar({
 
 				{/* Theme Switcher */}
 				{isExpanded ? (
-					<div className="pt-1">
+					<div className="pt-1" data-tour="theme-switcher">
 						<div
 							className="bg-opacity-50 flex items-center justify-between gap-0.5 rounded-md px-1.5 py-1.5"
 							style={{
-								backgroundColor:
-									'var(--theme-soft-bg)'
+								backgroundColor: 'var(--theme-soft-bg)'
 							}}
 						>
 							{themeOrder.map((themeKey) => {
@@ -360,21 +365,24 @@ export function AstrologySidebar({
 												: cn('hover:bg-opacity-50', themeStyle.hover)
 										)}
 										title={themeLabels[themeKey]}
+									>
+										<span
+											style={{
+												color: isSelected
+													? 'var(--theme-nav-text-primary)'
+													: themeStyle.themeIconColor
+											}}
 										>
-											<span
-												style={{
-													color: isSelected ? 'var(--theme-nav-text-primary)' : themeStyle.themeIconColor
-												}}
-											>
-												{renderThemeIcon(themeIconId, themeLabels[themeKey])}
-											</span>
-										</Button>
+											{renderThemeIcon(themeIconId, themeLabels[themeKey])}
+										</span>
+									</Button>
 								);
 							})}
 						</div>
 					</div>
 				) : (
 					<Button
+						data-tour="theme-switcher"
 						onClick={cycleTheme}
 						variant="ghost"
 						size="icon"
@@ -385,14 +393,14 @@ export function AstrologySidebar({
 							'mx-auto h-11 w-11 px-0 py-0'
 						)}
 						title={t('sidebar_theme_cycle_hint', { theme: themeLabels[currentTheme] })}
-						>
-							<span style={{ color: themeStyle.themeIconColor }}>
-								{renderThemeIcon(
-									`theme-${currentTheme}` as AppShellIconId,
-									themeLabels[currentTheme]
-								)}
-							</span>
-						</Button>
+					>
+						<span style={{ color: themeStyle.themeIconColor }}>
+							{renderThemeIcon(
+								`theme-${currentTheme}` as AppShellIconId,
+								themeLabels[currentTheme]
+							)}
+						</span>
+					</Button>
 				)}
 			</div>
 		</aside>
