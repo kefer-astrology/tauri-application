@@ -1,11 +1,11 @@
 baseURL = "/"
-title = "Kefer docs"
+title = "Kefer Astrology"
 locale = "en-US"
 disableKinds = ["taxonomy", "term", "rss", "sitemap"]
 staticDir = ["static", "../static"]
 
 [params]
-  description = "Project documentation, published frontend builds, and LLM handoff context for the Kefer astrology monorepo."
+  description = "The Kefer Astrology manual, developer reference, and guided product tour."
 
 [markup]
   [markup.goldmark]

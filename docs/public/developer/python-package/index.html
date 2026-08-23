@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Python package | Kefer Astrology</title>
+    <meta name="description" content="Reference for the optional Python backend package and its role in the current architecture." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Python package</h1>
+      <p class="lede">Reference for the optional Python backend package and its role in the current architecture.</p>
+    </header>
+    <div class="prose">
+      <p>The Python package is an optional computation backend used by the Tauri app.</p>
+<p>Some checkouts may omit the <code>backend-python/</code> source tree and run through the Rust/no-sidecar path. Treat this page as the contract for that optional sidecar, not as a required baseline for every local checkout.</p>
+<p>It should be treated as:</p>
+<ul>
+<li>a compatibility path</li>
+<li>a backend-specific integration surface</li>
+<li>a validation path while backend-neutral Rust layers mature</li>
+</ul>
+<p>It should not be treated as the sole owner of astrology semantics.</p>
+<h2 id="current-role">Current role</h2>
+<ul>
+<li>Tauri can route chart and transit computation to Python</li>
+<li>Python remains optional rather than foundational</li>
+<li>backend provenance should make Python-vs-Rust routing visible to callers</li>
+</ul>
+<h2 id="current-implemented-seams">Current implemented seams</h2>
+<p>Implemented or effectively present today:</p>
+<ul>
+<li><code>compute_positions_for_chart(...)</code></li>
+<li><code>compute_chart_data_for_chart(...)</code></li>
+<li><code>compute_aspects_for_chart(...)</code></li>
+<li>Python transit-series responses with provenance-oriented metadata</li>
+<li>JPL-backed Python chart data with <code>positions</code>, <code>axes</code>, <code>house_cusps</code>, and <code>warnings</code></li>
+</ul>
+<h2 id="contract-expectations">Contract expectations</h2>
+<p>Python-backed chart responses should align with the shared frontend/backend expectations:</p>
+<ul>
+<li>stable chart identity</li>
+<li>normalized <code>positions</code></li>
+<li><code>axes</code> when available</li>
+<li><code>house_cusps</code> when available</li>
+<li><code>warnings</code></li>
+<li>provenance fields such as <code>backend_used</code>, <code>fallback_used</code>, and <code>ephemeris_source</code></li>
+</ul>
+<h2 id="data-shape-notes">Data-shape notes</h2>
+<ul>
+<li>non-JPL paths may still be simpler</li>
+<li>JPL-backed paths should expose richer astronomy fields when available</li>
+<li>datetime handling must preserve the represented instant for offset-aware inputs</li>
+<li>outputs must stay JSON-serializable for Tauri transport</li>
+</ul>
+<h2 id="runtime-integration-rules">Runtime integration rules</h2>
+<ul>
+<li>Python communicates with Tauri through structured JSON</li>
+<li>frontend code should never talk to Python directly</li>
+<li>the Python path should not be allowed to silently redefine frontend-facing contracts independently of Rust</li>
+</ul>
+<h2 id="current-limitations">Current limitations</h2>
+<ul>
+<li>Rust storage compatibility commands are still no-op and do not persist computed data coming from Python</li>
+<li>some seam validation is still incomplete</li>
+<li>revolution computation is still not implemented</li>
+<li>end-to-end confidence still depends on a provisioned Python environment</li>
+</ul>
+<h2 id="design-rule">Design rule</h2>
+<p>Keep astrology semantics portable. Python may implement backend-specific details, but chart semantics such as zodiac policy, house interpretation, aspect defaults, and tradition behavior should not become Python-only knowledge.</p>
+<h2 id="related-docs">Related docs</h2>
+<ul>
+<li><a href="../architecture/">architecture</a> — app-level routing and backend boundaries</li>
+<li><a href="../spice-backend/">spice-backend</a> — JPL/SPICE backend boundary</li>
+<li><a href="../tauri-command-contracts/">tauri-command-contracts</a> — frontend-visible command contract</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

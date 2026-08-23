@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Time navigation | Kefer Astrology</title>
+    <meta name="description" content="Current reference for time navigation behavior and state." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Time navigation</h1>
+      <p class="lede">Current reference for time navigation behavior and state.</p>
+    </header>
+    <div class="prose">
+      <p>Time navigation exists to support:</p>
+<ul>
+<li>precise stepping through computed chart states</li>
+<li>quick movement through a defined time range</li>
+<li>transit browsing over intervals</li>
+<li>Astrolabe-style time shifting</li>
+</ul>
+<p>For frontend-specific implementation status, see <a href="../frontend-react/">frontend-react</a> or <a href="../frontend-svelte/">frontend-svelte</a>.</p>
+<h2 id="core-behavior">Core behavior</h2>
+<ul>
+<li>stepping units should include <code>seconds</code>, <code>minutes</code>, <code>hours</code>, and <code>days</code> (ideally also <code>months</code> and <code>years</code>)</li>
+<li>default step is typically <code>1 hour</code> (should be a workspace parameter)</li>
+<li>navigation actions should include <code>first</code>, <code>previous</code>, <code>next</code>, <code>last</code>, and <code>now</code></li>
+<li>users should be able to define a <code>start</code> and <code>end</code> time range through normalized selectors (specific for date and time adjust)</li>
+</ul>
+<h2 id="frontend-vs-backend-handling">Frontend vs backend handling</h2>
+<p>Time navigation is split across both layers:</p>
+<p><strong>Frontend responsibilities</strong></p>
+<ul>
+<li>keep the current navigation state</li>
+<li>apply local step changes and range clamps</li>
+<li>drive the visible controls for step size, range, and shift</li>
+<li>decide when a view should recompute</li>
+</ul>
+<p><strong>Backend responsibilities</strong></p>
+<ul>
+<li>parse incoming datetime strings for compute commands</li>
+<li>validate transit ranges and step size</li>
+<li>perform the actual time-series computation</li>
+<li>return normalized timestamps in compute results</li>
+</ul>
+<p>In other words, the frontend owns navigation intent and UI state; Tauri owns computation and final datetime validation.</p>
+<h2 id="current-implementation-direction">Current implementation direction</h2>
+<ul>
+<li>Svelte already supports UTC-safe stepping for the main navigation path</li>
+<li>Svelte already supports an Astrolabe-style shift model layered on top of current time</li>
+<li>React should follow the same behavior contract even where the exact UI differs</li>
+<li>Svelte query helpers now route through <code>src/lib/tauri/workspace.ts</code>, with in-memory fallback rendering when persisted query rows are unavailable</li>
+</ul>
+<h2 id="supported-datetime-formats">Supported datetime formats</h2>
+<h3 id="backend-accepted-datetime-strings">Backend-accepted datetime strings</h3>
+<p>The Rust Tauri compute path currently accepts these input forms:</p>
+<ul>
+<li>RFC3339 / ISO datetime with timezone: <code>2024-01-01T12:00:00+01:00</code>, <code>2024-01-01T11:00:00Z</code></li>
+<li>naive datetime with seconds: <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code></li>
+<li>naive datetime without seconds: <code>YYYY-MM-DD HH:mm</code></li>
+<li>date only: <code>YYYY-MM-DD</code></li>
+</ul>
+<p>Current backend rule:</p>
+<ul>
+<li>RFC3339 values preserve their represented instant and are converted to UTC internally</li>
+<li>naive datetime strings are treated as UTC in the Rust parser</li>
+<li>date-only values are interpreted as <code>00:00:00</code> UTC</li>
+</ul>
+<h3 id="frontend-parsing-notes">Frontend parsing notes</h3>
+<ul>
+<li>React currently accepts normal JS <code>Date</code>-parseable values and also normalizes <code>YYYY-MM-DD HH:mm[:ss]</code> into a <code>T...Z</code> form before parsing</li>
+<li>Svelte does the same basic normalization and also still accepts a legacy <code>DD/MM/YYYY HH:mm[:ss]</code> form in some local parsing paths</li>
+</ul>
+<p>That means frontend parsing is slightly more permissive than the backend contract. For durable interop, prefer RFC3339 or <code>YYYY-MM-DDTHH:mm:ssZ</code> when values cross the Tauri boundary.</p>
+<h2 id="ui-expectations">UI expectations</h2>
+<p>A time-navigation surface should provide:</p>
+<ul>
+<li>current time display</li>
+<li>step-size selection</li>
+<li>quick navigation controls</li>
+<li>start/end range controls</li>
+<li>optional shift controls for years/months/days/hours/minutes/seconds</li>
+</ul>
+<p>The exact layout can differ by frontend, but the interaction model should stay consistent.</p>
+<h2 id="state-model">State model</h2>
+<p>The navigation state should keep:</p>
+<ul>
+<li>current time</li>
+<li>start time</li>
+<li>end time</li>
+<li>current step definition</li>
+<li>optional shift values</li>
+<li>whether shift is active</li>
+</ul>
+<p>In the current Svelte implementation, this state lives in <code>apps/web-svelte/src/lib/stores/timeNavigation.svelte.ts</code>.</p>
+<p>Current details in that store:</p>
+<ul>
+<li>step units include <code>seconds</code>, <code>minutes</code>, <code>hours</code>, <code>days</code>, <code>months</code>, and <code>years</code></li>
+<li>stepping uses UTC setters such as <code>setUTCSeconds</code>, <code>setUTCHours</code>, <code>setUTCMonth</code>, and <code>setUTCFullYear</code></li>
+<li>navigation is clamped to the active <code>startTime</code> / <code>endTime</code></li>
+<li>the effective displayed time can be the base <code>currentTime</code> plus an active shift</li>
+</ul>
+<p>React does not yet centralize this in the same dedicated store shape, but it should follow the same contract.</p>
+<h2 id="backend-compute-rules">Backend compute rules</h2>
+<p>For <code>compute_transit_series(...)</code> specifically:</p>
+<ul>
+<li><code>time_step_seconds</code> must be greater than <code>0</code></li>
+<li><code>end_datetime</code> must be greater than or equal to <code>start_datetime</code></li>
+<li>the Rust path enforces a hard limit of <code>50_000</code> generated steps</li>
+<li>Rust transit results return timestamps as RFC3339</li>
+<li>Rust transit responses currently format <code>time_step</code> as a compact seconds string such as <code>3600s</code></li>
+</ul>
+<p>Backend chart payloads also carry datetime through chart <code>subject.event_time</code>. Chart navigation and transit navigation should therefore not drift into separate formatting rules.</p>
+<h2 id="integration-rules">Integration rules</h2>
+<ul>
+<li>frontend controls should drive recomputation through the active Tauri compute flow</li>
+<li>stepping should not silently invent data or bypass the backend contract</li>
+<li>backend results should remain the source of truth for rendered chart state</li>
+<li>loading behavior should preserve the last stable rendered state where practical</li>
+<li>when possible, the same datetime value should be usable both for chart recompute and transit-series requests without frontend-only reinterpretation</li>
+</ul>
+<h2 id="current-caveats">Current caveats</h2>
+<ul>
+<li>Svelte still falls back to the current in-memory computed payload when no persisted query rows are available</li>
+<li>performance work in this area is still partly about reducing reactive churn and repeated backend loads</li>
+<li>this page is the behavior reference, not a promise that one frontend’s code samples are canonical</li>
+<li>frontend-local parsing is currently a little broader than the Rust command contract, so docs and new UI flows should prefer the backend-safe formats above</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

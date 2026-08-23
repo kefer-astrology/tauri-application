@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Versioning | Kefer Astrology</title>
+    <meta name="description" content="SemVer policy for pre-1.0 releases and how commit types map to version bumps." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Versioning</h1>
+      <p class="lede">SemVer policy for pre-1.0 releases and how commit types map to version bumps.</p>
+    </header>
+    <div class="prose">
+      <p>The app is versioned with <a href="https://semver.org/">SemVer</a> and currently sits pre-1.0 (<code>0.x.y</code>). Per the SemVer spec, major version zero is for initial development — anything may still change at any time, so <code>1.0.0</code> is reserved for a deliberate stability declaration, not something a commit can trigger on its own.</p>
+<h2 id="commit-type--bump">Commit type → bump</h2>
+<ul>
+<li><code>fix:</code>, <code>chore:</code>, <code>refactor:</code>, <code>docs:</code>, <code>perf:</code>, <code>test:</code> → <strong>patch</strong> (<code>0.x.Y</code>)</li>
+<li><code>feat:</code> → <strong>minor</strong> (<code>0.X.0</code>)</li>
+<li><code>feat!:</code> or a <code>BREAKING CHANGE:</code> footer → still only <strong>minor</strong> while pre-1.0 — breaking changes don&rsquo;t get their own version segment until <code>1.0.0</code> exists to protect</li>
+<li><code>1.0.0</code> → manual, deliberate call once the app is considered ready for general stable use; not derived from any commit</li>
+</ul>
+<h2 id="where-the-version-lives">Where the version lives</h2>
+<p>One version number is kept in sync across:</p>
+<ul>
+<li><code>package.json</code> (root)</li>
+<li><code>apps/web-react/package.json</code></li>
+<li><code>apps/web-svelte/package.json</code></li>
+<li><code>src-tauri/tauri.conf.json</code></li>
+<li><code>src-tauri/Cargo.toml</code> / <code>Cargo.lock</code></li>
+</ul>
+<p><code>backend-python/pyproject.toml</code> (the Python sidecar) also tracks the same number where practical, since it ships as part of the same release.</p>
+<h2 id="current-state">Current state</h2>
+<p>This is a documented convention enforced by discipline, not tooling — there&rsquo;s no automation yet that reads commit history and computes the next version. Adopting <code>release-please</code> or <code>changesets</code> would enforce this policy mechanically (single bump PR updating every file above) and is tracked as a follow-up, not yet implemented.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lunar phase (moon details) | Kefer Astrology</title>
+    <meta name="description" content="How Kefer derives geocentric lunar phase and illumination from chart positions." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Lunar phase (moon details)</h1>
+      <p class="lede">How Kefer derives geocentric lunar phase and illumination from chart positions.</p>
+    </header>
+    <div class="prose">
+      <p>Chart compute commands attach a <strong><code>moon_details</code></strong> object to the JSON result whenever <strong><code>positions.sun</code></strong> and <strong><code>positions.moon</code></strong> are present (tropical longitude in degrees, same convention as the rest of the radix).</p>
+<p>Source: <a href="https://github.com/kefer-astrology/tauri-application-react/blob/main/src-tauri/src/lunar_phase.rs">src-tauri/src/lunar_phase.rs</a></p>
+<hr>
+<h2 id="what-is-included">What is included</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Field</th>
+					<th>Meaning</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>elongation_deg</code></td>
+					<td>Moon minus Sun in tropical longitude, in [0, 360). 0° = new (conjunction), 180° = full (opposition).</td>
+			</tr>
+			<tr>
+					<td><code>illuminated_fraction</code></td>
+					<td>Fraction of the lunar disk illuminated as seen from Earth, in [0, 1], from <code>(1 - cos(elongation_rad)) / 2</code>.</td>
+			</tr>
+			<tr>
+					<td><code>age_days</code></td>
+					<td>Rough age since new moon: <code>elongation / 360 × 29.530588853</code> days (mean synodic month).</td>
+			</tr>
+			<tr>
+					<td><code>waxing</code></td>
+					<td><code>true</code> when <code>0° &lt; elongation &lt; 180°</code> (waxing from new toward full).</td>
+			</tr>
+			<tr>
+					<td><code>phase_id</code></td>
+					<td>Stable id: <code>new_moon</code>, <code>waxing_crescent</code>, <code>first_quarter</code>, <code>waxing_gibbous</code>, <code>full_moon</code>, <code>waning_gibbous</code>, <code>third_quarter</code>, <code>waning_crescent</code>.</td>
+			</tr>
+			<tr>
+					<td><code>phase_label</code></td>
+					<td>Short English label (e.g. “First Quarter”).</td>
+			</tr>
+	</tbody>
+</table>
+<p>Eight equal 45° sectors around the principal phases are used for <code>phase_id</code> / <code>phase_label</code>.</p>
+<hr>
+<h2 id="model-and-limitations">Model and limitations</h2>
+<ul>
+<li>Phase uses <strong>geocentric tropical ecliptic longitudes</strong> already computed for the chart. That matches common astrological phase wheels; it is <strong>not</strong> a separate SPICE three-vector solve for the true phase angle at the Moon.</li>
+<li>If either <code>sun</code> or <code>moon</code> is missing from <code>positions</code> (e.g. a highly filtered object list), <strong><code>moon_details</code> is omitted or null</strong> and no error is raised.</li>
+<li><strong>Sidereal</strong> charts: elongation is still computed from the longitudes returned for that zodiac mode; the geometric relation Sun–Moon is the same; only the origin of longitude differs.</li>
+</ul>
+<hr>
+<h2 id="where-it-appears">Where it appears</h2>
+<ul>
+<li><strong><code>compute_chart</code></strong> / <strong><code>compute_chart_from_data</code></strong> (Rust path): <code>build_chart_result</code> adds <code>moon_details</code> after aspects are built.</li>
+<li><strong>Python chart responses</strong>: <code>normalize_chart_response</code> fills <code>moon_details</code> from <code>positions</code> when it was not already set, so Python-backed computes stay aligned when Sun and Moon are present.</li>
+</ul>
+<p>This is <strong>not</strong> the <a href="../ephemeris-manager/#remaining-gaps">Part of Fortune</a> (Pars Fortuna lot); that remains a separate formula on ascendant + luminaries.</p>
+<hr>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="../ephemeris-manager/">Ephemeris manager</a> — BSP / position pipeline</li>
+<li><a href="../tauri-command-contracts/">Tauri command contracts</a> — <code>compute_chart</code> response shape</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

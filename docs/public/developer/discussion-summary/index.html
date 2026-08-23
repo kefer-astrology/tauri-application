@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Discussion summary | Kefer Astrology</title>
+    <meta name="description" content="Historical architecture notes from the earlier UI phase." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Discussion summary</h1>
+      <p class="lede">Historical architecture notes from the earlier UI phase.</p>
+    </header>
+    <div class="prose">
+      <p>Do not treat this page as the live implementation contract.</p>
+<p>For current behavior and current architecture, prefer:</p>
+<ol>
+<li><a href="../architecture/">architecture</a></li>
+<li><a href="../frontend-react/">frontend-react</a></li>
+<li><a href="../frontend-svelte/">frontend-svelte</a></li>
+<li><a href="../tauri-command-contracts/">tauri-command-contracts</a></li>
+<li><a href="../spice-backend/">spice-backend</a></li>
+</ol>
+<h2 id="still-useful">Still useful</h2>
+<ul>
+<li>backend-pluggable compute as a long-term direction</li>
+<li>YAML compatibility as a core constraint</li>
+<li>separation between chart definitions and computed data</li>
+<li>the need for precise time navigation and transit-oriented workflows</li>
+</ul>
+<h2 id="no-longer-current">No longer current</h2>
+<ul>
+<li>DuckDB and Parquet are described there as if they were the active computed-data persistence model</li>
+<li>several sections assume the earlier Svelte-first UI phase</li>
+<li>many checklists reflect proposal-era implementation paths that were replaced or deferred</li>
+</ul>
+<h2 id="historical-note">Historical note</h2>
+<p>The original page contained a much larger planning snapshot covering:</p>
+<ul>
+<li>DuckDB and Parquet storage ideas</li>
+<li>sidecar performance assumptions</li>
+<li>historical implementation phases</li>
+<li>old open questions around time granularity and query optimization</li>
+</ul>
+<p>That material was useful during the earlier design phase, but it no longer represents the live desktop contract.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Physical properties | Kefer Astrology</title>
+    <meta name="description" content="Reference notes for richer astronomy fields exposed by JPL-backed results." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Physical properties</h1>
+      <p class="lede">Reference notes for richer astronomy fields exposed by JPL-backed results.</p>
+    </header>
+    <div class="prose">
+      <p>These fields are additive. They should enrich the common result shape, not break it.</p>
+<h2 id="core-extended-fields">Core extended fields</h2>
+<p>Fields commonly expected from JPL-backed results:</p>
+<ul>
+<li><code>distance</code></li>
+<li><code>declination</code></li>
+<li><code>right_ascension</code></li>
+</ul>
+<p>These are the most important richer astronomy fields beyond ecliptic longitude.</p>
+<h2 id="location-dependent-fields">Location-dependent fields</h2>
+<p>When observer location is available, the backend may also provide:</p>
+<ul>
+<li><code>altitude</code></li>
+<li><code>azimuth</code></li>
+</ul>
+<p>These belong to topocentric result enrichment rather than the minimum shared shape.</p>
+<h2 id="optional-further-fields">Optional further fields</h2>
+<p>When supported by the backend and requested by the flow, the result may also include:</p>
+<ul>
+<li><code>apparent_magnitude</code></li>
+<li><code>phase_angle</code></li>
+<li><code>elongation</code></li>
+<li><code>light_time</code></li>
+</ul>
+<p>These should be treated as optional extended astronomy metadata.</p>
+<h2 id="modeling-rules">Modeling rules</h2>
+<ul>
+<li>the stable shared result shape should stay backend-neutral</li>
+<li>richer astronomy fields should be additive rather than mandatory for every backend</li>
+<li>absent fields should be omitted or represented as missing values rather than guessed</li>
+<li>frontend tables and views should tolerate partial field availability</li>
+</ul>
+<h2 id="usage-notes">Usage notes</h2>
+<p>These fields are useful for:</p>
+<ul>
+<li>higher-precision astronomy inspection</li>
+<li>richer table views</li>
+<li>observational and visibility-oriented analysis</li>
+<li>future advanced filtering and comparison tools</li>
+</ul>
+<h2 id="current-architecture-note">Current architecture note</h2>
+<p>The current desktop architecture does not yet treat these fields as part of a persisted computed-data database model. They are primarily part of the live computed result surface.</p>
+<p>Use <a href="../architecture/">architecture</a> and <a href="../tauri-command-contracts/">tauri-command-contracts</a> for the current runtime contract around computed results.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,13 +1,16 @@
-Kefer Astrology repository documentation
+Kefer Astrology manuals
 
 Primary entrypoints:
-- /llm/project-context/
-- /llm/continuation-guide/
-- /docs/
-- /docs/frontend-react/
-- /docs/architecture/
+- /manual/
+- /developer/
+- /developer/project-context/
+- /developer/continuation-guide/
+- /developer/frontend-react/
+- /developer/architecture/
+- /tour/
 
 Notes:
 - The docs site is generated from the repository docs/ directory with Hugo.
-- Frontend builds are copied into /apps/<workspace>/ during npm run docs:prepare.
+- The React build under /apps/web-react/ is the application layer for the Guided Tour.
+- The Svelte build under /apps/web-svelte/ is retained as a developer-facing parity surface.
 - Generated frontend copies under docs/static/apps/ are build artifacts, not source of truth.

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rust workspace contract | Kefer Astrology</title>
+    <meta name="description" content="The Kefer Astrology manual, developer reference, and guided product tour." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Rust workspace contract</h1>
+      
+    </header>
+    <div class="prose">
+      <p>This page defines the current Rust-side implementation direction for the desktop app.</p>
+<h2 id="scope">Scope</h2>
+<p>Rust owns local workspace functionality and the no-sidecar execution path.</p>
+<p>Rust does not own persisted storage of computed positions, aspects, or transit series.</p>
+<h2 id="rules">Rules</h2>
+<ul>
+<li>Keep workspace persistence focused on YAML manifests and chart files.</li>
+<li>When the optional Python sidecar source tree is present, keep Rust workspace payloads compatible with <code>backend-python/module/models.py</code> and <code>backend-python/module/workspace.py</code>.</li>
+<li>The desktop app must run without the Python sidecar.</li>
+<li>The app should check whether the Python backend is available at startup and use that availability state as the general runtime decision source.</li>
+<li>Do not repeatedly probe for Python sidecar existence in every feature flow when startup availability state can be reused.</li>
+<li>If Python is unavailable, Rust fallback behavior must remain functional for supported features.</li>
+<li>CI and desktop packaging must not be blocked by sidecar build failures while the Rust/no-sidecar path is the baseline.</li>
+<li><code>backend-python/</code> may be omitted from some packaging contexts as long as the resulting app still supports the documented Rust fallback flows.</li>
+<li>Do not reintroduce DuckDB- or Parquet-based persistence on the Rust side unless a new <code>/developer/</code> spec explicitly changes this rule.</li>
+<li>Keep backend provenance visible to callers; do not allow silent backend changes to be invisible in compute results.</li>
+</ul>
+<h2 id="practical-implications">Practical implications</h2>
+<ul>
+<li><code>init_storage</code> is a compatibility command only.</li>
+<li>Storage query commands may remain compatibility shims that return empty results.</li>
+<li>Rust compute commands should continue to support local in-memory results for the no-sidecar path.</li>
+<li>Workspace and chart file behavior should stay aligned with the Python workspace/model layer.</li>
+<li>Native YAML chart import should work through Rust without requiring the Python backend.</li>
+<li>StarFisher/SFS import remains in scope, but should stay explicitly staged until a Python-backed parser path is wired in.</li>
+<li>Current implementation may use Swiss-backed paths locally, but the architecture should evolve toward a backend-neutral astronomy interface.</li>
+<li><code>jpl</code> / SPICE is the preferred long-term astronomy direction and should be added behind that interface rather than as a one-off special case.</li>
+<li>Rust-side contracts should prefer backend-neutral result shapes even when current implementation details differ underneath.</li>
+<li>Backend selection should follow this general rule:
+<ul>
+<li>app starts</li>
+<li>app checks Python backend availability once</li>
+<li>if Python is available, Python-backed flows may be used</li>
+<li>if Python is unavailable, flows fall back to Rust where supported</li>
+</ul>
+</li>
+</ul>
+<h2 id="dependency-rule">Dependency rule</h2>
+<ul>
+<li>Remove Rust dependencies that are no longer used.</li>
+<li>Prefer deleting unused helper modules when removing a dependency.</li>
+<li>When changing architecture direction, update the <code>/developer/</code> spec in the same change set.</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

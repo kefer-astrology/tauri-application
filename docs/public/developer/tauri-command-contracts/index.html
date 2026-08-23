@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tauri command contracts | Kefer Astrology</title>
+    <meta name="description" content="Normative command-level contract for the current desktop app." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Tauri command contracts</h1>
+      <p class="lede">Normative command-level contract for the current desktop app.</p>
+    </header>
+    <div class="prose">
+      <p>This page focuses on what the frontend can rely on today, including current no-op behavior.</p>
+<h2 id="contract-rules">Contract rules</h2>
+<ul>
+<li>All frontend actions must go through Tauri <code>invoke</code>.</li>
+<li>Successful commands return JSON-serializable values.</li>
+<li>Failing commands return <code>Err(String)</code> with a user-displayable message.</li>
+<li>Commands documented here describe the <strong>current</strong> desktop contract, not the intended long-term architecture.</li>
+<li>Signatures below are written from the frontend caller’s point of view. Tauri-injected internal parameters such as <code>AppHandle</code> and managed state are intentionally omitted.</li>
+</ul>
+<h2 id="utility-commands">Utility commands</h2>
+<h3 id="readpath---resultstring-string"><code>read(path) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Reads a file from the given path.</li>
+<li>Returns the file contents as a string on success.</li>
+</ul>
+<h3 id="writepath-contents---result-string"><code>write(path, contents) -&gt; Result&lt;(), String&gt;</code></h3>
+<ul>
+<li>Writes the provided string contents to the given path.</li>
+<li>Returns success when the file is written.</li>
+</ul>
+<h2 id="workspace-and-chart-commands">Workspace and chart commands</h2>
+<h3 id="open_folder_dialog---resultoptionstring-string"><code>open_folder_dialog() -&gt; Result&lt;Option&lt;String&gt;, String&gt;</code></h3>
+<ul>
+<li>Opens a native folder chooser.</li>
+<li>Returns <code>Ok(Some(path))</code> when the user selects a folder.</li>
+<li>Returns <code>Ok(None)</code> when the user cancels or no supported chooser succeeds.</li>
+</ul>
+<h3 id="save_workspaceworkspace_path-owner-charts-defaults---resultstring-string"><code>save_workspace(workspace_path, owner, charts, defaults?) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Creates <code>workspace.yaml</code> and <code>charts/*.yml</code> under <code>workspace_path</code>.</li>
+<li>Sanitizes chart file names from chart ids.</li>
+<li>Accepts an optional <code>defaults</code> payload and persists it into <code>workspace.yaml</code> alongside chart references.</li>
+<li>Returns the <code>workspace_path</code> string on success.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>Saving a workspace with N charts creates N chart files and one <code>workspace.yaml</code>.</li>
+<li>The saved manifest references the generated chart files.</li>
+<li>When <code>defaults</code> is provided, workspace-level engine / house / location / aspect defaults are written into the saved manifest.</li>
+</ul>
+<h3 id="save_workspace_defaultsworkspace_path-defaults---resultvalue-string"><code>save_workspace_defaults(workspace_path, defaults) -&gt; Result&lt;Value, String&gt;</code></h3>
+<ul>
+<li>Updates workspace-level defaults in <code>workspace.yaml</code> without rewriting chart files.</li>
+<li>Returns the normalized workspace defaults payload after persistence.</li>
+<li>Intended for settings changes that belong to workspace state rather than to a specific chart.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>Updating default bodies persists to <code>workspace.yaml</code>.</li>
+<li>Updating default engine, house system, or location defaults persists to <code>workspace.yaml</code>.</li>
+<li>Chart YAML files are left untouched by this command.</li>
+</ul>
+<h3 id="create_workspaceworkspace_path-owner---resultstring-string"><code>create_workspace(workspace_path, owner) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Creates the workspace directory and <code>charts/</code>.</li>
+<li>Writes an empty <code>workspace.yaml</code>.</li>
+<li>Returns an error if <code>workspace.yaml</code> already exists.</li>
+</ul>
+<h3 id="delete_workspaceworkspace_path---resultbool-string"><code>delete_workspace(workspace_path) -&gt; Result&lt;bool, String&gt;</code></h3>
+<ul>
+<li>Deletes the workspace directory recursively.</li>
+<li>Returns <code>Ok(false)</code> if the directory does not exist.</li>
+<li>Returns <code>Ok(true)</code> after successful deletion.</li>
+</ul>
+<h3 id="create_chartworkspace_path-chart---resultstring-string"><code>create_chart(workspace_path, chart) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Requires an <code>id</code> in the chart payload.</li>
+<li><code>chart.subject.event_time</code> should be provided in a canonical parseable form such as <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code>, or RFC3339.</li>
+<li>Writes a chart YAML file and registers it in <code>workspace.yaml</code>.</li>
+<li>Returns the chart id.</li>
+<li>Returns an error if the chart id already exists.</li>
+</ul>
+<h3 id="import_chartworkspace_path-source_path---resultstring-string"><code>import_chart(workspace_path, source_path) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Imports an external chart file into the active workspace.</li>
+<li>Native YAML (<code>.yml</code>, <code>.yaml</code>) is supported in the current Rust path.</li>
+<li>On success, writes the imported chart into <code>charts/</code> and registers it in <code>workspace.yaml</code>.</li>
+<li>Returns the imported chart id.</li>
+<li>Returns an error for duplicate chart ids.</li>
+<li>Returns an explicit error for <code>.sfs</code> because the Python-backed StarFisher import path is not wired yet.</li>
+</ul>
+<h3 id="update_chartworkspace_path-chart_id-chart---resultstring-string"><code>update_chart(workspace_path, chart_id, chart) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Finds the existing chart by <code>chart_id</code>.</li>
+<li>Rewrites the chart YAML with the enforced id.</li>
+<li>Returns the chart id.</li>
+<li>Returns an error if the chart does not exist.</li>
+</ul>
+<h3 id="delete_chartworkspace_path-chart_id---resultbool-string"><code>delete_chart(workspace_path, chart_id) -&gt; Result&lt;bool, String&gt;</code></h3>
+<ul>
+<li>Removes the chart reference from <code>workspace.yaml</code>.</li>
+<li>Deletes the chart YAML file if present.</li>
+<li>Returns <code>Ok(false)</code> when the chart id is not found.</li>
+</ul>
+<h3 id="load_workspaceworkspace_path---resultworkspaceinfo-string"><code>load_workspace(workspace_path) -&gt; Result&lt;WorkspaceInfo, String&gt;</code></h3>
+<ul>
+<li>Requires a readable <code>workspace.yaml</code>.</li>
+<li>Loads all registered charts and returns chart summaries.</li>
+<li>Does not compute chart positions.</li>
+</ul>
+<h3 id="validate_workspaceworkspace_path---resultworkspacevalidationreport-string"><code>validate_workspace(workspace_path) -&gt; Result&lt;WorkspaceValidationReport, String&gt;</code></h3>
+<ul>
+<li>Strictly attempts every subject, chart, preset, layout, and annotation
+reference under the workspace root.</li>
+<li>Returns <code>valid</code>, typed entity counts, workspace identity, and all structured
+diagnostics.</li>
+<li>Missing or malformed referenced items use
+<code>referenced_item_load_failed</code>; duplicate identifiers and broken catalog
+references have specific stable codes.</li>
+<li>An invalid referenced item does not prevent other items from being inspected.</li>
+<li>Neither frontend currently calls this command; it remains a backend-only capability until a UI surface needs it.</li>
+</ul>
+<h3 id="get_workspace_defaultsworkspace_path---resultvalue-string"><code>get_workspace_defaults(workspace_path) -&gt; Result&lt;Value, String&gt;</code></h3>
+<ul>
+<li>Returns normalized default workspace values from <code>workspace.yaml</code>.</li>
+<li>Includes house system, engine, location, bodies, aspects, and time system fields when present.</li>
+</ul>
+<h3 id="get_current_model_reportworkspace_path-chart_id---resultcurrentmodelreport-string"><code>get_current_model_report(workspace_path, chart_id?) -&gt; Result&lt;CurrentModelReport, String&gt;</code></h3>
+<ul>
+<li>Returns one canonical model envelope for the workspace, optionally resolved through a specific chart.</li>
+<li>Includes the requested model name, resolved model name, available model names, model catalog, effective settings, model overrides, source, and warnings.</li>
+<li>Includes structured <code>diagnostics</code> for catalog, selection, override, and
+chart-level invariants.</li>
+<li><code>effective_settings.sources</code> identifies whether each effective setting came from the application fallback, model, workspace, preset, chart, or operation layer. Aspect-orb sources are reported per aspect id.</li>
+<li>If <code>workspace.yaml</code> has no usable <code>models</code> entry, returns a built-in standard model catalog so callers still receive the same structure.</li>
+<li>When <code>chart_id</code> is supplied, chart-level model/settings fields override workspace defaults in <code>effective_settings</code>.</li>
+<li>Both frontends call this without <code>chart_id</code> when a workspace is opened, and seed workspace defaults (default bodies, default aspects, aspect orbs) from <code>effective_settings</code> before applying the workspace-level DTO from <code>get_workspace_defaults</code>, so the model layer resolves before the workspace layer.</li>
+</ul>
+<h3 id="resolve_locationquery---resultvalue-string"><code>resolve_location(query) -&gt; Result&lt;Value, String&gt;</code></h3>
+<ul>
+<li>Resolves a free-form place query into a best-match location with latitude and longitude.</li>
+<li>Uses the configured geocoder endpoint, defaulting to Nominatim search.</li>
+<li>Intended for explicit user-triggered lookup, not per-keystroke autocomplete.</li>
+<li>Returns an error when the query is empty or no result can be resolved.</li>
+</ul>
+<h3 id="search_locationsquery---resultvecvalue-string"><code>search_locations(query) -&gt; Result&lt;Vec&lt;Value&gt;, String&gt;</code></h3>
+<ul>
+<li>Resolves a free-form place query into multiple candidate locations.</li>
+<li>Uses the configured geocoder endpoint, defaulting to Nominatim search.</li>
+<li>Returns up to 5 candidates with <code>query</code>, <code>display_name</code>, <code>latitude</code>, and <code>longitude</code>.</li>
+<li>Returns an error when the query is empty or lookup fails.</li>
+</ul>
+<h3 id="get_chart_detailsworkspace_path-chart_id---resultvalue-string"><code>get_chart_details(workspace_path, chart_id) -&gt; Result&lt;Value, String&gt;</code></h3>
+<ul>
+<li>Returns the full chart payload needed by the React and Svelte editor surfaces.</li>
+<li><code>config</code> includes <code>mode</code>, <code>house_system</code>, <code>zodiac_type</code>, <code>engine</code>, <code>model</code>, <code>override_ephemeris</code>, <code>observable_objects</code>, <code>aspect_orbs</code>, <code>selected_aspects</code>, <code>ayanamsa</code>, and <code>time_system</code> — the complete set of chart-level settings-layer fields, so callers can resolve chart-level overrides without falling back to workspace defaults.</li>
+<li>Also returns top-level <code>tags</code>, <code>tag_colors</code>, and <code>roden_rating</code>.</li>
+<li>Returns an error when the chart id is not found.</li>
+</ul>
+<h2 id="compute-commands">Compute commands</h2>
+<h2 id="backend-selection">Backend selection</h2>
+<ul>
+<li><code>KEFER_COMPUTE_BACKEND=Auto</code>: Python first, Rust fallback when fallback is enabled.</li>
+<li><code>KEFER_COMPUTE_BACKEND=Python</code>: Python only.</li>
+<li><code>KEFER_COMPUTE_BACKEND=Rust</code>: Rust only.</li>
+<li>The contract should make backend provenance observable to callers.</li>
+</ul>
+<p>Recommended response metadata:</p>
+<ul>
+<li><code>backend_used</code></li>
+<li><code>fallback_used</code></li>
+<li><code>warnings</code></li>
+<li><code>ephemeris_source</code> when known</li>
+</ul>
+<h3 id="compute_chart_from_datachart_json-settings_overrides---resultmapstring-value-string"><code>compute_chart_from_data(chart_json, settings_overrides?) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
+<ul>
+<li>Computes positions and aspects from an in-memory chart payload.</li>
+<li><code>chart_json.subject.event_time</code> must be parseable as <code>YYYY-MM-DD HH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ss</code>, <code>YYYY-MM-DDTHH:mm:ssZ</code>, or RFC3339.</li>
+<li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>shapes</code>, <code>configurations</code>, <code>moon_details</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Rust standalone computation resolves built-in model defaults and chart
+overrides through the same settings service used by workspace charts.</li>
+<li>Resolved house system, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
+time system are materialized only on the in-memory computation copy.</li>
+<li>Legacy <code>included_points</code> is accepted as a chart-level body selection and
+produces a deprecation warning; new payloads should use
+<code>observable_objects</code>.</li>
+<li><code>settings_overrides</code> is an optional operation layer with <code>houseSystem</code>,
+<code>bodies</code>, <code>aspects</code>, <code>aspectOrbs</code>, <code>engine</code>, <code>zodiacType</code>, <code>ayanamsa</code>, and
+<code>timeSystem</code>.</li>
+<li>Uses Python or Rust depending on backend selection and availability.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>A valid chart payload returns <code>positions</code>, <code>aspects</code>, and <code>chart_id</code>.</li>
+<li>Rust-supported radix output should also include <code>axes</code> and <code>house_cusps</code>.</li>
+<li>Rust-supported radix output should include <code>motion</code> when the selected backend can derive it.</li>
+<li>Rust-supported radix output should also include <code>shapes</code> (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and <code>configurations</code> (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed <code>house_cusps</code>, and the computed <code>aspects</code>. See <code>detect_chart_shapes</code>/<code>detect_chart_configurations</code> in <code>astrology.rs</code>.</li>
+<li>When <code>positions.sun</code> and <code>positions.moon</code> exist, <code>moon_details</code> should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See <a href="../lunar-phase/">lunar-phase</a>.</li>
+<li>When fallback occurs, the response should expose that fact instead of failing silently.</li>
+</ul>
+<h3 id="compute_cross_aspects_from_datachart_json-transiting_positions-transited_positions-aspect_types-settings_overrides---resultveccomputedaspect-string"><code>compute_cross_aspects_from_data(chart_json, transiting_positions, transited_positions, aspect_types, settings_overrides?) -&gt; Result&lt;Vec&lt;ComputedAspect&gt;, String&gt;</code></h3>
+<ul>
+<li>Detects cross-chart aspects (e.g. a transit overlay) between two already-computed position maps (<code>transiting_positions</code>, <code>transited_positions</code>, both <code>Map&lt;String, f64&gt;</code>), without requiring a persisted workspace chart id.</li>
+<li>Resolves the aspect catalog and effective orb overrides the same way <code>compute_chart_from_data</code> resolves them: <code>chart_json</code> is deserialized into a <code>ChartInstance</code> and passed through the same settings service (<code>standalone_model_report_with_operation</code>).</li>
+<li><code>aspect_types</code> filters which aspect ids to detect, same semantics as <code>compute_transit_series</code>&rsquo;s <code>aspect_types</code>.</li>
+<li>Returns a list of <code>ComputedAspect</code> objects: <code>from</code>, <code>to</code>, <code>type</code>, <code>angle</code>, <code>orb</code>, <code>exact_angle</code>, <code>applying</code>, <code>separating</code> — the same shape used by <code>compute_chart</code>/<code>compute_chart_from_data</code>&rsquo;s <code>aspects</code> field and by <code>compute_transit_series</code>&rsquo;s per-entry <code>aspects</code>.</li>
+<li>Rust-only; no Python route exists for this command.</li>
+<li>This is the command any frontend code computing an &ldquo;instant&rdquo; (non-persisted) transit overlay should call instead of re-implementing aspect-detection geometry client-side.</li>
+</ul>
+<h3 id="compute_chartworkspace_path-chart_id-preset_id-settings_overrides---resultmapstring-value-string"><code>compute_chart(workspace_path, chart_id, preset_id?, settings_overrides?) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
+<ul>
+<li>Loads a chart from workspace storage and computes positions and aspects.</li>
+<li>Returns <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>shapes</code>, <code>configurations</code>, <code>moon_details</code> (when Sun and Moon are present), <code>chart_id</code>, and backend provenance fields when available.</li>
+<li>Rust aspect detection uses the resolved workspace/chart model definitions and effective orb overrides.</li>
+<li><code>preset_id</code> may identify a referenced workspace preset by its name or manifest
+path. The chart layer overrides the preset layer.</li>
+<li><code>settings_overrides</code> is the highest-precedence ephemeral operation layer.</li>
+<li>Uses Python or Rust depending on backend selection and availability.</li>
+<li>Preset and operation layers are forwarded to either backend. <code>Auto</code> follows
+normal backend selection, and fallback preserves the same layers.</li>
+</ul>
+<h3 id="compute_transit_series---resultvalue-string"><code>compute_transit_series(...) -&gt; Result&lt;Value, String&gt;</code></h3>
+<p>Inputs:</p>
+<ul>
+<li><code>workspace_path</code></li>
+<li><code>chart_id</code></li>
+<li><code>start_datetime</code></li>
+<li><code>end_datetime</code></li>
+<li><code>time_step_seconds</code></li>
+<li><code>transiting_objects</code></li>
+<li><code>transited_objects</code></li>
+<li><code>aspect_types</code></li>
+<li>optional <code>preset_id</code></li>
+<li>optional <code>settings_overrides</code></li>
+</ul>
+<p>Behavior:</p>
+<ul>
+<li><code>time_step_seconds</code> must be greater than <code>0</code>.</li>
+<li><code>end_datetime</code> must be greater than or equal to <code>start_datetime</code>.</li>
+<li>Rust mode enforces a hard cap of <code>50_000</code> generated steps.</li>
+<li>Returns a response with <code>source_chart_id</code>, <code>time_range</code>, <code>time_step</code>, <code>results</code>, and backend provenance fields.</li>
+<li>Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.</li>
+<li>Preset and operation settings use the same precedence and temporary Rust-only
+routing described for <code>compute_chart</code>.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>Invalid date order returns an error.</li>
+<li>Non-positive step returns an error.</li>
+<li>A valid range returns ordered results with <code>datetime</code>, <code>transit_positions</code>, and <code>aspects</code>.</li>
+</ul>
+<h2 id="ephemeris-commands">Ephemeris commands</h2>
+<h3 id="list_ephemeris_catalog---vecephemerisinfo"><code>list_ephemeris_catalog() -&gt; Vec&lt;EphemerisInfo&gt;</code></h3>
+<ul>
+<li>Returns the current BSP catalog and local download status for each entry.</li>
+<li>Each entry includes id, filename, URL, size, supported bodies, year coverage, default status, download status, and optional local path.</li>
+</ul>
+<h3 id="download_ephemerisid---result-string"><code>download_ephemeris(id) -&gt; Result&lt;(), String&gt;</code></h3>
+<ul>
+<li>Starts downloading a BSP file from the built-in catalog into the app-data ephemeris cache.</li>
+<li>Emits <code>ephemeris-progress</code> events while downloading and <code>ephemeris-ready</code> on completion.</li>
+<li>Returns an error when the catalog id is unknown or the download fails.</li>
+</ul>
+<h3 id="get_available_bodies---vecstring"><code>get_available_bodies() -&gt; Vec&lt;String&gt;</code></h3>
+<ul>
+<li>Returns the currently queryable body ids inferred from available BSP files.</li>
+<li>This reflects file availability, not a guarantee that every body has a dedicated SPK segment in the loaded kernels.</li>
+</ul>
+<h2 id="storage-commands">Storage commands</h2>
+<p>Current Rust storage behavior is workspace-only.</p>
+<p>Computed positions, aspects, and relations are <strong>not persisted</strong> by the Rust desktop app.
+These compatibility commands remain registered so older frontend invoke paths keep working while
+workspace data continues to live in YAML and live computations come from the chart compute commands.</p>
+<h3 id="init_storageworkspace_path---resultstring-string"><code>init_storage(workspace_path) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Ensures <code>workspace_path/</code> and <code>workspace_path/charts/</code> exist.</li>
+<li>Returns the normalized workspace path string.</li>
+<li>Does not create or initialize a DuckDB database.</li>
+</ul>
+<h3 id="store_positions---result-string"><code>store_positions(...) -&gt; Result&lt;(), String&gt;</code></h3>
+<ul>
+<li>No-op.</li>
+<li>Returns success for API compatibility.</li>
+</ul>
+<h3 id="query_positions---resultvecpositionrow-string"><code>query_positions(...) -&gt; Result&lt;Vec&lt;PositionRow&gt;, String&gt;</code></h3>
+<ul>
+<li>Returns an empty list.</li>
+</ul>
+<h3 id="store_relation---result-string"><code>store_relation(...) -&gt; Result&lt;(), String&gt;</code></h3>
+<ul>
+<li>No-op.</li>
+<li>Returns success for API compatibility.</li>
+</ul>
+<h3 id="query_aspects---resultvecaspectdata-string"><code>query_aspects(...) -&gt; Result&lt;Vec&lt;AspectData&gt;, String&gt;</code></h3>
+<ul>
+<li>Returns an empty list.</li>
+</ul>
+<h3 id="compute_aspects---resultvecaspectdata-string"><code>compute_aspects(...) -&gt; Result&lt;Vec&lt;AspectData&gt;, String&gt;</code></h3>
+<ul>
+<li>Returns an empty list.</li>
+</ul>
+<h3 id="query_timestamps---resultvecstring-string"><code>query_timestamps(...) -&gt; Result&lt;Vec&lt;String&gt;, String&gt;</code></h3>
+<ul>
+<li>Returns an empty list.</li>
+</ul>
+<h3 id="query_radix_relative---resultvecradixrelativerow-string"><code>query_radix_relative(...) -&gt; Result&lt;Vec&lt;RadixRelativeRow&gt;, String&gt;</code></h3>
+<ul>
+<li>Returns an empty list.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>Frontend code may invoke these commands without crashing.</li>
+<li>Frontend code must treat storage query results as empty unless a future spec introduces persisted computed storage.</li>
+<li>Frontend code should use <code>compute_chart</code> / <code>compute_chart_from_data</code> / <code>compute_transit_series</code> / <code>compute_cross_aspects_from_data</code> for live computation, not these storage compatibility commands.</li>
+</ul>
+<h2 id="spec-maintenance-rule">Spec maintenance rule</h2>
+<p>When any command signature or behavior changes, update this page in the same change set.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

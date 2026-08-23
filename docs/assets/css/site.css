@@ -41,10 +41,11 @@ a {
 
 .site-header {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  overflow-x: auto;
   margin-bottom: 2rem;
   padding: 1rem 1.25rem;
   background: var(--panel);
@@ -55,19 +56,23 @@ a {
 }
 
 .brand {
+  flex: 0 0 auto;
   font-size: 1.2rem;
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .top-nav {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   gap: 1rem;
 }
 
 .top-nav a {
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .content {
@@ -93,7 +98,7 @@ a {
 
 .lede {
   margin: 0;
-  max-width: 60ch;
+  max-width: none;
   color: var(--muted);
   font-size: 1.05rem;
   line-height: 1.7;
@@ -105,7 +110,7 @@ a {
 }
 
 .prose > :where(p, dl, blockquote, pre, h1, h2, h3, h4, h5, h6) {
-  max-width: 78ch;
+  max-width: none;
 }
 
 .prose img,
@@ -185,10 +190,53 @@ a {
   font-size: 0.92rem;
 }
 
-.frontend-section {
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+.tour-stage {
+  width: 100%;
+  margin-top: 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #201916;
+  box-shadow: 0 18px 40px rgba(70, 42, 25, 0.14);
+}
+
+.tour-scenarios {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 1.25rem 0 0;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+}
+
+.tour-scenarios a {
+  flex: 0 0 auto;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: white;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tour-scenarios a:hover,
+.tour-scenarios a:focus-visible,
+.tour-scenarios a[aria-current="page"] {
+  border-color: rgba(182, 74, 43, 0.45);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tour-frame {
+  display: block;
+  width: 100%;
+  height: min(76vh, 860px);
+  min-height: 620px;
+  border: 0;
 }
 
 @media (max-width: 720px) {
@@ -198,5 +246,10 @@ a {
 
   .content {
     padding: 1.25rem;
+  }
+
+  .tour-frame {
+    height: 72vh;
+    min-height: 520px;
   }
 }

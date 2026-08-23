@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1314&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Svelte frontend | Kefer Astrology</title>
+    <meta name="description" content="Operational guide for the alternate Svelte &#43; Vite &#43; Tauri workspace." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.06c68e7b8ccb994f1289c786021e9575f0488d8318069d0833b3b55488c91f7b.css" integrity="sha256-BsaOe4zLmU8SiceGAh6VdfBIjYMYBp0IM7O1VIjJH3s=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <nav class="top-nav" aria-label="Primary">
+          <a href="/manual/">Manual</a>
+          <a href="/developer/">Developer Manual</a>
+          <a href="/guides/">Guides</a>
+        </nav>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Svelte frontend</h1>
+      <p class="lede">Operational guide for the alternate Svelte &#43; Vite &#43; Tauri workspace.</p>
+    </header>
+    <div class="prose">
+      <h2 id="current-status">Current status</h2>
+<ul>
+<li>Svelte is the alternate desktop shell.</li>
+<li>It has real workspace open/load/save wiring and workspace-default persistence.</li>
+<li>Radix rendering, settings, location resolution, transit-series compute, and workspace query flows are routed through the Svelte Tauri bridge.</li>
+<li><code>stores/data.svelte.ts</code> keeps in-memory/static-mode fallbacks, but no longer owns Tauri query invocation.</li>
+<li><code>App.svelte</code> remains the biggest orchestration surface and should keep being decomposed.</li>
+<li>Workspace open resolves the backend&rsquo;s model report (<code>get_current_model_report</code>); chart-level settings persist across a reload using the same shape as React.</li>
+<li>The Aspects tab computes house placement from real house cusps, and the aspect matrix shows an empty state rather than fabricated positions (see <a href="../radix-render-contract/">radix-render-contract</a>).</li>
+</ul>
+<h2 id="commands">Commands</h2>
+<p>Svelte is the alternate frontend flow. Keep its build, check, and Tauri commands separate from the React defaults.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm install
+</span></span><span style="display:flex;"><span>npm run dev:svelte
+</span></span><span style="display:flex;"><span>npm run tauri:dev:svelte
+</span></span><span style="display:flex;"><span>npm run build:svelte
+</span></span><span style="display:flex;"><span>npm run tauri:build:svelte
+</span></span><span style="display:flex;"><span>npm run check:svelte
+</span></span><span style="display:flex;"><span>npm run lint
+</span></span><span style="display:flex;"><span>npm run i18n:sync
+</span></span><span style="display:flex;"><span>npm run docs:prepare
+</span></span></code></pre></div><p>Docs builds use the same Svelte app with a relative asset base:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>npm run build:svelte:docs
+</span></span></code></pre></div><h2 id="workspace-shape">Workspace shape</h2>
+<ul>
+<li><code>apps/web-svelte/src/App.svelte</code> — main integration shell.</li>
+<li><code>apps/web-svelte/src/lib/components/</code> — feature-facing Svelte UI and workspace operations.</li>
+<li><code>apps/web-svelte/src/lib/components/ui/</code> — shared Svelte primitive layer.</li>
+<li><code>apps/web-svelte/src/lib/state/</code> — rune-backed application state (<code>layout</code>, <code>theme</code>).</li>
+<li><code>apps/web-svelte/src/lib/stores/</code> — glyph/icon/data/time-navigation helpers.</li>
+<li><code>apps/web-svelte/src/lib/tauri/</code> — typed Svelte Tauri bridge, aligned with the React bridge shape.</li>
+<li><code>apps/web-svelte/src/lib/themes/presets/</code> — preset palette JSON files.</li>
+<li><code>apps/web-svelte/src/lib/i18n/</code> — generated locale JSON plus runtime helper.</li>
+</ul>
+<h2 id="ui-rules">UI rules</h2>
+<ul>
+<li>Prefer shared Svelte UI primitives before bespoke controls.</li>
+<li>Treat <code>App.svelte</code> as orchestration glue, not the ideal home for more feature logic.</li>
+<li>Extract new feature UI into focused components instead of extending <code>App.svelte</code> with another large conditional branch.</li>
+<li>Prefer shared tokens, variants, spacing, and wrappers over one-off component CSS.</li>
+<li>Avoid introducing raw native controls when an existing primitive exists in <code>src/lib/components/ui/</code>.</li>
+</ul>
+<h2 id="runtime-behavior">Runtime behavior</h2>
+<ul>
+<li><code>OpenWorkspaceView.svelte</code> handles open/save flows through <code>src/lib/tauri/workspace.ts</code> and computes loaded charts.</li>
+<li><code>SettingsView.svelte</code> persists workspace defaults through the same bridge and can recompute loaded charts after defaults changes.</li>
+<li><code>LocationSelector.svelte</code> uses the bridge location search/resolve commands so new-chart and settings location inputs can sync typed places to coordinates.</li>
+<li><code>App.svelte</code> computes transit series through the Svelte Tauri bridge and updates in-app results state.</li>
+<li><code>layout.svelte.ts</code> is the canonical in-memory shape for contexts, workspace defaults, mode, and payload mapping.</li>
+<li><code>stores/data.svelte.ts</code> consumes bridge query helpers and falls back to in-memory computed positions when no persisted query rows exist.</li>
+</ul>
+<h2 id="important-current-files">Important current files</h2>
+<ul>
+<li><code>apps/web-svelte/src/App.svelte</code></li>
+<li><code>apps/web-svelte/src/lib/components/OpenWorkspaceView.svelte</code></li>
+<li><code>apps/web-svelte/src/lib/components/SettingsView.svelte</code></li>
+<li><code>apps/web-svelte/src/lib/components/LocationSelector.svelte</code></li>
+<li><code>apps/web-svelte/src/lib/components/MiddleContent.svelte</code></li>
+<li><code>apps/web-svelte/src/lib/components/RadixChart.svelte</code></li>
+<li><code>apps/web-svelte/src/lib/components/TimeNavigationPanel.svelte</code></li>
+<li><code>apps/web-svelte/src/lib/state/layout.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/state/theme.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/stores/data.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/stores/timeNavigation.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/tauri/types.ts</code></li>
+<li><code>apps/web-svelte/src/lib/tauri/workspace.ts</code></li>
+</ul>
+<h2 id="shared-assets">Shared assets</h2>
+<p>Svelte uses the same repo-root <code>static/</code> source assets as React:</p>
+<ul>
+<li><code>static/app-shell/</code></li>
+<li><code>static/glyphs/</code></li>
+<li>shared logos and favicon</li>
+</ul>
+<p>Normalization happens in the frontend render layer, especially through:</p>
+<ul>
+<li><code>apps/web-svelte/src/lib/stores/app-shell-icons.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/stores/glyphs.svelte.ts</code></li>
+<li><code>apps/web-svelte/src/lib/components/SharedSvgIcon.svelte</code></li>
+</ul>
+<p>Asset note:</p>
+<ul>
+<li><code>apps/web-svelte/src/lib/icons/</code> is not the source of truth for shared shell or glyph assets.</li>
+</ul>
+<h2 id="theming">Theming</h2>
+<ul>
+<li>Theme mode and preset state are owned by <code>apps/web-svelte/src/lib/state/theme.svelte.ts</code>.</li>
+<li>Presets are loaded from <code>apps/web-svelte/src/lib/themes/presets/</code>.</li>
+<li>Settings → Appearance applies presets and persists them in local storage.</li>
+<li>Element color overrides are applied as CSS variables (<code>--element-fire</code>, <code>--element-earth</code>, <code>--element-air</code>, <code>--element-water</code>).</li>
+<li><code>App.svelte</code> reapplies the current preset on startup and when root theme class changes.</li>
+</ul>
+<h2 id="i18n">i18n</h2>
+<ul>
+<li>Source of truth: repo-root <code>translations.csv</code>.</li>
+<li>Regeneration command: <code>npm run i18n:sync</code>.</li>
+<li>Generated output includes <code>apps/web-svelte/src/lib/i18n/*.json</code> and the matching React locale files.</li>
+<li>Author new copy in <code>translations.csv</code>, not in generated JSON.</li>
+</ul>
+<p>See <a href="../ui-conventions/">ui-conventions</a> for the shared translation workflow and UI copy rules.</p>
+<h2 id="docs-integration">Docs integration</h2>
+<ul>
+<li><code>npm run docs:prepare</code> builds frontend workspaces for docs mode.</li>
+<li>Built Svelte output is copied into <code>docs/static/apps/web-svelte/</code>.</li>
+<li><code>docs/data/generated/frontends.json</code> is regenerated by the same pipeline.</li>
+<li>Treat both as generated artifacts.</li>
+</ul>
+<h2 id="tauri-integration">Tauri integration</h2>
+<ul>
+<li>Svelte workspace, chart compute, transit-series, and storage-query commands are centralized in <code>apps/web-svelte/src/lib/tauri/workspace.ts</code>.</li>
+<li>Tauri response shapes live in <code>apps/web-svelte/src/lib/tauri/types.ts</code>.</li>
+<li>Feature components should consume bridge helpers rather than importing <code>@tauri-apps/api/core</code> directly.</li>
+<li><code>openWorkspaceFolder()</code> calls <code>get_current_model_report</code> and seeds workspace defaults from <code>effective_settings</code> (<code>mergeModelReportDefaults</code> in <code>layout.svelte.ts</code>) before the workspace-level DTO is applied.</li>
+<li>Chart-level <code>observableObjects</code>/<code>aspectOrbs</code>/<code>selectedAspects</code>/<code>ayanamsa</code>/<code>timeSystem</code> round-trip through <code>ChartData</code> and take precedence over workspace defaults in <code>chartDataToComputePayload</code>.</li>
+<li>Tauri frontend target switching uses:
+<ul>
+<li><code>src-tauri/tauri.react.conf.json</code></li>
+<li><code>src-tauri/tauri.svelte.conf.json</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="known-limits">Known limits</h2>
+<ul>
+<li><code>App.svelte</code> still carries broad mode branching and should continue to shrink.</li>
+<li>Some secondary views remain spec-gated or more placeholder-oriented than end-to-end compute surfaces.</li>
+<li>In-memory fallback rendering remains for docs/static mode and for workspaces without persisted computed query rows.</li>
+<li>React remains a useful reference for shell decomposition and richer form/input UX patterns, while the Tauri bridge shape is now aligned across both frontends.</li>
+</ul>
+<h2 id="related-docs">Related docs</h2>
+<ul>
+<li><a href="../architecture/">architecture</a> — app-level architecture and routing.</li>
+<li><a href="../frontend-react/">frontend-react</a> — current primary-shell reference.</li>
+<li><a href="../ui-conventions/">ui-conventions</a> — theme, component, and i18n rules.</li>
+<li><a href="../time-navigation/">time-navigation</a> — shared navigation model.</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>
