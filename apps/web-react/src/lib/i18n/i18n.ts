@@ -12,6 +12,14 @@ export type AppLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 function readStoredLanguage(): AppLanguage {
 	try {
+		const fromUrl = new URLSearchParams(window.location.search).get('lang');
+		if (fromUrl && (SUPPORTED_LANGUAGES as readonly string[]).includes(fromUrl)) {
+			return fromUrl as AppLanguage;
+		}
+	} catch {
+		/* ignore */
+	}
+	try {
 		const v = localStorage.getItem(LANGUAGE_STORAGE_KEY);
 		if (v && (SUPPORTED_LANGUAGES as readonly string[]).includes(v)) {
 			return v as AppLanguage;
