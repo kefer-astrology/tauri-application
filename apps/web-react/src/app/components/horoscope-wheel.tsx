@@ -16,6 +16,7 @@ import {
 	getZodiacGlyphSrc,
 	type AstrologyGlyphSetId
 } from '@/lib/astrology/glyphs';
+import { resolveCustomGlyphSrc, useCustomGlyphOverrides } from '@/lib/astrology/customGlyphs';
 import type { AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
 import type { Theme } from './astrology-sidebar';
@@ -318,6 +319,11 @@ export function HoroscopeWheel({
 	className
 }: HoroscopeWheelProps) {
 	const isDark = theme === 'midnight' || theme === 'twilight';
+	const customGlyphOverrides = useCustomGlyphOverrides();
+	const astrologyGlyphSrc = (id: string) =>
+		resolveCustomGlyphSrc(customGlyphOverrides, id) ?? (glyphSet ? getAstrologyGlyphSrc(glyphSet, id) : null);
+	const zodiacGlyphSrc = (id: string) =>
+		resolveCustomGlyphSrc(customGlyphOverrides, id) ?? (glyphSet ? getZodiacGlyphSrc(glyphSet, id) : null);
 	const wheelFilterUid = useId().replace(/:/g, '');
 	const planetLightFilterId = `${wheelFilterUid}-pl`;
 	const planetDarkFilterId = `${wheelFilterUid}-pd`;
@@ -513,7 +519,7 @@ export function HoroscopeWheel({
 				) : null}
 				{glyphSet
 					? zodiacSigns.map((sign) => {
-							const href = getZodiacGlyphSrc(glyphSet, sign.id);
+							const href = zodiacGlyphSrc(sign.id);
 							if (!href) return null;
 							const el = elementForZodiacId(sign.id);
 							const base = elementColors[el];
@@ -579,7 +585,7 @@ export function HoroscopeWheel({
 						const lon = transitBodyLongitudes?.[key];
 						if (typeof lon !== 'number') return [];
 						const p = polar(center, center, transitGlyphRadius, displayLon(lon));
-						const planetHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						const planetHref = astrologyGlyphSrc(key);
 						return [
 							<g
 								key={`transit-${key}`}
@@ -709,7 +715,7 @@ export function HoroscopeWheel({
 				const el = elementForZodiacId(sign.id);
 				const base = elementColors[el];
 				const fill = isDark ? wheelZodiacFillOnDark(base) : base;
-				const zHref = glyphSet ? getZodiacGlyphSrc(glyphSet, sign.id) : null;
+				const zHref = zodiacGlyphSrc(sign.id);
 				return zHref ? (
 					<WheelTintedGlyphImage
 						key={sign.name}
@@ -851,7 +857,7 @@ export function HoroscopeWheel({
 				<g data-handoff="Layer_AngleGlyphs">
 					{anglePoints.map(({ key, icon, longitude }) => {
 						const p = polar(center, center, angleMarkerRadius, displayLon(longitude));
-						const angleHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						const angleHref = astrologyGlyphSrc(key);
 						return (
 							<g
 								key={key}
@@ -977,7 +983,7 @@ export function HoroscopeWheel({
 									: dimNonHighlighted
 										? 0.62
 										: 1) * hemiDim;
-						const planetHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						const planetHref = astrologyGlyphSrc(key);
 						return [
 							<g
 								key={key}

@@ -1,21 +1,24 @@
+import { OBSERVABLE_OBJECTS } from './observableObjects';
+import { ASPECT_ROWS } from './aspects';
+
 const ASSET_BASE_URL = import.meta.env.BASE_URL;
 
 export type AstrologyGlyphSetId = 'default' | 'modern';
 
 export const GLYPH_SET_KEY = 'glyph_set';
 
-const fileBackedIds = new Set([
-	'sun',
-	'moon',
-	'mercury',
-	'venus',
-	'mars',
-	'jupiter',
-	'saturn',
-	'uranus',
-	'neptune',
-	'pluto'
-]);
+/**
+ * Every id `OBSERVABLE_OBJECTS` can surface is file-backed under `planets/` — derived
+ * from the registry itself so this can't drift out of sync the way a hand-typed list did.
+ */
+const fileBackedIds = new Set(OBSERVABLE_OBJECTS.map((item) => item.id));
+
+const aspectIdSet = new Set<string>(ASPECT_ROWS.map((row) => row.id));
+
+/** Fixed stars (`star_*`, no per-star art yet) share one generic placeholder asset. */
+function planetAssetId(normalizedId: string): string {
+	return normalizedId.startsWith('star_') ? 'fixed_star_generic' : normalizedId;
+}
 
 /** Zodiac wheel order starting at 0° Aries (sign index 0). */
 export const ZODIAC_IDS = [
@@ -45,6 +48,7 @@ export function signIndexToZodiacId(signIndex: number): ZodiacId {
 const glyphAliasMap: Record<string, string> = {
 	ascendant: 'asc',
 	descendant: 'desc',
+	dsc: 'desc',
 	truenode: 'north_node',
 	meannode: 'north_node',
 	mean_node: 'north_node',
@@ -92,7 +96,19 @@ export function getAstrologyGlyphSrc(
 ): string | null {
 	const normalizedId = normalizeGlyphId(id);
 	if (!fileBackedIds.has(normalizedId)) return null;
-	return assetUrl(`glyphs/${setId}/planets/${normalizedId}.svg`);
+	return assetUrl(`glyphs/${setId}/planets/${planetAssetId(normalizedId)}.svg`);
+}
+
+export function getAspectGlyphSrc(
+	setId: AstrologyGlyphSetId,
+	aspectId: string
+): string | null {
+	const normalized = String(aspectId ?? '')
+		.trim()
+		.toLowerCase()
+		.replace(/\s+/g, '_');
+	if (!aspectIdSet.has(normalized)) return null;
+	return assetUrl(`glyphs/${setId}/aspects/${normalized}.svg`);
 }
 
 export function getZodiacGlyphSrc(

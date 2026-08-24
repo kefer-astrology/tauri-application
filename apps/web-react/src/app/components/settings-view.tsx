@@ -41,6 +41,7 @@ import {
 } from '@/lib/tauri/chartPayload';
 import { searchLocations } from '@/lib/tauri/workspace';
 import { BodySelector } from './body-selector';
+import { GlyphManager } from './glyph-manager';
 
 const LANG_BUBBLES: { code: AppLanguage; label: string }[] = [
 	{ code: 'cs', label: 'CS' },
@@ -816,6 +817,10 @@ function SettingsView({
 										{glyphDescription ? (
 											<p className={cn('text-xs', ft.muted)}>{glyphDescription}</p>
 										) : null}
+									</div>
+									<div className="space-y-2">
+										<Label className={ft.label}>{t('glyph_manager_title')}</Label>
+										<GlyphManager glyphSet={glyphSetValue} />
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="settings-app-shell-set" className={ft.label}>

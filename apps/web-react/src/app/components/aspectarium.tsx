@@ -194,17 +194,6 @@ function BodyGlyph({
 	size?: number;
 }) {
 	const fallback = bodyIcon(bodyId);
-	const isTextOnly = bodyId === 'asc' || bodyId === 'desc' || bodyId === 'mc' || bodyId === 'ic';
-	if (isTextOnly) {
-		return (
-			<span
-				className={cn('inline-flex items-center justify-center leading-none', className)}
-				style={{ width: size, height: size }}
-			>
-				{fallback}
-			</span>
-		);
-	}
 
 	return (
 		<AstrologyGlyph
@@ -220,11 +209,13 @@ function BodyGlyph({
 
 function AspectCellButton({
 	aspect,
+	glyphSet,
 	isSelected,
 	onSelect,
 	color
 }: {
 	aspect: ParsedAspect;
+	glyphSet: AstrologyGlyphSetId;
 	isSelected: boolean;
 	onSelect: () => void;
 	color: string;
@@ -243,7 +234,13 @@ function AspectCellButton({
 			aria-pressed={isSelected}
 		>
 			<span className="text-lg leading-none" style={{ color }}>
-				{ASPECT_GLYPHS[aspect.type] ?? '•'}
+				<AstrologyGlyph
+					glyphId={aspect.type}
+					glyphSet={glyphSet}
+					domain="aspect"
+					fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
+					size={18}
+				/>
 			</span>
 			<span className="mt-1 text-[11px] text-[color:var(--theme-content-muted)]">
 				{formatOrb(aspect.orb)}
@@ -546,7 +543,15 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 	const aspectFilterItems: FilterItem[] = ASPECT_ROWS.map((aspect) => ({
 		id: aspect.id,
 		label: t(aspect.labelKey),
-		icon: ASPECT_GLYPHS[aspect.id] ?? '•',
+		icon: (
+			<AstrologyGlyph
+				glyphId={aspect.id}
+				glyphSet={glyphSet}
+				domain="aspect"
+				fallback={ASPECT_GLYPHS[aspect.id] ?? '•'}
+				size={16}
+			/>
+		),
 		color:
 			workspaceDefaults.defaultAspectColors[aspect.id] ??
 			DEFAULT_ASPECT_COLORS[aspect.id] ??
@@ -720,6 +725,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 													>
 														<AspectCellButton
 															aspect={entry.aspect}
+															glyphSet={glyphSet}
 															isSelected={selectedAspectId === entry.id}
 															onSelect={() => setSelectedAspectId(entry.id)}
 															color={aspectColor}
@@ -761,8 +767,17 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 											)}
 											onClick={() => setSelectedAspectId(entry.id)}
 										>
-											<span className="w-8 shrink-0 text-center text-2xl" style={{ color }}>
-												{ASPECT_GLYPHS[entry.aspect.type] ?? '•'}
+											<span
+												className="flex w-8 shrink-0 items-center justify-center text-2xl"
+												style={{ color }}
+											>
+												<AstrologyGlyph
+													glyphId={entry.aspect.type}
+													glyphSet={glyphSet}
+													domain="aspect"
+													fallback={ASPECT_GLYPHS[entry.aspect.type] ?? '•'}
+													size={22}
+												/>
 											</span>
 											<span className="min-w-0 flex-1">
 												<span className={cn('block truncate text-sm font-medium', ft.title)}>
@@ -819,7 +834,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 								</span>
 							</div>
 							<span
-								className="text-xl leading-none"
+								className="flex items-center justify-center text-xl leading-none"
 								style={{
 									color:
 										workspaceDefaults.defaultAspectColors[selectedAspect.type] ??
@@ -829,7 +844,13 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 										'var(--theme-accent)'
 								}}
 							>
-								{ASPECT_GLYPHS[selectedAspect.type] ?? '•'}
+								<AstrologyGlyph
+									glyphId={selectedAspect.type}
+									glyphSet={glyphSet}
+									domain="aspect"
+									fallback={ASPECT_GLYPHS[selectedAspect.type] ?? '•'}
+									size={20}
+								/>
 							</span>
 							<div className="flex items-center gap-2">
 								<BodyGlyph

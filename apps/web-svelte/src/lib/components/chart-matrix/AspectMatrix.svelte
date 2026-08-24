@@ -1,5 +1,6 @@
 <script lang="ts">
   import { DEFAULT_ASPECT_COLORS, type AspectRowId } from '$lib/astrology/aspects';
+  import { getGlyphContent } from '$lib/stores/glyphs.svelte';
   import Table from '../ui/table/table.svelte';
   import TableBody from '../ui/table/table-body.svelte';
   import TableCell from '../ui/table/table-cell.svelte';
@@ -40,18 +41,9 @@
   ];
   const visiblePlanets = $derived(planetOrder.filter((planet) => planets[planet]));
 
-  const aspectSymbols: Partial<Record<AspectRowId, string>> = {
-    conjunction: '☌',
-    sextile: '*',
-    square: '□',
-    trine: '△',
-    quincunx: '∠',
-    opposition: '☍'
-  };
-
-  function getAspectSymbol(type: AspectRowId): { symbol: string; color: string } {
+  function getAspectGlyph(type: AspectRowId) {
     return {
-      symbol: aspectSymbols[type] ?? '•',
+      glyph: getGlyphContent(type),
       color: aspectColors[type] ?? DEFAULT_ASPECT_COLORS[type] ?? 'var(--token-viz-2)'
     };
   }
@@ -93,12 +85,21 @@
               {#if colIndex < rowIndex}
                 {@const aspect = getAspect(fromPlanet, toPlanet)}
                 {#if aspect}
-                  {@const aspectInfo = getAspectSymbol(aspect.type)}
+                  {@const aspectInfo = getAspectGlyph(aspect.type)}
                   <TableCell class="h-12 w-16 border-b border-r border-border/50 bg-[color:var(--token-surface-subtle)] px-1 text-center align-middle transition-colors hover:bg-accent/50">
                     <div class="flex flex-col items-center justify-center gap-0.5">
-                      <span class="text-base font-bold leading-none" style={`color:${aspectInfo.color};`}>
-                        {aspectInfo.symbol}
-                      </span>
+                      {#if aspectInfo.glyph.type === 'file'}
+                        <span
+                          class="inline-block h-4 w-4"
+                          style={`background-color:${aspectInfo.color}; mask-image:url(${aspectInfo.glyph.content}); mask-repeat:no-repeat; mask-position:center; mask-size:contain; -webkit-mask-image:url(${aspectInfo.glyph.content}); -webkit-mask-repeat:no-repeat; -webkit-mask-position:center; -webkit-mask-size:contain;`}
+                        ></span>
+                      {:else if aspectInfo.glyph.type === 'svg'}
+                        <span class="inline-block h-4 w-4" style={`color:${aspectInfo.color};`}>{@html aspectInfo.glyph.content}</span>
+                      {:else}
+                        <span class="text-base font-bold leading-none" style={`color:${aspectInfo.color};`}>
+                          {aspectInfo.glyph.content}
+                        </span>
+                      {/if}
                       <span class="font-mono text-[10px] leading-tight opacity-70">
                         {formatOrb(aspect.orb, aspect.applying)}
                       </span>
