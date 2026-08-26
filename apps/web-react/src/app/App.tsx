@@ -63,6 +63,7 @@ import {
 import type { TransitOverlay } from '@/lib/astrology/transits';
 import { WindowTitlebar } from './components/window-titlebar';
 import { HoroscopeContextTabs } from './components/horoscope-context-tabs';
+import { DetailSidePanel } from './components/detail-side-panel';
 
 const CHART_CONTEXT_VIEWS = new Set([
 	'horoskop',
@@ -471,7 +472,6 @@ export default function App() {
 		}
 		setCharts((prev) => prev.map((c) => (c.id === chart.id ? { ...c, ...chart } : c)));
 		setEditingChart(null);
-		setActiveView('horoskop');
 		void computeChartInBackground(chart, workspacePath);
 	};
 
@@ -635,7 +635,6 @@ export default function App() {
 										lightPlanetFill={lightPlanetFill}
 										onEdit={(chart) => {
 											setEditingChart(chart);
-											setActiveView('edit');
 										}}
 										onObservableObjectsChange={handleObservableObjectsChange}
 									/>
@@ -665,18 +664,6 @@ export default function App() {
 										existingChartIds={new Set(charts.map((c) => c.id))}
 										onCreated={handleChartCreated}
 										onBack={() => setActiveView('horoskop')}
-									/>
-								) : activeView === 'edit' && editingChart ? (
-									<NewHoroscope
-										theme={theme}
-										workspaceDefaults={workspaceDefaults}
-										existingChartIds={new Set(charts.map((c) => c.id))}
-										initialValues={editingChart}
-										onSaved={handleChartSaved}
-										onBack={() => {
-											setEditingChart(null);
-											setActiveView('horoskop');
-										}}
 									/>
 								) : activeView === 'aspektarium' ? (
 									<Aspectarium
@@ -740,6 +727,30 @@ export default function App() {
 							{CHART_CONTEXT_VIEWS.has(activeView) && <HoroscopeContextTabs theme={theme} />}
 						</main>
 					</div>
+					<DetailSidePanel
+						theme={theme}
+						open={editingChart !== null}
+						onOpenChange={(open) => {
+							if (!open) setEditingChart(null);
+						}}
+						title={t('edit_radix_title')}
+						description={editingChart?.name}
+						contentClassName="sm:max-w-xl lg:w-[min(48rem,70vw)] lg:max-w-3xl"
+						bodyClassName="overflow-y-auto p-0"
+					>
+						{editingChart && (
+							<NewHoroscope
+								key={editingChart.id}
+								presentation="panel"
+								theme={theme}
+								workspaceDefaults={workspaceDefaults}
+								existingChartIds={new Set(charts.map((chart) => chart.id))}
+								initialValues={editingChart}
+								onSaved={handleChartSaved}
+								onBack={() => setEditingChart(null)}
+							/>
+						)}
+					</DetailSidePanel>
 				</div>
 			</WorkspaceChartsProvider>
 			<Toaster theme={shadcnDark ? 'dark' : 'light'} />

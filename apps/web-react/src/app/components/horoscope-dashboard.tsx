@@ -28,18 +28,15 @@ import {
 import { toast } from 'sonner';
 import {
 	DEFAULT_OBSERVABLE_OBJECT_IDS,
-	OBSERVABLE_OBJECTS,
-	getObservableObjectLabel,
-	getObservableCategoryLabel,
-	type ObservableObjectCategory
+	OBSERVABLE_OBJECTS
 } from '@/lib/astrology/observableObjects';
-import { Checkbox } from './ui/checkbox';
-import { Label } from './ui/label';
 import { tagColor } from '@/lib/chartTags';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
+import { BodySelector } from './body-selector';
+import { DetailSidePanel } from './detail-side-panel';
 
 interface HoroscopeDashboardProps {
 	theme: Theme;
@@ -218,23 +215,6 @@ export function HoroscopeDashboard({
 	const [hoveredWheelObject, setHoveredWheelObject] = useState<HoroscopeWheelObjectHover | null>(
 		null
 	);
-
-	const observableCategories = useMemo(() => {
-		const categoryOrder: ObservableObjectCategory[] = [
-			'luminaries',
-			'personal_planets',
-			'social_outer_planets',
-			'angles',
-			'lunar_nodes',
-			'calculated_points',
-			'asteroids'
-		];
-		return categoryOrder.map((category) => ({
-			id: category,
-			label: getObservableCategoryLabel(category, t),
-			items: OBSERVABLE_OBJECTS.filter((item) => item.category === category)
-		}));
-	}, [t]);
 
 	const borderColor = 'border-[color:var(--token-border-subtle)]';
 	const textColor = ft.title;
@@ -782,9 +762,6 @@ export function HoroscopeDashboard({
 												</div>
 											))}
 										</div>
-										<div className={`text-center text-xs ${mutedColor} mt-3 italic`}>
-											{t('dashboard_positions_scroll_hint')}
-										</div>
 									</>
 								) : (
 									<div className={cn('py-6 text-sm', mutedColor)}>
@@ -854,93 +831,51 @@ export function HoroscopeDashboard({
 				</div>
 			) : null}
 
-			{/* Position Selection Modal */}
-			{showPositionModal && (
-				<div className="popup-backdrop fixed inset-0 z-50 flex items-center justify-center">
-					<Card
-						variant="themed"
-						theme={theme}
-						className="max-h-[80vh] w-[min(100vw-2rem,500px)] gap-0 overflow-hidden"
+			<DetailSidePanel
+				theme={theme}
+				open={showPositionModal}
+				onOpenChange={setShowPositionModal}
+				title={t('dashboard_positions_picker_title')}
+				description={t('aspectarium_selected_count', { count: pickerBodies.length })}
+				contentClassName="sm:max-w-xl lg:w-[min(48rem,70vw)] lg:max-w-3xl"
+				bodyClassName="overflow-hidden p-0"
+			>
+				<div className="flex h-full min-h-0 flex-col">
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<BodySelector
+							theme={theme}
+							glyphSet={glyphSet}
+							subtitleKey="dashboard_positions_picker_hint"
+							selectedBodyIds={pickerBodies}
+							onSelectedBodyIdsChange={setPickerBodies}
+						/>
+					</div>
+					<div
+						className={cn('flex shrink-0 justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}
 					>
-						<div className={`flex items-center justify-between border-b px-6 py-4 ${borderColor}`}>
-							<h3 className={`text-lg font-medium ${textColor}`}>
-								{t('dashboard_positions_picker_title')}
-							</h3>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => setShowPositionModal(false)}
-								className={cn('rounded-lg', hoverBg)}
-							>
-								<X className={`h-5 w-5 ${mutedColor}`} />
-							</Button>
-						</div>
-						<div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-4">
-							<p className={`text-sm ${mutedColor}`}>{t('dashboard_positions_picker_hint')}</p>
-							<div className="grid gap-4 md:grid-cols-2">
-								{observableCategories.map((category) => (
-									<div
-										key={category.id}
-										className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 p-4"
-									>
-										<h3 className={`mb-3 text-sm font-semibold ${textColor}`}>{category.label}</h3>
-										<div className="space-y-2">
-											{category.items.map((item) => (
-												<Label
-													key={item.id}
-													className="flex cursor-pointer items-center gap-3 text-sm"
-												>
-													<Checkbox
-														checked={pickerBodies.includes(item.id)}
-														onCheckedChange={() =>
-															setPickerBodies((prev) =>
-																prev.includes(item.id)
-																	? prev.filter((id) => id !== item.id)
-																	: [...prev, item.id]
-															)
-														}
-													/>
-													<AstrologyGlyph
-														glyphId={item.id}
-														glyphSet={glyphSet}
-														fallback={item.icon}
-														size={18}
-														className="text-foreground"
-														title={getObservableObjectLabel(item, t)}
-													/>
-													<span className={mutedColor}>{getObservableObjectLabel(item, t)}</span>
-												</Label>
-											))}
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-						<div className={cn('flex justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => setShowPositionModal(false)}
-								className={cn(ft.footerCancel, '!flex-none')}
-							>
-								{t('cancel')}
-							</Button>
-							<Button
-								type="button"
-								className={cn(ft.footerPrimary, '!flex-none')}
-								onClick={() => {
-									if (selectedChart) {
-										onObservableObjectsChange?.(selectedChart.id, pickerBodies);
-									}
-									setShowPositionModal(false);
-								}}
-							>
-								{t('sidebar_save')}
-							</Button>
-						</div>
-					</Card>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setShowPositionModal(false)}
+							className={cn(ft.footerCancel, '!flex-none')}
+						>
+							{t('cancel')}
+						</Button>
+						<Button
+							type="button"
+							className={cn(ft.footerPrimary, '!flex-none')}
+							onClick={() => {
+								if (selectedChart) {
+									onObservableObjectsChange?.(selectedChart.id, pickerBodies);
+								}
+								setShowPositionModal(false);
+							}}
+						>
+							{t('sidebar_save')}
+						</Button>
+					</div>
 				</div>
-			)}
+			</DetailSidePanel>
 		</div>
 	);
 }

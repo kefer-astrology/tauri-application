@@ -578,6 +578,7 @@ function TimezoneSelect({
 
 interface NewHoroscopeProps {
 	theme?: Theme;
+	presentation?: 'page' | 'panel';
 	/** Return to main horoscope view (sidebar **Horoskop**). */
 	onBack?: () => void;
 	workspaceDefaults: WorkspaceDefaultsState;
@@ -592,6 +593,7 @@ interface NewHoroscopeProps {
 
 export function NewHoroscope({
 	theme = 'noon',
+	presentation = 'page',
 	onBack,
 	workspaceDefaults,
 	existingChartIds,
@@ -932,8 +934,17 @@ export function NewHoroscope({
 	};
 
 	return (
-		<AppMainContentRoot className={cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')}>
-			<AppMainContentContainer layout="center-column">
+		<AppMainContentRoot
+			className={cn(
+				presentation === 'panel'
+					? 'bg-transparent px-5 py-4'
+					: cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')
+			)}
+		>
+			<AppMainContentContainer
+				layout={presentation === 'panel' ? 'centered' : 'center-column'}
+				maxWidth={presentation === 'panel' ? 'full' : '4xl'}
+			>
 				{/* <h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>
 						{isEditMode ? t('edit_radix_title') : t('new_radix_title')}
 					</h1> */}

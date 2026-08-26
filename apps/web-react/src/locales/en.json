@@ -90,7 +90,6 @@
 	"current_info_timezone": "Timezone",
 	"dashboard_positions_picker_hint": "Choose which points appear in the Positions panel.",
 	"dashboard_positions_picker_title": "Select bodies",
-	"dashboard_positions_scroll_hint": "Scroll for more",
 	"dashboard_no_positions": "No computed positions yet.",
 	"database_placeholder": "Custom layout for fetching specific persons",
 	"default_aspects": "Default aspects",
