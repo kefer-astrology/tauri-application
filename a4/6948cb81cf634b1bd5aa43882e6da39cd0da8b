@@ -1,0 +1,343 @@
+static/glyphs/modern/planets/flora.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/lilith_true.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/conjunction.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+apps/web-svelte/src/lib/stores/glyphs.svelte.ts
+  s_d6cb2704cf69ab::t_78571a9b74e4d7 35
+static/glyphs/default/aspects/sextile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/flora.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/square.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/semisextile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/lilith.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+apps/web-react/src/app/components/horoscope-wheel.tsx
+  s_d6cb2704cf69ab::t_0d4e69e8573192 725
+  s_d6cb2704cf69ab::t_5043f3093d78ab 618
+  s_d6cb2704cf69ab::t_7e3435fa207efb 887,896,1019,1028
+static/glyphs/default/planets/geo_node_venus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/hades.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/semisextile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/psyche.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/lilith_true.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/parthenope.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/egeria.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/apollon.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/part_of_spirit.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/poseidon.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/eris.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/geo_node_jupiter.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/ic.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/quadrinovile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/vertex.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/orcus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/sesquiquadrate.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/juno.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/asc.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/part_of_spirit.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/zeus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+apps/web-svelte/src/lib/components/RadixChart.svelte
+  s_d6cb2704cf69ab::t_6299b2a824abe5 386
+  s_d6cb2704cf69ab::t_ea963b3260c9cf 264
+  s_d6cb2704cf69ab::t_622c85970de271 332
+static/glyphs/default/planets/iris.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/eris.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/iris.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/trine.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/fixed_star_generic.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_saturn.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/pallas.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/kronos.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/juno.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/victoria.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/north_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/asc.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/geo_node_mars.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/admetos.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/irene.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/sesquiquadrate.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/makemake.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/cupido.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/tridecile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/septile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/irene.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/haumea.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/quintile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/fortuna.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_venus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/quadrinovile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/hades.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/ceres.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/opposition.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/astraea.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/haumea.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/eunomia.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/lilith.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/thetis.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/vesta.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/novile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/quaoar.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/vertex.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/quincunx.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/astraea.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/hebe.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/parthenope.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+apps/web-react/src/ui/astrology-glyph.tsx
+  s_d6cb2704cf69ab::t_f047d20e7e5ac6 11-14
+  s_d6cb2704cf69ab::t_34e7873e35281a 41,43,49
+static/glyphs/default/aspects/square.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/sedna.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/cupido.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/septile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/eunomia.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/kronos.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/massalia.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/mc.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/admetos.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/orcus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/desc.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/egeria.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/massalia.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/decile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/mc.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/quaoar.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/vesta.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/south_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/geo_node_saturn.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/varuna.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/quintile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/geo_node_uranus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/true_south_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/victoria.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/geo_node_neptune.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/decile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/binovile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/lilith_oscu.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/semisquare.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/trine.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/fixed_star_generic.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/part_of_fortune.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_jupiter.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/vulcanus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/sedna.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/novile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/opposition.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/sextile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/biquintile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_mercury.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/hebe.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/north_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/makemake.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/vulcanus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/binovile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/poseidon.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/true_north_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/melpomene.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/desc.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/thetis.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/psyche.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/hygiea.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/south_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/biquintile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/geo_node_mercury.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/ic.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_pluto.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_uranus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_neptune.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/varuna.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/antivertex.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/ceres.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/chiron.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/lilith_oscu.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/melpomene.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/zeus.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/pallas.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/metis.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/antivertex.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/geo_node_pluto.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/metis.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/tridecile.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/aspects/conjunction.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/part_of_fortune.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/hygiea.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/true_north_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/true_south_node.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/fortuna.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/semisquare.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/apollon.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/planets/geo_node_mars.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/default/planets/chiron.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+static/glyphs/modern/aspects/quincunx.svg
+  s_d6cb2704cf69ab::t_1d6e01f82260b8 2-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a46948cb81cf634b1bd5aa43882e6da39cd0da8b",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_d6cb2704cf69ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "641fe27a-2abd-482d-84eb-3080d83e4a8e",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
