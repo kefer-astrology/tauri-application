@@ -34,6 +34,7 @@
   import { onMount } from 'svelte';
   import { stepForward, stepBackward } from '$lib/stores/timeNavigation.svelte';
   import LocateFixed from '@lucide/svelte/icons/locate-fixed';
+  import WindowTitlebar from '$lib/components/WindowTitlebar.svelte';
 
   let rightExpanded = $state(true);
   // Left column has three panels with independent states
@@ -748,8 +749,10 @@
   });
 </script>
 
-<!-- Root layout: full viewport height, three rows by percentages -->
-<div class="h-screen w-screen grid grid-rows-[15%_75%_10%] bg-gradient-to-br from-[var(--panel)] to-[var(--panel-header)] text-foreground select-none box-border overflow-x-hidden">
+<!-- Root layout: the Tauri titlebar inherits the same canvas gradient. -->
+<div class="h-screen w-screen flex flex-col bg-gradient-to-br from-[var(--panel)] to-[var(--panel-header)] text-foreground select-none box-border overflow-x-hidden">
+  <WindowTitlebar />
+  <div class="min-h-0 flex-1 grid grid-rows-[15%_75%_10%]">
   <!-- Top: 15% height -->
   <header class="row-span-1">
     <TopBar />
@@ -1417,4 +1420,5 @@
   {#if layout.overlay.openExport}
     <OpenExportDialog />
   {/if}
+  </div>
 </div>

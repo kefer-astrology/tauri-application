@@ -204,7 +204,7 @@ export function AstrologySidebar({
 		<aside
 			data-tour="app-shell"
 			className={cn(
-				'flex h-screen flex-col border-r transition-all duration-300 ease-in-out',
+				'flex h-full flex-col border-r transition-all duration-300 ease-in-out',
 				themeStyle.bg,
 				themeStyle.border,
 				isExpanded ? 'w-[220px]' : 'w-16'

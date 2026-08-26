@@ -17,7 +17,6 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import { HoroscopeContextTabs } from './horoscope-context-tabs';
 import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import {
@@ -216,8 +215,9 @@ export function HoroscopeDashboard({
 	const [showPositionModal, setShowPositionModal] = useState(false);
 	const [pickerBodies, setPickerBodies] = useState<string[]>([]);
 	const [isSteppingTime, setIsSteppingTime] = useState(false);
-	const [hoveredWheelObject, setHoveredWheelObject] =
-		useState<HoroscopeWheelObjectHover | null>(null);
+	const [hoveredWheelObject, setHoveredWheelObject] = useState<HoroscopeWheelObjectHover | null>(
+		null
+	);
 
 	const observableCategories = useMemo(() => {
 		const categoryOrder: ObservableObjectCategory[] = [
@@ -435,7 +435,7 @@ export function HoroscopeDashboard({
 	};
 
 	return (
-		<div className="flex h-screen flex-col overflow-hidden" data-tour="radix-workspace">
+		<div className="flex h-full min-h-0 flex-col overflow-hidden" data-tour="radix-workspace">
 			{/* Main Content - 3 Column Layout */}
 			<div className="grid min-h-0 flex-1 grid-cols-[288px_minmax(0,1fr)_224px] gap-6 overflow-hidden p-4">
 				{/* Left Column */}
@@ -484,14 +484,12 @@ export function HoroscopeDashboard({
 								{chartTags.length > 0 ? (
 									<div className="flex flex-wrap gap-2 pt-2">
 										{chartTags.map((tag, index) => (
-											<Badge
-												key={tag}
-												variant="outline"
-												className="gap-1.5 px-2 py-1 text-xs"
-											>
+											<Badge key={tag} variant="outline" className="gap-1.5 px-2 py-1 text-xs">
 												<span
 													className="h-2 w-2 rounded-full"
-													style={{ backgroundColor: tagColor(selectedChart?.tagColors, tag, index) }}
+													style={{
+														backgroundColor: tagColor(selectedChart?.tagColors, tag, index)
+													}}
 												/>
 												{tag}
 											</Badge>
@@ -534,7 +532,12 @@ export function HoroscopeDashboard({
 					</Card>
 
 					{/* Astrolabe Panel */}
-					<Card variant="themed" theme={theme} className={panelCardClass} data-tour="radix-astrolabe">
+					<Card
+						variant="themed"
+						theme={theme}
+						className={panelCardClass}
+						data-tour="radix-astrolabe"
+					>
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
@@ -793,8 +796,6 @@ export function HoroscopeDashboard({
 					</Card>
 				</div>
 			</div>
-
-			<HoroscopeContextTabs theme={theme} />
 
 			{hoveredWheelDetails && hoveredWheelTooltipStyle ? (
 				<div
