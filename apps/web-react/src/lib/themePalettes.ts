@@ -15,6 +15,8 @@ export type ThemePalette = {
 	contentTextSecondary: string;
 	contentMuted: string;
 	accent: string;
+	/** Percentage (0–100) mapped to the blur behind modal popups. */
+	popupBackgroundFuzziness: number;
 	hoverBackground: string;
 	selectedBackground: string;
 };
@@ -37,6 +39,7 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 		contentTextSecondary: '#4B5563',
 		contentMuted: '#6B7280',
 		accent: '#2563EB',
+		popupBackgroundFuzziness: 0,
 		hoverBackground: 'rgba(255,255,255,0.10)',
 		selectedBackground: 'rgba(37,99,235,0.16)'
 	},
@@ -53,6 +56,7 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 		contentTextSecondary: '#4B5563',
 		contentMuted: '#6B7280',
 		accent: '#2563EB',
+		popupBackgroundFuzziness: 0,
 		hoverBackground: 'rgba(37,99,235,0.08)',
 		selectedBackground: 'rgba(37,99,235,0.16)'
 	},
@@ -69,6 +73,7 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 		contentTextSecondary: '#DBEAFE',
 		contentMuted: '#BFDBFE',
 		accent: '#6366F1',
+		popupBackgroundFuzziness: 0,
 		hoverBackground: 'rgba(255,255,255,0.10)',
 		selectedBackground: 'rgba(99,102,241,0.28)'
 	},
@@ -85,6 +90,7 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 		contentTextSecondary: '#CBD5E1',
 		contentMuted: '#94A3B8',
 		accent: '#6366F1',
+		popupBackgroundFuzziness: 0,
 		hoverBackground: 'rgba(255,255,255,0.10)',
 		selectedBackground: 'rgba(99,102,241,0.28)'
 	}
@@ -92,6 +98,12 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 
 function isNonEmptyString(value: unknown): value is string {
 	return typeof value === 'string' && value.trim().length > 0;
+}
+
+function clampPercentage(value: unknown, fallback: number): number {
+	return typeof value === 'number' && Number.isFinite(value)
+		? Math.min(100, Math.max(0, value))
+		: fallback;
 }
 
 function mergeThemePalette(
@@ -125,8 +137,14 @@ function mergeThemePalette(
 		contentTextSecondary: isNonEmptyString(partial?.contentTextSecondary)
 			? partial.contentTextSecondary
 			: base.contentTextSecondary,
-		contentMuted: isNonEmptyString(partial?.contentMuted) ? partial.contentMuted : base.contentMuted,
+		contentMuted: isNonEmptyString(partial?.contentMuted)
+			? partial.contentMuted
+			: base.contentMuted,
 		accent: isNonEmptyString(partial?.accent) ? partial.accent : base.accent,
+		popupBackgroundFuzziness: clampPercentage(
+			partial?.popupBackgroundFuzziness,
+			base.popupBackgroundFuzziness
+		),
 		hoverBackground: isNonEmptyString(partial?.hoverBackground)
 			? partial.hoverBackground
 			: base.hoverBackground,
@@ -136,7 +154,9 @@ function mergeThemePalette(
 	};
 }
 
-export function mergeThemePalettes(partial: Partial<ThemePalettes> | null | undefined): ThemePalettes {
+export function mergeThemePalettes(
+	partial: Partial<ThemePalettes> | null | undefined
+): ThemePalettes {
 	return {
 		sunrise: mergeThemePalette(DEFAULT_THEME_PALETTES.sunrise, partial?.sunrise),
 		noon: mergeThemePalette(DEFAULT_THEME_PALETTES.noon, partial?.noon),
@@ -181,9 +201,7 @@ function luminance(hex: string): number {
 	if (!rgb) return 1;
 	const [r, g, b] = rgb.map((channel) => {
 		const normalized = channel / 255;
-		return normalized <= 0.03928
-			? normalized / 12.92
-			: ((normalized + 0.055) / 1.055) ** 2.4;
+		return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
 	});
 	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
@@ -194,9 +212,20 @@ export function isLightPalette(palette: ThemePalette): boolean {
 
 export function themePaletteVars(palette: ThemePalette): CSSProperties {
 	const light = isLightPalette(palette);
-	const wheelStrokeMain = light ? alpha(palette.contentTextPrimary, 0.6, 'rgba(0,0,0,0.6)') : 'rgba(255,255,255,0.5)';
-	const wheelStrokeSoft = light ? alpha(palette.contentTextPrimary, 0.45, 'rgba(0,0,0,0.45)') : 'rgba(255,255,255,0.4)';
-	const wheelAxis = light ? alpha(palette.accent, 0.75, 'rgba(37,99,235,0.75)') : alpha(palette.accent, 0.85, 'rgba(96,165,250,0.85)');
+	const panelBackground = light ? 'rgba(255,255,255,0.95)' : 'rgba(15,23,42,0.82)';
+	const panelBackgroundSolid = light ? '#ffffff' : '#0f172a';
+	const panelBorder = light
+		? alpha(palette.contentTextSecondary, 0.18, 'rgba(75,85,99,0.18)')
+		: alpha(palette.navTextPrimary, 0.18, 'rgba(255,255,255,0.18)');
+	const wheelStrokeMain = light
+		? alpha(palette.contentTextPrimary, 0.6, 'rgba(0,0,0,0.6)')
+		: 'rgba(255,255,255,0.5)';
+	const wheelStrokeSoft = light
+		? alpha(palette.contentTextPrimary, 0.45, 'rgba(0,0,0,0.45)')
+		: 'rgba(255,255,255,0.4)';
+	const wheelAxis = light
+		? alpha(palette.accent, 0.75, 'rgba(37,99,235,0.75)')
+		: alpha(palette.accent, 0.85, 'rgba(96,165,250,0.85)');
 	const vizOne = alpha(palette.accent, 0.85, '#2563eb');
 	const vizTwo = alpha(palette.contentTextSecondary, 0.85, '#64748b');
 	const vizThree = alpha(palette.navTextSecondary, light ? 0.95 : 0.8, '#94a3b8');
@@ -214,16 +243,28 @@ export function themePaletteVars(palette: ThemePalette): CSSProperties {
 		['--theme-content-secondary' as string]: palette.contentTextSecondary,
 		['--theme-content-muted' as string]: palette.contentMuted,
 		['--theme-accent' as string]: palette.accent,
+		['--theme-popup-backdrop-blur' as string]: `${(palette.popupBackgroundFuzziness * 0.2).toFixed(1)}px`,
 		['--theme-hover-bg' as string]: palette.hoverBackground,
 		['--theme-selected-bg' as string]: palette.selectedBackground,
-		['--theme-sidebar-border' as string]: alpha(palette.navTextPrimary, 0.08, 'rgba(255,255,255,0.08)'),
+		['--theme-sidebar-border' as string]: alpha(
+			palette.navTextPrimary,
+			0.08,
+			'rgba(255,255,255,0.08)'
+		),
 		['--theme-separator' as string]: alpha(palette.navTextPrimary, 0.1, 'rgba(255,255,255,0.10)'),
-		['--theme-panel-bg' as string]: light ? 'rgba(255,255,255,0.95)' : 'rgba(15,23,42,0.82)',
+		['--theme-panel-bg' as string]: panelBackground,
 		['--theme-panel-bg-strong' as string]: light ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
-		['--theme-panel-bg-solid' as string]: light ? '#ffffff' : '#0f172a',
-		['--theme-panel-border' as string]: light
-			? alpha(palette.contentTextSecondary, 0.18, 'rgba(75,85,99,0.18)')
-			: alpha(palette.navTextPrimary, 0.18, 'rgba(255,255,255,0.18)'),
+		['--theme-panel-bg-solid' as string]: panelBackgroundSolid,
+		['--theme-panel-border' as string]: panelBorder,
+		// Bridge generic shadcn tokens to the active user-editable palette.
+		['--primary' as string]: palette.accent,
+		['--primary-foreground' as string]: '#ffffff',
+		['--accent' as string]: palette.selectedBackground,
+		['--accent-foreground' as string]: palette.contentTextPrimary,
+		['--ring' as string]: palette.accent,
+		['--popover' as string]: panelBackgroundSolid,
+		['--popover-foreground' as string]: palette.contentTextPrimary,
+		['--border' as string]: panelBorder,
 		['--theme-soft-bg' as string]: light
 			? alpha(palette.accent, 0.06, 'rgba(37,99,235,0.06)')
 			: 'rgba(255,255,255,0.06)',
@@ -248,9 +289,21 @@ export function themePaletteVars(palette: ThemePalette): CSSProperties {
 		['--token-wheel-bg' as string]: light ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.03)',
 		['--token-wheel-glyph' as string]: palette.contentTextSecondary,
 		['--token-wheel-axis' as string]: wheelAxis,
-		['--token-wheel-overlay-primary' as string]: alpha(palette.accent, light ? 0.14 : 0.18, 'rgba(37,99,235,0.14)'),
-		['--token-wheel-overlay-secondary' as string]: alpha(palette.contentMuted, light ? 0.16 : 0.2, 'rgba(244,63,94,0.16)'),
-		['--token-wheel-highlight' as string]: alpha(palette.accent, light ? 0.34 : 0.26, 'rgba(250,204,21,0.30)'),
+		['--token-wheel-overlay-primary' as string]: alpha(
+			palette.accent,
+			light ? 0.14 : 0.18,
+			'rgba(37,99,235,0.14)'
+		),
+		['--token-wheel-overlay-secondary' as string]: alpha(
+			palette.contentMuted,
+			light ? 0.16 : 0.2,
+			'rgba(244,63,94,0.16)'
+		),
+		['--token-wheel-highlight' as string]: alpha(
+			palette.accent,
+			light ? 0.34 : 0.26,
+			'rgba(250,204,21,0.30)'
+		),
 		['--token-viz-1' as string]: vizOne,
 		['--token-viz-2' as string]: vizTwo,
 		['--token-viz-3' as string]: vizThree,

@@ -855,6 +855,40 @@ function SettingsView({
 										<p className={cn('text-xs leading-relaxed', ft.muted)}>
 											{t('settings_theme_palette_blurb', { theme: t(`sidebar_theme_${theme}`) })}
 										</p>
+										<div className="space-y-2 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] p-4">
+											<div className="flex items-center justify-between gap-4">
+												<Label htmlFor="settings-popup-fuzziness" className={ft.label}>
+													{t('settings_popup_fuzziness')}
+												</Label>
+												<output
+													htmlFor="settings-popup-fuzziness"
+													className={cn('min-w-12 text-right text-sm tabular-nums', ft.title)}
+												>
+													{Math.round(themePaletteDraft.popupBackgroundFuzziness)}%
+												</output>
+											</div>
+											<input
+												id="settings-popup-fuzziness"
+												type="range"
+												min={0}
+												max={100}
+												step={1}
+												value={themePaletteDraft.popupBackgroundFuzziness}
+												onChange={(event) => {
+													const popupBackgroundFuzziness = Number(event.target.value);
+													setThemePaletteDraft((prev) => ({
+														...prev,
+														popupBackgroundFuzziness
+													}));
+													markChanged();
+												}}
+												className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[color:var(--theme-panel-border)]"
+												style={{ accentColor: 'var(--theme-accent)' }}
+											/>
+											<p className={cn('text-xs leading-relaxed', ft.muted)}>
+												{t('settings_popup_fuzziness_hint')}
+											</p>
+										</div>
 										<div className="grid gap-4 sm:grid-cols-2">
 											{(
 												[

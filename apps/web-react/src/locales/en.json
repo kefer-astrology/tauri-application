@@ -395,6 +395,8 @@
 	"settings_about": "About",
 	"settings_guide": "Guide",
 	"settings_observable_objects_hint": "Select the celestial bodies and points that should be computed and shown across the app.",
+	"settings_popup_fuzziness": "Popup background fuzziness",
+	"settings_popup_fuzziness_hint": "Controls how strongly content behind a modal popup is blurred. At 0%, the backdrop is fully transparent and sharp.",
 	"settings_theme_accent": "Accent",
 	"settings_theme_canvas_end": "Canvas background end",
 	"settings_theme_canvas_start": "Canvas background start",

@@ -395,6 +395,8 @@
 	"settings_about": "Acerca",
 	"settings_guide": "Guía",
 	"settings_observable_objects_hint": "Seleccione los cuerpos celestes y puntos que deben calcularse y mostrarse en toda la aplicación.",
+	"settings_popup_fuzziness": "Desenfoque del fondo de ventanas",
+	"settings_popup_fuzziness_hint": "Controla la intensidad del desenfoque detrás de una ventana modal. Al 0 %, el fondo es totalmente transparente y nítido.",
 	"settings_theme_accent": "Acento",
 	"settings_theme_canvas_end": "Fin del fondo del lienzo",
 	"settings_theme_canvas_start": "Inicio del fondo del lienzo",

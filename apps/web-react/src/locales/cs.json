@@ -395,6 +395,8 @@
 	"settings_about": "O Aplikaci a právní ujednání využití",
 	"settings_guide": "Návod ke stažení a odkaz na videa s návodem",
 	"settings_observable_objects_hint": "Vyberte tělesa a body, které se mají v celé aplikaci počítat a zobrazovat.",
+	"settings_popup_fuzziness": "Rozostření pozadí vyskakovacích oken",
+	"settings_popup_fuzziness_hint": "Určuje míru rozostření obsahu za modálním oknem. Při 0 % je pozadí zcela průhledné a ostré.",
 	"settings_theme_accent": "Akcent",
 	"settings_theme_canvas_end": "Pozadí plátna konec",
 	"settings_theme_canvas_start": "Pozadí plátna začátek",
