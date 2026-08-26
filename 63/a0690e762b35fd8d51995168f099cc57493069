@@ -1,0 +1,35 @@
+apps/web-react/src/locales/fr.json
+  s_17f98f19b36c49::t_fc268512583761 244
+apps/web-react/src/app/components/open-workspace-view.tsx
+  s_17f98f19b36c49::t_b3e22ec8d5454a 1-9,243-245,440-453,458-464,466,478-480,482-498
+  s_17f98f19b36c49::t_d9a9a4e838a4e4 65-69
+  s_17f98f19b36c49::t_37c969dde99804 467-476,481
+  s_17f98f19b36c49::t_c734ff70628d7d 37,503
+apps/web-react/src/locales/en.json
+  s_17f98f19b36c49::t_fc268512583761 244
+apps/web-react/src/locales/cs.json
+  s_17f98f19b36c49::t_fc268512583761 244
+apps/web-react/src/locales/es.json
+  s_17f98f19b36c49::t_fc268512583761 244
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "63a0690e762b35fd8d51995168f099cc57493069",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_17f98f19b36c49": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03edf-6db6-7411-9979-9172caa13e61",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
