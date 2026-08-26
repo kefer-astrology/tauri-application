@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type CSSProperties,
+	type PointerEvent as ReactPointerEvent,
+	type ReactNode
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderOpen, PanelRightOpen, Plus, Star, X } from 'lucide-react';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
@@ -26,7 +34,7 @@ import {
 	type SearchPlanetId
 } from '@/lib/astrology/chartSearch';
 
-type OpenMode = 'my_radixes' | 'database' | 'favorites' | 'history';
+type OpenMode = 'my_radixes' | 'database';
 type PlanetFilter = { sign: string; degree: string; house: string; motion: string };
 type HouseFilter = { sign: string; degree: string };
 type AspectFilter = { id: number; left: string; aspect: string; right: string };
@@ -54,6 +62,11 @@ const CHART_TYPE_OPTIONS = [
 		labelKey: 'open_type_secondary_direction'
 	},
 	{ id: 'solar', values: ['SOLAR', 'SOLAR_RETURN'], labelKey: 'open_type_solar' },
+	{
+		id: 'relative',
+		values: ['RELATIVE', 'RELATIVE_RETURN', 'RELATIV'],
+		labelKey: 'revolution_kind_relative'
+	},
 	{ id: 'lunar', values: ['LUNAR', 'LUNAR_RETURN'], labelKey: 'open_type_lunar' },
 	{ id: 'synastry', values: ['SYNASTRY'], labelKey: 'open_type_synastry' }
 ] as const;
@@ -227,6 +240,9 @@ export function OpenWorkspaceView({
 	const ft = useAppFormFieldTheme(theme);
 	const { charts, selectedChartId } = useWorkspaceCharts();
 	const [openMode, setOpenMode] = useState<OpenMode>('my_radixes');
+	const splitPaneRef = useRef<HTMLDivElement>(null);
+	const [filterPaneWidth, setFilterPaneWidth] = useState<number | null>(null);
+	const [resizingFilters, setResizingFilters] = useState(false);
 	const [selectedRows, setSelectedRows] = useState<string[]>([]);
 	const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 	const [focusedChartId, setFocusedChartId] = useState<string | null>(selectedChartId);
@@ -272,7 +288,6 @@ export function OpenWorkspaceView({
 		const normalizedContentQuery = contentQuery.trim().toLocaleLowerCase();
 		const normalizedLocationQuery = locationQuery.trim().toLocaleLowerCase();
 		return charts.filter((chart) => {
-			if (openMode === 'favorites' && !favorites.has(chart.id)) return false;
 			if (selectedTypes.length > 0 && !selectedTypes.includes(chartTypeId(chart) ?? ''))
 				return false;
 			if (
@@ -363,7 +378,6 @@ export function OpenWorkspaceView({
 		charts,
 		contentQuery,
 		dateParts,
-		favorites,
 		houseFilters,
 		locationQuery,
 		metadataByChart,
@@ -423,27 +437,70 @@ export function OpenWorkspaceView({
 	}));
 	const gridColumns =
 		'grid-cols-[40px_40px_minmax(12rem,1.5fr)_minmax(8rem,1fr)_minmax(10rem,1fr)_minmax(7rem,.8fr)_minmax(6rem,.7fr)_minmax(10rem,1.2fr)]';
+	const resizeFilterPane = (event: ReactPointerEvent<HTMLButtonElement>) => {
+		if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+		const bounds = splitPaneRef.current?.getBoundingClientRect();
+		if (!bounds) return;
+		const minWidth = 260;
+		const maxWidth = Math.min(560, Math.max(minWidth, bounds.width * 0.48));
+		setFilterPaneWidth(Math.min(maxWidth, Math.max(minWidth, event.clientX - bounds.left)));
+	};
+	const finishFilterResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+		if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+			event.currentTarget.releasePointerCapture(event.pointerId);
+		}
+		setResizingFilters(false);
+	};
 
 	return (
 		<AppMainContentRoot className={cn(ft.formPageBg, 'h-full')} layout="edge-to-edge">
 			<AppMainContentContainer maxWidth="full" className="flex h-full min-h-0 flex-1 flex-col">
-				<div className="flex h-full min-h-[calc(100vh-8rem)] flex-1 flex-col xl:min-h-[42rem] xl:flex-row">
+				<div
+					ref={splitPaneRef}
+					className={cn(
+						'flex h-full min-h-[calc(100vh-8rem)] flex-1 flex-col xl:min-h-[42rem] xl:flex-row',
+						resizingFilters && 'xl:cursor-col-resize xl:select-none'
+					)}
+				>
 					<aside
-						className="relative flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-b xl:w-[40%] xl:border-r xl:border-b-0"
-						style={{
-							background:
-								'linear-gradient(to bottom, var(--theme-secondary-sidebar-start) 0%, var(--theme-secondary-sidebar-end) 100%)',
-							borderColor: 'var(--theme-sidebar-border)',
-							color: 'var(--theme-nav-text-primary)'
-						}}
+						className="relative flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-b xl:w-[var(--open-filter-width)] xl:border-r xl:border-b-0"
+						style={
+							{
+								'--open-filter-width':
+									filterPaneWidth === null ? 'clamp(17rem, 30%, 30rem)' : `${filterPaneWidth}px`,
+								background:
+									'linear-gradient(to bottom, var(--theme-secondary-sidebar-start) 0%, var(--theme-secondary-sidebar-end) 100%)',
+								borderColor: 'var(--theme-sidebar-border)',
+								color: 'var(--theme-nav-text-primary)'
+							} as CSSProperties
+						}
 					>
+						<button
+							type="button"
+							className={cn(
+								'absolute top-0 right-0 z-30 hidden h-full w-2 cursor-col-resize touch-none xl:block',
+								'after:absolute after:inset-y-0 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-[color:var(--theme-panel-border)]',
+								'hover:after:w-0.5 hover:after:bg-[color:var(--theme-accent)]',
+								resizingFilters && 'after:w-0.5 after:bg-[color:var(--theme-accent)]'
+							)}
+							onPointerDown={(event) => {
+								event.preventDefault();
+								event.currentTarget.setPointerCapture(event.pointerId);
+								setResizingFilters(true);
+							}}
+							onPointerMove={resizeFilterPane}
+							onPointerUp={finishFilterResize}
+							onPointerCancel={finishFilterResize}
+							onLostPointerCapture={() => setResizingFilters(false)}
+							onDoubleClick={() => setFilterPaneWidth(null)}
+							aria-label={t('open_resize_filters')}
+							title={t('open_resize_filters')}
+						/>
 						<div className={cn('shrink-0 border-b px-4 sm:px-6', ft.footerBorder)}>
 							<div className="flex min-h-16 items-center">
 								{[
 									{ id: 'my_radixes', label: t('open_mode_my_radixes') },
-									{ id: 'database', label: t('open_mode_database') },
-									{ id: 'favorites', label: t('favorite') },
-									{ id: 'history', label: t('open_mode_history') }
+									{ id: 'database', label: t('open_mode_database') }
 								].map((tab) => (
 									<Button
 										key={tab.id}
