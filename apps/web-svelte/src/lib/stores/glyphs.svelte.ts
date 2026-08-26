@@ -32,7 +32,7 @@ export const glyphSetOptions: GlyphSetOption[] = [
 const GLYPH_SET_STORAGE_KEY = 'glyph_set';
 const CUSTOM_GLYPHS_STORAGE_KEY = 'custom_glyphs';
 const ASSET_BASE_URL = import.meta.env.BASE_URL;
-const SVELTE_GLYPH_SCALE = 0.9;
+const SVELTE_GLYPH_SCALE = 1.15;
 
 type GlyphCatalogType = 'planet' | 'zodiac' | 'aspect';
 

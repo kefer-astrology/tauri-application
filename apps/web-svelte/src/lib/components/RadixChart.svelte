@@ -261,7 +261,7 @@
 
   {#each zodiacSigns as sign}
     {@const pos = polar(zodiacRadius, sign.angle + 15)}
-      {@const rendered = renderGlyph(sign.id, pos.x, pos.y, 24, elementColorForSign(sign.id))}
+      {@const rendered = renderGlyph(sign.id, pos.x, pos.y, 28, elementColorForSign(sign.id))}
     <g transform={`translate(${rendered.x}, ${rendered.y})`} style={`color:${rendered.color}`}>
       {#if rendered.glyph.type === 'file'}
         {#if failedGlyphFiles[`zodiac:${sign.id}:${rendered.glyph.content}`]}
@@ -329,7 +329,7 @@
       { id: 'ic', longitude: angleLongitudes.ic! }
     ] as angle}
       {@const pos = polar(angleMarkerRadius, angle.longitude)}
-      {@const rendered = renderGlyph(angle.id, pos.x, pos.y, 22)}
+      {@const rendered = renderGlyph(angle.id, pos.x, pos.y, 26)}
       <g transform={`translate(${rendered.x}, ${rendered.y})`}>
         {#if rendered.glyph.type === 'file'}
           {#if failedGlyphFiles[`angle:${angle.id}:${rendered.glyph.content}`]}
@@ -383,7 +383,7 @@
   <g>
     {#each bodies as body}
       {@const pos = polar(planetRadius, body.longitude)}
-      {@const rendered = renderGlyph(body.id, pos.x, pos.y, 24)}
+      {@const rendered = renderGlyph(body.id, pos.x, pos.y, 28)}
       <g transform={`translate(${rendered.x}, ${rendered.y})`}>
         {#if rendered.glyph.type === 'file'}
           {#if failedGlyphFiles[`planet:${body.id}:${rendered.glyph.content}`]}

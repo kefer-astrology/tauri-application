@@ -615,7 +615,7 @@ export function HoroscopeWheel({
 										href={planetHref}
 										x={p.x}
 										y={p.y}
-										size={15}
+										size={18}
 										filterId={transitFilterId}
 									/>
 								) : (
@@ -722,7 +722,7 @@ export function HoroscopeWheel({
 						href={zHref}
 						x={x}
 						y={y}
-						size={20}
+						size={24}
 						filterId={`${wheelFilterUid}-z-${sign.id}`}
 					/>
 				) : (
@@ -884,7 +884,7 @@ export function HoroscopeWheel({
 											href={angleHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetDarkFilterId}
 										/>
 									) : (
@@ -893,7 +893,7 @@ export function HoroscopeWheel({
 											href={angleHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetLightFilterId}
 										/>
 									)
@@ -1016,7 +1016,7 @@ export function HoroscopeWheel({
 											href={planetHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetDarkFilterId}
 										/>
 									) : (
@@ -1025,7 +1025,7 @@ export function HoroscopeWheel({
 											href={planetHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetLightFilterId}
 										/>
 									)
