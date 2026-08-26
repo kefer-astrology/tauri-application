@@ -1,0 +1,45 @@
+apps/web-react/src/locales/cs.json
+  s_17f98f19b36c49::t_660b3a88f9e9eb 398-399
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_17f98f19b36c49::t_50e79a22b5d03d 859
+apps/web-react/src/locales/fr.json
+  s_17f98f19b36c49::t_660b3a88f9e9eb 398-399
+apps/web-react/src/locales/es.json
+  s_17f98f19b36c49::t_660b3a88f9e9eb 398-399
+apps/web-react/src/lib/themePalettes.ts
+  s_17f98f19b36c49::t_a296da5dd61be2 215-219,246,255,257-267
+  s_17f98f19b36c49::t_a34b2e9aff1c17 140-142,157-159,204,220-228,249-253,292-306
+  s_17f98f19b36c49::t_2f698a64b1c1f6 18-19,42,59,76,93,103-108,144-147
+apps/web-react/src/app/components/ui/dialog.tsx
+  s_17f98f19b36c49::t_50e79a22b5d03d 33
+apps/web-react/src/app/components/settings-view.tsx
+  s_17f98f19b36c49::t_7c6c90bb6f0393 858-891
+apps/web-react/src/app/components/ui/sheet.tsx
+  s_17f98f19b36c49::t_50e79a22b5d03d 33
+apps/web-react/src/styles/theme.css
+  s_17f98f19b36c49::t_50e79a22b5d03d 186-191
+  s_17f98f19b36c49::t_a34b2e9aff1c17 197-205
+apps/web-react/src/locales/en.json
+  s_17f98f19b36c49::t_660b3a88f9e9eb 398-399
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "2e5c83b24680183052cf38a0b81484201135db59",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_17f98f19b36c49": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03edf-6db6-7411-9979-9172caa13e61",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
