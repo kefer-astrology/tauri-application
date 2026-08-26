@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
 	ChevronDown,
 	ChevronRight,
@@ -21,8 +21,9 @@ import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import {
 	HoroscopeWheel,
+	type HoroscopeWheelAspectInteraction,
 	type HoroscopeWheelBody,
-	type HoroscopeWheelObjectHover,
+	type HoroscopeWheelObjectInteraction,
 	type RadixAspectDrawInput
 } from './horoscope-wheel';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ import {
 	OBSERVABLE_OBJECTS
 } from '@/lib/astrology/observableObjects';
 import { tagColor } from '@/lib/chartTags';
+import { ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
@@ -212,9 +214,11 @@ export function HoroscopeDashboard({
 	const [showPositionModal, setShowPositionModal] = useState(false);
 	const [pickerBodies, setPickerBodies] = useState<string[]>([]);
 	const [isSteppingTime, setIsSteppingTime] = useState(false);
-	const [hoveredWheelObject, setHoveredWheelObject] = useState<HoroscopeWheelObjectHover | null>(
-		null
-	);
+	const [selectedWheelObject, setSelectedWheelObject] =
+		useState<HoroscopeWheelObjectInteraction | null>(null);
+	const [selectedWheelAspect, setSelectedWheelAspect] =
+		useState<HoroscopeWheelAspectInteraction | null>(null);
+	const [wheelDetailKind, setWheelDetailKind] = useState<'object' | 'aspect' | null>(null);
 
 	const borderColor = 'border-[color:var(--token-border-subtle)]';
 	const textColor = ft.title;
@@ -335,28 +339,28 @@ export function HoroscopeDashboard({
 			})
 			.filter((entry): entry is [HoroscopeWheelBody, number] => entry[1] !== null)
 	) as Partial<Record<string, number>>;
-	const hoveredWheelDetails = useMemo(() => {
-		if (!hoveredWheelObject) return null;
+	const selectedWheelDetails = useMemo(() => {
+		if (!selectedWheelObject) return null;
 		const sourcePositions =
-			hoveredWheelObject.layer === 'transit' ? transitPositions : computedPositions;
+			selectedWheelObject.layer === 'transit' ? transitPositions : computedPositions;
 		const sourceMotion =
-			hoveredWheelObject.layer === 'transit'
+			selectedWheelObject.layer === 'transit'
 				? (activeTransitOverlay?.transitChart.computed?.motion ?? {})
 				: computedMotion;
-		const longitude = normalizeLongitude(sourcePositions[hoveredWheelObject.bodyId]);
+		const longitude = normalizeLongitude(sourcePositions[selectedWheelObject.bodyId]);
 		if (longitude === null) return null;
 		const position = longitudeToPosition(
-			hoveredWheelObject.bodyId,
+			selectedWheelObject.bodyId,
 			longitude,
-			sourceMotion[hoveredWheelObject.bodyId]?.retrograde ?? false,
+			sourceMotion[selectedWheelObject.bodyId]?.retrograde ?? false,
 			t
 		);
 		const layerLabel =
-			hoveredWheelObject.layer === 'transit'
+			selectedWheelObject.layer === 'transit'
 				? t('transits_general_transit_transit')
 				: (selectedChart?.name ?? t('new_type_radix'));
 		return {
-			...hoveredWheelObject,
+			...selectedWheelObject,
 			longitude,
 			position,
 			layerLabel
@@ -365,29 +369,68 @@ export function HoroscopeDashboard({
 		activeTransitOverlay?.transitChart.computed?.motion,
 		computedMotion,
 		computedPositions,
-		hoveredWheelObject,
+		selectedWheelObject,
 		selectedChart?.name,
 		t,
 		transitPositions
 	]);
-	const hoveredWheelTooltipStyle = hoveredWheelDetails
+	const selectedWheelPopupStyle = selectedWheelDetails
 		? {
 				left: Math.max(
 					8,
 					Math.min(
-						hoveredWheelDetails.clientX + 14,
+						selectedWheelDetails.clientX + 14,
 						(typeof window === 'undefined' ? 1200 : window.innerWidth) - 260
 					)
 				),
 				top: Math.max(
 					8,
 					Math.min(
-						hoveredWheelDetails.clientY + 14,
+						selectedWheelDetails.clientY + 14,
 						(typeof window === 'undefined' ? 800 : window.innerHeight) - 142
 					)
 				)
 			}
 		: undefined;
+	const selectedAspectPopupStyle = selectedWheelAspect
+		? {
+				left: Math.max(
+					8,
+					Math.min(
+						selectedWheelAspect.clientX + 14,
+						(typeof window === 'undefined' ? 1200 : window.innerWidth) - 260
+					)
+				),
+				top: Math.max(
+					8,
+					Math.min(
+						selectedWheelAspect.clientY + 14,
+						(typeof window === 'undefined' ? 800 : window.innerHeight) - 110
+					)
+				)
+			}
+		: undefined;
+	const aspectLabel = (type: string) => {
+		const definition = ASPECT_ROWS.find((aspect) => aspect.id === type);
+		return definition ? t(definition.labelKey) : type;
+	};
+	const objectLabel = (id: string) => {
+		const meta = POSITION_META[id];
+		return meta?.labelKey ? t(meta.labelKey) : (meta?.fallbackLabel ?? id);
+	};
+	const selectedBodyAspects =
+		selectedWheelObject?.layer === 'radix'
+			? radixAspects.filter(
+					(aspect) =>
+						aspect.from === selectedWheelObject.bodyId || aspect.to === selectedWheelObject.bodyId
+				)
+			: [];
+
+	useEffect(() => {
+		setSelectedWheelObject(null);
+		setSelectedWheelAspect(null);
+		setWheelDetailKind(null);
+	}, [selectedChart?.id]);
 
 	const getMaxAmount = () => {
 		if (timeUnit === 'sec' || timeUnit === 'min' || timeUnit === 'yr') return 10;
@@ -670,8 +713,27 @@ export function HoroscopeDashboard({
 							aspectOrbsForRadix={workspaceDefaults.defaultAspectOrbs}
 							aspectColorsForRadix={workspaceDefaults.defaultAspectColors}
 							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
-							onObjectHover={setHoveredWheelObject}
-							onObjectHoverEnd={() => setHoveredWheelObject(null)}
+							selectedObject={selectedWheelObject}
+							selectedAspectIndex={selectedWheelAspect?.index}
+							onObjectClick={(interaction) => {
+								const alreadySelected =
+									selectedWheelObject?.bodyId === interaction.bodyId &&
+									selectedWheelObject.layer === interaction.layer;
+								setSelectedWheelObject(interaction);
+								setSelectedWheelAspect(null);
+								setWheelDetailKind(alreadySelected ? 'object' : null);
+							}}
+							onAspectClick={(interaction) => {
+								const alreadySelected = selectedWheelAspect?.index === interaction.index;
+								setSelectedWheelAspect(interaction);
+								setSelectedWheelObject(null);
+								setWheelDetailKind(alreadySelected ? 'aspect' : null);
+							}}
+							onWheelBackgroundClick={() => {
+								setSelectedWheelObject(null);
+								setSelectedWheelAspect(null);
+								setWheelDetailKind(null);
+							}}
 						/>
 					</div>
 				</div>
@@ -774,62 +836,208 @@ export function HoroscopeDashboard({
 				</div>
 			</div>
 
-			{hoveredWheelDetails && hoveredWheelTooltipStyle ? (
+			{wheelDetailKind === null && selectedWheelDetails && selectedWheelPopupStyle ? (
 				<div
 					className={cn(
 						'pointer-events-none fixed z-[60] w-64 rounded-lg border px-3 py-2.5 shadow-xl backdrop-blur-md',
 						borderColor,
 						'bg-[color:var(--theme-panel-bg)]/95'
 					)}
-					style={hoveredWheelTooltipStyle}
+					style={selectedWheelPopupStyle}
 				>
 					<div className="mb-2 flex items-center justify-between gap-3">
 						<div className="flex min-w-0 items-center gap-2">
 							<AstrologyGlyph
-								glyphId={hoveredWheelDetails.bodyId}
+								glyphId={selectedWheelDetails.bodyId}
 								glyphSet={glyphSet}
-								fallback={hoveredWheelDetails.position.icon}
+								fallback={selectedWheelDetails.position.icon}
 								size={18}
-								title={hoveredWheelDetails.position.label}
+								title={selectedWheelDetails.position.label}
 								className="shrink-0"
 							/>
 							<div className={cn('truncate text-sm font-semibold', textColor)}>
-								{hoveredWheelDetails.position.label}
+								{selectedWheelDetails.position.label}
 							</div>
 						</div>
 						<div className={cn('shrink-0 text-[11px] font-medium', mutedColor)}>
-							{hoveredWheelDetails.layerLabel}
+							{selectedWheelDetails.layerLabel}
 						</div>
 					</div>
 					<div className="space-y-1 font-mono text-xs tabular-nums">
 						<div className="flex items-center justify-between gap-3">
 							<span className={mutedColor}>{t('aspectarium_position')}</span>
 							<span className={cn('flex items-center gap-1', textColor)}>
-								{hoveredWheelDetails.position.degrees}°
+								{selectedWheelDetails.position.degrees}°
 								<AstrologyGlyph
-									glyphId={hoveredWheelDetails.position.signZodiacId}
+									glyphId={selectedWheelDetails.position.signZodiacId}
 									glyphSet={glyphSet}
 									domain="zodiac"
-									fallback={hoveredWheelDetails.position.signGlyphFallback}
+									fallback={selectedWheelDetails.position.signGlyphFallback}
 									size={16}
-									title={hoveredWheelDetails.position.signZodiacId}
+									title={selectedWheelDetails.position.signZodiacId}
 								/>
-								{hoveredWheelDetails.position.minutes}' {hoveredWheelDetails.position.seconds}"
+								{selectedWheelDetails.position.minutes}' {selectedWheelDetails.position.seconds}"
 							</span>
 						</div>
 						<div className="flex items-center justify-between gap-3">
 							<span className={mutedColor}>{t('aspectarium_absolute_longitude')}</span>
-							<span className={textColor}>{hoveredWheelDetails.longitude.toFixed(2)}°</span>
+							<span className={textColor}>{selectedWheelDetails.longitude.toFixed(2)}°</span>
 						</div>
 						<div className="flex items-center justify-between gap-3">
 							<span className={mutedColor}>{t('open_filter_motion')}</span>
 							<span className={textColor}>
-								{hoveredWheelDetails.position.retrograde ? 'R' : 'D'}
+								{selectedWheelDetails.position.retrograde ? 'R' : 'D'}
 							</span>
 						</div>
 					</div>
 				</div>
 			) : null}
+
+			{wheelDetailKind === null && selectedWheelAspect && selectedAspectPopupStyle ? (
+				<div
+					className={cn(
+						'pointer-events-none fixed z-[60] w-64 rounded-lg border px-3 py-2.5 shadow-xl backdrop-blur-md',
+						borderColor,
+						'bg-[color:var(--theme-panel-bg)]/95'
+					)}
+					style={selectedAspectPopupStyle}
+				>
+					<div className={cn('mb-2 text-sm font-semibold', textColor)}>
+						{aspectLabel(selectedWheelAspect.aspect.type)}
+					</div>
+					<div className="space-y-1 text-xs">
+						<div className="flex items-center justify-between gap-3">
+							<span className={mutedColor}>
+								{objectLabel(selectedWheelAspect.aspect.from)} →{' '}
+								{objectLabel(selectedWheelAspect.aspect.to)}
+							</span>
+						</div>
+						<div className="flex items-center justify-between gap-3 font-mono tabular-nums">
+							<span className={mutedColor}>{t('label_orb')}</span>
+							<span className={textColor}>{selectedWheelAspect.aspect.orb.toFixed(2)}°</span>
+						</div>
+					</div>
+				</div>
+			) : null}
+
+			<DetailSidePanel
+				theme={theme}
+				open={wheelDetailKind !== null}
+				onOpenChange={(open) => {
+					if (!open) setWheelDetailKind(null);
+				}}
+				title={
+					wheelDetailKind === 'aspect' && selectedWheelAspect
+						? aspectLabel(selectedWheelAspect.aspect.type)
+						: (selectedWheelDetails?.position.label ?? t('details'))
+				}
+				description={
+					wheelDetailKind === 'aspect' && selectedWheelAspect
+						? `${objectLabel(selectedWheelAspect.aspect.from)} → ${objectLabel(selectedWheelAspect.aspect.to)}`
+						: selectedWheelDetails?.layerLabel
+				}
+				bodyClassName="overflow-y-auto"
+			>
+				{wheelDetailKind === 'object' && selectedWheelDetails ? (
+					<div className="space-y-6">
+						<div className="space-y-3">
+							<div className="flex items-center gap-3">
+								<AstrologyGlyph
+									glyphId={selectedWheelDetails.bodyId}
+									glyphSet={glyphSet}
+									fallback={selectedWheelDetails.position.icon}
+									size={28}
+									title={selectedWheelDetails.position.label}
+								/>
+								<div className={cn('text-base font-semibold', textColor)}>
+									{selectedWheelDetails.position.label}
+								</div>
+							</div>
+							<div className="space-y-2 text-sm">
+								<div className="flex items-center justify-between gap-3">
+									<span className={mutedColor}>{t('aspectarium_position')}</span>
+									<span className={cn('flex items-center gap-1 font-mono tabular-nums', textColor)}>
+										{selectedWheelDetails.position.degrees}°
+										<AstrologyGlyph
+											glyphId={selectedWheelDetails.position.signZodiacId}
+											glyphSet={glyphSet}
+											domain="zodiac"
+											fallback={selectedWheelDetails.position.signGlyphFallback}
+											size={18}
+										/>
+										{selectedWheelDetails.position.minutes}' {selectedWheelDetails.position.seconds}
+										"
+									</span>
+								</div>
+								<div className="flex items-center justify-between gap-3">
+									<span className={mutedColor}>{t('aspectarium_absolute_longitude')}</span>
+									<span className={cn('font-mono tabular-nums', textColor)}>
+										{selectedWheelDetails.longitude.toFixed(4)}°
+									</span>
+								</div>
+								<div className="flex items-center justify-between gap-3">
+									<span className={mutedColor}>{t('open_filter_motion')}</span>
+									<span className={textColor}>
+										{selectedWheelDetails.position.retrograde ? 'R' : 'D'}
+									</span>
+								</div>
+							</div>
+						</div>
+						<div>
+							<h4 className={cn('mb-3 text-sm font-semibold', textColor)}>{t('aspects')}</h4>
+							{selectedBodyAspects.length > 0 ? (
+								<div className="space-y-2">
+									{selectedBodyAspects.map((aspect, index) => {
+										const otherId =
+											aspect.from === selectedWheelDetails.bodyId ? aspect.to : aspect.from;
+										return (
+											<div
+												key={`${aspect.from}-${aspect.to}-${aspect.type}-${index}`}
+												className="rounded-lg bg-[color:var(--theme-soft-bg)] px-3 py-2"
+											>
+												<div className="flex items-center justify-between gap-3 text-sm">
+													<span className={textColor}>{objectLabel(otherId)}</span>
+													<span className={mutedColor}>{aspectLabel(aspect.type)}</span>
+												</div>
+												<div
+													className={cn(
+														'mt-1 text-right font-mono text-xs tabular-nums',
+														mutedColor
+													)}
+												>
+													{t('label_orb')}: {aspect.orb.toFixed(2)}°
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							) : (
+								<p className={cn('text-sm', mutedColor)}>{t('aspectarium_no_aspects')}</p>
+							)}
+						</div>
+					</div>
+				) : wheelDetailKind === 'aspect' && selectedWheelAspect ? (
+					<div className="space-y-4 text-sm">
+						<div className="rounded-lg bg-[color:var(--theme-soft-bg)] p-4">
+							<div className="flex items-center justify-between gap-3">
+								<span className={mutedColor}>{t('aspects')}</span>
+								<span className={cn('font-semibold', textColor)}>
+									{aspectLabel(selectedWheelAspect.aspect.type)}
+								</span>
+							</div>
+							<div className="mt-3 flex items-center justify-between gap-3">
+								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.from)}</span>
+								<span className={textColor}>→</span>
+								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.to)}</span>
+							</div>
+							<div className="mt-3 flex items-center justify-between gap-3 font-mono tabular-nums">
+								<span className={mutedColor}>{t('label_orb')}</span>
+								<span className={textColor}>{selectedWheelAspect.aspect.orb.toFixed(4)}°</span>
+							</div>
+						</div>
+					</div>
+				) : null}
+			</DetailSidePanel>
 
 			<DetailSidePanel
 				theme={theme}

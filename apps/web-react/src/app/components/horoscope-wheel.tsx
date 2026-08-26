@@ -2,7 +2,7 @@
  * Horoscope wheel SVG — single source shared with Horoskop tab (`HoroscopeDashboard`).
  * Developer handoff id: HoroscopeWheel
  */
-import { useId, type PointerEvent } from 'react';
+import { useId, type MouseEvent } from 'react';
 import {
 	DEFAULT_ELEMENT_COLORS,
 	elementForZodiacId,
@@ -242,9 +242,16 @@ export interface RadixAspectDrawInput {
 
 export type HoroscopeWheelObjectLayer = 'radix' | 'transit';
 
-export interface HoroscopeWheelObjectHover {
+export interface HoroscopeWheelObjectInteraction {
 	bodyId: string;
 	layer: HoroscopeWheelObjectLayer;
+	clientX: number;
+	clientY: number;
+}
+
+export interface HoroscopeWheelAspectInteraction {
+	aspect: RadixAspectDrawInput;
+	index: number;
 	clientX: number;
 	clientY: number;
 }
@@ -287,8 +294,11 @@ export interface HoroscopeWheelProps {
 	/** Horoskop tab uses radix-only wheel; Informace view enables glyphs + axes */
 	showPlanetGlyphs?: boolean;
 	showAxisLines?: boolean;
-	onObjectHover?: (hover: HoroscopeWheelObjectHover) => void;
-	onObjectHoverEnd?: () => void;
+	selectedObject?: Pick<HoroscopeWheelObjectInteraction, 'bodyId' | 'layer'> | null;
+	selectedAspectIndex?: number | null;
+	onObjectClick?: (interaction: HoroscopeWheelObjectInteraction) => void;
+	onAspectClick?: (interaction: HoroscopeWheelAspectInteraction) => void;
+	onWheelBackgroundClick?: () => void;
 	className?: string;
 }
 
@@ -314,16 +324,21 @@ export function HoroscopeWheel({
 	showAxisLines = false,
 	elementColors: elementColorsProp = DEFAULT_ELEMENT_COLORS,
 	lightPlanetFill = 'var(--theme-content-primary)',
-	onObjectHover,
-	onObjectHoverEnd,
+	selectedObject,
+	selectedAspectIndex,
+	onObjectClick,
+	onAspectClick,
+	onWheelBackgroundClick,
 	className
 }: HoroscopeWheelProps) {
 	const isDark = theme === 'midnight' || theme === 'twilight';
 	const customGlyphOverrides = useCustomGlyphOverrides();
 	const astrologyGlyphSrc = (id: string) =>
-		resolveCustomGlyphSrc(customGlyphOverrides, id) ?? (glyphSet ? getAstrologyGlyphSrc(glyphSet, id) : null);
+		resolveCustomGlyphSrc(customGlyphOverrides, id) ??
+		(glyphSet ? getAstrologyGlyphSrc(glyphSet, id) : null);
 	const zodiacGlyphSrc = (id: string) =>
-		resolveCustomGlyphSrc(customGlyphOverrides, id) ?? (glyphSet ? getZodiacGlyphSrc(glyphSet, id) : null);
+		resolveCustomGlyphSrc(customGlyphOverrides, id) ??
+		(glyphSet ? getZodiacGlyphSrc(glyphSet, id) : null);
 	const wheelFilterUid = useId().replace(/:/g, '');
 	const planetLightFilterId = `${wheelFilterUid}-pl`;
 	const planetDarkFilterId = `${wheelFilterUid}-pd`;
@@ -451,12 +466,13 @@ export function HoroscopeWheel({
 		...(aspectColorsForRadix ?? {})
 	};
 	const aspectList = radixAspects ?? [];
-	const emitObjectHover = (
-		event: PointerEvent<SVGElement>,
+	const emitObjectClick = (
+		event: MouseEvent<SVGElement>,
 		bodyId: string,
 		layer: HoroscopeWheelObjectLayer
 	) => {
-		onObjectHover?.({
+		event.stopPropagation();
+		onObjectClick?.({
 			bodyId,
 			layer,
 			clientX: event.clientX,
@@ -472,6 +488,7 @@ export function HoroscopeWheel({
 			viewBox={`0 0 ${wheelSize} ${wheelSize}`}
 			className={className}
 			preserveAspectRatio="xMidYMid meet"
+			onClick={onWheelBackgroundClick}
 		>
 			<defs>
 				<filter id="hw-planet-halo" x="-100%" y="-100%" width="300%" height="300%">
@@ -590,24 +607,19 @@ export function HoroscopeWheel({
 							<g
 								key={`transit-${key}`}
 								data-handoff={`TransitPlanet_${key}`}
-								style={{ cursor: 'help' }}
-								onPointerEnter={(event) => emitObjectHover(event, key, 'transit')}
-								onPointerMove={(event) => emitObjectHover(event, key, 'transit')}
-								onPointerLeave={onObjectHoverEnd}
+								style={{ cursor: 'pointer' }}
+								onClick={(event) => emitObjectClick(event, key, 'transit')}
 							>
-								<circle
-									cx={p.x}
-									cy={p.y}
-									r="20"
-									fill="transparent"
-								/>
+								<circle cx={p.x} cy={p.y} r="20" fill="transparent" />
 								<circle
 									cx={p.x}
 									cy={p.y}
 									r="14"
 									fill="var(--theme-panel-bg)"
 									stroke="var(--theme-accent)"
-									strokeWidth="1"
+									strokeWidth={
+										selectedObject?.layer === 'transit' && selectedObject.bodyId === key ? 2.5 : 1
+									}
 									opacity={0.92}
 								/>
 								{planetHref ? (
@@ -862,21 +874,14 @@ export function HoroscopeWheel({
 							<g
 								key={key}
 								data-handoff={`Angle_${key}`}
-								style={{ cursor: 'help' }}
-								onPointerEnter={(event) =>
-									emitObjectHover(event, key === 'dsc' ? 'desc' : key, 'radix')
-								}
-								onPointerMove={(event) =>
-									emitObjectHover(event, key === 'dsc' ? 'desc' : key, 'radix')
-								}
-								onPointerLeave={onObjectHoverEnd}
+								style={{ cursor: 'pointer' }}
+								onClick={(event) => emitObjectClick(event, key === 'dsc' ? 'desc' : key, 'radix')}
 							>
-								<circle
-									cx={p.x}
-									cy={p.y}
-									r="18"
-									fill="transparent"
-								/>
+								<circle cx={p.x} cy={p.y} r="18" fill="transparent" />
+								{selectedObject?.layer === 'radix' &&
+									selectedObject.bodyId === (key === 'dsc' ? 'desc' : key) && (
+										<circle cx={p.x} cy={p.y} r="18" fill="var(--token-wheel-highlight)" />
+									)}
 								{angleHref ? (
 									isDark ? (
 										<WheelTintedGlyphImage
@@ -917,11 +922,7 @@ export function HoroscopeWheel({
 			)}
 
 			{/* Layer: radix aspect lines (from computed aspects) */}
-			<g
-				data-handoff="Layer_AspectLines"
-				opacity={aspectList.length > 0 ? 0.5 : 0}
-				style={{ pointerEvents: 'none' }}
-			>
+			<g data-handoff="Layer_AspectLines" opacity={aspectList.length > 0 ? 1 : 0}>
 				{aspectList.flatMap((aspect, idx) => {
 					const aLon = longitudeForAspectPoint(
 						aspect.from,
@@ -940,17 +941,44 @@ export function HoroscopeWheel({
 							? `${baseHex}${isDark ? '99' : 'cc'}`
 							: baseHex;
 					const key = `${aspect.from}-${aspect.to}-${aspect.type}-${idx}`;
+					const isSelected = selectedAspectIndex === idx;
+					const selectionActive = selectedAspectIndex != null;
 					return [
-						<line
-							key={key}
-							x1={pa.x}
-							y1={pa.y}
-							x2={pb.x}
-							y2={pb.y}
-							stroke={stroke}
-							strokeWidth={sw}
-							strokeLinecap="round"
-						/>
+						<g key={key}>
+							<line
+								x1={pa.x}
+								y1={pa.y}
+								x2={pb.x}
+								y2={pb.y}
+								stroke={stroke}
+								strokeWidth={sw}
+								strokeLinecap="round"
+								opacity={selectionActive ? (isSelected ? 1 : 0) : 0.5}
+								style={{ transition: 'opacity 0.16s ease' }}
+							/>
+							<line
+								x1={pa.x}
+								y1={pa.y}
+								x2={pb.x}
+								y2={pb.y}
+								stroke="transparent"
+								strokeWidth={Math.max(12, sw + 8)}
+								strokeLinecap="round"
+								style={{
+									cursor: 'pointer',
+									pointerEvents: selectionActive && !isSelected ? 'none' : 'stroke'
+								}}
+								onClick={(event) => {
+									event.stopPropagation();
+									onAspectClick?.({
+										aspect,
+										index: idx,
+										clientX: event.clientX,
+										clientY: event.clientY
+									});
+								}}
+							/>
+						</g>
 					];
 				})}
 			</g>
@@ -989,18 +1017,11 @@ export function HoroscopeWheel({
 								key={key}
 								data-handoff={`Planet_${key}`}
 								opacity={dim}
-								style={{ cursor: 'help', transition: 'opacity 0.2s ease' }}
-								onPointerEnter={(event) => emitObjectHover(event, key, 'radix')}
-								onPointerMove={(event) => emitObjectHover(event, key, 'radix')}
-								onPointerLeave={onObjectHoverEnd}
+								style={{ cursor: 'pointer', transition: 'opacity 0.2s ease' }}
+								onClick={(event) => emitObjectClick(event, key, 'radix')}
 							>
-								<circle
-									cx={p.x}
-									cy={p.y}
-									r="22"
-									fill="transparent"
-								/>
-								{hi && (
+								<circle cx={p.x} cy={p.y} r="22" fill="transparent" />
+								{(hi || (selectedObject?.layer === 'radix' && selectedObject.bodyId === key)) && (
 									<circle
 										cx={p.x}
 										cy={p.y}
