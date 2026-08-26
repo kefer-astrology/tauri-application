@@ -1,0 +1,33 @@
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_17f98f19b36c49::t_e79502e6b54d6c 846,851,853,855,859,863,870,872,875,877,879,884,889-895,897-912,915-917
+  s_17f98f19b36c49::t_def4a99ebf3b61 918,925-967,970-1001,1008-1041
+  s_17f98f19b36c49::t_b069129845e32c 35,716-736
+  s_17f98f19b36c49::t_5a26c4dbba3ada 968-969,1002-1007
+  s_17f98f19b36c49::t_e34cfd51c0fa8a 839,896
+  s_17f98f19b36c49::t_ebe9f7536925b7 1,24,26,217-221,342-343,345,347,350,353,355,359,363,372,377,382,389,395-433
+  s_17f98f19b36c49::t_98debb14953711 923-924
+apps/web-react/src/app/components/horoscope-wheel.tsx
+  s_17f98f19b36c49::t_b630590b05ca9e 5,245,252-258,297-301,327-331,469-470,474-475,491,610-611,620-622,877,881-882,884,944-945,947-948,958-981,1020-1021
+  s_17f98f19b36c49::t_5a26c4dbba3ada 337-338,340-341,613,878,880,883,925,949-957,1023-1024
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "dc9e897c44c34c21d22fecfbc9f6369b5a8cb68f",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_17f98f19b36c49": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03edf-6db6-7411-9979-9172caa13e61",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
