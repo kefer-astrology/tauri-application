@@ -1,0 +1,32 @@
+apps/web-react/src/app/components/detail-side-panel.tsx
+  s_17f98f19b36c49::t_5e219ba2ec4922 14-15,25-26,41-42
+  s_17f98f19b36c49::t_897e6b5531b6eb 3,31,49,53
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_17f98f19b36c49::t_74c2caac4054a4 31,38-39,834-853,856-876,878
+  s_17f98f19b36c49::t_d4b4cf35076999 854
+apps/web-react/src/app/App.tsx
+  s_17f98f19b36c49::t_5e219ba2ec4922 66,730-753
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_17f98f19b36c49::t_5e219ba2ec4922 581,596,937-947
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "d9e9aab1d23065f55c3fe98c508805c7a9be3109",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_17f98f19b36c49": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03edf-6db6-7411-9979-9172caa13e61",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
