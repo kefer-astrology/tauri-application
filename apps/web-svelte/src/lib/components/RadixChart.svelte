@@ -135,8 +135,19 @@
     return ((180 - eclipticDeg) * Math.PI) / 180;
   }
 
+  // Rotate the whole wheel so the Ascendant always sits at the 9 o'clock (left) point,
+  // matching the React app's horoscope-wheel behavior.
+  const wheelRotationOffset = $derived.by(() => {
+    const asc = angleLongitudes.asc;
+    return typeof asc === 'number' && Number.isFinite(asc) ? -asc : 0;
+  });
+
+  function displayLongitude(eclipticDeg: number): number {
+    return ((eclipticDeg + wheelRotationOffset) % 360 + 360) % 360;
+  }
+
   function polar(r: number, eclipticDeg: number) {
-    const rad = longitudeToScreenRadians(eclipticDeg);
+    const rad = longitudeToScreenRadians(displayLongitude(eclipticDeg));
     return {
       x: center + r * Math.cos(rad),
       y: center + r * Math.sin(rad)

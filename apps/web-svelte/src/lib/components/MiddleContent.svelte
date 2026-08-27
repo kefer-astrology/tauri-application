@@ -678,16 +678,11 @@
                   {t('loading_positions', {}, 'Loading positions…')}
                 </div>
               {/if}
-              <!-- Timestamp navigation indicator -->
-              {#if availableTimestamps.length > 0}
+              {#if availableTimestamps.length > 1}
                 <div class="absolute top-2 left-2 text-xs opacity-75 bg-background/80 px-2 py-1 rounded">
-                  {#if availableTimestamps.length === 1}
-                    <span class="text-yellow-500">⚠️ Only 1 timestamp (compute time series to enable navigation)</span>
-                  {:else}
-                    {currentTimestampIndex + 1} / {availableTimestamps.length}
-                    {#if zoomLevel > 1}
-                      <span class="ml-1 opacity-60">(×{zoomLevel})</span>
-                    {/if}
+                  {currentTimestampIndex + 1} / {availableTimestamps.length}
+                  {#if zoomLevel > 1}
+                    <span class="ml-1 opacity-60">(×{zoomLevel})</span>
                   {/if}
                 </div>
               {/if}

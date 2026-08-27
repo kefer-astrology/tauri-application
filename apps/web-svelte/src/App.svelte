@@ -31,6 +31,7 @@
   import PanelMenu from '$lib/components/PanelMenu.svelte';
   import OptionListMenu from '$lib/components/OptionListMenu.svelte';
   import * as Dialog from '$lib/components/ui/dialog/index.js';
+  import * as Sheet from '$lib/components/ui/sheet/index.js';
   import { onMount } from 'svelte';
   import { stepForward, stepBackward } from '$lib/stores/timeNavigation.svelte';
   import LocateFixed from '@lucide/svelte/icons/locate-fixed';
@@ -61,6 +62,7 @@
   let newZodiacType = $state(layout.workspaceDefaults.zodiacType);
   let newTags = $state('');
   let editingChartId = $state<string | null>(null);
+  let editSheetOpen = $state(false);
   let isResolvingNewLocation = $state(false);
   let newLocationStatus = $state<string | null>(null);
   const newLocationOptions = $derived(
@@ -554,19 +556,17 @@
         if (chartDate && !isNaN(chartDate.getTime())) {
           const chartTimeMs = chartDate.getTime();
           const currentTimeMs = timeNavigation.currentTime?.getTime?.() ?? NaN;
-          // When Astrolabe shift is active, the shifted chart time is a preview target.
-          // Feeding that time back into currentTime would reapply the shift repeatedly.
-          if (!timeNavigation.shiftActive && currentTimeMs !== chartTimeMs) {
+          if (currentTimeMs !== chartTimeMs) {
             timeNavigation.currentTime = chartDate;
           }
           // Set time range around the chart time (default: 1 day before/after)
           const oneDay = 24 * 60 * 60 * 1000;
           const nextStart = chartTimeMs - oneDay;
           const nextEnd = chartTimeMs + oneDay;
-          if (!timeNavigation.shiftActive && (timeNavigation.startTime?.getTime?.() ?? NaN) !== nextStart) {
+          if ((timeNavigation.startTime?.getTime?.() ?? NaN) !== nextStart) {
             timeNavigation.startTime = new Date(nextStart);
           }
-          if (!timeNavigation.shiftActive && (timeNavigation.endTime?.getTime?.() ?? NaN) !== nextEnd) {
+          if ((timeNavigation.endTime?.getTime?.() ?? NaN) !== nextEnd) {
             timeNavigation.endTime = new Date(nextEnd);
           }
           timeNavigationSeededChartId = chart.id;
@@ -709,6 +709,7 @@
       setMode('radix_view');
     }
 
+    editSheetOpen = false;
     applyFormReset();
   }
 
@@ -759,73 +760,12 @@
   </header>
 
   <!-- Middle: 75% height -->
-  {#if mode === 'new_radix' || mode === 'open' || mode === 'info' || mode === 'revolution' || mode === 'synastry' || mode === 'favorite' || mode === 'settings' || mode === 'export'}
-    <!-- Left 20% + middle stretched to 80% -->
-    <section class="row-span-1 grid gap-x-3 gap-y-3 px-3 pb-3 overflow-hidden w-full" style:grid-template-columns="minmax(0,20%) minmax(0,80%)">
-      <!-- Left single panel -->
-      <div class="h-full min-w-0 flex flex-col gap-2 min-h-0 bg-panel rounded-md overflow-hidden">
-        <div class="min-h-0 flex-1">
-          <ExpandablePanel 
-            title={
-              mode === 'settings' ? t('settings', {}, 'Settings')
-              : mode === 'open' ? t('open_chart', {}, 'Open Chart')
-              : mode === 'info' ? t('info', {}, 'Info')
-              : mode === 'revolution' ? t('revolution', {}, 'Revolution')
-              : mode === 'synastry' ? t('sidebar_synastry', {}, 'Synastry')
-              : mode === 'favorite' ? t('favorite', {}, 'Favorite')
-              : t('new', {}, 'New')
-            } 
-            editable={false}
-          >
-            {#snippet children()}
-              {#if mode === 'new_radix'}
-                <PanelMenu items={newRadixMenuItems} bind:selectedId={newChartType} />
-              {:else if mode === 'open'}
-                {@const openModes = [
-                  { value: 'my_radixes', label: t('open_mode_my_radixes', {}, 'My Radixes') },
-                  { value: 'database', label: t('open_mode_database', {}, 'Persons Database') }
-                ]}
-                <OptionListMenu items={openModes} bind:selectedValue={openMode} />
-              {:else if mode === 'export'}
-                {@const exportTypes = [
-                  { value: 'print', label: t('export_type_print', {}, 'Print') },
-                  { value: 'pdf', label: t('export_type_pdf', {}, 'Export PDF') },
-                  { value: 'png', label: t('export_type_png', {}, 'Export PNG') }
-                ]}
-                <OptionListMenu items={exportTypes} bind:selectedValue={exportType} />
-              {:else if mode === 'info'}
-                <PanelMenu items={infoItems} bind:selectedId={selectedInfoItem} />
-              {:else if mode === 'settings'}
-                <PanelMenu items={settingsMenuItems} bind:selectedId={selectedSettingsSection} />
-              {:else if mode === 'revolution'}
-                <PanelMenu items={revolutionMenuItems} bind:selectedId={selectedRevolutionSection} />
-              {:else}
-                <div class="text-sm opacity-85">{t('mode_view_description', { mode: t(mode, {}, mode) }, 'Use the center panel for {mode} view.')}</div>
-                <div class="mt-4">
-                  <div class="text-sm font-medium opacity-85 mb-2">{t('list_items', {}, 'Contexts')}</div>
-                  <ul class="space-y-1 max-h-40 overflow-auto pr-1">
-                    {#each layout.contexts as c}
-                      <li class="flex items-center justify-between text-sm">
-                        <span class:font-semibold={layout.selectedContext === c.id}>{c.name}</span>
-                        {#if layout.selectedContext === c.id}
-                          <span class="text-xs opacity-70">{t('selected', {}, 'selected')}</span>
-                        {/if}
-                      </li>
-                    {/each}
-                  </ul>
-                </div>
-              {/if}
-            {/snippet}
-          </ExpandablePanel>
-        </div>
-      </div>
-
-      <!-- Middle content spans remaining width -->
-      <div class="h-full min-w-0">
-        {#if mode === 'new_radix'}
-          <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col overflow-y-auto">
-            <h2 class="text-lg font-semibold mb-4">{t('new', {}, 'New')}</h2>
-            <form class="space-y-4 w-full max-w-2xl" onsubmit={submitNewContext}>
+      {#snippet chartFormPanel()}
+        <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col overflow-y-auto">
+          <h2 class="text-lg font-semibold mb-4">
+            {editingChartId ? t('edit_radix_title', {}, 'Edit Radix') : t('new', {}, 'New')}
+          </h2>
+          <form class="space-y-4 w-full max-w-2xl" onsubmit={submitNewContext}>
               <!-- Name -->
               <div class="space-y-1">
                 <label class="block text-sm font-medium opacity-85" for="ctxNameCenter">
@@ -1011,6 +951,73 @@
               </div>
             </form>
           </div>
+      {/snippet}
+
+  {#if mode === 'new_radix' || mode === 'open' || mode === 'info' || mode === 'revolution' || mode === 'synastry' || mode === 'favorite' || mode === 'settings' || mode === 'export'}
+    <!-- Left 20% + middle stretched to 80% -->
+    <section class="row-span-1 grid gap-x-3 gap-y-3 px-3 pb-3 overflow-hidden w-full" style:grid-template-columns="minmax(0,20%) minmax(0,80%)">
+      <!-- Left single panel -->
+      <div class="h-full min-w-0 flex flex-col gap-2 min-h-0">
+        <div class="min-h-0 flex-1">
+          <ExpandablePanel 
+            title={
+              mode === 'settings' ? t('settings', {}, 'Settings')
+              : mode === 'open' ? t('open_chart', {}, 'Open Chart')
+              : mode === 'info' ? t('info', {}, 'Info')
+              : mode === 'revolution' ? t('revolution', {}, 'Revolution')
+              : mode === 'synastry' ? t('sidebar_synastry', {}, 'Synastry')
+              : mode === 'favorite' ? t('favorite', {}, 'Favorite')
+              : t('new', {}, 'New')
+            } 
+            editable={false}
+          >
+            {#snippet children()}
+              {#if mode === 'new_radix'}
+                <PanelMenu items={newRadixMenuItems} bind:selectedId={newChartType} />
+              {:else if mode === 'open'}
+                {@const openModes = [
+                  { value: 'my_radixes', label: t('open_mode_my_radixes', {}, 'My Radixes') },
+                  { value: 'database', label: t('open_mode_database', {}, 'Persons Database') }
+                ]}
+                <OptionListMenu items={openModes} bind:selectedValue={openMode} />
+              {:else if mode === 'export'}
+                {@const exportTypes = [
+                  { value: 'print', label: t('export_type_print', {}, 'Print') },
+                  { value: 'pdf', label: t('export_type_pdf', {}, 'Export PDF') },
+                  { value: 'png', label: t('export_type_png', {}, 'Export PNG') }
+                ]}
+                <OptionListMenu items={exportTypes} bind:selectedValue={exportType} />
+              {:else if mode === 'info'}
+                <PanelMenu items={infoItems} bind:selectedId={selectedInfoItem} />
+              {:else if mode === 'settings'}
+                <PanelMenu items={settingsMenuItems} bind:selectedId={selectedSettingsSection} />
+              {:else if mode === 'revolution'}
+                <PanelMenu items={revolutionMenuItems} bind:selectedId={selectedRevolutionSection} />
+              {:else}
+                <div class="text-sm opacity-85">{t('mode_view_description', { mode: t(mode, {}, mode) }, 'Use the center panel for {mode} view.')}</div>
+                <div class="mt-4">
+                  <div class="text-sm font-medium opacity-85 mb-2">{t('list_items', {}, 'Contexts')}</div>
+                  <ul class="space-y-1 max-h-40 overflow-auto pr-1">
+                    {#each layout.contexts as c}
+                      <li class="flex items-center justify-between text-sm">
+                        <span class:font-semibold={layout.selectedContext === c.id}>{c.name}</span>
+                        {#if layout.selectedContext === c.id}
+                          <span class="text-xs opacity-70">{t('selected', {}, 'selected')}</span>
+                        {/if}
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              {/if}
+            {/snippet}
+          </ExpandablePanel>
+        </div>
+      </div>
+
+      <!-- Middle content spans remaining width -->
+      <div class="h-full min-w-0">
+        {#if mode === 'new_radix'}
+          {@render chartFormPanel()}
         {:else if mode === 'open'}
           <OpenWorkspaceView bind:openMode />
         {:else if mode === 'export'}
@@ -1033,9 +1040,9 @@
   {:else if mode === 'radix_table'}
     <!-- Left 20% (1 panel) + middle stretched to 80% -->
     <section class="row-span-1 grid gap-x-3 gap-y-3 px-3 pb-3 overflow-hidden w-full" style:grid-template-columns="minmax(0,20%) minmax(0,80%)">
-      <div class="h-full min-w-0 flex flex-col gap-2 min-h-0 bg-panel rounded-md overflow-hidden">
+      <div class="h-full min-w-0 flex flex-col gap-2 min-h-0">
         <div class="min-h-0" class:flex-1={leftTopExpanded}>
-          <ExpandablePanel title={t('table_tools', {}, 'Table Tools')} bind:expanded={leftTopExpanded}>
+          <ExpandablePanel title={t('table_tools', {}, 'Table Tools')} bind:expanded={leftTopExpanded} editable={false}>
             {#snippet children()}
               <div class="space-y-2 text-sm">
                 <p>{t('table_tools_description', {}, 'Table filters and helpers.')}</p>
@@ -1060,9 +1067,9 @@
       <!-- Left column: stack two panels (removed Transits panel) -->
       {#if isTransitsView}
         <!-- Transits mode: only show transits selector -->
-        <div class="h-full min-w-0 flex flex-col gap-2 min-h-0 bg-panel rounded-md overflow-hidden">
+        <div class="h-full min-w-0 flex flex-col gap-2 min-h-0">
           <div class="min-h-0" class:flex-1={leftMiddleExpanded}>
-            <ExpandablePanel title={mode === 'dynamic' ? t('dynamic_transits', {}, 'Dynamic Transits') : t('transits', {}, 'Transits')} bind:expanded={leftMiddleExpanded}>
+            <ExpandablePanel title={mode === 'dynamic' ? t('dynamic_transits', {}, 'Dynamic Transits') : t('transits', {}, 'Transits')} bind:expanded={leftMiddleExpanded} editable={false}>
               {#snippet children()}
                 <PanelMenu items={mode === 'dynamic' ? dynamicTransitsMenuItems : transitsMenuItems} bind:selectedId={selectedTransitsSection} />
               {/snippet}
@@ -1071,7 +1078,7 @@
         </div>
       {:else}
         <!-- Normal radix view: show chart details and astrolab -->
-        <div class="h-full min-w-0 flex flex-col gap-2 min-h-0 bg-panel rounded-md overflow-hidden">
+        <div class="h-full min-w-0 flex flex-col gap-2 min-h-0">
           <!-- Panel 1: title is current context name -->
           <div class="min-h-0" class:flex-1={leftTopExpanded}>
             <ExpandablePanel 
@@ -1084,7 +1091,7 @@
                 }
                 editingChartId = selectedChart.id;
                 populateFormFromChart(selectedChart);
-                setMode('new_radix');
+                editSheetOpen = true;
               }}
             >
               {#snippet children()}
@@ -1129,7 +1136,7 @@
           </div>
           <!-- Panel 2: Astrolab -->
           <div class="min-h-0" class:flex-1={leftMiddleExpanded}>
-            <ExpandablePanel title={t('astrolabe', {}, 'Astrolab')} bind:expanded={leftMiddleExpanded}>
+            <ExpandablePanel title={t('astrolabe', {}, 'Astrolab')} bind:expanded={leftMiddleExpanded} editable={false}>
               {#snippet children()}
                 <TimeNavigationPanel
                   dateLabel={chartDateLabel}
@@ -1349,10 +1356,10 @@
 
       <!-- Right panel (hidden for Aspects view and Transits view) -->
       {#if !isAspectsView && !isTransitsView}
-        <div class="h-full min-w-0 flex flex-col gap-2 min-h-0 bg-panel rounded-md overflow-hidden">
+        <div class="h-full min-w-0 flex flex-col gap-2 min-h-0">
           <!-- Poloha: radix view = single column list; other = placeholder -->
           <div class="min-h-0 flex-1 min-w-0">
-            <ExpandablePanel title={t('right_panel', {}, 'Poloha')} bind:expanded={rightExpanded}>
+            <ExpandablePanel title={t('right_panel', {}, 'Poloha')} bind:expanded={rightExpanded} editable={false}>
               {#snippet children()}
                 {#if isRadixLikeMode}
                   <!-- Radix: object glyph, degrees, house sign glyph, minutes, seconds -->
@@ -1420,5 +1427,27 @@
   {#if layout.overlay.openExport}
     <OpenExportDialog />
   {/if}
+
+  <Sheet.Root
+    open={editSheetOpen}
+    onOpenChange={(open) => {
+      editSheetOpen = open;
+      if (!open) {
+        editingChartId = null;
+      }
+    }}
+  >
+    <Sheet.Content side="right" class="flex h-full min-h-0 flex-col gap-0">
+      <Sheet.Header>
+        <Sheet.Title>{t('edit_radix_title', {}, 'Edit Radix')}</Sheet.Title>
+        {#if selectedChart?.name}
+          <Sheet.Description>{selectedChart.name}</Sheet.Description>
+        {/if}
+      </Sheet.Header>
+      <div class="min-h-0 flex-1 px-1 pb-4">
+        {@render chartFormPanel()}
+      </div>
+    </Sheet.Content>
+  </Sheet.Root>
   </div>
 </div>
