@@ -2,7 +2,7 @@
  * Horoscope wheel SVG — single source shared with Horoskop tab (`HoroscopeDashboard`).
  * Developer handoff id: HoroscopeWheel
  */
-import { useId, type PointerEvent } from 'react';
+import { useId, type MouseEvent } from 'react';
 import {
 	DEFAULT_ELEMENT_COLORS,
 	elementForZodiacId,
@@ -16,6 +16,7 @@ import {
 	getZodiacGlyphSrc,
 	type AstrologyGlyphSetId
 } from '@/lib/astrology/glyphs';
+import { resolveCustomGlyphSrc, useCustomGlyphOverrides } from '@/lib/astrology/customGlyphs';
 import type { AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
 import type { Theme } from './astrology-sidebar';
@@ -241,11 +242,14 @@ export interface RadixAspectDrawInput {
 
 export type HoroscopeWheelObjectLayer = 'radix' | 'transit';
 
-export interface HoroscopeWheelObjectHover {
+export interface HoroscopeWheelObjectInteraction {
 	bodyId: string;
 	layer: HoroscopeWheelObjectLayer;
-	clientX: number;
-	clientY: number;
+}
+
+export interface HoroscopeWheelAspectInteraction {
+	aspect: RadixAspectDrawInput;
+	index: number;
 }
 
 export interface HoroscopeWheelProps {
@@ -286,8 +290,13 @@ export interface HoroscopeWheelProps {
 	/** Horoskop tab uses radix-only wheel; Informace view enables glyphs + axes */
 	showPlanetGlyphs?: boolean;
 	showAxisLines?: boolean;
-	onObjectHover?: (hover: HoroscopeWheelObjectHover) => void;
-	onObjectHoverEnd?: () => void;
+	selectedObject?: Pick<HoroscopeWheelObjectInteraction, 'bodyId' | 'layer'> | null;
+	selectedAspectIndex?: number | null;
+	/** Aspect indices (into `radixAspects`) to keep at full opacity; the rest dim. Driven by clicking a body. */
+	highlightAspectIndices?: ReadonlySet<number>;
+	onObjectClick?: (interaction: HoroscopeWheelObjectInteraction) => void;
+	onAspectClick?: (interaction: HoroscopeWheelAspectInteraction) => void;
+	onWheelBackgroundClick?: () => void;
 	className?: string;
 }
 
@@ -313,11 +322,22 @@ export function HoroscopeWheel({
 	showAxisLines = false,
 	elementColors: elementColorsProp = DEFAULT_ELEMENT_COLORS,
 	lightPlanetFill = 'var(--theme-content-primary)',
-	onObjectHover,
-	onObjectHoverEnd,
+	selectedObject,
+	selectedAspectIndex,
+	highlightAspectIndices = new Set(),
+	onObjectClick,
+	onAspectClick,
+	onWheelBackgroundClick,
 	className
 }: HoroscopeWheelProps) {
 	const isDark = theme === 'midnight' || theme === 'twilight';
+	const customGlyphOverrides = useCustomGlyphOverrides();
+	const astrologyGlyphSrc = (id: string) =>
+		resolveCustomGlyphSrc(customGlyphOverrides, id) ??
+		(glyphSet ? getAstrologyGlyphSrc(glyphSet, id) : null);
+	const zodiacGlyphSrc = (id: string) =>
+		resolveCustomGlyphSrc(customGlyphOverrides, id) ??
+		(glyphSet ? getZodiacGlyphSrc(glyphSet, id) : null);
 	const wheelFilterUid = useId().replace(/:/g, '');
 	const planetLightFilterId = `${wheelFilterUid}-pl`;
 	const planetDarkFilterId = `${wheelFilterUid}-pd`;
@@ -445,17 +465,13 @@ export function HoroscopeWheel({
 		...(aspectColorsForRadix ?? {})
 	};
 	const aspectList = radixAspects ?? [];
-	const emitObjectHover = (
-		event: PointerEvent<SVGElement>,
+	const emitObjectClick = (
+		event: MouseEvent<SVGElement>,
 		bodyId: string,
 		layer: HoroscopeWheelObjectLayer
 	) => {
-		onObjectHover?.({
-			bodyId,
-			layer,
-			clientX: event.clientX,
-			clientY: event.clientY
-		});
+		event.stopPropagation();
+		onObjectClick?.({ bodyId, layer });
 	};
 
 	return (
@@ -466,6 +482,7 @@ export function HoroscopeWheel({
 			viewBox={`0 0 ${wheelSize} ${wheelSize}`}
 			className={className}
 			preserveAspectRatio="xMidYMid meet"
+			onClick={onWheelBackgroundClick}
 		>
 			<defs>
 				<filter id="hw-planet-halo" x="-100%" y="-100%" width="300%" height="300%">
@@ -513,7 +530,7 @@ export function HoroscopeWheel({
 				) : null}
 				{glyphSet
 					? zodiacSigns.map((sign) => {
-							const href = getZodiacGlyphSrc(glyphSet, sign.id);
+							const href = zodiacGlyphSrc(sign.id);
 							if (!href) return null;
 							const el = elementForZodiacId(sign.id);
 							const base = elementColors[el];
@@ -579,29 +596,24 @@ export function HoroscopeWheel({
 						const lon = transitBodyLongitudes?.[key];
 						if (typeof lon !== 'number') return [];
 						const p = polar(center, center, transitGlyphRadius, displayLon(lon));
-						const planetHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						const planetHref = astrologyGlyphSrc(key);
 						return [
 							<g
 								key={`transit-${key}`}
 								data-handoff={`TransitPlanet_${key}`}
-								style={{ cursor: 'help' }}
-								onPointerEnter={(event) => emitObjectHover(event, key, 'transit')}
-								onPointerMove={(event) => emitObjectHover(event, key, 'transit')}
-								onPointerLeave={onObjectHoverEnd}
+								style={{ cursor: 'pointer' }}
+								onClick={(event) => emitObjectClick(event, key, 'transit')}
 							>
-								<circle
-									cx={p.x}
-									cy={p.y}
-									r="20"
-									fill="transparent"
-								/>
+								<circle cx={p.x} cy={p.y} r="20" fill="transparent" />
 								<circle
 									cx={p.x}
 									cy={p.y}
 									r="14"
 									fill="var(--theme-panel-bg)"
 									stroke="var(--theme-accent)"
-									strokeWidth="1"
+									strokeWidth={
+										selectedObject?.layer === 'transit' && selectedObject.bodyId === key ? 2.5 : 1
+									}
 									opacity={0.92}
 								/>
 								{planetHref ? (
@@ -609,7 +621,7 @@ export function HoroscopeWheel({
 										href={planetHref}
 										x={p.x}
 										y={p.y}
-										size={15}
+										size={18}
 										filterId={transitFilterId}
 									/>
 								) : (
@@ -709,14 +721,14 @@ export function HoroscopeWheel({
 				const el = elementForZodiacId(sign.id);
 				const base = elementColors[el];
 				const fill = isDark ? wheelZodiacFillOnDark(base) : base;
-				const zHref = glyphSet ? getZodiacGlyphSrc(glyphSet, sign.id) : null;
+				const zHref = zodiacGlyphSrc(sign.id);
 				return zHref ? (
 					<WheelTintedGlyphImage
 						key={sign.name}
 						href={zHref}
 						x={x}
 						y={y}
-						size={20}
+						size={24}
 						filterId={`${wheelFilterUid}-z-${sign.id}`}
 					/>
 				) : (
@@ -851,26 +863,19 @@ export function HoroscopeWheel({
 				<g data-handoff="Layer_AngleGlyphs">
 					{anglePoints.map(({ key, icon, longitude }) => {
 						const p = polar(center, center, angleMarkerRadius, displayLon(longitude));
-						const angleHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						const angleHref = astrologyGlyphSrc(key);
 						return (
 							<g
 								key={key}
 								data-handoff={`Angle_${key}`}
-								style={{ cursor: 'help' }}
-								onPointerEnter={(event) =>
-									emitObjectHover(event, key === 'dsc' ? 'desc' : key, 'radix')
-								}
-								onPointerMove={(event) =>
-									emitObjectHover(event, key === 'dsc' ? 'desc' : key, 'radix')
-								}
-								onPointerLeave={onObjectHoverEnd}
+								style={{ cursor: 'pointer' }}
+								onClick={(event) => emitObjectClick(event, key === 'dsc' ? 'desc' : key, 'radix')}
 							>
-								<circle
-									cx={p.x}
-									cy={p.y}
-									r="18"
-									fill="transparent"
-								/>
+								<circle cx={p.x} cy={p.y} r="18" fill="transparent" />
+								{selectedObject?.layer === 'radix' &&
+									selectedObject.bodyId === (key === 'dsc' ? 'desc' : key) && (
+										<circle cx={p.x} cy={p.y} r="18" fill="var(--token-wheel-highlight)" />
+									)}
 								{angleHref ? (
 									isDark ? (
 										<WheelTintedGlyphImage
@@ -878,7 +883,7 @@ export function HoroscopeWheel({
 											href={angleHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetDarkFilterId}
 										/>
 									) : (
@@ -887,7 +892,7 @@ export function HoroscopeWheel({
 											href={angleHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetLightFilterId}
 										/>
 									)
@@ -911,11 +916,7 @@ export function HoroscopeWheel({
 			)}
 
 			{/* Layer: radix aspect lines (from computed aspects) */}
-			<g
-				data-handoff="Layer_AspectLines"
-				opacity={aspectList.length > 0 ? 0.5 : 0}
-				style={{ pointerEvents: 'none' }}
-			>
+			<g data-handoff="Layer_AspectLines" opacity={aspectList.length > 0 ? 1 : 0}>
 				{aspectList.flatMap((aspect, idx) => {
 					const aLon = longitudeForAspectPoint(
 						aspect.from,
@@ -934,17 +935,43 @@ export function HoroscopeWheel({
 							? `${baseHex}${isDark ? '99' : 'cc'}`
 							: baseHex;
 					const key = `${aspect.from}-${aspect.to}-${aspect.type}-${idx}`;
+					const isSelected = selectedAspectIndex === idx;
+					const selectionActive = selectedAspectIndex != null;
+					const isHighlighted = highlightAspectIndices.has(idx);
+					const highlightActive = highlightAspectIndices.size > 0;
+					const emphasized = isSelected || isHighlighted;
+					const dimActive = selectionActive || highlightActive;
 					return [
-						<line
-							key={key}
-							x1={pa.x}
-							y1={pa.y}
-							x2={pb.x}
-							y2={pb.y}
-							stroke={stroke}
-							strokeWidth={sw}
-							strokeLinecap="round"
-						/>
+						<g key={key}>
+							<line
+								x1={pa.x}
+								y1={pa.y}
+								x2={pb.x}
+								y2={pb.y}
+								stroke={stroke}
+								strokeWidth={sw}
+								strokeLinecap="round"
+								opacity={dimActive ? (emphasized ? 1 : 0.15) : 0.5}
+								style={{ transition: 'opacity 0.16s ease' }}
+							/>
+							<line
+								x1={pa.x}
+								y1={pa.y}
+								x2={pb.x}
+								y2={pb.y}
+								stroke="transparent"
+								strokeWidth={Math.max(12, sw + 8)}
+								strokeLinecap="round"
+								style={{
+									cursor: 'pointer',
+									pointerEvents: 'stroke'
+								}}
+								onClick={(event) => {
+									event.stopPropagation();
+									onAspectClick?.({ aspect, index: idx });
+								}}
+							/>
+						</g>
 					];
 				})}
 			</g>
@@ -977,24 +1004,17 @@ export function HoroscopeWheel({
 									: dimNonHighlighted
 										? 0.62
 										: 1) * hemiDim;
-						const planetHref = glyphSet ? getAstrologyGlyphSrc(glyphSet, key) : null;
+						const planetHref = astrologyGlyphSrc(key);
 						return [
 							<g
 								key={key}
 								data-handoff={`Planet_${key}`}
 								opacity={dim}
-								style={{ cursor: 'help', transition: 'opacity 0.2s ease' }}
-								onPointerEnter={(event) => emitObjectHover(event, key, 'radix')}
-								onPointerMove={(event) => emitObjectHover(event, key, 'radix')}
-								onPointerLeave={onObjectHoverEnd}
+								style={{ cursor: 'pointer', transition: 'opacity 0.2s ease' }}
+								onClick={(event) => emitObjectClick(event, key, 'radix')}
 							>
-								<circle
-									cx={p.x}
-									cy={p.y}
-									r="22"
-									fill="transparent"
-								/>
-								{hi && (
+								<circle cx={p.x} cy={p.y} r="22" fill="transparent" />
+								{(hi || (selectedObject?.layer === 'radix' && selectedObject.bodyId === key)) && (
 									<circle
 										cx={p.x}
 										cy={p.y}
@@ -1010,7 +1030,7 @@ export function HoroscopeWheel({
 											href={planetHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetDarkFilterId}
 										/>
 									) : (
@@ -1019,7 +1039,7 @@ export function HoroscopeWheel({
 											href={planetHref}
 											x={p.x}
 											y={p.y}
-											size={18}
+											size={22}
 											filterId={planetLightFilterId}
 										/>
 									)

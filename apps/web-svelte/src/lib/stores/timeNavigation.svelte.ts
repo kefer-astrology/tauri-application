@@ -8,52 +8,28 @@ export interface TimeStep {
   value: number;
 }
 
-export interface TimeShift {
-  years: number;
-  months: number;
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-}
-
 export interface TimeNavigationState {
   // Current time being viewed
   currentTime: Date;
-  
+
   // Time range for computation
   startTime: Date;
   endTime: Date;
-  
+
   // Current step size
   step: TimeStep;
-  
-  // Time shift (Astrolab)
-  shift: TimeShift;
-  
-  // Whether shift is active
-  shiftActive: boolean;
 }
 
 // Initialize with sensible defaults
 function getDefaultState(): TimeNavigationState {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  
+
   return {
     currentTime: now,
     startTime: sevenDaysAgo,
     endTime: now,
     step: { unit: 'hours', value: 1 },
-    shift: {
-      years: 0,
-      months: 0,
-      days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-    },
-    shiftActive: false,
   };
 }
 
@@ -145,38 +121,9 @@ export function jumpToNow() {
   }
 }
 
-export function applyShift() {
-  timeNavigation.shiftActive = true;
-}
-
-export function resetShift() {
-  timeNavigation.shift = {
-    years: 0,
-    months: 0,
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  };
-  timeNavigation.shiftActive = false;
-}
-
 // Export function to get effective time (computed on access)
-// This function computes the effective time based on current state
 export function effectiveTime(): Date {
-  if (!timeNavigation.shiftActive) {
-    return timeNavigation.currentTime;
-  }
-  
-  const result = new Date(timeNavigation.currentTime);
-  result.setUTCFullYear(result.getUTCFullYear() + timeNavigation.shift.years);
-  result.setUTCMonth(result.getUTCMonth() + timeNavigation.shift.months);
-  result.setUTCDate(result.getUTCDate() + timeNavigation.shift.days);
-  result.setUTCHours(result.getUTCHours() + timeNavigation.shift.hours);
-  result.setUTCMinutes(result.getUTCMinutes() + timeNavigation.shift.minutes);
-  result.setUTCSeconds(result.getUTCSeconds() + timeNavigation.shift.seconds);
-  
-  return result;
+  return timeNavigation.currentTime;
 }
 
 // Format time for display

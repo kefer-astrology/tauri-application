@@ -262,6 +262,25 @@ export interface TransitSeriesEntry {
 	aspects?: Array<Record<string, unknown>>;
 }
 
+export interface TransitSetup {
+	version: 1;
+	source_chart_id: string;
+	transit_type: string;
+	period_mode: string;
+	from_date: string;
+	from_time: string;
+	to_date: string;
+	to_time: string;
+	time_step_seconds: number;
+	transiting_bodies: string[];
+	transited_bodies: string[];
+	aspect_types: string[];
+	house_transitions: boolean;
+	sign_transitions: boolean;
+	transit_limits: boolean;
+	precession_correction: boolean;
+}
+
 export interface TransitSeriesRequest extends Record<string, unknown> {
 	workspacePath: string;
 	chartId: string;

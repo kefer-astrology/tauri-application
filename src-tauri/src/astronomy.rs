@@ -148,10 +148,12 @@ pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Se
     // License-clean default when swisseph feature is not enabled.
     #[cfg(not(feature = "swisseph"))]
     {
-        Box::new(crate::jpl_backend::jpl_backend_for_chart(chart).unwrap_or_else(|_| {
-            crate::jpl_backend::JplAstronomyBackend::new(
-                crate::ephemeris_manager::EphemerisManager::from_global().available_bsp_paths(),
-            )
-        }))
+        Box::new(
+            crate::jpl_backend::jpl_backend_for_chart(chart).unwrap_or_else(|_| {
+                crate::jpl_backend::JplAstronomyBackend::new(
+                    crate::ephemeris_manager::EphemerisManager::from_global().available_bsp_paths(),
+                )
+            }),
+        )
     }
 }

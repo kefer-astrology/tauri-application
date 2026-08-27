@@ -2,6 +2,9 @@
 // - Supports switchable default glyph image sets
 // - Allows per-glyph custom SVG overrides persisted in localStorage
 
+import { OBSERVABLE_OBJECTS } from '../astrology/observableObjects';
+import { ASPECT_ROWS, ASPECT_GLYPHS } from '../astrology/aspects';
+
 export type GlyphSetId = 'default' | 'modern';
 
 export interface GlyphDefinition {
@@ -29,45 +32,66 @@ export const glyphSetOptions: GlyphSetOption[] = [
 const GLYPH_SET_STORAGE_KEY = 'glyph_set';
 const CUSTOM_GLYPHS_STORAGE_KEY = 'custom_glyphs';
 const ASSET_BASE_URL = import.meta.env.BASE_URL;
-const SVELTE_GLYPH_SCALE = 0.9;
+const SVELTE_GLYPH_SCALE = 1.15;
 
+type GlyphCatalogType = 'planet' | 'zodiac' | 'aspect';
+
+/** Zodiac signs aren't in `OBSERVABLE_OBJECTS` (that registry is bodies/points only), so
+ *  their names + 2-letter fallbacks stay a small local table. */
+const ZODIAC_META: Record<string, { name: string; fallback: string }> = {
+  aries: { name: 'Aries', fallback: 'Ar' },
+  taurus: { name: 'Taurus', fallback: 'Ta' },
+  gemini: { name: 'Gemini', fallback: 'Ge' },
+  cancer: { name: 'Cancer', fallback: 'Ca' },
+  leo: { name: 'Leo', fallback: 'Le' },
+  virgo: { name: 'Virgo', fallback: 'Vi' },
+  libra: { name: 'Libra', fallback: 'Li' },
+  scorpio: { name: 'Scorpio', fallback: 'Sc' },
+  sagittarius: { name: 'Sagittarius', fallback: 'Sg' },
+  capricorn: { name: 'Capricorn', fallback: 'Cp' },
+  aquarius: { name: 'Aquarius', fallback: 'Aq' },
+  pisces: { name: 'Pisces', fallback: 'Pi' },
+};
+
+function titleCase(id: string): string {
+  return id
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
+ * Every id the UI can show — planets/angles/nodes/asteroids/TNOs/hypothetical points from
+ * `OBSERVABLE_OBJECTS`, zodiac signs, and aspect types from `ASPECT_ROWS` — derived directly
+ * from those registries so this catalog can't silently drift out of sync with them again.
+ */
 const glyphCatalog: Record<
   string,
-  { name: string; type: 'planet' | 'zodiac'; fallback: string; size: number }
+  { name: string; type: GlyphCatalogType; fallback: string; size: number }
 > = {
-  // Planets
-  sun: { name: 'Sun', type: 'planet', fallback: 'Su', size: 24 },
-  moon: { name: 'Moon', type: 'planet', fallback: 'Mo', size: 24 },
-  mercury: { name: 'Mercury', type: 'planet', fallback: 'Me', size: 24 },
-  venus: { name: 'Venus', type: 'planet', fallback: 'Ve', size: 24 },
-  mars: { name: 'Mars', type: 'planet', fallback: 'Ma', size: 24 },
-  jupiter: { name: 'Jupiter', type: 'planet', fallback: 'Ju', size: 24 },
-  saturn: { name: 'Saturn', type: 'planet', fallback: 'Sa', size: 24 },
-  uranus: { name: 'Uranus', type: 'planet', fallback: 'Ur', size: 24 },
-  neptune: { name: 'Neptune', type: 'planet', fallback: 'Ne', size: 24 },
-  pluto: { name: 'Pluto', type: 'planet', fallback: 'Pl', size: 24 },
-
-  // Zodiac
-  aries: { name: 'Aries', type: 'zodiac', fallback: 'Ar', size: 24 },
-  taurus: { name: 'Taurus', type: 'zodiac', fallback: 'Ta', size: 24 },
-  gemini: { name: 'Gemini', type: 'zodiac', fallback: 'Ge', size: 24 },
-  cancer: { name: 'Cancer', type: 'zodiac', fallback: 'Ca', size: 24 },
-  leo: { name: 'Leo', type: 'zodiac', fallback: 'Le', size: 24 },
-  virgo: { name: 'Virgo', type: 'zodiac', fallback: 'Vi', size: 24 },
-  libra: { name: 'Libra', type: 'zodiac', fallback: 'Li', size: 24 },
-  scorpio: { name: 'Scorpio', type: 'zodiac', fallback: 'Sc', size: 24 },
-  sagittarius: { name: 'Sagittarius', type: 'zodiac', fallback: 'Sg', size: 24 },
-  capricorn: { name: 'Capricorn', type: 'zodiac', fallback: 'Cp', size: 24 },
-  aquarius: { name: 'Aquarius', type: 'zodiac', fallback: 'Aq', size: 24 },
-  pisces: { name: 'Pisces', type: 'zodiac', fallback: 'Pi', size: 24 },
-  asc: { name: 'Asc', type: 'planet', fallback: 'As', size: 24 },
-  mc: { name: 'Mc', type: 'planet', fallback: 'Mc', size: 24 },
-  ic: { name: 'Ic', type: 'planet', fallback: 'Ic', size: 24 },
-  desc: { name: 'Desc', type: 'planet', fallback: 'Ds', size: 24 },
-  north_node: { name: 'North Node', type: 'planet', fallback: 'NN', size: 24 },
-  south_node: { name: 'South Node', type: 'planet', fallback: 'SN', size: 24 },
-  lilith: { name: 'Lilith', type: 'planet', fallback: 'Li', size: 24 },
-  chiron: { name: 'Chiron', type: 'planet', fallback: 'Ch', size: 24 },
+  ...Object.fromEntries(
+    OBSERVABLE_OBJECTS.map((item) => [
+      item.id,
+      { name: item.label, type: 'planet' as const, fallback: item.icon, size: 24 }
+    ])
+  ),
+  ...Object.fromEntries(
+    Object.entries(ZODIAC_META).map(([id, meta]) => [
+      id,
+      { name: meta.name, type: 'zodiac' as const, fallback: meta.fallback, size: 24 }
+    ])
+  ),
+  ...Object.fromEntries(
+    ASPECT_ROWS.map((row) => [
+      row.id,
+      {
+        name: titleCase(row.id),
+        type: 'aspect' as const,
+        fallback: ASPECT_GLYPHS[row.id] ?? row.id.slice(0, 3),
+        size: 20
+      }
+    ])
+  )
 };
 
 /** Zodiac sign glyph ids in order: Aries 0°, Taurus 30°, ... Pisces 330°. Use for lookups, never hardcoded symbols. */
@@ -79,14 +103,18 @@ export function signIdFromLongitude(longitude: number): string {
   return ZODIAC_SIGN_IDS[index] ?? 'aries';
 }
 
-const fileBackedIds = new Set([
-  'sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto',
-  'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
-]);
+/** Every catalog id now has a generated (or hand-drawn) static asset behind it. */
+const fileBackedIds = new Set(Object.keys(glyphCatalog));
+
+/** Fixed stars (`star_*`, no per-star art yet) share one generic placeholder asset. */
+function planetAssetId(id: string): string {
+  return id.startsWith('star_') ? 'fixed_star_generic' : id;
+}
 
 const glyphAliasMap: Record<string, string> = {
   ascendant: 'asc',
   descendant: 'desc',
+  dsc: 'desc',
   true_north_node: 'north_node',
   true_south_node: 'south_node',
   truenode: 'north_node',
@@ -121,10 +149,11 @@ function normalizeGlyphSetId(value: string | null): GlyphSetId {
   return 'default';
 }
 
-function glyphPathForSet(setId: GlyphSetId, type: 'planet' | 'zodiac', id: string): string {
-  const folder = type === 'planet' ? 'planets' : 'zodiac';
+function glyphPathForSet(setId: GlyphSetId, type: GlyphCatalogType, id: string): string {
+  const folder = type === 'zodiac' ? 'zodiac' : type === 'aspect' ? 'aspects' : 'planets';
   const normalizedBase = ASSET_BASE_URL.endsWith('/') ? ASSET_BASE_URL : `${ASSET_BASE_URL}/`;
-  return `${normalizedBase}glyphs/${setId}/${folder}/${id}.svg`;
+  const assetId = type === 'planet' ? planetAssetId(id) : id;
+  return `${normalizedBase}glyphs/${setId}/${folder}/${assetId}.svg`;
 }
 
 function buildDefaultGlyphs(setId: GlyphSetId): Record<string, GlyphDefinition> {

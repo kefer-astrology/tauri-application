@@ -10,7 +10,8 @@ fn main() {
 }
 
 fn build_swisseph() {
-    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR missing"));
+    let manifest_dir =
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR missing"));
     let source_dir = manifest_dir.join("vendor").join("swisseph-2.10.03");
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR missing"));
     let cc = env::var("CC").unwrap_or_else(|_| "cc".to_string());
@@ -29,7 +30,10 @@ fn build_swisseph() {
     ];
 
     for source in &sources {
-        println!("cargo:rerun-if-changed={}", source_dir.join(source).display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            source_dir.join(source).display()
+        );
     }
     let mut objects = Vec::with_capacity(sources.len());
     for source in &sources {
@@ -66,6 +70,12 @@ fn build_swisseph() {
 }
 
 fn run(command: &mut Command) {
-    let status = command.status().unwrap_or_else(|err| panic!("failed to run {:?}: {err}", command));
-    assert!(status.success(), "command {:?} failed with status {status}", command);
+    let status = command
+        .status()
+        .unwrap_or_else(|err| panic!("failed to run {:?}: {err}", command));
+    assert!(
+        status.success(),
+        "command {:?} failed with status {status}",
+        command
+    );
 }

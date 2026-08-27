@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
 	ChevronDown,
 	ChevronRight,
@@ -17,30 +17,28 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import { HoroscopeContextTabs } from './horoscope-context-tabs';
 import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import {
 	HoroscopeWheel,
+	type HoroscopeWheelAspectInteraction,
 	type HoroscopeWheelBody,
-	type HoroscopeWheelObjectHover,
+	type HoroscopeWheelObjectInteraction,
 	type RadixAspectDrawInput
 } from './horoscope-wheel';
 import { toast } from 'sonner';
 import {
 	DEFAULT_OBSERVABLE_OBJECT_IDS,
-	OBSERVABLE_OBJECTS,
-	getObservableObjectLabel,
-	getObservableCategoryLabel,
-	type ObservableObjectCategory
+	OBSERVABLE_OBJECTS
 } from '@/lib/astrology/observableObjects';
-import { Checkbox } from './ui/checkbox';
-import { Label } from './ui/label';
 import { tagColor } from '@/lib/chartTags';
+import { ASPECT_GLYPHS, ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
+import { BodySelector } from './body-selector';
+import { DetailSidePanel } from './detail-side-panel';
 
 interface HoroscopeDashboardProps {
 	theme: Theme;
@@ -216,25 +214,11 @@ export function HoroscopeDashboard({
 	const [showPositionModal, setShowPositionModal] = useState(false);
 	const [pickerBodies, setPickerBodies] = useState<string[]>([]);
 	const [isSteppingTime, setIsSteppingTime] = useState(false);
-	const [hoveredWheelObject, setHoveredWheelObject] =
-		useState<HoroscopeWheelObjectHover | null>(null);
-
-	const observableCategories = useMemo(() => {
-		const categoryOrder: ObservableObjectCategory[] = [
-			'luminaries',
-			'personal_planets',
-			'social_outer_planets',
-			'angles',
-			'lunar_nodes',
-			'calculated_points',
-			'asteroids'
-		];
-		return categoryOrder.map((category) => ({
-			id: category,
-			label: getObservableCategoryLabel(category, t),
-			items: OBSERVABLE_OBJECTS.filter((item) => item.category === category)
-		}));
-	}, [t]);
+	const [selectedWheelObject, setSelectedWheelObject] =
+		useState<HoroscopeWheelObjectInteraction | null>(null);
+	const [selectedWheelAspect, setSelectedWheelAspect] =
+		useState<HoroscopeWheelAspectInteraction | null>(null);
+	const [wheelDetailKind, setWheelDetailKind] = useState<'object' | 'aspect' | null>(null);
 
 	const borderColor = 'border-[color:var(--token-border-subtle)]';
 	const textColor = ft.title;
@@ -297,7 +281,7 @@ export function HoroscopeDashboard({
 	const computedMotion = selectedChart?.computed?.motion ?? {};
 	const computedAxes = selectedChart?.computed?.axes;
 	const positionOrder =
-		selectedChart?.observableObjects && selectedChart.observableObjects.length > 0
+		selectedChart?.observableObjects !== undefined
 			? selectedChart.observableObjects
 			: workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
@@ -355,28 +339,28 @@ export function HoroscopeDashboard({
 			})
 			.filter((entry): entry is [HoroscopeWheelBody, number] => entry[1] !== null)
 	) as Partial<Record<string, number>>;
-	const hoveredWheelDetails = useMemo(() => {
-		if (!hoveredWheelObject) return null;
+	const selectedWheelDetails = useMemo(() => {
+		if (!selectedWheelObject) return null;
 		const sourcePositions =
-			hoveredWheelObject.layer === 'transit' ? transitPositions : computedPositions;
+			selectedWheelObject.layer === 'transit' ? transitPositions : computedPositions;
 		const sourceMotion =
-			hoveredWheelObject.layer === 'transit'
+			selectedWheelObject.layer === 'transit'
 				? (activeTransitOverlay?.transitChart.computed?.motion ?? {})
 				: computedMotion;
-		const longitude = normalizeLongitude(sourcePositions[hoveredWheelObject.bodyId]);
+		const longitude = normalizeLongitude(sourcePositions[selectedWheelObject.bodyId]);
 		if (longitude === null) return null;
 		const position = longitudeToPosition(
-			hoveredWheelObject.bodyId,
+			selectedWheelObject.bodyId,
 			longitude,
-			sourceMotion[hoveredWheelObject.bodyId]?.retrograde ?? false,
+			sourceMotion[selectedWheelObject.bodyId]?.retrograde ?? false,
 			t
 		);
 		const layerLabel =
-			hoveredWheelObject.layer === 'transit'
+			selectedWheelObject.layer === 'transit'
 				? t('transits_general_transit_transit')
 				: (selectedChart?.name ?? t('new_type_radix'));
 		return {
-			...hoveredWheelObject,
+			...selectedWheelObject,
 			longitude,
 			position,
 			layerLabel
@@ -385,29 +369,69 @@ export function HoroscopeDashboard({
 		activeTransitOverlay?.transitChart.computed?.motion,
 		computedMotion,
 		computedPositions,
-		hoveredWheelObject,
+		selectedWheelObject,
 		selectedChart?.name,
 		t,
 		transitPositions
 	]);
-	const hoveredWheelTooltipStyle = hoveredWheelDetails
-		? {
-				left: Math.max(
-					8,
-					Math.min(
-						hoveredWheelDetails.clientX + 14,
-						(typeof window === 'undefined' ? 1200 : window.innerWidth) - 260
-					)
-				),
-				top: Math.max(
-					8,
-					Math.min(
-						hoveredWheelDetails.clientY + 14,
-						(typeof window === 'undefined' ? 800 : window.innerHeight) - 142
-					)
+	const aspectLabel = (type: string) => {
+		const definition = ASPECT_ROWS.find((aspect) => aspect.id === type);
+		return definition ? t(definition.labelKey) : type;
+	};
+	const objectLabel = (id: string) => {
+		const meta = POSITION_META[id];
+		return meta?.labelKey ? t(meta.labelKey) : (meta?.fallbackLabel ?? id);
+	};
+	const normalizePointId = (id: string) => (id.trim().toLowerCase() === 'desc' ? 'dsc' : id.trim().toLowerCase());
+	const selectedBodyAspects =
+		selectedWheelObject?.layer === 'radix'
+			? radixAspects.filter(
+					(aspect) =>
+						normalizePointId(aspect.from) === normalizePointId(selectedWheelObject.bodyId) ||
+						normalizePointId(aspect.to) === normalizePointId(selectedWheelObject.bodyId)
 				)
+			: [];
+	/** Selecting a radix body highlights the aspect lines touching it; stays highlighted through the
+	 *  second click (detail panel), same as the wheel's own selected-object halo does. */
+	const highlightAspectIndicesForObject = useMemo(() => {
+		if (!selectedWheelObject || selectedWheelObject.layer !== 'radix') {
+			return new Set<number>();
+		}
+		const bodyId = normalizePointId(selectedWheelObject.bodyId);
+		const indices = new Set<number>();
+		radixAspects.forEach((aspect, idx) => {
+			if (normalizePointId(aspect.from) === bodyId || normalizePointId(aspect.to) === bodyId) {
+				indices.add(idx);
 			}
-		: undefined;
+		});
+		return indices;
+	}, [selectedWheelObject, radixAspects]);
+	/** Selecting an aspect highlights the two bodies it connects; stays highlighted through the
+	 *  second click (detail panel), same as the wheel's own selected-aspect emphasis does. */
+	const highlightBodiesForAspect = useMemo(() => {
+		if (!selectedWheelAspect) return new Set<HoroscopeWheelBody>();
+		return new Set<HoroscopeWheelBody>([
+			selectedWheelAspect.aspect.from as HoroscopeWheelBody,
+			selectedWheelAspect.aspect.to as HoroscopeWheelBody
+		]);
+	}, [selectedWheelAspect]);
+
+	/** Shared by the wheel's object click and the Positions list row click, so either entry point
+	 *  drives the same first-click-highlights / second-click-opens-detail behavior. */
+	const handleObjectSelect = (interaction: HoroscopeWheelObjectInteraction) => {
+		const alreadySelected =
+			selectedWheelObject?.bodyId === interaction.bodyId &&
+			selectedWheelObject.layer === interaction.layer;
+		setSelectedWheelObject(interaction);
+		setSelectedWheelAspect(null);
+		setWheelDetailKind(alreadySelected ? 'object' : null);
+	};
+
+	useEffect(() => {
+		setSelectedWheelObject(null);
+		setSelectedWheelAspect(null);
+		setWheelDetailKind(null);
+	}, [selectedChart?.id]);
 
 	const getMaxAmount = () => {
 		if (timeUnit === 'sec' || timeUnit === 'min' || timeUnit === 'yr') return 10;
@@ -435,7 +459,7 @@ export function HoroscopeDashboard({
 	};
 
 	return (
-		<div className="flex h-screen flex-col overflow-hidden" data-tour="radix-workspace">
+		<div className="flex h-full min-h-0 flex-col overflow-hidden" data-tour="radix-workspace">
 			{/* Main Content - 3 Column Layout */}
 			<div className="grid min-h-0 flex-1 grid-cols-[288px_minmax(0,1fr)_224px] gap-6 overflow-hidden p-4">
 				{/* Left Column */}
@@ -484,14 +508,12 @@ export function HoroscopeDashboard({
 								{chartTags.length > 0 ? (
 									<div className="flex flex-wrap gap-2 pt-2">
 										{chartTags.map((tag, index) => (
-											<Badge
-												key={tag}
-												variant="outline"
-												className="gap-1.5 px-2 py-1 text-xs"
-											>
+											<Badge key={tag} variant="outline" className="gap-1.5 px-2 py-1 text-xs">
 												<span
 													className="h-2 w-2 rounded-full"
-													style={{ backgroundColor: tagColor(selectedChart?.tagColors, tag, index) }}
+													style={{
+														backgroundColor: tagColor(selectedChart?.tagColors, tag, index)
+													}}
 												/>
 												{tag}
 											</Badge>
@@ -534,7 +556,12 @@ export function HoroscopeDashboard({
 					</Card>
 
 					{/* Astrolabe Panel */}
-					<Card variant="themed" theme={theme} className={panelCardClass} data-tour="radix-astrolabe">
+					<Card
+						variant="themed"
+						theme={theme}
+						className={panelCardClass}
+						data-tour="radix-astrolabe"
+					>
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
@@ -687,8 +714,23 @@ export function HoroscopeDashboard({
 							aspectOrbsForRadix={workspaceDefaults.defaultAspectOrbs}
 							aspectColorsForRadix={workspaceDefaults.defaultAspectColors}
 							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
-							onObjectHover={setHoveredWheelObject}
-							onObjectHoverEnd={() => setHoveredWheelObject(null)}
+							selectedObject={selectedWheelObject}
+							selectedAspectIndex={selectedWheelAspect?.index}
+							highlightAspectIndices={highlightAspectIndicesForObject}
+							highlightBodies={highlightBodiesForAspect}
+							dimNonHighlighted={highlightBodiesForAspect.size > 0}
+							onObjectClick={handleObjectSelect}
+							onAspectClick={(interaction) => {
+								const alreadySelected = selectedWheelAspect?.index === interaction.index;
+								setSelectedWheelAspect(interaction);
+								setSelectedWheelObject(null);
+								setWheelDetailKind(alreadySelected ? 'aspect' : null);
+							}}
+							onWheelBackgroundClick={() => {
+								setSelectedWheelObject(null);
+								setSelectedWheelAspect(null);
+								setWheelDetailKind(null);
+							}}
 						/>
 					</div>
 				</div>
@@ -738,11 +780,16 @@ export function HoroscopeDashboard({
 												<div
 													key={pos.id}
 													className={cn(
-														'flex items-center gap-0.5',
+														'flex items-center gap-0.5 rounded-md px-1 py-0.5 cursor-pointer transition-colors',
 														textColor,
-														'font-mono text-sm leading-none tabular-nums'
+														'font-mono text-sm leading-none tabular-nums',
+														selectedWheelObject?.layer === 'radix' &&
+															selectedWheelObject.bodyId === pos.id
+															? 'bg-[color:var(--theme-selected-bg)]'
+															: hoverBg
 													)}
 													title={pos.label}
+													onClick={() => handleObjectSelect({ bodyId: pos.id, layer: 'radix' })}
 												>
 													<span
 														className={cn(
@@ -779,9 +826,6 @@ export function HoroscopeDashboard({
 												</div>
 											))}
 										</div>
-										<div className={`text-center text-xs ${mutedColor} mt-3 italic`}>
-											{t('dashboard_positions_scroll_hint')}
-										</div>
 									</>
 								) : (
 									<div className={cn('py-6 text-sm', mutedColor)}>
@@ -794,152 +838,212 @@ export function HoroscopeDashboard({
 				</div>
 			</div>
 
-			<HoroscopeContextTabs theme={theme} />
+			{/* First click on a body/aspect now highlights related wheel elements (see
+			    highlightAspectIndicesForObject / highlightBodiesForAspect above) instead of showing a
+			    floating details popup here; the second click opens the full detail side panel below. */}
 
-			{hoveredWheelDetails && hoveredWheelTooltipStyle ? (
-				<div
-					className={cn(
-						'pointer-events-none fixed z-[60] w-64 rounded-lg border px-3 py-2.5 shadow-xl backdrop-blur-md',
-						borderColor,
-						'bg-[color:var(--theme-panel-bg)]/95'
-					)}
-					style={hoveredWheelTooltipStyle}
-				>
-					<div className="mb-2 flex items-center justify-between gap-3">
-						<div className="flex min-w-0 items-center gap-2">
-							<AstrologyGlyph
-								glyphId={hoveredWheelDetails.bodyId}
-								glyphSet={glyphSet}
-								fallback={hoveredWheelDetails.position.icon}
-								size={18}
-								title={hoveredWheelDetails.position.label}
-								className="shrink-0"
-							/>
-							<div className={cn('truncate text-sm font-semibold', textColor)}>
-								{hoveredWheelDetails.position.label}
-							</div>
-						</div>
-						<div className={cn('shrink-0 text-[11px] font-medium', mutedColor)}>
-							{hoveredWheelDetails.layerLabel}
-						</div>
-					</div>
-					<div className="space-y-1 font-mono text-xs tabular-nums">
-						<div className="flex items-center justify-between gap-3">
-							<span className={mutedColor}>{t('aspectarium_position')}</span>
-							<span className={cn('flex items-center gap-1', textColor)}>
-								{hoveredWheelDetails.position.degrees}°
+			<DetailSidePanel
+				theme={theme}
+				open={wheelDetailKind !== null}
+				onOpenChange={(open) => {
+					if (!open) setWheelDetailKind(null);
+				}}
+				title={
+					wheelDetailKind === 'aspect' && selectedWheelAspect
+						? aspectLabel(selectedWheelAspect.aspect.type)
+						: (selectedWheelDetails?.position.label ?? t('details'))
+				}
+				description={
+					wheelDetailKind === 'aspect' && selectedWheelAspect
+						? `${objectLabel(selectedWheelAspect.aspect.from)} → ${objectLabel(selectedWheelAspect.aspect.to)}`
+						: selectedWheelDetails?.layerLabel
+				}
+				bodyClassName="overflow-y-auto"
+			>
+				{wheelDetailKind === 'object' && selectedWheelDetails ? (
+					<div className="space-y-6">
+						<div className="space-y-3">
+							<div className="flex items-center gap-3">
 								<AstrologyGlyph
-									glyphId={hoveredWheelDetails.position.signZodiacId}
+									glyphId={selectedWheelDetails.bodyId}
 									glyphSet={glyphSet}
-									domain="zodiac"
-									fallback={hoveredWheelDetails.position.signGlyphFallback}
-									size={16}
-									title={hoveredWheelDetails.position.signZodiacId}
+									fallback={selectedWheelDetails.position.icon}
+									size={28}
+									title={selectedWheelDetails.position.label}
 								/>
-								{hoveredWheelDetails.position.minutes}' {hoveredWheelDetails.position.seconds}"
-							</span>
-						</div>
-						<div className="flex items-center justify-between gap-3">
-							<span className={mutedColor}>{t('aspectarium_absolute_longitude')}</span>
-							<span className={textColor}>{hoveredWheelDetails.longitude.toFixed(2)}°</span>
-						</div>
-						<div className="flex items-center justify-between gap-3">
-							<span className={mutedColor}>{t('open_filter_motion')}</span>
-							<span className={textColor}>
-								{hoveredWheelDetails.position.retrograde ? 'R' : 'D'}
-							</span>
-						</div>
-					</div>
-				</div>
-			) : null}
-
-			{/* Position Selection Modal */}
-			{showPositionModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--theme-overlay-bg)] backdrop-blur-sm">
-					<Card
-						variant="themed"
-						theme={theme}
-						className="max-h-[80vh] w-[min(100vw-2rem,500px)] gap-0 overflow-hidden"
-					>
-						<div className={`flex items-center justify-between border-b px-6 py-4 ${borderColor}`}>
-							<h3 className={`text-lg font-medium ${textColor}`}>
-								{t('dashboard_positions_picker_title')}
-							</h3>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => setShowPositionModal(false)}
-								className={cn('rounded-lg', hoverBg)}
-							>
-								<X className={`h-5 w-5 ${mutedColor}`} />
-							</Button>
-						</div>
-						<div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-4">
-							<p className={`text-sm ${mutedColor}`}>{t('dashboard_positions_picker_hint')}</p>
-							<div className="grid gap-4 md:grid-cols-2">
-								{observableCategories.map((category) => (
-									<div
-										key={category.id}
-										className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 p-4"
-									>
-										<h3 className={`mb-3 text-sm font-semibold ${textColor}`}>{category.label}</h3>
-										<div className="space-y-2">
-											{category.items.map((item) => (
-												<Label
-													key={item.id}
-													className="flex cursor-pointer items-center gap-3 text-sm"
-												>
-													<Checkbox
-														checked={pickerBodies.includes(item.id)}
-														onCheckedChange={() =>
-															setPickerBodies((prev) =>
-																prev.includes(item.id)
-																	? prev.filter((id) => id !== item.id)
-																	: [...prev, item.id]
-															)
-														}
-													/>
-													<AstrologyGlyph
-														glyphId={item.id}
-														glyphSet={glyphSet}
-														fallback={item.icon}
-														size={18}
-														className="text-foreground"
-														title={getObservableObjectLabel(item, t)}
-													/>
-													<span className={mutedColor}>{getObservableObjectLabel(item, t)}</span>
-												</Label>
-											))}
-										</div>
-									</div>
-								))}
+								<div className={cn('text-base font-semibold', textColor)}>
+									{selectedWheelDetails.position.label}
+								</div>
+							</div>
+							<div className="space-y-2 text-sm">
+								<div className="flex items-center justify-between gap-3">
+									<span className={mutedColor}>{t('aspectarium_position')}</span>
+									<span className={cn('flex items-center gap-1 font-mono tabular-nums', textColor)}>
+										{selectedWheelDetails.position.degrees}°
+										<AstrologyGlyph
+											glyphId={selectedWheelDetails.position.signZodiacId}
+											glyphSet={glyphSet}
+											domain="zodiac"
+											fallback={selectedWheelDetails.position.signGlyphFallback}
+											size={18}
+										/>
+										{selectedWheelDetails.position.minutes}' {selectedWheelDetails.position.seconds}
+										"
+									</span>
+								</div>
+								<div className="flex items-center justify-between gap-3">
+									<span className={mutedColor}>{t('aspectarium_absolute_longitude')}</span>
+									<span className={cn('font-mono tabular-nums', textColor)}>
+										{selectedWheelDetails.longitude.toFixed(4)}°
+									</span>
+								</div>
+								<div className="flex items-center justify-between gap-3">
+									<span className={mutedColor}>{t('open_filter_motion')}</span>
+									<span className={textColor}>
+										{selectedWheelDetails.position.retrograde ? 'R' : 'D'}
+									</span>
+								</div>
 							</div>
 						</div>
-						<div className={cn('flex justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => setShowPositionModal(false)}
-								className={cn(ft.footerCancel, '!flex-none')}
-							>
-								{t('cancel')}
-							</Button>
-							<Button
-								type="button"
-								className={cn(ft.footerPrimary, '!flex-none')}
-								onClick={() => {
-									if (selectedChart) {
-										onObservableObjectsChange?.(selectedChart.id, pickerBodies);
-									}
-									setShowPositionModal(false);
-								}}
-							>
-								{t('sidebar_save')}
-							</Button>
+						<div>
+							<h4 className={cn('mb-3 text-sm font-semibold', textColor)}>{t('aspects')}</h4>
+							{selectedBodyAspects.length > 0 ? (
+								<div className="space-y-2">
+									{selectedBodyAspects.map((aspect, index) => {
+										const otherId =
+											aspect.from === selectedWheelDetails.bodyId ? aspect.to : aspect.from;
+										return (
+											<div
+												key={`${aspect.from}-${aspect.to}-${aspect.type}-${index}`}
+												className="rounded-lg bg-[color:var(--theme-soft-bg)] px-3 py-2"
+											>
+												<div className="flex items-center justify-between gap-3 text-sm">
+													<span className={cn('flex items-center gap-1.5', textColor)}>
+														{objectLabel(otherId)}
+														<AstrologyGlyph
+															glyphId={otherId}
+															glyphSet={glyphSet}
+															fallback={POSITION_META[otherId]?.icon ?? otherId.slice(0, 3)}
+															size={16}
+														/>
+													</span>
+													<span className={cn('flex items-center gap-1.5', mutedColor)}>
+														<AstrologyGlyph
+															glyphId={aspect.type}
+															glyphSet={glyphSet}
+															domain="aspect"
+															fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
+															size={16}
+														/>
+														{aspectLabel(aspect.type)}
+													</span>
+												</div>
+												<div
+													className={cn(
+														'mt-1 text-right font-mono text-xs tabular-nums',
+														mutedColor
+													)}
+												>
+													{t('label_orb')}: {aspect.orb.toFixed(2)}°
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							) : (
+								<p className={cn('text-sm', mutedColor)}>{t('aspectarium_no_aspects')}</p>
+							)}
 						</div>
-					</Card>
+					</div>
+				) : wheelDetailKind === 'aspect' && selectedWheelAspect ? (
+					<div className="space-y-4 text-sm">
+						<div className="rounded-lg bg-[color:var(--theme-soft-bg)] p-4">
+							<div className="flex items-center justify-between gap-3">
+								<span className={mutedColor}>{t('aspects')}</span>
+								<span className={cn('flex items-center gap-1.5 font-semibold', textColor)}>
+									<AstrologyGlyph
+										glyphId={selectedWheelAspect.aspect.type}
+										glyphSet={glyphSet}
+										domain="aspect"
+										fallback={ASPECT_GLYPHS[selectedWheelAspect.aspect.type] ?? '•'}
+										size={16}
+									/>
+									{aspectLabel(selectedWheelAspect.aspect.type)}
+								</span>
+							</div>
+							<div className="mt-3 flex items-center justify-between gap-3">
+								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.from)}</span>
+								<div className="flex items-center gap-2">
+									<AstrologyGlyph
+										glyphId={selectedWheelAspect.aspect.from}
+										glyphSet={glyphSet}
+										fallback={POSITION_META[selectedWheelAspect.aspect.from]?.icon ?? selectedWheelAspect.aspect.from.slice(0, 3)}
+										size={18}
+									/>
+									<span className={textColor}>→</span>
+									<AstrologyGlyph
+										glyphId={selectedWheelAspect.aspect.to}
+										glyphSet={glyphSet}
+										fallback={POSITION_META[selectedWheelAspect.aspect.to]?.icon ?? selectedWheelAspect.aspect.to.slice(0, 3)}
+										size={18}
+									/>
+								</div>
+								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.to)}</span>
+							</div>
+							<div className="mt-3 flex items-center justify-between gap-3 font-mono tabular-nums">
+								<span className={mutedColor}>{t('label_orb')}</span>
+								<span className={textColor}>{selectedWheelAspect.aspect.orb.toFixed(4)}°</span>
+							</div>
+						</div>
+					</div>
+				) : null}
+			</DetailSidePanel>
+
+			<DetailSidePanel
+				theme={theme}
+				open={showPositionModal}
+				onOpenChange={setShowPositionModal}
+				title={t('dashboard_positions_picker_title')}
+				description={t('aspectarium_selected_count', { count: pickerBodies.length })}
+				contentClassName="sm:max-w-lg lg:w-[30vw] lg:max-w-xl"
+				bodyClassName="overflow-hidden p-0"
+			>
+				<div className="flex h-full min-h-0 flex-col">
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<BodySelector
+							theme={theme}
+							glyphSet={glyphSet}
+							subtitleKey="dashboard_positions_picker_hint"
+							selectedBodyIds={pickerBodies}
+							onSelectedBodyIdsChange={setPickerBodies}
+						/>
+					</div>
+					<div
+						className={cn('flex shrink-0 justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}
+					>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setShowPositionModal(false)}
+							className={cn(ft.footerCancel, '!flex-none')}
+						>
+							{t('cancel')}
+						</Button>
+						<Button
+							type="button"
+							className={cn(ft.footerPrimary, '!flex-none')}
+							onClick={() => {
+								if (selectedChart) {
+									onObservableObjectsChange?.(selectedChart.id, pickerBodies);
+								}
+								setShowPositionModal(false);
+							}}
+						>
+							{t('sidebar_save')}
+						</Button>
+					</div>
 				</div>
-			)}
+			</DetailSidePanel>
 		</div>
 	);
 }

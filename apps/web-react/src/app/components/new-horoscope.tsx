@@ -578,6 +578,7 @@ function TimezoneSelect({
 
 interface NewHoroscopeProps {
 	theme?: Theme;
+	presentation?: 'page' | 'panel';
 	/** Return to main horoscope view (sidebar **Horoskop**). */
 	onBack?: () => void;
 	workspaceDefaults: WorkspaceDefaultsState;
@@ -592,6 +593,7 @@ interface NewHoroscopeProps {
 
 export function NewHoroscope({
 	theme = 'noon',
+	presentation = 'page',
 	onBack,
 	workspaceDefaults,
 	existingChartIds,
@@ -932,8 +934,17 @@ export function NewHoroscope({
 	};
 
 	return (
-		<AppMainContentRoot className={cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')}>
-			<AppMainContentContainer layout="center-column">
+		<AppMainContentRoot
+			className={cn(
+				presentation === 'panel'
+					? 'bg-transparent px-5 py-4'
+					: cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')
+			)}
+		>
+			<AppMainContentContainer
+				layout={presentation === 'panel' ? 'centered' : 'center-column'}
+				maxWidth={presentation === 'panel' ? 'full' : '4xl'}
+			>
 				{/* <h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>
 						{isEditMode ? t('edit_radix_title') : t('new_radix_title')}
 					</h1> */}
@@ -974,6 +985,26 @@ export function NewHoroscope({
 						onValueChange={(value) => setTimeRegime(value as TimeRegime)}
 						className="gap-3"
 					>
+						<div className="flex flex-col gap-2">
+							<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
+							<Select
+								value={timeSystem}
+								onValueChange={(value) =>
+									handleTimeSystemChange(value as NewHoroscopeTimeSystem)
+								}
+							>
+								<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent className={ft.selectContent}>
+									{TIME_SYSTEMS.map((option) => (
+										<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+											{t(option.labelKey)}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
@@ -1032,6 +1063,8 @@ export function NewHoroscope({
 							<div className="flex flex-col gap-2">
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
 								<ModeSwitcherList
+									value={timeRegime}
+									onValueChange={setTimeRegime}
 									ariaLabel={t('new_time_regime')}
 									options={[
 										{ value: 'auto', label: t('new_time_regime_auto') },
@@ -1100,24 +1133,6 @@ export function NewHoroscope({
 									</SelectContent>
 								</Select>
 							</div>
-							<div>
-								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
-								<Select
-									value={timeSystem}
-									onValueChange={(value) => handleTimeSystemChange(value as NewHoroscopeTimeSystem)}
-								>
-									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent className={ft.selectContent}>
-										{TIME_SYSTEMS.map((option) => (
-											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
-												{t(option.labelKey)}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
 						</TabsContent>
 					</Tabs>
 
@@ -1158,6 +1173,8 @@ export function NewHoroscope({
 							<div className="flex flex-col gap-2 md:col-start-2">
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location_regime')}</Label>
 								<ModeSwitcherList
+									value={locationRegime}
+									onValueChange={setLocationRegime}
 									ariaLabel={t('new_location_regime')}
 									options={[
 										{ value: 'auto', label: t('new_time_regime_auto') },

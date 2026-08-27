@@ -3,7 +3,6 @@
 ///
 /// All angles are in degrees unless stated otherwise.
 /// Longitude conventions: ecliptic longitude in [0, 360).
-
 use std::f64::consts::PI;
 
 use crate::astronomy::AstronomyMotion;
@@ -24,8 +23,7 @@ fn j2000_centuries(jd_ut: f64) -> f64 {
 /// Good enough here to shift J2000 ecliptic longitudes toward equinox-of-date tropical longitudes.
 pub fn general_precession_deg(jd_ut: f64) -> f64 {
     let t = j2000_centuries(jd_ut);
-    let arcsec =
-        5028.796_195 * t + 1.105_434_8 * t * t + 0.000_079_64 * t * t * t;
+    let arcsec = 5028.796_195 * t + 1.105_434_8 * t * t + 0.000_079_64 * t * t * t;
     arcsec / 3600.0
 }
 
@@ -35,10 +33,7 @@ pub fn general_precession_deg(jd_ut: f64) -> f64 {
 /// Accurate to better than 0.01" over ±2000 years from J2000.
 pub fn mean_obliquity_deg(jd_ut: f64) -> f64 {
     let t = j2000_centuries(jd_ut);
-    23.439_291_111
-        - 0.013_004_167 * t
-        - 0.000_000_164 * t * t
-        + 0.000_000_504 * t * t * t
+    23.439_291_111 - 0.013_004_167 * t - 0.000_000_164 * t * t + 0.000_000_504 * t * t * t
 }
 
 // ─── sidereal time ───────────────────────────────────────────────────────────
@@ -47,10 +42,8 @@ pub fn mean_obliquity_deg(jd_ut: f64) -> f64 {
 pub fn gmst_deg(jd_ut: f64) -> f64 {
     let d = jd_ut - 2451545.0;
     let t = d / 36525.0;
-    let theta = 280.460_618_37
-        + 360.985_647_366_29 * d
-        + 0.000_387_933 * t * t
-        - t * t * t / 38_710_000.0;
+    let theta =
+        280.460_618_37 + 360.985_647_366_29 * d + 0.000_387_933 * t * t - t * t * t / 38_710_000.0;
     normalize_deg(theta)
 }
 
@@ -328,10 +321,8 @@ fn great_circle_ecliptic_intersection_q1(
 /// IAU 1980 formula, accurate to ~0.1" over a few centuries.
 pub fn mean_node_lon(jd_ut: f64) -> f64 {
     let t = j2000_centuries(jd_ut);
-    let omega = 125.044_555_01
-        - 1934.136_261_97 * t
-        + 0.002_075_81 * t * t
-        + 0.000_002_15 * t * t * t;
+    let omega =
+        125.044_555_01 - 1934.136_261_97 * t + 0.002_075_81 * t * t + 0.000_002_15 * t * t * t;
     normalize_deg(omega)
 }
 
@@ -470,7 +461,10 @@ mod tests {
     fn obliquity_j2000() {
         let jd = 2451545.0; // J2000.0
         let eps = mean_obliquity_deg(jd);
-        assert!((eps - 23.439291).abs() < 0.0001, "obliquity at J2000: {eps}");
+        assert!(
+            (eps - 23.439291).abs() < 0.0001,
+            "obliquity at J2000: {eps}"
+        );
     }
 
     #[test]

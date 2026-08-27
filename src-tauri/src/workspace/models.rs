@@ -279,7 +279,9 @@ where
     S: serde::Serializer,
 {
     match dt {
-        Some(dt) => serializer.serialize_str(&dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)),
+        Some(dt) => {
+            serializer.serialize_str(&dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, true))
+        }
         None => serializer.serialize_none(),
     }
 }

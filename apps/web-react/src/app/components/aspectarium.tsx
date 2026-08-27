@@ -30,7 +30,10 @@ import {
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ENABLED_ASPECT_IDS
 } from '@/lib/astrology/aspects';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import {
+	signIndexToZodiacId,
+	type AstrologyGlyphSetId
+} from '@/lib/astrology/glyphs';
 
 interface AspectariumProps {
 	theme: Theme;
@@ -167,7 +170,7 @@ function formatOrb(orb: number | undefined) {
 	return `${Math.abs(orb!).toFixed(2)}°`;
 }
 
-function formatPosition(longitude: number | null) {
+function positionParts(longitude: number | null) {
 	if (longitude === null) return null;
 	const normalized = ((longitude % 360) + 360) % 360;
 	const signIndex = Math.floor(normalized / 30) % 12;
@@ -175,7 +178,11 @@ function formatPosition(longitude: number | null) {
 	const totalMinutes = Math.round(withinSign * 60);
 	const degrees = Math.floor(totalMinutes / 60);
 	const minutes = totalMinutes % 60;
-	return `${ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈'} ${degrees}°${String(minutes).padStart(2, '0')}′`;
+	return {
+		zodiacId: signIndexToZodiacId(signIndex),
+		fallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
+		text: `${degrees}°${String(minutes).padStart(2, '0')}′`
+	};
 }
 
 function fallbackAspectLabel(type: string) {
@@ -194,17 +201,6 @@ function BodyGlyph({
 	size?: number;
 }) {
 	const fallback = bodyIcon(bodyId);
-	const isTextOnly = bodyId === 'asc' || bodyId === 'desc' || bodyId === 'mc' || bodyId === 'ic';
-	if (isTextOnly) {
-		return (
-			<span
-				className={cn('inline-flex items-center justify-center leading-none', className)}
-				style={{ width: size, height: size }}
-			>
-				{fallback}
-			</span>
-		);
-	}
 
 	return (
 		<AstrologyGlyph
@@ -218,13 +214,39 @@ function BodyGlyph({
 	);
 }
 
+function PositionValue({
+	longitude,
+	glyphSet
+}: {
+	longitude: number | null;
+	glyphSet: AstrologyGlyphSetId;
+}) {
+	const position = positionParts(longitude);
+	if (!position) return null;
+
+	return (
+		<span className="inline-flex items-center justify-end gap-1.5">
+			<AstrologyGlyph
+				glyphId={position.zodiacId}
+				glyphSet={glyphSet}
+				domain="zodiac"
+				fallback={position.fallback}
+				size={13}
+			/>
+			<span>{position.text}</span>
+		</span>
+	);
+}
+
 function AspectCellButton({
 	aspect,
+	glyphSet,
 	isSelected,
 	onSelect,
 	color
 }: {
 	aspect: ParsedAspect;
+	glyphSet: AstrologyGlyphSetId;
 	isSelected: boolean;
 	onSelect: () => void;
 	color: string;
@@ -243,7 +265,13 @@ function AspectCellButton({
 			aria-pressed={isSelected}
 		>
 			<span className="text-lg leading-none" style={{ color }}>
-				{ASPECT_GLYPHS[aspect.type] ?? '•'}
+				<AstrologyGlyph
+					glyphId={aspect.type}
+					glyphSet={glyphSet}
+					domain="aspect"
+					fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
+					size={18}
+				/>
 			</span>
 			<span className="mt-1 text-[11px] text-[color:var(--theme-content-muted)]">
 				{formatOrb(aspect.orb)}
@@ -252,7 +280,7 @@ function AspectCellButton({
 	);
 }
 
-function DetailRow({ label, value }: { label: string; value: string | null }) {
+function DetailRow({ label, value }: { label: string; value: ReactNode | null }) {
 	return (
 		<div className="flex items-start justify-between gap-3 text-sm">
 			<span className="text-[color:var(--theme-content-muted)]">{label}</span>
@@ -546,7 +574,15 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 	const aspectFilterItems: FilterItem[] = ASPECT_ROWS.map((aspect) => ({
 		id: aspect.id,
 		label: t(aspect.labelKey),
-		icon: ASPECT_GLYPHS[aspect.id] ?? '•',
+		icon: (
+			<AstrologyGlyph
+				glyphId={aspect.id}
+				glyphSet={glyphSet}
+				domain="aspect"
+				fallback={ASPECT_GLYPHS[aspect.id] ?? '•'}
+				size={16}
+			/>
+		),
 		color:
 			workspaceDefaults.defaultAspectColors[aspect.id] ??
 			DEFAULT_ASPECT_COLORS[aspect.id] ??
@@ -573,8 +609,14 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 			<div className="min-w-0">
 				<p className={cn('truncate text-sm font-medium', ft.title)}>{bodyLabel(bodyId, t)}</p>
 				<p className={cn('truncate text-xs', ft.muted)}>
-					{formatPosition(normalizeLongitude(positionsForLayer(layer)[bodyId])) ??
-						t('loading_positions')}
+					{normalizeLongitude(positionsForLayer(layer)[bodyId]) === null ? (
+						t('loading_positions')
+					) : (
+						<PositionValue
+							longitude={normalizeLongitude(positionsForLayer(layer)[bodyId])}
+							glyphSet={glyphSet}
+						/>
+					)}
 				</p>
 			</div>
 		</div>
@@ -720,6 +762,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 													>
 														<AspectCellButton
 															aspect={entry.aspect}
+															glyphSet={glyphSet}
 															isSelected={selectedAspectId === entry.id}
 															onSelect={() => setSelectedAspectId(entry.id)}
 															color={aspectColor}
@@ -761,8 +804,17 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 											)}
 											onClick={() => setSelectedAspectId(entry.id)}
 										>
-											<span className="w-8 shrink-0 text-center text-2xl" style={{ color }}>
-												{ASPECT_GLYPHS[entry.aspect.type] ?? '•'}
+											<span
+												className="flex w-8 shrink-0 items-center justify-center text-2xl"
+												style={{ color }}
+											>
+												<AstrologyGlyph
+													glyphId={entry.aspect.type}
+													glyphSet={glyphSet}
+													domain="aspect"
+													fallback={ASPECT_GLYPHS[entry.aspect.type] ?? '•'}
+													size={22}
+												/>
 											</span>
 											<span className="min-w-0 flex-1">
 												<span className={cn('block truncate text-sm font-medium', ft.title)}>
@@ -819,7 +871,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 								</span>
 							</div>
 							<span
-								className="text-xl leading-none"
+								className="flex items-center justify-center text-xl leading-none"
 								style={{
 									color:
 										workspaceDefaults.defaultAspectColors[selectedAspect.type] ??
@@ -829,7 +881,13 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 										'var(--theme-accent)'
 								}}
 							>
-								{ASPECT_GLYPHS[selectedAspect.type] ?? '•'}
+								<AstrologyGlyph
+									glyphId={selectedAspect.type}
+									glyphSet={glyphSet}
+									domain="aspect"
+									fallback={ASPECT_GLYPHS[selectedAspect.type] ?? '•'}
+									size={20}
+								/>
 							</span>
 							<div className="flex items-center gap-2">
 								<BodyGlyph
@@ -908,7 +966,14 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 									<p className={cn('text-sm font-medium', ft.title)}>{label}</p>
 								</div>
 								<DetailRow label={t('charts')} value={`${bodyLabel(bodyId, t)} · ${layerLabel}`} />
-								<DetailRow label={t('aspectarium_position')} value={formatPosition(longitude)} />
+								<DetailRow
+									label={t('aspectarium_position')}
+									value={
+										longitude === null ? null : (
+											<PositionValue longitude={longitude} glyphSet={glyphSet} />
+										)
+									}
+								/>
 								<DetailRow
 									label={t('aspectarium_absolute_longitude')}
 									value={longitude === null ? null : formatDegrees(longitude, 2)}

@@ -8,7 +8,6 @@
 ///   - Lunar nodes: computed analytically in houses.rs
 ///   - House cusps: computed in houses.rs
 ///   - Chiron: not in any standard DE file; planned via JPL Horizons API
-
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock, RwLock};
@@ -24,14 +23,14 @@ use hifitime::Epoch;
 use crate::astronomy::{AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion};
 use crate::ephemeris_manager::{
     load_almanac_from_paths, EphemerisManager, ASTRAEA_J2000, CERES_J2000, EGERIA_J2000,
-    EUNOMIA_J2000, FLORA_J2000, FORTUNA_J2000, HEBE_J2000, HYGIEA_J2000, IRIS_J2000,
-    IRENE_J2000, JUNO_J2000, MASSALIA_J2000, MELPOMENE_J2000, METIS_J2000, PALLAS_J2000,
-    PARTHENOPE_J2000, PSYCHE_J2000, THETIS_J2000, VICTORIA_J2000, VESTA_J2000,
+    EUNOMIA_J2000, FLORA_J2000, FORTUNA_J2000, HEBE_J2000, HYGIEA_J2000, IRENE_J2000, IRIS_J2000,
+    JUNO_J2000, MASSALIA_J2000, MELPOMENE_J2000, METIS_J2000, PALLAS_J2000, PARTHENOPE_J2000,
+    PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
 };
 use crate::houses::{
-    campanus_cusps, compute_axes, general_precession_deg, icrf_to_ecliptic,
-    julian_day_from_unix, mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg,
-    placidus_cusps, true_node_tropical_deg, whole_sign_cusps,
+    campanus_cusps, compute_axes, general_precession_deg, icrf_to_ecliptic, julian_day_from_unix,
+    mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps,
+    true_node_tropical_deg, whole_sign_cusps,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem};
 
@@ -116,7 +115,8 @@ fn almanac_cache() -> &'static RwLock<AlmanacCache> {
 }
 
 fn almanac_cache_key(paths: &[PathBuf]) -> String {
-    paths.iter()
+    paths
+        .iter()
         .map(|path| path.to_string_lossy().into_owned())
         .collect::<Vec<_>>()
         .join("|")
@@ -134,8 +134,12 @@ fn sample_tropical_longitude(
     let state = almanac
         .translate(frame, EARTH_J2000, epoch, None)
         .map_err(|e| e.to_string())?;
-    let (lon, _lat) =
-        icrf_to_ecliptic(state.radius_km.x, state.radius_km.y, state.radius_km.z, obliquity);
+    let (lon, _lat) = icrf_to_ecliptic(
+        state.radius_km.x,
+        state.radius_km.y,
+        state.radius_km.z,
+        obliquity,
+    );
     Ok(normalize_deg(lon + tropical_offset))
 }
 
@@ -149,7 +153,11 @@ fn angular_delta_deg(from: f64, to: f64) -> f64 {
     delta
 }
 
-fn sample_motion(almanac: &Almanac, frame: Frame, unix_secs: f64) -> Result<AstronomyMotion, String> {
+fn sample_motion(
+    almanac: &Almanac,
+    frame: Frame,
+    unix_secs: f64,
+) -> Result<AstronomyMotion, String> {
     const SAMPLE_STEP_SECONDS: f64 = 3600.0;
     let before = sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS)?;
     let after = sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS)?;
@@ -328,12 +336,20 @@ impl AstronomyBackend for JplAstronomyBackend {
         let mean_node = mean_node_lon(jd_ut);
         let mean_motion = mean_node_motion(jd_ut);
         if wanted("north_node") || wanted("mean_node") {
-            let key = if wanted("north_node") { "north_node" } else { "mean_node" };
+            let key = if wanted("north_node") {
+                "north_node"
+            } else {
+                "mean_node"
+            };
             positions.insert(key.to_string(), mean_node);
             motion.insert(key.to_string(), mean_motion.clone());
         }
         if wanted("south_node") || wanted("mean_south_node") {
-            let key = if wanted("south_node") { "south_node" } else { "mean_south_node" };
+            let key = if wanted("south_node") {
+                "south_node"
+            } else {
+                "mean_south_node"
+            };
             positions.insert(key.to_string(), (mean_node + 180.0) % 360.0);
             motion.insert(key.to_string(), mean_motion);
         }
@@ -382,8 +398,8 @@ impl AstronomyBackend for JplAstronomyBackend {
         let lat = chart.subject.location.latitude;
         let lon = chart.subject.location.longitude;
 
-        let (asc, mc, desc, ic) = compute_axes(jd_ut, lat, lon)
-            .map_err(|e| format!("Failed to compute axes: {e}"))?;
+        let (asc, mc, desc, ic) =
+            compute_axes(jd_ut, lat, lon).map_err(|e| format!("Failed to compute axes: {e}"))?;
 
         let axes = AstronomyAxes { asc, desc, mc, ic };
         for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
@@ -400,7 +416,9 @@ impl AstronomyBackend for JplAstronomyBackend {
                 let name = format!("{other:?}").to_lowercase();
                 (
                     whole_sign_cusps(asc),
-                    vec![format!("house_system_{name}_not_yet_supported: whole_sign_used")],
+                    vec![format!(
+                        "house_system_{name}_not_yet_supported: whole_sign_used"
+                    )],
                 )
             }
         };
@@ -500,10 +518,15 @@ mod tests {
 
         let chart = j2000_chart(bsp.to_str().unwrap());
         let backend = JplAstronomyBackend::new(vec![bsp]);
-        let data = backend.compute_chart_data(&chart, None).expect("compute failed");
+        let data = backend
+            .compute_chart_data(&chart, None)
+            .expect("compute failed");
 
-        let mut bodies: Vec<(&str, f64)> =
-            data.positions.iter().map(|(k, &v)| (k.as_str(), v)).collect();
+        let mut bodies: Vec<(&str, f64)> = data
+            .positions
+            .iter()
+            .map(|(k, &v)| (k.as_str(), v))
+            .collect();
         bodies.sort_by_key(|(k, _)| *k);
         println!("\n=== JplAstronomyBackend positions at J2000.0 ===");
         for (body, lon) in &bodies {
@@ -518,8 +541,10 @@ mod tests {
             );
         }
 
-        for body in ["sun", "moon", "mercury", "venus", "mars",
-                     "jupiter", "saturn", "uranus", "neptune", "pluto"] {
+        for body in [
+            "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune",
+            "pluto",
+        ] {
             assert!(data.positions.contains_key(body), "{body} missing");
         }
         for (body, &lon) in &data.positions {
@@ -580,13 +605,19 @@ mod tests {
             .unwrap()]);
         let swiss = SwissAstronomyBackend;
 
-        let jd = jpl.compute_chart_data(&jpl_chart, None).expect("jpl failed");
-        let sd = swiss.compute_chart_data(&swiss_chart, None).expect("swiss failed");
+        let jd = jpl
+            .compute_chart_data(&jpl_chart, None)
+            .expect("jpl failed");
+        let sd = swiss
+            .compute_chart_data(&swiss_chart, None)
+            .expect("swiss failed");
 
         println!("\n=== JPL vs Swiss @ 2026-04-22 15:00 UTC ===");
         println!(" body                 jpl         swiss       diff");
-        for body in ["sun", "moon", "mercury", "venus", "mars",
-                     "jupiter", "saturn", "uranus", "neptune", "pluto"] {
+        for body in [
+            "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune",
+            "pluto",
+        ] {
             let j = jd.positions.get(body).copied().unwrap_or(f64::NAN);
             let s = sd.positions.get(body).copied().unwrap_or(f64::NAN);
             let diff = ((j - s + 540.0) % 360.0) - 180.0;

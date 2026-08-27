@@ -61,6 +61,19 @@ import {
 	type ThemePalettes
 } from '@/lib/themePalettes';
 import type { TransitOverlay } from '@/lib/astrology/transits';
+import { WindowTitlebar } from './components/window-titlebar';
+import { HoroscopeContextTabs } from './components/horoscope-context-tabs';
+import { DetailSidePanel } from './components/detail-side-panel';
+
+const CHART_CONTEXT_VIEWS = new Set([
+	'horoskop',
+	'aspektarium',
+	'informace',
+	'tranzity',
+	'dynamika',
+	'revoluce',
+	'synastrie'
+]);
 
 function mergeWorkspaceDefaults(
 	prev: WorkspaceDefaultsState,
@@ -215,6 +228,7 @@ export default function App() {
 	const [activeView, setActiveView] = useState<string>('horoskop');
 	const [activeTransitSection, setActiveTransitSection] = useState<TransitSection>('general');
 	const [activeSettingsSection, setActiveSettingsSection] = useState<SettingsSectionId>('jazyk');
+	const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 	const [workspacePath, setWorkspacePath] = useState<string | null>(null);
 	const [charts, setCharts] = useState<AppChart[]>(() => [
 		createBootstrapChart(DEFAULT_WORKSPACE_DEFAULTS)
@@ -421,7 +435,9 @@ export default function App() {
 	const handleObservableObjectsChange = async (chartId: string, bodies: string[]) => {
 		const chart = charts.find((c) => c.id === chartId);
 		if (!chart) return;
-		const updated: AppChart = { ...chart, observableObjects: bodies };
+		const updated: AppChart = { ...chart, observableObjects: [...bodies] };
+		setSelectedChartPreview(null);
+		setCharts((prev) => prev.map((c) => (c.id === chartId ? updated : c)));
 		if (workspacePath) {
 			try {
 				await invoke<string>('update_chart', {
@@ -431,13 +447,13 @@ export default function App() {
 				});
 			} catch (e) {
 				console.error(e);
+				setCharts((prev) => prev.map((c) => (c.id === chartId ? chart : c)));
 				toast.error(t('toast_save_failed'), {
 					description: e instanceof Error ? e.message : String(e)
 				});
 				return;
 			}
 		}
-		setCharts((prev) => prev.map((c) => (c.id === chartId ? updated : c)));
 		void computeChartInBackground(updated, workspacePath);
 	};
 
@@ -459,7 +475,6 @@ export default function App() {
 		}
 		setCharts((prev) => prev.map((c) => (c.id === chart.id ? { ...c, ...chart } : c)));
 		setEditingChart(null);
-		setActiveView('horoskop');
 		void computeChartInBackground(chart, workspacePath);
 	};
 
@@ -576,147 +591,179 @@ export default function App() {
 	return (
 		<>
 			<WorkspaceChartsProvider value={workspaceChartsValue}>
-				<div className="flex h-screen overflow-hidden" style={currentThemeStyle}>
-					{/* Main Sidebar */}
-					<AstrologySidebar
-						onThemeChange={setTheme}
-						currentTheme={theme}
-						appShellIconSet={appShellIconSet}
-						onMenuItemClick={handleMenuItemClick}
-						activeMenuItem={activeView}
+				<div className="flex h-screen flex-col overflow-hidden" style={currentThemeStyle}>
+					<WindowTitlebar
+						isSidebarExpanded={isSidebarExpanded}
+						showSecondarySidebar={
+							activeView === 'otevrit' ||
+							activeView === 'tranzity' ||
+							activeView === 'dynamika' ||
+							activeView === 'nastaveni'
+						}
 					/>
-
-					{/* Secondary Sidebar for Transits and Dynamic Transits */}
-					{(activeView === 'tranzity' || activeView === 'dynamika') && (
-						<TransitsSecondarySidebar
-							activeSection={activeTransitSection}
-							onSectionChange={setActiveTransitSection}
-							theme={theme}
-							dynamic={activeView === 'dynamika'}
+					<div className="flex min-h-0 flex-1 overflow-hidden">
+						{/* Main Sidebar */}
+						<AstrologySidebar
+							onThemeChange={setTheme}
+							currentTheme={theme}
+							appShellIconSet={appShellIconSet}
+							onMenuItemClick={handleMenuItemClick}
+							activeMenuItem={activeView}
+							isExpanded={isSidebarExpanded}
+							onExpandedChange={setIsSidebarExpanded}
 						/>
-					)}
 
-					{activeView === 'nastaveni' && (
-						<SettingsSecondarySidebar
-							activeSection={activeSettingsSection}
-							onSectionChange={setActiveSettingsSection}
-							theme={theme}
-						/>
-					)}
+						{/* Secondary Sidebar for Transits and Dynamic Transits */}
+						{(activeView === 'tranzity' || activeView === 'dynamika') && (
+							<TransitsSecondarySidebar
+								activeSection={activeTransitSection}
+								onSectionChange={setActiveTransitSection}
+								theme={theme}
+								dynamic={activeView === 'dynamika'}
+							/>
+						)}
 
-					{/* Main Content Area */}
-					<main className="flex-1 overflow-auto text-[color:var(--theme-content-primary)] transition-colors duration-500">
-						{activeView === 'horoskop' ? (
-							<HoroscopeDashboard
+						{activeView === 'nastaveni' && (
+							<SettingsSecondarySidebar
+								activeSection={activeSettingsSection}
+								onSectionChange={setActiveSettingsSection}
 								theme={theme}
-								workspaceDefaults={workspaceDefaults}
-								glyphSet={astrologyGlyphSet}
-								elementColors={elementWheelColors}
-								lightPlanetFill={lightPlanetFill}
-								onEdit={(chart) => {
-									setEditingChart(chart);
-									setActiveView('edit');
-								}}
-								onObservableObjectsChange={handleObservableObjectsChange}
 							/>
-						) : activeView === 'otevrit' ? (
-							<OpenWorkspaceView
-								theme={theme}
-								workspacePath={workspacePath}
-								onOpenWorkspace={runOpenWorkspaceFolder}
-								onActivateChart={(id) => {
-									handleSelectChartId(id);
-									setActiveView('horoskop');
-								}}
-							/>
-						) : activeView === 'export' ? (
-							<ExportWorkspaceView theme={theme} />
-						) : activeView === 'informace' ? (
-							<InformationView
-								theme={theme}
-								glyphSet={astrologyGlyphSet}
-								elementColors={elementWheelColors}
-								lightPlanetFill={lightPlanetFill}
-							/>
-						) : activeView === 'novy' ? (
+						)}
+
+						{/* Main Content Area */}
+						<main className="flex min-h-0 flex-1 flex-col overflow-hidden text-[color:var(--theme-content-primary)] transition-colors duration-500">
+							<div
+								className={cn(
+									'min-h-0 flex-1',
+									activeView === 'horoskop' ? 'overflow-hidden' : 'overflow-auto'
+								)}
+							>
+								{activeView === 'horoskop' ? (
+									<HoroscopeDashboard
+										theme={theme}
+										workspaceDefaults={workspaceDefaults}
+										glyphSet={astrologyGlyphSet}
+										elementColors={elementWheelColors}
+										lightPlanetFill={lightPlanetFill}
+										onEdit={(chart) => {
+											setEditingChart(chart);
+										}}
+										onObservableObjectsChange={handleObservableObjectsChange}
+									/>
+								) : activeView === 'otevrit' ? (
+									<OpenWorkspaceView
+										theme={theme}
+										workspacePath={workspacePath}
+										onOpenWorkspace={runOpenWorkspaceFolder}
+										onActivateChart={(id) => {
+											handleSelectChartId(id);
+											setActiveView('horoskop');
+										}}
+									/>
+								) : activeView === 'export' ? (
+									<ExportWorkspaceView theme={theme} />
+								) : activeView === 'informace' ? (
+									<InformationView
+										theme={theme}
+										glyphSet={astrologyGlyphSet}
+										elementColors={elementWheelColors}
+										lightPlanetFill={lightPlanetFill}
+									/>
+								) : activeView === 'novy' ? (
+									<NewHoroscope
+										theme={theme}
+										workspaceDefaults={workspaceDefaults}
+										existingChartIds={new Set(charts.map((c) => c.id))}
+										onCreated={handleChartCreated}
+										onBack={() => setActiveView('horoskop')}
+									/>
+								) : activeView === 'aspektarium' ? (
+									<Aspectarium
+										theme={theme}
+										glyphSet={astrologyGlyphSet}
+										workspaceDefaults={workspaceDefaults}
+									/>
+								) : activeView === 'revoluce' ? (
+									<RevolutionView theme={theme} />
+								) : activeView === 'synastrie' ? (
+									<SynastryView theme={theme} />
+								) : activeView === 'tranzity' || activeView === 'dynamika' ? (
+									<TransitsContent
+										section={activeTransitSection}
+										theme={theme}
+										glyphSet={astrologyGlyphSet}
+										workspacePath={workspacePath}
+										workspaceDefaults={workspaceDefaults}
+									/>
+								) : activeView === 'nastaveni' ? (
+									<SettingsView
+										theme={theme}
+										section={activeSettingsSection}
+										appShellIconSet={appShellIconSet}
+										onAppShellIconSetChange={setAppShellIconSet}
+										astrologyGlyphSet={astrologyGlyphSet}
+										onAstrologyGlyphSetChange={setAstrologyGlyphSet}
+										elementColors={elementWheelColors}
+										onElementColorsCommit={commitElementWheelColors}
+										themePalette={currentThemePalette}
+										onThemePaletteCommit={(nextPalette) => {
+											setThemePalettes((prev) => {
+												const next = { ...prev, [theme]: nextPalette };
+												persistThemePalettes(next);
+												return next;
+											});
+										}}
+										workspaceDefaults={workspaceDefaults}
+										onWorkspaceDefaultsChange={applyWorkspaceDefaultsPatch}
+									/>
+								) : (
+									<AppMainContentRoot>
+										<AppMainContentContainer layout="center-column">
+											<Card variant="ghost" className="gap-0 p-0">
+												<CardContent className="space-y-3 p-6 md:p-8">
+													<h1 className={cn('text-xl font-semibold', formTheme.title)}>
+														{t('placeholder_view_title')}
+													</h1>
+													<p className={cn('text-sm', formTheme.muted)}>
+														{t('placeholder_view_subtitle')}
+													</p>
+													<p className={cn('text-sm leading-relaxed', formTheme.muted)}>
+														{t('placeholder_view_body')}
+													</p>
+												</CardContent>
+											</Card>
+										</AppMainContentContainer>
+									</AppMainContentRoot>
+								)}
+							</div>
+							{CHART_CONTEXT_VIEWS.has(activeView) && <HoroscopeContextTabs theme={theme} />}
+						</main>
+					</div>
+					<DetailSidePanel
+						theme={theme}
+						open={editingChart !== null}
+						onOpenChange={(open) => {
+							if (!open) setEditingChart(null);
+						}}
+						title={t('edit_radix_title')}
+						description={editingChart?.name}
+						contentClassName="sm:max-w-xl lg:w-[min(48rem,70vw)] lg:max-w-3xl"
+						bodyClassName="overflow-y-auto p-0"
+					>
+						{editingChart && (
 							<NewHoroscope
+								key={editingChart.id}
+								presentation="panel"
 								theme={theme}
 								workspaceDefaults={workspaceDefaults}
-								existingChartIds={new Set(charts.map((c) => c.id))}
-								onCreated={handleChartCreated}
-								onBack={() => setActiveView('horoskop')}
-							/>
-						) : activeView === 'edit' && editingChart ? (
-							<NewHoroscope
-								theme={theme}
-								workspaceDefaults={workspaceDefaults}
-								existingChartIds={new Set(charts.map((c) => c.id))}
+								existingChartIds={new Set(charts.map((chart) => chart.id))}
 								initialValues={editingChart}
 								onSaved={handleChartSaved}
-								onBack={() => {
-									setEditingChart(null);
-									setActiveView('horoskop');
-								}}
+								onBack={() => setEditingChart(null)}
 							/>
-						) : activeView === 'aspektarium' ? (
-							<Aspectarium
-								theme={theme}
-								glyphSet={astrologyGlyphSet}
-								workspaceDefaults={workspaceDefaults}
-							/>
-						) : activeView === 'revoluce' ? (
-							<RevolutionView theme={theme} />
-						) : activeView === 'synastrie' ? (
-							<SynastryView theme={theme} />
-						) : activeView === 'tranzity' || activeView === 'dynamika' ? (
-							<TransitsContent
-								section={activeTransitSection}
-								theme={theme}
-								glyphSet={astrologyGlyphSet}
-								workspacePath={workspacePath}
-								workspaceDefaults={workspaceDefaults}
-							/>
-						) : activeView === 'nastaveni' ? (
-							<SettingsView
-								theme={theme}
-								section={activeSettingsSection}
-								appShellIconSet={appShellIconSet}
-								onAppShellIconSetChange={setAppShellIconSet}
-								astrologyGlyphSet={astrologyGlyphSet}
-								onAstrologyGlyphSetChange={setAstrologyGlyphSet}
-								elementColors={elementWheelColors}
-								onElementColorsCommit={commitElementWheelColors}
-								themePalette={currentThemePalette}
-								onThemePaletteCommit={(nextPalette) => {
-									setThemePalettes((prev) => {
-										const next = { ...prev, [theme]: nextPalette };
-										persistThemePalettes(next);
-										return next;
-									});
-								}}
-								workspaceDefaults={workspaceDefaults}
-								onWorkspaceDefaultsChange={applyWorkspaceDefaultsPatch}
-							/>
-						) : (
-							<AppMainContentRoot>
-								<AppMainContentContainer layout="center-column">
-									<Card variant="ghost" className="gap-0 p-0">
-										<CardContent className="space-y-3 p-6 md:p-8">
-											<h1 className={cn('text-xl font-semibold', formTheme.title)}>
-												{t('placeholder_view_title')}
-											</h1>
-											<p className={cn('text-sm', formTheme.muted)}>
-												{t('placeholder_view_subtitle')}
-											</p>
-											<p className={cn('text-sm leading-relaxed', formTheme.muted)}>
-												{t('placeholder_view_body')}
-											</p>
-										</CardContent>
-									</Card>
-								</AppMainContentContainer>
-							</AppMainContentRoot>
 						)}
-					</main>
+					</DetailSidePanel>
 				</div>
 			</WorkspaceChartsProvider>
 			<Toaster theme={shadcnDark ? 'dark' : 'light'} />

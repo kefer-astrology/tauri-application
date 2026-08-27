@@ -5,6 +5,7 @@ import type {
 	ComputeSettingsOverrides,
 	CurrentModelReport,
 	ResolvedLocation,
+	TransitSetup,
 	TransitSeriesRequest,
 	TransitSeriesResult,
 	WorkspaceDefaultsDto,
@@ -167,6 +168,21 @@ export function computeTransitSeries(params: TransitSeriesRequest): Promise<Tran
 		presetId: params.presetId ?? null,
 		settingsOverrides: params.settingsOverrides ?? null
 	});
+}
+
+export async function loadTransitSetup(
+	workspacePath: string,
+	chartId: string
+): Promise<TransitSetup | null> {
+	if (!isTauriRuntime()) return null;
+	return invoke<TransitSetup | null>('load_transit_setup', { workspacePath, chartId });
+}
+
+export async function saveTransitSetup(
+	workspacePath: string,
+	setup: TransitSetup
+): Promise<TransitSetup> {
+	return invoke<TransitSetup>('save_transit_setup', { workspacePath, setup });
 }
 
 export async function resolveLocation(query: string): Promise<ResolvedLocation> {

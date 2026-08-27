@@ -1,18 +1,17 @@
+mod application;
 mod astrology;
 mod astronomy;
-mod application;
 mod backend;
 mod commands;
 mod ephemeris_manager;
 mod event_time;
 mod houses;
-mod lunar_phase;
 mod jpl_backend;
+mod lunar_phase;
 mod storage;
-mod workspace;
 #[cfg(feature = "swisseph")]
 mod swisseph;
-use tauri::Manager;
+mod workspace;
 use commands::default::{read, write};
 use commands::ephemeris::{download_ephemeris, get_available_bodies, list_ephemeris_catalog};
 use commands::storage::{
@@ -23,9 +22,11 @@ use commands::workspace::{
     compute_chart, compute_chart_from_data, compute_cross_aspects_from_data,
     compute_transit_series, create_chart, create_workspace, delete_chart, delete_workspace,
     get_chart_details, get_current_model_report, get_workspace_defaults, import_chart,
-    load_workspace, open_folder_dialog, resolve_location, resolve_timezone, save_workspace,
-    save_workspace_defaults, search_locations, update_chart, validate_workspace,
+    load_transit_setup, load_workspace, open_folder_dialog, resolve_location, resolve_timezone,
+    save_transit_setup, save_workspace, save_workspace_defaults, search_locations, update_chart,
+    validate_workspace,
 };
+use tauri::Manager;
 
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -53,7 +54,9 @@ pub fn run() {
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state = app_handle.state::<backend::BackendState>();
-                if let Err(err) = backend::initialize_backend_availability(&app_handle, &state).await {
+                if let Err(err) =
+                    backend::initialize_backend_availability(&app_handle, &state).await
+                {
                     log::warn!("Python backend was not ready during startup: {err}");
                 }
             });
@@ -84,6 +87,8 @@ pub fn run() {
             update_chart,
             delete_chart,
             get_workspace_defaults,
+            load_transit_setup,
+            save_transit_setup,
             compute_chart,
             compute_chart_from_data,
             compute_cross_aspects_from_data,

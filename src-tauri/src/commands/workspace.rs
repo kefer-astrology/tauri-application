@@ -75,6 +75,28 @@ pub struct SaveWorkspaceDefaultsInput {
     pub aspect_line_tier_style: Option<crate::workspace::models::AspectLineTierStyle>,
 }
 
+/// Inputs needed to reproduce a transit calculation. Computed results are intentionally
+/// excluded so the ephemeris engine can recompute them when the workspace is reopened.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransitSetup {
+    pub version: u32,
+    pub source_chart_id: String,
+    pub transit_type: String,
+    pub period_mode: String,
+    pub from_date: String,
+    pub from_time: String,
+    pub to_date: String,
+    pub to_time: String,
+    pub time_step_seconds: u64,
+    pub transiting_bodies: Vec<String>,
+    pub transited_bodies: Vec<String>,
+    pub aspect_types: Vec<String>,
+    pub house_transitions: bool,
+    pub sign_transitions: bool,
+    pub transit_limits: bool,
+    pub precession_correction: bool,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 struct NominatimSearchResult {
     display_name: String,
@@ -203,7 +225,10 @@ print(path or '', end='')
             }
         }
 
-        Err("No native folder picker was available. Install python3-tk, zenity, kdialog, or yad.".to_string())
+        Err(
+            "No native folder picker was available. Install python3-tk, zenity, kdialog, or yad."
+                .to_string(),
+        )
     }
 
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
@@ -285,6 +310,8 @@ pub async fn save_workspace(
     let base = Path::new(&workspace_path);
     let charts_dir = base.join("charts");
     fs::create_dir_all(&charts_dir).map_err(|e| format!("Failed to create charts dir: {}", e))?;
+    fs::create_dir_all(base.join("transits"))
+        .map_err(|e| format!("Failed to create transits dir: {}", e))?;
 
     let mut chart_refs = Vec::new();
     for chart in &charts {
@@ -347,15 +374,17 @@ pub async fn save_workspace(
         parsed_defaults.default_location_longitude,
         parsed_defaults.default_timezone,
     ) {
-        (Some(name), Some(latitude), Some(longitude), Some(timezone)) => Some(crate::workspace::models::Location {
-            name,
-            latitude,
-            longitude,
-            timezone,
-            utc_offset: None,
-            location_mode: None,
-            timezone_mode: None,
-        }),
+        (Some(name), Some(latitude), Some(longitude), Some(timezone)) => {
+            Some(crate::workspace::models::Location {
+                name,
+                latitude,
+                longitude,
+                timezone,
+                utc_offset: None,
+                location_mode: None,
+                timezone_mode: None,
+            })
+        }
         _ => None,
     };
     if let Some(location) = default_location.as_ref() {
@@ -429,6 +458,8 @@ pub async fn create_workspace(workspace_path: String, owner: String) -> Result<S
     fs::create_dir_all(base).map_err(|e| format!("Failed to create workspace dir: {}", e))?;
     fs::create_dir_all(base.join("charts"))
         .map_err(|e| format!("Failed to create charts dir: {}", e))?;
+    fs::create_dir_all(base.join("transits"))
+        .map_err(|e| format!("Failed to create transits dir: {}", e))?;
 
     let manifest_path = base.join("workspace.yaml");
     if manifest_path.exists() {
@@ -441,6 +472,88 @@ pub async fn create_workspace(workspace_path: String, owner: String) -> Result<S
     let manifest = empty_workspace_manifest(&owner);
     write_workspace_manifest(base, &manifest)?;
     Ok(workspace_path)
+}
+
+/// Persist the transit form state for one source chart without storing computed output.
+#[tauri::command]
+pub async fn save_transit_setup(
+    workspace_path: String,
+    setup: TransitSetup,
+) -> Result<TransitSetup, String> {
+    use std::fs;
+
+    let base = Path::new(&workspace_path);
+    let manifest = load_workspace_manifest(base)?;
+    if setup.version != 1 {
+        return Err(format!(
+            "Unsupported transit setup version: {}",
+            setup.version
+        ));
+    }
+    if setup.source_chart_id.trim().is_empty() {
+        return Err("Transit setup source_chart_id cannot be empty".to_string());
+    }
+    if setup.time_step_seconds == 0 {
+        return Err("Transit setup time_step_seconds must be greater than zero".to_string());
+    }
+    if find_chart_ref_by_id(base, &manifest, &setup.source_chart_id)?.is_none() {
+        return Err(format!(
+            "Transit source chart not found: {}",
+            setup.source_chart_id
+        ));
+    }
+
+    let transits_dir = base.join("transits");
+    fs::create_dir_all(&transits_dir)
+        .map_err(|e| format!("Failed to create transits dir: {}", e))?;
+    let path = transits_dir.join(format!(
+        "{}.yml",
+        sanitize_chart_filename(&setup.source_chart_id)
+    ));
+    let yaml = serde_yaml::to_string(&setup)
+        .map_err(|e| format!("Transit setup YAML serialization failed: {}", e))?;
+    fs::write(&path, yaml)
+        .map_err(|e| format!("Write transit setup {} failed: {}", path.display(), e))?;
+    Ok(setup)
+}
+
+/// Load the saved transit form state for a source chart, if one exists.
+#[tauri::command]
+pub async fn load_transit_setup(
+    workspace_path: String,
+    chart_id: String,
+) -> Result<Option<TransitSetup>, String> {
+    use std::fs;
+
+    let base = Path::new(&workspace_path);
+    let manifest = load_workspace_manifest(base)?;
+    if find_chart_ref_by_id(base, &manifest, &chart_id)?.is_none() {
+        return Err(format!("Transit source chart not found: {}", chart_id));
+    }
+
+    let path = base
+        .join("transits")
+        .join(format!("{}.yml", sanitize_chart_filename(&chart_id)));
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let yaml = fs::read_to_string(&path)
+        .map_err(|e| format!("Read transit setup {} failed: {}", path.display(), e))?;
+    let setup: TransitSetup = serde_yaml::from_str(&yaml)
+        .map_err(|e| format!("Parse transit setup {} failed: {}", path.display(), e))?;
+    if setup.version != 1 {
+        return Err(format!(
+            "Unsupported transit setup version: {}",
+            setup.version
+        ));
+    }
+    if setup.source_chart_id != chart_id {
+        return Err(format!(
+            "Transit setup source chart mismatch: expected {}, found {}",
+            chart_id, setup.source_chart_id
+        ));
+    }
+    Ok(Some(setup))
 }
 
 /// Delete a workspace directory recursively.
@@ -522,8 +635,8 @@ pub async fn import_chart(workspace_path: String, source_path: String) -> Result
     }
 
     let rel = chart_relative_path(&chart_id);
-    let chart_json =
-        serde_json::to_value(&chart).map_err(|e| format!("Chart JSON serialization failed: {e}"))?;
+    let chart_json = serde_json::to_value(&chart)
+        .map_err(|e| format!("Chart JSON serialization failed: {e}"))?;
     write_chart_yaml(base, &rel, &chart_json)?;
 
     manifest.charts.push(rel);
@@ -577,6 +690,19 @@ pub async fn delete_chart(workspace_path: String, chart_id: String) -> Result<bo
         })?;
     }
 
+    let transit_setup_path = base
+        .join("transits")
+        .join(format!("{}.yml", sanitize_chart_filename(&chart_id)));
+    if transit_setup_path.exists() {
+        fs::remove_file(&transit_setup_path).map_err(|e| {
+            format!(
+                "Failed to delete transit setup {}: {}",
+                transit_setup_path.display(),
+                e
+            )
+        })?;
+    }
+
     Ok(true)
 }
 
@@ -608,10 +734,7 @@ pub async fn load_workspace(workspace_path: String) -> Result<WorkspaceInfo, Str
 pub async fn validate_workspace(
     workspace_path: String,
 ) -> Result<WorkspaceValidationReport, String> {
-    Ok(crate::workspace::load_workspace_aggregate(Path::new(
-        &workspace_path,
-    ))?
-    .validation_report())
+    Ok(crate::workspace::load_workspace_aggregate(Path::new(&workspace_path))?.validation_report())
 }
 
 /// Load workspace default settings from workspace.yaml.
@@ -823,9 +946,7 @@ pub async fn compute_chart_from_data(
     );
     let route = select_chart_compute_route(backend, backend_available, force_python)?;
     match route {
-        ComputeRoute::Rust => {
-            compute_chart_from_data_rust(chart_json, settings_overrides.as_ref())
-        }
+        ComputeRoute::Rust => compute_chart_from_data_rust(chart_json, settings_overrides.as_ref()),
         ComputeRoute::Python if matches!(backend, ComputeBackend::Auto) && !force_python => {
             match compute_chart_from_data_python(
                 &app,
@@ -910,7 +1031,8 @@ async fn compute_chart_from_data_python(
         "settings_overrides": settings_overrides,
     });
     let response =
-        crate::backend::post_json(app, backend_state, "/charts/compute-from-data", &payload).await?;
+        crate::backend::post_json(app, backend_state, "/charts/compute-from-data", &payload)
+            .await?;
     serde_json::from_value(response)
         .map_err(|err| format!("Failed to parse backend chart-from-data response: {err}"))
 }
@@ -1099,24 +1221,22 @@ pub async fn compute_transit_series(
                 Err(err) => Err(err),
             }
         }
-        ComputeRoute::Python => {
-            compute_transit_series_python(
-                &app,
-                &backend_state,
-                &workspace_path,
-                &chart_id,
-                &start_datetime,
-                &end_datetime,
-                time_step_seconds,
-                transiting_objects,
-                transited_objects,
-                aspect_types,
-                preset_id.as_deref(),
-                settings_overrides.as_ref(),
-            )
-            .await
-            .map(|result| normalize_transit_response(result, Some("python")))
-        }
+        ComputeRoute::Python => compute_transit_series_python(
+            &app,
+            &backend_state,
+            &workspace_path,
+            &chart_id,
+            &start_datetime,
+            &end_datetime,
+            time_step_seconds,
+            transiting_objects,
+            transited_objects,
+            aspect_types,
+            preset_id.as_deref(),
+            settings_overrides.as_ref(),
+        )
+        .await
+        .map(|result| normalize_transit_response(result, Some("python"))),
     }
 }
 
@@ -1420,10 +1540,10 @@ fn selected_compute_backend() -> ComputeBackend {
 fn python_fallback_enabled() -> bool {
     !matches!(
         std::env::var("KEFER_PYTHON_FALLBACK")
-        .ok()
-        .as_deref()
-        .map(|value| value.trim().to_ascii_lowercase())
-        .as_deref(),
+            .ok()
+            .as_deref()
+            .map(|value| value.trim().to_ascii_lowercase())
+            .as_deref(),
         Some("0" | "false" | "no" | "off")
     )
 }
@@ -1435,9 +1555,15 @@ fn select_chart_compute_route(
 ) -> Result<ComputeRoute, String> {
     if force_python {
         return match backend {
-            ComputeBackend::Rust => Err("Rust backend does not support this chart type yet. Use Python backend.".to_string()),
+            ComputeBackend::Rust => Err(
+                "Rust backend does not support this chart type yet. Use Python backend."
+                    .to_string(),
+            ),
             _ if backend_available => Ok(ComputeRoute::Python),
-            _ => Err("Python backend unavailable. This chart requires Python-backed computation.".to_string()),
+            _ => Err(
+                "Python backend unavailable. This chart requires Python-backed computation."
+                    .to_string(),
+            ),
         };
     }
 
@@ -1573,15 +1699,19 @@ fn apply_workspace_defaults_patch(
         || patch.default_location_latitude.is_some()
         || patch.default_location_longitude.is_some()
     {
-        let mut location = defaults.default_location.clone().unwrap_or(crate::workspace::models::Location {
-            name: String::new(),
-            latitude: 0.0,
-            longitude: 0.0,
-            timezone: "UTC".to_string(),
-            utc_offset: None,
-            location_mode: None,
-            timezone_mode: None,
-        });
+        let mut location =
+            defaults
+                .default_location
+                .clone()
+                .unwrap_or(crate::workspace::models::Location {
+                    name: String::new(),
+                    latitude: 0.0,
+                    longitude: 0.0,
+                    timezone: "UTC".to_string(),
+                    utc_offset: None,
+                    location_mode: None,
+                    timezone_mode: None,
+                });
 
         if let Some(value) = patch.default_location_name {
             location.name = value;
@@ -1619,8 +1749,8 @@ fn apply_workspace_defaults_patch(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use serde_json::Value;
+    use std::fs;
     use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -1634,10 +1764,8 @@ mod tests {
                 .duration_since(UNIX_EPOCH)
                 .expect("system time should be after unix epoch")
                 .as_nanos();
-            let path = std::env::temp_dir().join(format!(
-                "kefer-{prefix}-{}-{unique}",
-                std::process::id()
-            ));
+            let path = std::env::temp_dir()
+                .join(format!("kefer-{prefix}-{}-{unique}", std::process::id()));
             fs::create_dir_all(&path).expect("temporary test directory should be creatable");
             Self { path }
         }
@@ -1750,7 +1878,8 @@ mod tests {
     fn compute_chart_rust_reads_sample_workspace() {
         let workspace_path = sample_workspace_path();
         let base = std::path::Path::new(&workspace_path);
-        let manifest = load_workspace_manifest(base).expect("sample workspace manifest should load");
+        let manifest =
+            load_workspace_manifest(base).expect("sample workspace manifest should load");
         let chart_rel = find_chart_ref_by_id(base, &manifest, "Base Chart")
             .expect("chart lookup should succeed")
             .expect("Base Chart should exist");
@@ -1759,12 +1888,16 @@ mod tests {
         let result = compute_chart_rust(&workspace_path, "Base Chart", None, None)
             .expect("sample workspace chart should compute");
 
-        assert_eq!(result.get("chart_id"), Some(&serde_json::json!("Base Chart")));
+        assert_eq!(
+            result.get("chart_id"),
+            Some(&serde_json::json!("Base Chart"))
+        );
         assert_eq!(
             result.get("backend_used"),
-            Some(&serde_json::json!(
-                crate::astronomy::backend_for_chart(&chart).backend_id()
-            ))
+            Some(&serde_json::json!(crate::astronomy::backend_for_chart(
+                &chart
+            )
+            .backend_id()))
         );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
         assert!(result.get("ephemeris_source").is_some());
@@ -1776,12 +1909,16 @@ mod tests {
         if crate::astronomy::backend_for_chart(&chart).backend_id() == "jpl" {
             assert!(
                 !warnings.iter().any(|warning| {
-                    warning.as_str() == Some("true_node_not_available: anise backend uses mean node only")
+                    warning.as_str()
+                        == Some("true_node_not_available: anise backend uses mean node only")
                 }),
                 "jpl path should provide true lunar nodes from Moon state"
             );
         } else {
-            assert!(warnings.is_empty(), "swisseph path should not emit jpl-only warnings");
+            assert!(
+                warnings.is_empty(),
+                "swisseph path should not emit jpl-only warnings"
+            );
         }
 
         let positions = result
@@ -1794,7 +1931,10 @@ mod tests {
         assert!(positions.contains_key("mc"));
 
         let moon = result.get("moon_details").expect("moon_details key");
-        assert!(!moon.is_null(), "moon_details should be populated when sun and moon exist");
+        assert!(
+            !moon.is_null(),
+            "moon_details should be populated when sun and moon exist"
+        );
         let obj = moon.as_object().expect("moon_details object");
         assert!(obj.contains_key("elongation_deg"));
         assert!(obj.contains_key("illuminated_fraction"));
@@ -1833,8 +1973,8 @@ mod tests {
         config.insert("selected_aspects".to_string(), Value::Null);
         config.insert("aspect_orbs".to_string(), serde_json::json!({}));
 
-        let result = compute_chart_from_data_rust(payload, None)
-            .expect("standalone chart should compute");
+        let result =
+            compute_chart_from_data_rust(payload, None).expect("standalone chart should compute");
 
         assert_eq!(result.get("backend_used"), Some(&serde_json::json!("jpl")));
         let positions = result
@@ -1908,8 +2048,7 @@ mod tests {
             serde_yaml::to_string(&preset).expect("preset should serialize"),
         )
         .expect("preset should be written");
-        let mut manifest =
-            load_workspace_manifest(&workspace_path).expect("manifest should load");
+        let mut manifest = load_workspace_manifest(&workspace_path).expect("manifest should load");
         manifest
             .chart_presets
             .push("presets/minimal.yml".to_string());
@@ -1937,15 +2076,15 @@ mod tests {
         let result = HashMap::from([
             ("backend_used".to_string(), serde_json::json!("swisseph")),
             ("fallback_used".to_string(), serde_json::json!(false)),
-            (
-                "warnings".to_string(),
-                serde_json::json!(["partial_axes"]),
-            ),
+            ("warnings".to_string(), serde_json::json!(["partial_axes"])),
         ]);
 
         let annotated = annotate_chart_fallback(result, "python_compute_failed_auto_fallback");
 
-        assert_eq!(annotated.get("fallback_used"), Some(&serde_json::json!(true)));
+        assert_eq!(
+            annotated.get("fallback_used"),
+            Some(&serde_json::json!(true))
+        );
         assert_eq!(
             annotated.get("warnings"),
             Some(&serde_json::json!([
@@ -1966,7 +2105,10 @@ mod tests {
         let annotated =
             annotate_transit_fallback(result, "python_transit_compute_failed_auto_fallback");
 
-        assert_eq!(annotated.get("fallback_used"), Some(&serde_json::json!(true)));
+        assert_eq!(
+            annotated.get("fallback_used"),
+            Some(&serde_json::json!(true))
+        );
         assert_eq!(
             annotated.get("warnings"),
             Some(&serde_json::json!([
@@ -1984,7 +2126,8 @@ mod tests {
         )
         .expect("sample chart should load");
         let mut whole_sign_chart = chart.clone();
-        whole_sign_chart.config.house_system = Some(crate::workspace::models::HouseSystem::WholeSign);
+        whole_sign_chart.config.house_system =
+            Some(crate::workspace::models::HouseSystem::WholeSign);
 
         let axes = compute_radix_axes(&whole_sign_chart).expect("axes should compute");
         let cusps = compute_house_cusps(&whole_sign_chart, &axes);
@@ -1992,16 +2135,15 @@ mod tests {
         assert_eq!(cusps.len(), 12);
         let expected_first = (axes.asc / 30.0).floor() * 30.0;
         assert!((cusps[0] - expected_first).abs() < 0.000_1);
-        assert!(
-            (crate::houses::normalize_deg(cusps[1] - cusps[0]) - 30.0).abs() < 0.000_1
-        );
+        assert!((crate::houses::normalize_deg(cusps[1] - cusps[0]) - 30.0).abs() < 0.000_1);
     }
 
     #[test]
     fn compute_transit_series_rust_applies_requested_filters() {
         let workspace_path = sample_workspace_path();
         let base = std::path::Path::new(&workspace_path);
-        let manifest = load_workspace_manifest(base).expect("sample workspace manifest should load");
+        let manifest =
+            load_workspace_manifest(base).expect("sample workspace manifest should load");
         let chart_rel = find_chart_ref_by_id(base, &manifest, "Base Chart")
             .expect("chart lookup should succeed")
             .expect("Base Chart should exist");
@@ -2032,9 +2174,10 @@ mod tests {
         assert_eq!(results.len(), 3);
         assert_eq!(
             result.get("backend_used"),
-            Some(&serde_json::json!(
-                crate::astronomy::backend_for_chart(&chart).backend_id()
-            ))
+            Some(&serde_json::json!(crate::astronomy::backend_for_chart(
+                &chart
+            )
+            .backend_id()))
         );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
         assert!(result.get("ephemeris_source").is_some());
@@ -2078,6 +2221,7 @@ mod tests {
 
         assert_eq!(result, workspace_path.to_string_lossy());
         assert!(workspace_path.join("charts").is_dir());
+        assert!(workspace_path.join("transits").is_dir());
         assert!(workspace_path.join("workspace.yaml").is_file());
 
         let manifest = load_workspace_manifest(&workspace_path).expect("manifest should load");
@@ -2101,8 +2245,7 @@ mod tests {
         ))
         .expect("chart should be created");
 
-        let mut manifest =
-            load_workspace_manifest(&workspace_path).expect("manifest should load");
+        let mut manifest = load_workspace_manifest(&workspace_path).expect("manifest should load");
         let existing_chart = manifest.charts[0].clone();
         manifest.charts.push(existing_chart);
         manifest.charts.push("charts/missing.yml".to_string());
@@ -2125,12 +2268,22 @@ mod tests {
 
     #[test]
     fn get_workspace_defaults_reads_sample_workspace_defaults() {
-        let defaults = tauri::async_runtime::block_on(get_workspace_defaults(sample_workspace_path()))
-            .expect("sample defaults should load");
+        let defaults =
+            tauri::async_runtime::block_on(get_workspace_defaults(sample_workspace_path()))
+                .expect("sample defaults should load");
 
-        assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("swisseph")));
-        assert_eq!(defaults.get("default_bodies"), Some(&serde_json::Value::Null));
-        assert_eq!(defaults.get("default_aspects"), Some(&serde_json::Value::Null));
+        assert_eq!(
+            defaults.get("default_engine"),
+            Some(&serde_json::json!("swisseph"))
+        );
+        assert_eq!(
+            defaults.get("default_bodies"),
+            Some(&serde_json::Value::Null)
+        );
+        assert_eq!(
+            defaults.get("default_aspects"),
+            Some(&serde_json::Value::Null)
+        );
     }
 
     #[test]
@@ -2154,7 +2307,11 @@ mod tests {
                 default_location_latitude: Some(50.0875),
                 default_location_longitude: Some(14.4214),
                 default_engine: Some("jpl".to_string()),
-                default_bodies: Some(vec!["sun".to_string(), "moon".to_string(), "asc".to_string()]),
+                default_bodies: Some(vec![
+                    "sun".to_string(),
+                    "moon".to_string(),
+                    "asc".to_string(),
+                ]),
                 default_aspects: Some(vec!["conjunction".to_string(), "trine".to_string()]),
                 default_aspect_orbs: Some(HashMap::from([
                     ("conjunction".to_string(), 8.0),
@@ -2165,7 +2322,10 @@ mod tests {
         ))
         .expect("workspace defaults should persist");
 
-        assert_eq!(defaults.get("default_engine"), Some(&serde_json::json!("jpl")));
+        assert_eq!(
+            defaults.get("default_engine"),
+            Some(&serde_json::json!("jpl"))
+        );
         assert_eq!(
             defaults.get("default_bodies"),
             Some(&serde_json::json!(["sun", "moon", "asc"]))
@@ -2190,7 +2350,11 @@ mod tests {
         );
         assert_eq!(
             manifest.default.default_bodies,
-            Some(vec!["sun".to_string(), "moon".to_string(), "asc".to_string()])
+            Some(vec![
+                "sun".to_string(),
+                "moon".to_string(),
+                "asc".to_string()
+            ])
         );
     }
 
@@ -2221,6 +2385,65 @@ mod tests {
         assert_eq!(info.charts.len(), 1);
         assert_eq!(info.charts[0].id, "Test Chart");
         assert_eq!(info.charts[0].name, "Test Chart");
+    }
+
+    #[test]
+    fn transit_setup_round_trips_without_computed_results() {
+        let temp = TestWorkspaceDir::new("transit-setup");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_string = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_string.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+        tauri::async_runtime::block_on(create_chart(
+            workspace_path_string.clone(),
+            sample_chart_payload("Transit Source"),
+        ))
+        .expect("chart should be created");
+
+        let setup = TransitSetup {
+            version: 1,
+            source_chart_id: "Transit Source".to_string(),
+            transit_type: "transit".to_string(),
+            period_mode: "custom".to_string(),
+            from_date: "2026-08-27".to_string(),
+            from_time: "10:15".to_string(),
+            to_date: "2026-08-28".to_string(),
+            to_time: "11:30".to_string(),
+            time_step_seconds: 3600,
+            transiting_bodies: vec!["sun".to_string(), "moon".to_string()],
+            transited_bodies: vec!["saturn".to_string()],
+            aspect_types: vec!["conjunction".to_string(), "square".to_string()],
+            house_transitions: false,
+            sign_transitions: true,
+            transit_limits: false,
+            precession_correction: true,
+        };
+
+        let saved = tauri::async_runtime::block_on(save_transit_setup(
+            workspace_path_string.clone(),
+            setup.clone(),
+        ))
+        .expect("transit setup should save");
+        assert_eq!(saved, setup);
+        assert!(workspace_path.join("transits/Transit_Source.yml").is_file());
+
+        let loaded = tauri::async_runtime::block_on(load_transit_setup(
+            workspace_path_string.clone(),
+            "Transit Source".to_string(),
+        ))
+        .expect("transit setup should load");
+        assert_eq!(loaded, Some(setup));
+
+        tauri::async_runtime::block_on(delete_chart(
+            workspace_path_string,
+            "Transit Source".to_string(),
+        ))
+        .expect("chart should be deleted");
+        assert!(!workspace_path.join("transits/Transit_Source.yml").exists());
     }
 
     #[test]
@@ -2259,7 +2482,10 @@ mod tests {
         ))
         .expect("updated chart details should load");
 
-        assert_eq!(details.get("id"), Some(&serde_json::json!("Original Chart")));
+        assert_eq!(
+            details.get("id"),
+            Some(&serde_json::json!("Original Chart"))
+        );
         assert_eq!(
             details.pointer("/subject/name"),
             Some(&serde_json::json!("Updated Name"))
@@ -2330,8 +2556,11 @@ mod tests {
         let workspace_path = temp.path.join("project");
         let workspace_path_str = workspace_path.to_string_lossy().into_owned();
         let source_path = temp.path.join("sample.sfs");
-        fs::write(&source_path, "_settings.Model.DefaultHouseSystem = \"Placidus\";\n")
-            .expect("temporary sfs file should be writable");
+        fs::write(
+            &source_path,
+            "_settings.Model.DefaultHouseSystem = \"Placidus\";\n",
+        )
+        .expect("temporary sfs file should be writable");
 
         tauri::async_runtime::block_on(create_workspace(
             workspace_path_str.clone(),
@@ -2356,8 +2585,8 @@ mod tests {
             lon: "14.4214".to_string(),
         }];
 
-        let result = select_nominatim_result("Prague", &candidates)
-            .expect("candidate should resolve");
+        let result =
+            select_nominatim_result("Prague", &candidates).expect("candidate should resolve");
 
         assert_eq!(result.display_name, "Prague, Czechia");
         assert_eq!(result.latitude, 50.0875);
@@ -2386,8 +2615,8 @@ mod tests {
 
     #[test]
     fn select_nominatim_result_rejects_empty_candidate_list() {
-        let err = select_nominatim_result("Unknown", &[])
-            .expect_err("empty result list should fail");
+        let err =
+            select_nominatim_result("Unknown", &[]).expect_err("empty result list should fail");
         assert!(err.contains("No location results found"));
     }
 }
@@ -2422,9 +2651,7 @@ fn validate_chart_payload(
     Ok(parsed)
 }
 
-fn validate_chart_instance(
-    chart: &crate::workspace::models::ChartInstance,
-) -> Result<(), String> {
+fn validate_chart_instance(chart: &crate::workspace::models::ChartInstance) -> Result<(), String> {
     if chart.id.trim().is_empty() {
         return Err("Chart id is required".to_string());
     }
@@ -2453,7 +2680,9 @@ fn validate_chart_instance(
     Ok(())
 }
 
-fn read_importable_chart_yaml(path: &Path) -> Result<crate::workspace::models::ChartInstance, String> {
+fn read_importable_chart_yaml(
+    path: &Path,
+) -> Result<crate::workspace::models::ChartInstance, String> {
     use std::fs;
 
     let content = fs::read_to_string(path)

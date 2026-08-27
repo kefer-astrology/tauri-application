@@ -135,8 +135,19 @@
     return ((180 - eclipticDeg) * Math.PI) / 180;
   }
 
+  // Rotate the whole wheel so the Ascendant always sits at the 9 o'clock (left) point,
+  // matching the React app's horoscope-wheel behavior.
+  const wheelRotationOffset = $derived.by(() => {
+    const asc = angleLongitudes.asc;
+    return typeof asc === 'number' && Number.isFinite(asc) ? -asc : 0;
+  });
+
+  function displayLongitude(eclipticDeg: number): number {
+    return ((eclipticDeg + wheelRotationOffset) % 360 + 360) % 360;
+  }
+
   function polar(r: number, eclipticDeg: number) {
-    const rad = longitudeToScreenRadians(eclipticDeg);
+    const rad = longitudeToScreenRadians(displayLongitude(eclipticDeg));
     return {
       x: center + r * Math.cos(rad),
       y: center + r * Math.sin(rad)
@@ -261,7 +272,7 @@
 
   {#each zodiacSigns as sign}
     {@const pos = polar(zodiacRadius, sign.angle + 15)}
-      {@const rendered = renderGlyph(sign.id, pos.x, pos.y, 24, elementColorForSign(sign.id))}
+      {@const rendered = renderGlyph(sign.id, pos.x, pos.y, 28, elementColorForSign(sign.id))}
     <g transform={`translate(${rendered.x}, ${rendered.y})`} style={`color:${rendered.color}`}>
       {#if rendered.glyph.type === 'file'}
         {#if failedGlyphFiles[`zodiac:${sign.id}:${rendered.glyph.content}`]}
@@ -329,7 +340,7 @@
       { id: 'ic', longitude: angleLongitudes.ic! }
     ] as angle}
       {@const pos = polar(angleMarkerRadius, angle.longitude)}
-      {@const rendered = renderGlyph(angle.id, pos.x, pos.y, 22)}
+      {@const rendered = renderGlyph(angle.id, pos.x, pos.y, 26)}
       <g transform={`translate(${rendered.x}, ${rendered.y})`}>
         {#if rendered.glyph.type === 'file'}
           {#if failedGlyphFiles[`angle:${angle.id}:${rendered.glyph.content}`]}
@@ -383,7 +394,7 @@
   <g>
     {#each bodies as body}
       {@const pos = polar(planetRadius, body.longitude)}
-      {@const rendered = renderGlyph(body.id, pos.x, pos.y, 24)}
+      {@const rendered = renderGlyph(body.id, pos.x, pos.y, 28)}
       <g transform={`translate(${rendered.x}, ${rendered.y})`}>
         {#if rendered.glyph.type === 'file'}
           {#if failedGlyphFiles[`planet:${body.id}:${rendered.glyph.content}`]}

@@ -143,14 +143,18 @@ mod tests {
 
     #[test]
     fn inject_fills_moon_details_from_positions_json() {
-        let mut map = HashMap::from([
-            (
-                "positions".to_string(),
-                serde_json::json!({ "sun": 0.0, "moon": 90.0 }),
-            ),
-        ]);
+        let mut map = HashMap::from([(
+            "positions".to_string(),
+            serde_json::json!({ "sun": 0.0, "moon": 90.0 }),
+        )]);
         inject_moon_details_into_chart_map(&mut map);
-        let md = map.get("moon_details").and_then(|v| v.as_object()).expect("moon_details");
-        assert_eq!(md.get("phase_id").and_then(|v| v.as_str()), Some("first_quarter"));
+        let md = map
+            .get("moon_details")
+            .and_then(|v| v.as_object())
+            .expect("moon_details");
+        assert_eq!(
+            md.get("phase_id").and_then(|v| v.as_str()),
+            Some("first_quarter")
+        );
     }
 }

@@ -16,6 +16,7 @@
   const glyphsByType = $derived({
     planet: Object.values(glyphs).filter(g => g.type === 'planet'),
     zodiac: Object.values(glyphs).filter(g => g.type === 'zodiac'),
+    aspect: Object.values(glyphs).filter(g => g.type === 'aspect'),
     custom: Object.values(glyphs).filter(g => g.isCustom),
   });
   
@@ -135,6 +136,56 @@
                   style={`width:${glyphView.size}px;height:${glyphView.size}px;`}
                   onerror={() => {
                     failedGlyphFiles[`z:${glyph.id}:${glyphView.content}`] = true;
+                    failedGlyphFiles = { ...failedGlyphFiles };
+                  }}
+                />
+              {/if}
+            {:else}
+              <span class="text-2xl">{glyphView.content}</span>
+            {/if}
+            <span class="text-sm">{glyph.name}</span>
+            {#if glyph.isCustom}
+              <span class="text-xs text-muted-foreground">(custom)</span>
+            {/if}
+          </div>
+          <div class="flex gap-1">
+            <label class="cursor-pointer">
+              <Input
+                type="file"
+                accept=".svg,image/svg+xml"
+                class="hidden"
+                onchange={(e) => handleFileUpload(e, glyph.id)}
+              />
+              <Button variant="ghost" size="sm" type="button">Upload</Button>
+            </label>
+            {#if glyph.isCustom}
+              <Button variant="ghost" size="sm" onclick={() => resetGlyph(glyph.id)}>Reset</Button>
+            {/if}
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+  <!-- Aspects -->
+  <div class="mb-6">
+    <h3 class="text-sm font-semibold mb-3">Aspects</h3>
+    <div class="flex flex-wrap gap-2">
+      {#each glyphsByType.aspect as glyph}
+        {@const glyphView = getGlyphContent(glyph.id)}
+        <div class="flex items-center justify-between p-2 border rounded grow basis-[260px] min-w-[240px]">
+          <div class="flex items-center gap-2">
+            {#if glyphView.type === 'svg'}
+              <span class="inline-block w-6 h-6">{@html glyphView.content}</span>
+            {:else if glyphView.type === 'file'}
+              {#if failedGlyphFiles[`a:${glyph.id}:${glyphView.content}`]}
+                <span class="text-2xl">{glyphView.fallback || glyph.name.charAt(0).toUpperCase()}</span>
+              {:else}
+                <img
+                  src={glyphView.content}
+                  alt={glyph.name}
+                  style={`width:${glyphView.size}px;height:${glyphView.size}px;`}
+                  onerror={() => {
+                    failedGlyphFiles[`a:${glyph.id}:${glyphView.content}`] = true;
                     failedGlyphFiles = { ...failedGlyphFiles };
                   }}
                 />
