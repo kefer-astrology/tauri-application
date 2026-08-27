@@ -1,0 +1,103 @@
+apps/web-react/src/locales/fr.json
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+apps/web-react/src/app/components/open-workspace-view.tsx
+  s_b4863ad268c11f::t_0ffb517c858a11 514-516
+  s_b4863ad268c11f::t_732081abcb2367 467,483
+  s_b4863ad268c11f::t_d1a0959063a824 513
+  s_b4863ad268c11f::t_062e2e0fef6b21 628
+apps/web-react/src/app/App.tsx
+  s_b4863ad268c11f::t_4091fcd3758a27 438-440,450
+apps/web-react/src/app/components/ui/color-input.tsx
+  s_b4863ad268c11f::t_f9f39745a8db7c 11
+apps/web-react/src/app/components/horoscope-wheel.tsx
+  s_7be7dd50ba46b8::t_60f904b7da370d 971
+  s_7be7dd50ba46b8::t_441f77f463c1f5 327
+  s_7be7dd50ba46b8::t_9a529f46bfeaf4 474
+  s_7be7dd50ba46b8::t_bc3fe9b729360c 295-296
+  s_7be7dd50ba46b8::t_0bbf1bceec6225 940-943,954,967
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_7be7dd50ba46b8::t_4f3cf01052be73 394-395,397,408-410,412,417
+  s_b4863ad268c11f::t_4091fcd3758a27 284
+  s_7be7dd50ba46b8::t_044c1e8b286f81 385,390-391,396,398-407,411,413-416
+  s_7be7dd50ba46b8::t_6ba7b97edb1594 783,785-789,792
+  s_7be7dd50ba46b8::t_5c9bc05ffa6341 722
+  s_7be7dd50ba46b8::t_abe31bfe3a9d6e 841-843
+  s_7be7dd50ba46b8::t_7406f337c9ef6d 719-721
+  s_7be7dd50ba46b8::t_9651826795ca78 921-939
+  s_b4863ad268c11f::t_fd6d5d6ad14219 1008
+  s_7be7dd50ba46b8::t_e5db9fb6a34e54 35
+  s_7be7dd50ba46b8::t_ef792b8af51cfa 963-970,976-990
+  s_7be7dd50ba46b8::t_73e9ce44e50cf8 419-428
+  s_7be7dd50ba46b8::t_5875f4711a2976 418
+apps/web-svelte/src/lib/i18n/en.json
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+apps/web-svelte/src/lib/i18n/fr.json
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+apps/web-react/src/app/components/aspectarium.tsx
+  s_b4863ad268c11f::t_3c91cdbe0e17b4 33-36,173,181-185,217-240,283,612-619,969-976
+apps/web-react/src/lib/tauri/workspace.ts
+  s_b4863ad268c11f::t_2228d725e750c3 8,173-186
+  s_b4863ad268c11f::t_d353ca62993631 187
+apps/web-svelte/src/lib/i18n/cs.json
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+apps/web-react/src/locales/en.json
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+apps/web-react/src/lib/tauri/types.ts
+  s_b4863ad268c11f::t_2228d725e750c3 265-283
+translations.csv
+  s_b4863ad268c11f::t_0c2c46e0617538 414
+  s_b4863ad268c11f::t_f39fb812c33599 206
+apps/web-react/src/app/components/app-main-content.tsx
+  s_b4863ad268c11f::t_8b9ac2deb22cd5 70-71,74
+apps/web-react/src/locales/es.json
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_b4863ad268c11f::t_e21df2ae5517ff 988-1007
+apps/web-react/src/app/components/transits-content.tsx
+  s_b4863ad268c11f::t_63195ed636e16d 6-8,10,146-187,244-265
+apps/web-svelte/src/lib/i18n/es.json
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+apps/web-react/src/app/components/settings-view.tsx
+  s_b4863ad268c11f::t_0c2c46e0617538 15,56-90,977-1024
+apps/web-react/src/locales/cs.json
+  s_b4863ad268c11f::t_c8fc27887558d9 206
+  s_b4863ad268c11f::t_4d2af9a096aa37 414
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_b4863ad268c11f::t_4091fcd3758a27 289
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "9bc93f1158c4f8a523501c37f66a4f311c9c4763",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_7be7dd50ba46b8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "61e12e93-9e04-43c2-9548-c386ee225264",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_b4863ad268c11f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a044b3-2e9c-7650-a8bb-10fb92640aa5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
