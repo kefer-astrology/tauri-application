@@ -1,0 +1,420 @@
+scripts/glyph-audit.py
+  s_de1e3492ffccac::t_81c3c2dc9ddca4 1-39,41-68,80-109,113
+static/glyphs/default/aspects/binovile.svg
+  s_de1e3492ffccac::t_2576e9600e17c4 2
+static/glyphs/default/aspects/biquintile.svg
+  s_de1e3492ffccac::t_87abc830ceb757 2
+static/glyphs/default/aspects/conjunction.svg
+  s_de1e3492ffccac::t_4e76da1e31b387 2-6
+static/glyphs/default/aspects/decile.svg
+  s_de1e3492ffccac::t_ded56ecae32208 2-6
+static/glyphs/default/aspects/novile.svg
+  s_de1e3492ffccac::t_c35da9cd24eefb 2
+static/glyphs/default/aspects/opposition.svg
+  s_de1e3492ffccac::t_6f0db734637dde 2-6
+static/glyphs/default/aspects/quadrinovile.svg
+  s_de1e3492ffccac::t_1e51feb90fc316 2
+static/glyphs/default/aspects/quincunx.svg
+  s_de1e3492ffccac::t_382200ad007e61 2-6
+static/glyphs/default/aspects/quintile.svg
+  s_de1e3492ffccac::t_fe9f1f01ead1d8 2
+static/glyphs/default/aspects/semisextile.svg
+  s_de1e3492ffccac::t_b2e33df22cf485 2-6
+static/glyphs/default/aspects/semisquare.svg
+  s_de1e3492ffccac::t_a2535aaee26eb8 2-6
+static/glyphs/default/aspects/septile.svg
+  s_de1e3492ffccac::t_9517357b8b48a3 2
+static/glyphs/default/aspects/sesquiquadrate.svg
+  s_de1e3492ffccac::t_431558fbadcdae 2-6
+static/glyphs/default/aspects/sextile.svg
+  s_de1e3492ffccac::t_1817d251a7272c 2-6
+static/glyphs/default/aspects/square.svg
+  s_de1e3492ffccac::t_4b0af1f1dcfc40 2-6
+static/glyphs/default/aspects/tridecile.svg
+  s_de1e3492ffccac::t_7e5be8c4f2811b 2
+static/glyphs/default/aspects/trine.svg
+  s_de1e3492ffccac::t_7bb93cbe346729 2-6
+static/glyphs/default/planets/admetos.svg
+  s_de1e3492ffccac::t_be023b48dc617b 2-6
+static/glyphs/default/planets/antivertex.svg
+  s_de1e3492ffccac::t_67ca79def4b29c 2
+static/glyphs/default/planets/apollon.svg
+  s_de1e3492ffccac::t_05f72f8e323aec 2-6
+static/glyphs/default/planets/asc.svg
+  s_de1e3492ffccac::t_9c66dd1d5b92cb 2
+static/glyphs/default/planets/astraea.svg
+  s_de1e3492ffccac::t_a49863f2954e88 2-6
+static/glyphs/default/planets/ceres.svg
+  s_de1e3492ffccac::t_d19d0d5abbc6b4 2-6
+static/glyphs/default/planets/chiron.svg
+  s_de1e3492ffccac::t_0c074038d4fc6d 2-6
+static/glyphs/default/planets/cupido.svg
+  s_de1e3492ffccac::t_65df0d5bb56cb1 2-6
+static/glyphs/default/planets/desc.svg
+  s_de1e3492ffccac::t_0779d20cb08abd 2
+static/glyphs/default/planets/egeria.svg
+  s_de1e3492ffccac::t_8b0ef5808a38c7 2-9
+static/glyphs/default/planets/eris.svg
+  s_de1e3492ffccac::t_68373912a6ce6a 2-6
+static/glyphs/default/planets/eunomia.svg
+  s_de1e3492ffccac::t_8b8c906dc3b5c1 2-9
+static/glyphs/default/planets/fixed_star_generic.svg
+  s_de1e3492ffccac::t_b3931cb642e656 2-6
+static/glyphs/default/planets/flora.svg
+  s_de1e3492ffccac::t_17c3a74ddf8a8d 2-6
+static/glyphs/default/planets/fortuna.svg
+  s_de1e3492ffccac::t_56d57ee093d8c2 2-9
+static/glyphs/default/planets/geo_node_jupiter.svg
+  s_de1e3492ffccac::t_b7a27fb10464a4 2
+static/glyphs/default/planets/geo_node_mars.svg
+  s_de1e3492ffccac::t_12965e151f0b3b 2
+static/glyphs/default/planets/geo_node_mercury.svg
+  s_de1e3492ffccac::t_cb4f0b25aa00c1 2
+static/glyphs/default/planets/geo_node_neptune.svg
+  s_de1e3492ffccac::t_45b58821a6885d 2
+static/glyphs/default/planets/geo_node_pluto.svg
+  s_de1e3492ffccac::t_074e0ac26a5da9 2
+static/glyphs/default/planets/geo_node_saturn.svg
+  s_de1e3492ffccac::t_affa4d74bcd17c 2
+static/glyphs/default/planets/geo_node_uranus.svg
+  s_de1e3492ffccac::t_ce41c43f8272de 2
+static/glyphs/default/planets/geo_node_venus.svg
+  s_de1e3492ffccac::t_b50c6ea6a4936a 2
+static/glyphs/default/planets/hades.svg
+  s_de1e3492ffccac::t_7143c83bda5d72 2-6
+static/glyphs/default/planets/haumea.svg
+  s_de1e3492ffccac::t_3c2bc4871572fb 2-12
+static/glyphs/default/planets/hebe.svg
+  s_de1e3492ffccac::t_66cca1b2862409 2-6
+static/glyphs/default/planets/hygiea.svg
+  s_de1e3492ffccac::t_83ff32ffabc520 2-6
+static/glyphs/default/planets/ic.svg
+  s_de1e3492ffccac::t_9a07293599e10c 2
+static/glyphs/default/planets/irene.svg
+  s_de1e3492ffccac::t_94c1b31b4a6676 2
+static/glyphs/default/planets/iris.svg
+  s_de1e3492ffccac::t_3407a5b49dcfc9 2-12
+static/glyphs/default/planets/juno.svg
+  s_de1e3492ffccac::t_18a5209de4423e 2-6
+static/glyphs/default/planets/jupiter.svg
+  s_de1e3492ffccac::t_ac248b3085a214 2-9,11
+static/glyphs/default/planets/kronos.svg
+  s_de1e3492ffccac::t_caf58e1546dfab 2-6
+static/glyphs/default/planets/lilith.svg
+  s_de1e3492ffccac::t_3f31115e693bd7 2-6
+static/glyphs/default/planets/lilith_oscu.svg
+  s_de1e3492ffccac::t_524ac1f3618692 2-6
+static/glyphs/default/planets/lilith_true.svg
+  s_de1e3492ffccac::t_b43583e05e7e5b 2-6
+static/glyphs/default/planets/makemake.svg
+  s_de1e3492ffccac::t_e4db190ad1d290 2-6
+static/glyphs/default/planets/mars.svg
+  s_de1e3492ffccac::t_06b3db93bbeb71 2-13,15
+static/glyphs/default/planets/massalia.svg
+  s_de1e3492ffccac::t_a32900b815285b 2
+static/glyphs/default/planets/mc.svg
+  s_de1e3492ffccac::t_ae43c8efcadd62 2
+static/glyphs/default/planets/melpomene.svg
+  s_de1e3492ffccac::t_6f07a83f61cd21 2-6
+static/glyphs/default/planets/mercury.svg
+  s_de1e3492ffccac::t_1e134f845a5723 2-9
+static/glyphs/default/planets/metis.svg
+  s_de1e3492ffccac::t_714d6863815ae2 2-12
+static/glyphs/default/planets/moon.svg
+  s_de1e3492ffccac::t_d8610041bfd066 2-9,11
+static/glyphs/default/planets/neptune.svg
+  s_de1e3492ffccac::t_86cf273cb527ff 2-9,11
+static/glyphs/default/planets/north_node.svg
+  s_de1e3492ffccac::t_90403fd0b29602 2-6
+static/glyphs/default/planets/orcus.svg
+  s_de1e3492ffccac::t_7f4ace1d8ce360 2-6
+static/glyphs/default/planets/pallas.svg
+  s_de1e3492ffccac::t_9de3b4cdae018b 2-6
+static/glyphs/default/planets/part_of_fortune.svg
+  s_de1e3492ffccac::t_e8481d1f4b7ea8 2-6
+static/glyphs/default/planets/part_of_spirit.svg
+  s_de1e3492ffccac::t_0b2f43d83da166 2
+static/glyphs/default/planets/parthenope.svg
+  s_de1e3492ffccac::t_16af0ad8fa5003 2-9
+static/glyphs/default/planets/pluto.svg
+  s_de1e3492ffccac::t_5715d5e4c621be 2-9,11
+static/glyphs/default/planets/poseidon.svg
+  s_de1e3492ffccac::t_ed806f02abb811 2-6
+static/glyphs/default/planets/psyche.svg
+  s_de1e3492ffccac::t_aecea46570827a 2-9
+static/glyphs/default/planets/quaoar.svg
+  s_de1e3492ffccac::t_7e08bb6a6dc351 2-6
+static/glyphs/default/planets/saturn.svg
+  s_de1e3492ffccac::t_279e7a8ff328f2 2-9
+static/glyphs/default/planets/sedna.svg
+  s_de1e3492ffccac::t_114e40fc598120 2-6
+static/glyphs/default/planets/south_node.svg
+  s_de1e3492ffccac::t_e3a32efec5f196 2-6
+static/glyphs/default/planets/sun.svg
+  s_de1e3492ffccac::t_b547a862f082d1 2-8
+static/glyphs/default/planets/thetis.svg
+  s_de1e3492ffccac::t_52a06ec8f199ce 2-9
+static/glyphs/default/planets/true_north_node.svg
+  s_de1e3492ffccac::t_f6c8ad44065c2e 2-6
+static/glyphs/default/planets/true_south_node.svg
+  s_de1e3492ffccac::t_ad5432cf4fd0df 2-6
+static/glyphs/default/planets/uranus.svg
+  s_de1e3492ffccac::t_41628cffc66862 2-17,19
+static/glyphs/default/planets/varuna.svg
+  s_de1e3492ffccac::t_c6a85fc918f153 2-6
+static/glyphs/default/planets/venus.svg
+  s_de1e3492ffccac::t_ff68ebadbd5267 2-9,11
+static/glyphs/default/planets/vertex.svg
+  s_de1e3492ffccac::t_516b1587fdbafe 2
+static/glyphs/default/planets/vesta.svg
+  s_de1e3492ffccac::t_af26b61752c949 2-12
+static/glyphs/default/planets/victoria.svg
+  s_de1e3492ffccac::t_9dc9f6dc11fbe1 2
+static/glyphs/default/planets/vulcanus.svg
+  s_de1e3492ffccac::t_dbfba120d65a1b 2-6
+static/glyphs/default/planets/zeus.svg
+  s_de1e3492ffccac::t_25ad227fb049f7 2-6
+static/glyphs/default/zodiac/aquarius.svg
+  s_de1e3492ffccac::t_1165e18d3247d3 1-7
+static/glyphs/default/zodiac/aries.svg
+  s_de1e3492ffccac::t_e6951faa31fe2b 1-7
+static/glyphs/default/zodiac/cancer.svg
+  s_de1e3492ffccac::t_424c5056a7aa48 1-7
+static/glyphs/default/zodiac/capricorn.svg
+  s_de1e3492ffccac::t_d977b120b48907 1-7
+static/glyphs/default/zodiac/gemini.svg
+  s_de1e3492ffccac::t_d6d6f9127a2c57 1-7
+static/glyphs/default/zodiac/leo.svg
+  s_de1e3492ffccac::t_5b6d9bff5f2073 1-7
+static/glyphs/default/zodiac/libra.svg
+  s_de1e3492ffccac::t_50d75f5cd5d22c 1-7
+static/glyphs/default/zodiac/pisces.svg
+  s_de1e3492ffccac::t_089fbb1664de85 1-7
+static/glyphs/default/zodiac/sagittarius.svg
+  s_de1e3492ffccac::t_d1a8788f85e366 1-7
+static/glyphs/default/zodiac/scorpio.svg
+  s_de1e3492ffccac::t_1fd4659ea78ff4 1-7
+static/glyphs/default/zodiac/taurus.svg
+  s_de1e3492ffccac::t_8e688dd4a3c6ff 1-7
+static/glyphs/default/zodiac/virgo.svg
+  s_de1e3492ffccac::t_b581662ef7e5ea 1-7
+static/glyphs/modern/aspects/binovile.svg
+  s_de1e3492ffccac::t_ac0642c49e34a2 2
+static/glyphs/modern/aspects/biquintile.svg
+  s_de1e3492ffccac::t_5278cfc78e48cb 2
+static/glyphs/modern/aspects/conjunction.svg
+  s_de1e3492ffccac::t_6317b9186d4334 2-6
+static/glyphs/modern/aspects/decile.svg
+  s_de1e3492ffccac::t_80161b0e4d97ca 2-6
+static/glyphs/modern/aspects/novile.svg
+  s_de1e3492ffccac::t_021a59e3dea617 2
+static/glyphs/modern/aspects/opposition.svg
+  s_de1e3492ffccac::t_6f1f26c1d3331d 2-6
+static/glyphs/modern/aspects/quadrinovile.svg
+  s_de1e3492ffccac::t_4e3f0f8d741f04 2
+static/glyphs/modern/aspects/quincunx.svg
+  s_de1e3492ffccac::t_a78d9eccf8a0f4 2-6
+static/glyphs/modern/aspects/quintile.svg
+  s_de1e3492ffccac::t_dd7cce538af9cf 2
+static/glyphs/modern/aspects/semisextile.svg
+  s_de1e3492ffccac::t_2c7743cc2e9bec 2-6
+static/glyphs/modern/aspects/semisquare.svg
+  s_de1e3492ffccac::t_c9ac8b06b5ee02 2-6
+static/glyphs/modern/aspects/septile.svg
+  s_de1e3492ffccac::t_ae0e94a7728d14 2
+static/glyphs/modern/aspects/sesquiquadrate.svg
+  s_de1e3492ffccac::t_7361612e52dd37 2-6
+static/glyphs/modern/aspects/sextile.svg
+  s_de1e3492ffccac::t_8f8cd99915eaa5 2-6
+static/glyphs/modern/aspects/square.svg
+  s_de1e3492ffccac::t_7afdca5878b530 2-6
+static/glyphs/modern/aspects/tridecile.svg
+  s_de1e3492ffccac::t_70b9c584f769de 2
+static/glyphs/modern/aspects/trine.svg
+  s_de1e3492ffccac::t_5c7ea131ca819a 2-6
+static/glyphs/modern/planets/admetos.svg
+  s_de1e3492ffccac::t_a02ecaac859fdb 2-6
+static/glyphs/modern/planets/antivertex.svg
+  s_de1e3492ffccac::t_6249ffb026a719 2
+static/glyphs/modern/planets/apollon.svg
+  s_de1e3492ffccac::t_06f1f4ed6f6768 2-6
+static/glyphs/modern/planets/asc.svg
+  s_de1e3492ffccac::t_6450f7779b8ec6 2
+static/glyphs/modern/planets/astraea.svg
+  s_de1e3492ffccac::t_5d321753d7873a 2-6
+static/glyphs/modern/planets/ceres.svg
+  s_de1e3492ffccac::t_a75491eb3c5795 2-6
+static/glyphs/modern/planets/chiron.svg
+  s_de1e3492ffccac::t_c25ee1198647ee 2-6
+static/glyphs/modern/planets/cupido.svg
+  s_de1e3492ffccac::t_319df6e0a7c704 2-6
+static/glyphs/modern/planets/desc.svg
+  s_de1e3492ffccac::t_24bb2a811fbf9f 2
+static/glyphs/modern/planets/egeria.svg
+  s_de1e3492ffccac::t_2722233e030e34 2-9
+static/glyphs/modern/planets/eris.svg
+  s_de1e3492ffccac::t_0361e4cd821493 2-6
+static/glyphs/modern/planets/eunomia.svg
+  s_de1e3492ffccac::t_f618001426b684 2-9
+static/glyphs/modern/planets/fixed_star_generic.svg
+  s_de1e3492ffccac::t_3b5a98689b0db6 2-6
+static/glyphs/modern/planets/flora.svg
+  s_de1e3492ffccac::t_30e9911c493f5e 2-6
+static/glyphs/modern/planets/fortuna.svg
+  s_de1e3492ffccac::t_3bd4e54ae046f4 2-9
+static/glyphs/modern/planets/geo_node_jupiter.svg
+  s_de1e3492ffccac::t_098cc32781a1b3 2
+static/glyphs/modern/planets/geo_node_mars.svg
+  s_de1e3492ffccac::t_b258e71aecdb7e 2
+static/glyphs/modern/planets/geo_node_mercury.svg
+  s_de1e3492ffccac::t_fbecd1360aaa42 2
+static/glyphs/modern/planets/geo_node_neptune.svg
+  s_de1e3492ffccac::t_e15174d36f1b74 2
+static/glyphs/modern/planets/geo_node_pluto.svg
+  s_de1e3492ffccac::t_201b1f223a2243 2
+static/glyphs/modern/planets/geo_node_saturn.svg
+  s_de1e3492ffccac::t_3adcff985d227d 2
+static/glyphs/modern/planets/geo_node_uranus.svg
+  s_de1e3492ffccac::t_f3d0fc7edf55c5 2
+static/glyphs/modern/planets/geo_node_venus.svg
+  s_de1e3492ffccac::t_f91221216d2d94 2
+static/glyphs/modern/planets/hades.svg
+  s_de1e3492ffccac::t_3f4bed18f34b04 2-6
+static/glyphs/modern/planets/haumea.svg
+  s_de1e3492ffccac::t_1d97ed88eed92a 2-12
+static/glyphs/modern/planets/hebe.svg
+  s_de1e3492ffccac::t_1c8ff75d4a5c1b 2-6
+static/glyphs/modern/planets/hygiea.svg
+  s_de1e3492ffccac::t_074110fe742156 2-6
+static/glyphs/modern/planets/ic.svg
+  s_de1e3492ffccac::t_b8907e76978d0b 2
+static/glyphs/modern/planets/irene.svg
+  s_de1e3492ffccac::t_455a50ee41b7f7 2
+static/glyphs/modern/planets/iris.svg
+  s_de1e3492ffccac::t_4f010642f8b768 2-12
+static/glyphs/modern/planets/juno.svg
+  s_de1e3492ffccac::t_5f9a6489eac73e 2-6
+static/glyphs/modern/planets/jupiter.svg
+  s_de1e3492ffccac::t_417b4fd9e1b70c 2-9,11
+static/glyphs/modern/planets/kronos.svg
+  s_de1e3492ffccac::t_837faaf480b949 2-6
+static/glyphs/modern/planets/lilith.svg
+  s_de1e3492ffccac::t_b1cfeb220afe76 2-6
+static/glyphs/modern/planets/lilith_oscu.svg
+  s_de1e3492ffccac::t_b614a60fb02a19 2-6
+static/glyphs/modern/planets/lilith_true.svg
+  s_de1e3492ffccac::t_d3cdb14e4122fb 2-6
+static/glyphs/modern/planets/makemake.svg
+  s_de1e3492ffccac::t_6d7f1846ac015f 2-6
+static/glyphs/modern/planets/mars.svg
+  s_de1e3492ffccac::t_974f56fb5b77ce 2-13,15
+static/glyphs/modern/planets/massalia.svg
+  s_de1e3492ffccac::t_c926941625dc31 2
+static/glyphs/modern/planets/mc.svg
+  s_de1e3492ffccac::t_8c37b36290b7a3 2
+static/glyphs/modern/planets/melpomene.svg
+  s_de1e3492ffccac::t_9cf817ecb96197 2-6
+static/glyphs/modern/planets/mercury.svg
+  s_de1e3492ffccac::t_3281ece50c8fda 2-9
+static/glyphs/modern/planets/metis.svg
+  s_de1e3492ffccac::t_75dbf11b67e716 2-12
+static/glyphs/modern/planets/moon.svg
+  s_de1e3492ffccac::t_6a2fd491873b4a 2-9,11
+static/glyphs/modern/planets/neptune.svg
+  s_de1e3492ffccac::t_9e7f099cc2ca5a 2-9,11
+static/glyphs/modern/planets/north_node.svg
+  s_de1e3492ffccac::t_b90a90c04cd641 2-6
+static/glyphs/modern/planets/orcus.svg
+  s_de1e3492ffccac::t_57d3ea1fc7b856 2-6
+static/glyphs/modern/planets/pallas.svg
+  s_de1e3492ffccac::t_8ed4b4bec35d2c 2-6
+static/glyphs/modern/planets/part_of_fortune.svg
+  s_de1e3492ffccac::t_0dd3b9274ba1ea 2-6
+static/glyphs/modern/planets/part_of_spirit.svg
+  s_de1e3492ffccac::t_91a450377845ed 2
+static/glyphs/modern/planets/parthenope.svg
+  s_de1e3492ffccac::t_f32e6cf869bcb2 2-9
+static/glyphs/modern/planets/pluto.svg
+  s_de1e3492ffccac::t_acb56fa582d9c7 2-9,11
+static/glyphs/modern/planets/poseidon.svg
+  s_de1e3492ffccac::t_2df1ee9b28b373 2-6
+static/glyphs/modern/planets/psyche.svg
+  s_de1e3492ffccac::t_5af35e51556fc1 2-9
+static/glyphs/modern/planets/quaoar.svg
+  s_de1e3492ffccac::t_2deb877ec6f80c 2-6
+static/glyphs/modern/planets/saturn.svg
+  s_de1e3492ffccac::t_a7760ac0622a4b 2-9
+static/glyphs/modern/planets/sedna.svg
+  s_de1e3492ffccac::t_b5e83287445373 2-6
+static/glyphs/modern/planets/south_node.svg
+  s_de1e3492ffccac::t_4d807efa85f4ef 2-6
+static/glyphs/modern/planets/sun.svg
+  s_de1e3492ffccac::t_a70f2622c85633 2-8
+static/glyphs/modern/planets/thetis.svg
+  s_de1e3492ffccac::t_92d51507a4b825 2-9
+static/glyphs/modern/planets/true_north_node.svg
+  s_de1e3492ffccac::t_b9668422133947 2-6
+static/glyphs/modern/planets/true_south_node.svg
+  s_de1e3492ffccac::t_159bed02949a4d 2-6
+static/glyphs/modern/planets/uranus.svg
+  s_de1e3492ffccac::t_d61f9c677b96a3 2-17,19
+static/glyphs/modern/planets/varuna.svg
+  s_de1e3492ffccac::t_5bb711f0c26d0f 2-6
+static/glyphs/modern/planets/venus.svg
+  s_de1e3492ffccac::t_2fb3fb3c20b8eb 2-9,11
+static/glyphs/modern/planets/vertex.svg
+  s_de1e3492ffccac::t_4f97618e7edc87 2
+static/glyphs/modern/planets/vesta.svg
+  s_de1e3492ffccac::t_c74e2fe08a67a4 2-12
+static/glyphs/modern/planets/victoria.svg
+  s_de1e3492ffccac::t_916593435e1dcc 2
+static/glyphs/modern/planets/vulcanus.svg
+  s_de1e3492ffccac::t_6376b2db5ab504 2-6
+static/glyphs/modern/planets/zeus.svg
+  s_de1e3492ffccac::t_c395be07e21b40 2-6
+static/glyphs/modern/zodiac/aquarius.svg
+  s_de1e3492ffccac::t_c0ad1b7cb7ee74 1-7
+static/glyphs/modern/zodiac/aries.svg
+  s_de1e3492ffccac::t_11bc86d53db32b 1-7
+static/glyphs/modern/zodiac/cancer.svg
+  s_de1e3492ffccac::t_45edf730254d7c 1-7
+static/glyphs/modern/zodiac/capricorn.svg
+  s_de1e3492ffccac::t_9f978dd559b850 1-7
+static/glyphs/modern/zodiac/gemini.svg
+  s_de1e3492ffccac::t_2e516cb1695bb7 1-7
+static/glyphs/modern/zodiac/leo.svg
+  s_de1e3492ffccac::t_a17e3a4d96f466 1-7
+static/glyphs/modern/zodiac/libra.svg
+  s_de1e3492ffccac::t_b496b1f7dfedba 1-7
+static/glyphs/modern/zodiac/pisces.svg
+  s_de1e3492ffccac::t_e494d23834a384 1-7
+static/glyphs/modern/zodiac/sagittarius.svg
+  s_de1e3492ffccac::t_dd855e22f874eb 1-7
+static/glyphs/modern/zodiac/scorpio.svg
+  s_de1e3492ffccac::t_1cc97d40660819 1-7
+static/glyphs/modern/zodiac/taurus.svg
+  s_de1e3492ffccac::t_e1d476e6caf212 1-7
+static/glyphs/modern/zodiac/virgo.svg
+  s_de1e3492ffccac::t_73b264a447eafa 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "4dcdabddb474e455a86fa9b87c9c57b958320a64",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_de1e3492ffccac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1bb6be8a-94c4-4f25-b193-049748a66812",
+        "model": "claude-opus-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
