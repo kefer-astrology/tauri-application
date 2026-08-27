@@ -16,8 +16,36 @@
   import ModeSwitcher from '$lib/components/ModeSwitcher.svelte';
   import { layout, type Mode, showOpenExportOverlay, getSelectedChart, chartDataToComputePayload, type ChartData, setMode } from '$lib/state/layout';
   import { isTauriRuntime } from '$lib/tauri/runtime';
-  import { computeTransitSeries, createChart, resolveLocation, searchLocations, updateChart } from '$lib/tauri/workspace';
+  import { computeTransitSeries, createChart, resolveLocation, resolveTimezone, searchLocations, updateChart } from '$lib/tauri/workspace';
   import type { ResolvedLocation, TransitSeriesEntry, TransitSeriesResult } from '$lib/tauri/types';
+  import { parseDate } from '@internationalized/date';
+  import * as Popover from '$lib/components/ui/popover/index.js';
+  import { Calendar as CalendarWidget } from '$lib/components/ui/calendar/index.js';
+  import CalendarIcon from '@lucide/svelte/icons/calendar';
+  import ClockIcon from '@lucide/svelte/icons/clock';
+  import PlusIcon from '@lucide/svelte/icons/plus';
+  import PencilIcon from '@lucide/svelte/icons/pencil';
+  import XIcon from '@lucide/svelte/icons/x';
+  import { tagColor, tagDefaultColor, parseTags, mergeTags } from '$lib/astrology/chartTags';
+  import {
+    supportedTimeSystem,
+    utcDateToJulianDay,
+    julianDayToUtcIso,
+    julianCalendarDateToGregorianWallDate,
+    gregorianWallDateToJulianCalendarDate,
+    wallTimeToUtcIso,
+    parseDateTimeString,
+    formatCoordinateMagnitude,
+    signedCoordinate,
+    TIMEZONES,
+    TIMEZONE_REGIONS,
+    UTC_OFFSETS,
+    timezoneRegion,
+    timezoneMatchesRegion,
+    type TimeSystem,
+    type LatDir,
+    type LonDir
+  } from '$lib/astrology/timeConversion';
   import { reapplyCurrentPreset } from '$lib/state/theme.svelte';
   import { timeNavigation } from '$lib/stores/timeNavigation.svelte';
   import { t } from '$lib/i18n/index.svelte';
@@ -51,20 +79,66 @@
   // New Radix form state
   let newChartType = $state<string>('NATAL');
   let newContextName = $state('');
+  let newTimeSystem = $state<TimeSystem>('gregorian');
   let newDate = $state('');
   let newTime = $state('');
+  let newJulianDay = $state('');
+  let newJulianCalendarDate = $state('');
   let newTimeRegime = $state<'auto' | 'manual'>('auto');
+  let newTimezoneRegion = $state('');
+  let newTimezone = $state('');
+  let newUtcOffset = $state('auto');
+  let newLocationRegime = $state<'auto' | 'manual'>('auto');
   let newLocation = $state('');
   let newLatitude = $state('');
   let newLongitude = $state('');
-  let newTimezone = $state('');
+  let newLatitudeDir = $state<LatDir>('north');
+  let newLongitudeDir = $state<LonDir>('east');
   let newHouseSystem = $state(layout.workspaceDefaults.houseSystem);
   let newZodiacType = $state(layout.workspaceDefaults.zodiacType);
   let newTags = $state('');
+  let newRodenRating = $state('');
+  let newFormError = $state<string | null>(null);
   let editingChartId = $state<string | null>(null);
   let editSheetOpen = $state(false);
   let isResolvingNewLocation = $state(false);
   let newLocationStatus = $state<string | null>(null);
+  const timezonesInRegion = $derived(TIMEZONES.filter((tz) => timezoneMatchesRegion(tz, newTimezoneRegion)));
+  let newDatePopoverOpen = $state(false);
+  const newDateCalendarValue = $derived.by(() => {
+    try {
+      return newDate ? parseDate(newDate) : undefined;
+    } catch {
+      return undefined;
+    }
+  });
+  let newTagDraft = $state('');
+  let newTagColors = $state<Record<string, string>>({});
+  let advancedTagSheetOpen = $state(false);
+  let advancedTagDraft = $state('');
+  let advancedTagNameDrafts = $state<Record<string, string>>({});
+  let newTimePopoverOpen = $state(false);
+  const timeSystemOptions = [
+    { id: 'gregorian', labelKey: 'new_time_system_gregorian' },
+    { id: 'julian_calendar', labelKey: 'new_time_system_julian_calendar' },
+    { id: 'julian_day', labelKey: 'new_time_system_julian_day' }
+  ] as const;
+  const latDirOptions = [
+    { id: 'north', labelKey: 'new_dir_north' },
+    { id: 'south', labelKey: 'new_dir_south' }
+  ] as const;
+  const lonDirOptions = [
+    { id: 'east', labelKey: 'new_dir_east' },
+    { id: 'west', labelKey: 'new_dir_west' }
+  ] as const;
+  const rodenRatingOptions = [
+    { id: 'AA', labelKey: 'new_roden_rating_aa' },
+    { id: 'A', labelKey: 'new_roden_rating_a' },
+    { id: 'B', labelKey: 'new_roden_rating_b' },
+    { id: 'C', labelKey: 'new_roden_rating_c' },
+    { id: 'DD', labelKey: 'new_roden_rating_dd' },
+    { id: 'X', labelKey: 'new_roden_rating_x' }
+  ] as const;
   const newLocationOptions = $derived(
     [
       layout.workspaceDefaults.locationName,
@@ -460,15 +534,66 @@
     (chartDetails.tags || '').split(',').map((tag: string) => tag.trim()).filter(Boolean)
   );
 
-  function parseDateTime(dateTime: string) {
-    const trimmed = dateTime?.trim();
-    if (!trimmed) {
-      return { date: '', time: '' };
+  function formatDateInput(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function formatTimeInput(date: Date): string {
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${h}:${min}`;
+  }
+
+  /** Wall-clock Date built from the plain <input type="date">/<input type="time"> fields. */
+  function wallDateFromInputs(dateStr: string, timeStr: string): Date | null {
+    const d = dateStr.trim();
+    if (!d) return null;
+    const [y, mo, da] = d.split('-').map(Number);
+    const [h, mi] = (timeStr.trim() || '00:00').split(':').map(Number);
+    if (![y, mo, da, h, mi].every((n) => Number.isFinite(n))) return null;
+    return new Date(y, mo - 1, da, h, mi, 0);
+  }
+
+  /** Keep date/Julian-day/Julian-calendar fields in sync when the time system changes. */
+  function handleTimeSystemChange(next: TimeSystem) {
+    try {
+      const currentTimezone = newTimeRegime === 'manual' ? nonEmptyOr(newTimezone, layout.workspaceDefaults.timezone) : layout.workspaceDefaults.timezone;
+      const currentUtcOffset = newTimeRegime === 'manual' && newUtcOffset !== 'auto' ? newUtcOffset : undefined;
+
+      if (next === 'julian_day') {
+        let instant: Date;
+        if (newTimeSystem === 'julian_day') {
+          instant = new Date(julianDayToUtcIso(newJulianDay));
+        } else {
+          const wallDate =
+            newTimeSystem === 'julian_calendar'
+              ? julianCalendarDateToGregorianWallDate(newJulianCalendarDate, wallDateFromInputs(newDate, newTime) ?? new Date())
+              : (wallDateFromInputs(newDate, newTime) ?? new Date());
+          instant = new Date(wallTimeToUtcIso(wallDate, currentTimezone, currentUtcOffset));
+        }
+        newJulianDay = utcDateToJulianDay(instant).toFixed(8);
+      } else if (newTimeSystem === 'julian_day') {
+        const wallDate = parseDateTimeString(julianDayToUtcIso(newJulianDay), currentTimezone, currentUtcOffset);
+        newDate = formatDateInput(wallDate);
+        newTime = formatTimeInput(wallDate);
+        if (next === 'julian_calendar') {
+          newJulianCalendarDate = gregorianWallDateToJulianCalendarDate(wallDate);
+        }
+      } else if (next === 'julian_calendar') {
+        newJulianCalendarDate = gregorianWallDateToJulianCalendarDate(wallDateFromInputs(newDate, newTime) ?? new Date());
+      } else if (newTimeSystem === 'julian_calendar') {
+        const wallDate = julianCalendarDateToGregorianWallDate(newJulianCalendarDate, wallDateFromInputs(newDate, newTime) ?? new Date());
+        newDate = formatDateInput(wallDate);
+        newTime = formatTimeInput(wallDate);
+      }
+      newTimeSystem = next;
+      newFormError = null;
+    } catch (err) {
+      newFormError = err instanceof Error ? err.message : String(err);
     }
-    const parts = trimmed.includes('T') ? trimmed.split('T') : trimmed.split(' ');
-    const date = parts[0] || '';
-    const time = parts[1]?.split('.')[0]?.slice(0, 5) || '';
-    return { date, time };
   }
 
   function parseChartDateTimeValue(value: string): Date | null {
@@ -503,35 +628,70 @@
   }
 
   function populateFormFromChart(chart: ChartData) {
-    const { date, time } = parseDateTime(chart.dateTime);
+    const wsDefaults = layout.workspaceDefaults;
     newContextName = chart.name;
-    newDate = date;
-    newTime = time;
+    newChartType = chart.chartType ?? 'NATAL';
+    newTags = chart.tags.join(', ');
+    newTagColors = chart.tagColors ?? {};
+    newRodenRating = chart.rodenRating ?? '';
+
+    newTimeRegime = chart.timeRegime ?? (chart.timezone ? 'manual' : 'auto');
+    newTimezone = chart.timezone || wsDefaults.timezone;
+    newTimezoneRegion = timezoneRegion(newTimezone);
+    newUtcOffset = chart.utcOffset ?? 'auto';
+    newTimeSystem = supportedTimeSystem(chart.timeSystem);
+
+    const wallDate = chart.dateTime
+      ? parseDateTimeString(chart.dateTime, newTimezone, chart.utcOffset ?? undefined)
+      : new Date();
+    newDate = formatDateInput(wallDate);
+    newTime = formatTimeInput(wallDate);
+    newJulianDay = utcDateToJulianDay(chart.dateTime ? new Date(chart.dateTime) : new Date()).toFixed(8);
+    newJulianCalendarDate = gregorianWallDateToJulianCalendarDate(wallDate);
+
     newLocation = chart.location || '';
-    newLatitude = chart.latitude?.toString() || '';
-    newLongitude = chart.longitude?.toString() || '';
-    newTimezone = chart.timezone ?? '';
-    newTimeRegime =
-      chart.timezone && chart.timezone !== layout.workspaceDefaults.timezone ? 'manual' : 'auto';
+    newLocationRegime = chart.locationRegime ?? (chart.latitude != null ? 'manual' : 'auto');
+    newLatitude = formatCoordinateMagnitude(chart.latitude ?? wsDefaults.locationLatitude);
+    newLongitude = formatCoordinateMagnitude(chart.longitude ?? wsDefaults.locationLongitude);
+    newLatitudeDir = (chart.latitude ?? wsDefaults.locationLatitude) >= 0 ? 'north' : 'south';
+    newLongitudeDir = (chart.longitude ?? wsDefaults.locationLongitude) >= 0 ? 'east' : 'west';
+
     newHouseSystem = chart.houseSystem || 'Placidus';
     newZodiacType = chart.zodiacType || 'Tropical';
-    newTags = chart.tags.join(', ');
-    newChartType = chart.chartType ?? 'NATAL';
+    newLocationStatus = null;
+    newFormError = null;
   }
 
   function applyFormReset() {
+    const wsDefaults = layout.workspaceDefaults;
+    const now = new Date();
     newContextName = '';
-    newDate = '';
-    newTime = '';
-    newLocation = '';
-    newLatitude = '';
-    newLongitude = '';
-    newTimezone = '';
-    newTimeRegime = 'auto';
-    newTags = '';
     newChartType = 'NATAL';
-    newHouseSystem = 'Placidus';
-    newZodiacType = 'Tropical';
+    newTags = '';
+    newTagColors = {};
+    newRodenRating = '';
+
+    newTimeSystem = 'gregorian';
+    newDate = formatDateInput(now);
+    newTime = formatTimeInput(now);
+    newJulianDay = utcDateToJulianDay(now).toFixed(8);
+    newJulianCalendarDate = gregorianWallDateToJulianCalendarDate(now);
+    newTimeRegime = 'auto';
+    newTimezone = wsDefaults.timezone;
+    newTimezoneRegion = timezoneRegion(wsDefaults.timezone);
+    newUtcOffset = 'auto';
+
+    newLocation = '';
+    newLocationRegime = 'auto';
+    newLatitude = formatCoordinateMagnitude(wsDefaults.locationLatitude);
+    newLongitude = formatCoordinateMagnitude(wsDefaults.locationLongitude);
+    newLatitudeDir = wsDefaults.locationLatitude >= 0 ? 'north' : 'south';
+    newLongitudeDir = wsDefaults.locationLongitude >= 0 ? 'east' : 'west';
+
+    newHouseSystem = wsDefaults.houseSystem || 'Placidus';
+    newZodiacType = wsDefaults.zodiacType || 'Tropical';
+    newLocationStatus = null;
+    newFormError = null;
     editingChartId = null;
   }
   
@@ -586,21 +746,57 @@
     return normalized.length > 0 ? normalized : fallback;
   }
 
-  function parseOptionalNumber(value: string): number | undefined {
-    const normalized = value.trim();
-    if (!normalized) return undefined;
-    const num = Number(normalized);
-    return Number.isFinite(num) ? num : undefined;
+  function currentTagList(): string[] {
+    return newTags.split(',').map((tag) => tag.trim()).filter(Boolean);
   }
 
-  function formatCoordinate(value: number): string {
-    return value.toFixed(4);
+  function applyTags(nextTags: string[]) {
+    const uniqueTags = mergeTags([], nextTags);
+    newTags = uniqueTags.join(', ');
+    const nextColors: Record<string, string> = {};
+    uniqueTags.forEach((tag, index) => {
+      nextColors[tag] = newTagColors[tag] ?? tagDefaultColor(index);
+    });
+    newTagColors = nextColors;
+  }
+
+  function addTagsFromRawInput(raw: string) {
+    const next = parseTags(raw);
+    if (next.length > 0) applyTags([...currentTagList(), ...next]);
+  }
+
+  function removeTag(tag: string) {
+    applyTags(currentTagList().filter((t) => t !== tag));
+  }
+
+  function renameTag(tag: string, nextNameRaw: string) {
+    const nextName = nextNameRaw.trim();
+    if (!nextName || nextName === tag) return;
+    const existing = currentTagList();
+    const nextTags = existing.reduce<string[]>((acc, current) => {
+      const value = current === tag ? nextName : current;
+      if (!acc.includes(value)) acc.push(value);
+      return acc;
+    }, []);
+    const nextColors: Record<string, string> = { ...newTagColors };
+    if (nextColors[tag] != null) {
+      nextColors[nextName] = nextColors[tag];
+      delete nextColors[tag];
+    }
+    newTags = nextTags.join(', ');
+    newTagColors = nextColors;
+  }
+
+  function setTagColor(tag: string, color: string) {
+    newTagColors = { ...newTagColors, [tag]: color };
   }
 
   function applyResolvedNewLocation(location: ResolvedLocation) {
     newLocation = location.display_name;
-    newLatitude = formatCoordinate(location.latitude);
-    newLongitude = formatCoordinate(location.longitude);
+    newLatitude = formatCoordinateMagnitude(location.latitude);
+    newLongitude = formatCoordinateMagnitude(location.longitude);
+    newLatitudeDir = location.latitude >= 0 ? 'north' : 'south';
+    newLongitudeDir = location.longitude >= 0 ? 'east' : 'west';
     newLocationStatus = `${t('toast_location_resolved', {}, 'Location resolved')}: ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`;
   }
 
@@ -630,50 +826,88 @@
     }
   }
 
-  function buildChartFromForm(chartId: string): ChartData {
-    const wsDefaults = layout.workspaceDefaults;
-    const tags = newTags
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(Boolean);
-    const dateTime = [newDate.trim(), newTime.trim()].filter(Boolean).join(' ');
-    const latitude = parseOptionalNumber(newLatitude);
-    const longitude = parseOptionalNumber(newLongitude);
+  async function submitNewContext(e?: Event) {
+    e?.preventDefault?.();
+    const name = newContextName.trim();
+    if (!name) return;
+    newFormError = null;
 
-    return {
+    const wsDefaults = layout.workspaceDefaults;
+    const chartId = editingChartId ?? normalizeChartId(name);
+
+    let resolvedLocation = newLocation.trim();
+    let latitudeValue: number | null = null;
+    let longitudeValue: number | null = null;
+    let resolvedTimezone = newTimeRegime === 'manual' ? nonEmptyOr(newTimezone, wsDefaults.timezone) : wsDefaults.timezone;
+
+    if (newLocationRegime === 'manual') {
+      latitudeValue = signedCoordinate(newLatitude, 'north', newLatitudeDir);
+      longitudeValue = signedCoordinate(newLongitude, 'east', newLongitudeDir);
+    } else if (resolvedLocation && isTauriRuntime()) {
+      const resolved = await resolveNewLocation();
+      if (!resolved) return;
+      resolvedLocation = resolved.display_name;
+      latitudeValue = resolved.latitude;
+      longitudeValue = resolved.longitude;
+    }
+
+    if (
+      (latitudeValue != null && Math.abs(latitudeValue) > 90) ||
+      (longitudeValue != null && Math.abs(longitudeValue) > 180)
+    ) {
+      newFormError = t('toast_coordinates_invalid', {}, 'Coordinates are invalid.');
+      return;
+    }
+
+    if (newTimeRegime === 'auto' && isTauriRuntime() && latitudeValue != null && longitudeValue != null) {
+      try {
+        resolvedTimezone = await resolveTimezone(latitudeValue, longitudeValue);
+      } catch (err) {
+        newFormError = err instanceof Error ? err.message : String(err);
+        return;
+      }
+    }
+
+    const utcOffsetArg = newTimeRegime === 'manual' && newUtcOffset !== 'auto' ? newUtcOffset : undefined;
+
+    let dateTime: string;
+    try {
+      if (newTimeSystem === 'julian_day') {
+        dateTime = julianDayToUtcIso(newJulianDay);
+      } else {
+        const wallDate =
+          newTimeSystem === 'julian_calendar'
+            ? julianCalendarDateToGregorianWallDate(newJulianCalendarDate, wallDateFromInputs(newDate, newTime) ?? new Date())
+            : (wallDateFromInputs(newDate, newTime) ?? new Date());
+        dateTime = wallTimeToUtcIso(wallDate, resolvedTimezone, utcOffsetArg);
+      }
+    } catch (err) {
+      newFormError = err instanceof Error ? err.message : String(err);
+      return;
+    }
+
+    const formChart: ChartData = {
       id: chartId,
-      name: newContextName.trim(),
+      name,
       chartType: newChartType as 'NATAL' | 'EVENT' | 'HORARY' | 'COMPOSITE',
       dateTime,
-      location: nonEmptyOr(newLocation, wsDefaults.locationName),
-      latitude,
-      longitude,
-      timezone:
-        newTimeRegime === 'manual'
-          ? nonEmptyOr(newTimezone, wsDefaults.timezone)
-          : wsDefaults.timezone,
+      location: resolvedLocation || wsDefaults.locationName,
+      latitude: latitudeValue ?? undefined,
+      longitude: longitudeValue ?? undefined,
+      timezone: resolvedTimezone,
+      utcOffset: utcOffsetArg,
+      locationRegime: newLocationRegime,
+      timeRegime: newTimeRegime,
+      timeSystem: newTimeSystem,
+      rodenRating: newRodenRating || undefined,
       houseSystem: nonEmptyOr(newHouseSystem, wsDefaults.houseSystem),
       zodiacType: nonEmptyOr(newZodiacType, wsDefaults.zodiacType),
       engine: wsDefaults.engine,
       model: null,
       overrideEphemeris: null,
-      tags,
+      tags: currentTagList(),
+      tagColors: Object.keys(newTagColors).length > 0 ? newTagColors : undefined,
     };
-  }
-
-  async function submitNewContext(e?: Event) {
-    e?.preventDefault?.();
-    const n = newContextName.trim();
-    if (!n) return;
-
-    const chartId = editingChartId ?? normalizeChartId(n);
-    let formChart = buildChartFromForm(chartId);
-    if ((!newLatitude.trim() || !newLongitude.trim()) && newLocation.trim()) {
-      const resolved = await resolveNewLocation();
-      if (resolved) {
-        formChart = buildChartFromForm(chartId);
-      }
-    }
 
     if (layout.workspacePath && isTauriRuntime()) {
       const payload = chartDataToComputePayload(formChart);
@@ -685,6 +919,7 @@
         }
       } catch (err) {
         console.error('Failed to persist chart to workspace:', err);
+        newFormError = err instanceof Error ? err.message : String(err);
         return;
       }
     }
@@ -700,7 +935,7 @@
       setMode('radix_view');
     } else {
       if (layout.contexts.some((chart) => chart.id === chartId)) {
-        console.error(`Chart with id ${chartId} already exists in memory`);
+        newFormError = `Chart with id ${chartId} already exists`;
         return;
       }
       layout.contexts = [...layout.contexts, formChart];
@@ -761,11 +996,12 @@
 
   <!-- Middle: 75% height -->
       {#snippet chartFormPanel()}
-        <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col overflow-y-auto">
-          <h2 class="text-lg font-semibold mb-4">
+        <div class="h-full w-full rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col overflow-hidden">
+          <h2 class="text-lg font-semibold mb-4 flex-shrink-0">
             {editingChartId ? t('edit_radix_title', {}, 'Edit Radix') : t('new', {}, 'New')}
           </h2>
-          <form class="space-y-4 w-full max-w-2xl" onsubmit={submitNewContext}>
+          <div class="flex-1 min-h-0 overflow-y-auto">
+          <form class="space-y-4 w-full" onsubmit={submitNewContext}>
               <!-- Name -->
               <div class="space-y-1">
                 <label class="block text-sm font-medium opacity-85" for="ctxNameCenter">
@@ -799,182 +1035,511 @@
                 </Select.Root>
               </div>
               
-              <!-- Date and Time -->
-              <div class="grid grid-cols-2 gap-4">
+              <!-- Date, Time and Time Regime: one row, matching the React app -->
+              <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4">
                 <div class="space-y-1">
                   <label class="block text-sm font-medium opacity-85" for="new-date">
-                    {t('new_date', {}, 'Date')}
+                    {newTimeSystem === 'julian_day'
+                      ? t('new_julian_day', {}, 'Julian Day')
+                      : newTimeSystem === 'julian_calendar'
+                        ? t('new_julian_calendar_date', {}, 'Julian calendar date')
+                        : t('new_date', {}, 'Date')}
                   </label>
-                  <Input
-                    id="new-date"
-                    type="date"
-                    class="w-full h-9 px-3 rounded-md bg-background text-foreground border"
-                    bind:value={newDate}
-                  />
+                  {#if newTimeSystem === 'julian_day'}
+                    <Input
+                      id="new-date"
+                      type="text"
+                      inputmode="decimal"
+                      class="w-full h-9 px-3 rounded-md bg-background text-foreground border"
+                      bind:value={newJulianDay}
+                      placeholder="2451545.0"
+                    />
+                  {:else if newTimeSystem === 'julian_calendar'}
+                    <Input
+                      id="new-date"
+                      type="text"
+                      inputmode="numeric"
+                      class="w-full h-9 px-3 rounded-md bg-background text-foreground border"
+                      bind:value={newJulianCalendarDate}
+                      placeholder="YYYY-MM-DD"
+                    />
+                  {:else}
+                    <Popover.Root bind:open={newDatePopoverOpen}>
+                      <div class="relative">
+                        <Input
+                          id="new-date"
+                          type="text"
+                          readonly
+                          value={newDate}
+                          class="w-full h-9 pl-3 pr-9 rounded-md bg-background text-foreground border cursor-pointer"
+                          onclick={() => (newDatePopoverOpen = true)}
+                        />
+                        <Popover.Trigger
+                          class="absolute inset-y-0 right-0 flex items-center px-2.5 text-muted-foreground hover:text-foreground"
+                          aria-label={t('new_date', {}, 'Date')}
+                        >
+                          <CalendarIcon class="h-4 w-4" />
+                        </Popover.Trigger>
+                      </div>
+                      <Popover.Content class="w-auto p-0" align="start">
+                        <CalendarWidget
+                          type="single"
+                          value={newDateCalendarValue}
+                          onValueChange={(value) => {
+                            if (value) {
+                              newDate = value.toString();
+                            }
+                            newDatePopoverOpen = false;
+                          }}
+                        />
+                      </Popover.Content>
+                    </Popover.Root>
+                  {/if}
                 </div>
-                <div class="space-y-1">
+                <div class="space-y-1" class:hidden={newTimeSystem === 'julian_day'}>
                   <label class="block text-sm font-medium opacity-85" for="new-time">
                     {t('new_time', {}, 'Time')}
                   </label>
-                  <Input
-                    id="new-time"
-                    type="time"
-                    class="w-full h-9 px-3 rounded-md bg-background text-foreground border"
-                    bind:value={newTime}
+                  <Popover.Root bind:open={newTimePopoverOpen}>
+                    <div class="relative">
+                      <Input
+                        id="new-time"
+                        type="text"
+                        inputmode="numeric"
+                        placeholder="HH:MM"
+                        class="w-full h-9 pl-3 pr-9 rounded-md bg-background text-foreground border"
+                        bind:value={newTime}
+                        onkeydown={(e) => {
+                          if (e.key === 'Enter') newTimePopoverOpen = false;
+                        }}
+                      />
+                      <Popover.Trigger
+                        class="absolute inset-y-0 right-0 flex items-center px-2.5 text-muted-foreground hover:text-foreground"
+                        aria-label={t('new_time', {}, 'Time')}
+                      >
+                        <ClockIcon class="h-4 w-4" />
+                      </Popover.Trigger>
+                    </div>
+                    <Popover.Content class="w-[220px] p-3" align="end">
+                      {@const [hourStr, minuteStr] = (newTime || '00:00').split(':')}
+                      {@const selectedHour = Number(hourStr) || 0}
+                      {@const selectedMinute = Number(minuteStr) || 0}
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-2">
+                          <div class="text-center text-xs font-medium uppercase tracking-wide opacity-60">
+                            {t('new_time_hour', {}, 'Hour')}
+                          </div>
+                          <div class="h-48 overflow-y-auto rounded-md border p-1 space-y-1">
+                            {#each Array.from({ length: 24 }, (_, i) => i) as h}
+                              <Button
+                                type="button"
+                                variant={h === selectedHour ? 'default' : 'ghost'}
+                                class="h-8 w-full justify-center font-mono"
+                                onclick={() => {
+                                  newTime = `${String(h).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+                                }}
+                              >
+                                {String(h).padStart(2, '0')}
+                              </Button>
+                            {/each}
+                          </div>
+                        </div>
+                        <div class="space-y-2">
+                          <div class="text-center text-xs font-medium uppercase tracking-wide opacity-60">
+                            {t('new_time_minute', {}, 'Minute')}
+                          </div>
+                          <div class="h-48 overflow-y-auto rounded-md border p-1 space-y-1">
+                            {#each Array.from({ length: 60 }, (_, i) => i) as m}
+                              <Button
+                                type="button"
+                                variant={m === selectedMinute ? 'default' : 'ghost'}
+                                class="h-8 w-full justify-center font-mono"
+                                onclick={() => {
+                                  newTime = `${String(selectedHour).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                                }}
+                              >
+                                {String(m).padStart(2, '0')}
+                              </Button>
+                            {/each}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex justify-end pt-2">
+                        <Button type="button" size="sm" onclick={() => (newTimePopoverOpen = false)}>
+                          {t('done', {}, 'Done')}
+                        </Button>
+                      </div>
+                    </Popover.Content>
+                  </Popover.Root>
+                </div>
+                <div class="space-y-1">
+                  <div class="block text-sm font-medium opacity-85">
+                    {t('new_time_regime', {}, 'Time regime')}
+                  </div>
+                  <ModeSwitcher
+                    bind:value={newTimeRegime}
+                    class="min-w-[11rem]"
+                    options={[
+                      { value: 'auto', label: t('new_time_regime_auto', {}, 'Auto') },
+                      { value: 'manual', label: t('new_time_regime_manual', {}, 'Manual') }
+                    ]}
+                    ariaLabel={t('new_time_regime', {}, 'Time regime')}
                   />
                 </div>
-              </div>
-
-              <!-- Time Regime -->
-              <div class="space-y-2">
-                <div class="block text-sm font-medium opacity-85">
-                  {t('new_time_regime', {}, 'Time regime')}
-                </div>
-                <ModeSwitcher
-                  bind:value={newTimeRegime}
-                  options={[
-                    { value: 'auto', label: t('new_time_regime_auto', {}, 'Auto') },
-                    { value: 'manual', label: t('new_time_regime_manual', {}, 'Manual') }
-                  ]}
-                  ariaLabel={t('new_time_regime', {}, 'Time regime')}
-                />
               </div>
 
               {#if newTimeRegime === 'manual'}
-                <div class="space-y-4 rounded-xl bg-muted/40 p-4">
-                  <div class="text-sm font-medium opacity-85">
-                    {t('new_manual_time_details', {}, 'Manual time details')}
-                  </div>
-                  <div class="space-y-2">
-                    <div class="text-xs font-medium opacity-75">
-                      {t('new_home_location_details', {}, 'Home location details')}
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                      <Input
-                        type="text"
-                        class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
-                        placeholder={t('placeholder_latitude', {}, 'Latitude')}
-                        bind:value={newLatitude}
-                      />
-                      <Input
-                        type="text"
-                        class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
-                        placeholder={t('placeholder_longitude', {}, 'Longitude')}
-                        bind:value={newLongitude}
-                      />
-                    </div>
+                <div class="space-y-3 rounded-xl bg-muted/40 p-4">
+                  <div class="space-y-1">
+                    <div class="text-xs font-medium opacity-75">{t('new_timezone_region', {}, 'Timezone region')}</div>
+                    <Select.Root
+                      type="single"
+                      value={newTimezoneRegion}
+                      onValueChange={(region) => {
+                        if (!region) return;
+                        newTimezoneRegion = region;
+                        if (!timezoneMatchesRegion(newTimezone, region)) {
+                          newTimezone = TIMEZONES.find((tz) => timezoneMatchesRegion(tz, region)) ?? newTimezone;
+                        }
+                      }}
+                    >
+                      <Select.Trigger class="w-full h-9 px-3 text-xs">
+                        {newTimezoneRegion || t('new_timezone_region', {}, 'Timezone region')}
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Group>
+                          {#each TIMEZONE_REGIONS as region}
+                            <Select.Item value={region} label={region}>{region}</Select.Item>
+                          {/each}
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
                   </div>
                   <div class="space-y-1">
-                    <div class="block text-xs font-medium opacity-75">
-                      {t('new_utc_shift_definition', {}, 'UTC shift definition')}
-                    </div>
-                    <Input
-                      type="text"
-                      class="w-full h-8 px-2 rounded-md bg-background text-foreground border text-xs"
-                      placeholder={t('new_timezone_placeholder', {}, 'Europe/Prague or UTC+01:00')}
-                      bind:value={newTimezone}
-                    />
+                    <div class="text-xs font-medium opacity-75">{t('new_timezone', {}, 'Timezone')}</div>
+                    <Select.Root type="single" bind:value={newTimezone}>
+                      <Select.Trigger class="w-full h-9 px-3 text-xs">
+                        {newTimezone || t('new_timezone_placeholder', {}, 'Select a timezone')}
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Group>
+                          {#each timezonesInRegion as tz}
+                            <Select.Item value={tz} label={tz}>{tz}</Select.Item>
+                          {/each}
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-xs font-medium opacity-75">{t('new_utc_offset', {}, 'UTC offset')}</div>
+                    <Select.Root type="single" bind:value={newUtcOffset}>
+                      <Select.Trigger class="w-full h-9 px-3 text-xs">
+                        {newUtcOffset === 'auto' ? t('new_time_regime_auto', {}, 'Auto') : newUtcOffset}
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Group>
+                          <Select.Item value="auto" label={t('new_time_regime_auto', {}, 'Auto')}>
+                            {t('new_time_regime_auto', {}, 'Auto')}
+                          </Select.Item>
+                          {#each UTC_OFFSETS as offset}
+                            <Select.Item value={offset} label={offset}>{offset}</Select.Item>
+                          {/each}
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-xs font-medium opacity-75">{t('new_time_system', {}, 'Time system')}</div>
+                    <Select.Root
+                      type="single"
+                      value={newTimeSystem}
+                      onValueChange={(value) => handleTimeSystemChange(value as TimeSystem)}
+                    >
+                      <Select.Trigger class="w-full h-9 px-3 text-xs">
+                        {newTimeSystem === 'julian_day'
+                          ? t('new_time_system_julian_day', {}, 'Julian Day')
+                          : newTimeSystem === 'julian_calendar'
+                            ? t('new_time_system_julian_calendar', {}, 'Julian calendar')
+                            : t('new_time_system_gregorian', {}, 'Gregorian')}
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Group>
+                          {#each timeSystemOptions as opt}
+                            <Select.Item value={opt.id} label={t(opt.labelKey, {}, opt.id)}>
+                              {t(opt.labelKey, {}, opt.id)}
+                            </Select.Item>
+                          {/each}
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
                   </div>
                 </div>
               {/if}
-              
-              <!-- Location -->
-              <div class="space-y-1">
-                <label class="block text-sm font-medium opacity-85" for="new-location">
-                  {t('new_location', {}, 'Location')}
-                </label>
-                <div class="space-y-2">
-                  <LocationSelector
-                    id="new-location"
-                    bind:value={newLocation}
-                    onValueChange={() => {
-                      newLocationStatus = null;
-                    }}
-                    options={newLocationOptions}
-                    placeholder={t('new_placeholder_any_location', {}, 'Any searchable location…')}
-                    searchPlaceholder={t('new_location_search', {}, 'Search')}
-                    emptyLabel={t('new_placeholder_any_location', {}, 'Any searchable location…')}
-                    loadingLabel={t('new_resolving_location', {}, 'Resolving…')}
-                    searchLocations={isTauriRuntime() ? searchLocations : undefined}
-                    onResolvedLocationSelect={(location) => {
-                      applyResolvedNewLocation(location);
-                    }}
-                    class="bg-background"
-                  />
-                  <div class="flex justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      class="h-9 px-3 text-sm"
-                      onclick={() => void resolveNewLocation()}
-                      disabled={isResolvingNewLocation || !newLocation.trim() || !isTauriRuntime()}
-                      title={t('new_resolve_location', {}, 'Resolve location')}
-                    >
-                      <LocateFixed class="h-4 w-4" />
-                      {isResolvingNewLocation ? t('new_resolving_location', {}, 'Resolving…') : t('new_resolve_location', {}, 'Resolve location')}
-                    </Button>
+
+              <!-- Location: field + regime switcher in one row, matching the React app -->
+              <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-4">
+                {#if newLocationRegime === 'auto'}
+                  <div class="space-y-1">
+                    <label class="block text-sm font-medium opacity-85" for="new-location">
+                      {t('new_location', {}, 'Location')}
+                    </label>
+                    <LocationSelector
+                      id="new-location"
+                      bind:value={newLocation}
+                      onValueChange={() => {
+                        newLocationStatus = null;
+                      }}
+                      options={newLocationOptions}
+                      placeholder={t('new_placeholder_any_location', {}, 'Any searchable location…')}
+                      searchPlaceholder={t('new_location_search', {}, 'Search')}
+                      emptyLabel={t('new_placeholder_any_location', {}, 'Any searchable location…')}
+                      loadingLabel={t('new_resolving_location', {}, 'Resolving…')}
+                      searchLocations={isTauriRuntime() ? searchLocations : undefined}
+                      onResolvedLocationSelect={(location) => {
+                        applyResolvedNewLocation(location);
+                      }}
+                      class="bg-background"
+                    />
                   </div>
-                  {#if newLocationStatus}
-                    <div class="text-xs opacity-75">{newLocationStatus}</div>
-                  {/if}
+                {:else}
+                  <div class="space-y-1">
+                    <label class="block text-sm font-medium opacity-85" for="new-location">
+                      {t('new_location', {}, 'Location')}
+                    </label>
+                    <Input
+                      id="new-location"
+                      type="text"
+                      class="w-full h-9 px-3 rounded-md bg-background text-foreground border"
+                      bind:value={newLocation}
+                      placeholder={t('new_placeholder_any_location', {}, 'Any searchable location…')}
+                    />
+                  </div>
+                {/if}
+                <div class="space-y-1">
+                  <div class="block text-sm font-medium opacity-85">
+                    {t('new_location_regime', {}, 'Location regime')}
+                  </div>
+                  <ModeSwitcher
+                    bind:value={newLocationRegime}
+                    class="min-w-[11rem]"
+                    options={[
+                      { value: 'auto', label: t('new_time_regime_auto', {}, 'Auto') },
+                      { value: 'manual', label: t('new_time_regime_manual', {}, 'Manual') }
+                    ]}
+                    ariaLabel={t('new_location_regime', {}, 'Location regime')}
+                  />
                 </div>
               </div>
-              
+
+              {#if newLocationRegime === 'auto'}
+                <div class="flex justify-end -mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    class="h-9 px-3 text-sm"
+                    onclick={() => void resolveNewLocation()}
+                    disabled={isResolvingNewLocation || !newLocation.trim() || !isTauriRuntime()}
+                    title={t('new_resolve_location', {}, 'Resolve location')}
+                  >
+                    <LocateFixed class="h-4 w-4" />
+                    {isResolvingNewLocation ? t('new_resolving_location', {}, 'Resolving…') : t('new_resolve_location', {}, 'Resolve location')}
+                  </Button>
+                </div>
+                {#if newLocationStatus}
+                  <div class="text-xs opacity-75 -mt-2">{newLocationStatus}</div>
+                {/if}
+              {:else}
+                <div class="grid grid-cols-1 gap-2">
+                  <div class="space-y-1">
+                    <div class="text-xs font-medium opacity-75">{t('current_info_latitude', {}, 'Latitude')}</div>
+                    <div class="flex gap-1.5">
+                      <Input
+                        type="text"
+                        class="flex-1 h-9 px-2 rounded-md bg-background text-foreground border text-xs"
+                        placeholder="50.0755"
+                        bind:value={newLatitude}
+                      />
+                      <Select.Root type="single" bind:value={newLatitudeDir}>
+                        <Select.Trigger class="w-16 h-9 px-2 text-xs shrink-0">
+                          {newLatitudeDir === 'north' ? t('new_dir_north', {}, 'N') : t('new_dir_south', {}, 'S')}
+                        </Select.Trigger>
+                        <Select.Content>
+                          <Select.Group>
+                            {#each latDirOptions as dir}
+                              <Select.Item value={dir.id} label={t(dir.labelKey, {}, dir.id)}>
+                                {t(dir.labelKey, {}, dir.id)}
+                              </Select.Item>
+                            {/each}
+                          </Select.Group>
+                        </Select.Content>
+                      </Select.Root>
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-xs font-medium opacity-75">{t('current_info_longitude', {}, 'Longitude')}</div>
+                    <div class="flex gap-1.5">
+                      <Input
+                        type="text"
+                        class="flex-1 h-9 px-2 rounded-md bg-background text-foreground border text-xs"
+                        placeholder="14.4378"
+                        bind:value={newLongitude}
+                      />
+                      <Select.Root type="single" bind:value={newLongitudeDir}>
+                        <Select.Trigger class="w-16 h-9 px-2 text-xs shrink-0">
+                          {newLongitudeDir === 'east' ? t('new_dir_east', {}, 'E') : t('new_dir_west', {}, 'W')}
+                        </Select.Trigger>
+                        <Select.Content>
+                          <Select.Group>
+                            {#each lonDirOptions as dir}
+                              <Select.Item value={dir.id} label={t(dir.labelKey, {}, dir.id)}>
+                                {t(dir.labelKey, {}, dir.id)}
+                              </Select.Item>
+                            {/each}
+                          </Select.Group>
+                        </Select.Content>
+                      </Select.Root>
+                    </div>
+                  </div>
+                </div>
+              {/if}
+
               <!-- Tags -->
               <div class="space-y-1">
-                <label class="block text-sm font-medium opacity-85" for="new-tags">
+                <label class="block text-sm font-medium opacity-85" for="new-tag-draft">
                   {t('new_tags', {}, 'Tags')}
                 </label>
-                <Input
-                  id="new-tags"
-                  type="text"
-                  class="w-full h-9 px-3 rounded-md bg-background text-foreground border"
-                  bind:value={newTags}
-                  placeholder={t('placeholder_tags_example', {}, 'e.g. personal, important')}
-                />
+                <div class="flex items-stretch w-full rounded-md border-input bg-background dark:bg-input/30 text-foreground border overflow-hidden">
+                  <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0 px-2 py-1.5">
+                    {#each currentTagList() as tag, index (tag)}
+                      <span class="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 pl-2 pr-1 py-0.5 text-xs">
+                        <span
+                          class="h-1.5 w-1.5 rounded-full flex-shrink-0"
+                          style={`background-color: ${tagColor(newTagColors, tag, index)}`}
+                        ></span>
+                        {tag}
+                        <button
+                          type="button"
+                          class="rounded-full hover:opacity-70"
+                          aria-label={`${t('new_tags', {}, 'Tags')} ${tag}`}
+                          onclick={() => removeTag(tag)}
+                        >
+                          <XIcon class="h-3 w-3" />
+                        </button>
+                      </span>
+                    {/each}
+                    <input
+                      id="new-tag-draft"
+                      type="text"
+                      class="flex-1 min-w-[6rem] bg-transparent text-sm outline-none py-0.5"
+                      bind:value={newTagDraft}
+                      placeholder={newTags ? '' : t('new_tags_comma_hint', {}, 'Type a tag and press Enter or comma')}
+                      onkeydown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          addTagsFromRawInput(newTagDraft);
+                          newTagDraft = '';
+                        } else if (e.key === 'Backspace' && !newTagDraft && newTags) {
+                          const existing = currentTagList();
+                          applyTags(existing.slice(0, -1));
+                        }
+                      }}
+                      onblur={() => {
+                        if (newTagDraft.trim()) {
+                          addTagsFromRawInput(newTagDraft);
+                          newTagDraft = '';
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="flex-shrink-0 flex items-center justify-center w-10 border-l border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                    aria-label={t('new_tags', {}, 'Tags')}
+                    onclick={() => {
+                      advancedTagNameDrafts = Object.fromEntries(currentTagList().map((tag) => [tag, tag]));
+                      advancedTagSheetOpen = true;
+                    }}
+                  >
+                    <PencilIcon class="h-4 w-4" />
+                  </button>
+                </div>
               </div>
+
+              <!-- Roden Rating -->
+              <div class="space-y-1">
+                <label class="block text-sm font-medium opacity-85" for="new-roden-rating">
+                  {t('new_roden_rating', {}, 'Roden rating')}
+                </label>
+                <Select.Root type="single" bind:value={newRodenRating}>
+                  <Select.Trigger id="new-roden-rating" class="w-full h-9 px-3">
+                    {newRodenRating || t('new_roden_rating_placeholder', {}, 'Select a rating')}
+                  </Select.Trigger>
+                  <Select.Content>
+                    <Select.Group>
+                      {#each rodenRatingOptions as opt}
+                        <Select.Item value={opt.id} label={opt.id}>{opt.id} – {t(opt.labelKey, {}, opt.id)}</Select.Item>
+                      {/each}
+                    </Select.Group>
+                  </Select.Content>
+                </Select.Root>
+              </div>
+
+              {#if newFormError}
+                <div class="text-xs text-destructive">{newFormError}</div>
+              {/if}
 
               <!-- Submit buttons -->
               <div class="flex gap-2 pt-2">
-                <Button type="submit" class="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90">
-                  {editingChartId ? t('save', {}, 'Save') : t('add', {}, 'Add')}
-                </Button>
-                <Button 
-                  type="button" 
-                  class="px-4 py-2 rounded-md bg-transparent border hover:bg-white/10"
-                  onclick={() => {
-                    applyFormReset();
-                  }}
+                {#if editingChartId}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    class="px-4 py-2 rounded-md hover:bg-white/10"
+                    onclick={() => {
+                      editSheetOpen = false;
+                      applyFormReset();
+                    }}
+                  >
+                    {t('new_back', {}, 'Cancel')}
+                  </Button>
+                {/if}
+                <Button
+                  type="submit"
+                  class={`px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 ${editingChartId ? '' : 'flex-1'}`}
                 >
-                  {t('clear', {}, 'Clear')}
+                  {editingChartId ? t('save', {}, 'Save') : t('add', {}, 'Add')}
                 </Button>
               </div>
             </form>
           </div>
+        </div>
       {/snippet}
 
-  {#if mode === 'new_radix' || mode === 'open' || mode === 'info' || mode === 'revolution' || mode === 'synastry' || mode === 'favorite' || mode === 'settings' || mode === 'export'}
+  {#if mode === 'new_radix'}
+    <!-- New/Edit Radix: full-width form, no left sidebar (matches the React app's full-page NewHoroscope).
+         Side margins scale with the window instead of a fixed max-width, so fields get more room on wide windows. -->
+    <section class="row-span-1 overflow-hidden w-full px-3 pb-3 md:px-[8%] lg:px-[12%] xl:px-[15%]">
+      {@render chartFormPanel()}
+    </section>
+  {:else if mode === 'open' || mode === 'info' || mode === 'revolution' || mode === 'synastry' || mode === 'favorite' || mode === 'settings' || mode === 'export'}
     <!-- Left 20% + middle stretched to 80% -->
     <section class="row-span-1 grid gap-x-3 gap-y-3 px-3 pb-3 overflow-hidden w-full" style:grid-template-columns="minmax(0,20%) minmax(0,80%)">
       <!-- Left single panel -->
       <div class="h-full min-w-0 flex flex-col gap-2 min-h-0">
         <div class="min-h-0 flex-1">
-          <ExpandablePanel 
+          <ExpandablePanel
             title={
               mode === 'settings' ? t('settings', {}, 'Settings')
               : mode === 'open' ? t('open_chart', {}, 'Open Chart')
               : mode === 'info' ? t('info', {}, 'Info')
               : mode === 'revolution' ? t('revolution', {}, 'Revolution')
               : mode === 'synastry' ? t('sidebar_synastry', {}, 'Synastry')
-              : mode === 'favorite' ? t('favorite', {}, 'Favorite')
-              : t('new', {}, 'New')
-            } 
+              : t('favorite', {}, 'Favorite')
+            }
             editable={false}
           >
             {#snippet children()}
-              {#if mode === 'new_radix'}
-                <PanelMenu items={newRadixMenuItems} bind:selectedId={newChartType} />
-              {:else if mode === 'open'}
+              {#if mode === 'open'}
                 {@const openModes = [
                   { value: 'my_radixes', label: t('open_mode_my_radixes', {}, 'My Radixes') },
                   { value: 'database', label: t('open_mode_database', {}, 'Persons Database') }
@@ -1016,9 +1581,7 @@
 
       <!-- Middle content spans remaining width -->
       <div class="h-full min-w-0">
-        {#if mode === 'new_radix'}
-          {@render chartFormPanel()}
-        {:else if mode === 'open'}
+        {#if mode === 'open'}
           <OpenWorkspaceView bind:openMode />
         {:else if mode === 'export'}
           <ExportWorkspaceView bind:exportType />
@@ -1447,6 +2010,108 @@
       <div class="min-h-0 flex-1 px-1 pb-4">
         {@render chartFormPanel()}
       </div>
+    </Sheet.Content>
+  </Sheet.Root>
+
+  <Sheet.Root bind:open={advancedTagSheetOpen}>
+    <Sheet.Content side="right" class="flex h-full min-h-0 flex-col gap-0">
+      <Sheet.Header>
+        <Sheet.Title>{t('new_tags', {}, 'Tags')}</Sheet.Title>
+        <Sheet.Description>{t('new_tags_comma_hint', {}, 'Type a tag and press Enter or comma')}</Sheet.Description>
+      </Sheet.Header>
+      <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        <div class="space-y-2">
+          <label class="block text-sm font-medium opacity-85" for="advanced-tag-input">
+            {t('new_tags', {}, 'Tags')}
+          </label>
+          <div class="flex gap-2">
+            <Input
+              id="advanced-tag-input"
+              type="text"
+              class="flex-1 h-9 px-3 rounded-md bg-background text-foreground border"
+              bind:value={advancedTagDraft}
+              placeholder={t('placeholder_tags_example', {}, 'e.g. personal, important')}
+              onkeydown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addTagsFromRawInput(advancedTagDraft);
+                  advancedTagDraft = '';
+                }
+              }}
+            />
+            <Button
+              type="button"
+              size="icon"
+              class="h-9 w-9 flex-shrink-0"
+              aria-label={t('new_tags', {}, 'Tags')}
+              onclick={() => {
+                addTagsFromRawInput(advancedTagDraft);
+                advancedTagDraft = '';
+              }}
+            >
+              <PlusIcon class="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium opacity-85">{t('table_tags', {}, 'Tags')}</div>
+          {#if currentTagList().length > 0}
+            <div class="space-y-2">
+              {#each currentTagList() as tag, index (tag)}
+                <div class="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+                  <input
+                    type="color"
+                    class="h-8 w-9 rounded-lg border border-border/60 bg-transparent p-0.5"
+                    value={tagColor(newTagColors, tag, index)}
+                    onchange={(e) => setTagColor(tag, (e.currentTarget as HTMLInputElement).value)}
+                    aria-label={`${t('new_tags', {}, 'Tags')} ${tag}`}
+                  />
+                  <Input
+                    type="text"
+                    class="h-8 min-w-0 flex-1 rounded-lg bg-background text-foreground border text-sm"
+                    value={advancedTagNameDrafts[tag] ?? tag}
+                    oninput={(e) => {
+                      advancedTagNameDrafts = { ...advancedTagNameDrafts, [tag]: (e.currentTarget as HTMLInputElement).value };
+                    }}
+                    onblur={() => renameTag(tag, advancedTagNameDrafts[tag] ?? tag)}
+                    onkeydown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        renameTag(tag, advancedTagNameDrafts[tag] ?? tag);
+                      } else if (e.key === 'Escape') {
+                        advancedTagNameDrafts = { ...advancedTagNameDrafts, [tag]: tag };
+                      }
+                    }}
+                    aria-label={`${t('new_tags', {}, 'Tags')} ${tag}`}
+                  />
+                  <button
+                    type="button"
+                    class="flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    onclick={() => removeTag(tag)}
+                    aria-label={`${t('button_close', {}, 'Remove')} ${tag}`}
+                  >
+                    <XIcon class="h-4 w-4" />
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div class="rounded-xl border border-dashed border-border/60 px-3 py-4 text-sm opacity-70">
+              {t('placeholder_tags_example', {}, 'e.g. personal, important')}
+            </div>
+          {/if}
+        </div>
+      </div>
+      <Sheet.Footer class="border-t border-border/60">
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => (advancedTagSheetOpen = false)}
+        >
+          {t('button_close', {}, 'Close')}
+        </Button>
+      </Sheet.Footer>
     </Sheet.Content>
   </Sheet.Root>
   </div>

@@ -2,6 +2,7 @@ import { Dialog as SheetPrimitive } from "bits-ui";
 
 import Title from "./sheet-title.svelte";
 import Header from "./sheet-header.svelte";
+import Footer from "./sheet-footer.svelte";
 import Overlay from "./sheet-overlay.svelte";
 import Content from "./sheet-content.svelte";
 import Description from "./sheet-description.svelte";
@@ -16,6 +17,7 @@ export {
 	Title,
 	Portal,
 	Header,
+	Footer,
 	Trigger,
 	Overlay,
 	Content,
@@ -26,6 +28,7 @@ export {
 	Title as SheetTitle,
 	Portal as SheetPortal,
 	Header as SheetHeader,
+	Footer as SheetFooter,
 	Trigger as SheetTrigger,
 	Overlay as SheetOverlay,
 	Content as SheetContent,

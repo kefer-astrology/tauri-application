@@ -40,11 +40,16 @@ export interface ChartData {
   latitude?: number;
   longitude?: number;
   timezone?: string;
+  utcOffset?: string;
+  locationRegime?: 'auto' | 'manual';
+  timeRegime?: 'auto' | 'manual';
   observableObjects?: string[];
   aspectOrbs?: Record<string, number>;
   selectedAspects?: string[];
   ayanamsa?: string | null;
   timeSystem?: string | null;
+  rodenRating?: string | null;
+  tagColors?: Record<string, string>;
   computed?: {
     positions?: Record<string, unknown>;
     motion?: Record<string, { speed: number; retrograde: boolean }>;
@@ -321,6 +326,9 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
         latitude: chart.latitude ?? defaults.locationLatitude,
         longitude: chart.longitude ?? defaults.locationLongitude,
         timezone,
+        ...(chart.utcOffset ? { utc_offset: chart.utcOffset } : {}),
+        ...(chart.locationRegime ? { location_mode: chart.locationRegime } : {}),
+        ...(chart.timeRegime ? { timezone_mode: chart.timeRegime } : {}),
       },
     },
     config: {
@@ -337,5 +345,7 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
       ...(chart.timeSystem ? { time_system: chart.timeSystem } : {}),
     },
     tags: chart.tags ?? [],
+    ...(chart.tagColors && Object.keys(chart.tagColors).length > 0 ? { tag_colors: chart.tagColors } : {}),
+    ...(chart.rodenRating ? { roden_rating: chart.rodenRating } : {}),
   };
 }

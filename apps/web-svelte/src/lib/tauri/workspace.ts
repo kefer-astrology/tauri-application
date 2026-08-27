@@ -104,6 +104,9 @@ export function chartDetailsToChartData(details: ChartDetails): ChartData {
     latitude: details.subject.location.latitude,
     longitude: details.subject.location.longitude,
     timezone: details.subject.location.timezone,
+    utcOffset: details.subject.location.utc_offset ?? undefined,
+    locationRegime: details.subject.location.location_mode ?? undefined,
+    timeRegime: details.subject.location.timezone_mode ?? undefined,
     houseSystem: details.config.house_system,
     zodiacType: details.config.zodiac_type,
     engine: details.config.engine,
@@ -114,6 +117,8 @@ export function chartDetailsToChartData(details: ChartDetails): ChartData {
     selectedAspects: details.config.selected_aspects,
     ayanamsa: details.config.ayanamsa,
     timeSystem: details.config.time_system,
+    rodenRating: details.roden_rating,
+    tagColors: details.tag_colors,
     tags: details.tags
   };
 }
@@ -188,6 +193,10 @@ export function resolveLocation(query: string): Promise<ResolvedLocation> {
 
 export function searchLocations(query: string): Promise<ResolvedLocation[]> {
   return invoke<ResolvedLocation[]>('search_locations', { query });
+}
+
+export function resolveTimezone(latitude: number, longitude: number): Promise<string> {
+  return invoke<string>('resolve_timezone', { latitude, longitude });
 }
 
 export function createChart(

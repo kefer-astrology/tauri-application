@@ -201,6 +201,9 @@ export interface ChartDetails {
       latitude: number;
       longitude: number;
       timezone: string;
+      utc_offset?: string | null;
+      location_mode?: 'auto' | 'manual' | null;
+      timezone_mode?: 'auto' | 'manual' | null;
     };
   };
   config: {
@@ -217,6 +220,8 @@ export interface ChartDetails {
     time_system?: string | null;
   };
   tags: string[];
+  tag_colors?: Record<string, string>;
+  roden_rating?: string | null;
 }
 
 export interface MoonDetails {
