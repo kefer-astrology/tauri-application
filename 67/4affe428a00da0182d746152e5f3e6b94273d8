@@ -1,0 +1,52 @@
+src-tauri/src/houses.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 26,36,45-46,324-325,464-467
+src-tauri/src/jpl_backend.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 26-28,31-33,118-119,137-142,156-160,339-343,348-352,401-402,419-421,521-529,544-547,608-613,617-620
+src-tauri/build.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 13-14,33-36,73-80
+src-tauri/src/astronomy.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 151-157
+src-tauri/src/backend.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 116-118
+src-tauri/src/astrology.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 272-274,344-347,350-353,376-378,440-443,474-477,481-484,493-497,500-503,549-551,578-581,593-598
+src-tauri/src/commands/workspace.rs
+  s_b4863ad268c11f::t_b706da356844cf 696-700,2224,2390-2431,2433-2445
+  s_b4863ad268c11f::t_2f60e213c6fe4b 228-231,377-387,488-491,534-536,545-548,638-639,693-695,702,737,949,1034-1035,1224-1239,1543-1546,1558-1561,1563-1566,1702-1714,1753,1767-1768,1881-1882,1891-1894,1897-1900,1912-1913,1918-1921,1934-1937,1976-1977,2051,2079,2084-2087,2108-2111,2129-2130,2138,2145-2146,2177-2180,2248,2271-2273,2275-2286,2310-2314,2325-2328,2353-2357,2432,2446-2448,2485-2488,2559-2563,2588-2589,2618-2619,2654,2683-2685
+  s_b4863ad268c11f::t_2228d725e750c3 78-99,313-314,461-462,477-487,492-533,537-544,549-557,704
+  s_b4863ad268c11f::t_2283e9e55de377 558,701,703,705
+src-tauri/src/commands/storage.rs
+  s_b4863ad268c11f::t_2228d725e750c3 20-21
+src-tauri/src/workspace/models.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 282-284
+src-tauri/src/lib.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 1,10,14,29,57-59
+  s_b4863ad268c11f::t_2228d725e750c3 25-27,90-91
+src-tauri/src/lunar_phase.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 146-149,151-158
+src-tauri/src/ephemeris_manager.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 110,232-234,375-379,383-387,496-500,523-526
+src-tauri/src/swisseph.rs
+  s_b4863ad268c11f::t_2f60e213c6fe4b 70-76,179-194,220-223,245-248,436-444,448-454
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "674affe428a00da0182d746152e5f3e6b94273d8",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_b4863ad268c11f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a044b3-2e9c-7650-a8bb-10fb92640aa5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
