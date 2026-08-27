@@ -1,7 +1,8 @@
 export type ObservableObjectCategory =
 	| 'luminaries'
 	| 'personal_planets'
-	| 'social_outer_planets'
+	| 'social_planets'
+	| 'transpersonal_planets'
 	| 'angles'
 	| 'lunar_nodes'
 	| 'calculated_points'
@@ -100,7 +101,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		labelKey: 'planet_jupiter',
 		fallbackLabel: 'Jupiter',
 		icon: '♃',
-		category: 'social_outer_planets',
+		category: 'social_planets',
 		status: 'available'
 	},
 	{
@@ -108,7 +109,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		labelKey: 'planet_saturn',
 		fallbackLabel: 'Saturn',
 		icon: '♄',
-		category: 'social_outer_planets',
+		category: 'social_planets',
 		status: 'available'
 	},
 	{
@@ -116,7 +117,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		labelKey: 'planet_uranus',
 		fallbackLabel: 'Uranus',
 		icon: '♅',
-		category: 'social_outer_planets',
+		category: 'transpersonal_planets',
 		status: 'available'
 	},
 	{
@@ -124,7 +125,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		labelKey: 'planet_neptune',
 		fallbackLabel: 'Neptune',
 		icon: '♆',
-		category: 'social_outer_planets',
+		category: 'transpersonal_planets',
 		status: 'available'
 	},
 	{
@@ -132,7 +133,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		labelKey: 'planet_pluto',
 		fallbackLabel: 'Pluto',
 		icon: '♇',
-		category: 'social_outer_planets',
+		category: 'transpersonal_planets',
 		status: 'available'
 	},
 	{
@@ -689,7 +690,11 @@ export const OBSERVABLE_OBJECT_CATEGORY_LABELS: Record<
 > = {
 	luminaries: { labelKey: 'transits_group_luminaries', fallbackLabel: 'Luminaries' },
 	personal_planets: { labelKey: 'transits_group_personal_planets', fallbackLabel: 'Personal Planets' },
-	social_outer_planets: { labelKey: 'transits_group_social', fallbackLabel: 'Social and Outer Planets' },
+	social_planets: { labelKey: 'transits_group_social', fallbackLabel: 'Social Planets' },
+	transpersonal_planets: {
+		labelKey: 'transits_group_transpersonal',
+		fallbackLabel: 'Transpersonal Planets'
+	},
 	angles: { labelKey: 'observable_category_angles', fallbackLabel: 'Angles' },
 	lunar_nodes: { labelKey: 'transits_group_lunar_nodes', fallbackLabel: 'Lunar Nodes' },
 	calculated_points: { labelKey: 'observable_category_calculated_points', fallbackLabel: 'Calculated Points' },

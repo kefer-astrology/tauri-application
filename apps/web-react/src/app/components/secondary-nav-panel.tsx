@@ -39,6 +39,7 @@ export function SecondaryNavPanel({
 	return (
 		<aside
 			data-tour="secondary-navigation"
+			data-titlebar-secondary-rail="fixed"
 			className={cn(
 				'flex h-full min-h-0 w-[220px] shrink-0 flex-col border-r pt-2 transition-all duration-300 ease-in-out',
 				st.bg,

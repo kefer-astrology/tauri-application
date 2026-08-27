@@ -1043,6 +1043,8 @@ export function NewHoroscope({
 							<div className="flex flex-col gap-2">
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
 								<ModeSwitcherList
+									value={timeRegime}
+									onValueChange={setTimeRegime}
 									ariaLabel={t('new_time_regime')}
 									options={[
 										{ value: 'auto', label: t('new_time_regime_auto') },
@@ -1169,6 +1171,8 @@ export function NewHoroscope({
 							<div className="flex flex-col gap-2 md:col-start-2">
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location_regime')}</Label>
 								<ModeSwitcherList
+									value={locationRegime}
+									onValueChange={setLocationRegime}
 									ariaLabel={t('new_location_regime')}
 									options={[
 										{ value: 'auto', label: t('new_time_regime_auto') },

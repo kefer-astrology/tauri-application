@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
@@ -14,6 +14,8 @@ interface SidebarProps {
 	onMenuItemClick?: (itemId: string) => void;
 	activeMenuItem?: string;
 	appShellIconSet?: AppShellIconSetId;
+	isExpanded: boolean;
+	onExpandedChange: (isExpanded: boolean) => void;
 }
 
 /** `internal_name` in translations.csv */
@@ -145,10 +147,11 @@ export function AstrologySidebar({
 	currentTheme = 'noon',
 	onMenuItemClick,
 	activeMenuItem,
-	appShellIconSet = 'default'
+	appShellIconSet = 'default',
+	isExpanded,
+	onExpandedChange
 }: SidebarProps) {
 	const { t } = useTranslation();
-	const [isExpanded, setIsExpanded] = useState(true);
 
 	const themeLabels = useMemo(
 		() => ({
@@ -163,7 +166,7 @@ export function AstrologySidebar({
 	// Use activeMenuItem from props or default to 'horoskop'
 	const currentActiveItem = activeMenuItem || 'horoskop';
 
-	const toggleSidebar = () => setIsExpanded(!isExpanded);
+	const toggleSidebar = () => onExpandedChange(!isExpanded);
 
 	const handleThemeClick = (theme: Theme) => {
 		onThemeChange?.(theme);

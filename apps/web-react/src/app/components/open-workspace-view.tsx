@@ -463,6 +463,7 @@ export function OpenWorkspaceView({
 					)}
 				>
 					<aside
+						data-titlebar-secondary-rail="responsive"
 						className="relative flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-b xl:w-[var(--open-filter-width)] xl:border-r xl:border-b-0"
 						style={
 							{

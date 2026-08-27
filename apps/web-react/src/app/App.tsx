@@ -228,6 +228,7 @@ export default function App() {
 	const [activeView, setActiveView] = useState<string>('horoskop');
 	const [activeTransitSection, setActiveTransitSection] = useState<TransitSection>('general');
 	const [activeSettingsSection, setActiveSettingsSection] = useState<SettingsSectionId>('jazyk');
+	const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 	const [workspacePath, setWorkspacePath] = useState<string | null>(null);
 	const [charts, setCharts] = useState<AppChart[]>(() => [
 		createBootstrapChart(DEFAULT_WORKSPACE_DEFAULTS)
@@ -589,7 +590,15 @@ export default function App() {
 		<>
 			<WorkspaceChartsProvider value={workspaceChartsValue}>
 				<div className="flex h-screen flex-col overflow-hidden" style={currentThemeStyle}>
-					<WindowTitlebar />
+					<WindowTitlebar
+						isSidebarExpanded={isSidebarExpanded}
+						showSecondarySidebar={
+							activeView === 'otevrit' ||
+							activeView === 'tranzity' ||
+							activeView === 'dynamika' ||
+							activeView === 'nastaveni'
+						}
+					/>
 					<div className="flex min-h-0 flex-1 overflow-hidden">
 						{/* Main Sidebar */}
 						<AstrologySidebar
@@ -598,6 +607,8 @@ export default function App() {
 							appShellIconSet={appShellIconSet}
 							onMenuItemClick={handleMenuItemClick}
 							activeMenuItem={activeView}
+							isExpanded={isSidebarExpanded}
+							onExpandedChange={setIsSidebarExpanded}
 						/>
 
 						{/* Secondary Sidebar for Transits and Dynamic Transits */}
