@@ -1,0 +1,62 @@
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_b4863ad268c11f::t_98f2e50b6a76a5 1046-1047,1174-1175
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_b4863ad268c11f::t_8080b869bdc065 4-5,104,112,120,128,136,693-697
+apps/web-react/src/app/App.tsx
+  s_b4863ad268c11f::t_7290f83d1a3357 593-601
+  s_b4863ad268c11f::t_ef4d0c383d8231 231,610-611
+apps/web-react/src/app/components/window-titlebar.tsx
+  s_b4863ad268c11f::t_18b05c685f1634 5,10-11,13-14,57-62,64,75
+  s_b4863ad268c11f::t_7290f83d1a3357 1,12,15-46,65-74
+  s_b4863ad268c11f::t_eb93035cc82d6c 8,55,63
+  s_b4863ad268c11f::t_ef6744bc35a79b 9
+apps/web-react/src/locales/cs.json
+  s_b4863ad268c11f::t_84584fdf5199e1 71-72,74,93,244,521-522
+apps/web-react/src/app/components/secondary-nav-panel.tsx
+  s_b4863ad268c11f::t_7290f83d1a3357 42
+apps/web-react/src/app/components/ui/switch.tsx
+  s_b4863ad268c11f::t_98f2e50b6a76a5 13,20
+apps/web-svelte/src/lib/i18n/cs.json
+  s_b4863ad268c11f::t_84584fdf5199e1 93,244,521-522
+apps/web-react/src/locales/en.json
+  s_b4863ad268c11f::t_84584fdf5199e1 71-72,74,93,244,522
+apps/web-react/src/locales/fr.json
+  s_b4863ad268c11f::t_84584fdf5199e1 71-72,74,93,244,522
+apps/web-react/src/locales/es.json
+  s_b4863ad268c11f::t_84584fdf5199e1 71-72,74,93,244,522
+apps/web-react/src/app/components/mode-switcher.tsx
+  s_b4863ad268c11f::t_98f2e50b6a76a5 1,19,21,27,29,33-37,39-40,43,47-80,93-101
+apps/web-react/src/app/components/open-workspace-view.tsx
+  s_b4863ad268c11f::t_7290f83d1a3357 466
+translations.csv
+  s_b4863ad268c11f::t_8080b869bdc065 521-522
+apps/web-svelte/src/lib/i18n/en.json
+  s_b4863ad268c11f::t_84584fdf5199e1 93,244,522
+apps/web-react/src/app/components/astrology-sidebar.tsx
+  s_b4863ad268c11f::t_18b05c685f1634 1,17-18,150-152,169
+apps/web-svelte/src/lib/i18n/fr.json
+  s_b4863ad268c11f::t_84584fdf5199e1 93,244,522
+apps/web-svelte/src/lib/i18n/es.json
+  s_b4863ad268c11f::t_84584fdf5199e1 93,244,522
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "85240e5b18b482c77f68059ba61593ab670f9b09",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_b4863ad268c11f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a044b3-2e9c-7650-a8bb-10fb92640aa5",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
