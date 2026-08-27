@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next';
 import {
 	computeChartFromData,
 	computeCrossAspectsFromData,
-	computeTransitSeries
+	computeTransitSeries,
+	loadTransitSetup,
+	saveTransitSetup
 } from '@/lib/tauri/workspace';
-import type { TransitSeriesEntry } from '@/lib/tauri/types';
+import type { TransitSeriesEntry, TransitSetup } from '@/lib/tauri/types';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Checkbox } from './ui/checkbox';
@@ -141,6 +143,48 @@ export function TransitsContent({
 		setSourceChartId(selectedChartId ?? charts[0].id);
 	}, [charts, selectedChartId, sourceChartId]);
 
+	useEffect(() => {
+		let cancelled = false;
+		setTransitSeries([]);
+		setTransitError(null);
+		clearTransitOverlay();
+
+		if (!workspacePath || !effectiveSourceChartId) {
+			return () => {
+				cancelled = true;
+			};
+		}
+
+		void loadTransitSetup(workspacePath, effectiveSourceChartId)
+			.then((setup) => {
+				if (cancelled || !setup) return;
+				setSelectedTypeId(setup.transit_type);
+				setPeriodModeId(setup.period_mode);
+				setFromDate(setup.from_date);
+				setFromTime(setup.from_time);
+				setToDate(setup.to_date);
+				setToTime(setup.to_time);
+				setTransitingBodies(setup.transiting_bodies);
+				setTransitedBodies(setup.transited_bodies);
+				setSelectedAspects(setup.aspect_types);
+				setCheckboxes({
+					houseTransitions: setup.house_transitions,
+					signTransitions: setup.sign_transitions,
+					transitLimits: setup.transit_limits,
+					precessionCorrection: setup.precession_correction
+				});
+			})
+			.catch((err) => {
+				if (cancelled) return;
+				console.error('Failed to load transit setup:', err);
+				setTransitError(err instanceof Error ? err.message : 'Failed to load transit setup.');
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [clearTransitOverlay, effectiveSourceChartId, workspacePath]);
+
 	const transitResultsCountLabel = useMemo(
 		() => t('transit_results_count').replace('{count}', String(transitSeries.length)),
 		[t, transitSeries.length]
@@ -197,6 +241,28 @@ export function TransitsContent({
 		setTransitSeries([]);
 
 		try {
+			if (workspacePath) {
+				const setup: TransitSetup = {
+					version: 1,
+					source_chart_id: effectiveSourceChartId,
+					transit_type: selectedTypeId,
+					period_mode: periodModeId,
+					from_date: fromDate,
+					from_time: fromTime,
+					to_date: toDate,
+					to_time: toTime,
+					time_step_seconds: 3600,
+					transiting_bodies: transitingBodies,
+					transited_bodies: transitedBodies,
+					aspect_types: selectedAspects,
+					house_transitions: checkboxes.houseTransitions,
+					sign_transitions: checkboxes.signTransitions,
+					transit_limits: checkboxes.transitLimits,
+					precession_correction: checkboxes.precessionCorrection
+				};
+				await saveTransitSetup(workspacePath, setup);
+			}
+
 			const radixComputed = await ensureChartComputed(sourceChart);
 			const transitDateTime = range.endDatetime;
 			const transitChart: AppChart = {

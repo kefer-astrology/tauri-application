@@ -67,10 +67,11 @@ export function AppMainContentContainer({
 		return (
 			<div
 				className={cn(
-					'w-full xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_minmax(0,1fr)]'
+					'mx-auto w-full min-w-0 md:w-[88%] lg:w-[76%] xl:w-[64%]',
+					className
 				)}
 			>
-				<div className={cn('min-w-0 xl:col-start-2', className)}>{children}</div>
+				{children}
 			</div>
 		);
 	}

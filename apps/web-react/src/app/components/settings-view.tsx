@@ -12,6 +12,7 @@ import { ColorInput } from './ui/color-input';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
+import { Switch } from './ui/switch';
 import {
 	Select,
 	SelectContent,
@@ -51,6 +52,41 @@ const LANG_BUBBLES: { code: AppLanguage; label: string }[] = [
 ];
 
 const HOUSE_SYSTEMS = SUPPORTED_RUST_HOUSE_SYSTEMS;
+
+type ParsedThemeColor = {
+	hex: string;
+	alpha: number;
+};
+
+function parseThemeColor(value: string): ParsedThemeColor {
+	const hex = value.trim().match(/^#([\da-f]{6})([\da-f]{2})?$/i);
+	if (hex) {
+		return {
+			hex: `#${hex[1]}`,
+			alpha: hex[2] ? Number.parseInt(hex[2], 16) / 255 : 1
+		};
+	}
+
+	const rgb = value
+		.trim()
+		.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+	if (!rgb) return { hex: '#000000', alpha: 1 };
+
+	const channels = rgb.slice(1, 4).map((channel) =>
+		Math.min(255, Math.max(0, Math.round(Number(channel))))
+	);
+	return {
+		hex: `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`,
+		alpha: Math.min(1, Math.max(0, rgb[4] === undefined ? 1 : Number(rgb[4])))
+	};
+}
+
+function formatThemeColor(hex: string, alpha: number): string {
+	if (alpha >= 1) return hex;
+	const normalized = hex.replace('#', '');
+	const channels = [0, 2, 4].map((offset) => Number.parseInt(normalized.slice(offset, offset + 2), 16));
+	return `rgba(${channels.join(',')},${Number(alpha.toFixed(2))})`;
+}
 
 /** Historical house-system names stay untranslated across languages; only real words get a key. */
 const HOUSE_SYSTEM_LABEL_KEYS: Partial<Record<(typeof HOUSE_SYSTEMS)[number], string>> = {
@@ -938,20 +974,54 @@ function SettingsView({
 													['hoverBackground', 'settings_theme_hover_background'],
 													['selectedBackground', 'settings_theme_selected_background']
 												] as const
-											).map(([key, labelKey]) => (
-												<div key={key} className="space-y-1">
-													<Label className={ft.label}>{t(labelKey)}</Label>
-													<Input
-														className={ft.inputCompact}
-														value={themePaletteDraft[key]}
-														onChange={(e) => {
-															const value = e.target.value;
-															setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
-															markChanged();
-														}}
-													/>
-												</div>
-											))}
+							).map(([key, labelKey]) => {
+								const parsedColor = parseThemeColor(themePaletteDraft[key]);
+								const defaultAlpha = parseThemeColor(DEFAULT_THEME_PALETTES[theme][key]).alpha;
+								const transparencyId = `settings-${key}-transparency`;
+								return (
+									<div key={key} className="space-y-2">
+										<Label className={ft.label}>{t(labelKey)}</Label>
+										<div className="flex items-center gap-3">
+											<Input
+												className={cn(ft.inputCompact, 'min-w-0 flex-1')}
+												value={themePaletteDraft[key]}
+												onChange={(e) => {
+													const value = e.target.value;
+													setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+													markChanged();
+												}}
+											/>
+											<ColorInput
+												className="w-14"
+												value={parsedColor.hex}
+												onChange={(event) => {
+													const value = formatThemeColor(event.target.value, parsedColor.alpha);
+													setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+													markChanged();
+												}}
+												aria-label={t(labelKey)}
+											/>
+										</div>
+										<div className="flex items-center gap-2">
+											<Switch
+												id={transparencyId}
+												checked={parsedColor.alpha < 1}
+												onCheckedChange={(checked) => {
+													const alpha = checked ? defaultAlpha : 1;
+													setThemePaletteDraft((prev) => ({
+														...prev,
+														[key]: formatThemeColor(parsedColor.hex, alpha)
+													}));
+													markChanged();
+												}}
+											/>
+											<Label htmlFor={transparencyId} className={cn('cursor-pointer text-xs', ft.muted)}>
+												{t('settings_theme_transparency')}
+											</Label>
+										</div>
+									</div>
+								);
+							})}
 										</div>
 										<div className="pt-1">
 											<Button

@@ -286,7 +286,7 @@ export function chartDataToComputePayload(
 	const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
 	const model = asNonEmpty(chart.model);
 	const observableObjects =
-		chart.observableObjects && chart.observableObjects.length > 0
+		Array.isArray(chart.observableObjects)
 			? chart.observableObjects
 			: defaults.defaultBodies.length > 0
 				? defaults.defaultBodies

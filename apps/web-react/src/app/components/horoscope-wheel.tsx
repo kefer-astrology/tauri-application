@@ -245,15 +245,11 @@ export type HoroscopeWheelObjectLayer = 'radix' | 'transit';
 export interface HoroscopeWheelObjectInteraction {
 	bodyId: string;
 	layer: HoroscopeWheelObjectLayer;
-	clientX: number;
-	clientY: number;
 }
 
 export interface HoroscopeWheelAspectInteraction {
 	aspect: RadixAspectDrawInput;
 	index: number;
-	clientX: number;
-	clientY: number;
 }
 
 export interface HoroscopeWheelProps {
@@ -296,6 +292,8 @@ export interface HoroscopeWheelProps {
 	showAxisLines?: boolean;
 	selectedObject?: Pick<HoroscopeWheelObjectInteraction, 'bodyId' | 'layer'> | null;
 	selectedAspectIndex?: number | null;
+	/** Aspect indices (into `radixAspects`) to keep at full opacity; the rest dim. Driven by clicking a body. */
+	highlightAspectIndices?: ReadonlySet<number>;
 	onObjectClick?: (interaction: HoroscopeWheelObjectInteraction) => void;
 	onAspectClick?: (interaction: HoroscopeWheelAspectInteraction) => void;
 	onWheelBackgroundClick?: () => void;
@@ -326,6 +324,7 @@ export function HoroscopeWheel({
 	lightPlanetFill = 'var(--theme-content-primary)',
 	selectedObject,
 	selectedAspectIndex,
+	highlightAspectIndices = new Set(),
 	onObjectClick,
 	onAspectClick,
 	onWheelBackgroundClick,
@@ -472,12 +471,7 @@ export function HoroscopeWheel({
 		layer: HoroscopeWheelObjectLayer
 	) => {
 		event.stopPropagation();
-		onObjectClick?.({
-			bodyId,
-			layer,
-			clientX: event.clientX,
-			clientY: event.clientY
-		});
+		onObjectClick?.({ bodyId, layer });
 	};
 
 	return (
@@ -943,6 +937,10 @@ export function HoroscopeWheel({
 					const key = `${aspect.from}-${aspect.to}-${aspect.type}-${idx}`;
 					const isSelected = selectedAspectIndex === idx;
 					const selectionActive = selectedAspectIndex != null;
+					const isHighlighted = highlightAspectIndices.has(idx);
+					const highlightActive = highlightAspectIndices.size > 0;
+					const emphasized = isSelected || isHighlighted;
+					const dimActive = selectionActive || highlightActive;
 					return [
 						<g key={key}>
 							<line
@@ -953,7 +951,7 @@ export function HoroscopeWheel({
 								stroke={stroke}
 								strokeWidth={sw}
 								strokeLinecap="round"
-								opacity={selectionActive ? (isSelected ? 1 : 0) : 0.5}
+								opacity={dimActive ? (emphasized ? 1 : 0.15) : 0.5}
 								style={{ transition: 'opacity 0.16s ease' }}
 							/>
 							<line
@@ -966,16 +964,11 @@ export function HoroscopeWheel({
 								strokeLinecap="round"
 								style={{
 									cursor: 'pointer',
-									pointerEvents: selectionActive && !isSelected ? 'none' : 'stroke'
+									pointerEvents: 'stroke'
 								}}
 								onClick={(event) => {
 									event.stopPropagation();
-									onAspectClick?.({
-										aspect,
-										index: idx,
-										clientX: event.clientX,
-										clientY: event.clientY
-									});
+									onAspectClick?.({ aspect, index: idx });
 								}}
 							/>
 						</g>

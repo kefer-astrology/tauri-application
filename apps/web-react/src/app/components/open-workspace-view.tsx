@@ -464,7 +464,7 @@ export function OpenWorkspaceView({
 				>
 					<aside
 						data-titlebar-secondary-rail="responsive"
-						className="relative flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-b xl:w-[var(--open-filter-width)] xl:border-r xl:border-b-0"
+						className="relative flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-b xl:w-[var(--open-filter-width)] xl:border-b-0"
 						style={
 							{
 								'--open-filter-width':
@@ -480,7 +480,7 @@ export function OpenWorkspaceView({
 							type="button"
 							className={cn(
 								'absolute top-0 right-0 z-30 hidden h-full w-2 cursor-col-resize touch-none xl:block',
-								'after:absolute after:inset-y-0 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-[color:var(--theme-panel-border)]',
+								'after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-[color:var(--theme-sidebar-border)]',
 								'hover:after:w-0.5 hover:after:bg-[color:var(--theme-accent)]',
 								resizingFilters && 'after:w-0.5 after:bg-[color:var(--theme-accent)]'
 							)}
@@ -510,8 +510,10 @@ export function OpenWorkspaceView({
 										size="sm"
 										onClick={() => setOpenMode(tab.id as OpenMode)}
 										className={cn(
-											'relative h-16 min-w-0 flex-1 rounded-none px-2 text-center text-sm',
-											openMode === tab.id ? ft.title : ft.muted
+											'relative h-16 min-w-0 flex-1 rounded-none px-2 text-center text-sm hover:text-[color:var(--theme-nav-text-primary)]',
+											openMode === tab.id
+												? 'text-[color:var(--theme-nav-text-primary)]'
+												: 'text-[color:var(--theme-nav-text-secondary)]'
 										)}
 									>
 										<span className="truncate">{tab.label}</span>
@@ -623,7 +625,7 @@ export function OpenWorkspaceView({
 									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
 										{t('new_location')}
 									</AccordionTrigger>
-									<AccordionContent className="px-4 sm:px-6">
+									<AccordionContent className="px-4 pt-1 sm:px-6">
 										<Input
 											type="search"
 											value={locationQuery}

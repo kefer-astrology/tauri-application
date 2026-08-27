@@ -30,7 +30,10 @@ import {
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ENABLED_ASPECT_IDS
 } from '@/lib/astrology/aspects';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import {
+	signIndexToZodiacId,
+	type AstrologyGlyphSetId
+} from '@/lib/astrology/glyphs';
 
 interface AspectariumProps {
 	theme: Theme;
@@ -167,7 +170,7 @@ function formatOrb(orb: number | undefined) {
 	return `${Math.abs(orb!).toFixed(2)}°`;
 }
 
-function formatPosition(longitude: number | null) {
+function positionParts(longitude: number | null) {
 	if (longitude === null) return null;
 	const normalized = ((longitude % 360) + 360) % 360;
 	const signIndex = Math.floor(normalized / 30) % 12;
@@ -175,7 +178,11 @@ function formatPosition(longitude: number | null) {
 	const totalMinutes = Math.round(withinSign * 60);
 	const degrees = Math.floor(totalMinutes / 60);
 	const minutes = totalMinutes % 60;
-	return `${ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈'} ${degrees}°${String(minutes).padStart(2, '0')}′`;
+	return {
+		zodiacId: signIndexToZodiacId(signIndex),
+		fallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
+		text: `${degrees}°${String(minutes).padStart(2, '0')}′`
+	};
 }
 
 function fallbackAspectLabel(type: string) {
@@ -204,6 +211,30 @@ function BodyGlyph({
 			className={className}
 			title={fallback}
 		/>
+	);
+}
+
+function PositionValue({
+	longitude,
+	glyphSet
+}: {
+	longitude: number | null;
+	glyphSet: AstrologyGlyphSetId;
+}) {
+	const position = positionParts(longitude);
+	if (!position) return null;
+
+	return (
+		<span className="inline-flex items-center justify-end gap-1.5">
+			<AstrologyGlyph
+				glyphId={position.zodiacId}
+				glyphSet={glyphSet}
+				domain="zodiac"
+				fallback={position.fallback}
+				size={13}
+			/>
+			<span>{position.text}</span>
+		</span>
 	);
 }
 
@@ -249,7 +280,7 @@ function AspectCellButton({
 	);
 }
 
-function DetailRow({ label, value }: { label: string; value: string | null }) {
+function DetailRow({ label, value }: { label: string; value: ReactNode | null }) {
 	return (
 		<div className="flex items-start justify-between gap-3 text-sm">
 			<span className="text-[color:var(--theme-content-muted)]">{label}</span>
@@ -578,8 +609,14 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 			<div className="min-w-0">
 				<p className={cn('truncate text-sm font-medium', ft.title)}>{bodyLabel(bodyId, t)}</p>
 				<p className={cn('truncate text-xs', ft.muted)}>
-					{formatPosition(normalizeLongitude(positionsForLayer(layer)[bodyId])) ??
-						t('loading_positions')}
+					{normalizeLongitude(positionsForLayer(layer)[bodyId]) === null ? (
+						t('loading_positions')
+					) : (
+						<PositionValue
+							longitude={normalizeLongitude(positionsForLayer(layer)[bodyId])}
+							glyphSet={glyphSet}
+						/>
+					)}
 				</p>
 			</div>
 		</div>
@@ -929,7 +966,14 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 									<p className={cn('text-sm font-medium', ft.title)}>{label}</p>
 								</div>
 								<DetailRow label={t('charts')} value={`${bodyLabel(bodyId, t)} · ${layerLabel}`} />
-								<DetailRow label={t('aspectarium_position')} value={formatPosition(longitude)} />
+								<DetailRow
+									label={t('aspectarium_position')}
+									value={
+										longitude === null ? null : (
+											<PositionValue longitude={longitude} glyphSet={glyphSet} />
+										)
+									}
+								/>
 								<DetailRow
 									label={t('aspectarium_absolute_longitude')}
 									value={longitude === null ? null : formatDegrees(longitude, 2)}

@@ -32,7 +32,7 @@ import {
 	OBSERVABLE_OBJECTS
 } from '@/lib/astrology/observableObjects';
 import { tagColor } from '@/lib/chartTags';
-import { ASPECT_ROWS } from '@/lib/astrology/aspects';
+import { ASPECT_GLYPHS, ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
@@ -281,7 +281,7 @@ export function HoroscopeDashboard({
 	const computedMotion = selectedChart?.computed?.motion ?? {};
 	const computedAxes = selectedChart?.computed?.axes;
 	const positionOrder =
-		selectedChart?.observableObjects && selectedChart.observableObjects.length > 0
+		selectedChart?.observableObjects !== undefined
 			? selectedChart.observableObjects
 			: workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
@@ -374,42 +374,6 @@ export function HoroscopeDashboard({
 		t,
 		transitPositions
 	]);
-	const selectedWheelPopupStyle = selectedWheelDetails
-		? {
-				left: Math.max(
-					8,
-					Math.min(
-						selectedWheelDetails.clientX + 14,
-						(typeof window === 'undefined' ? 1200 : window.innerWidth) - 260
-					)
-				),
-				top: Math.max(
-					8,
-					Math.min(
-						selectedWheelDetails.clientY + 14,
-						(typeof window === 'undefined' ? 800 : window.innerHeight) - 142
-					)
-				)
-			}
-		: undefined;
-	const selectedAspectPopupStyle = selectedWheelAspect
-		? {
-				left: Math.max(
-					8,
-					Math.min(
-						selectedWheelAspect.clientX + 14,
-						(typeof window === 'undefined' ? 1200 : window.innerWidth) - 260
-					)
-				),
-				top: Math.max(
-					8,
-					Math.min(
-						selectedWheelAspect.clientY + 14,
-						(typeof window === 'undefined' ? 800 : window.innerHeight) - 110
-					)
-				)
-			}
-		: undefined;
 	const aspectLabel = (type: string) => {
 		const definition = ASPECT_ROWS.find((aspect) => aspect.id === type);
 		return definition ? t(definition.labelKey) : type;
@@ -418,13 +382,50 @@ export function HoroscopeDashboard({
 		const meta = POSITION_META[id];
 		return meta?.labelKey ? t(meta.labelKey) : (meta?.fallbackLabel ?? id);
 	};
+	const normalizePointId = (id: string) => (id.trim().toLowerCase() === 'desc' ? 'dsc' : id.trim().toLowerCase());
 	const selectedBodyAspects =
 		selectedWheelObject?.layer === 'radix'
 			? radixAspects.filter(
 					(aspect) =>
-						aspect.from === selectedWheelObject.bodyId || aspect.to === selectedWheelObject.bodyId
+						normalizePointId(aspect.from) === normalizePointId(selectedWheelObject.bodyId) ||
+						normalizePointId(aspect.to) === normalizePointId(selectedWheelObject.bodyId)
 				)
 			: [];
+	/** Selecting a radix body highlights the aspect lines touching it; stays highlighted through the
+	 *  second click (detail panel), same as the wheel's own selected-object halo does. */
+	const highlightAspectIndicesForObject = useMemo(() => {
+		if (!selectedWheelObject || selectedWheelObject.layer !== 'radix') {
+			return new Set<number>();
+		}
+		const bodyId = normalizePointId(selectedWheelObject.bodyId);
+		const indices = new Set<number>();
+		radixAspects.forEach((aspect, idx) => {
+			if (normalizePointId(aspect.from) === bodyId || normalizePointId(aspect.to) === bodyId) {
+				indices.add(idx);
+			}
+		});
+		return indices;
+	}, [selectedWheelObject, radixAspects]);
+	/** Selecting an aspect highlights the two bodies it connects; stays highlighted through the
+	 *  second click (detail panel), same as the wheel's own selected-aspect emphasis does. */
+	const highlightBodiesForAspect = useMemo(() => {
+		if (!selectedWheelAspect) return new Set<HoroscopeWheelBody>();
+		return new Set<HoroscopeWheelBody>([
+			selectedWheelAspect.aspect.from as HoroscopeWheelBody,
+			selectedWheelAspect.aspect.to as HoroscopeWheelBody
+		]);
+	}, [selectedWheelAspect]);
+
+	/** Shared by the wheel's object click and the Positions list row click, so either entry point
+	 *  drives the same first-click-highlights / second-click-opens-detail behavior. */
+	const handleObjectSelect = (interaction: HoroscopeWheelObjectInteraction) => {
+		const alreadySelected =
+			selectedWheelObject?.bodyId === interaction.bodyId &&
+			selectedWheelObject.layer === interaction.layer;
+		setSelectedWheelObject(interaction);
+		setSelectedWheelAspect(null);
+		setWheelDetailKind(alreadySelected ? 'object' : null);
+	};
 
 	useEffect(() => {
 		setSelectedWheelObject(null);
@@ -715,14 +716,10 @@ export function HoroscopeDashboard({
 							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
 							selectedObject={selectedWheelObject}
 							selectedAspectIndex={selectedWheelAspect?.index}
-							onObjectClick={(interaction) => {
-								const alreadySelected =
-									selectedWheelObject?.bodyId === interaction.bodyId &&
-									selectedWheelObject.layer === interaction.layer;
-								setSelectedWheelObject(interaction);
-								setSelectedWheelAspect(null);
-								setWheelDetailKind(alreadySelected ? 'object' : null);
-							}}
+							highlightAspectIndices={highlightAspectIndicesForObject}
+							highlightBodies={highlightBodiesForAspect}
+							dimNonHighlighted={highlightBodiesForAspect.size > 0}
+							onObjectClick={handleObjectSelect}
 							onAspectClick={(interaction) => {
 								const alreadySelected = selectedWheelAspect?.index === interaction.index;
 								setSelectedWheelAspect(interaction);
@@ -783,11 +780,16 @@ export function HoroscopeDashboard({
 												<div
 													key={pos.id}
 													className={cn(
-														'flex items-center gap-0.5',
+														'flex items-center gap-0.5 rounded-md px-1 py-0.5 cursor-pointer transition-colors',
 														textColor,
-														'font-mono text-sm leading-none tabular-nums'
+														'font-mono text-sm leading-none tabular-nums',
+														selectedWheelObject?.layer === 'radix' &&
+															selectedWheelObject.bodyId === pos.id
+															? 'bg-[color:var(--theme-selected-bg)]'
+															: hoverBg
 													)}
 													title={pos.label}
+													onClick={() => handleObjectSelect({ bodyId: pos.id, layer: 'radix' })}
 												>
 													<span
 														className={cn(
@@ -836,89 +838,9 @@ export function HoroscopeDashboard({
 				</div>
 			</div>
 
-			{wheelDetailKind === null && selectedWheelDetails && selectedWheelPopupStyle ? (
-				<div
-					className={cn(
-						'pointer-events-none fixed z-[60] w-64 rounded-lg border px-3 py-2.5 shadow-xl backdrop-blur-md',
-						borderColor,
-						'bg-[color:var(--theme-panel-bg)]/95'
-					)}
-					style={selectedWheelPopupStyle}
-				>
-					<div className="mb-2 flex items-center justify-between gap-3">
-						<div className="flex min-w-0 items-center gap-2">
-							<AstrologyGlyph
-								glyphId={selectedWheelDetails.bodyId}
-								glyphSet={glyphSet}
-								fallback={selectedWheelDetails.position.icon}
-								size={18}
-								title={selectedWheelDetails.position.label}
-								className="shrink-0"
-							/>
-							<div className={cn('truncate text-sm font-semibold', textColor)}>
-								{selectedWheelDetails.position.label}
-							</div>
-						</div>
-						<div className={cn('shrink-0 text-[11px] font-medium', mutedColor)}>
-							{selectedWheelDetails.layerLabel}
-						</div>
-					</div>
-					<div className="space-y-1 font-mono text-xs tabular-nums">
-						<div className="flex items-center justify-between gap-3">
-							<span className={mutedColor}>{t('aspectarium_position')}</span>
-							<span className={cn('flex items-center gap-1', textColor)}>
-								{selectedWheelDetails.position.degrees}°
-								<AstrologyGlyph
-									glyphId={selectedWheelDetails.position.signZodiacId}
-									glyphSet={glyphSet}
-									domain="zodiac"
-									fallback={selectedWheelDetails.position.signGlyphFallback}
-									size={16}
-									title={selectedWheelDetails.position.signZodiacId}
-								/>
-								{selectedWheelDetails.position.minutes}' {selectedWheelDetails.position.seconds}"
-							</span>
-						</div>
-						<div className="flex items-center justify-between gap-3">
-							<span className={mutedColor}>{t('aspectarium_absolute_longitude')}</span>
-							<span className={textColor}>{selectedWheelDetails.longitude.toFixed(2)}°</span>
-						</div>
-						<div className="flex items-center justify-between gap-3">
-							<span className={mutedColor}>{t('open_filter_motion')}</span>
-							<span className={textColor}>
-								{selectedWheelDetails.position.retrograde ? 'R' : 'D'}
-							</span>
-						</div>
-					</div>
-				</div>
-			) : null}
-
-			{wheelDetailKind === null && selectedWheelAspect && selectedAspectPopupStyle ? (
-				<div
-					className={cn(
-						'pointer-events-none fixed z-[60] w-64 rounded-lg border px-3 py-2.5 shadow-xl backdrop-blur-md',
-						borderColor,
-						'bg-[color:var(--theme-panel-bg)]/95'
-					)}
-					style={selectedAspectPopupStyle}
-				>
-					<div className={cn('mb-2 text-sm font-semibold', textColor)}>
-						{aspectLabel(selectedWheelAspect.aspect.type)}
-					</div>
-					<div className="space-y-1 text-xs">
-						<div className="flex items-center justify-between gap-3">
-							<span className={mutedColor}>
-								{objectLabel(selectedWheelAspect.aspect.from)} →{' '}
-								{objectLabel(selectedWheelAspect.aspect.to)}
-							</span>
-						</div>
-						<div className="flex items-center justify-between gap-3 font-mono tabular-nums">
-							<span className={mutedColor}>{t('label_orb')}</span>
-							<span className={textColor}>{selectedWheelAspect.aspect.orb.toFixed(2)}°</span>
-						</div>
-					</div>
-				</div>
-			) : null}
+			{/* First click on a body/aspect now highlights related wheel elements (see
+			    highlightAspectIndicesForObject / highlightBodiesForAspect above) instead of showing a
+			    floating details popup here; the second click opens the full detail side panel below. */}
 
 			<DetailSidePanel
 				theme={theme}
@@ -996,8 +918,25 @@ export function HoroscopeDashboard({
 												className="rounded-lg bg-[color:var(--theme-soft-bg)] px-3 py-2"
 											>
 												<div className="flex items-center justify-between gap-3 text-sm">
-													<span className={textColor}>{objectLabel(otherId)}</span>
-													<span className={mutedColor}>{aspectLabel(aspect.type)}</span>
+													<span className={cn('flex items-center gap-1.5', textColor)}>
+														{objectLabel(otherId)}
+														<AstrologyGlyph
+															glyphId={otherId}
+															glyphSet={glyphSet}
+															fallback={POSITION_META[otherId]?.icon ?? otherId.slice(0, 3)}
+															size={16}
+														/>
+													</span>
+													<span className={cn('flex items-center gap-1.5', mutedColor)}>
+														<AstrologyGlyph
+															glyphId={aspect.type}
+															glyphSet={glyphSet}
+															domain="aspect"
+															fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
+															size={16}
+														/>
+														{aspectLabel(aspect.type)}
+													</span>
 												</div>
 												<div
 													className={cn(
@@ -1021,13 +960,34 @@ export function HoroscopeDashboard({
 						<div className="rounded-lg bg-[color:var(--theme-soft-bg)] p-4">
 							<div className="flex items-center justify-between gap-3">
 								<span className={mutedColor}>{t('aspects')}</span>
-								<span className={cn('font-semibold', textColor)}>
+								<span className={cn('flex items-center gap-1.5 font-semibold', textColor)}>
+									<AstrologyGlyph
+										glyphId={selectedWheelAspect.aspect.type}
+										glyphSet={glyphSet}
+										domain="aspect"
+										fallback={ASPECT_GLYPHS[selectedWheelAspect.aspect.type] ?? '•'}
+										size={16}
+									/>
 									{aspectLabel(selectedWheelAspect.aspect.type)}
 								</span>
 							</div>
 							<div className="mt-3 flex items-center justify-between gap-3">
 								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.from)}</span>
-								<span className={textColor}>→</span>
+								<div className="flex items-center gap-2">
+									<AstrologyGlyph
+										glyphId={selectedWheelAspect.aspect.from}
+										glyphSet={glyphSet}
+										fallback={POSITION_META[selectedWheelAspect.aspect.from]?.icon ?? selectedWheelAspect.aspect.from.slice(0, 3)}
+										size={18}
+									/>
+									<span className={textColor}>→</span>
+									<AstrologyGlyph
+										glyphId={selectedWheelAspect.aspect.to}
+										glyphSet={glyphSet}
+										fallback={POSITION_META[selectedWheelAspect.aspect.to]?.icon ?? selectedWheelAspect.aspect.to.slice(0, 3)}
+										size={18}
+									/>
+								</div>
 								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.to)}</span>
 							</div>
 							<div className="mt-3 flex items-center justify-between gap-3 font-mono tabular-nums">
@@ -1045,7 +1005,7 @@ export function HoroscopeDashboard({
 				onOpenChange={setShowPositionModal}
 				title={t('dashboard_positions_picker_title')}
 				description={t('aspectarium_selected_count', { count: pickerBodies.length })}
-				contentClassName="sm:max-w-xl lg:w-[min(48rem,70vw)] lg:max-w-3xl"
+				contentClassName="sm:max-w-lg lg:w-[30vw] lg:max-w-xl"
 				bodyClassName="overflow-hidden p-0"
 			>
 				<div className="flex h-full min-h-0 flex-col">

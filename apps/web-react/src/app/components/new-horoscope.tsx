@@ -985,6 +985,26 @@ export function NewHoroscope({
 						onValueChange={(value) => setTimeRegime(value as TimeRegime)}
 						className="gap-3"
 					>
+						<div className="flex flex-col gap-2">
+							<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
+							<Select
+								value={timeSystem}
+								onValueChange={(value) =>
+									handleTimeSystemChange(value as NewHoroscopeTimeSystem)
+								}
+							>
+								<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent className={ft.selectContent}>
+									{TIME_SYSTEMS.map((option) => (
+										<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+											{t(option.labelKey)}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
 							<div className="flex flex-col gap-2">
 								<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
@@ -1108,24 +1128,6 @@ export function NewHoroscope({
 										{UTC_OFFSETS.map((offset) => (
 											<SelectItem key={offset} value={offset} className={ft.selectItem}>
 												{offset}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div>
-								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
-								<Select
-									value={timeSystem}
-									onValueChange={(value) => handleTimeSystemChange(value as NewHoroscopeTimeSystem)}
-								>
-									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent className={ft.selectContent}>
-										{TIME_SYSTEMS.map((option) => (
-											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
-												{t(option.labelKey)}
 											</SelectItem>
 										))}
 									</SelectContent>

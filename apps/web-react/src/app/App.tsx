@@ -435,7 +435,9 @@ export default function App() {
 	const handleObservableObjectsChange = async (chartId: string, bodies: string[]) => {
 		const chart = charts.find((c) => c.id === chartId);
 		if (!chart) return;
-		const updated: AppChart = { ...chart, observableObjects: bodies };
+		const updated: AppChart = { ...chart, observableObjects: [...bodies] };
+		setSelectedChartPreview(null);
+		setCharts((prev) => prev.map((c) => (c.id === chartId ? updated : c)));
 		if (workspacePath) {
 			try {
 				await invoke<string>('update_chart', {
@@ -445,13 +447,13 @@ export default function App() {
 				});
 			} catch (e) {
 				console.error(e);
+				setCharts((prev) => prev.map((c) => (c.id === chartId ? chart : c)));
 				toast.error(t('toast_save_failed'), {
 					description: e instanceof Error ? e.message : String(e)
 				});
 				return;
 			}
 		}
-		setCharts((prev) => prev.map((c) => (c.id === chartId ? updated : c)));
 		void computeChartInBackground(updated, workspacePath);
 	};
 
