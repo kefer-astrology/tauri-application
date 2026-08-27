@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100" height="100" fill="none">
-    <circle cx="12" cy="12" r="11" style="fill: none; stroke: currentColor; stroke-width: 2.5px" />
-    <text x="12" y="12.5" text-anchor="middle" dominant-baseline="middle" style="fill: currentColor; font-family: sans-serif; font-weight: 700; font-size: 14px">□</text>
+    <g transform="translate(-8.083,-8.083) scale(1.667)">
+        <g transform="translate(2.67,2.67) scale(0.07)">
+            <path d="M 46.66 46.66 C 104.89 46.67 163.11 46.67 221.34 46.66 C 221.33 104.88 221.33 163.11 221.34 221.34 C 163.11 221.33 104.89 221.33 46.66 221.34 C 46.67 163.11 46.67 104.89 46.66 46.66 M 73.47 194.51 C 113.82 194.50 154.17 194.48 194.52 194.52 C 194.49 154.17 194.48 113.83 194.53 73.49 C 154.17 73.52 113.82 73.50 73.47 73.50 C 73.52 113.83 73.52 154.17 73.47 194.51 Z" style="fill: currentColor" />
+        </g>
+    </g>
 </svg>
