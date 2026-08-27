@@ -1,0 +1,67 @@
+apps/web-svelte/src/lib/components/ui/sheet/sheet-description.svelte
+  s_7be7dd50ba46b8::t_9e6ac0645af2a1 1-17
+apps/web-svelte/src/lib/components/ui/sheet/index.ts
+  s_7be7dd50ba46b8::t_36cc980c795d60 1-34
+apps/web-svelte/src/lib/components/ui/sheet/sheet-title.svelte
+  s_7be7dd50ba46b8::t_ad2e4498f54b17 1-17
+apps/web-svelte/src/App.svelte
+  s_7be7dd50ba46b8::t_1e3e18b06f1a2c 1045
+  s_7be7dd50ba46b8::t_235833e4cf7231 559,566,569
+  s_7be7dd50ba46b8::t_11e4f7aae837b2 1043,1070,1081,1359
+  s_7be7dd50ba46b8::t_7db069bb0c8a0e 1430-1439,1450-1451
+  s_7be7dd50ba46b8::t_9b977e802998c5 955-1015
+  s_7be7dd50ba46b8::t_ac6aa45fba084b 65
+  s_7be7dd50ba46b8::t_d99af8f32b0ff8 954,1016-1020
+  s_7be7dd50ba46b8::t_e49ae2679c26aa 1362
+  s_7be7dd50ba46b8::t_1a98462bc4fae9 763-768
+  s_7be7dd50ba46b8::t_ed128db95903d6 1440-1449
+  s_7be7dd50ba46b8::t_5f8d7dde2780c5 712
+  s_7be7dd50ba46b8::t_e2eeec95129b4c 1072
+  s_7be7dd50ba46b8::t_d65fe9e5895800 1094
+  s_7be7dd50ba46b8::t_bb27a3aacd7e1b 34
+  s_7be7dd50ba46b8::t_edf726738c1a20 1139
+apps/web-svelte/src/lib/components/RadixChart.svelte
+  s_7be7dd50ba46b8::t_c8a5d8c7147686 138-148,150
+apps/web-svelte/src/lib/components/TimeNavigationPanel.svelte
+  s_7be7dd50ba46b8::t_71e92cafe4e6fc 44-47
+  s_7be7dd50ba46b8::t_d37205b0978b55 24-30
+  s_7be7dd50ba46b8::t_099dc57deaf6a5 3-4,6,13
+apps/web-svelte/src/lib/themes/presets/default.json
+  s_7be7dd50ba46b8::t_d1e2da80b1bfb2 29,31,35,37,39
+apps/web-svelte/src/lib/components/ui/sheet/sheet-header.svelte
+  s_7be7dd50ba46b8::t_32712b9e32583a 1-20
+apps/web-svelte/src/lib/components/MiddleContent.svelte
+  s_7be7dd50ba46b8::t_c3b7ba644c9911 681,683-685
+apps/web-svelte/src/lib/stores/timeNavigation.svelte.ts
+  s_7be7dd50ba46b8::t_f93ae7cabaa8b1 126
+  s_7be7dd50ba46b8::t_5746d0b73b9c99 14,18,27
+apps/web-svelte/src/lib/components/ui/sheet/sheet-overlay.svelte
+  s_7be7dd50ba46b8::t_98c9541183d86a 1-20
+apps/web-svelte/src/app.css
+  s_7be7dd50ba46b8::t_84c21b59790456 51,53,55,59,61,63,69,73
+apps/web-svelte/src/lib/components/ExpandablePanel.svelte
+  s_7be7dd50ba46b8::t_f415696519b018 23,25,45
+apps/web-svelte/src/lib/components/ui/sheet/sheet-content.svelte
+  s_7be7dd50ba46b8::t_316b87f793dd54 1-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0493ac70b4493b42de693b3bc79b1aa9781a052e",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_7be7dd50ba46b8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "61e12e93-9e04-43c2-9548-c386ee225264",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
