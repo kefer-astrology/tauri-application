@@ -269,7 +269,9 @@ fn smallest_occupied_arc<'a>(entries: &[(&'a str, f64)]) -> OccupiedArc<'a> {
             gap_index = index;
         }
     }
-    let leader = sorted.get((gap_index + 1) % sorted.len()).map(|entry| entry.0);
+    let leader = sorted
+        .get((gap_index + 1) % sorted.len())
+        .map(|entry| entry.0);
     OccupiedArc {
         arc: 360.0 - largest_gap,
         largest_gap,
@@ -339,10 +341,16 @@ pub fn detect_chart_shapes(positions: &HashMap<String, f64>, house_cusps: &[f64]
             .filter_map(|(_, lon)| house_for_longitude(lon, house_cusps))
             .collect();
         if houses.len() == entries.len() {
-            if houses.iter().all(|house| matches!(house, 10 | 11 | 12 | 1 | 2 | 3)) {
+            if houses
+                .iter()
+                .all(|house| matches!(house, 10 | 11 | 12 | 1 | 2 | 3))
+            {
                 result.insert("bowl_east".to_string());
             }
-            if houses.iter().all(|house| matches!(house, 4 | 5 | 6 | 7 | 8 | 9)) {
+            if houses
+                .iter()
+                .all(|house| matches!(house, 4 | 5 | 6 | 7 | 8 | 9))
+            {
                 result.insert("bowl_west".to_string());
             }
             if houses.iter().all(|house| *house >= 7) {
@@ -365,9 +373,9 @@ pub fn detect_chart_shapes(positions: &HashMap<String, f64>, house_cusps: &[f64]
             .copied()
             .filter(|pair| pair.0 != handle)
             .collect();
-        let clears_gap = remainder.iter().all(|pair| {
-            forward_arc(longitude, pair.1).min(forward_arc(pair.1, longitude)) >= 30.0
-        });
+        let clears_gap = remainder
+            .iter()
+            .all(|pair| forward_arc(longitude, pair.1).min(forward_arc(pair.1, longitude)) >= 30.0);
         if smallest_occupied_arc(&remainder).arc <= 180.0 && clears_gap {
             result.insert("bucket".to_string());
             result.insert(format!("bucket_{handle}"));
@@ -429,7 +437,10 @@ pub fn detect_chart_configurations(
 
     let mut aspect_map: HashMap<String, String> = HashMap::new();
     for aspect in aspects {
-        aspect_map.insert(pair_key(&aspect.from, &aspect.to), aspect.aspect_type.clone());
+        aspect_map.insert(
+            pair_key(&aspect.from, &aspect.to),
+            aspect.aspect_type.clone(),
+        );
     }
     let is = |left: &str, right: &str, aspect_type: &str| {
         aspect_map.get(&pair_key(left, right)).map(String::as_str) == Some(aspect_type)
@@ -460,11 +471,17 @@ pub fn detect_chart_configurations(
             ));
             trines.push(trio.clone());
         }
-        let quincunx_count = pair_types.iter().filter(|t| **t == Some("quincunx")).count();
+        let quincunx_count = pair_types
+            .iter()
+            .filter(|t| **t == Some("quincunx"))
+            .count();
         if quincunx_count == 2 && pair_types.contains(&Some("sextile")) {
             result.insert("double_quincunx".to_string());
         }
-        let biquintile_count = pair_types.iter().filter(|t| **t == Some("biquintile")).count();
+        let biquintile_count = pair_types
+            .iter()
+            .filter(|t| **t == Some("biquintile"))
+            .count();
         if biquintile_count >= 2 {
             result.insert("double_biquintile".to_string());
         }
@@ -473,10 +490,17 @@ pub fn detect_chart_configurations(
     for quartet in combinations(&bodies, 4) {
         let pair_types: Vec<Option<&str>> = combinations(&quartet, 2)
             .into_iter()
-            .map(|pair| aspect_map.get(&pair_key(pair[0], pair[1])).map(String::as_str))
+            .map(|pair| {
+                aspect_map
+                    .get(&pair_key(pair[0], pair[1]))
+                    .map(String::as_str)
+            })
             .collect();
         let square_count = pair_types.iter().filter(|t| **t == Some("square")).count();
-        let opposition_count = pair_types.iter().filter(|t| **t == Some("opposition")).count();
+        let opposition_count = pair_types
+            .iter()
+            .filter(|t| **t == Some("opposition"))
+            .count();
         if square_count == 4 && opposition_count == 2 {
             result.insert("grand_cross".to_string());
             result.insert(format!(
@@ -522,7 +546,9 @@ pub fn detect_chart_configurations(
             .iter()
             .filter(|pair| {
                 matches!(
-                    aspect_map.get(&pair_key(pair[0], pair[1])).map(String::as_str),
+                    aspect_map
+                        .get(&pair_key(pair[0], pair[1]))
+                        .map(String::as_str),
                     Some("quintile") | Some("biquintile")
                 )
             })
@@ -549,7 +575,10 @@ pub fn inject_shapes_and_configurations_into_chart_map(
     if !need_shapes && !need_configurations {
         return;
     }
-    let Some(positions_obj) = result.get("positions").and_then(serde_json::Value::as_object) else {
+    let Some(positions_obj) = result
+        .get("positions")
+        .and_then(serde_json::Value::as_object)
+    else {
         return;
     };
     let positions: HashMap<String, f64> = positions_obj
@@ -561,7 +590,12 @@ pub fn inject_shapes_and_configurations_into_chart_map(
         let house_cusps: Vec<f64> = result
             .get("house_cusps")
             .and_then(serde_json::Value::as_array)
-            .map(|values| values.iter().filter_map(serde_json::Value::as_f64).collect())
+            .map(|values| {
+                values
+                    .iter()
+                    .filter_map(serde_json::Value::as_f64)
+                    .collect()
+            })
             .unwrap_or_default();
         let shapes = detect_chart_shapes(&positions, &house_cusps);
         result.insert("shapes".to_string(), serde_json::json!(shapes));

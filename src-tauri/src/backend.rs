@@ -113,7 +113,9 @@ pub async fn ensure_backend<R: Runtime>(
                     .map_err(|err| format!("Failed to poll backend process: {err}"))?
                 {
                     *child_guard = None;
-                    return Err(format!("Backend exited before becoming ready (status: {status})"));
+                    return Err(format!(
+                        "Backend exited before becoming ready (status: {status})"
+                    ));
                 }
             }
         }

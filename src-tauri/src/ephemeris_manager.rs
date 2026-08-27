@@ -3,7 +3,6 @@
 /// Maintains a static catalog of known JPL BSP files (de440s, de440, de441 parts),
 /// resolves locally available files (bundled + user-downloaded), and builds a chained
 /// `anise::Almanac` from all of them so asteroid bodies are available alongside planets.
-
 use std::io::Write as IoWrite;
 use std::path::PathBuf;
 use std::sync::OnceLock;
@@ -108,8 +107,7 @@ pub struct EphemerisEntry {
 // their positions are NOT stored as queryable SPK segments in these files.
 // Asteroid bodies (Ceres etc.) require a separate dedicated asteroid SPK kernel.
 const DE_PLANETS: &[&str] = &[
-    "sun", "moon", "mercury", "venus", "mars",
-    "jupiter", "saturn", "uranus", "neptune", "pluto",
+    "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto",
 ];
 
 const DE440S_ID: &str = "de440s";
@@ -231,7 +229,9 @@ pub fn bodies_for_spk_filename(filename: &str) -> Option<&'static [&'static str]
         CERES_SPK_FILENAME => Some(&["ceres"]),
         PALLAS_SPK_FILENAME => Some(&["pallas"]),
         VESTA_SPK_FILENAME => Some(&["vesta"]),
-        name if name.contains("codes_300ast") && name.ends_with(".bsp") => Some(CODES_300AST_MAJOR_BODIES),
+        name if name.contains("codes_300ast") && name.ends_with(".bsp") => {
+            Some(CODES_300AST_MAJOR_BODIES)
+        }
         DE440S_FILENAME | DE440_FILENAME => Some(DE_PLANETS),
         "de441_part-1.bsp" | "de441_part-2.bsp" => Some(DE_PLANETS),
         _ => None,
@@ -372,11 +372,19 @@ impl EphemerisManager {
     fn resolve_primary_bsp(&self) -> Option<PathBuf> {
         for filename in PRIMARY_BSP_PRIORITY {
             if let Some(path) = self.cached_bsp_path(filename) {
-                log::debug!("ephemeris: primary (cached) {} → {}", filename, path.display());
+                log::debug!(
+                    "ephemeris: primary (cached) {} → {}",
+                    filename,
+                    path.display()
+                );
                 return Some(path);
             }
             if let Some(path) = self.find_bundled_bsp(filename) {
-                log::debug!("ephemeris: primary (bundled) {} → {}", filename, path.display());
+                log::debug!(
+                    "ephemeris: primary (bundled) {} → {}",
+                    filename,
+                    path.display()
+                );
                 return Some(path);
             }
         }
@@ -485,7 +493,11 @@ impl EphemerisManager {
         let mut file = std::fs::File::create(&partial)
             .map_err(|e| format!("Cannot create '{}': {e}", partial.display()))?;
 
-        while let Some(chunk) = resp.chunk().await.map_err(|e| format!("Download error: {e}"))? {
+        while let Some(chunk) = resp
+            .chunk()
+            .await
+            .map_err(|e| format!("Download error: {e}"))?
+        {
             downloaded += chunk.len() as u64;
             file.write_all(&chunk)
                 .map_err(|e| format!("Write error: {e}"))?;
@@ -508,7 +520,10 @@ impl EphemerisManager {
             .map_err(|e| format!("Cannot finalise download: {e}"))?;
 
         let _ = app.emit("ephemeris-ready", serde_json::json!({ "id": id }));
-        log::info!("ephemeris: download complete — {id} at {}", final_path.display());
+        log::info!(
+            "ephemeris: download complete — {id} at {}",
+            final_path.display()
+        );
         Ok(())
     }
 }

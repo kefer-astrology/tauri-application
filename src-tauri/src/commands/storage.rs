@@ -17,6 +17,8 @@ pub async fn init_storage(workspace_path: String) -> Result<String, String> {
         .map_err(|e| format!("Failed to create workspace directory: {}", e))?;
     std::fs::create_dir_all(workspace_dir.join("charts"))
         .map_err(|e| format!("Failed to create charts directory: {}", e))?;
+    std::fs::create_dir_all(workspace_dir.join("transits"))
+        .map_err(|e| format!("Failed to create transits directory: {}", e))?;
 
     let normalized = workspace_dir
         .to_str()

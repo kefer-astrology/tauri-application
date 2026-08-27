@@ -67,7 +67,13 @@ unsafe extern "C" {
     fn swe_set_ephe_path(path: *const c_char);
     fn swe_set_jpl_file(fname: *const c_char);
     fn swe_set_sid_mode(sid_mode: i32, t0: c_double, ayan_t0: c_double);
-    fn swe_calc_ut(tjd_ut: c_double, ipl: i32, iflag: i32, xx: *mut c_double, serr: *mut c_char) -> i32;
+    fn swe_calc_ut(
+        tjd_ut: c_double,
+        ipl: i32,
+        iflag: i32,
+        xx: *mut c_double,
+        serr: *mut c_char,
+    ) -> i32;
     fn swe_houses_ex(
         tjd_ut: c_double,
         iflag: i32,
@@ -170,11 +176,22 @@ fn compute_chart_data_locked(
         mc: normalize_deg(ascmc[SE_MC]),
         ic: normalize_deg(ascmc[SE_MC] + 180.0),
     };
-    let house_cusps = (1..=12).map(|index| normalize_deg(cusps[index])).collect::<Vec<_>>();
+    let house_cusps = (1..=12)
+        .map(|index| normalize_deg(cusps[index]))
+        .collect::<Vec<_>>();
 
-    let requested = requested_objects
-        .map(|items| items.iter().map(|item| normalize_object_id(item)).collect::<HashSet<_>>());
-    let wanted = |id: &str| requested.as_ref().map(|set| set.contains(id)).unwrap_or(true);
+    let requested = requested_objects.map(|items| {
+        items
+            .iter()
+            .map(|item| normalize_object_id(item))
+            .collect::<HashSet<_>>()
+    });
+    let wanted = |id: &str| {
+        requested
+            .as_ref()
+            .map(|set| set.contains(id))
+            .unwrap_or(true)
+    };
     let should_compute = |id: &str| match id {
         "north_node" => wanted("north_node") || wanted("south_node"),
         "mean_node" => wanted("mean_node") || wanted("mean_south_node"),
@@ -200,7 +217,10 @@ fn compute_chart_data_locked(
         match id {
             "true_north_node" => {
                 if wanted("true_south_node") {
-                    positions.insert("true_south_node".to_string(), normalize_deg(longitude + 180.0));
+                    positions.insert(
+                        "true_south_node".to_string(),
+                        normalize_deg(longitude + 180.0),
+                    );
                     motion.insert(
                         "true_south_node".to_string(),
                         AstronomyMotion {
@@ -222,7 +242,10 @@ fn compute_chart_data_locked(
                     );
                 }
                 if wanted("mean_south_node") {
-                    positions.insert("mean_south_node".to_string(), normalize_deg(longitude + 180.0));
+                    positions.insert(
+                        "mean_south_node".to_string(),
+                        normalize_deg(longitude + 180.0),
+                    );
                     motion.insert(
                         "mean_south_node".to_string(),
                         AstronomyMotion {
@@ -410,11 +433,25 @@ fn julian_day_ut(dt: DateTime<Utc>) -> f64 {
         + f64::from(dt.second()) / 3600.0
         + f64::from(dt.nanosecond()) / 3_600_000_000_000.0;
     // Swiss Ephemeris expects Gregorian dates for modern timestamps.
-    unsafe { swe_julday(dt.year(), dt.month() as c_int, dt.day() as c_int, hour, SE_GREG_CAL) }
+    unsafe {
+        swe_julday(
+            dt.year(),
+            dt.month() as c_int,
+            dt.day() as c_int,
+            hour,
+            SE_GREG_CAL,
+        )
+    }
 }
 
 unsafe extern "C" {
-    fn swe_julday(year: c_int, month: c_int, day: c_int, hour: c_double, gregflag: c_int) -> c_double;
+    fn swe_julday(
+        year: c_int,
+        month: c_int,
+        day: c_int,
+        hour: c_double,
+        gregflag: c_int,
+    ) -> c_double;
 }
 
 fn normalize_deg(value: f64) -> f64 {
