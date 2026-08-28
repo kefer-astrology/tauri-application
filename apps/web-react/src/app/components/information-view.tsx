@@ -14,6 +14,7 @@ import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import type { WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import {
 	HoroscopeWheel,
@@ -24,6 +25,7 @@ import {
 interface InformationViewProps {
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
+	wheelStyle?: WheelStyleId;
 	elementColors: ElementColors;
 	lightPlanetFill: string;
 }
@@ -42,7 +44,13 @@ function chipStateClass(
 	return cn(base, 'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] hover:bg-[color:var(--theme-soft-bg)]');
 }
 
-export function InformationView({ theme, glyphSet, elementColors, lightPlanetFill }: InformationViewProps) {
+export function InformationView({
+	theme,
+	glyphSet,
+	wheelStyle,
+	elementColors,
+	lightPlanetFill
+}: InformationViewProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 
@@ -442,6 +450,7 @@ export function InformationView({ theme, glyphSet, elementColors, lightPlanetFil
 							<HoroscopeWheel
 								theme={theme}
 								glyphSet={glyphSet}
+								wheelStyle={wheelStyle}
 								elementColors={elementColors}
 								lightPlanetFill={lightPlanetFill}
 								showPlanetGlyphs

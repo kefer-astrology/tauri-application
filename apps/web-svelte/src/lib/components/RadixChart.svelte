@@ -5,6 +5,7 @@
     type AspectLineTierStyleState
   } from '$lib/astrology/aspects';
   import { getGlyphContent } from '$lib/stores/glyphs.svelte';
+  import { wheelStyleSettings } from '$lib/stores/wheel-style.svelte';
 
   interface Props {
     size?: number;
@@ -37,6 +38,8 @@
   const center = VIEWBOX_SIZE / 2;
   const outerRadius = 320;
   const innerRadius = 270;
+  /** Outer boundary, inner boundary, sign dividers, and bold degree ticks share one weight. */
+  const zodiacRingStrokeWidth = 2;
   const innerCenterRing = 184;
   const innerCenterCore = 152;
   const glyphRadialOutset = 3;
@@ -235,8 +238,8 @@
 
   <circle cx={center} cy={center} r={outerRadius + 60} fill="var(--token-surface-subtle)" />
 
-  <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" />
-  <circle cx={center} cy={center} r={innerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" />
+  <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width={zodiacRingStrokeWidth} />
+  <circle cx={center} cy={center} r={innerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width={zodiacRingStrokeWidth} />
 
   {#each zodiacSigns as sign}
     {@const p1 = polar(innerRadius, sign.angle)}
@@ -248,27 +251,30 @@
       y2={p2.y}
       stroke="currentColor"
       stroke-opacity="0.45"
-      stroke-width="1.5"
+      stroke-width={zodiacRingStrokeWidth}
     />
   {/each}
 
-  {#each Array.from({ length: 360 }, (_, i) => i) as tick}
-    {@const is10 = tick % 10 === 0}
-    {@const is5 = tick % 5 === 0}
-    {@const tickLength = is10 ? 20 : is5 ? 12 : 8}
-    {@const tickWidth = is10 ? 1.5 : is5 ? 1.2 : 0.5}
-    {@const p1 = polar(innerRadius, tick)}
-    {@const p2 = polar(innerRadius + tickLength, tick)}
-    <line
-      x1={p1.x}
-      y1={p1.y}
-      x2={p2.x}
-      y2={p2.y}
-      stroke="currentColor"
-      stroke-opacity="0.35"
-      stroke-width={tickWidth}
-    />
-  {/each}
+  {#if wheelStyleSettings.activeStyle === 'technical'}
+    {@const ringWidth = outerRadius - innerRadius}
+    {#each Array.from({ length: 360 }, (_, i) => i) as tick}
+      {@const is10 = tick % 10 === 0}
+      {@const is5 = tick % 5 === 0 && !is10}
+      {@const tickLength = is10 ? ringWidth * 0.48 * 0.6 : ringWidth * 0.14}
+      {@const tickWidth = is10 || is5 ? zodiacRingStrokeWidth : 0.6}
+      {@const p1 = polar(innerRadius, tick)}
+      {@const p2 = polar(innerRadius + tickLength, tick)}
+      <line
+        x1={p1.x}
+        y1={p1.y}
+        x2={p2.x}
+        y2={p2.y}
+        stroke="currentColor"
+        stroke-opacity="0.35"
+        stroke-width={tickWidth}
+      />
+    {/each}
+  {/if}
 
   {#each zodiacSigns as sign}
     {@const pos = polar(zodiacRadius, sign.angle + 15)}

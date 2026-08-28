@@ -27,6 +27,12 @@
     type AppShellIconSetId
   } from '$lib/stores/app-shell-icons.svelte';
   import {
+    wheelStyleOptions,
+    wheelStyleSettings,
+    setWheelStyle,
+    type WheelStyleId
+  } from '$lib/stores/wheel-style.svelte';
+  import {
     ASPECT_ROWS,
     DEFAULT_ASPECT_COLORS,
     DEFAULT_ASPECT_ORBS,
@@ -118,6 +124,11 @@
     appShellIconSetOptions.find((s) => s.id === appShellIconSetValue)?.label ?? 'Select app shell icon set'
   );
 
+  let wheelStyleValue = $state(String(wheelStyleSettings.activeStyle));
+  const wheelStyleTriggerContent = $derived(
+    wheelStyleOptions.find((s) => s.id === wheelStyleValue)?.label ?? t('select_wheel_style', {}, 'Select wheel style')
+  );
+
   $effect(() => {
     if (presetValue !== String(preset.id)) {
       applyPreset(presetValue);
@@ -147,6 +158,19 @@
   $effect(() => {
     if (appShellIconSetValue !== appShellIconSettings.activeSet && appShellIconSetOptions.some((s) => s.id === appShellIconSetValue)) {
       setAppShellIconSet(appShellIconSetValue as AppShellIconSetId);
+      settingsChanged = true;
+    }
+  });
+
+  $effect(() => {
+    if (wheelStyleValue !== wheelStyleSettings.activeStyle) {
+      wheelStyleValue = wheelStyleSettings.activeStyle;
+    }
+  });
+
+  $effect(() => {
+    if (wheelStyleValue !== wheelStyleSettings.activeStyle && wheelStyleOptions.some((s) => s.id === wheelStyleValue)) {
+      setWheelStyle(wheelStyleValue as WheelStyleId);
       settingsChanged = true;
     }
   });
@@ -653,6 +677,28 @@
           >
             Reset glyph cache
           </Button>
+        </div>
+        <div class="space-y-2 w-full sm:w-auto sm:min-w-[240px]">
+          <label class="block text-sm font-medium opacity-90" for="settings-wheel-style">{t('select_wheel_style', {}, 'Wheel style')}</label>
+          <div class="min-w-[220px]">
+            <Select.Root type="single" name="wheelStyle" bind:value={wheelStyleValue}>
+              <Select.Trigger class="w-[220px]" id="settings-wheel-style">
+                {wheelStyleTriggerContent}
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Group>
+                  {#each wheelStyleOptions as styleOpt (styleOpt.id)}
+                    <Select.Item value={styleOpt.id} label={styleOpt.label}>
+                      {styleOpt.label}
+                    </Select.Item>
+                  {/each}
+                </Select.Group>
+              </Select.Content>
+            </Select.Root>
+          </div>
+          <div class="text-xs text-muted-foreground max-w-[260px]">
+            {wheelStyleOptions.find((s) => s.id === wheelStyleValue)?.description}
+          </div>
         </div>
         <div class="space-y-2 w-full sm:w-auto sm:min-w-[240px]">
           <label class="block text-sm font-medium opacity-90" for="settings-app-shell-set">App shell icon set</label>

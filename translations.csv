@@ -389,6 +389,7 @@ internal_name,czech,english,french,spanish
 "select_glyph_set","Vybrat sadu symbolů","Select glyph set","Choisir le set de glyphes","Seleccionar set de glifos"
 "select_language","Vybrat jazyk","Select language","Choisir la langue","Seleccionar idioma"
 "select_preset","Vybrat přednastavení","Select preset","Choisir le thème","Seleccionar tema"
+"select_wheel_style","Vybrat styl kola","Select wheel style","Choisir le style de roue","Seleccionar estilo de rueda"
 "selected","vybráno","selected","sélectionné","seleccionado"
 "settings","Nastavení","Settings","Paramètres","Ajustes"
 "settings_about","O Aplikaci a právní ujednání využití","About","À propos","Acerca"

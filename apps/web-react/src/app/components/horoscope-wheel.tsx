@@ -16,6 +16,7 @@ import {
 	getZodiacGlyphSrc,
 	type AstrologyGlyphSetId
 } from '@/lib/astrology/glyphs';
+import type { WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { resolveCustomGlyphSrc, useCustomGlyphOverrides } from '@/lib/astrology/customGlyphs';
 import type { AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
@@ -259,6 +260,8 @@ export interface HoroscopeWheelProps {
 	 * as native `<image>` with per-tint SVG filters (`elementColors` for signs; primary for light planets).
 	 */
 	glyphSet?: AstrologyGlyphSetId;
+	/** Outer ring rendering: `minimalist` is sign dividers only, `technical` adds a 360° degree scale. */
+	wheelStyle?: WheelStyleId;
 	/** Fire / earth / air / water colors for zodiac ring on the wheel. */
 	elementColors?: ElementColors;
 	/** Resolved CSS color for light-theme planet glyphs (typically `--color-primary`). */
@@ -303,6 +306,7 @@ export interface HoroscopeWheelProps {
 export function HoroscopeWheel({
 	theme,
 	glyphSet,
+	wheelStyle = 'technical',
 	bodyLongitudes,
 	bodyOrder,
 	transitBodyLongitudes,
@@ -346,14 +350,17 @@ export function HoroscopeWheel({
 	const center = wheelSize / 2;
 	const outerRadius = 320;
 	const innerRadius = 270;
-	const houseRingGap = 6;
-	const houseOuterRadius = innerRadius - houseRingGap;
-	const houseInnerRadius = houseOuterRadius - 25;
+	/** Outer boundary, inner boundary, sign dividers, and bold degree ticks share one weight. */
+	const zodiacRingStrokeWidth = 2;
 	const innerCenterRing = 184;
 	const innerCenterCore = 152;
+	/** House band sits flush against the inner ring instead of the zodiac ring, so its own boundary doesn't read as a near-duplicate of `innerRadius`. */
+	const houseBandWidth = 20;
+	const houseInnerRadius = innerCenterRing;
+	const houseOuterRadius = houseInnerRadius + houseBandWidth;
 	/** Small outward nudge from the original mid-band radii (larger values crowded the layout). */
 	const glyphRadialOutset = 3;
-	const planetRadius = (houseInnerRadius + innerCenterRing) / 2 - 8 + glyphRadialOutset;
+	const planetRadius = (houseOuterRadius + innerRadius) / 2 - 8 + glyphRadialOutset;
 	const houseLabelRadius = (houseInnerRadius + houseOuterRadius) / 2;
 	/** Aspect chords stop at the first inner circle, keeping the band to the second circle clear. */
 	const radixAspectChordRadius = innerCenterCore;
@@ -649,7 +656,7 @@ export function HoroscopeWheel({
 				r={outerRadius}
 				fill="none"
 				stroke={strokeMain}
-				strokeWidth="1.5"
+				strokeWidth={zodiacRingStrokeWidth}
 			/>
 			<circle
 				cx={center}
@@ -657,7 +664,7 @@ export function HoroscopeWheel({
 				r={innerRadius}
 				fill="none"
 				stroke={strokeMain}
-				strokeWidth="1.5"
+				strokeWidth={zodiacRingStrokeWidth}
 			/>
 
 			{zodiacSigns.map((sign, idx) => {
@@ -674,45 +681,39 @@ export function HoroscopeWheel({
 						x2={x2}
 						y2={y2}
 						stroke={strokeSoft}
-						strokeWidth="1.5"
+						strokeWidth={zodiacRingStrokeWidth}
 					/>
 				);
 			})}
 
-			<g>
-				{Array.from({ length: 360 }, (_, i) => {
-					const rad = longitudeToScreenRadians(displayLon(i));
-					const is10Degree = i % 10 === 0;
-					const is5Degree = i % 5 === 0;
-					let tickLength: number;
-					let tickWidth: number;
-					if (is10Degree) {
-						tickLength = 20;
-						tickWidth = 1.5;
-					} else if (is5Degree) {
-						tickLength = 12;
-						tickWidth = 1.2;
-					} else {
-						tickLength = 8;
-						tickWidth = 0.5;
-					}
-					const x1 = center + innerRadius * Math.cos(rad);
-					const y1 = center + innerRadius * Math.sin(rad);
-					const x2 = center + (innerRadius + tickLength) * Math.cos(rad);
-					const y2 = center + (innerRadius + tickLength) * Math.sin(rad);
-					return (
-						<line
-							key={`inner-tick-${i}`}
-							x1={x1}
-							y1={y1}
-							x2={x2}
-							y2={y2}
-							stroke={strokeSoft}
-							strokeWidth={tickWidth}
-						/>
-					);
-				})}
-			</g>
+			{wheelStyle === 'technical' && (
+				<g>
+					{Array.from({ length: 360 }, (_, i) => {
+						const rad = longitudeToScreenRadians(displayLon(i));
+						const is10Degree = i % 10 === 0;
+						const is5Degree = i % 5 === 0 && !is10Degree;
+						const ringWidth = outerRadius - innerRadius;
+						/** 10° ticks read longer; 5° ticks stay 1°-length but bolder — mirrors the Technical ring spec. */
+						const tickLength = is10Degree ? ringWidth * 0.48 * 0.6 : ringWidth * 0.14;
+						const tickWidth = is10Degree || is5Degree ? zodiacRingStrokeWidth : 0.6;
+						const x1 = center + innerRadius * Math.cos(rad);
+						const y1 = center + innerRadius * Math.sin(rad);
+						const x2 = center + (innerRadius + tickLength) * Math.cos(rad);
+						const y2 = center + (innerRadius + tickLength) * Math.sin(rad);
+						return (
+							<line
+								key={`inner-tick-${i}`}
+								x1={x1}
+								y1={y1}
+								x2={x2}
+								y2={y2}
+								stroke={strokeSoft}
+								strokeWidth={tickWidth}
+							/>
+						);
+					})}
+				</g>
+			)}
 
 			{zodiacSigns.map((sign) => {
 				const rad = longitudeToScreenRadians(displayLon(sign.angle + 15));
@@ -769,16 +770,8 @@ export function HoroscopeWheel({
 				strokeWidth="1.25"
 				opacity={0.72}
 			/>
-			<circle
-				cx={center}
-				cy={center}
-				r={houseInnerRadius}
-				fill="none"
-				stroke={strokeMain}
-				strokeWidth="1.25"
-				opacity={0.72}
-			/>
 
+			{/* houseInnerRadius === innerCenterRing by design — the house band sits flush against it, so its inner edge is this circle, not a separate one. */}
 			<circle
 				cx={center}
 				cy={center}
