@@ -72,6 +72,22 @@ pub struct ComputedAspect {
     pub separating: bool,
 }
 
+/// Point pairs whose separation is fixed at exactly 180° by definition (the second point is
+/// computed as the first plus 180°), so any "opposition" between them is a mathematical
+/// certainty rather than an astrological observation. Excluded from aspect detection entirely —
+/// no other aspect type could ever fire for a pair locked at 180° anyway.
+const STRUCTURALLY_LOCKED_PAIRS: [(&str, &str); 3] = [
+    ("asc", "desc"),
+    ("ic", "mc"),
+    ("north_node", "south_node"),
+];
+
+fn is_structurally_locked_pair(from: &str, to: &str) -> bool {
+    STRUCTURALLY_LOCKED_PAIRS
+        .iter()
+        .any(|(a, b)| (from == *a && to == *b) || (from == *b && to == *a))
+}
+
 pub fn compute_chart_aspects(
     positions: &HashMap<String, f64>,
     aspect_definitions: &[AspectDefinition],
@@ -85,6 +101,9 @@ pub fn compute_chart_aspects(
     let mut aspects = Vec::new();
     for (index, from) in ids.iter().enumerate() {
         for to in ids.iter().skip(index + 1) {
+            if is_structurally_locked_pair(from, to) {
+                continue;
+            }
             let angle = shortest_arc_deg(
                 *positions.get(*from).unwrap_or(&0.0),
                 *positions.get(*to).unwrap_or(&0.0),
@@ -657,6 +676,41 @@ mod tests {
                 separating: false,
             }]
         );
+    }
+
+    #[test]
+    fn chart_aspects_exclude_structurally_locked_axis_and_node_pairs() {
+        let definitions = vec![AspectDefinition {
+            id: "opposition".to_string(),
+            glyph: "☍".to_string(),
+            angle: 180.0,
+            default_orb: 8.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+        }];
+        let positions = HashMap::from([
+            ("asc".to_string(), 10.0),
+            ("desc".to_string(), 190.0),
+            ("mc".to_string(), 100.0),
+            ("ic".to_string(), 280.0),
+            ("north_node".to_string(), 50.0),
+            ("south_node".to_string(), 230.0),
+            // A real opposition between two ordinary bodies should still be reported.
+            ("sun".to_string(), 0.0),
+            ("moon".to_string(), 180.0),
+        ]);
+        let selected = vec!["opposition".to_string()];
+
+        let aspects = compute_chart_aspects(&positions, &definitions, &HashMap::new(), Some(&selected));
+
+        assert_eq!(aspects.len(), 1);
+        assert_eq!(aspects[0].from, "moon");
+        assert_eq!(aspects[0].to, "sun");
     }
 
     #[test]

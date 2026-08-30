@@ -5,6 +5,7 @@
     type AspectLineTierStyleState
   } from '$lib/astrology/aspects';
   import { getGlyphContent } from '$lib/stores/glyphs.svelte';
+  import { wheelStyleSettings } from '$lib/stores/wheel-style.svelte';
 
   interface Props {
     size?: number;
@@ -37,6 +38,8 @@
   const center = VIEWBOX_SIZE / 2;
   const outerRadius = 320;
   const innerRadius = 270;
+  /** Outer boundary, inner boundary, sign dividers, and bold degree ticks share one weight. */
+  const zodiacRingStrokeWidth = 2;
   const innerCenterRing = 184;
   const innerCenterCore = 152;
   const glyphRadialOutset = 3;
@@ -177,16 +180,32 @@
     return aspectColors[type] ?? 'var(--token-viz-2)';
   }
 
-  function getAspectStrokeWidth(type: string, orb: number | undefined): number {
+  type AspectOrbTier = 'tight' | 'medium' | 'loose' | 'outer';
+
+  function getAspectOrbTier(type: string, orb: number | undefined): AspectOrbTier {
     const maxOrb = Math.max(
       aspectOrbs[type] ?? DEFAULT_ASPECT_ORBS[type as keyof typeof DEFAULT_ASPECT_ORBS] ?? 8,
       0.0001
     );
     const ratioPct = (Math.abs(orb ?? 0) / maxOrb) * 100;
-    if (ratioPct <= aspectLineTierStyle.tightThresholdPct) return aspectLineTierStyle.widthTight;
-    if (ratioPct <= aspectLineTierStyle.mediumThresholdPct) return aspectLineTierStyle.widthMedium;
-    if (ratioPct <= aspectLineTierStyle.looseThresholdPct) return aspectLineTierStyle.widthLoose;
+    if (ratioPct <= aspectLineTierStyle.tightThresholdPct) return 'tight';
+    if (ratioPct <= aspectLineTierStyle.mediumThresholdPct) return 'medium';
+    if (ratioPct <= aspectLineTierStyle.looseThresholdPct) return 'loose';
+    return 'outer';
+  }
+
+  function getAspectStrokeWidth(tier: AspectOrbTier): number {
+    if (tier === 'tight') return aspectLineTierStyle.widthTight;
+    if (tier === 'medium') return aspectLineTierStyle.widthMedium;
+    if (tier === 'loose') return aspectLineTierStyle.widthLoose;
     return aspectLineTierStyle.widthOuter;
+  }
+
+  /** Tight/medium/loose aspects always render solid; only the outer (loosest) tier follows `outerLineStyle`. */
+  function getAspectDasharray(tier: AspectOrbTier, strokeWidthPx: number): string | undefined {
+    if (tier !== 'outer' || aspectLineTierStyle.outerLineStyle === 'solid') return undefined;
+    if (aspectLineTierStyle.outerLineStyle === 'dotted') return `0.1 ${(strokeWidthPx * 2.4).toFixed(2)}`;
+    return `${(strokeWidthPx * 3).toFixed(2)} ${(strokeWidthPx * 2).toFixed(2)}`;
   }
 
   function renderGlyph(
@@ -235,8 +254,8 @@
 
   <circle cx={center} cy={center} r={outerRadius + 60} fill="var(--token-surface-subtle)" />
 
-  <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" />
-  <circle cx={center} cy={center} r={innerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" />
+  <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width={zodiacRingStrokeWidth} />
+  <circle cx={center} cy={center} r={innerRadius} fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width={zodiacRingStrokeWidth} />
 
   {#each zodiacSigns as sign}
     {@const p1 = polar(innerRadius, sign.angle)}
@@ -248,27 +267,30 @@
       y2={p2.y}
       stroke="currentColor"
       stroke-opacity="0.45"
-      stroke-width="1.5"
+      stroke-width={zodiacRingStrokeWidth}
     />
   {/each}
 
-  {#each Array.from({ length: 360 }, (_, i) => i) as tick}
-    {@const is10 = tick % 10 === 0}
-    {@const is5 = tick % 5 === 0}
-    {@const tickLength = is10 ? 20 : is5 ? 12 : 8}
-    {@const tickWidth = is10 ? 1.5 : is5 ? 1.2 : 0.5}
-    {@const p1 = polar(innerRadius, tick)}
-    {@const p2 = polar(innerRadius + tickLength, tick)}
-    <line
-      x1={p1.x}
-      y1={p1.y}
-      x2={p2.x}
-      y2={p2.y}
-      stroke="currentColor"
-      stroke-opacity="0.35"
-      stroke-width={tickWidth}
-    />
-  {/each}
+  {#if wheelStyleSettings.activeStyle === 'technical'}
+    {@const ringWidth = outerRadius - innerRadius}
+    {#each Array.from({ length: 360 }, (_, i) => i) as tick}
+      {@const is10 = tick % 10 === 0}
+      {@const is5 = tick % 5 === 0 && !is10}
+      {@const tickLength = is10 ? ringWidth * 0.48 * 0.6 : ringWidth * 0.14}
+      {@const tickWidth = is10 || is5 ? zodiacRingStrokeWidth : 0.6}
+      {@const p1 = polar(innerRadius, tick)}
+      {@const p2 = polar(innerRadius + tickLength, tick)}
+      <line
+        x1={p1.x}
+        y1={p1.y}
+        x2={p2.x}
+        y2={p2.y}
+        stroke="currentColor"
+        stroke-opacity="0.35"
+        stroke-width={tickWidth}
+      />
+    {/each}
+  {/if}
 
   {#each zodiacSigns as sign}
     {@const pos = polar(zodiacRadius, sign.angle + 15)}
@@ -378,13 +400,16 @@
       {#if fromBody && toBody}
         {@const p1 = polar(radixAspectChordRadius, fromBody.longitude)}
         {@const p2 = polar(radixAspectChordRadius, toBody.longitude)}
+        {@const orbTier = getAspectOrbTier(aspect.type, aspect.orb)}
+        {@const strokeWidthPx = getAspectStrokeWidth(orbTier)}
         <line
           x1={p1.x}
           y1={p1.y}
           x2={p2.x}
           y2={p2.y}
           stroke={getAspectColor(aspect.type)}
-          stroke-width={getAspectStrokeWidth(aspect.type, aspect.orb)}
+          stroke-width={strokeWidthPx}
+          stroke-dasharray={getAspectDasharray(orbTier, strokeWidthPx)}
           stroke-linecap="round"
         />
       {/if}

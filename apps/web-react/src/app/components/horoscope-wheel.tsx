@@ -16,8 +16,9 @@ import {
 	getZodiacGlyphSrc,
 	type AstrologyGlyphSetId
 } from '@/lib/astrology/glyphs';
+import type { WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { resolveCustomGlyphSrc, useCustomGlyphOverrides } from '@/lib/astrology/customGlyphs';
-import type { AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
+import type { AspectLineStyleId, AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
 import type { Theme } from './astrology-sidebar';
 
@@ -185,6 +186,76 @@ function normalizeHouseCusps(cusps?: readonly number[]) {
 	return normalized.every((cusp): cusp is number => cusp !== null) ? normalized : [];
 }
 
+/** Longitude gap below which two glyphs are treated as overlapping and fanned apart. */
+const PLANET_STACK_CONFLICT_DEG = 6;
+/** Preferred radial gap between fan tiers; compressed when a cluster is larger than the band allows. */
+const PLANET_FAN_RADIAL_STEP = 22;
+/** Target on-screen arc length between adjacent fanned glyphs, a bit more than the ~22px glyph itself. */
+const PLANET_FAN_PIXEL_GAP = 26;
+
+export interface PlanetPlacement {
+	radius: number;
+	/** Longitude used only for on-wheel placement; the body's true longitude is untouched elsewhere (aspects, hemisphere, trailers). */
+	renderLon: number;
+}
+
+/**
+ * Bodies whose longitudes cluster within `PLANET_STACK_CONFLICT_DEG` of each other fan into a
+ * triangle instead of rendering on top of one another: the middle (by longitude) member of the
+ * cluster stays at `outerRadius` as the apex, and each step away from that middle rank moves one
+ * tier inward *and* one notch further around — so a tight conjunction reads as a small triangle,
+ * not a straight radial stack that can still collide once its own longitude gap shrinks at a
+ * smaller radius. The angular step is sized from the tightest (innermost) radius in the cluster so
+ * on-screen spacing stays roughly constant no matter how close to center the fan is pushed.
+ */
+function resolveDeclutteredPlacements(
+	entries: readonly { key: string; lon: number }[],
+	outerRadius: number,
+	floorRadius: number
+): Map<string, PlanetPlacement> {
+	const placements = new Map<string, PlanetPlacement>();
+	const n = entries.length;
+	if (n === 0) return placements;
+	const sorted = [...entries].sort((a, b) => a.lon - b.lon);
+	const visited = new Array<boolean>(n).fill(false);
+	for (let i = 0; i < n; i++) {
+		if (visited[i]) continue;
+		const cluster = [i];
+		visited[i] = true;
+		for (let step = 1; step < n; step++) {
+			const cur = (i + step) % n;
+			if (visited[cur]) break;
+			const prev = cluster[cluster.length - 1]!;
+			const gap = normalizeDeg(sorted[cur]!.lon - sorted[prev]!.lon);
+			if (gap > PLANET_STACK_CONFLICT_DEG) break;
+			cluster.push(cur);
+			visited[cur] = true;
+		}
+		const size = cluster.length;
+		if (size === 1) {
+			placements.set(sorted[cluster[0]!]!.key, {
+				radius: outerRadius,
+				renderLon: sorted[cluster[0]!]!.lon
+			});
+			continue;
+		}
+		const midRank = (size - 1) / 2;
+		const maxAbsRank = Math.max(...cluster.map((_, k) => Math.abs(k - midRank)));
+		const radialStep =
+			maxAbsRank > 0 ? Math.min(PLANET_FAN_RADIAL_STEP, (outerRadius - floorRadius) / maxAbsRank) : 0;
+		const innermostRadius = outerRadius - maxAbsRank * radialStep;
+		const angleStepDeg = (PLANET_FAN_PIXEL_GAP / (2 * Math.PI * Math.max(innermostRadius, 1))) * 360;
+		cluster.forEach((idx, k) => {
+			const rank = k - midRank;
+			placements.set(sorted[idx]!.key, {
+				radius: outerRadius - Math.abs(rank) * radialStep,
+				renderLon: normalizeDeg(sorted[idx]!.lon + rank * angleStepDeg)
+			});
+		});
+	}
+	return placements;
+}
+
 function normalizeAspectPointId(id: string): string {
 	const s = id.trim().toLowerCase();
 	return s === 'desc' ? 'dsc' : s;
@@ -217,20 +288,36 @@ function maxOrbForAspectType(aspectType: string, aspectOrbs: Record<string, numb
 	return 8;
 }
 
-function strokeWidthFromOrbTiers(
-	orbDeg: number,
-	maxOrbDeg: number,
-	tier: AspectLineTierStyleState
-): number {
+type AspectOrbTier = 'tight' | 'medium' | 'loose' | 'outer';
+
+function aspectOrbTier(orbDeg: number, maxOrbDeg: number, tier: AspectLineTierStyleState): AspectOrbTier {
 	const max = Math.max(maxOrbDeg, 1e-9);
 	const pct = (Math.abs(orbDeg) / max) * 100;
 	const t = tier.tightThresholdPct;
 	const m = Math.max(tier.mediumThresholdPct, t);
 	const l = Math.max(tier.looseThresholdPct, m);
-	if (pct <= t) return tier.widthTight;
-	if (pct <= m) return tier.widthMedium;
-	if (pct <= l) return tier.widthLoose;
+	if (pct <= t) return 'tight';
+	if (pct <= m) return 'medium';
+	if (pct <= l) return 'loose';
+	return 'outer';
+}
+
+function strokeWidthForAspectTier(orbTier: AspectOrbTier, tier: AspectLineTierStyleState): number {
+	if (orbTier === 'tight') return tier.widthTight;
+	if (orbTier === 'medium') return tier.widthMedium;
+	if (orbTier === 'loose') return tier.widthLoose;
 	return tier.widthOuter;
+}
+
+/** Tight/medium/loose aspects always render solid; only the outer (loosest) tier follows `outerLineStyle`. */
+function strokeDasharrayForAspectTier(
+	orbTier: AspectOrbTier,
+	outerLineStyle: AspectLineStyleId,
+	strokeWidthPx: number
+): string | undefined {
+	if (orbTier !== 'outer' || outerLineStyle === 'solid') return undefined;
+	if (outerLineStyle === 'dotted') return `0.1 ${(strokeWidthPx * 2.4).toFixed(2)}`;
+	return `${(strokeWidthPx * 3).toFixed(2)} ${(strokeWidthPx * 2).toFixed(2)}`;
 }
 
 export interface RadixAspectDrawInput {
@@ -259,6 +346,8 @@ export interface HoroscopeWheelProps {
 	 * as native `<image>` with per-tint SVG filters (`elementColors` for signs; primary for light planets).
 	 */
 	glyphSet?: AstrologyGlyphSetId;
+	/** Outer ring rendering: `minimalist` is sign dividers only, `technical` adds a 360° degree scale. */
+	wheelStyle?: WheelStyleId;
 	/** Fire / earth / air / water colors for zodiac ring on the wheel. */
 	elementColors?: ElementColors;
 	/** Resolved CSS color for light-theme planet glyphs (typically `--color-primary`). */
@@ -303,6 +392,7 @@ export interface HoroscopeWheelProps {
 export function HoroscopeWheel({
 	theme,
 	glyphSet,
+	wheelStyle = 'technical',
 	bodyLongitudes,
 	bodyOrder,
 	transitBodyLongitudes,
@@ -346,14 +436,20 @@ export function HoroscopeWheel({
 	const center = wheelSize / 2;
 	const outerRadius = 320;
 	const innerRadius = 270;
-	const houseRingGap = 6;
-	const houseOuterRadius = innerRadius - houseRingGap;
-	const houseInnerRadius = houseOuterRadius - 25;
+	/** Outer boundary, inner boundary, sign dividers, and bold degree ticks share one weight. */
+	const zodiacRingStrokeWidth = 2;
 	const innerCenterRing = 184;
 	const innerCenterCore = 152;
+	/** House band sits flush against the innermost circle instead of the zodiac ring, so its own boundary doesn't read as a near-duplicate of `innerRadius`. */
+	const houseBandWidth = 20;
+	const houseInnerRadius = innerCenterCore;
+	const houseOuterRadius = houseInnerRadius + houseBandWidth;
 	/** Small outward nudge from the original mid-band radii (larger values crowded the layout). */
 	const glyphRadialOutset = 3;
-	const planetRadius = (houseInnerRadius + innerCenterRing) / 2 - 8 + glyphRadialOutset;
+	/** Fraction of the way from `houseOuterRadius` to `innerRadius`; above 0.5 biases glyphs outward, closer to the zodiac ring, so they're easier to find and click. */
+	const planetBandOuterBias = 0.62;
+	const planetRadius =
+		houseOuterRadius + (innerRadius - houseOuterRadius) * planetBandOuterBias - 8 + glyphRadialOutset;
 	const houseLabelRadius = (houseInnerRadius + houseOuterRadius) / 2;
 	/** Aspect chords stop at the first inner circle, keeping the band to the second circle clear. */
 	const radixAspectChordRadius = innerCenterCore;
@@ -393,6 +489,14 @@ export function HoroscopeWheel({
 		key,
 		icon: OBSERVABLE_OBJECT_META.get(key)?.icon ?? key.slice(0, 3)
 	}));
+	/** Bodies in the same conjunction fan into a triangle inward from `planetRadius`; true longitude is untouched elsewhere. */
+	const bodyPlacementByKey = resolveDeclutteredPlacements(
+		bodies
+			.map(({ key }) => ({ key, lon: wheelBodyLongitudes[key] }))
+			.filter((entry): entry is { key: string; lon: number } => typeof entry.lon === 'number'),
+		planetRadius,
+		houseOuterRadius + 14
+	);
 	const transitBodies: { key: HoroscopeWheelBody; icon: string }[] = (transitBodyOrder ?? []).map(
 		(key) => ({
 			key,
@@ -649,7 +753,7 @@ export function HoroscopeWheel({
 				r={outerRadius}
 				fill="none"
 				stroke={strokeMain}
-				strokeWidth="1.5"
+				strokeWidth={zodiacRingStrokeWidth}
 			/>
 			<circle
 				cx={center}
@@ -657,7 +761,7 @@ export function HoroscopeWheel({
 				r={innerRadius}
 				fill="none"
 				stroke={strokeMain}
-				strokeWidth="1.5"
+				strokeWidth={zodiacRingStrokeWidth}
 			/>
 
 			{zodiacSigns.map((sign, idx) => {
@@ -674,45 +778,39 @@ export function HoroscopeWheel({
 						x2={x2}
 						y2={y2}
 						stroke={strokeSoft}
-						strokeWidth="1.5"
+						strokeWidth={zodiacRingStrokeWidth}
 					/>
 				);
 			})}
 
-			<g>
-				{Array.from({ length: 360 }, (_, i) => {
-					const rad = longitudeToScreenRadians(displayLon(i));
-					const is10Degree = i % 10 === 0;
-					const is5Degree = i % 5 === 0;
-					let tickLength: number;
-					let tickWidth: number;
-					if (is10Degree) {
-						tickLength = 20;
-						tickWidth = 1.5;
-					} else if (is5Degree) {
-						tickLength = 12;
-						tickWidth = 1.2;
-					} else {
-						tickLength = 8;
-						tickWidth = 0.5;
-					}
-					const x1 = center + innerRadius * Math.cos(rad);
-					const y1 = center + innerRadius * Math.sin(rad);
-					const x2 = center + (innerRadius + tickLength) * Math.cos(rad);
-					const y2 = center + (innerRadius + tickLength) * Math.sin(rad);
-					return (
-						<line
-							key={`inner-tick-${i}`}
-							x1={x1}
-							y1={y1}
-							x2={x2}
-							y2={y2}
-							stroke={strokeSoft}
-							strokeWidth={tickWidth}
-						/>
-					);
-				})}
-			</g>
+			{wheelStyle === 'technical' && (
+				<g>
+					{Array.from({ length: 360 }, (_, i) => {
+						const rad = longitudeToScreenRadians(displayLon(i));
+						const is10Degree = i % 10 === 0;
+						const is5Degree = i % 5 === 0 && !is10Degree;
+						const ringWidth = outerRadius - innerRadius;
+						/** 10° ticks read longer; 5° ticks stay 1°-length but bolder — mirrors the Technical ring spec. */
+						const tickLength = is10Degree ? ringWidth * 0.48 * 0.6 : ringWidth * 0.14;
+						const tickWidth = is10Degree || is5Degree ? zodiacRingStrokeWidth : 0.6;
+						const x1 = center + innerRadius * Math.cos(rad);
+						const y1 = center + innerRadius * Math.sin(rad);
+						const x2 = center + (innerRadius + tickLength) * Math.cos(rad);
+						const y2 = center + (innerRadius + tickLength) * Math.sin(rad);
+						return (
+							<line
+								key={`inner-tick-${i}`}
+								x1={x1}
+								y1={y1}
+								x2={x2}
+								y2={y2}
+								stroke={strokeSoft}
+								strokeWidth={tickWidth}
+							/>
+						);
+					})}
+				</g>
+			)}
 
 			{zodiacSigns.map((sign) => {
 				const rad = longitudeToScreenRadians(displayLon(sign.angle + 15));
@@ -769,15 +867,6 @@ export function HoroscopeWheel({
 				strokeWidth="1.25"
 				opacity={0.72}
 			/>
-			<circle
-				cx={center}
-				cy={center}
-				r={houseInnerRadius}
-				fill="none"
-				stroke={strokeMain}
-				strokeWidth="1.25"
-				opacity={0.72}
-			/>
 
 			<circle
 				cx={center}
@@ -787,6 +876,8 @@ export function HoroscopeWheel({
 				stroke={strokeSoft}
 				strokeWidth="1.5"
 			/>
+
+			{/* houseInnerRadius === innerCenterCore by design — the house band sits flush against it, so its inner edge is this circle, not a separate one. */}
 			<circle
 				cx={center}
 				cy={center}
@@ -928,7 +1019,9 @@ export function HoroscopeWheel({
 					const pa = polar(center, center, radixAspectChordRadius, displayLon(aLon));
 					const pb = polar(center, center, radixAspectChordRadius, displayLon(bLon));
 					const maxOrb = maxOrbForAspectType(aspect.type, orbTable);
-					const sw = strokeWidthFromOrbTiers(aspect.orb, maxOrb, tierStyle);
+					const orbTier = aspectOrbTier(aspect.orb, maxOrb, tierStyle);
+					const sw = strokeWidthForAspectTier(orbTier, tierStyle);
+					const dasharray = strokeDasharrayForAspectTier(orbTier, tierStyle.outerLineStyle, sw);
 					const baseHex = colorTable[aspect.type] ?? 'var(--token-viz-2)';
 					const stroke =
 						baseHex.length === 7 && baseHex.startsWith('#')
@@ -951,6 +1044,7 @@ export function HoroscopeWheel({
 								stroke={stroke}
 								strokeWidth={sw}
 								strokeLinecap="round"
+								strokeDasharray={dasharray}
 								opacity={dimActive ? (emphasized ? 1 : 0.15) : 0.5}
 								style={{ transition: 'opacity 0.16s ease' }}
 							/>
@@ -982,7 +1076,15 @@ export function HoroscopeWheel({
 					{bodies.flatMap(({ key, icon }) => {
 						const lon = wheelBodyLongitudes[key];
 						if (typeof lon !== 'number') return [];
-						const p = polar(center, center, planetRadius, displayLon(lon));
+						const placement = bodyPlacementByKey.get(key);
+						const p = polar(
+							center,
+							center,
+							placement?.radius ?? planetRadius,
+							displayLon(placement?.renderLon ?? lon)
+						);
+						const isSelected =
+							selectedObject?.layer === 'radix' && selectedObject.bodyId === key;
 						const hi = highlightBodies.has(key);
 						let hemiDim = 1;
 						if (hemisphereOverlay !== 'off') {
@@ -1005,7 +1107,32 @@ export function HoroscopeWheel({
 										? 0.62
 										: 1) * hemiDim;
 						const planetHref = astrologyGlyphSrc(key);
+						/** Selected glyph's exact longitude on the ring, terminating at `innerRadius` — the side opposite the outward-facing degree ticks. */
+						const boundaryPoint = polar(center, center, innerRadius, displayLon(lon));
 						return [
+							...(isSelected
+								? [
+										<g key={`${key}-trailer`} data-handoff={`Trailer_${key}`} pointerEvents="none">
+											<line
+												x1={p.x}
+												y1={p.y}
+												x2={boundaryPoint.x}
+												y2={boundaryPoint.y}
+												stroke="var(--theme-accent)"
+												strokeWidth={1}
+												strokeDasharray="2 2"
+												opacity={0.85}
+											/>
+											<circle
+												cx={boundaryPoint.x}
+												cy={boundaryPoint.y}
+												r={2.5}
+												fill="var(--theme-accent)"
+												opacity={0.9}
+											/>
+										</g>
+									]
+								: []),
 							<g
 								key={key}
 								data-handoff={`Planet_${key}`}
@@ -1014,7 +1141,7 @@ export function HoroscopeWheel({
 								onClick={(event) => emitObjectClick(event, key, 'radix')}
 							>
 								<circle cx={p.x} cy={p.y} r="22" fill="transparent" />
-								{(hi || (selectedObject?.layer === 'radix' && selectedObject.bodyId === key)) && (
+								{(hi || isSelected) && (
 									<circle
 										cx={p.x}
 										cy={p.y}

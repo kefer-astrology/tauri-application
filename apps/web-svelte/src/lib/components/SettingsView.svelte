@@ -27,9 +27,16 @@
     type AppShellIconSetId
   } from '$lib/stores/app-shell-icons.svelte';
   import {
+    wheelStyleOptions,
+    wheelStyleSettings,
+    setWheelStyle,
+    type WheelStyleId
+  } from '$lib/stores/wheel-style.svelte';
+  import {
     ASPECT_ROWS,
     DEFAULT_ASPECT_COLORS,
     DEFAULT_ASPECT_ORBS,
+    type AspectLineStyleId,
     type AspectLineTierStyleState
   } from '$lib/astrology/aspects';
   import BodySelector from '$lib/components/BodySelector.svelte';
@@ -118,6 +125,11 @@
     appShellIconSetOptions.find((s) => s.id === appShellIconSetValue)?.label ?? 'Select app shell icon set'
   );
 
+  let wheelStyleValue = $state(String(wheelStyleSettings.activeStyle));
+  const wheelStyleTriggerContent = $derived(
+    wheelStyleOptions.find((s) => s.id === wheelStyleValue)?.label ?? t('select_wheel_style', {}, 'Select wheel style')
+  );
+
   $effect(() => {
     if (presetValue !== String(preset.id)) {
       applyPreset(presetValue);
@@ -147,6 +159,19 @@
   $effect(() => {
     if (appShellIconSetValue !== appShellIconSettings.activeSet && appShellIconSetOptions.some((s) => s.id === appShellIconSetValue)) {
       setAppShellIconSet(appShellIconSetValue as AppShellIconSetId);
+      settingsChanged = true;
+    }
+  });
+
+  $effect(() => {
+    if (wheelStyleValue !== wheelStyleSettings.activeStyle) {
+      wheelStyleValue = wheelStyleSettings.activeStyle;
+    }
+  });
+
+  $effect(() => {
+    if (wheelStyleValue !== wheelStyleSettings.activeStyle && wheelStyleOptions.some((s) => s.id === wheelStyleValue)) {
+      setWheelStyle(wheelStyleValue as WheelStyleId);
       settingsChanged = true;
     }
   });
@@ -188,6 +213,11 @@
     { key: 'widthMedium', labelKey: 'settings_aspect_line_width_medium', min: 0.25, step: 0.25 },
     { key: 'widthLoose', labelKey: 'settings_aspect_line_width_loose', min: 0.25, step: 0.25 },
     { key: 'widthOuter', labelKey: 'settings_aspect_line_width_outer', min: 0.25, step: 0.25 }
+  ];
+  const ASPECT_LINE_OUTER_STYLE_OPTIONS: { id: AspectLineStyleId; label: string }[] = [
+    { id: 'solid', label: 'Solid' },
+    { id: 'dashed', label: 'Dashed' },
+    { id: 'dotted', label: 'Dotted' }
   ];
 
   $effect(() => {
@@ -594,6 +624,37 @@
                 />
               </div>
             {/each}
+            <div class="space-y-1">
+              <label class="text-xs" for="aspect-tier-outer-style">
+                {t('settings_aspect_line_outer_style', {}, 'Outer tier line style')}
+              </label>
+              <Select.Root
+                type="single"
+                name="aspectOuterLineStyle"
+                value={aspectLineTiers.outerLineStyle}
+                onValueChange={(value) => {
+                  const next = value === 'solid' || value === 'dashed' ? value : 'dotted';
+                  aspectLineTiers = { ...aspectLineTiers, outerLineStyle: next };
+                  settingsChanged = true;
+                  void persistWorkspaceDefaultsPatch(
+                    { aspectLineTierStyle: aspectLineTiers },
+                    { recomputeCharts: true }
+                  );
+                }}
+              >
+                <Select.Trigger class="h-9" id="aspect-tier-outer-style">
+                  {ASPECT_LINE_OUTER_STYLE_OPTIONS.find((o) => o.id === aspectLineTiers.outerLineStyle)?.label ??
+                    'Dotted'}
+                </Select.Trigger>
+                <Select.Content>
+                  <Select.Group>
+                    {#each ASPECT_LINE_OUTER_STYLE_OPTIONS as option (option.id)}
+                      <Select.Item value={option.id} label={option.label}>{option.label}</Select.Item>
+                    {/each}
+                  </Select.Group>
+                </Select.Content>
+              </Select.Root>
+            </div>
           </div>
         </div>
       </div>
@@ -653,6 +714,28 @@
           >
             Reset glyph cache
           </Button>
+        </div>
+        <div class="space-y-2 w-full sm:w-auto sm:min-w-[240px]">
+          <label class="block text-sm font-medium opacity-90" for="settings-wheel-style">{t('select_wheel_style', {}, 'Wheel style')}</label>
+          <div class="min-w-[220px]">
+            <Select.Root type="single" name="wheelStyle" bind:value={wheelStyleValue}>
+              <Select.Trigger class="w-[220px]" id="settings-wheel-style">
+                {wheelStyleTriggerContent}
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Group>
+                  {#each wheelStyleOptions as styleOpt (styleOpt.id)}
+                    <Select.Item value={styleOpt.id} label={styleOpt.label}>
+                      {styleOpt.label}
+                    </Select.Item>
+                  {/each}
+                </Select.Group>
+              </Select.Content>
+            </Select.Root>
+          </div>
+          <div class="text-xs text-muted-foreground max-w-[260px]">
+            {wheelStyleOptions.find((s) => s.id === wheelStyleValue)?.description}
+          </div>
         </div>
         <div class="space-y-2 w-full sm:w-auto sm:min-w-[240px]">
           <label class="block text-sm font-medium opacity-90" for="settings-app-shell-set">App shell icon set</label>
