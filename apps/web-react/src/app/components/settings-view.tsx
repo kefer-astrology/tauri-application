@@ -42,6 +42,7 @@ import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
 import {
 	SUPPORTED_RUST_HOUSE_SYSTEMS,
+	type AspectLineStyleId,
 	type AspectLineTierStyleState,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
@@ -112,6 +113,12 @@ const PRESET_OPTIONS = [
 	{ value: 'violet', label: 'Violet' },
 	{ value: 'rose', label: 'Rose' }
 ] as const;
+
+const ASPECT_LINE_OUTER_STYLE_OPTIONS: { id: AspectLineStyleId; label: string }[] = [
+	{ id: 'solid', label: 'Solid' },
+	{ id: 'dashed', label: 'Dashed' },
+	{ id: 'dotted', label: 'Dotted' }
+];
 
 const GLYPH_SET_OPTIONS = [
 	{
@@ -826,6 +833,30 @@ function SettingsView({
 														commitAspectLineTiers({ widthOuter: n });
 													}}
 												/>
+											</div>
+											<div className="space-y-1">
+												<Label className="text-xs">{t('settings_aspect_line_outer_style')}</Label>
+												<Select
+													value={aspectLineTiers.outerLineStyle}
+													onValueChange={(value) => {
+														const next: AspectLineStyleId =
+															value === 'solid' || value === 'dashed' ? value : 'dotted';
+														setAspectLineTiers((p) => ({ ...p, outerLineStyle: next }));
+														markChanged();
+														commitAspectLineTiers({ outerLineStyle: next });
+													}}
+												>
+													<SelectTrigger className={cn(ft.selectTrigger, 'h-9')}>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent className={ft.selectContent}>
+														{ASPECT_LINE_OUTER_STYLE_OPTIONS.map((option) => (
+															<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+																{option.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
 											</div>
 										</div>
 									</div>

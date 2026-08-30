@@ -180,16 +180,32 @@
     return aspectColors[type] ?? 'var(--token-viz-2)';
   }
 
-  function getAspectStrokeWidth(type: string, orb: number | undefined): number {
+  type AspectOrbTier = 'tight' | 'medium' | 'loose' | 'outer';
+
+  function getAspectOrbTier(type: string, orb: number | undefined): AspectOrbTier {
     const maxOrb = Math.max(
       aspectOrbs[type] ?? DEFAULT_ASPECT_ORBS[type as keyof typeof DEFAULT_ASPECT_ORBS] ?? 8,
       0.0001
     );
     const ratioPct = (Math.abs(orb ?? 0) / maxOrb) * 100;
-    if (ratioPct <= aspectLineTierStyle.tightThresholdPct) return aspectLineTierStyle.widthTight;
-    if (ratioPct <= aspectLineTierStyle.mediumThresholdPct) return aspectLineTierStyle.widthMedium;
-    if (ratioPct <= aspectLineTierStyle.looseThresholdPct) return aspectLineTierStyle.widthLoose;
+    if (ratioPct <= aspectLineTierStyle.tightThresholdPct) return 'tight';
+    if (ratioPct <= aspectLineTierStyle.mediumThresholdPct) return 'medium';
+    if (ratioPct <= aspectLineTierStyle.looseThresholdPct) return 'loose';
+    return 'outer';
+  }
+
+  function getAspectStrokeWidth(tier: AspectOrbTier): number {
+    if (tier === 'tight') return aspectLineTierStyle.widthTight;
+    if (tier === 'medium') return aspectLineTierStyle.widthMedium;
+    if (tier === 'loose') return aspectLineTierStyle.widthLoose;
     return aspectLineTierStyle.widthOuter;
+  }
+
+  /** Tight/medium/loose aspects always render solid; only the outer (loosest) tier follows `outerLineStyle`. */
+  function getAspectDasharray(tier: AspectOrbTier, strokeWidthPx: number): string | undefined {
+    if (tier !== 'outer' || aspectLineTierStyle.outerLineStyle === 'solid') return undefined;
+    if (aspectLineTierStyle.outerLineStyle === 'dotted') return `0.1 ${(strokeWidthPx * 2.4).toFixed(2)}`;
+    return `${(strokeWidthPx * 3).toFixed(2)} ${(strokeWidthPx * 2).toFixed(2)}`;
   }
 
   function renderGlyph(
@@ -384,13 +400,16 @@
       {#if fromBody && toBody}
         {@const p1 = polar(radixAspectChordRadius, fromBody.longitude)}
         {@const p2 = polar(radixAspectChordRadius, toBody.longitude)}
+        {@const orbTier = getAspectOrbTier(aspect.type, aspect.orb)}
+        {@const strokeWidthPx = getAspectStrokeWidth(orbTier)}
         <line
           x1={p1.x}
           y1={p1.y}
           x2={p2.x}
           y2={p2.y}
           stroke={getAspectColor(aspect.type)}
-          stroke-width={getAspectStrokeWidth(aspect.type, aspect.orb)}
+          stroke-width={strokeWidthPx}
+          stroke-dasharray={getAspectDasharray(orbTier, strokeWidthPx)}
           stroke-linecap="round"
         />
       {/if}

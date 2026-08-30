@@ -102,6 +102,13 @@ export const ASPECT_GLYPHS: Record<string, string> = {
   quadrinovile: 'qNv'
 };
 
+/** Stroke style for the outer (loosest) aspect-line tier only. */
+export type AspectLineStyleId = 'solid' | 'dashed' | 'dotted';
+
+function isAspectLineStyleId(value: unknown): value is AspectLineStyleId {
+  return value === 'solid' || value === 'dashed' || value === 'dotted';
+}
+
 export interface AspectLineTierStyleState {
   tightThresholdPct: number;
   mediumThresholdPct: number;
@@ -110,6 +117,8 @@ export interface AspectLineTierStyleState {
   widthMedium: number;
   widthLoose: number;
   widthOuter: number;
+  /** Tight/medium/loose always render solid; only the outer tier uses this. */
+  outerLineStyle: AspectLineStyleId;
 }
 
 export const DEFAULT_ASPECT_LINE_TIER_STYLE: AspectLineTierStyleState = {
@@ -119,7 +128,8 @@ export const DEFAULT_ASPECT_LINE_TIER_STYLE: AspectLineTierStyleState = {
   widthTight: 5,
   widthMedium: 2,
   widthLoose: 1,
-  widthOuter: 1
+  widthOuter: 1,
+  outerLineStyle: 'dotted'
 };
 
 export function normalizeAspectLineTierStyle(
@@ -138,6 +148,9 @@ export function normalizeAspectLineTierStyle(
     widthTight: numberOr('widthTight', DEFAULT_ASPECT_LINE_TIER_STYLE.widthTight),
     widthMedium: numberOr('widthMedium', DEFAULT_ASPECT_LINE_TIER_STYLE.widthMedium),
     widthLoose: numberOr('widthLoose', DEFAULT_ASPECT_LINE_TIER_STYLE.widthLoose),
-    widthOuter: numberOr('widthOuter', DEFAULT_ASPECT_LINE_TIER_STYLE.widthOuter)
+    widthOuter: numberOr('widthOuter', DEFAULT_ASPECT_LINE_TIER_STYLE.widthOuter),
+    outerLineStyle: isAspectLineStyleId(source.outerLineStyle)
+      ? source.outerLineStyle
+      : DEFAULT_ASPECT_LINE_TIER_STYLE.outerLineStyle
   };
 }

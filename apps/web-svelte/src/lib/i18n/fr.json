@@ -422,6 +422,7 @@
 	"settings_aspect_line_width_medium": "Épaisseur de trait (moyen)",
 	"settings_aspect_line_width_loose": "Épaisseur de trait (large)",
 	"settings_aspect_line_width_outer": "Épaisseur de trait (au-delà du seuil large)",
+	"settings_aspect_line_outer_style": "Style de trait (au-delà du seuil large)",
 	"settings_element_wheel_title": "Roue — éléments classiques",
 	"settings_element_wheel_blurb": "Couleurs du zodiaque sur la roue radix. Feu : Bélier, Lion, Sagittaire. Terre : Taureau, Vierge, Capricorne. Air : Gémeaux, Balance, Verseau. Eau : Cancer, Scorpion, Poissons.",
 	"settings_element_fire": "Feu",

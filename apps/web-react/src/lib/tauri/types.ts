@@ -35,6 +35,7 @@ export interface AspectLineTierStyleDto {
 	width_medium?: number | null;
 	width_loose?: number | null;
 	width_outer?: number | null;
+	outer_line_style?: string | null;
 }
 
 export interface WorkspaceDefaultsDto {

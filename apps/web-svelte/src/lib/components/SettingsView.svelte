@@ -36,6 +36,7 @@
     ASPECT_ROWS,
     DEFAULT_ASPECT_COLORS,
     DEFAULT_ASPECT_ORBS,
+    type AspectLineStyleId,
     type AspectLineTierStyleState
   } from '$lib/astrology/aspects';
   import BodySelector from '$lib/components/BodySelector.svelte';
@@ -212,6 +213,11 @@
     { key: 'widthMedium', labelKey: 'settings_aspect_line_width_medium', min: 0.25, step: 0.25 },
     { key: 'widthLoose', labelKey: 'settings_aspect_line_width_loose', min: 0.25, step: 0.25 },
     { key: 'widthOuter', labelKey: 'settings_aspect_line_width_outer', min: 0.25, step: 0.25 }
+  ];
+  const ASPECT_LINE_OUTER_STYLE_OPTIONS: { id: AspectLineStyleId; label: string }[] = [
+    { id: 'solid', label: 'Solid' },
+    { id: 'dashed', label: 'Dashed' },
+    { id: 'dotted', label: 'Dotted' }
   ];
 
   $effect(() => {
@@ -618,6 +624,37 @@
                 />
               </div>
             {/each}
+            <div class="space-y-1">
+              <label class="text-xs" for="aspect-tier-outer-style">
+                {t('settings_aspect_line_outer_style', {}, 'Outer tier line style')}
+              </label>
+              <Select.Root
+                type="single"
+                name="aspectOuterLineStyle"
+                value={aspectLineTiers.outerLineStyle}
+                onValueChange={(value) => {
+                  const next = value === 'solid' || value === 'dashed' ? value : 'dotted';
+                  aspectLineTiers = { ...aspectLineTiers, outerLineStyle: next };
+                  settingsChanged = true;
+                  void persistWorkspaceDefaultsPatch(
+                    { aspectLineTierStyle: aspectLineTiers },
+                    { recomputeCharts: true }
+                  );
+                }}
+              >
+                <Select.Trigger class="h-9" id="aspect-tier-outer-style">
+                  {ASPECT_LINE_OUTER_STYLE_OPTIONS.find((o) => o.id === aspectLineTiers.outerLineStyle)?.label ??
+                    'Dotted'}
+                </Select.Trigger>
+                <Select.Content>
+                  <Select.Group>
+                    {#each ASPECT_LINE_OUTER_STYLE_OPTIONS as option (option.id)}
+                      <Select.Item value={option.id} label={option.label}>{option.label}</Select.Item>
+                    {/each}
+                  </Select.Group>
+                </Select.Content>
+              </Select.Root>
+            </div>
           </div>
         </div>
       </div>

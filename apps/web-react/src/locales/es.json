@@ -422,6 +422,7 @@
 	"settings_aspect_line_width_medium": "Grosor de línea (medio)",
 	"settings_aspect_line_width_loose": "Grosor de línea (amplio)",
 	"settings_aspect_line_width_outer": "Grosor de línea (más amplio que la banda amplia)",
+	"settings_aspect_line_outer_style": "Estilo de línea (más amplio que la banda amplia)",
 	"settings_element_wheel_title": "Rueda — elementos clásicos",
 	"settings_element_wheel_blurb": "Colores del anillo zodiacal en la rueda radix. Fuego: Aries, Leo, Sagitario. Tierra: Tauro, Virgo, Capricornio. Aire: Géminis, Libra, Acuario. Agua: Cáncer, Escorpio, Piscis.",
 	"settings_element_fire": "Fuego",
