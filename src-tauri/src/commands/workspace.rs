@@ -1,7 +1,7 @@
 use crate::workspace::loader::load_chart;
 use crate::workspace::{
     chart_to_summary, load_all_charts, load_workspace_manifest, ChartSummary, CurrentModelReport,
-    WorkspaceInfo, WorkspaceValidationReport,
+    TransitSetup, WorkspaceInfo, WorkspaceValidationReport,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -73,28 +73,6 @@ pub struct SaveWorkspaceDefaultsInput {
     pub default_aspect_colors: Option<HashMap<String, String>>,
     #[serde(default)]
     pub aspect_line_tier_style: Option<crate::workspace::models::AspectLineTierStyle>,
-}
-
-/// Inputs needed to reproduce a transit calculation. Computed results are intentionally
-/// excluded so the ephemeris engine can recompute them when the workspace is reopened.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TransitSetup {
-    pub version: u32,
-    pub source_chart_id: String,
-    pub transit_type: String,
-    pub period_mode: String,
-    pub from_date: String,
-    pub from_time: String,
-    pub to_date: String,
-    pub to_time: String,
-    pub time_step_seconds: u64,
-    pub transiting_bodies: Vec<String>,
-    pub transited_bodies: Vec<String>,
-    pub aspect_types: Vec<String>,
-    pub house_transitions: bool,
-    pub sign_transitions: bool,
-    pub transit_limits: bool,
-    pub precession_correction: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -303,7 +281,6 @@ pub async fn save_workspace(
     charts: Vec<serde_json::Value>,
     defaults: Option<SaveWorkspaceDefaultsInput>,
 ) -> Result<String, String> {
-    use crate::workspace::models::{WorkspaceDefaults, WorkspaceManifest};
     use std::fs;
     use std::path::Path;
 
@@ -340,94 +317,30 @@ pub async fn save_workspace(
         chart_refs.push(rel);
     }
 
-    let parsed_defaults = defaults.unwrap_or_default();
-
-    let default_house_system = parsed_defaults
-        .default_house_system
-        .as_deref()
-        .and_then(|value| match value {
-            "Placidus" => Some(crate::workspace::models::HouseSystem::Placidus),
-            "Whole Sign" => Some(crate::workspace::models::HouseSystem::WholeSign),
-            "Campanus" => Some(crate::workspace::models::HouseSystem::Campanus),
-            "Koch" => Some(crate::workspace::models::HouseSystem::Koch),
-            "Equal" => Some(crate::workspace::models::HouseSystem::Equal),
-            "Regiomontanus" => Some(crate::workspace::models::HouseSystem::Regiomontanus),
-            "Vehlow" => Some(crate::workspace::models::HouseSystem::Vehlow),
-            "Porphyry" => Some(crate::workspace::models::HouseSystem::Porphyry),
-            "Alcabitius" => Some(crate::workspace::models::HouseSystem::Alcabitius),
-            _ => None,
-        });
-    let ephemeris_engine = parsed_defaults
-        .default_engine
-        .as_deref()
-        .and_then(|value| match value {
-            "swisseph" => Some(crate::workspace::models::EngineType::Swisseph),
-            "jyotish" => Some(crate::workspace::models::EngineType::Jyotish),
-            "jpl" => Some(crate::workspace::models::EngineType::Jpl),
-            "custom" => Some(crate::workspace::models::EngineType::Custom),
-            _ => None,
-        })
-        .or(Some(crate::workspace::models::EngineType::Jpl));
-    let default_location = match (
-        parsed_defaults.default_location_name,
-        parsed_defaults.default_location_latitude,
-        parsed_defaults.default_location_longitude,
-        parsed_defaults.default_timezone,
-    ) {
-        (Some(name), Some(latitude), Some(longitude), Some(timezone)) => {
-            Some(crate::workspace::models::Location {
-                name,
-                latitude,
-                longitude,
-                timezone,
-                utc_offset: None,
-                location_mode: None,
-                timezone_mode: None,
-            })
-        }
-        _ => None,
+    // Saving an open workspace is an update, not an export. Preserve model
+    // catalogs, school definitions, definition overrides, referenced entities,
+    // presentation settings, and extension fields represented by the contract.
+    let manifest_path = base.join("workspace.yaml");
+    let mut manifest = if manifest_path.exists() {
+        load_workspace_manifest(base)?
+    } else {
+        empty_workspace_manifest(&owner)
     };
-    if let Some(location) = default_location.as_ref() {
+    manifest.owner = if owner.is_empty() {
+        manifest.owner
+    } else {
+        owner
+    };
+    manifest.charts = chart_refs;
+    if let Some(defaults) = defaults {
+        apply_workspace_presentation_patch(&mut manifest.presentation, &defaults);
+        apply_workspace_defaults_patch(&mut manifest.default, defaults);
+    }
+    if let Some(location) = manifest.default.default_location.as_ref() {
         crate::workspace::models::validate_location(location)?;
     }
-
-    let default = WorkspaceDefaults {
-        ephemeris_engine,
-        ephemeris_backend: None,
-        element_colors: None,
-        radix_point_colors: None,
-        default_location,
-        language: None,
-        theme: None,
-        default_house_system,
-        default_bodies: parsed_defaults.default_bodies,
-        default_aspects: parsed_defaults.default_aspects,
-        default_aspect_orbs: parsed_defaults.default_aspect_orbs,
-        default_aspect_colors: parsed_defaults.default_aspect_colors,
-        aspect_line_tier_style: parsed_defaults.aspect_line_tier_style,
-        time_system: None,
-    };
-    let manifest = WorkspaceManifest {
-        owner: if owner.is_empty() {
-            "User".to_string()
-        } else {
-            owner
-        },
-        active_model: None,
-        aspects: vec![],
-        bodies: vec![],
-        models: HashMap::new(),
-        model_overrides: None,
-        default,
-        chart_presets: vec![],
-        subjects: vec![],
-        charts: chart_refs,
-        layouts: vec![],
-        annotations: vec![],
-    };
     let manifest_yaml =
         serde_yaml::to_string(&manifest).map_err(|e| format!("Manifest YAML: {}", e))?;
-    let manifest_path = base.join("workspace.yaml");
     fs::write(&manifest_path, manifest_yaml).map_err(|e| format!("Write workspace.yaml: {}", e))?;
 
     Ok(workspace_path)
@@ -441,6 +354,7 @@ pub async fn save_workspace_defaults(
 ) -> Result<serde_json::Value, String> {
     let base = Path::new(&workspace_path);
     let mut manifest = load_workspace_manifest(base)?;
+    apply_workspace_presentation_patch(&mut manifest.presentation, &defaults);
     apply_workspace_defaults_patch(&mut manifest.default, defaults);
     if let Some(location) = manifest.default.default_location.as_ref() {
         crate::workspace::models::validate_location(location)?;
@@ -483,7 +397,7 @@ pub async fn save_transit_setup(
     use std::fs;
 
     let base = Path::new(&workspace_path);
-    let manifest = load_workspace_manifest(base)?;
+    let mut manifest = load_workspace_manifest(base)?;
     if setup.version != 1 {
         return Err(format!(
             "Unsupported transit setup version: {}",
@@ -496,24 +410,40 @@ pub async fn save_transit_setup(
     if setup.time_step_seconds == 0 {
         return Err("Transit setup time_step_seconds must be greater than zero".to_string());
     }
-    if find_chart_ref_by_id(base, &manifest, &setup.source_chart_id)?.is_none() {
-        return Err(format!(
-            "Transit source chart not found: {}",
-            setup.source_chart_id
-        ));
+    let source_chart_ref = find_chart_ref_by_id(base, &manifest, &setup.source_chart_id)?
+        .ok_or_else(|| format!("Transit source chart not found: {}", setup.source_chart_id))?;
+    let source_chart = load_chart(base, &source_chart_ref)?;
+    let source_report =
+        crate::workspace::current_model_report(&manifest, Some(&source_chart.config));
+    if let Some(school) = setup.school.as_deref() {
+        if !manifest.schools.contains_key(school)
+            && source_report.resolved_school.as_deref() != Some(school)
+        {
+            return Err(format!("Transit setup references unknown school: {school}"));
+        }
+    }
+    if let Some(model) = setup.model.as_deref() {
+        if !manifest.models.contains_key(model) && source_report.resolved_model != model {
+            return Err(format!("Transit setup references unknown model: {model}"));
+        }
     }
 
     let transits_dir = base.join("transits");
     fs::create_dir_all(&transits_dir)
         .map_err(|e| format!("Failed to create transits dir: {}", e))?;
-    let path = transits_dir.join(format!(
-        "{}.yml",
+    let relative_path = format!(
+        "transits/{}.yml",
         sanitize_chart_filename(&setup.source_chart_id)
-    ));
+    );
+    let path = base.join(&relative_path);
     let yaml = serde_yaml::to_string(&setup)
         .map_err(|e| format!("Transit setup YAML serialization failed: {}", e))?;
     fs::write(&path, yaml)
         .map_err(|e| format!("Write transit setup {} failed: {}", path.display(), e))?;
+    if !manifest.transit_analyses.contains(&relative_path) {
+        manifest.transit_analyses.push(relative_path);
+        write_workspace_manifest(base, &manifest)?;
+    }
     Ok(setup)
 }
 
@@ -676,7 +606,11 @@ pub async fn delete_chart(workspace_path: String, chart_id: String) -> Result<bo
         None => return Ok(false),
     };
 
+    let transit_setup_rel = format!("transits/{}.yml", sanitize_chart_filename(&chart_id));
     manifest.charts.retain(|p| p != &rel);
+    manifest
+        .transit_analyses
+        .retain(|path| path != &transit_setup_rel);
     write_workspace_manifest(base, &manifest)?;
 
     let chart_path = base.join(&rel);
@@ -690,9 +624,7 @@ pub async fn delete_chart(workspace_path: String, chart_id: String) -> Result<bo
         })?;
     }
 
-    let transit_setup_path = base
-        .join("transits")
-        .join(format!("{}.yml", sanitize_chart_filename(&chart_id)));
+    let transit_setup_path = base.join(transit_setup_rel);
     if transit_setup_path.exists() {
         fs::remove_file(&transit_setup_path).map_err(|e| {
             format!(
@@ -744,6 +676,7 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
 
     let workspace_dir = Path::new(&workspace_path);
     let manifest = load_workspace_manifest(workspace_dir)?;
+    let presentation = manifest.presentation;
     let defaults = manifest.default;
 
     let default_house_system = defaults.default_house_system.map(|h| match h {
@@ -795,8 +728,8 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
         "default_bodies": defaults.default_bodies,
         "default_aspects": defaults.default_aspects,
         "default_aspect_orbs": defaults.default_aspect_orbs,
-        "default_aspect_colors": defaults.default_aspect_colors,
-        "aspect_line_tier_style": defaults.aspect_line_tier_style,
+        "default_aspect_colors": presentation.aspect_colors.or(defaults.default_aspect_colors),
+        "aspect_line_tier_style": presentation.aspect_line_tier_style.or(defaults.aspect_line_tier_style),
         "time_system": defaults.time_system,
     }))
 }
@@ -915,12 +848,16 @@ pub async fn get_chart_details(
             "zodiac_type": zodiac_type_str,
             "engine": engine_str,
             "model": chart.config.model,
+            "model_overrides": chart.config.model_overrides,
             "override_ephemeris": chart.config.override_ephemeris,
+            "included_points": chart.config.included_points,
             "observable_objects": chart.config.observable_objects,
             "aspect_orbs": chart.config.aspect_orbs,
             "selected_aspects": chart.config.selected_aspects,
             "ayanamsa": ayanamsa_str,
             "time_system": time_system_str,
+            "display_style": chart.config.display_style,
+            "color_theme": chart.config.color_theme,
         },
         "tags": chart.tags,
         "tag_colors": chart.tag_colors,
@@ -1616,8 +1553,11 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
         owner.to_string()
     };
     crate::workspace::models::WorkspaceManifest {
+        schema_version: 1,
         owner: owner_value,
+        active_school: None,
         active_model: None,
+        schools: HashMap::new(),
         aspects: vec![],
         bodies: vec![],
         models: HashMap::new(),
@@ -1638,11 +1578,13 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
             aspect_line_tier_style: None,
             time_system: None,
         },
+        presentation: crate::workspace::models::WorkspacePresentation::default(),
         chart_presets: vec![],
         subjects: vec![],
         charts: vec![],
         layouts: vec![],
         annotations: vec![],
+        transit_analyses: vec![],
     }
 }
 
@@ -1743,6 +1685,18 @@ fn apply_workspace_defaults_patch(
     }
     if let Some(value) = patch.aspect_line_tier_style {
         defaults.aspect_line_tier_style = Some(value);
+    }
+}
+
+fn apply_workspace_presentation_patch(
+    presentation: &mut crate::workspace::models::WorkspacePresentation,
+    patch: &SaveWorkspaceDefaultsInput,
+) {
+    if let Some(value) = patch.default_aspect_colors.as_ref() {
+        presentation.aspect_colors = Some(value.clone());
+    }
+    if let Some(value) = patch.aspect_line_tier_style.as_ref() {
+        presentation.aspect_line_tier_style = Some(value.clone());
     }
 }
 
@@ -2359,6 +2313,72 @@ mod tests {
     }
 
     #[test]
+    fn save_workspace_preserves_the_complete_manifest_contract() {
+        let temp = TestWorkspaceDir::new("manifest-preservation");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_string = workspace_path.to_string_lossy().into_owned();
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_string.clone(),
+            "Original owner".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        let mut manifest = load_workspace_manifest(&workspace_path).expect("manifest should load");
+        let mut model = crate::workspace::builtin_standard_model("traditional-default");
+        model.school = Some("traditional".to_string());
+        manifest.models.insert(model.name.clone(), model);
+        manifest.schools.insert(
+            "traditional".to_string(),
+            crate::workspace::models::AstrologySchool {
+                id: "traditional".to_string(),
+                extends: None,
+                default_model: "traditional-default".to_string(),
+            },
+        );
+        manifest.active_school = Some("traditional".to_string());
+        manifest.model_overrides = Some(crate::workspace::models::ModelOverrides {
+            points: vec![crate::workspace::models::OverrideEntry {
+                id: "pluto".to_string(),
+                glyph: None,
+                angle: None,
+                default_orb: None,
+                only_for: Some(vec!["traditional".to_string()]),
+                i18n: None,
+                computed: Some(true),
+                enabled: Some(false),
+                valid_contexts: None,
+                interpretation_weight: None,
+            }],
+            aspects: Vec::new(),
+            override_orbs: HashMap::new(),
+        });
+        manifest.presentation.glyph_set = Some("classic".to_string());
+        write_workspace_manifest(&workspace_path, &manifest).expect("fixture manifest write");
+
+        tauri::async_runtime::block_on(save_workspace(
+            workspace_path_string,
+            "Updated owner".to_string(),
+            vec![sample_chart_payload("Preserved Chart")],
+            None,
+        ))
+        .expect("workspace save should succeed");
+
+        let persisted = load_workspace_manifest(&workspace_path).expect("manifest should reload");
+        assert_eq!(persisted.owner, "Updated owner");
+        assert_eq!(persisted.active_school.as_deref(), Some("traditional"));
+        assert!(persisted.models.contains_key("traditional-default"));
+        let point_override = &persisted
+            .model_overrides
+            .as_ref()
+            .expect("model overrides should survive")
+            .points[0];
+        assert_eq!(point_override.computed, Some(true));
+        assert_eq!(point_override.enabled, Some(false));
+        assert_eq!(persisted.presentation.glyph_set.as_deref(), Some("classic"));
+        assert_eq!(persisted.charts, vec!["charts/Preserved_Chart.yml"]);
+    }
+
+    #[test]
     fn create_chart_registers_chart_and_loads_in_workspace_summary() {
         let temp = TestWorkspaceDir::new("chart-create");
         let workspace_path = temp.path.join("project");
@@ -2417,8 +2437,14 @@ mod tests {
             transiting_bodies: vec!["sun".to_string(), "moon".to_string()],
             transited_bodies: vec!["saturn".to_string()],
             aspect_types: vec!["conjunction".to_string(), "square".to_string()],
+            aspect_orbs: HashMap::from([("square".to_string(), 4.0)]),
+            school: None,
+            model: None,
+            model_overrides: None,
             house_transitions: false,
             sign_transitions: true,
+            exact_hits: true,
+            station_events: true,
             transit_limits: false,
             precession_correction: true,
         };
@@ -2430,6 +2456,12 @@ mod tests {
         .expect("transit setup should save");
         assert_eq!(saved, setup);
         assert!(workspace_path.join("transits/Transit_Source.yml").is_file());
+        let manifest =
+            load_workspace_manifest(&workspace_path).expect("transit reference should load");
+        assert_eq!(
+            manifest.transit_analyses,
+            vec!["transits/Transit_Source.yml".to_string()]
+        );
 
         let loaded = tauri::async_runtime::block_on(load_transit_setup(
             workspace_path_string.clone(),

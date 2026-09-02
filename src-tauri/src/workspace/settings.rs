@@ -42,6 +42,7 @@ pub struct SettingsLayer {
     pub zodiac_type: Option<ZodiacType>,
     pub ayanamsa: Option<Ayanamsa>,
     pub time_system: Option<TimeSystem>,
+    pub model_overrides: Option<ModelOverrides>,
 }
 
 impl SettingsLayer {
@@ -58,6 +59,7 @@ impl SettingsLayer {
             zodiac_type: Some(config.zodiac_type.clone()),
             ayanamsa: config.ayanamsa.clone(),
             time_system: config.time_system.clone(),
+            model_overrides: config.model_overrides.clone(),
         }
     }
 }
@@ -119,6 +121,10 @@ pub struct EffectiveModelSettings {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CurrentModelReport {
     #[serde(default)]
+    pub requested_school: Option<String>,
+    #[serde(default)]
+    pub resolved_school: Option<String>,
+    #[serde(default)]
     pub requested_model: Option<String>,
     pub resolved_model: String,
     pub source: String,
@@ -176,6 +182,8 @@ pub fn standalone_model_report_with_operation(
     ));
 
     CurrentModelReport {
+        requested_school: None,
+        resolved_school: model.school.clone(),
         requested_model,
         resolved_model,
         source: "builtin_standard_model".to_string(),
@@ -201,9 +209,20 @@ pub fn current_model_report_with_layers(
 ) -> CurrentModelReport {
     let mut warnings = Vec::new();
     let available_models = sorted_model_names(&manifest.models);
+    let requested_school = chart_config
+        .and_then(|config| config.model.as_deref())
+        .and_then(|model_name| manifest.models.get(model_name))
+        .and_then(|model| model.school.clone())
+        .or_else(|| manifest.active_school.clone());
     let requested_model = chart_config
         .and_then(|config| non_empty_string(config.model.as_deref()))
         .or_else(|| non_empty_string(manifest.active_model.as_deref()))
+        .or_else(|| {
+            requested_school
+                .as_deref()
+                .and_then(|school| manifest.schools.get(school))
+                .and_then(|school| non_empty_string(Some(&school.default_model)))
+        })
         .map(str::to_string);
 
     let (base_model, source) = resolve_model_catalog(
@@ -212,7 +231,16 @@ pub fn current_model_report_with_layers(
         &available_models,
         &mut warnings,
     );
-    let model = merge_model_with_overrides(base_model, manifest.model_overrides.as_ref());
+    let mut model = merge_model_with_overrides(base_model, manifest.model_overrides.as_ref());
+    if let Some(layer) = preset {
+        model = merge_model_with_overrides(model, layer.model_overrides.as_ref());
+    }
+    if let Some(config) = chart_config {
+        model = merge_model_with_overrides(model, config.model_overrides.as_ref());
+    }
+    if let Some(layer) = operation {
+        model = merge_model_with_overrides(model, layer.model_overrides.as_ref());
+    }
     let effective_settings =
         effective_model_settings(Some(manifest), &model, preset, chart_config, operation);
     append_chart_compatibility_warnings(chart_config, &mut warnings);
@@ -245,6 +273,8 @@ pub fn current_model_report_with_layers(
     }
 
     CurrentModelReport {
+        requested_school,
+        resolved_school: model.school.clone(),
         requested_model,
         resolved_model: model.name.clone(),
         source,
@@ -304,6 +334,9 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
 
     let mut merged = model;
     for override_entry in &overrides.points {
+        if !override_applies(override_entry, &merged) {
+            continue;
+        }
         if let Some(body) = merged
             .body_definitions
             .iter_mut()
@@ -315,10 +348,16 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
             if let Some(i18n) = &override_entry.i18n {
                 body.i18n = i18n.clone();
             }
+            if let Some(enabled) = override_entry.enabled {
+                body.enabled = enabled;
+            }
         }
     }
 
     for override_entry in &overrides.aspects {
+        if !override_applies(override_entry, &merged) {
+            continue;
+        }
         if let Some(aspect) = merged
             .aspect_definitions
             .iter_mut()
@@ -336,6 +375,15 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
             if let Some(i18n) = &override_entry.i18n {
                 aspect.i18n = i18n.clone();
             }
+            if let Some(enabled) = override_entry.enabled {
+                aspect.enabled = enabled;
+            }
+            if let Some(valid_contexts) = &override_entry.valid_contexts {
+                aspect.valid_contexts = Some(valid_contexts.clone());
+            }
+            if let Some(weight) = override_entry.interpretation_weight {
+                aspect.interpretation_weight = Some(weight);
+            }
         }
     }
 
@@ -345,6 +393,18 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
         }
     }
     merged
+}
+
+fn override_applies(entry: &super::models::OverrideEntry, model: &AstroModel) -> bool {
+    entry.only_for.as_ref().is_none_or(|selectors| {
+        selectors.iter().any(|selector| {
+            selector.eq_ignore_ascii_case(&model.name)
+                || model
+                    .school
+                    .as_deref()
+                    .is_some_and(|school| selector.eq_ignore_ascii_case(school))
+        })
+    })
 }
 
 fn effective_model_settings(
@@ -653,7 +713,8 @@ fn aspect_orbs_from_model(model: &AstroModel) -> HashMap<String, f64> {
 mod tests {
     use super::*;
     use crate::workspace::models::{
-        ChartMode, ElementColorSettings, OverrideEntry, RadixPointColorSettings, WorkspaceDefaults,
+        AspectContext, AstrologySchool, ChartMode, ElementColorSettings, OverrideEntry,
+        RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
     };
 
     fn empty_defaults() -> WorkspaceDefaults {
@@ -677,16 +738,21 @@ mod tests {
 
     fn empty_manifest() -> WorkspaceManifest {
         WorkspaceManifest {
+            schema_version: 1,
             owner: "Tester".to_string(),
+            active_school: None,
+            schools: HashMap::new(),
             active_model: Some("default".to_string()),
             aspects: vec![],
             bodies: vec![],
             models: HashMap::new(),
             model_overrides: None,
             default: empty_defaults(),
+            presentation: WorkspacePresentation::default(),
             chart_presets: vec![],
             subjects: vec![],
             charts: vec![],
+            transit_analyses: vec![],
             layouts: vec![],
             annotations: vec![],
         }
@@ -704,6 +770,7 @@ mod tests {
             color_theme: String::new(),
             override_ephemeris: None,
             model: Some("western".to_string()),
+            model_overrides: None,
             engine: Some(EngineType::Swisseph),
             ayanamsa: Some(Ayanamsa::Lahiri),
             observable_objects: Some(vec!["moon".to_string()]),
@@ -752,6 +819,9 @@ mod tests {
                 only_for: None,
                 i18n: None,
                 computed: None,
+                enabled: None,
+                valid_contexts: None,
+                interpretation_weight: None,
             }],
             override_orbs: HashMap::new(),
         });
@@ -818,6 +888,57 @@ mod tests {
             report.effective_settings.sources.default_aspects,
             SettingSource::Operation
         );
+    }
+
+    #[test]
+    fn school_default_and_chart_definition_override_are_resolved() {
+        let mut manifest = empty_manifest();
+        let mut model = builtin_standard_model("traditional-default");
+        model.school = Some("traditional".to_string());
+        manifest.models.insert(model.name.clone(), model);
+        manifest.schools.insert(
+            "traditional".to_string(),
+            AstrologySchool {
+                id: "traditional".to_string(),
+                extends: None,
+                default_model: "traditional-default".to_string(),
+            },
+        );
+        manifest.active_school = Some("traditional".to_string());
+        manifest.active_model = None;
+        let mut chart = chart_config();
+        chart.model = None;
+        chart.model_overrides = Some(ModelOverrides {
+            points: Vec::new(),
+            aspects: vec![OverrideEntry {
+                id: "square".to_string(),
+                glyph: None,
+                angle: Some(91.0),
+                default_orb: Some(2.0),
+                only_for: Some(vec!["traditional".to_string()]),
+                i18n: None,
+                computed: Some(true),
+                enabled: Some(false),
+                valid_contexts: Some(vec![AspectContext::Transit]),
+                interpretation_weight: Some(0.5),
+            }],
+            override_orbs: HashMap::new(),
+        });
+
+        let report = current_model_report(&manifest, Some(&chart));
+        let square = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|aspect| aspect.id == "square")
+            .expect("square definition");
+
+        assert_eq!(report.requested_school.as_deref(), Some("traditional"));
+        assert_eq!(report.resolved_model, "traditional-default");
+        assert!(!square.enabled);
+        assert_eq!(square.angle, 91.0);
+        assert_eq!(square.default_orb, 2.0);
+        assert_eq!(square.interpretation_weight, Some(0.5));
     }
 
     #[test]

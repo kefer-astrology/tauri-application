@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::models::{
     Annotation, AstroModel, ChartConfig, ChartInstance, ChartPreset, ChartSubject, ModelOverrides,
-    ViewLayout, WorkspaceManifest,
+    TransitSetup, ViewLayout, WorkspaceManifest,
 };
 use super::settings::EffectiveModelSettings;
 
@@ -32,6 +32,7 @@ pub struct LoadedWorkspace {
     pub subjects: Vec<ChartSubject>,
     pub charts: Vec<ChartInstance>,
     pub chart_presets: Vec<ChartPreset>,
+    pub transit_analyses: Vec<TransitSetup>,
     pub layouts: Vec<ViewLayout>,
     pub annotations: Vec<Annotation>,
     pub diagnostics: Vec<Diagnostic>,
@@ -42,6 +43,7 @@ pub struct WorkspaceEntityCounts {
     pub subjects: usize,
     pub charts: usize,
     pub chart_presets: usize,
+    pub transit_analyses: usize,
     pub layouts: usize,
     pub annotations: usize,
 }
@@ -69,6 +71,7 @@ impl LoadedWorkspace {
                 subjects: self.subjects.len(),
                 charts: self.charts.len(),
                 chart_presets: self.chart_presets.len(),
+                transit_analyses: self.transit_analyses.len(),
                 layouts: self.layouts.len(),
                 annotations: self.annotations.len(),
             },
@@ -103,6 +106,13 @@ impl Diagnostic {
 
 pub fn validate_model(model: &AstroModel, path: &str) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
+    if model.version == 0 {
+        diagnostics.push(Diagnostic::error(
+            "invalid_model_version",
+            "Model version must be greater than zero",
+            Some(format!("{path}.version")),
+        ));
+    }
     let body_ids = validate_unique_ids(
         model.body_definitions.iter().map(|body| body.id.as_str()),
         "duplicate_body_id",
@@ -193,7 +203,20 @@ pub fn validate_model(model: &AstroModel, path: &str) -> Vec<Diagnostic> {
                     "Aspect '{}' has invalid default orb {}",
                     aspect.id, aspect.default_orb
                 ),
-                Some(aspect_path),
+                Some(aspect_path.clone()),
+            ));
+        }
+        if aspect
+            .interpretation_weight
+            .is_some_and(|weight| !weight.is_finite())
+        {
+            diagnostics.push(Diagnostic::error(
+                "invalid_aspect_interpretation_weight",
+                format!(
+                    "Aspect '{}' has a non-finite interpretation weight",
+                    aspect.id
+                ),
+                Some(format!("{aspect_path}.interpretation_weight")),
             ));
         }
     }
@@ -340,6 +363,53 @@ pub fn validate_manifest_model_references(
     model: &AstroModel,
 ) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
+    if manifest.schema_version != 1 {
+        diagnostics.push(Diagnostic::error(
+            "unsupported_workspace_schema_version",
+            format!(
+                "Workspace schema version {} is not supported (expected 1)",
+                manifest.schema_version
+            ),
+            Some("workspace.schema_version".to_string()),
+        ));
+    }
+    if let Some(active_school) = manifest.active_school.as_deref() {
+        if !manifest.schools.contains_key(active_school) {
+            diagnostics.push(Diagnostic::error(
+                "active_school_not_in_catalog",
+                format!("Active school '{active_school}' is not present in the school catalog"),
+                Some("workspace.active_school".to_string()),
+            ));
+        }
+    }
+    for (key, school) in &manifest.schools {
+        if school.id != *key {
+            diagnostics.push(Diagnostic::warning(
+                "school_key_id_mismatch",
+                format!("School key '{key}' contains school id '{}'", school.id),
+                Some(format!("workspace.schools.{key}")),
+            ));
+        }
+        if !manifest.models.contains_key(&school.default_model) {
+            diagnostics.push(Diagnostic::error(
+                "school_default_model_missing",
+                format!(
+                    "School '{}' references missing default model '{}'",
+                    school.id, school.default_model
+                ),
+                Some(format!("workspace.schools.{key}.default_model")),
+            ));
+        }
+        if let Some(parent) = school.extends.as_deref() {
+            if !manifest.schools.contains_key(parent) {
+                diagnostics.push(Diagnostic::error(
+                    "school_parent_missing",
+                    format!("School '{}' extends missing school '{parent}'", school.id),
+                    Some(format!("workspace.schools.{key}.extends")),
+                ));
+            }
+        }
+    }
     if let Some(active_model) = manifest.active_model.as_deref() {
         if !manifest.models.contains_key(active_model) {
             diagnostics.push(Diagnostic::warning(
@@ -361,6 +431,18 @@ pub fn validate_manifest_model_references(
                 ),
                 Some(format!("workspace.models.{key}")),
             ));
+        }
+        if let Some(school) = candidate.school.as_deref() {
+            if !manifest.schools.contains_key(school) {
+                diagnostics.push(Diagnostic::error(
+                    "model_school_missing",
+                    format!(
+                        "Model '{}' references missing school '{school}'",
+                        candidate.name
+                    ),
+                    Some(format!("workspace.models.{key}.school")),
+                ));
+            }
         }
         diagnostics.extend(validate_model(
             candidate,
@@ -403,6 +485,26 @@ fn validate_model_overrides(
                 Some("workspace.model_overrides.aspects".to_string()),
             ));
         }
+        if entry
+            .angle
+            .is_some_and(|angle| !angle.is_finite() || !(0.0..=360.0).contains(&angle))
+        {
+            diagnostics.push(Diagnostic::error(
+                "invalid_override_angle",
+                format!("Aspect override '{}' has an invalid angle", entry.id),
+                Some("workspace.model_overrides.aspects".to_string()),
+            ));
+        }
+        if entry
+            .default_orb
+            .is_some_and(|orb| !orb.is_finite() || orb < 0.0)
+        {
+            diagnostics.push(Diagnostic::error(
+                "invalid_override_orb",
+                format!("Aspect override '{}' has an invalid orb", entry.id),
+                Some("workspace.model_overrides.aspects".to_string()),
+            ));
+        }
     }
     for id in overrides.override_orbs.keys() {
         if !aspect_ids.contains(&normalize_id(id)) {
@@ -428,6 +530,7 @@ pub fn validate_chart_config(
             .map(|aspect| aspect.id.as_str()),
     );
     let mut diagnostics = Vec::new();
+    validate_model_overrides(config.model_overrides.as_ref(), model, &mut diagnostics);
     if let Some(bodies) = &config.observable_objects {
         validate_selection(
             bodies,
@@ -573,6 +676,7 @@ mod tests {
             color_theme: String::new(),
             override_ephemeris: None,
             model: None,
+            model_overrides: None,
             engine: None,
             ayanamsa: None,
             observable_objects: None,

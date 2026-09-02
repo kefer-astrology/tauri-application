@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::workspace::models::{AspectDefinition, BodyDefinition};
+use crate::workspace::models::{AspectContext, AspectDefinition, BodyDefinition};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BodySelection {
@@ -42,6 +42,10 @@ pub fn resolve_body_selection(
             warnings.push(format!("unknown_body_id: {requested_id}"));
             continue;
         };
+        if !definition.enabled {
+            warnings.push(format!("body_disabled_by_model: {}", definition.id));
+            continue;
+        }
         if !seen.insert(normalized) {
             warnings.push(format!("duplicate_body_id: {}", definition.id));
             continue;
@@ -78,7 +82,12 @@ pub fn compute_chart_aspects(
     aspect_orbs: &HashMap<String, f64>,
     aspect_types: Option<&[String]>,
 ) -> Vec<ComputedAspect> {
-    let specs = selected_aspects(aspect_definitions, aspect_orbs, aspect_types);
+    let specs = selected_aspects(
+        aspect_definitions,
+        aspect_orbs,
+        aspect_types,
+        AspectContext::Chart,
+    );
     let mut ids: Vec<&String> = positions.keys().collect();
     ids.sort();
 
@@ -113,7 +122,12 @@ pub fn compute_cross_aspects(
     aspect_orbs: &HashMap<String, f64>,
     aspect_types: &[String],
 ) -> Vec<ComputedAspect> {
-    let specs = selected_aspects(aspect_definitions, aspect_orbs, Some(aspect_types));
+    let specs = selected_aspects(
+        aspect_definitions,
+        aspect_orbs,
+        Some(aspect_types),
+        AspectContext::Transit,
+    );
     let mut transiting_ids: Vec<&String> = transiting_positions.keys().collect();
     let mut transited_ids: Vec<&String> = transited_positions.keys().collect();
     transiting_ids.sort();
@@ -146,6 +160,7 @@ fn selected_aspects(
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
     selected_types: Option<&[String]>,
+    context: AspectContext,
 ) -> Vec<(String, f64, f64)> {
     let selected: Option<HashSet<String>> = selected_types.map(|types| {
         types
@@ -157,6 +172,16 @@ fn selected_aspects(
     aspect_definitions
         .iter()
         .filter_map(|definition| {
+            if !definition.enabled
+                || definition.valid_contexts.as_ref().is_some_and(|contexts| {
+                    !contexts.is_empty()
+                        && !contexts.iter().any(|candidate| {
+                            std::mem::discriminant(candidate) == std::mem::discriminant(&context)
+                        })
+                })
+            {
+                return None;
+            }
             let id = definition.id.clone();
             if let Some(filter) = &selected {
                 if !filter.contains(&id.trim().to_ascii_lowercase()) {
@@ -622,6 +647,7 @@ mod tests {
     fn model_definition_and_effective_orb_control_detection() {
         let definitions = vec![AspectDefinition {
             id: "semisextile".to_string(),
+            enabled: true,
             glyph: "⚺".to_string(),
             angle: 30.0,
             default_orb: 0.5,
@@ -632,6 +658,7 @@ mod tests {
             line_width: None,
             show_label: None,
             valid_contexts: None,
+            interpretation_weight: None,
         }];
         let positions = HashMap::from([("moon".to_string(), 30.75), ("sun".to_string(), 0.0)]);
         let selected = vec!["semisextile".to_string()];
@@ -663,6 +690,7 @@ mod tests {
     fn cross_aspects_preserve_transiting_and_transited_direction() {
         let definitions = vec![AspectDefinition {
             id: "square".to_string(),
+            enabled: true,
             glyph: "□".to_string(),
             angle: 90.0,
             default_orb: 1.0,
@@ -673,6 +701,7 @@ mod tests {
             line_width: None,
             show_label: None,
             valid_contexts: None,
+            interpretation_weight: None,
         }];
         let transiting = HashMap::from([("mars".to_string(), 90.0)]);
         let transited = HashMap::from([("sun".to_string(), 0.0)]);
@@ -687,6 +716,55 @@ mod tests {
 
         assert_eq!(aspects[0].from, "mars");
         assert_eq!(aspects[0].to, "sun");
+    }
+
+    #[test]
+    fn aspect_enabled_and_context_are_computation_rules() {
+        let positions = HashMap::from([("mars".to_string(), 90.0), ("sun".to_string(), 0.0)]);
+        let mut definition = AspectDefinition {
+            id: "square".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle: 90.0,
+            default_orb: 1.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: Some(vec![AspectContext::Transit]),
+            interpretation_weight: None,
+        };
+
+        assert!(compute_chart_aspects(
+            &positions,
+            std::slice::from_ref(&definition),
+            &HashMap::new(),
+            None,
+        )
+        .is_empty());
+        assert_eq!(
+            compute_cross_aspects(
+                &HashMap::from([("mars".to_string(), 90.0)]),
+                &HashMap::from([("sun".to_string(), 0.0)]),
+                std::slice::from_ref(&definition),
+                &HashMap::new(),
+                &["square".to_string()],
+            )
+            .len(),
+            1
+        );
+
+        definition.enabled = false;
+        assert!(compute_cross_aspects(
+            &HashMap::from([("mars".to_string(), 90.0)]),
+            &HashMap::from([("sun".to_string(), 0.0)]),
+            &[definition],
+            &HashMap::new(),
+            &["square".to_string()],
+        )
+        .is_empty());
     }
 
     #[test]

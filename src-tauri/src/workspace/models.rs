@@ -84,7 +84,7 @@ pub enum ObjectType {
     Part,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AspectContext {
     Chart,
@@ -151,6 +151,20 @@ pub enum LayoutStyle {
 pub enum InputMode {
     Auto,
     Manual,
+}
+
+/// Extensible astrological tradition/school identifier.
+///
+/// This deliberately remains a string instead of a closed enum so workspaces
+/// can carry user-defined schools without requiring an application release.
+pub type AstrologySchoolId = String;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AstrologySchool {
+    pub id: AstrologySchoolId,
+    #[serde(default)]
+    pub extends: Option<AstrologySchoolId>,
+    pub default_model: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -306,6 +320,9 @@ pub struct ChartConfig {
     pub override_ephemeris: Option<String>,
     #[serde(default)]
     pub model: Option<String>,
+    /// Sparse calculation-definition changes local to this chart.
+    #[serde(default)]
+    pub model_overrides: Option<ModelOverrides>,
     #[serde(default)]
     pub engine: Option<EngineType>,
     #[serde(default)]
@@ -333,6 +350,40 @@ pub struct ChartInstance {
 pub struct ChartPreset {
     pub name: String,
     pub config: ChartConfig,
+}
+
+/// Persisted transit calculation intent. Results remain derived and are
+/// recomputed so ephemeris/model upgrades cannot leave stale values behind.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TransitSetup {
+    pub version: u32,
+    pub source_chart_id: String,
+    pub transit_type: String,
+    pub period_mode: String,
+    pub from_date: String,
+    pub from_time: String,
+    pub to_date: String,
+    pub to_time: String,
+    pub time_step_seconds: u64,
+    pub transiting_bodies: Vec<String>,
+    pub transited_bodies: Vec<String>,
+    pub aspect_types: Vec<String>,
+    #[serde(default)]
+    pub aspect_orbs: HashMap<String, f64>,
+    #[serde(default)]
+    pub school: Option<AstrologySchoolId>,
+    #[serde(default)]
+    pub model: Option<String>,
+    #[serde(default)]
+    pub model_overrides: Option<ModelOverrides>,
+    pub house_transitions: bool,
+    pub sign_transitions: bool,
+    #[serde(default)]
+    pub exact_hits: bool,
+    #[serde(default)]
+    pub station_events: bool,
+    pub transit_limits: bool,
+    pub precession_correction: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -471,11 +522,37 @@ pub struct WorkspaceDefaults {
     pub time_system: Option<TimeSystem>,
 }
 
+/// Portable presentation choices. They are persisted with the workspace but
+/// never enter astrological setting resolution or computation.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct WorkspacePresentation {
+    #[serde(default)]
+    pub theme: Option<String>,
+    #[serde(default)]
+    pub language: Option<String>,
+    #[serde(default)]
+    pub glyph_set: Option<String>,
+    #[serde(default)]
+    pub element_colors: Option<ElementColorSettings>,
+    #[serde(default)]
+    pub radix_point_colors: Option<RadixPointColorSettings>,
+    #[serde(default)]
+    pub aspect_colors: Option<HashMap<String, String>>,
+    #[serde(default)]
+    pub aspect_line_tier_style: Option<AspectLineTierStyle>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkspaceManifest {
+    #[serde(default = "default_workspace_schema_version")]
+    pub schema_version: u32,
     pub owner: String,
     #[serde(default)]
+    pub active_school: Option<AstrologySchoolId>,
+    #[serde(default)]
     pub active_model: Option<String>,
+    #[serde(default)]
+    pub schools: HashMap<AstrologySchoolId, AstrologySchool>,
     #[serde(default)]
     pub aspects: Vec<String>,
     #[serde(default)]
@@ -486,6 +563,8 @@ pub struct WorkspaceManifest {
     pub model_overrides: Option<ModelOverrides>,
     pub default: WorkspaceDefaults,
     #[serde(default)]
+    pub presentation: WorkspacePresentation,
+    #[serde(default)]
     pub chart_presets: Vec<String>, // File paths
     #[serde(default)]
     pub subjects: Vec<String>, // File paths
@@ -495,6 +574,8 @@ pub struct WorkspaceManifest {
     pub layouts: Vec<String>, // File paths
     #[serde(default)]
     pub annotations: Vec<String>, // File paths
+    #[serde(default)]
+    pub transit_analyses: Vec<String>, // File paths
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -520,6 +601,10 @@ pub struct WorkspaceInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BodyDefinition {
     pub id: String,
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Legacy presentation metadata. New workspaces should resolve glyphs in
+    /// the frontend presentation profile instead.
     pub glyph: String,
     #[serde(default)]
     pub formula: String,
@@ -544,6 +629,9 @@ pub struct BodyDefinition {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AspectDefinition {
     pub id: String,
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Legacy presentation metadata retained for YAML compatibility.
     pub glyph: String,
     #[serde(default)]
     pub angle: f64,
@@ -563,6 +651,8 @@ pub struct AspectDefinition {
     pub show_label: Option<bool>,
     #[serde(default)]
     pub valid_contexts: Option<Vec<AspectContext>>,
+    #[serde(default)]
+    pub interpretation_weight: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -605,6 +695,10 @@ pub struct ModelSettings {
 pub struct AstroModel {
     pub name: String,
     #[serde(default)]
+    pub school: Option<AstrologySchoolId>,
+    #[serde(default = "default_model_version")]
+    pub version: u32,
+    #[serde(default)]
     pub body_definitions: Vec<BodyDefinition>,
     #[serde(default)]
     pub aspect_definitions: Vec<AspectDefinition>,
@@ -620,7 +714,7 @@ pub struct AstroModel {
     pub ayanamsa: Option<Ayanamsa>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OverrideEntry {
     pub id: String,
     #[serde(default)]
@@ -633,11 +727,21 @@ pub struct OverrideEntry {
     pub only_for: Option<Vec<String>>,
     #[serde(default)]
     pub i18n: Option<HashMap<String, String>>,
+    /// Legacy function-wrapper metadata, retained losslessly. It does not
+    /// enable/disable a catalog entry because its historical meaning was not
+    /// implemented consistently.
     #[serde(default)]
     pub computed: Option<bool>,
+    /// Whether the definition participates in computation.
+    #[serde(default)]
+    pub enabled: Option<bool>,
+    #[serde(default)]
+    pub valid_contexts: Option<Vec<AspectContext>>,
+    #[serde(default)]
+    pub interpretation_weight: Option<f64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelOverrides {
     #[serde(default)]
     pub points: Vec<OverrideEntry>,
@@ -667,6 +771,18 @@ pub struct RadixPointColorSettings {
 
 fn default_degrees_in_circle() -> f64 {
     360.0
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_model_version() -> u32 {
+    1
+}
+
+fn default_workspace_schema_version() -> u32 {
+    1
 }
 
 fn default_obliquity_j2000() -> f64 {

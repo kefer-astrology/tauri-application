@@ -56,6 +56,8 @@ pub(super) fn builtin_model_settings() -> ModelSettings {
 pub(crate) fn builtin_standard_model(name: &str) -> AstroModel {
     AstroModel {
         name: name.to_string(),
+        school: None,
+        version: 1,
         body_definitions: builtin_body_definitions(),
         aspect_definitions: builtin_aspect_definitions(),
         signs: builtin_signs(),
@@ -310,6 +312,7 @@ fn body_definition(
 
     BodyDefinition {
         id: id.to_string(),
+        enabled: true,
         glyph: glyph.to_string(),
         formula: id.to_string(),
         element: None,
@@ -348,6 +351,7 @@ fn builtin_aspect_definitions() -> Vec<AspectDefinition> {
 fn aspect_definition(id: &str, label: &str, angle: f64, default_orb: f64) -> AspectDefinition {
     AspectDefinition {
         id: id.to_string(),
+        enabled: true,
         glyph: label.to_string(),
         angle,
         default_orb,
@@ -358,6 +362,7 @@ fn aspect_definition(id: &str, label: &str, angle: f64, default_orb: f64) -> Asp
         line_width: None,
         show_label: None,
         valid_contexts: None,
+        interpretation_weight: None,
     }
 }
 

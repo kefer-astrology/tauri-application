@@ -156,6 +156,7 @@ pub fn load_workspace_aggregate(
     let mut subjects = Vec::new();
     let mut charts = Vec::new();
     let mut chart_presets = Vec::new();
+    let mut transit_analyses = Vec::new();
     let mut layouts = Vec::new();
     let mut annotations = Vec::new();
 
@@ -202,6 +203,12 @@ pub fn load_workspace_aggregate(
             Err(error) => diagnostics.push(reference_error("chart_preset", reference, error)),
         }
     }
+    for reference in &manifest.transit_analyses {
+        match load_yaml_reference::<TransitSetup>(base_dir, reference, "transit analysis") {
+            Ok(analysis) => transit_analyses.push(analysis),
+            Err(diagnostic) => diagnostics.push(diagnostic),
+        }
+    }
     for reference in &manifest.layouts {
         match load_yaml_reference::<ViewLayout>(base_dir, reference, "layout") {
             Ok(layout) => layouts.push(layout),
@@ -234,6 +241,14 @@ pub fn load_workspace_aggregate(
         &mut diagnostics,
     );
     validate_named_items(
+        transit_analyses
+            .iter()
+            .map(|analysis| analysis.source_chart_id.as_str()),
+        "duplicate_transit_analysis_source",
+        "transit analysis source",
+        &mut diagnostics,
+    );
+    validate_named_items(
         layouts.iter().map(|layout| layout.name.as_str()),
         "duplicate_layout_id",
         "layout",
@@ -259,6 +274,55 @@ pub fn load_workspace_aggregate(
         .iter()
         .map(|chart| chart.id.trim().to_ascii_lowercase())
         .collect();
+    for analysis in &transit_analyses {
+        if !chart_ids.contains(&analysis.source_chart_id.trim().to_ascii_lowercase()) {
+            diagnostics.push(super::validation::Diagnostic::error(
+                "transit_source_chart_missing",
+                format!(
+                    "Transit analysis references missing chart '{}'",
+                    analysis.source_chart_id
+                ),
+                Some("transit_analyses.source_chart_id".to_string()),
+            ));
+        }
+        if analysis.version != 1 {
+            diagnostics.push(super::validation::Diagnostic::error(
+                "unsupported_transit_schema_version",
+                format!(
+                    "Transit schema version {} is not supported",
+                    analysis.version
+                ),
+                Some("transit_analyses.version".to_string()),
+            ));
+        }
+        if analysis.time_step_seconds == 0 {
+            diagnostics.push(super::validation::Diagnostic::error(
+                "invalid_transit_step",
+                "Transit time_step_seconds must be greater than zero",
+                Some("transit_analyses.time_step_seconds".to_string()),
+            ));
+        }
+        if let Some(school) = analysis.school.as_deref() {
+            if !manifest.schools.contains_key(school)
+                && validation_model.school.as_deref() != Some(school)
+            {
+                diagnostics.push(super::validation::Diagnostic::error(
+                    "transit_school_missing",
+                    format!("Transit analysis references missing school '{school}'"),
+                    Some("transit_analyses.school".to_string()),
+                ));
+            }
+        }
+        if let Some(model) = analysis.model.as_deref() {
+            if !manifest.models.contains_key(model) && validation_model.name != model {
+                diagnostics.push(super::validation::Diagnostic::error(
+                    "transit_model_missing",
+                    format!("Transit analysis references missing model '{model}'"),
+                    Some("transit_analyses.model".to_string()),
+                ));
+            }
+        }
+    }
     for layout in &layouts {
         for chart_id in &layout.chart_instances {
             validate_layout_chart_reference(
@@ -294,6 +358,7 @@ pub fn load_workspace_aggregate(
         subjects,
         charts,
         chart_presets,
+        transit_analyses,
         layouts,
         annotations,
         diagnostics,
@@ -473,5 +538,49 @@ mod tests {
 
         assert_eq!(diagnostics.len(), 2);
         assert_eq!(diagnostics[1], distinct_path);
+    }
+
+    #[test]
+    fn rust_loads_the_shared_python_writer_fixture() {
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("contracts")
+            .join("workspace-v1");
+        let loaded = load_workspace_aggregate(&fixture).expect("shared workspace should load");
+
+        assert_eq!(loaded.manifest.schema_version, 1);
+        assert_eq!(
+            loaded.manifest.active_school.as_deref(),
+            Some("traditional")
+        );
+        assert_eq!(loaded.charts.len(), 1);
+        assert_eq!(loaded.transit_analyses.len(), 1);
+        assert_eq!(
+            loaded.charts[0]
+                .config
+                .model_overrides
+                .as_ref()
+                .expect("chart overrides")
+                .aspects[0]
+                .angle,
+            Some(91.0)
+        );
+        let persisted_metadata = &loaded
+            .manifest
+            .model_overrides
+            .as_ref()
+            .expect("workspace overrides")
+            .points[0];
+        assert_eq!(persisted_metadata.computed, Some(true));
+        assert_eq!(persisted_metadata.enabled, Some(true));
+        assert!(
+            loaded
+                .diagnostics
+                .iter()
+                .all(|diagnostic| diagnostic.severity
+                    != super::super::validation::DiagnosticSeverity::Error),
+            "fixture diagnostics: {:?}",
+            loaded.diagnostics
+        );
     }
 }
