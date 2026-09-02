@@ -1,0 +1,32 @@
+apps/web-react/src/lib/tauri/types.ts
+  s_16bc0dab641562::t_53b47926a779e1 63
+  s_16bc0dab641562::t_47dcfd252f1c8e 62,65-66,77,92,103,130-131,194-195,229,234-236
+  s_16bc0dab641562::t_1fdc582c892d99 294-297,300-301
+apps/web-react/src/app/components/transits-content.tsx
+  s_16bc0dab641562::t_60d119f608398e 258-260,263-264
+apps/web-svelte/src/lib/tauri/types.ts
+  s_16bc0dab641562::t_47dcfd252f1c8e 60,63-64,75,90,101,128-129,192-193,227,232-234
+  s_16bc0dab641562::t_53b47926a779e1 61
+apps/web-svelte/src/lib/tauri/workspace.ts
+  s_16bc0dab641562::t_47dcfd252f1c8e 123,128-130
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_16bc0dab641562::t_47dcfd252f1c8e 1,23,35-37,250,258-260,315,348,350,353-354
+apps/web-svelte/src/lib/state/layout.svelte.ts
+  s_16bc0dab641562::t_47dcfd252f1c8e 12,39,50-52,314,345,347,350-351
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c76f5c1273cb6ed6b6a288b353f18db1bf7b5b0b",
+  "prompts": {},
+  "sessions": {
+    "s_16bc0dab641562": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a063ba-03a3-74a3-a76d-8307a5b6ba0c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
