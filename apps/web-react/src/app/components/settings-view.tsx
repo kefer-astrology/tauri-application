@@ -33,10 +33,16 @@ import {
 import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import { type ElementColors, type ElementId } from '@/lib/astrology/elementColors';
 import { persistGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import {
+	persistWheelStyle,
+	WHEEL_STYLE_OPTIONS,
+	type WheelStyleId
+} from '@/lib/astrology/wheelStyle';
 import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
 import {
 	SUPPORTED_RUST_HOUSE_SYSTEMS,
+	type AspectLineStyleId,
 	type AspectLineTierStyleState,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
@@ -108,6 +114,12 @@ const PRESET_OPTIONS = [
 	{ value: 'rose', label: 'Rose' }
 ] as const;
 
+const ASPECT_LINE_OUTER_STYLE_OPTIONS: { id: AspectLineStyleId; label: string }[] = [
+	{ id: 'solid', label: 'Solid' },
+	{ id: 'dashed', label: 'Dashed' },
+	{ id: 'dotted', label: 'Dotted' }
+];
+
 const GLYPH_SET_OPTIONS = [
 	{
 		id: 'default' as const,
@@ -128,6 +140,8 @@ interface SettingsViewProps {
 	onAppShellIconSetChange: (value: AppShellIconSetId) => void;
 	astrologyGlyphSet: AstrologyGlyphSetId;
 	onAstrologyGlyphSetChange: (value: AstrologyGlyphSetId) => void;
+	wheelStyle: WheelStyleId;
+	onWheelStyleChange: (value: WheelStyleId) => void;
 	elementColors: ElementColors;
 	onElementColorsCommit: (value: ElementColors) => void;
 	themePalette: ThemePalette;
@@ -143,6 +157,8 @@ function SettingsView({
 	onAppShellIconSetChange,
 	astrologyGlyphSet,
 	onAstrologyGlyphSetChange,
+	wheelStyle,
+	onWheelStyleChange,
 	elementColors,
 	onElementColorsCommit,
 	themePalette,
@@ -160,6 +176,7 @@ function SettingsView({
 	const [houseSystem, setHouseSystem] = useState<string>(workspaceDefaults.houseSystem);
 	const [presetValue, setPresetValue] = useState<string>('default');
 	const [glyphSetValue, setGlyphSetValue] = useState<AstrologyGlyphSetId>(astrologyGlyphSet);
+	const [wheelStyleValue, setWheelStyleValue] = useState<WheelStyleId>(wheelStyle);
 	const [elementDraft, setElementDraft] = useState<ElementColors>(elementColors);
 	const [themePaletteDraft, setThemePaletteDraft] = useState<ThemePalette>(themePalette);
 	const [selectedBodies, setSelectedBodies] = useState<string[]>(
@@ -218,6 +235,10 @@ function SettingsView({
 	}, [astrologyGlyphSet]);
 
 	useEffect(() => {
+		setWheelStyleValue(wheelStyle);
+	}, [wheelStyle]);
+
+	useEffect(() => {
 		setElementDraft(elementColors);
 	}, [elementColors]);
 
@@ -245,6 +266,17 @@ function SettingsView({
 			markChanged();
 		},
 		[markChanged, onAstrologyGlyphSetChange]
+	);
+
+	const onWheelStyleChangeHandler = useCallback(
+		(value: string) => {
+			const next = value === 'minimalist' ? 'minimalist' : 'technical';
+			setWheelStyleValue(next);
+			onWheelStyleChange(next);
+			persistWheelStyle(next);
+			markChanged();
+		},
+		[markChanged, onWheelStyleChange]
 	);
 
 	const onAppShellSetChange = useCallback(
@@ -288,10 +320,18 @@ function SettingsView({
 		);
 		setAspectLineTiers({ ...workspaceDefaults.aspectLineTierStyle });
 		setGlyphSetValue(astrologyGlyphSet);
+		setWheelStyleValue(wheelStyle);
 		setElementDraft(elementColors);
 		setThemePaletteDraft(themePalette);
 		onAppShellIconSetChange(readStoredAppShellIconSet());
-	}, [astrologyGlyphSet, elementColors, onAppShellIconSetChange, themePalette, workspaceDefaults]);
+	}, [
+		astrologyGlyphSet,
+		elementColors,
+		onAppShellIconSetChange,
+		themePalette,
+		wheelStyle,
+		workspaceDefaults
+	]);
 
 	const handleConfirm = useCallback(() => {
 		onElementColorsCommit(elementDraft);
@@ -372,6 +412,9 @@ function SettingsView({
 	)?.description;
 	const appShellDescription = APP_SHELL_ICON_SET_OPTIONS.find(
 		(option) => option.id === appShellIconSet
+	)?.description;
+	const wheelStyleDescription = WHEEL_STYLE_OPTIONS.find(
+		(option) => option.id === wheelStyleValue
 	)?.description;
 
 	return (
@@ -791,6 +834,30 @@ function SettingsView({
 													}}
 												/>
 											</div>
+											<div className="space-y-1">
+												<Label className="text-xs">{t('settings_aspect_line_outer_style')}</Label>
+												<Select
+													value={aspectLineTiers.outerLineStyle}
+													onValueChange={(value) => {
+														const next: AspectLineStyleId =
+															value === 'solid' || value === 'dashed' ? value : 'dotted';
+														setAspectLineTiers((p) => ({ ...p, outerLineStyle: next }));
+														markChanged();
+														commitAspectLineTiers({ outerLineStyle: next });
+													}}
+												>
+													<SelectTrigger className={cn(ft.selectTrigger, 'h-9')}>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent className={ft.selectContent}>
+														{ASPECT_LINE_OUTER_STYLE_OPTIONS.map((option) => (
+															<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+																{option.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -857,6 +924,29 @@ function SettingsView({
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('glyph_manager_title')}</Label>
 										<GlyphManager glyphSet={glyphSetValue} />
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="settings-wheel-style" className={ft.label}>
+											{t('select_wheel_style')}
+										</Label>
+										<Select value={wheelStyleValue} onValueChange={onWheelStyleChangeHandler}>
+											<SelectTrigger
+												id="settings-wheel-style"
+												className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												{WHEEL_STYLE_OPTIONS.map((option) => (
+													<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+														{option.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										{wheelStyleDescription ? (
+											<p className={cn('text-xs', ft.muted)}>{wheelStyleDescription}</p>
+										) : null}
 									</div>
 									<div className="space-y-2">
 										<Label htmlFor="settings-app-shell-set" className={ft.label}>

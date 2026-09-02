@@ -1,5 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
-import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '$lib/astrology/aspects';
+import { DEFAULT_ASPECT_LINE_TIER_STYLE, type AspectLineStyleId } from '$lib/astrology/aspects';
+
+function asAspectLineStyleId(value: unknown, fallback: AspectLineStyleId): AspectLineStyleId {
+  return value === 'solid' || value === 'dashed' || value === 'dotted' ? value : fallback;
+}
 import type { ChartData, WorkspaceDefaultsState } from '$lib/state/layout';
 import type {
   Aspect,
@@ -36,7 +40,8 @@ export function workspaceDefaultsToDto(defaults: WorkspaceDefaultsState): Worksp
       width_tight: defaults.aspectLineTierStyle.widthTight,
       width_medium: defaults.aspectLineTierStyle.widthMedium,
       width_loose: defaults.aspectLineTierStyle.widthLoose,
-      width_outer: defaults.aspectLineTierStyle.widthOuter
+      width_outer: defaults.aspectLineTierStyle.widthOuter,
+      outer_line_style: defaults.aspectLineTierStyle.outerLineStyle
     }
   };
 }
@@ -77,7 +82,11 @@ export function workspaceDefaultsDtoToStatePatch(
             DEFAULT_ASPECT_LINE_TIER_STYLE.widthLoose,
           widthOuter:
             defaults.aspect_line_tier_style.width_outer ??
-            DEFAULT_ASPECT_LINE_TIER_STYLE.widthOuter
+            DEFAULT_ASPECT_LINE_TIER_STYLE.widthOuter,
+          outerLineStyle: asAspectLineStyleId(
+            defaults.aspect_line_tier_style.outer_line_style,
+            DEFAULT_ASPECT_LINE_TIER_STYLE.outerLineStyle
+          )
         }
       : undefined
   };

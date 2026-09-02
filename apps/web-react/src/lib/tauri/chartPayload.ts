@@ -131,6 +131,13 @@ export function normalizeComputedChartPayload(
 	};
 }
 
+/** Stroke style for the outer (loosest) aspect-line tier only. */
+export type AspectLineStyleId = 'solid' | 'dashed' | 'dotted';
+
+function isAspectLineStyleId(value: unknown): value is AspectLineStyleId {
+	return value === 'solid' || value === 'dashed' || value === 'dotted';
+}
+
 /** Radix wheel aspect line weights from orb vs allowed orb (workspace default). */
 export interface AspectLineTierStyleState {
 	/** Orb ≤ this % of max orb → `widthTight`. */
@@ -142,6 +149,8 @@ export interface AspectLineTierStyleState {
 	widthLoose: number;
 	/** Wider than `looseThresholdPct` but still within orb. */
 	widthOuter: number;
+	/** Tight/medium/loose always render solid; only the outer tier uses this. */
+	outerLineStyle: AspectLineStyleId;
 }
 
 export const DEFAULT_ASPECT_LINE_TIER_STYLE: AspectLineTierStyleState = {
@@ -151,7 +160,8 @@ export const DEFAULT_ASPECT_LINE_TIER_STYLE: AspectLineTierStyleState = {
 	widthTight: 5,
 	widthMedium: 2,
 	widthLoose: 1,
-	widthOuter: 1
+	widthOuter: 1,
+	outerLineStyle: 'dotted'
 };
 
 export function aspectLineTierStyleFromDto(
@@ -168,7 +178,8 @@ export function aspectLineTierStyleFromDto(
 		widthTight: num(dto.width_tight, base.widthTight),
 		widthMedium: num(dto.width_medium, base.widthMedium),
 		widthLoose: num(dto.width_loose, base.widthLoose),
-		widthOuter: num(dto.width_outer, base.widthOuter)
+		widthOuter: num(dto.width_outer, base.widthOuter),
+		outerLineStyle: isAspectLineStyleId(dto.outer_line_style) ? dto.outer_line_style : base.outerLineStyle
 	};
 }
 
@@ -180,7 +191,8 @@ export function aspectLineTierStyleToDto(style: AspectLineTierStyleState): Aspec
 		width_tight: style.widthTight,
 		width_medium: style.widthMedium,
 		width_loose: style.widthLoose,
-		width_outer: style.widthOuter
+		width_outer: style.widthOuter,
+		outer_line_style: style.outerLineStyle
 	};
 }
 

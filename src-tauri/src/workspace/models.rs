@@ -452,6 +452,9 @@ pub struct AspectLineTierStyle {
     /// Used when the aspect is valid but looser than `loose_threshold_pct` of the max orb.
     #[serde(default = "aspect_line_tier_default_width_outer")]
     pub width_outer: f64,
+    /// Stroke style for the outer (loosest) tier only — `"solid"`, `"dashed"`, or `"dotted"`.
+    #[serde(default = "aspect_line_tier_default_outer_line_style")]
+    pub outer_line_style: String,
 }
 
 fn aspect_line_tier_default_tight_pct() -> f64 {
@@ -475,6 +478,9 @@ fn aspect_line_tier_default_width_loose() -> f64 {
 fn aspect_line_tier_default_width_outer() -> f64 {
     1.0
 }
+fn aspect_line_tier_default_outer_line_style() -> String {
+    "dotted".to_string()
+}
 
 impl Default for AspectLineTierStyle {
     fn default() -> Self {
@@ -486,6 +492,7 @@ impl Default for AspectLineTierStyle {
             width_medium: aspect_line_tier_default_width_medium(),
             width_loose: aspect_line_tier_default_width_loose(),
             width_outer: aspect_line_tier_default_width_outer(),
+            outer_line_style: aspect_line_tier_default_outer_line_style(),
         }
     }
 }

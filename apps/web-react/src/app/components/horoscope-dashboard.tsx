@@ -36,6 +36,7 @@ import { ASPECT_GLYPHS, ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import type { WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { BodySelector } from './body-selector';
 import { DetailSidePanel } from './detail-side-panel';
@@ -44,6 +45,7 @@ interface HoroscopeDashboardProps {
 	theme: Theme;
 	workspaceDefaults: WorkspaceDefaultsState;
 	glyphSet: AstrologyGlyphSetId;
+	wheelStyle?: WheelStyleId;
 	elementColors: ElementColors;
 	lightPlanetFill: string;
 	onEdit?: (chart: import('@/lib/tauri/chartPayload').AppChart) => void;
@@ -197,6 +199,7 @@ export function HoroscopeDashboard({
 	theme,
 	workspaceDefaults,
 	glyphSet,
+	wheelStyle,
 	elementColors,
 	lightPlanetFill,
 	onEdit,
@@ -698,6 +701,7 @@ export function HoroscopeDashboard({
 						<HoroscopeWheel
 							theme={theme}
 							glyphSet={glyphSet}
+							wheelStyle={wheelStyle}
 							elementColors={elementColors}
 							lightPlanetFill={lightPlanetFill}
 							bodyLongitudes={wheelBodyLongitudes}

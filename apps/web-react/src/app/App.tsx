@@ -54,6 +54,7 @@ import {
 	type ElementColors
 } from '@/lib/astrology/elementColors';
 import { readStoredGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { readStoredWheelStyle, type WheelStyleId } from '@/lib/astrology/wheelStyle';
 import {
 	persistThemePalettes,
 	readStoredThemePalettes,
@@ -216,6 +217,7 @@ export default function App() {
 	const [astrologyGlyphSet, setAstrologyGlyphSet] = useState<AstrologyGlyphSetId>(() =>
 		readStoredGlyphSet()
 	);
+	const [wheelStyle, setWheelStyle] = useState<WheelStyleId>(() => readStoredWheelStyle());
 	const [elementWheelColors, setElementWheelColors] = useState<ElementColors>(() =>
 		readStoredElementColors()
 	);
@@ -644,6 +646,7 @@ export default function App() {
 										theme={theme}
 										workspaceDefaults={workspaceDefaults}
 										glyphSet={astrologyGlyphSet}
+										wheelStyle={wheelStyle}
 										elementColors={elementWheelColors}
 										lightPlanetFill={lightPlanetFill}
 										onEdit={(chart) => {
@@ -667,6 +670,7 @@ export default function App() {
 									<InformationView
 										theme={theme}
 										glyphSet={astrologyGlyphSet}
+										wheelStyle={wheelStyle}
 										elementColors={elementWheelColors}
 										lightPlanetFill={lightPlanetFill}
 									/>
@@ -704,6 +708,8 @@ export default function App() {
 										onAppShellIconSetChange={setAppShellIconSet}
 										astrologyGlyphSet={astrologyGlyphSet}
 										onAstrologyGlyphSetChange={setAstrologyGlyphSet}
+										wheelStyle={wheelStyle}
+										onWheelStyleChange={setWheelStyle}
 										elementColors={elementWheelColors}
 										onElementColorsCommit={commitElementWheelColors}
 										themePalette={currentThemePalette}
