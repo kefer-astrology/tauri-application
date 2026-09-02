@@ -1,0 +1,47 @@
+docs/content/developer/architecture.md
+  s_16bc0dab641562::t_60d119f608398e 71-72
+  s_16bc0dab641562::t_26c2234d9971fe 57-59,73-74,81-82
+docs/content/developer/ui-conventions.md
+  s_16bc0dab641562::t_26c2234d9971fe 9-23
+docs/content/developer/workspace-yaml.md
+  s_16bc0dab641562::t_60d119f608398e 300-301
+  s_16bc0dab641562::t_26c2234d9971fe 1-189,220-222,225-289,293-299,302-311,313,326-332
+  s_16bc0dab641562::t_c3ee69437d5bdf 190-219,290-292
+  s_16bc0dab641562::t_a855fa5e6abe17 312,314-318,320-325
+  s_16bc0dab641562::t_f4fc442b8781ad 223-224
+  s_16bc0dab641562::t_7cd4bfe1723ec2 319
+docs/content/developer/tauri-command-contracts.md
+  s_16bc0dab641562::t_a855fa5e6abe17 140-141
+  s_16bc0dab641562::t_67f6061406543f 73-86
+  s_16bc0dab641562::t_28386c1483c8d8 39-40,44-47,131,151-152,177-181
+docs/content/developer/_index.md
+  s_16bc0dab641562::t_28386c1483c8d8 18-20,31-33
+docs/content/developer/backend-structure.md
+  s_16bc0dab641562::t_a855fa5e6abe17 370-374
+  s_16bc0dab641562::t_28386c1483c8d8 356-369
+  s_16bc0dab641562::t_26c2234d9971fe 99-102,192
+  s_16bc0dab641562::t_cc90092ef203fb 375-378
+docs/content/manual/settings-and-appearance.md
+  s_16bc0dab641562::t_26c2234d9971fe 11-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "548bec339a62a44fdef9fd9a9061c43cdebc290e",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_16bc0dab641562": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a063ba-03a3-74a3-a76d-8307a5b6ba0c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
