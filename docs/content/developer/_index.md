@@ -15,6 +15,9 @@ The Developer Manual is the shared technical source of truth for contributors an
 
 ## Contracts
 
+- **[Workspace YAML contract](./workspace-yaml/)** — complete project tree,
+  schools/models, settings inheritance, chart overrides, presentation, and
+  persisted transit intent.
 - **[Tauri command contracts](./tauri-command-contracts/)** — frontend-facing native commands.
 - **[Rust workspace contract](./rust-workspace-contract/)** — persistence and no-sidecar rules.
 - **[Frontend workflow baseline](./frontend-workflow-baseline/)** — workflows both frontends are measured against.
@@ -25,7 +28,9 @@ The Developer Manual is the shared technical source of truth for contributors an
 
 ## Architecture and computation
 
-- **[System architecture](./architecture/)** and **[backend structure](./backend-structure/)** describe system boundaries and data ownership.
+- **[System architecture](./architecture/)** describes the overview;
+  **[backend structure](./backend-structure/)** describes implementation
+  boundaries without redefining the YAML format.
 - **[SPICE backend](./spice-backend/)**, **[ephemeris manager](./ephemeris-manager/)**, and **[Python package](./python-package/)** describe computation backends.
 - **[House systems](./house-systems/)**, **[lunar phase](./lunar-phase/)**, and **[physical properties](./physical-properties/)** document domain calculations and data.
 

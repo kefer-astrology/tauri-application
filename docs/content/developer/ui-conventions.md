@@ -6,6 +6,21 @@ weight: 30
 
 Crisp reference for **themes**, **secondary navigation**, **shared component strategy**, and **i18n** so new work stays aligned with the app themes and a single source of styling truth.
 
+## Persistence boundary
+
+Visual semantics belong to the UI. Theme, glyph set, element/body/aspect colors,
+line styling, language, and layout appearance may be persisted in
+`workspace.yaml:presentation` when they should travel with a project, or in
+frontend local storage when they are device/session preferences. They must not
+change astronomical or astrological computation.
+
+The computation contract owns schools/models, engines, zodiac and ayanamsa,
+house systems, selected bodies/aspects, aspect angles/orbs/contexts, subject
+time/location, and transit intent. See the
+[Workspace YAML contract](../workspace-yaml/) for the exact boundary. Legacy
+model glyph/color fields remain readable during migration but are not the new
+source of truth.
+
 ## UI View Modes
 
 - **Radix View**: circular chart, houses, aspects (derived).

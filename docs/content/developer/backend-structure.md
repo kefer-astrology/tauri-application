@@ -96,6 +96,10 @@ neither backend silently drops a supplied layer.
 
 ## Workspace representations
 
+The field-by-field persisted format, folder composition, examples, and test
+commands live in the [Workspace YAML contract](../workspace-yaml/). This page
+describes its implementation boundaries.
+
 Two workspace representations have different responsibilities and must not be
 collapsed into one type.
 
@@ -185,7 +189,7 @@ previous scope.
 | zodiac and ayanamsa          |     yes      |     yes      |   yes    |     yes     |    yes    |
 | selected bodies              |     yes      |     yes      |   yes    |     yes     |    yes    |
 | selected aspects and orbs    |     yes      |     yes      |   yes    |     yes     |    yes    |
-| language, theme, colors      |      no      |     yes      |   yes    |     yes     |    no     |
+| language, theme, glyphs, colors | UI only | presentation | UI only | legacy only | UI only |
 | subject event time           |      no      |  seed only   | template | owns value  | temporary |
 | subject location             |      no      |  seed only   | template | owns value  | temporary |
 | model definitions            | owns catalog | may override |    no    | exceptional |    no     |
@@ -349,6 +353,29 @@ The shared settings fixture compares:
 - model/default/override resolution
 - selected bodies, aspects, and orbs
 - result DTO shape
+
+## Relation to `function-wrapper`
+
+The sibling `function-wrapper/` design informed the layered shape here: a main
+model supplies defaults, narrower scopes carry sparse overrides, and effective
+settings are resolved before computation. This Rust contract goes further in
+four persisted areas: a typed school catalog, chart-local definition overrides,
+a computation-independent presentation section, and registered transit intent.
+
+The two implementations should not exchange their internal runtime types.
+Their compatibility boundary is serialized YAML plus shared resolution tests.
+In particular, a string such as `hellenic` is not itself a school unless it is
+registered in `schools`, and visual glyph/color metadata is no longer treated
+as a calculation override in new workspace files.
+
+The in-repository Python sidecar now reads and writes workspace schema v1,
+including schools, model versions, chart-local definition overrides,
+presentation, transit analyses, tag colors, Rodden ratings, and legacy
+`computed` metadata. Cross-language regression coverage uses the shared
+`contracts/workspace-v1/` fixture from both Rust and Python. The corresponding
+reader, writer, resolver, and test are maintained in the tracked sibling
+`function-wrapper/` repository; the ignored `backend-python/` directory is only
+the local sidecar mirror and must not be mistaken for the source of record.
 - warning and provenance fields
 - error category
 - numerical results using field-specific tolerances

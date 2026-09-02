@@ -36,10 +36,15 @@ This page focuses on what the frontend can rely on today, including current no-o
 
 ### `save_workspace(workspace_path, owner, charts, defaults?) -> Result<String, String>`
 
-- Creates `workspace.yaml` and `charts/*.yml` under `workspace_path`.
+- Creates a new manifest or updates an existing `workspace.yaml`, and writes
+  `charts/*.yml` under `workspace_path`.
 - Sanitizes chart file names from chart ids.
 - Accepts an optional `defaults` payload and persists it into `workspace.yaml` alongside chart references.
 - Returns the `workspace_path` string on success.
+- When updating, preserves schools, models, definition overrides,
+  presentation, transit references, presets, subjects, layouts, and
+  annotations. It replaces only the chart reference list and explicitly
+  supplied defaults.
 
 Acceptance criteria:
 
@@ -64,6 +69,20 @@ Acceptance criteria:
 - Creates the workspace directory and `charts/`.
 - Writes an empty `workspace.yaml`.
 - Returns an error if `workspace.yaml` already exists.
+
+### `save_transit_setup(workspace_path, setup) -> Result<TransitSetup, String>`
+
+- Persists reproducible transit intent under `transits/` and registers its
+  relative path in `workspace.yaml:transit_analyses`.
+- Stores source chart, period/step, bodies, aspects/orbs, optional
+  school/model/definition overrides, and requested event families.
+- Does not store computed positions, aspects, or series rows.
+- Rejects unsupported versions, missing source charts, and zero time steps.
+
+### `load_transit_setup(workspace_path, chart_id) -> Result<Option<TransitSetup>, String>`
+
+- Returns the registered source chart's persisted form state when present.
+- Validates version and source-chart identity before returning it.
 
 ### `delete_workspace(workspace_path) -> Result<bool, String>`
 
@@ -109,7 +128,7 @@ Acceptance criteria:
 
 ### `validate_workspace(workspace_path) -> Result<WorkspaceValidationReport, String>`
 
-- Strictly attempts every subject, chart, preset, layout, and annotation
+- Strictly attempts every subject, chart, preset, transit analysis, layout, and annotation
   reference under the workspace root.
 - Returns `valid`, typed entity counts, workspace identity, and all structured
   diagnostics.
@@ -118,6 +137,8 @@ Acceptance criteria:
   references have specific stable codes.
 - An invalid referenced item does not prevent other items from being inspected.
 - Neither frontend currently calls this command; it remains a backend-only capability until a UI surface needs it.
+- The Rust loader and Python sidecar share the versioned
+  `contracts/workspace-v1/` interoperability fixture.
 
 ### `get_workspace_defaults(workspace_path) -> Result<Value, String>`
 
@@ -127,7 +148,8 @@ Acceptance criteria:
 ### `get_current_model_report(workspace_path, chart_id?) -> Result<CurrentModelReport, String>`
 
 - Returns one canonical model envelope for the workspace, optionally resolved through a specific chart.
-- Includes the requested model name, resolved model name, available model names, model catalog, effective settings, model overrides, source, and warnings.
+- Includes requested/resolved school and model names, available model names,
+  the resolved model catalog, effective settings, model overrides, source, and warnings.
 - Includes structured `diagnostics` for catalog, selection, override, and
   chart-level invariants.
 - `effective_settings.sources` identifies whether each effective setting came from the application fallback, model, workspace, preset, chart, or operation layer. Aspect-orb sources are reported per aspect id.
@@ -152,7 +174,11 @@ Acceptance criteria:
 ### `get_chart_details(workspace_path, chart_id) -> Result<Value, String>`
 
 - Returns the full chart payload needed by the React and Svelte editor surfaces.
-- `config` includes `mode`, `house_system`, `zodiac_type`, `engine`, `model`, `override_ephemeris`, `observable_objects`, `aspect_orbs`, `selected_aspects`, `ayanamsa`, and `time_system` — the complete set of chart-level settings-layer fields, so callers can resolve chart-level overrides without falling back to workspace defaults.
+- `config` includes `mode`, `house_system`, `zodiac_type`, `engine`, `model`,
+  `model_overrides`, `override_ephemeris`, `observable_objects`,
+  `included_points`, `aspect_orbs`, `selected_aspects`, `ayanamsa`,
+  `time_system`, and legacy visual keys. Both frontends retain these fields
+  during load/save round-trips.
 - Also returns top-level `tags`, `tag_colors`, and `roden_rating`.
 - Returns an error when the chart id is not found.
 

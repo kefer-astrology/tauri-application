@@ -8,6 +8,13 @@ Open **Settings** from the bottom of the primary sidebar. Its secondary navigati
 
 Appearance settings include the four application themes, app-shell icon family, astrology glyph family, element colors, and theme palettes. The compact theme control at the bottom of the primary sidebar provides quick access to the four themes.
 
-Calculation-oriented settings include the default location and timezone, house system, computation engine, observable bodies, aspects, orbs, colors, and aspect-line styling. Workspace defaults affect new work and may cause existing chart results to be refreshed when a relevant calculation setting changes.
+Calculation settings include the default location and timezone, school/model,
+house system, computation engine, observable bodies, aspects, angles, orbs, and
+valid calculation contexts. They may change computed results.
+
+Colors, glyph choices, theme, language, and aspect-line styling are presentation
+settings. They may travel with a workspace, but they do not change computation.
+Workspace defaults affect new work and may cause existing results to be
+refreshed only when a calculation setting changes.
 
 Language resources are shared by both frontend implementations. Changing the application language changes interface labels; it does not change the stored astronomical values.

@@ -54,8 +54,9 @@ The app has three main layers: frontend shells, the Tauri desktop boundary, and 
 8. **One resolution policy**: model, workspace, preset, chart, and operation settings resolve through one deterministic service.
 9. **Explainable configuration**: effective settings expose the scope that supplied each value.
 
-The detailed responsibility map and configuration precedence are defined in
-[Backend structure and data ownership](../backend-structure/).
+The persisted structure and every override scope are defined in
+[Workspace YAML contract](../workspace-yaml/). Backend implementation boundaries
+are defined in [Backend structure and data ownership](../backend-structure/).
 
 ## Workspace model
 
@@ -67,14 +68,18 @@ workspace/
 │   └── chart_002.yaml
 ├── subjects/
 │   └── subject_001.yaml
-└── layouts/
-    └── layout_001.yaml
+├── layouts/
+│   └── layout_001.yaml
+└── transits/
+    └── chart_001.yaml
 ```
 
 - **Live state today**: the Rust desktop app persists workspace YAML only.
 - **Chart definitions**: stay in YAML and should remain compatible with the Python workspace/model layer.
 - **Workspace defaults**: live in `workspace.yaml` and have their own persistence path.
 - **Computed positions and aspects**: are produced on demand in Rust or Python.
+- **Visual presentation**: portable theme/glyph/color choices live under
+  `workspace.yaml:presentation`; they never affect computation.
 - **Storage compatibility commands**: still exist, but should not be treated as a real computed-data persistence layer.
 
 `WorkspaceManifest` is the persisted reference index. The target `Workspace`
