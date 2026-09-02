@@ -9,7 +9,7 @@ import {
   normalizeAspectLineTierStyle,
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
-import type { CurrentModelReport } from '$lib/tauri/types';
+import type { CurrentModelReport, ModelOverridesDto } from '$lib/tauri/types';
 
 export interface MoonDetailsDto {
   elongation_deg: number;
@@ -36,6 +36,7 @@ export interface ChartData {
   zodiacType?: string;
   engine?: string | null;
   model?: string | null;
+  modelOverrides?: ModelOverridesDto | null;
   overrideEphemeris?: string | null;
   latitude?: number;
   longitude?: number;
@@ -46,6 +47,9 @@ export interface ChartData {
   observableObjects?: string[];
   aspectOrbs?: Record<string, number>;
   selectedAspects?: string[];
+  includedPoints?: string[];
+  displayStyle?: string;
+  colorTheme?: string;
   ayanamsa?: string | null;
   timeSystem?: string | null;
   rodenRating?: string | null;
@@ -307,7 +311,7 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
       ? chart.observableObjects
       : (defaults.defaultBodies.length > 0 ? defaults.defaultBodies : undefined);
   const selectedAspects =
-    chart.selectedAspects && chart.selectedAspects.length > 0
+    Array.isArray(chart.selectedAspects)
       ? chart.selectedAspects
       : [...defaults.defaultAspects];
   const aspectOrbs =
@@ -338,9 +342,13 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
       engine,
       override_ephemeris: overrideEphemeris,
       model,
+      model_overrides: chart.modelOverrides ?? null,
       observable_objects: observableObjects,
+      included_points: chart.includedPoints ?? [],
       selected_aspects: selectedAspects,
       aspect_orbs: aspectOrbs,
+      display_style: chart.displayStyle ?? '',
+      color_theme: chart.colorTheme ?? '',
       ...(chart.ayanamsa ? { ayanamsa: chart.ayanamsa } : {}),
       ...(chart.timeSystem ? { time_system: chart.timeSystem } : {}),
     },

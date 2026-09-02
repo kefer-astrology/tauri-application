@@ -255,8 +255,13 @@ export function TransitsContent({
 					transiting_bodies: transitingBodies,
 					transited_bodies: transitedBodies,
 					aspect_types: selectedAspects,
+					aspect_orbs: sourceChart.aspectOrbs ?? {},
+					model: sourceChart.model ?? null,
+					model_overrides: sourceChart.modelOverrides ?? null,
 					house_transitions: checkboxes.houseTransitions,
 					sign_transitions: checkboxes.signTransitions,
+					exact_hits: false,
+					station_events: false,
 					transit_limits: checkboxes.transitLimits,
 					precession_correction: checkboxes.precessionCorrection
 				};
