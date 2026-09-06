@@ -1,0 +1,94 @@
+src-tauri/src/workspace/writer.rs
+  s_5241e6c69a41a3::t_d25502f653a818 2-27,46-68
+  s_5241e6c69a41a3::t_374360046de392 1,28-45
+src-tauri/src/test_support.rs
+  s_5241e6c69a41a3::t_3927e989e4f92f 1-81
+src-tauri/src/commands/charts.rs
+  s_5241e6c69a41a3::t_480158bb603b86 4
+  s_5241e6c69a41a3::t_af81e57cad88d7 1-3,5-435
+src-tauri/src/commands/transits.rs
+  s_5241e6c69a41a3::t_374ffee34e6135 7-9
+  s_5241e6c69a41a3::t_d10a80216a6e82 1-6,10-429
+src-tauri/src/application/mod.rs
+  s_5241e6c69a41a3::t_374ffee34e6135 7
+  s_5241e6c69a41a3::t_33556a7e404669 8,10
+src-tauri/src/commands/calculation.rs
+  s_5241e6c69a41a3::t_bde5d30dcdbe18 1-2,5-7,9-511
+  s_5241e6c69a41a3::t_374ffee34e6135 3-4,8
+src-tauri/src/workspace/loader.rs
+  s_5241e6c69a41a3::t_ac15809aa9afce 87-107
+src-tauri/src/application/compute_router.rs
+  s_5241e6c69a41a3::t_374ffee34e6135 227-230
+  s_5241e6c69a41a3::t_1c0291109a7a7f 1-226,231-331
+src-tauri/src/application/workspace.rs
+  s_5241e6c69a41a3::t_8f1531d7584d3f 1-100
+src-tauri/src/commands/dialogs.rs
+  s_5241e6c69a41a3::t_d0011b5d3ffe7a 1-5
+src-tauri/src/infrastructure/astronomy/mod.rs
+  s_5241e6c69a41a3::t_da5fc734e31592 153,166-172
+  s_5241e6c69a41a3::t_4b3e3b5dfcca0f 1-4
+  s_5241e6c69a41a3::t_2f2c03d7e30227 62,70-74,124-128,152,154
+src-tauri/src/infrastructure/mod.rs
+  s_5241e6c69a41a3::t_b13af5e3761eb8 2,4
+  s_5241e6c69a41a3::t_e8e49ce987adaf 1,3,5
+src-tauri/src/commands/ephemeris.rs
+  s_5241e6c69a41a3::t_4ff6cdb8a19f47 3,23
+src-tauri/src/domain/mod.rs
+  s_5241e6c69a41a3::t_786ebcf1d2b41b 1-2
+src-tauri/src/commands.rs
+  s_5241e6c69a41a3::t_3b05b4bc6c316b 1-2,4,6,8
+src-tauri/src/application/location.rs
+  s_5241e6c69a41a3::t_6ed9a4964be04b 1-96
+src-tauri/src/lib.rs
+  s_5241e6c69a41a3::t_1edcc49d5038e3 3,5
+  s_5241e6c69a41a3::t_e1227d18820357 33-34
+  s_5241e6c69a41a3::t_3597e68f98b8dd 8-9,11-14,16,18,23,25-26
+  s_5241e6c69a41a3::t_924c87d7ffb1cd 48,51,56
+  s_5241e6c69a41a3::t_da5fc734e31592 57-61
+  s_5241e6c69a41a3::t_0f03679e9db856 110-111
+src-tauri/src/infrastructure/geocoding.rs
+  s_5241e6c69a41a3::t_a5023d3c75b12a 1-86
+src-tauri/src/infrastructure/dialogs.rs
+  s_5241e6c69a41a3::t_c085d3322acedc 1-133
+src-tauri/src/application/transit.rs
+  s_5241e6c69a41a3::t_4ff6cdb8a19f47 8,100
+src-tauri/src/commands/location.rs
+  s_5241e6c69a41a3::t_f1c099c0a5b5b3 1-23
+src-tauri/src/commands/workspace.rs
+  s_5241e6c69a41a3::t_af8a624d2f2845 1-3,6,58,288-292,294-318,320-326,330-342,345-352,436-437
+  s_5241e6c69a41a3::t_f3d3056c1ae953 8
+src-tauri/src/application/computation.rs
+  s_5241e6c69a41a3::t_da5fc734e31592 104-105
+  s_5241e6c69a41a3::t_4ff6cdb8a19f47 7-8,97,107,142-143
+src-tauri/src/workspace/mod.rs
+  s_5241e6c69a41a3::t_552fe5788175d9 6
+src-tauri/src/domain/astrology.rs
+  s_5241e6c69a41a3::t_ff1c3e968ed495 83-84,709,720,735-736
+src-tauri/src/domain/houses.rs
+  s_5241e6c69a41a3::t_d72791b37d3097 8
+src-tauri/src/infrastructure/astronomy/jpl_backend.rs
+  s_5241e6c69a41a3::t_fdef7b59f77d28 23-31,566
+src-tauri/src/infrastructure/astronomy/swisseph.rs
+  s_5241e6c69a41a3::t_d70ea1a693b18d 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "1e84982872e92b2176b819bd744232e5efc73490",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5241e6c69a41a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "147e2ecd-6b4f-489d-ac4f-f3d2633178c5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
