@@ -80,11 +80,8 @@ pub struct ComputedAspect {
 /// computed as the first plus 180°), so any "opposition" between them is a mathematical
 /// certainty rather than an astrological observation. Excluded from aspect detection entirely —
 /// no other aspect type could ever fire for a pair locked at 180° anyway.
-const STRUCTURALLY_LOCKED_PAIRS: [(&str, &str); 3] = [
-    ("asc", "desc"),
-    ("ic", "mc"),
-    ("north_node", "south_node"),
-];
+const STRUCTURALLY_LOCKED_PAIRS: [(&str, &str); 3] =
+    [("asc", "desc"), ("ic", "mc"), ("north_node", "south_node")];
 
 fn is_structurally_locked_pair(from: &str, to: &str) -> bool {
     STRUCTURALLY_LOCKED_PAIRS
@@ -709,6 +706,7 @@ mod tests {
     fn chart_aspects_exclude_structurally_locked_axis_and_node_pairs() {
         let definitions = vec![AspectDefinition {
             id: "opposition".to_string(),
+            enabled: true,
             glyph: "☍".to_string(),
             angle: 180.0,
             default_orb: 8.0,
@@ -719,6 +717,7 @@ mod tests {
             line_width: None,
             show_label: None,
             valid_contexts: None,
+            interpretation_weight: None,
         }];
         let positions = HashMap::from([
             ("asc".to_string(), 10.0),
@@ -733,7 +732,8 @@ mod tests {
         ]);
         let selected = vec!["opposition".to_string()];
 
-        let aspects = compute_chart_aspects(&positions, &definitions, &HashMap::new(), Some(&selected));
+        let aspects =
+            compute_chart_aspects(&positions, &definitions, &HashMap::new(), Some(&selected));
 
         assert_eq!(aspects.len(), 1);
         assert_eq!(aspects[0].from, "moon");

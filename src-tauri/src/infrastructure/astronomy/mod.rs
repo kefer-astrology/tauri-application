@@ -1,3 +1,7 @@
+pub mod jpl_backend;
+#[cfg(feature = "swisseph")]
+pub mod swisseph;
+
 use std::collections::HashMap;
 
 use serde::Serialize;
@@ -55,7 +59,7 @@ impl AstronomyBackend for SwissAstronomyBackend {
             .override_ephemeris
             .clone()
             .filter(|value| !value.trim().is_empty())
-            .or_else(crate::swisseph::default_ephemeris_source)
+            .or_else(crate::infrastructure::astronomy::swisseph::default_ephemeris_source)
     }
 
     fn compute_chart_data(
@@ -63,7 +67,11 @@ impl AstronomyBackend for SwissAstronomyBackend {
         chart: &ChartInstance,
         requested_objects: Option<&Vec<String>>,
     ) -> Result<AstronomyChartData, String> {
-        let computed = crate::swisseph::compute_chart_data(chart, requested_objects, None)?;
+        let computed = crate::infrastructure::astronomy::swisseph::compute_chart_data(
+            chart,
+            requested_objects,
+            None,
+        )?;
         Ok(AstronomyChartData {
             positions: computed.positions,
             motion: computed.motion,
@@ -113,7 +121,11 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
             .filter(|v| !v.trim().is_empty())
             .map(Path::new);
 
-        let computed = crate::swisseph::compute_chart_data_jpl(chart, requested_objects, jpl_file)?;
+        let computed = crate::infrastructure::astronomy::swisseph::compute_chart_data_jpl(
+            chart,
+            requested_objects,
+            jpl_file,
+        )?;
         Ok(AstronomyChartData {
             positions: computed.positions,
             motion: computed.motion,
@@ -137,7 +149,9 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
 /// - without feature `swisseph` → `JplAstronomyBackend` is the only backend
 pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Send + Sync> {
     if matches!(chart.config.engine, Some(EngineType::Jpl)) {
-        if let Ok(backend) = crate::jpl_backend::jpl_backend_for_chart(chart) {
+        if let Ok(backend) =
+            crate::infrastructure::astronomy::jpl_backend::jpl_backend_for_chart(chart)
+        {
             return Box::new(backend);
         }
         #[cfg(feature = "swisseph")]
@@ -149,11 +163,13 @@ pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Se
     #[cfg(not(feature = "swisseph"))]
     {
         Box::new(
-            crate::jpl_backend::jpl_backend_for_chart(chart).unwrap_or_else(|_| {
-                crate::jpl_backend::JplAstronomyBackend::new(
-                    crate::ephemeris_manager::EphemerisManager::from_global().available_bsp_paths(),
-                )
-            }),
+            crate::infrastructure::astronomy::jpl_backend::jpl_backend_for_chart(chart)
+                .unwrap_or_else(|_| {
+                    crate::infrastructure::astronomy::jpl_backend::JplAstronomyBackend::new(
+                        crate::infrastructure::ephemeris::EphemerisManager::from_global()
+                            .available_bsp_paths(),
+                    )
+                }),
         )
     }
 }

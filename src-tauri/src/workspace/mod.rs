@@ -3,6 +3,7 @@ mod model_catalog;
 pub mod models;
 pub mod settings;
 pub mod validation;
+pub mod writer;
 
 pub use loader::{
     chart_to_summary, find_chart_preset, load_all_charts, load_workspace_aggregate,

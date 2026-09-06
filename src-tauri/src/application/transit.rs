@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 
-use crate::astrology::ComputedAspect;
+use crate::domain::astrology::ComputedAspect;
 
 use super::computation::{compute_positions, extend_unique, inherited_or_override, ResolvedChart};
 
@@ -97,7 +97,7 @@ pub fn compute_transit_series(
         transit_chart.subject.event_time = Some(current);
         let transit = compute_positions(&transit_chart, &resolved.model, transiting_ids, &[])?;
         extend_unique(&mut warnings, transit.warnings);
-        let aspects = crate::astrology::compute_cross_aspects(
+        let aspects = crate::domain::astrology::compute_cross_aspects(
             &transit.positions,
             &radix.positions,
             &resolved.model.aspect_definitions,

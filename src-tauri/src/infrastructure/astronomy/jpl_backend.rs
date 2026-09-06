@@ -20,17 +20,19 @@ use anise::constants::frames::{
 use anise::prelude::*;
 use hifitime::Epoch;
 
-use crate::astronomy::{AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion};
-use crate::ephemeris_manager::{
+use crate::domain::houses::{
+    campanus_cusps, compute_axes, general_precession_deg, icrf_to_ecliptic, julian_day_from_unix,
+    mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps,
+    true_node_tropical_deg, whole_sign_cusps,
+};
+use crate::infrastructure::astronomy::{
+    AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion,
+};
+use crate::infrastructure::ephemeris::{
     load_almanac_from_paths, EphemerisManager, ASTRAEA_J2000, CERES_J2000, EGERIA_J2000,
     EUNOMIA_J2000, FLORA_J2000, FORTUNA_J2000, HEBE_J2000, HYGIEA_J2000, IRENE_J2000, IRIS_J2000,
     JUNO_J2000, MASSALIA_J2000, MELPOMENE_J2000, METIS_J2000, PALLAS_J2000, PARTHENOPE_J2000,
     PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
-};
-use crate::houses::{
-    campanus_cusps, compute_axes, general_precession_deg, icrf_to_ecliptic, julian_day_from_unix,
-    mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps,
-    true_node_tropical_deg, whole_sign_cusps,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem};
 
@@ -561,7 +563,7 @@ mod tests {
     #[test]
     #[ignore = "diagnostic comparison; requires de440s.bsp + Swiss Ephemeris"]
     fn compare_jpl_vs_swisseph_2026_04_22_1500_utc() {
-        use crate::astronomy::{AstronomyBackend, SwissAstronomyBackend};
+        use crate::infrastructure::astronomy::{AstronomyBackend, SwissAstronomyBackend};
 
         let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
 

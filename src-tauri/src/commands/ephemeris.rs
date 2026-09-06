@@ -1,6 +1,6 @@
 use tauri::AppHandle;
 
-use crate::ephemeris_manager::{EphemerisInfo, EphemerisManager};
+use crate::infrastructure::ephemeris::{EphemerisInfo, EphemerisManager};
 
 /// Return the full ephemeris catalog with download status for each entry.
 #[tauri::command]
@@ -20,5 +20,5 @@ pub async fn download_ephemeris(id: String, app: AppHandle) -> Result<(), String
 pub fn get_available_bodies() -> Vec<String> {
     let manager = EphemerisManager::from_global();
     let available_paths = manager.available_bsp_paths();
-    crate::ephemeris_manager::bodies_available_for_bsp_paths(&available_paths)
+    crate::infrastructure::ephemeris::bodies_available_for_bsp_paths(&available_paths)
 }

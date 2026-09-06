@@ -6,7 +6,7 @@ use std::sync::{Mutex, OnceLock};
 
 use chrono::{DateTime, Datelike, Timelike, Utc};
 
-use crate::astronomy::AstronomyMotion;
+use crate::infrastructure::astronomy::AstronomyMotion;
 use crate::workspace::models::{Ayanamsa, ChartInstance, HouseSystem, ZodiacType};
 
 const SE_SUN: c_int = 0;

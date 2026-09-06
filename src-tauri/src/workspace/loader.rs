@@ -84,6 +84,27 @@ pub fn load_all_charts(
     Ok(charts)
 }
 
+/// Find the workspace-relative chart file path whose chart id matches `chart_id`.
+pub fn find_chart_ref_by_id(
+    base: &Path,
+    manifest: &WorkspaceManifest,
+    chart_id: &str,
+) -> Result<Option<String>, String> {
+    for chart_ref in &manifest.charts {
+        match load_chart(base, chart_ref) {
+            Ok(chart) if chart.id == chart_id => return Ok(Some(chart_ref.clone())),
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!(
+                    "Warning: Failed to load chart {} while searching id {}: {}",
+                    chart_ref, chart_id, err
+                );
+            }
+        }
+    }
+    Ok(None)
+}
+
 /// Convert ChartInstance to ChartSummary
 pub fn chart_to_summary(chart: &ChartInstance) -> ChartSummary {
     let date_time = chart
