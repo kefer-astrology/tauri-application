@@ -1,0 +1,31 @@
+src-tauri/src/workspace/model_catalog.rs
+  s_5241e6c69a41a3::t_dea57eef3387b1 460-463,466-467
+  s_5241e6c69a41a3::t_47c37b78322d34 289-437
+  s_5241e6c69a41a3::t_2df24a436558c7 445-448
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_5241e6c69a41a3::t_28f8e8f7ec18e2 114-130
+src-tauri/src/infrastructure/astronomy/jpl_backend.rs
+  s_5241e6c69a41a3::t_26fcc7a4a24126 478-482,485-528,530-534
+  s_5241e6c69a41a3::t_c99bc0b3fe8651 483-484,529
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4e6a231a1048b58994d17a3528e098455df88a39",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5241e6c69a41a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "147e2ecd-6b4f-489d-ac4f-f3d2633178c5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
