@@ -2,6 +2,9 @@
 title: 'SPICE backend'
 description: 'JPL/SPICE backend contract, implementation boundary, and current status.'
 weight: 41
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
 This page is intentionally narrower than [architecture](../architecture/): it is about the astronomy backend layer itself, not the whole app.
@@ -51,11 +54,14 @@ Current Rust module split:
 
 ```text
 src-tauri/src/
-  astronomy.rs         # AstronomyBackend trait + backend selection
-  jpl_backend.rs       # JplAstronomyBackend using anise
-  ephemeris_manager.rs # BSP catalog, download, cache, multi-file almanac
-  houses.rs            # obliquity, axes, cusps, node helpers, transforms
-  swisseph.rs          # Swiss-backed compatibility path, feature-gated
+  domain/
+    houses.rs                    # obliquity, axes, cusps, node helpers, transforms
+  infrastructure/
+    astronomy/
+      mod.rs                     # AstronomyBackend trait + backend selection
+      jpl_backend.rs             # JplAstronomyBackend using anise
+      swisseph.rs                # Swiss-backed compatibility path, feature-gated
+    ephemeris.rs                 # BSP catalog, download, cache, multi-file almanac
 ```
 
 What the Rust SPICE backend currently provides:
@@ -115,7 +121,7 @@ Implemented:
 
 - `JplAstronomyBackend` in Rust using `anise`
 - feature-gated Swiss path in Rust
-- pure-Rust support for key transforms and baseline house/axis calculations in `houses.rs`
+- pure-Rust support for key transforms and baseline house/axis calculations in `domain/houses.rs`
 - `EphemerisManager` integration for resolving active BSP files (planetary primary, optional de441 supplements, optional NAIF asteroid kernels)
 - bundled `de440s.bsp` as the default planetary kernel (`de440` is the documented wider-range upgrade)
 - bundled `ceres_1900_2100.bsp` and catalog entries for additional asteroid SPKs (`pallas_spk`, `vesta_spk`, `codes_300ast`)

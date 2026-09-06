@@ -1,136 +1,83 @@
 ---
 title: 'React frontend'
-description: 'Operational guide for the React + Vite + Tauri UI workspace.'
+description: 'React-specific structure, runtime wiring, and current limitations.'
 weight: 20
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
-## Current status
-
-- React is the default desktop shell.
-- The main horoscope workflow is wired to real Tauri compute commands.
-- Workspace open/save/defaults persistence is wired.
-- `openWorkspaceFolder()` calls `get_current_model_report` and seeds workspace defaults from `effective_settings` before the workspace-level DTO is applied.
-- Chart-level `observable_objects`/`aspect_orbs`/`selected_aspects`/`ayanamsa`/`time_system` round-trip through `ChartDetails`/`AppChart` and take precedence over workspace defaults in `chartDataToComputePayload`.
-- The create-new flow uses app-owned popover controls for time and location search.
-- Some secondary views are still presentational or prototype-oriented rather than fully chart-backed.
-- React is still the clearer reference for app-shell decomposition and reusable input primitives.
+React is the default desktop shell and the primary reference for app-shell
+decomposition and reusable input primitives. Shared workflow requirements live
+in the [Frontend workflow baseline](../frontend-workflow-baseline/); shared
+visual and asset rules live in [UI conventions](../ui-conventions/).
 
 ## Commands
 
-React is the primary frontend and the default desktop app target.
+From the repository root:
 
 ```bash
-npm install
 npm run dev
 npm run tauri:dev
 npm run build
 npm run tauri:build
 npm run check
-npm run lint
-npm run i18n:sync
-```
-
-Docs builds use the same React app with a relative asset base:
-
-```bash
 npm run build:react:docs
 ```
 
-## Workspace shape
+Cross-frontend lint, translation, and documentation commands are defined in the
+[Repository and contribution guide](../project-context/).
+
+## Source structure
 
 - `apps/web-react/src/main.tsx` — React root and global providers.
-- `apps/web-react/src/app/` — app composition, shell state, feature wiring.
+- `apps/web-react/src/app/` — application composition, shell state, and feature wiring.
 - `apps/web-react/src/app/components/` — feature-facing UI.
-- `apps/web-react/src/app/components/ui/` — shared React primitive layer.
+- `apps/web-react/src/app/components/ui/` — React primitive layer.
 - `apps/web-react/src/ui/` — cross-feature presentational wrappers.
-- `apps/web-react/src/lib/` — non-visual logic: Tauri bridge, i18n, theme and asset helpers.
-- `apps/web-react/src/locales/` — generated locale JSON.
-- `apps/web-react/src/styles/` — Tailwind/theme/token layer.
+- `apps/web-react/src/lib/` — Tauri bridge, payload mapping, i18n, theme, and asset helpers.
+- `apps/web-react/src/styles/` — Tailwind and semantic token layers.
 
-## UI rules
-
-- Prefer the shared React primitive layer in `apps/web-react/src/app/components/ui/`.
-- Favor tokens, variants, composition, and shared wrappers over one-off CSS forks.
-- Treat `src/app/` as orchestration and `src/lib/` as non-visual infrastructure.
-- Use shadcn primitives (`Button`, `Card`, `Sheet`, `Separator`, `ScrollArea`) as the default interactive/layout baseline before introducing custom wrappers.
-- Keep interior sections mostly border-light: one outer surface per screen region, then spacing + subtle background layers + separators.
-- In feature components, avoid raw native controls when primitives exist; promote missing controls into `src/app/components/ui/` before use.
-
-## Runtime behavior
+## Runtime ownership
 
 - `App.tsx` owns the main shell state and sidebar-driven flows.
-- `openWorkspaceFolder()` handles the real open flow: choose folder, load workspace, merge defaults, compute charts, update UI state.
-- `save_workspace` and `save_workspace_defaults(...)` are real current flows.
-- `InformationView` is still explicitly prototype-oriented.
-- Not every secondary analysis screen is yet a full end-to-end compute surface.
+- `openWorkspaceFolder()` chooses a folder, loads its workspace and model
+  report, merges defaults, computes charts, and updates UI state.
+- Workspace and chart persistence use the typed bridge under `src/lib/tauri/`.
+- `chartPayload.ts` maps `AppChart` and workspace defaults into backend-neutral
+  calculation payloads.
+- Chart-level bodies, aspects, orbs, ayanamsha, and time-system values override
+  workspace defaults during payload construction.
+- Real chart and transit views consume Tauri calculation results. Static docs
+  mode may demonstrate interface structure but must not fabricate backend data.
 
-## Tauri bridge
+## React-specific conventions
 
-- `src/lib/tauri/types.ts` — frontend-side response shapes.
-- `src/lib/tauri/chartPayload.ts` — chart payload shaping and workspace defaults state.
-- `src/lib/tauri/workspace.ts` — folder open/load/save/init/defaults/compute helpers.
+- Keep `App.tsx` focused on composition; feature behavior belongs in focused
+  components or non-visual helpers.
+- Begin interactive controls with the primitives in
+  `src/app/components/ui/`.
+- Use `AppMainContentRoot` and `AppMainContentContainer` for top-level content
+  layout.
+- Secondary navigation is a sibling of the main content column. Reuse
+  `SecondaryNavPanel` rather than constructing feature-local rails.
+- Use `useAppFormFieldTheme()` for themed form surfaces.
+- Resolve shared shell assets through `src/lib/app-shell.ts` and
+  `src/ui/app-shell-icon.tsx`.
 
-Workspace-only storage note:
+Do not duplicate theme, glyph, translation, or shared-component policy here;
+[UI conventions](../ui-conventions/) is authoritative for both frontends.
 
-- The Rust desktop app does not persist computed chart data.
-- Storage compatibility commands still exist so older `invoke` paths continue to work.
-- Real workspace persistence still flows through YAML plus in-memory compute results.
+## Current limitations
 
-## i18n
+- Some secondary views remain presentational or prototype-oriented.
+- `InformationView` is not yet a complete chart-backed analysis surface.
+- Frontend behavioral test automation remains a documented gap in
+  [Testing strategy](../testing-strategy/).
 
-- Source of truth: repo-root `translations.csv`.
-- Regeneration command: `npm run i18n:sync`.
-- Generated output: `apps/web-react/src/locales/*.json` and the matching Svelte locale files.
-- Runtime: `react-i18next` + `i18next`.
-- Author new copy in `translations.csv`, not in generated JSON.
+## Related contracts
 
-See [ui-conventions](../ui-conventions/) for the shared translation workflow and UI copy rules.
-
-## Shared assets
-
-React uses repo-root `static/` as the source of truth for:
-
-- `static/app-shell/`
-- `static/glyphs/`
-- shared logos and favicon
-
-Key rules:
-
-- do not treat `dist/` output as source of truth
-- prefer shared `static/` assets over app-local visual duplicates
-- resolve frontend-published assets through `import.meta.env.BASE_URL`
-
-Important implementation helpers:
-
-- `apps/web-react/src/lib/app-shell.ts`
-- `apps/web-react/src/ui/app-shell-icon.tsx`
-- `apps/web-react/src/ui/shared-svg-icon.tsx`
-- `apps/web-react/src/ui/astrology-glyph.tsx`
-- `apps/web-react/src/lib/astrology/glyphs.ts`
-
-## Theming
-
-- The four app themes are defined through the shared palette model in `apps/web-react/src/lib/themePalettes.ts`.
-- `App.tsx` applies the active theme as CSS variables across the shell.
-- `astrology-sidebar.tsx`, `secondary-nav-panel.tsx`, and `form-field-theme.ts` consume that shared palette.
-- Settings → Appearance edits the active palette and persists it locally.
-
-See [ui-conventions](../ui-conventions/) for the cross-app theme rules.
-
-## Docs integration
-
-- `npm run docs:prepare` builds the frontend workspaces for docs mode.
-- Built output is copied into `docs/static/apps/<workspace>/`.
-- `docs/data/generated/frontends.json` is regenerated by the same pipeline.
-- Treat both as generated artifacts.
-
-## Known limits
-
-- Some views are still richer in layout than in backend completeness.
-- Prototype-era fallback surfaces still exist and should not be mistaken for final architecture.
-
-## Related docs
-
-- [architecture](../architecture/) — app-level architecture and routing.
-- [ui-conventions](../ui-conventions/) — theme, component, and i18n rules.
-- [tauri-command-contracts](../tauri-command-contracts/) — exact current command behavior.
+- [Tauri command contracts](../tauri-command-contracts/)
+- [Radix render contract](../radix-render-contract/)
+- [Transit series contract](../transit-series-contract/)
+- [Chart datetime contract](../chart-datetime-contract/)

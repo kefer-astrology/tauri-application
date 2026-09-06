@@ -2,6 +2,9 @@
 title: 'House systems'
 description: 'Supported house-system names, calculation setup, and backend coverage.'
 weight: 58
+doc_kind: implementation-reference
+status: evolving
+authority: informative
 ---
 
 House building is the astrology layer that turns a chart's time and place into the 12 house cusps used by the radix wheel and house placement logic.
@@ -57,12 +60,12 @@ Frontend settings expose the same list in:
 
 Swiss Ephemeris maps the accepted list through:
 
-- `src-tauri/src/swisseph.rs`
+- `src-tauri/src/infrastructure/astronomy/swisseph.rs`
 
 Rust JPL house support lives in:
 
-- `src-tauri/src/houses.rs`
-- `src-tauri/src/jpl_backend.rs`
+- `src-tauri/src/domain/houses.rs`
+- `src-tauri/src/infrastructure/astronomy/jpl_backend.rs`
 
 The current Rust JPL implementation computes axes for all supported chart types, then:
 

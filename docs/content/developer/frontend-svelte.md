@@ -1,148 +1,82 @@
 ---
 title: 'Svelte frontend'
-description: 'Operational guide for the alternate Svelte + Vite + Tauri workspace.'
+description: 'Svelte-specific structure, runtime wiring, and current limitations.'
 weight: 25
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
-## Current status
-
-- Svelte is the alternate desktop shell.
-- It has real workspace open/load/save wiring and workspace-default persistence.
-- Radix rendering, settings, location resolution, transit-series compute, and workspace query flows are routed through the Svelte Tauri bridge.
-- `stores/data.svelte.ts` keeps in-memory/static-mode fallbacks, but no longer owns Tauri query invocation.
-- `App.svelte` remains the biggest orchestration surface and should keep being decomposed.
-- Workspace open resolves the backend's model report (`get_current_model_report`); chart-level settings persist across a reload using the same shape as React.
-- The Aspects tab computes house placement from real house cusps, and the aspect matrix shows an empty state rather than fabricated positions (see [radix-render-contract](../radix-render-contract/)).
+Svelte is the alternate desktop shell. It consumes the same workflow and Tauri
+contracts as React while retaining framework-specific state and component
+structure. Shared rules are defined in the
+[Frontend workflow baseline](../frontend-workflow-baseline/) and
+[UI conventions](../ui-conventions/).
 
 ## Commands
 
-Svelte is the alternate frontend flow. Keep its build, check, and Tauri commands separate from the React defaults.
+From the repository root:
 
 ```bash
-npm install
 npm run dev:svelte
 npm run tauri:dev:svelte
 npm run build:svelte
 npm run tauri:build:svelte
 npm run check:svelte
-npm run lint
-npm run i18n:sync
-npm run docs:prepare
-```
-
-Docs builds use the same Svelte app with a relative asset base:
-
-```bash
 npm run build:svelte:docs
 ```
 
-## Workspace shape
+Cross-frontend lint, translation, and documentation commands are defined in the
+[Repository and contribution guide](../project-context/).
+
+## Source structure
 
 - `apps/web-svelte/src/App.svelte` — main integration shell.
-- `apps/web-svelte/src/lib/components/` — feature-facing Svelte UI and workspace operations.
-- `apps/web-svelte/src/lib/components/ui/` — shared Svelte primitive layer.
-- `apps/web-svelte/src/lib/state/` — rune-backed application state (`layout`, `theme`).
-- `apps/web-svelte/src/lib/stores/` — glyph/icon/data/time-navigation helpers.
-- `apps/web-svelte/src/lib/tauri/` — typed Svelte Tauri bridge, aligned with the React bridge shape.
-- `apps/web-svelte/src/lib/themes/presets/` — preset palette JSON files.
-- `apps/web-svelte/src/lib/i18n/` — generated locale JSON plus runtime helper.
+- `apps/web-svelte/src/lib/components/` — feature components and workspace operations.
+- `apps/web-svelte/src/lib/components/ui/` — Svelte primitive layer.
+- `apps/web-svelte/src/lib/state/` — rune-backed application state.
+- `apps/web-svelte/src/lib/stores/` — glyph, icon, data, and time-navigation helpers.
+- `apps/web-svelte/src/lib/tauri/` — typed bridge aligned with the React command shape.
+- `apps/web-svelte/src/lib/themes/presets/` — Svelte palette presets.
 
-## UI rules
+## Runtime ownership
 
-- Prefer shared Svelte UI primitives before bespoke controls.
-- Treat `App.svelte` as orchestration glue, not the ideal home for more feature logic.
-- Extract new feature UI into focused components instead of extending `App.svelte` with another large conditional branch.
-- Prefer shared tokens, variants, spacing, and wrappers over one-off component CSS.
-- Avoid introducing raw native controls when an existing primitive exists in `src/lib/components/ui/`.
+- `OpenWorkspaceView.svelte` owns the open/save interaction and computes loaded charts through the bridge.
+- `SettingsView.svelte` persists workspace defaults and can recompute loaded charts.
+- `LocationSelector.svelte` uses the location search and resolution commands.
+- `App.svelte` coordinates transit-series requests and application result state.
+- `layout.svelte.ts` owns the canonical Svelte-side context, defaults, mode, and payload mapping.
+- `stores/data.svelte.ts` consumes bridge queries and may use in-memory computed
+  positions when persisted query rows are unavailable.
+- Chart-level calculation settings override workspace defaults through the same
+  payload precedence used by React.
 
-## Runtime behavior
+## Svelte-specific conventions
 
-- `OpenWorkspaceView.svelte` handles open/save flows through `src/lib/tauri/workspace.ts` and computes loaded charts.
-- `SettingsView.svelte` persists workspace defaults through the same bridge and can recompute loaded charts after defaults changes.
-- `LocationSelector.svelte` uses the bridge location search/resolve commands so new-chart and settings location inputs can sync typed places to coordinates.
-- `App.svelte` computes transit series through the Svelte Tauri bridge and updates in-app results state.
-- `layout.svelte.ts` is the canonical in-memory shape for contexts, workspace defaults, mode, and payload mapping.
-- `stores/data.svelte.ts` consumes bridge query helpers and falls back to in-memory computed positions when no persisted query rows exist.
+- Keep shrinking broad mode branching in `App.svelte`; new feature behavior
+  belongs in focused components.
+- Begin interactive controls with the primitives in `src/lib/components/ui/`.
+- Resolve shared shell icons through `stores/app-shell-icons.svelte.ts` and
+  astrology glyphs through `stores/glyphs.svelte.ts`.
+- Keep Tauri invocation centralized in `src/lib/tauri/`; feature components
+  should not import `@tauri-apps/api/core` directly.
+- Desktop target switching uses `src-tauri/tauri.svelte.conf.json`.
 
-## Important current files
+Do not duplicate theme, glyph, translation, or shared-component policy here;
+[UI conventions](../ui-conventions/) is authoritative for both frontends.
 
-- `apps/web-svelte/src/App.svelte`
-- `apps/web-svelte/src/lib/components/OpenWorkspaceView.svelte`
-- `apps/web-svelte/src/lib/components/SettingsView.svelte`
-- `apps/web-svelte/src/lib/components/LocationSelector.svelte`
-- `apps/web-svelte/src/lib/components/MiddleContent.svelte`
-- `apps/web-svelte/src/lib/components/RadixChart.svelte`
-- `apps/web-svelte/src/lib/components/TimeNavigationPanel.svelte`
-- `apps/web-svelte/src/lib/state/layout.svelte.ts`
-- `apps/web-svelte/src/lib/state/theme.svelte.ts`
-- `apps/web-svelte/src/lib/stores/data.svelte.ts`
-- `apps/web-svelte/src/lib/stores/timeNavigation.svelte.ts`
-- `apps/web-svelte/src/lib/tauri/types.ts`
-- `apps/web-svelte/src/lib/tauri/workspace.ts`
+## Current limitations
 
-## Shared assets
+- `App.svelte` still owns broad orchestration and mode branching.
+- Some secondary views remain intentionally spec-gated or presentational.
+- In-memory fallback rendering remains for static mode and workspaces without
+  persisted computed-query rows.
+- Frontend behavioral test automation remains a documented gap in
+  [Testing strategy](../testing-strategy/).
 
-Svelte uses the same repo-root `static/` source assets as React:
+## Related contracts
 
-- `static/app-shell/`
-- `static/glyphs/`
-- shared logos and favicon
-
-Normalization happens in the frontend render layer, especially through:
-
-- `apps/web-svelte/src/lib/stores/app-shell-icons.svelte.ts`
-- `apps/web-svelte/src/lib/stores/glyphs.svelte.ts`
-- `apps/web-svelte/src/lib/components/SharedSvgIcon.svelte`
-
-Asset note:
-
-- `apps/web-svelte/src/lib/icons/` is not the source of truth for shared shell or glyph assets.
-
-## Theming
-
-- Theme mode and preset state are owned by `apps/web-svelte/src/lib/state/theme.svelte.ts`.
-- Presets are loaded from `apps/web-svelte/src/lib/themes/presets/`.
-- Settings → Appearance applies presets and persists them in local storage.
-- Element color overrides are applied as CSS variables (`--element-fire`, `--element-earth`, `--element-air`, `--element-water`).
-- `App.svelte` reapplies the current preset on startup and when root theme class changes.
-
-## i18n
-
-- Source of truth: repo-root `translations.csv`.
-- Regeneration command: `npm run i18n:sync`.
-- Generated output includes `apps/web-svelte/src/lib/i18n/*.json` and the matching React locale files.
-- Author new copy in `translations.csv`, not in generated JSON.
-
-See [ui-conventions](../ui-conventions/) for the shared translation workflow and UI copy rules.
-
-## Docs integration
-
-- `npm run docs:prepare` builds frontend workspaces for docs mode.
-- Built Svelte output is copied into `docs/static/apps/web-svelte/`.
-- `docs/data/generated/frontends.json` is regenerated by the same pipeline.
-- Treat both as generated artifacts.
-
-## Tauri integration
-
-- Svelte workspace, chart compute, transit-series, and storage-query commands are centralized in `apps/web-svelte/src/lib/tauri/workspace.ts`.
-- Tauri response shapes live in `apps/web-svelte/src/lib/tauri/types.ts`.
-- Feature components should consume bridge helpers rather than importing `@tauri-apps/api/core` directly.
-- `openWorkspaceFolder()` calls `get_current_model_report` and seeds workspace defaults from `effective_settings` (`mergeModelReportDefaults` in `layout.svelte.ts`) before the workspace-level DTO is applied.
-- Chart-level `observableObjects`/`aspectOrbs`/`selectedAspects`/`ayanamsa`/`timeSystem` round-trip through `ChartData` and take precedence over workspace defaults in `chartDataToComputePayload`.
-- Tauri frontend target switching uses:
-  - `src-tauri/tauri.react.conf.json`
-  - `src-tauri/tauri.svelte.conf.json`
-
-## Known limits
-
-- `App.svelte` still carries broad mode branching and should continue to shrink.
-- Some secondary views remain spec-gated or more placeholder-oriented than end-to-end compute surfaces.
-- In-memory fallback rendering remains for docs/static mode and for workspaces without persisted computed query rows.
-- React remains a useful reference for shell decomposition and richer form/input UX patterns, while the Tauri bridge shape is now aligned across both frontends.
-
-## Related docs
-
-- [architecture](../architecture/) — app-level architecture and routing.
-- [frontend-react](../frontend-react/) — current primary-shell reference.
-- [ui-conventions](../ui-conventions/) — theme, component, and i18n rules.
-- [time-navigation](../time-navigation/) — shared navigation model.
+- [Tauri command contracts](../tauri-command-contracts/)
+- [Radix render contract](../radix-render-contract/)
+- [Transit series contract](../transit-series-contract/)
+- [Time navigation](../time-navigation/)

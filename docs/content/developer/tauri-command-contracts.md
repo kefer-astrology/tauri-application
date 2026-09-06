@@ -2,6 +2,9 @@
 title: 'Tauri command contracts'
 description: 'Normative command-level contract for the current desktop app.'
 weight: 45
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This page focuses on what the frontend can rely on today, including current no-op behavior.
@@ -220,7 +223,7 @@ Acceptance criteria:
 - A valid chart payload returns `positions`, `aspects`, and `chart_id`.
 - Rust-supported radix output should also include `axes` and `house_cusps`.
 - Rust-supported radix output should include `motion` when the selected backend can derive it.
-- Rust-supported radix output should also include `shapes` (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and `configurations` (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed `house_cusps`, and the computed `aspects`. See `detect_chart_shapes`/`detect_chart_configurations` in `astrology.rs`.
+- Rust-supported radix output should also include `shapes` (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and `configurations` (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed `house_cusps`, and the computed `aspects`. See `detect_chart_shapes`/`detect_chart_configurations` in `domain/astrology.rs`.
 - When `positions.sun` and `positions.moon` exist, `moon_details` should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See [lunar-phase](../lunar-phase/).
 - When fallback occurs, the response should expose that fact instead of failing silently.
 

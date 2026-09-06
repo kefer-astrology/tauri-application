@@ -2,6 +2,9 @@
 title: 'Guided Tour contract'
 description: 'How the documentation site layers an interactive tour over the primary React application.'
 weight: 28
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 ## Entry point

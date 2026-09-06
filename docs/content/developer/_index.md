@@ -1,17 +1,43 @@
 ---
 title: 'Developer Manual'
-description: 'Architecture, contracts, implementation guidance, and project direction for people and coding agents.'
+description: 'Architecture, contracts, implementation guidance, and verification for contributors and coding agents.'
 weight: 20
+doc_kind: index
+status: current
+authority: informative
 ---
 
-The Developer Manual is the shared technical source of truth for contributors and coding agents. Read normative contracts before inferring behavior from an implementation or historical note.
+The Developer Manual explains how Kefer Astrology is designed, implemented,
+extended, and verified. The separate **[Manual](../manual/)** describes the
+application from a user's point of view.
 
-## Start here
+Developer pages have distinct roles:
 
-- **[Project context](./project-context/)** — repository shape, technology choices, and reliable entry points.
-- **[Development driver](./development-driver/)** — current direction and definition of done.
-- **[Contract workflow](./specs-workflow/)** — how to distinguish binding behavior from guidance and plans.
-- **[Continuation guide](./continuation-guide/)** — the shortest safe path for resuming work.
+- **Contract** — normative behavior that implementations and consumers may rely on.
+- **Architecture** — system boundaries, ownership, and design rationale.
+- **Implementation reference** — where and how current code realizes a contract.
+- **Guide or policy** — how contributors work in this repository.
+- **Roadmap** — desired work that is not yet a current contract.
+- **Archive** — historical context only.
+
+When pages disagree, follow a current normative contract. Do not infer current
+behavior from a roadmap or archive page.
+
+## Contributing
+
+- **[Repository and contribution guide](./project-context/)** — repository map,
+  document roles, contract workflow, and definition of done.
+- **[Testing strategy](./testing-strategy/)** — test levels, shared fixtures, parity, and traceability.
+
+## Architecture
+
+- **[System architecture](./architecture/)** — cross-layer runtime overview.
+- **[Domain model and extensibility](./domain-model/)** — schools, models,
+  calculations, providers, and extension points.
+- **[Shared astrology core](./shared-core/)** — the planned boundary shared by
+  Rust and the separately extractable Python sidecar.
+- **[Backend structure](./backend-structure/)** — current and target Rust implementation boundaries.
+- **[Rust code structure audit](./rust-code-structure/)** — how closely the current command and service modules match those boundaries.
 
 ## Contracts
 
@@ -26,23 +52,18 @@ The Developer Manual is the shared technical source of truth for contributors an
 - **[Import chart contract](./import-chart-contract/)** — supported import behavior.
 - **[Radix render contract](./radix-render-contract/)** — computed output required for a radix view.
 
-## Architecture and computation
+## Implementation reference
 
-- **[System architecture](./architecture/)** describes the overview;
-  **[backend structure](./backend-structure/)** describes implementation
-  boundaries without redefining the YAML format.
 - **[SPICE backend](./spice-backend/)**, **[ephemeris manager](./ephemeris-manager/)**, and **[Python package](./python-package/)** describe computation backends.
 - **[House systems](./house-systems/)**, **[lunar phase](./lunar-phase/)**, and **[physical properties](./physical-properties/)** document domain calculations and data.
-
-## Frontend and interface
-
 - **[React frontend](./frontend-react/)** — the primary desktop interface.
 - **[Svelte frontend](./frontend-svelte/)** — the alternate implementation and parity surface.
 - **[Guided Tour contract](./guided-tour/)** — tour mode, stable anchors, and overlay behavior.
 - **[UI conventions](./ui-conventions/)** and **[time navigation](./time-navigation/)** — shared interaction rules.
 
-## Plans, automation, and historical context
+## Roadmap and history
 
-- **[Frontend gap implementation plan](./frontend-gap-implementation-plan/)** and **[CI todo](./ci-todo/)** are forward-looking work plans, not current contracts.
+- **[Development roadmap](./development-driver/)** — active implementation and architecture gaps.
+- **[CI todo](./ci-todo/)** records remaining automation work.
 - **[Versioning](./versioning/)** defines the release-number policy.
 - **[Discussion summary](./discussion-summary/)** preserves historical context and is explicitly non-normative.

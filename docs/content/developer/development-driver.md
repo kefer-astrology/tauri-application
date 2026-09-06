@@ -1,68 +1,78 @@
 ---
-title: 'Development driver'
+title: 'Development roadmap'
+description: 'Active implementation gaps and planned architectural movement.'
 weight: 15
+doc_kind: roadmap
+status: active
+authority: non-normative
+aliases:
+  - /developer/frontend-gap-implementation-plan/
 ---
 
-This is the current high-level driver for specs-driven development.
+This page owns unfinished cross-cutting work. It does not redefine current
+contracts. Contribution rules and the definition of done live in the
+[Repository and contribution guide](../project-context/).
 
-## Motivation / Background
+When an item lands, update the relevant contract and test-matrix entry, then
+remove or narrow the item here.
 
-Keep future work driven by explicit contracts instead of scattered cleanup lists. New behavior should land through the relevant `docs/content/developer/` contract first, then implementation, then documentation and build verification.
+## Frontend architecture
 
-## Current State
+- Lazy-load React feature views from `App.tsx`.
+- Lazy-load Svelte feature views as its main shell continues to shrink.
+- Add manual chunks only after measuring the effect of feature-level lazy loading.
+- Keep static/docs mode on the normal application shell with unavailable native
+  actions disabled or represented honestly.
 
-- React and Svelte follow the shared UI standard: shadcn-style primitives first, semantic tokens for theme behavior, and named domain components for chart/matrix rendering.
-- Svelte is parity-compliant with the current React reference. Dynamic, Revolution, and Favorite remain spec-gated because the React reference is also placeholder/workbench-level there.
-- Backend/Tauri availability must not decide layout. Static/docs mode keeps the app shell and treats unavailable backend actions as no-ops or explicit disabled states.
-- New behavior starts from `docs/content/developer/` contracts before implementation.
-- Dual-frontend parity is mandatory for frontend-visible behavior: implement React and Svelte in the same change, or mark one frontend as explicitly spec-gated with acceptance criteria before merging the feature.
+## Workflow and persistence gaps
 
-## Dual-Frontend Rule
+- Finish the external chart-import workflow in both frontends. Native YAML is
+  supported by Rust; SFS remains staged until its parser path is available.
+- Persist settings, selected bodies, selected aspects, and transit options at
+  the contractually intended workspace/chart scope.
+- Keep payload builders aligned with the
+  [Frontend workflow baseline](../frontend-workflow-baseline/),
+  [Radix render contract](../radix-render-contract/), and
+  [Chart datetime contract](../chart-datetime-contract/).
+- Converge transit controls on one canonical observable-object selector and one
+  time-step model.
+- Add behavioral tests for both frontend payload builders and at least one
+  shared workspace-open workflow. Type checks alone do not close this gap.
 
-1. Update the relevant `docs/content/developer/` contract before adding or changing frontend-visible behavior.
-2. Keep React and Svelte on the same typed Tauri bridge contract under each frontend's `src/lib/tauri/` folder when commands or payloads are involved.
-3. Keep compute payload builders aligned when workspace, chart, transit, or settings configuration changes.
-4. Implement both frontend shells in the same change unless the spec names the deferred shell, the reason it is deferred, and the acceptance criteria for closing the gap.
-5. Do not add local-only UI state for values that affect computation unless the contract explicitly says the value is transient.
-6. Verification must include `npm run check`, `npm run check:svelte`, and the relevant build or docs command for the touched surface.
+## Spec-gated product modes
 
-## Planned State
+- Dynamic requires a dynamic-calculation contract.
+- Revolution requires a revolution-chart contract.
+- Favorite requires a favorites/workbench contract.
+- Deeper Information sections require data-source and acceptance contracts.
+- Aspectarium should consume selected backend-computed objects/aspects, use a
+  self-describing matrix, and open relation details only after explicit user
+  action. Its current prototype must not become a second source of calculation
+  geometry.
 
-1. **Bundle Size And Loading**
-   - Lazy-load React feature views from `App.tsx`.
-   - Lazy-load Svelte mode components now that the shell delegates to feature views.
-   - Add manual chunks for stable vendor groups only after lazy-loading is in place.
-   - Measure bundles before and after each split.
+## Backend runtime direction
 
-2. **Workflow State And Persistence**
-   - Wire settings, selected bodies, selected aspects, and transit options to workspace/chart state when the behavior is meant to survive reloads.
-   - Keep compute payloads aligned with `frontend-workflow-baseline`, `radix-render-contract`, and `chart-datetime-contract`.
-   - Do not add local-only UI state for behavior that affects computation.
+- Continue the responsibility extraction recorded in the
+  [Rust code structure audit](../rust-code-structure/).
+- Keep astronomy providers pluggable, with JPL/SPICE as the preferred long-term
+  direction and Swiss Ephemeris as compatibility/validation infrastructure.
+- Audit true-node behavior outside the documented JPL/Rust path so labels and
+  provenance distinguish mean node, true node, and approximations.
+- Decide support for Chiron, TNOs, and other auxiliary bodies. Until then,
+  catalog-only entries remain visibly unavailable rather than silently omitted.
+- Remove or clearly label mock/fallback geometry that appears to be computed
+  astrology data without backend provenance.
+- Add an end-to-end no-Swiss/no-sidecar smoke path.
+- Validate the optional Python environment end to end when provisioned.
+- Keep Rust/Python routing and fallback visible in result provenance.
 
-3. **Spec-Gated Product Modes**
-   - Dynamic requires a dynamic-calculation spec.
-   - Revolution requires a revolution-chart spec.
-   - Favorite requires a favorites/workbench spec.
-   - Deeper Information sections require data-source and acceptance specs.
+## Shared core and verification
 
-4. **Backend Runtime Direction**
-   - Keep astronomy backend-pluggable, with JPL / SPICE as the preferred long-term direction and Swiss Ephemeris as compatibility/validation infrastructure.
-   - Audit true-node behavior outside the documented JPL/Rust path so labels and provenance distinguish mean-node, true-node, and backend-specific approximations.
-   - Decide the supported contract for Chiron, TNOs, and other auxiliary bodies: provide a reliable auxiliary source or surface them as unavailable with clear warnings. Partially addressed: `ObservableObjectDefinition.status` (`available` | `planned`) now distinguishes backend-computable bodies from catalog-only placeholders (TNOs, geocentric planetary nodes, hypothetical/Uranian bodies, fixed stars, extra Lilith variants), and every consumer (Settings, Aspectarium, Transits) renders `planned` entries disabled with a shared hint. The actual backend-support decision for each `planned` category is still open.
-   - Remove or label any UI fallback geometry, compatibility path, or prototype surface that appears to expose computed astrology data without backend-backed provenance.
-   - Add an end-to-end no-Swiss/no-sidecar smoke path, not only compilation.
-   - Validate the optional Python environment end to end when that backend is provisioned.
-   - Make backend routing visible: Rust-backed, Python-backed, or auto-routed compute should be clear in docs and user/debug-facing provenance.
+- Extend shared fixtures beyond time, settings, and workspace interoperability
+  to diagnostics, result structures, aspect cases, and numerical reference data.
+- Define field-specific provider tolerances.
+- Add automated frontend behavior and cross-shell workflow coverage.
+- Keep skipped optional-provider tests visible in CI output.
 
-5. **Docs And Generated Assets**
-   - Source docs live under `docs/content/`.
-   - Frontend docs app assets are generated through `npm run docs:prepare`.
-   - Hugo output is generated; do not treat `docs/public/` as source of truth.
-
-## Definition Of Done
-
-- The relevant `/developer/` spec exists or was updated.
-- Feature UI uses shared primitives and existing domain components.
-- React and Svelte either both implement the behavior, or the spec names the intentional gap and the acceptance criteria for closing it.
-- Static/docs mode still renders the standard shell.
-- `npm run check`, `npm run check:svelte`, and the relevant build/docs command pass.
+See [Shared astrology core](../shared-core/) for the extraction boundary and
+[Testing strategy](../testing-strategy/) for the coverage inventory.

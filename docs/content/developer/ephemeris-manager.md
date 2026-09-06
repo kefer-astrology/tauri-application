@@ -2,11 +2,14 @@
 title: 'Ephemeris manager'
 description: 'Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.'
 weight: 42
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
 `EphemerisManager` is the Rust module that owns all BSP file lifecycle concerns: what files exist, where they live, which one to load, how to download a missing file, and how to hand multiple files to `anise` as a single chained `Almanac`.
 
-Source: [src-tauri/src/ephemeris_manager.rs](https://github.com/kefer-astrology/tauri-application-react/blob/main/src-tauri/src/ephemeris_manager.rs)
+Source: [src-tauri/src/infrastructure/ephemeris.rs](https://github.com/kefer-astrology/tauri-application-react/blob/main/src-tauri/src/infrastructure/ephemeris.rs)
 
 ---
 
@@ -25,7 +28,7 @@ The original `JplAstronomyBackend` held a single `bsp_path: PathBuf` and loaded 
 ## Architecture
 
 ```
-ephemeris_manager.rs
+infrastructure/ephemeris.rs
 │
 ├── CATALOG: &[EphemerisEntry]        static catalog of known BSP files
 │
@@ -35,14 +38,14 @@ ephemeris_manager.rs
     └── download(id, app)             async, streams progress events
 ```
 
-`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then chains them with `load_almanac_from_paths()` in `jpl_backend.rs` on each compute call.
+`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then chains them with `load_almanac_from_paths()` in `infrastructure/astronomy/jpl_backend.rs` on each compute call.
 
 A global `OnceLock<PathBuf>` stores the cache directory. It is initialised once during Tauri app setup from `app.path().app_data_dir()`:
 
 ```rust
 // lib.rs setup closure
 if let Ok(data_dir) = app.path().app_data_dir() {
-    ephemeris_manager::init_cache_dir(data_dir.join("ephemeris"));
+    infrastructure::ephemeris::init_cache_dir(data_dir.join("ephemeris"));
 }
 ```
 
@@ -90,13 +93,15 @@ To get asteroid positions, a **separate dedicated asteroid SPK kernel** is requi
 | `codes_300ast_20100725.bsp` (59 MB)                | 300 asteroids, Baer 2010 solution | one download covers most                 |
 | JPL Horizons REST API                              | any NAIF body, on demand          | no file to bundle; query at compute time |
 
-Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `jpl_backend.rs` (small-body table). The backend calls `almanac.translate(...)` per body; if no SPK segment exists for that epoch, the chart still succeeds and a per-body `{id}_unavailable` warning is recorded.
+Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `infrastructure/astronomy/jpl_backend.rs` (small-body table). The backend calls `almanac.translate(...)` per body; if no SPK segment exists for that epoch, the chart still succeeds and a per-body `{id}_unavailable` warning is recorded.
 
-**Default chart** (`included_points` / requested objects unspecified): only the **four classical** asteroids (Ceres, Pallas, Juno, Vesta) are evaluated automatically. If `codes_300ast_*.bsp` is on the load path, the backend also evaluates an extended list (`CODES_300AST_MAJOR_BODIES` in `ephemeris_manager.rs` — Astraea through Massalia) so optional downloads do not spam warnings for bodies that were never requested. When the client passes an explicit object list, every listed body is attempted.
+All 20 named bodies in the table below (Ceres through Massalia) are also registered in the built-in `BodyDefinition` catalog (`workspace/model_catalog.rs`, mirrored in `backend-python/module/model_catalog.py`), so they are selectable objects, not just resolvable NAIF frames. `astraea` through `massalia` are marked JPL-only in `computation_map` — Swiss Ephemeris support would need asteroid `.se1` files this project does not bundle — and use a circled-digit glyph matching their minor-planet number, since none of them has a dedicated astrological symbol in wide use. A `codes_300ast_minor_planets_resolve_from_bundled_kernels` test in `jpl_backend.rs` confirms all 16 actually resolve from the bundled kernels, not just that the catalog entry exists.
+
+**Default chart** (`included_points` / requested objects unspecified): only the **four classical** asteroids (Ceres, Pallas, Juno, Vesta) are evaluated automatically. If `codes_300ast_*.bsp` is on the load path, the backend also evaluates an extended list (`CODES_300AST_MAJOR_BODIES` in `infrastructure/ephemeris.rs` — Astraea through Massalia) so optional downloads do not spam warnings for bodies that were never requested. When the client passes an explicit object list, every listed body is attempted.
 
 ### NAIF body IDs
 
-Standard planets use named constants from `anise::constants::frames`. Asteroid frames use `Frame::from_ephem_j2000(...)` in `ephemeris_manager.rs`:
+Standard planets use named constants from `anise::constants::frames`. Asteroid frames use `Frame::from_ephem_j2000(...)` in `infrastructure/ephemeris.rs`:
 
 | Kefer ID               | NAIF ID               | Typical kernel                                                                        |
 | ---------------------- | --------------------- | ------------------------------------------------------------------------------------- |

@@ -2,6 +2,9 @@
 title: 'UI conventions'
 description: 'Theme, layout, component, and i18n rules for the frontend shells.'
 weight: 30
+doc_kind: policy
+status: evolving
+authority: normative
 ---
 
 Crisp reference for **themes**, **secondary navigation**, **shared component strategy**, and **i18n** so new work stays aligned with the app themes and a single source of styling truth.
@@ -38,23 +41,19 @@ source of truth.
 - Feature-level UI should not introduce raw native controls (`<button>`, `<select>`, checkbox `<input>`) when a shared primitive exists.
 - If a required primitive is missing, add it to that frontend's shared `ui/` layer first, then consume it from feature components.
 
-## Frontend Alignment Status
+## Shared primitive baseline
 
 Both frontend workspaces should keep these shared primitive families available before feature work adds custom controls:
 
 - React: `Button`, `Input`, `Textarea`, `Checkbox`, `ColorInput`, `Label`, `Select`, `Card`, `Dialog`, `Sheet` / `Drawer`, `Accordion`, `Tooltip`, `Breadcrumb`, `Badge`, `Separator`, and `Table`.
 - Svelte: `Button`, `Input`, `Textarea`, `Checkbox`, `ColorInput`, `Label`, `Select`, `Card`, `Dialog`, `Accordion`, `Tooltip`, `Breadcrumb`, `Badge`, `Separator`, and `Table`.
 
-Native control tags are allowed inside the shared primitive implementations themselves. In feature components they should be treated as drift unless the control genuinely has no primitive yet.
-
-Current alignment status:
-
-- React and Svelte feature components follow shared shadcn-style primitives for common controls.
-- React `TransitsBodiesConfig` is data-driven and uses shared `Checkbox` + `Label`.
-- React `Aspectarium` consumes shared `Table` primitives and theme tokens.
-- Svelte matrix rendering is routed through `components/chart-matrix/AspectMatrix.svelte`.
-- Svelte mode content is split into feature components including `NewRadixView`, `InformationView`, `RadixDetailsPanel`, `RadixPositionPanel`, and `RadixTransitsView`.
-- Ongoing work is driven from the [Development driver](../development-driver/). Future Dynamic/Revolution/Favorite behavior is spec-gated because the React reference is also placeholder/workbench-level there.
+Native control tags are allowed inside the shared primitive implementations
+themselves. In feature components they are drift unless no suitable primitive
+exists. Framework-specific implementation status belongs in the
+[React](../frontend-react/) and [Svelte](../frontend-svelte/) references;
+unfinished alignment work belongs in the
+[Development roadmap](../development-driver/).
 
 ## Interior surfaces
 
@@ -104,64 +103,6 @@ The product uses exactly four named themes (no ad‑hoc palettes in feature code
 - Keep these semantic tokens defined in `themePaletteVars()` and consume them in feature components rather than hardcoding `blue-*`/`gray-*`/hex values in view files.
 - Hover policy: use `--token-hover-subtle` for lightweight affordances and `--token-hover-strong` for primary navigation and dense selectable rows where higher contrast feedback is needed.
 
-## Secondary navigation (`SecondaryNavPanel`)
-
-**File:** `src/app/components/secondary-nav-panel.tsx`
-
-Used for:
-
-- **Transits** — `TransitsSecondarySidebar` wraps it (section titles from i18n).
-- **Settings** — `SettingsView` places it in a **grid** next to the settings card: `lg:grid-cols-[14rem_minmax(0,1fr)]`, `gap-6`, `items-stretch`.
-
-The panel consumes the active theme palette through the same shared sidebar adapter, and its background is driven from the **secondary sidebar** palette values rather than a separate hardcoded preset.
-
-Optional **`className`** on the panel (e.g. max-height + scroll on the settings rail) is for layout only, not alternate palettes.
-
-## Transits layout (shell)
-
-In **`App.tsx`**, when `activeView === 'tranzity'`, the transits **secondary** rail is a sibling of the main content column (same flex row as `AstrologySidebar`). Content is **`TransitsContent`** with a `section` driven by the rail.
-
-Adding another “second column” view should follow the same pattern: sibling rail + main, theme passed through.
-
-## Aspectarium target layout
-
-The current React `Aspectarium` (`apps/web-react/src/app/components/aspectarium.tsx`) is still a prototype. The target shape should follow the imported vision from `inspiration-source/aspektarium/Kefer - Aspektárium/` while still using the app’s existing shell and shared primitives.
-
-**Data and geometry rules**
-
-- The left matrix rows should correspond to the current list of selected objects to compute, using the same object-selection source as the radix position report rather than a hardcoded planet list.
-- The diagonal should repeat the same objects used in the rows so the matrix is self-describing.
-- For a single-chart aspectarium, render the lower-triangle relationship grid.
-- For transit/event-range computation, allow the same structure to expand into a square where the diagonal-adjacent edges represent the beginning and ending event times.
-- Visible aspect cells should correspond only to the aspects enabled in settings and the aspects actually computed by the backend.
-
-**Interaction rules**
-
-- Clicking any populated aspect cell should open the aspect detail view on the right.
-- The detail view should be driven by the selected relation, not by hover-only state.
-- The detail view should be able to describe both bodies/points involved and the computed aspect metadata that produced that cell.
-- The detail surface should appear only after explicit user action; it should not reserve permanent layout space when nothing is selected.
-
-**Layout rules**
-
-- The matrix should keep the full content width until the user opens a detail relation.
-- When opened, the detail view should come from the right as a unified side popup rather than as a permanently visible second column.
-- Desktop width for that popup should stay roughly in the 20% range of the workspace, capped to a practical reading width.
-- On narrow screens, use the same popup pattern through `Sheet` or `Drawer` instead of introducing a separate mobile-only layout family.
-
-**Component strategy**
-
-- Reuse the shared shell and theme tokens first; do not build the aspectarium as a one-off visual island.
-- Prefer existing shadcn primitives already present in the repo:
-  - `Card` / `CardContent` for the matrix and detail surfaces
-  - `ScrollArea` for long detail content
-  - `Button` (styled as icon/cell controls where needed) for interactive aspect entries
-  - `Separator` for section breaks inside the detail panel
-- Prefer one reusable right-side detail panel component for repeated click-to-inspect flows across the app instead of re-implementing fixed right columns per screen.
-- If a reusable matrix-specific primitive is still missing, add a new focused component in `apps/web-react/src/app/components/` or `.../ui/` rather than embedding bespoke table behavior directly into `App.tsx`.
-- New styling should inherit the active theme palette through the same shared adapters/helpers used by other content surfaces.
-- Svelte chart matrices should follow the same domain-component rule through `apps/web-svelte/src/lib/components/chart-matrix/` and should not reintroduce feature-local lower-triangle table logic.
-
 ## Internationalization (i18n)
 
 | Item              | Location                                                                                              |
@@ -189,4 +130,6 @@ Transits-related keys use the `transits_*` prefix where grouped; shared labels r
 ## Related docs
 
 - **[frontend-react](../frontend-react/)** — Commands, folder layout, Tauri bridge, glyphs.
+- **[frontend-svelte](../frontend-svelte/)** — Svelte-specific structure and bridge.
+- **[frontend workflow baseline](../frontend-workflow-baseline/)** — shared workflow behavior and parity.
 - **[architecture](../architecture/)** — Workspace and storage (backend-oriented).

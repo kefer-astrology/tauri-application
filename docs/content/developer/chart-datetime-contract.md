@@ -1,6 +1,9 @@
 ---
 title: 'Chart datetime contract'
 weight: 42
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This page defines the canonical chart datetime format shared by the frontends and Tauri commands.

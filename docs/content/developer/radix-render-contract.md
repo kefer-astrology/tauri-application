@@ -1,6 +1,9 @@
 ---
 title: 'Radix render contract'
 weight: 43
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This page defines the current compute output contract for rendering a radix view without mock data.
@@ -46,7 +49,7 @@ The frontend radix view should render from computed chart output, not from hardc
 
 - `shapes`: array of distribution-shape ids (`bundle`, `bowl`, `bowl_east`, `bowl_west`, `bowl_day`, `bowl_night`, `bucket`, `bucket_<planet>`, `locomotive`, `locomotive_leader_<planet>`, `seesaw`, `splash`, `splay`, `shifted_center`, `stellium`), derived from the 10 classical bodies (Sun through Pluto) and, for the bowl sub-variants, `house_cusps`.
 - `configurations`: array of aspect-pattern ids (`t_square`, `t_square_<modality>`, `grand_trine`, `grand_trine_<element>`, `grand_cross`, `grand_cross_<modality>`, `kite`, `kite_<element>`, `mystic_rectangle`, `double_quincunx`, `double_biquintile`, `hexagram`, `pentagram`), derived from the same 10 bodies and the computed `aspects`.
-- Computed once in Rust (`detect_chart_shapes`/`detect_chart_configurations` in `astrology.rs`) and shared by every compute route — including the Python route, which gets them injected from its own `positions`/`house_cusps`/`aspects` response fields — so frontends never need to re-derive them.
+- Computed once in Rust (`detect_chart_shapes`/`detect_chart_configurations` in `domain/astrology.rs`) and shared by every compute route — including the Python route, which gets them injected from its own `positions`/`house_cusps`/`aspects` response fields — so frontends never need to re-derive them.
 - `shapes` requires at least 7 of the 10 classical bodies present in `positions`; otherwise it is empty. `configurations` has no such minimum — it simply finds no matching pattern among however many of the 10 are present.
 
 ## Support rule

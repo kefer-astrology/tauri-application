@@ -1,6 +1,9 @@
 ---
 title: 'Frontend workflow baseline'
 weight: 40
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 Both frontend shells should be judged against these baseline workflows:
@@ -19,7 +22,7 @@ New frontend-visible workflow behavior must land through both shells unless a sp
 - React and Svelte use the same Tauri command contract and typed bridge shape.
 - React and Svelte expose the same computation inputs, or the spec names the missing input and acceptance criteria.
 - Selected objects, selected aspects, date/time ranges, and workspace/chart IDs must feed the command payload rather than remaining local-only widget state.
-- A partial frontend implementation is not "parity-compliant"; it is an intentional gap that must be documented in this file or the feature-specific `/developer/` contract.
+- A partial frontend implementation is not "parity-compliant"; it is an intentional gap that must be documented in the [Development roadmap](../development-driver/) or the feature-specific contract.
 
 ## Readiness rule
 
@@ -67,46 +70,9 @@ A frontend is only "ready" for this baseline when:
   - edge-to-edge for radix, information/dashboard, aspectarium, and open-workspace flows
   - a centered 20/60/20 content layout for new-chart, transits, settings, and placeholder editor-style views
 
-## Gap-closing checklist
+## Verification
 
-## 1. Tauri contract gaps
-
-- Keep `load_workspace`, `get_workspace_defaults`, `get_chart_details`, `create_chart`, `update_chart`, `compute_chart`, and `compute_chart_from_data` as the stable baseline for both frontends.
-- Treat "import chart into workspace" as a real external-ingest workflow, not as chart creation from frontend form data.
-- Add an explicit Tauri command and contract for chart import instead of overloading open-workspace behavior.
-- Support importing previously created chart files, especially:
-  - native chart YAML in the Rust path
-  - StarFisher/SFS when the backend parser path is available
-- Extend the chart/workspace contract if frontend-selected aspects must be persisted as `default_aspects` and/or `aspect_orbs`.
-- Make sure the compute path accepts and respects selected objects and selected aspects through chart config or command arguments.
-
-## 2. React gaps
-
-- Add an explicit "import chart into workspace" workflow or remove the ambiguity from the product language.
-- Add a real external chart import workflow for supported file types.
-- Add UI for selecting calculated objects, not only consuming `default_bodies` loaded from workspace.
-- Connect settings changes for house system, location, calculated objects, and calculated aspects to real app state instead of local-only component state.
-- Persist confirmed settings either to workspace defaults or to per-chart config, depending on the chosen contract.
-- Ensure compute payloads include the settings that should affect computation.
-- Keep React transit-series controls wired to the same command payload fields as Svelte when extending transits behavior.
-- Replace React's fixed one-hour transit-series step with the shared time-step model once that model is specified for both shells.
-
-## 3. Svelte gaps
-
-- Add a real external chart import workflow for supported file types.
-- Connect settings controls for location, house system, and aspects to shared workspace/chart state.
-- Decide whether `BodySelector` should also drive workspace-level default computed bodies, not only transit filters.
-- Persist confirmed settings to workspace/chart config instead of leaving them as local view state.
-- Ensure compute payloads include both selected objects and selected aspects where required.
-- Keep Svelte transit-series controls wired to the same command payload fields as React when extending transits behavior.
-- Keep Svelte's transit body selector aligned with the eventual shared canonical selector used by React.
-
-## 4. Recommended implementation order
-
-1. Define the supported import command shape and file types.
-2. Make one authoritative settings model for computed bodies and aspects.
-3. Wire that model into payload builders in both frontends.
-4. Verify Rust/Python compute respects the same inputs.
-5. Finish the missing import workflow in each frontend.
-6. Verify Rust/Python preserve the same instant for offset-aware datetimes.
-7. Only then mark the baseline workflows as ready.
+The cross-frontend contract is tracked by `FRONTEND-001`, `FRONTEND-002`, and
+`STATIC-001` in the [Testing strategy](../testing-strategy/). Unfinished work
+belongs in the [Development roadmap](../development-driver/), not in this
+normative baseline.

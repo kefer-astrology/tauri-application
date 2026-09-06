@@ -1,6 +1,9 @@
 ---
 title: 'Import chart contract'
 weight: 42
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This page defines the current import behavior for bringing previously created charts into an existing workspace.

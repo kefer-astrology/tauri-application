@@ -2,6 +2,9 @@
 title: 'Workspace YAML contract'
 description: 'Authoritative persisted project structure, settings inheritance, overrides, schools, charts, subjects, and transits.'
 weight: 41
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This is the authoritative description of the portable workspace format. The
@@ -292,6 +295,10 @@ survive a typed Rust save; version and add them to the contract before relying
 on them.
 
 ## How to test the contract
+
+This contract is tracked by the `MODEL-*` and `WORKSPACE-*` entries in the
+[testing strategy](../testing-strategy/). The commands below are the currently
+available checks; the central matrix owns cross-contract traceability.
 
 From the repository root:
 

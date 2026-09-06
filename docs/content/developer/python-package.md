@@ -2,6 +2,9 @@
 title: 'Python package'
 description: 'Reference for the optional Python backend package and its role in the current architecture.'
 weight: 50
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
 The Python package is an optional computation backend used by the Tauri app.
@@ -72,3 +75,5 @@ Keep astrology semantics portable. Python may implement backend-specific details
 - [architecture](../architecture/) — app-level routing and backend boundaries
 - [spice-backend](../spice-backend/) — JPL/SPICE backend boundary
 - [tauri-command-contracts](../tauri-command-contracts/) — frontend-visible command contract
+- [shared astrology core](../shared-core/) — planned cross-language contract and fixture boundary
+- [testing strategy](../testing-strategy/) — Rust/Python parity and numerical verification
