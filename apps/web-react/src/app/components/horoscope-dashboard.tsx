@@ -111,7 +111,23 @@ const POSITION_META: Record<string, { labelKey?: string; fallbackLabel: string; 
 	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
 	pallas: { labelKey: 'point_pallas', fallbackLabel: 'Pallas', icon: 'Pa' },
 	juno: { labelKey: 'point_juno', fallbackLabel: 'Juno', icon: 'Ju' },
-	vesta: { labelKey: 'point_vesta', fallbackLabel: 'Vesta', icon: 'Ve' }
+	vesta: { labelKey: 'point_vesta', fallbackLabel: 'Vesta', icon: 'Ve' },
+	astraea: { labelKey: 'point_astraea', fallbackLabel: 'Astraea', icon: 'As' },
+	hebe: { labelKey: 'point_hebe', fallbackLabel: 'Hebe', icon: 'He' },
+	iris: { labelKey: 'point_iris', fallbackLabel: 'Iris', icon: 'Ir' },
+	flora: { labelKey: 'point_flora', fallbackLabel: 'Flora', icon: 'Fl' },
+	metis: { labelKey: 'point_metis', fallbackLabel: 'Metis', icon: 'Mt' },
+	hygiea: { labelKey: 'point_hygiea', fallbackLabel: 'Hygiea', icon: 'Hy' },
+	parthenope: { labelKey: 'point_parthenope', fallbackLabel: 'Parthenope', icon: 'Pt' },
+	victoria: { labelKey: 'point_victoria', fallbackLabel: 'Victoria', icon: 'Vc' },
+	egeria: { labelKey: 'point_egeria', fallbackLabel: 'Egeria', icon: 'Eg' },
+	irene: { labelKey: 'point_irene', fallbackLabel: 'Irene', icon: 'Ie' },
+	eunomia: { labelKey: 'point_eunomia', fallbackLabel: 'Eunomia', icon: 'Eu' },
+	psyche: { labelKey: 'point_psyche', fallbackLabel: 'Psyche', icon: 'Ps' },
+	thetis: { labelKey: 'point_thetis', fallbackLabel: 'Thetis', icon: 'Th' },
+	melpomene: { labelKey: 'point_melpomene', fallbackLabel: 'Melpomene', icon: 'Mp' },
+	fortuna: { labelKey: 'point_fortuna', fallbackLabel: 'Fortuna', icon: 'Ft' },
+	massalia: { labelKey: 'point_massalia', fallbackLabel: 'Massalia', icon: 'Ma' }
 };
 
 function parseRadixAspect(raw: unknown): RadixAspectDrawInput | null {

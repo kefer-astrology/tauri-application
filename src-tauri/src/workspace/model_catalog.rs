@@ -286,6 +286,155 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::Both,
         ),
+        // Resolvable via the bundled/downloadable `codes_300ast_20100725.bsp` kernel
+        // (see `infrastructure::ephemeris::CODES_300AST_MAJOR_BODIES`), but none of
+        // these has a dedicated astrological symbol in wide use — the glyph is the
+        // circled digit matching the minor-planet number, a convention several
+        // asteroid-ephemeris references already use for bodies without one.
+        body_definition(
+            "astraea",
+            "Astraea",
+            "⑤",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "hebe",
+            "Hebe",
+            "⑥",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "iris",
+            "Iris",
+            "⑦",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "flora",
+            "Flora",
+            "⑧",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "metis",
+            "Metis",
+            "⑨",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "hygiea",
+            "Hygiea",
+            "⑩",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "parthenope",
+            "Parthenope",
+            "⑪",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "victoria",
+            "Victoria",
+            "⑫",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "egeria",
+            "Egeria",
+            "⑬",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "irene",
+            "Irene",
+            "⑭",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "eunomia",
+            "Eunomia",
+            "⑮",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "psyche",
+            "Psyche",
+            "⑯",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "thetis",
+            "Thetis",
+            "⑰",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "melpomene",
+            "Melpomene",
+            "⑱",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "fortuna",
+            "Fortuna",
+            "⑲",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "massalia",
+            "Massalia",
+            "⑳",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
     ]
 }
 
@@ -293,6 +442,10 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
 enum EngineSupport {
     Both,
     SwissOnly,
+    /// Resolvable today only via the anise/JPL path (bundled or downloadable BSP
+    /// kernels). Swiss Ephemeris support would require asteroid `.se1` files this
+    /// project does not bundle, so it is left unclaimed rather than guessed at.
+    JplOnly,
 }
 
 fn body_definition(
@@ -304,10 +457,14 @@ fn body_definition(
     requires_house_system: bool,
     engine_support: EngineSupport,
 ) -> BodyDefinition {
-    let mut computation_map = HashMap::from([("swisseph".to_string(), Some(id.to_string()))]);
+    let mut computation_map = HashMap::from([(
+        "swisseph".to_string(),
+        (!matches!(engine_support, EngineSupport::JplOnly)).then(|| id.to_string()),
+    )]);
     computation_map.insert(
         "jpl".to_string(),
-        matches!(engine_support, EngineSupport::Both).then(|| id.to_string()),
+        matches!(engine_support, EngineSupport::Both | EngineSupport::JplOnly)
+            .then(|| id.to_string()),
     );
 
     BodyDefinition {

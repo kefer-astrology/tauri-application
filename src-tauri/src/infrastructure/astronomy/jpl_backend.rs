@@ -475,6 +475,63 @@ mod tests {
         assert!(backend.build_almanac().is_err());
     }
 
+    /// Confirms the minor planets added to the body catalog alongside `codes_300ast`
+    /// (astraea..massalia) actually resolve through the bundled kernels, not just
+    /// that the catalog entry exists.
+    #[test]
+    fn codes_300ast_minor_planets_resolve_from_bundled_kernels() {
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        assert!(
+            paths.iter().any(|p| p
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|s| s.contains("codes_300ast"))),
+            "expected the bundled codes_300ast kernel to resolve; found {paths:?}"
+        );
+
+        let requested: Vec<String> = [
+            "astraea",
+            "hebe",
+            "iris",
+            "flora",
+            "metis",
+            "hygiea",
+            "parthenope",
+            "victoria",
+            "egeria",
+            "irene",
+            "eunomia",
+            "psyche",
+            "thetis",
+            "melpomene",
+            "fortuna",
+            "massalia",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+
+        let chart = j2000_chart(paths[0].to_str().unwrap());
+        let backend = JplAstronomyBackend::new(paths);
+        let data = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .expect("compute should succeed");
+
+        for id in &requested {
+            assert!(
+                data.positions.contains_key(id),
+                "{id} did not resolve; warnings: {:?}",
+                data.warnings
+            );
+        }
+        assert!(
+            data.warnings.iter().all(|w| !w.contains("_unavailable")),
+            "unexpected unavailable warnings: {:?}",
+            data.warnings
+        );
+    }
+
     fn j2000_chart(bsp_path: &str) -> crate::workspace::models::ChartInstance {
         serde_json::from_value(serde_json::json!({
             "id": "j2000_test",
