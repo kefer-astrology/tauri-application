@@ -1,0 +1,32 @@
+src-tauri/src/infrastructure/astronomy/mod.rs
+  s_5241e6c69a41a3::t_3f20b2302a9093 58
+  s_5241e6c69a41a3::t_da5fc734e31592 40-42,66-150
+src-tauri/src/infrastructure/astronomy/jpl_backend.rs
+  s_5241e6c69a41a3::t_d23fae2deeb53d 1-22,31-627
+  s_5241e6c69a41a3::t_da5fc734e31592 23-30
+src-tauri/src/domain/houses.rs
+  s_5241e6c69a41a3::t_a68ae2ffa835f9 1-551
+src-tauri/src/infrastructure/astronomy/swisseph.rs
+  s_5241e6c69a41a3::t_a68ae2ffa835f9 1-473
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "41973fe725af1d20b12b4fa392ee0a2a757104c9",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5241e6c69a41a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "147e2ecd-6b4f-489d-ac4f-f3d2633178c5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
