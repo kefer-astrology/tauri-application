@@ -1,0 +1,65 @@
+docs/content/developer/radix-render-contract.md
+  s_a7bd7e289352a7::t_c6f448255c4cf7 33-39
+docs/content/developer/spice-backend.md
+  s_a7bd7e289352a7::t_78afdefea05468 104-114,120,172-173,180-182
+  s_a7bd7e289352a7::t_17176f6f1b8279 79-82
+  s_a7bd7e289352a7::t_40bb1fa843ecb4 45,169-171
+  s_a7bd7e289352a7::t_130298db0e62b8 76-77
+  s_a7bd7e289352a7::t_c6f448255c4cf7 51-52,74-75,78,83-103,183
+docs/content/developer/development-driver.md
+  s_a7bd7e289352a7::t_8179b8da33602b 61-67,71-73
+  s_a7bd7e289352a7::t_b5df276ec7f9cd 68-70
+  s_5241e6c69a41a3::t_3b1d38130ac6c8 74-86
+docs/content/developer/architecture.md
+  s_a7bd7e289352a7::t_78afdefea05468 128-131
+  s_a7bd7e289352a7::t_c6f448255c4cf7 113-127,168-171
+docs/content/developer/ephemeris-manager.md
+  s_a7bd7e289352a7::t_40bb1fa843ecb4 67,107-112,120,348,411
+  s_a7bd7e289352a7::t_ea064356077b0d 215-223
+  s_a7bd7e289352a7::t_b5df276ec7f9cd 101,172-173,214
+  s_a7bd7e289352a7::t_b8959a6713f7ef 78-79,145
+  s_5241e6c69a41a3::t_7ce67102a62ffc 417
+  s_a7bd7e289352a7::t_ac49e77ac8f11a 70,412-413
+  s_a7bd7e289352a7::t_130298db0e62b8 132-134
+  s_a7bd7e289352a7::t_799b392eb11a2b 38-39,71,75-77,80-83,125,131,174-213,383,419
+  s_a7bd7e289352a7::t_7c9548f511a3c3 103
+  s_5241e6c69a41a3::t_1b5afb87f7de63 414,420-422
+  s_5241e6c69a41a3::t_c3e21f2da7a5e5 423
+  s_a7bd7e289352a7::t_0103cb83b1e9d1 158-168
+  s_a7bd7e289352a7::t_49a017ceb0f7cc 135-136
+docs/content/developer/tauri-command-contracts.md
+  s_a7bd7e289352a7::t_fdbe22cb68e55a 303-307
+  s_a7bd7e289352a7::t_c6f448255c4cf7 204-209
+docs/content/developer/astronomy-coordinate-contract.md
+  s_a7bd7e289352a7::t_c6f448255c4cf7 1-66,68-71,73,78,92-94
+  s_a7bd7e289352a7::t_78afdefea05468 67,72,74-77,79-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6adb972f6c5f5478c73026c26303f3d0494ff279",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5241e6c69a41a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "147e2ecd-6b4f-489d-ac4f-f3d2633178c5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_a7bd7e289352a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a90-8c4d-7f32-a8d9-647183b32c59",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
