@@ -1,0 +1,29 @@
+scripts/generate-horizons-type13.py
+  s_a7bd7e289352a7::t_0945656566b6ac 51-53,94-106,121-123,126,128,131-135,245-246,256-258,261,264-265,329
+  s_a7bd7e289352a7::t_fd42d778b056e9 19,297-301
+  s_a7bd7e289352a7::t_9ace74b11f92aa 1-18,20-50,54-93,107-120,124-125,127,129-130,136-244,247-255,259-260,262-263,266-296,302-328,330-381
+src-tauri/resources/chiron_1900_2100_type13.bsp.json
+  s_a7bd7e289352a7::t_84fe52834ab746 26-28
+  s_a7bd7e289352a7::t_64ef6d02f23b30 1-25,29-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "29b49f44804167d9ea3b4baf54c26b1f01c349a9",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a7bd7e289352a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a90-8c4d-7f32-a8d9-647183b32c59",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
