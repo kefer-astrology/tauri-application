@@ -1,0 +1,28 @@
+contracts/workspace-v1/workspace.yaml
+  s_16bc0dab641562::t_88494410a9945e 1-99
+contracts/workspace-v1/transits/nested/python-written.yml
+  s_16bc0dab641562::t_88494410a9945e 1-22
+contracts/workspace-v1/charts/nested/python-written.yml
+  s_16bc0dab641562::t_88494410a9945e 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "79874ba709b2a9adb0ec77adb662ee15c5db93a3",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_16bc0dab641562": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a063ba-03a3-74a3-a76d-8307a5b6ba0c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
