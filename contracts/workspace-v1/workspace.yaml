@@ -1,0 +1,99 @@
+schema_version: 1
+owner: Cross-language fixture
+active_school: traditional
+active_model: traditional-test
+schools:
+  traditional:
+    id: traditional
+    default_model: traditional-test
+models:
+  traditional-test:
+    name: traditional-test
+    school: traditional
+    version: 1
+    engine: jpl
+    zodiac_type: Tropical
+    settings:
+      default_house_system: Whole Sign
+      default_aspects: [square]
+      default_bodies: [sun, moon]
+      standard_orb: 6.0
+      default_transit_aspects: [square]
+      default_transit_bodies: [moon]
+      degrees_in_circle: 360.0
+      obliquity_j2000: 23.4392911
+      coordinate_tolerance: 0.000001
+    body_definitions:
+      - id: sun
+        enabled: true
+        glyph: ''
+        formula: ephemeris
+        avg_speed: 1.0
+        max_orb: 8.0
+        i18n: {}
+        object_type: planet
+        computation_map: { jpl: sun }
+        requires_location: false
+        requires_house_system: false
+      - id: moon
+        enabled: true
+        glyph: ''
+        formula: ephemeris
+        avg_speed: 13.0
+        max_orb: 8.0
+        i18n: {}
+        object_type: planet
+        computation_map: { jpl: moon }
+        requires_location: false
+        requires_house_system: false
+    aspect_definitions:
+      - id: square
+        enabled: true
+        glyph: ''
+        angle: 90.0
+        default_orb: 6.0
+        i18n: {}
+        valid_contexts: [chart, transit]
+        interpretation_weight: 0.8
+    signs: []
+model_overrides:
+  points:
+    - id: moon
+      computed: true
+      enabled: true
+      only_for: [traditional]
+  aspects:
+    - id: square
+      default_orb: 4.0
+      valid_contexts: [chart, transit]
+      interpretation_weight: 1.0
+  override_orbs: { square: 4.0 }
+default:
+  ephemeris_engine: jpl
+  default_location:
+    name: Prague
+    latitude: 50.0875
+    longitude: 14.4214
+    timezone: Europe/Prague
+    location_mode: manual
+    timezone_mode: auto
+  default_house_system: Whole Sign
+  default_bodies: [sun, moon]
+  default_aspects: [square]
+  default_aspect_orbs: { square: 4.0 }
+  time_system: gregorian
+presentation:
+  theme: midnight
+  language: en
+  glyph_set: classic
+  aspect_colors: { square: '#cc3333' }
+chart_presets: []
+subjects: []
+charts:
+  - charts/nested/python-written.yml
+transit_analyses:
+  - transits/nested/python-written.yml
+layouts: []
+annotations: []
+aspects: []
+bodies: []
