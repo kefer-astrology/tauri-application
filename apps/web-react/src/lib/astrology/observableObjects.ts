@@ -209,12 +209,12 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		status: 'available'
 	},
 	{
-		id: 'lilith_true',
+		id: 'true_lilith',
 		labelKey: 'point_lilith_true',
 		fallbackLabel: 'True Lilith',
 		icon: '⚸',
 		category: 'calculated_points',
-		status: 'planned'
+		status: 'available'
 	},
 	{
 		id: 'lilith_oscu',
@@ -398,7 +398,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		fallbackLabel: 'Vertex',
 		icon: 'Vx',
 		category: 'sensitive_points',
-		status: 'planned'
+		status: 'available'
 	},
 	{
 		id: 'antivertex',
@@ -406,7 +406,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		fallbackLabel: 'Antivertex',
 		icon: 'AVx',
 		category: 'sensitive_points',
-		status: 'planned'
+		status: 'available'
 	},
 	{
 		id: 'part_of_fortune',
@@ -414,7 +414,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		fallbackLabel: 'Part of Fortune',
 		icon: 'PF',
 		category: 'sensitive_points',
-		status: 'planned'
+		status: 'available'
 	},
 	{
 		id: 'part_of_spirit',
@@ -422,7 +422,7 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		fallbackLabel: 'Part of Spirit',
 		icon: 'PS',
 		category: 'sensitive_points',
-		status: 'planned'
+		status: 'available'
 	},
 	{
 		id: 'geo_node_mercury',

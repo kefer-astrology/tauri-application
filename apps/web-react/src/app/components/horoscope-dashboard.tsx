@@ -107,6 +107,19 @@ const POSITION_META: Record<string, { labelKey?: string; fallbackLabel: string; 
 		icon: '☋'
 	},
 	lilith: { labelKey: 'point_lilith', fallbackLabel: 'Lilith', icon: '⚸' },
+	true_lilith: { labelKey: 'point_lilith_true', fallbackLabel: 'True Lilith', icon: '⚸' },
+	vertex: { labelKey: 'point_vertex', fallbackLabel: 'Vertex', icon: 'Vx' },
+	antivertex: { labelKey: 'point_antivertex', fallbackLabel: 'Antivertex', icon: 'AVx' },
+	part_of_fortune: {
+		labelKey: 'point_part_of_fortune',
+		fallbackLabel: 'Part of Fortune',
+		icon: 'PF'
+	},
+	part_of_spirit: {
+		labelKey: 'point_part_of_spirit',
+		fallbackLabel: 'Part of Spirit',
+		icon: 'PS'
+	},
 	chiron: { labelKey: 'point_chiron', fallbackLabel: 'Chiron', icon: '⚷' },
 	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
 	pallas: { labelKey: 'point_pallas', fallbackLabel: 'Pallas', icon: 'Pa' },

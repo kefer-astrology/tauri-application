@@ -79,11 +79,11 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
   },
   { id: 'lilith', label: 'Lilith', icon: '⚸', category: 'calculated_points', status: 'available' },
   {
-    id: 'lilith_true',
+    id: 'true_lilith',
     label: 'True Lilith',
     icon: '⚸',
     category: 'calculated_points',
-    status: 'planned'
+    status: 'available'
   },
   {
     id: 'lilith_oscu',
@@ -113,27 +113,27 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
   { id: 'melpomene', label: 'Melpomene', icon: 'Mp', category: 'asteroids', status: 'available' },
   { id: 'fortuna', label: 'Fortuna', icon: 'Ft', category: 'asteroids', status: 'available' },
   { id: 'massalia', label: 'Massalia', icon: 'Ma', category: 'asteroids', status: 'available' },
-  { id: 'vertex', label: 'Vertex', icon: 'Vx', category: 'sensitive_points', status: 'planned' },
+  { id: 'vertex', label: 'Vertex', icon: 'Vx', category: 'sensitive_points', status: 'available' },
   {
     id: 'antivertex',
     label: 'Antivertex',
     icon: 'AVx',
     category: 'sensitive_points',
-    status: 'planned'
+    status: 'available'
   },
   {
     id: 'part_of_fortune',
     label: 'Part of Fortune',
     icon: 'PF',
     category: 'sensitive_points',
-    status: 'planned'
+    status: 'available'
   },
   {
     id: 'part_of_spirit',
     label: 'Part of Spirit',
     icon: 'PS',
     category: 'sensitive_points',
-    status: 'planned'
+    status: 'available'
   },
   {
     id: 'geo_node_mercury',

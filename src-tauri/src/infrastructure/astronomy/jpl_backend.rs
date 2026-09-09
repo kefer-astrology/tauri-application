@@ -483,11 +483,20 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         if wanted("part_of_fortune") || wanted("part_of_spirit") {
-            match (
-                positions.get("sun").copied(),
-                positions.get("moon").copied(),
-            ) {
-                (Some(sun_lon), Some(moon_lon)) => {
+            // Lots depend on the luminaries even when the caller requests only a Lot.
+            // Sample missing prerequisites without adding unrequested Sun/Moon rows.
+            let sun_lon = positions
+                .get("sun")
+                .copied()
+                .map(Ok)
+                .unwrap_or_else(|| sample_tropical_longitude(&almanac, SUN_J2000, unix_secs));
+            let moon_lon = positions
+                .get("moon")
+                .copied()
+                .map(Ok)
+                .unwrap_or_else(|| sample_tropical_longitude(&almanac, MOON_J2000, unix_secs));
+            match (sun_lon, moon_lon) {
+                (Ok(sun_lon), Ok(moon_lon)) => {
                     let (fortune, spirit) = day_night_parts(asc, sun_lon, moon_lon);
                     if wanted("part_of_fortune") {
                         positions.insert("part_of_fortune".to_string(), fortune);
@@ -496,18 +505,20 @@ impl AstronomyBackend for JplAstronomyBackend {
                         positions.insert("part_of_spirit".to_string(), spirit);
                     }
                 }
-                _ => {
+                (sun_result, moon_result) => {
+                    let reason = match (sun_result.err(), moon_result.err()) {
+                        (Some(sun_error), Some(moon_error)) => {
+                            format!("requires Sun and Moon positions ({sun_error}; {moon_error})")
+                        }
+                        (Some(error), None) => format!("requires Sun position ({error})"),
+                        (None, Some(error)) => format!("requires Moon position ({error})"),
+                        (None, None) => "requires Sun and Moon positions".to_string(),
+                    };
                     if wanted("part_of_fortune") {
-                        warnings.push(
-                            "part_of_fortune_unavailable: requires sun and moon positions"
-                                .to_string(),
-                        );
+                        warnings.push(format!("part_of_fortune_unavailable: {reason}"));
                     }
                     if wanted("part_of_spirit") {
-                        warnings.push(
-                            "part_of_spirit_unavailable: requires sun and moon positions"
-                                .to_string(),
-                        );
+                        warnings.push(format!("part_of_spirit_unavailable: {reason}"));
                     }
                 }
             }
@@ -682,6 +693,15 @@ mod tests {
             crate::domain::astrology::day_night_parts(asc, sun, moon);
         assert!((data.positions["part_of_fortune"] - expected_fortune).abs() < 1e-9);
         assert!((data.positions["part_of_spirit"] - expected_spirit).abs() < 1e-9);
+
+        let lots_only = vec!["part_of_fortune".to_string(), "part_of_spirit".to_string()];
+        let lots_data = backend
+            .compute_chart_data(&chart, Some(&lots_only))
+            .expect("Lots should compute without explicitly requesting their dependencies");
+        assert!((lots_data.positions["part_of_fortune"] - expected_fortune).abs() < 1e-9);
+        assert!((lots_data.positions["part_of_spirit"] - expected_spirit).abs() < 1e-9);
+        assert!(!lots_data.positions.contains_key("sun"));
+        assert!(!lots_data.positions.contains_key("moon"));
     }
 
     /// Confirms the minor planets added to the body catalog alongside `codes_300ast`

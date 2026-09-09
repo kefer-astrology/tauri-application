@@ -200,7 +200,7 @@
       'mean_south_node': 'south_node',
       'true_node': 'north_node',
       'black_moon': 'lilith',
-      'true_lilith': 'lilith',
+      'true_lilith': 'true_lilith',
       'chiron': 'chiron',
       'asc': 'asc',
       'desc': 'desc',
