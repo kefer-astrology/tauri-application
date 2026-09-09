@@ -30,6 +30,13 @@ The frontend radix view should render from computed chart output, not from hardc
 
 - Map of computed body/object ids to longitudes in degrees.
 - Used for planets and any other computed objects that are currently supported.
+- Values are normalized to `[0, 360)`.
+- For the Rust JPL provider, values are geometric mean-tropical longitudes:
+  ANISE rotates the complete J2000/ICRS state into Earth mean-of-date before
+  projection into the mean ecliptic. See the
+  [Astronomy coordinate contract](../astronomy-coordinate-contract/).
+- A provider must not silently substitute a different coordinate convention.
+  Any approximation or fallback belongs in response provenance/warnings.
 
 ### `axes`
 

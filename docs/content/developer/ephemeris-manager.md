@@ -35,7 +35,8 @@ infrastructure/ephemeris.rs
 └── EphemerisManager { cache_dir }
     ├── available_bsp_paths()         → Vec<PathBuf>  (primary + de441 supplements + asteroid SPKs)
     ├── catalog_status()              → Vec<EphemerisInfo>  (for Tauri command)
-    └── download(id, app)             async, streams progress events
+    ├── download(id, app)             async, streams progress events
+    └── *.bsp.json discovery          → checksummed and probe-tested small-body SPKs
 ```
 
 `JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then chains them with `load_almanac_from_paths()` in `infrastructure/astronomy/jpl_backend.rs` on each compute call.
@@ -63,17 +64,23 @@ The static catalog and `available_bsp_paths()` define which files Kefer can down
 | `de440`              | `de440.bsp`                 | 115 MB         | 1550–2650                 | 10 planets + Moon                   | downloadable upgrade                               |
 | `de441_part1`        | `de441_part-1.bsp`          | ~1.5 GB        | −13 200 to 0              | 10 planets + Moon                   | supplementary (cache)                              |
 | `de441_part2`        | `de441_part-2.bsp`          | ~1.5 GB        | 0 to +17 191              | 10 planets + Moon                   | supplementary (cache)                              |
-| `ceres_spk`          | `ceres_1900_2100.bsp`       | ~1.1 MB        | 1900–2100                 | `ceres`                             | bundled with the app; also downloadable if missing |
+| `ceres_spk`          | `ceres_1900_2100.bsp`       | ~1.1 MB        | 1900–2100                 | `ceres`                             | optional single-body download                       |
 | `pallas_spk`         | `pallas_1900_2100.bsp`      | ~1.1 MB        | 1900–2100                 | `pallas`                            | optional download                                  |
 | `vesta_spk`          | `vesta_1900_2100.bsp`       | ~1.1 MB        | 1900–2100                 | `vesta`                             | optional download                                  |
-| `codes_300ast`       | `codes_300ast_20100725.bsp` | ~59 MB         | Baer 2010 solution window | subset of 300 asteroids (see below) | optional download; includes **Juno** (`2000003`)   |
+| `codes_300ast`       | `codes_300ast_20100725.bsp` | ~59 MB         | 1600–2200                 | subset of 300 asteroids (see below) | bundled; includes Ceres and **Juno** (`2000003`)    |
+| manifest artifact    | `chiron_1900_2100_type13.bsp` | ~1.1 MB       | 1900–2100                 | `chiron`                            | bundled Horizons-derived Type 13; not a static download row |
 
 Current status:
 
-- All rows above are **active** `CATALOG` entries with `download_ephemeris` support.
-- The primary planetary kernel resolves as **`de440s` → `de440`** (cache first, then bundled `src-tauri/resources/`).
-- After the primary and any cached `de441_part-*` files, the manager appends any resolved **asteroid** kernels in fixed order: Ceres → Pallas → Vesta → `codes_300ast` (each skipped if not present in cache or bundle search paths).
-- `tauri.conf.json` `bundle.resources` includes `resources/de440s.bsp` and **`resources/ceres_1900_2100.bsp`**.
+- The DE and traditional asteroid rows are active static `CATALOG` entries with
+  `download_ephemeris` support. Horizons-derived rows are discovered from their
+  adjacent manifests instead of hard-coded into that catalog.
+- The primary planetary kernel resolves from cached **`de440s` → `de440`**, then
+  falls back to the explicitly bundled `de440s`.
+- After the primary and any cached `de441_part-*` files, the manager appends any resolved **asteroid** kernels in fixed order: Ceres → Pallas → Vesta → `codes_300ast`, then validated manifest-defined small-body kernels.
+- `tauri.conf.json` `bundle.resources` includes `pck11.pca`, `de440s.bsp`,
+  `codes_300ast_20100725.bsp`, and the Chiron Type 13 BSP plus manifest. The
+  standalone Ceres kernel is not bundled.
 
 Planetary BSP base URL (NAIF HTTPS):
 
@@ -91,13 +98,18 @@ To get asteroid positions, a **separate dedicated asteroid SPK kernel** is requi
 | -------------------------------------------------- | --------------------------------- | ---------------------------------------- |
 | Individual NAIF files (`ceres_1900_2100.bsp` etc.) | single-body, 200-year window      | publicly archived on NAIF                |
 | `codes_300ast_20100725.bsp` (59 MB)                | 300 asteroids, Baer 2010 solution | one download covers most                 |
-| JPL Horizons REST API                              | any NAIF body, on demand          | no file to bundle; query at compute time |
+| JPL Horizons file API                              | arbitrary supported small bodies | generates a bounded SPK artifact; never queried from the chart compute path |
 
-Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `infrastructure/astronomy/jpl_backend.rs` (small-body table). The backend calls `almanac.translate(...)` per body; if no SPK segment exists for that epoch, the chart still succeeds and a per-body `{id}_unavailable` warning is recorded.
+Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `infrastructure/astronomy/jpl_backend.rs` (small-body table). The backend calls `almanac.transform(...)` per body so translation and the Earth mean-of-date rotation happen together; if no SPK segment exists for that epoch, the chart still succeeds and a per-body `{id}_unavailable` warning is recorded.
 
 All 20 named bodies in the table below (Ceres through Massalia) are also registered in the built-in `BodyDefinition` catalog (`workspace/model_catalog.rs`, mirrored in `backend-python/module/model_catalog.py`), so they are selectable objects, not just resolvable NAIF frames. `astraea` through `massalia` are marked JPL-only in `computation_map` — Swiss Ephemeris support would need asteroid `.se1` files this project does not bundle — and use a circled-digit glyph matching their minor-planet number, since none of them has a dedicated astrological symbol in wide use. A `codes_300ast_minor_planets_resolve_from_bundled_kernels` test in `jpl_backend.rs` confirms all 16 actually resolve from the bundled kernels, not just that the catalog entry exists.
 
-**Default chart** (`included_points` / requested objects unspecified): only the **four classical** asteroids (Ceres, Pallas, Juno, Vesta) are evaluated automatically. If `codes_300ast_*.bsp` is on the load path, the backend also evaluates an extended list (`CODES_300AST_MAJOR_BODIES` in `infrastructure/ephemeris.rs` — Astraea through Massalia) so optional downloads do not spam warnings for bodies that were never requested. When the client passes an explicit object list, every listed body is attempted.
+**Default chart** (`included_points` / requested objects unspecified): because
+`codes_300ast_*.bsp` is bundled and therefore on the normal load path, the backend
+evaluates the configured 20-body subset (`CODES_300AST_MAJOR_BODIES` in
+`infrastructure/ephemeris.rs`: Ceres through Massalia). Without that kernel, only
+the four classical asteroids (Ceres, Pallas, Juno, Vesta) are attempted. When the
+client passes an explicit object list, every listed body is attempted.
 
 ### NAIF body IDs
 
@@ -105,18 +117,23 @@ Standard planets use named constants from `anise::constants::frames`. Asteroid f
 
 | Kefer ID               | NAIF ID               | Typical kernel                                                                        |
 | ---------------------- | --------------------- | ------------------------------------------------------------------------------------- |
-| `ceres`                | 2 000 001             | `ceres_1900_2100.bsp` (bundled) or `codes_300ast`                                     |
+| `ceres`                | 2 000 001             | bundled `codes_300ast`; optional `ceres_1900_2100.bsp` single-body download            |
 | `pallas`               | 2 000 002             | `pallas_1900_2100.bsp` or `codes_300ast`                                              |
 | `juno`                 | 2 000 003             | **`codes_300ast` only** (no standalone `juno_1900_2100.bsp` in NAIF `a_old_versions`) |
 | `vesta`                | 2 000 004             | `vesta_1900_2100.bsp` or `codes_300ast`                                               |
 | `astraea` … `massalia` | 2 000 005 … 2 000 020 | `codes_300ast_20100725.bsp`                                                           |
-| `chiron`               | 2 000 060             | not in DE or `codes_300ast`; JPL Horizons API still planned                           |
+| `chiron`               | 20 002 060            | bundled validated Type 13 generated from Horizons geometric vectors; 1900–2100 |
 
 ---
 
 ## File resolution
 
-`available_bsp_paths()` builds the almanac load list in **three** stages.
+`available_bsp_paths()` builds the SPK load list in **four** stages. During
+almanac construction, the bundled `pck11.pca` planetary-constants kernel is
+loaded first; ANISE requires it to resolve the IAU 2006 dynamic Earth MOD frame.
+Failure to locate or load that required orientation kernel is fatal rather than
+silently falling back to scalar precession. The bundled v0.10 artifact has SHA-256
+`d585b8a04717d8a25195dc6357066a1de125a9cb300c1e224582fd9e443303e3`.
 
 ### 1 — Primary BSP (exactly one)
 
@@ -125,8 +142,7 @@ The first match in this ordered list is used; the rest are skipped:
 ```
 cache/de440s.bsp   (user downloaded)
 cache/de440.bsp    (user downloaded)
-bundled de440s.bsp (src-tauri/resources/ or exe-adjacent)
-bundled de440.bsp
+bundled de440s.bsp (active Tauri resource directory)
 ```
 
 `de440s.bsp` is bundled with the app in `src-tauri/resources/`.
@@ -139,9 +155,71 @@ Each `de441` part found in the **cache** directory is appended **after** the pri
 
 ### 3 — Asteroid supplementary BSPs
 
-For each of `ceres_1900_2100.bsp`, `pallas_1900_2100.bsp`, `vesta_1900_2100.bsp`, `codes_300ast_20100725.bsp`, the manager looks in the **cache first**, then the same bundled search paths as the primary (e.g. `src-tauri/resources/`). Each file is appended **at most once** and only if it exists. Ceres is normally satisfied by the **bundled** `ceres_1900_2100.bsp`; Pallas, Vesta, and the full 300-asteroid set are optional downloads.
+For `ceres_1900_2100.bsp`, `pallas_1900_2100.bsp`, and
+`vesta_1900_2100.bsp`, the manager looks only in the app-data **cache** because
+they are optional downloads. `codes_300ast_20100725.bsp` may resolve from the
+cache or the active Tauri resource directory because it is explicitly bundled.
+This distinction prevents obsolete files left under `target/*/resources` from
+silently becoming bundled kernels again.
+
+Once Tauri supplies `resource_dir()`, that directory is the sole bundled-resource
+root and all resolved paths are canonicalized. Source-tree resource lookup is a
+non-Tauri/unit-test fallback only. Consequently a source manifest and its copied
+development resource cannot be registered twice.
 
 **Load failures after the primary:** `load_almanac_from_paths` requires the **first** path to parse successfully. If a later file (de441 supplement or asteroid SPK) fails — for example an incompatible DAF endian with the current `anise` build — that file is **skipped** with a `log::warn!` and the almanac keeps the previous successful chain so charts still compute (e.g. planets without optional asteroids).
+
+### Horizons acquisition boundary
+
+Horizons' native Chiron SPK resolves target `20002060` but uses Type 21, which
+ANISE 0.10.6 cannot evaluate. The implemented acquisition workaround is
+`scripts/generate-horizons-type13.py`:
+
+1. Request Sun-centred, geometric ICRF `VECTORS` over a bounded interval.
+2. Keep one set as interpolation knots and request an offset set as held-out data.
+3. Validate degree-7 Hermite position and velocity against those held-out states.
+4. Invoke a caller-supplied, pinned NAIF `mkspk` executable to write SPK Type 13.
+5. Write `<kernel>.bsp.json` containing target/center IDs, coverage, full request
+   provenance, interpolation settings, error maxima, and SHA-256.
+
+The script deliberately does not download `mkspk`; release tooling supplies the
+pinned executable and NAIF leap-seconds kernel explicitly. For example:
+
+```bash
+python3 scripts/generate-horizons-type13.py \
+  --start 1900-01-01 --stop 2100-01-01 \
+  --mkspk /path/to/mkspk --lsk /path/to/naif0012.tls \
+  --output src-tauri/resources/chiron_1900_2100_type13.bsp
+```
+
+The bundled result uses four-day source samples and a degree-7 Type 13 segment.
+Across 2,300 held-out samples its maximum observed errors were 0.0391025 km and
+`6.38884e-8` km/s. Its SHA-256 is
+`ceb7b8078c735b1108df1a410165c662b4db5277fd9765e43a5c97d0511e00e1`.
+
+### 4 — Manifest-defined small-body SPKs
+
+The manager scans the cache and bundled resource locations for `*.bsp.json`.
+Before appending the referenced BSP or exposing its `body_id`, it requires:
+
+- schema 1, artifact kind `horizons-sampled-spk`, J2000 frame, Sun centre, Type 13
+- a passing validation record whose errors remain under its declared thresholds
+- an artifact SHA-256 matching the manifest
+- a successful finite ANISE position-and-velocity probe within stated coverage,
+  transformed through `EARTH_MOD_FRAME`
+
+Probe results are cached against file metadata for the process lifetime. Editing
+either artifact invalidates the cache. Invalid supplementary artifacts are logged
+and skipped without breaking planetary charts.
+
+This is also the extension mechanism for a new small body. Generate its BSP into
+the app-data `ephemeris/` directory (or copy both generated files there), and use
+the same stable `body_id` in a workspace `BodyDefinition.computation_map.jpl`.
+The astronomy backend derives `Frame::from_ephem_j2000(naif_target_id)` from the
+accepted manifest, so adding a body does not require another Rust frame constant.
+Presentation metadata such as label, glyph, category, and default inclusion still
+belongs to the workspace/model catalog; an SPK manifest does not silently modify
+the user's astrological model.
 
 **Load order and duplicates:** SPICE-style chaining uses **last-loaded wins** when two files both define a segment for the same body and epoch. Asteroid files are appended **after** the planetary primary (and after any de441 supplements). Among asteroid files, **`codes_300ast` is loaded last**, so if you have both `ceres_1900_2100.bsp` and `codes_300ast`, the CODES segment for Ceres takes precedence for overlapping epochs unless you remove one of the files from the path.
 
@@ -267,7 +345,7 @@ interface EphemerisInfo {
 	year_end: number;
 	is_default: boolean;
 	is_downloaded: boolean;
-	local_path: string | null; // null when unavailable; set when file is in cache *or* bundled (e.g. de440s, ceres_spk)
+	local_path: string | null; // null when unavailable; set when file is in cache or bundled (e.g. de440s, codes_300ast)
 }
 ```
 
@@ -302,8 +380,7 @@ Returns the union of body IDs queryable given currently available BSP files.
 ```typescript
 const bodies = await invoke<string[]>('get_available_bodies');
 // Always includes the ten planets + Moon when a DE primary is loaded.
-// With bundled Ceres SPK: at least "ceres".
-// With codes_300ast downloaded: also "juno" and extended IDs such as "astraea", "hebe", … (see CODES_300AST_MAJOR_BODIES in Rust).
+// With bundled resources: Ceres, Juno, "astraea", "hebe", … and "chiron".
 ```
 
 ---
@@ -331,15 +408,17 @@ The `is_de421` flag in `services.py` (which controls whether outer-planet baryce
 
 | Body / Feature                                                     | Status             | Notes                                                                                                                                                 |
 | ------------------------------------------------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ceres                                                              | ✅ done (JPL Rust) | Bundled `ceres_1900_2100.bsp`; `get_available_bodies` includes `ceres`                                                                                |
-| Pallas, Vesta                                                      | optional           | Download `pallas_spk` / `vesta_spk` or use `codes_300ast`                                                                                             |
-| Juno                                                               | optional           | Requires `codes_300ast` (no standalone NAIF `juno_1900_2100.bsp` in the archived set Kefer links)                                                     |
-| Extended main-belt (Astraea–Massalia)                              | optional           | `codes_300ast` + explicit chart object list or default extended path when that kernel is present                                                      |
+| Ceres                                                              | ✅ done (JPL Rust) | Supplied by bundled `codes_300ast`; standalone `ceres_spk` remains an optional download                                                              |
+| Pallas, Vesta                                                      | ✅ done (JPL Rust) | Supplied by bundled `codes_300ast`; smaller standalone downloads remain optional alternatives                                                        |
+| Juno                                                               | ✅ done (JPL Rust) | Supplied by bundled `codes_300ast` (no standalone NAIF `juno_1900_2100.bsp` in the archived set Kefer links)                                        |
+| Extended main-belt (Astraea–Massalia)                              | ✅ done (JPL Rust) | 16 minor planets in the `BodyDefinition` catalog (`workspace/model_catalog.rs`), JPL-only; resolve via `codes_300ast_20100725.bsp`                    |
 | South Node                                                         | ✅ done            | Mean Node + 180°                                                                                                                                      |
 | True Node                                                          | ✅ done            | osculating node from geocentric Moon position + velocity (Rust JPL path); Python JPL path uses the same vector method                                 |
-| Part of Fortune                                                    | pending            | Lot / Pars formula using ASC + Moon − Sun (or night variant); **not** lunar phase — a single derived longitude                                        |
+| Part of Fortune / Part of Spirit                                   | ✅ done (JPL Rust) | `domain::astrology::day_night_parts`: day/night-sect arithmetic on ASC + Sun + Moon; **not** lunar phase — a single derived longitude                 |
 | Lunar phase (“moon shape”), illumination, age                      | ✅ done            | See [lunar-phase](../lunar-phase/): `moon_details` on `compute_chart` / `compute_chart_from_data` (tropical Sun–Moon elongation); not Part of Fortune |
-| Chiron (2060)                                                      | pending            | not in any standard DE file; JPL Horizons API planned                                                                                                 |
-| Eris, Sedna                                                        | out of scope       | TNOs not in standard NAIF kernels                                                                                                                     |
-| Black Moon Lilith                                                  | pending            | mean lunar apogee formula; no BSP needed                                                                                                              |
+| Chiron (2060)                                                      | ✅ done (JPL Rust) | Bundled 1900–2100 Type 13 artifact generated from Horizons vectors; native Type 21 remains unsupported by ANISE 0.10.6 |
+| Eris, Sedna, and other TNOs                                        | pending            | NAIF kernels exist under `spk/tno/`, but at 168-285MB each rather than the ~1-60MB kernels used so far; needs a bundling/download-size decision (see [Development roadmap](../development-driver/)) |
+| Black Moon Lilith (mean apogee)                                    | pending            | mean lunar apogee formula (Swiss `SE_MEAN_APOG` only); not yet in the Rust JPL path                                                                   |
+| True Lilith (osculating apogee)                                    | ✅ done (JPL Rust) | eccentricity-vector formula in `domain::houses::true_apogee_tropical_deg`, matching Python's `_true_lilith_tropical_deg`                              |
+| Vertex / Antivertex                                                | ✅ done (JPL Rust) | `domain::houses::vertex_lon`: oblique-ascension formula at co-latitude (90° − latitude), same RAMC as the Ascendant; Swiss adapter not yet updated to expose its own native `ascmc[SE_VERTEX]` |
 | Minor aspects (Sesquisquare 135°, Semisquare 45°, Semisextile 30°) | pending            | pure angle constants                                                                                                                                  |

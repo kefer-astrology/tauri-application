@@ -201,6 +201,12 @@ Recommended response metadata:
 - `warnings`
 - `ephemeris_source` when known
 
+All returned longitudes are normalized to `[0, 360)`. On the Rust JPL path,
+`positions` and `motion` use the geometric mean-tropical coordinate pipeline
+defined by the [Astronomy coordinate contract](../astronomy-coordinate-contract/).
+This is a semantic contract rather than an additional response field; changing
+it requires an explicit version/provenance decision.
+
 ### `compute_chart_from_data(chart_json, settings_overrides?) -> Result<Map<String, Value>, String>`
 
 - Computes positions and aspects from an in-memory chart payload.
@@ -294,8 +300,11 @@ Acceptance criteria:
 
 ### `get_available_bodies() -> Vec<String>`
 
-- Returns the currently queryable body ids inferred from available BSP files.
-- This reflects file availability, not a guarantee that every body has a dedicated SPK segment in the loaded kernels.
+- Returns body ids from resolved static kernels plus accepted manifest-defined
+  small-body SPKs.
+- A manifest-defined body is returned only after schema, checksum, validation
+  thresholds, and an in-range ANISE state probe pass. Traditional static catalog
+  kernels continue to use their declared filename/body mapping.
 
 ## Storage commands
 

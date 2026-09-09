@@ -110,7 +110,25 @@ request resolves into:
 The result exposes backend-neutral fields plus additive provider data,
 diagnostics, and provenance. Exact command inputs and outputs live in the
 [Tauri command contracts](../tauri-command-contracts/); radix and transit result
-requirements live in their feature contracts.
+requirements live in their feature contracts. The numerical meaning of JPL
+longitudes is fixed by the
+[Astronomy coordinate contract](../astronomy-coordinate-contract/).
+
+The JPL coordinate pipeline is intentionally split at a frame boundary:
+
+```text
+SPK state in J2000/ICRS
+  → ANISE Earth mean-of-date rotation (IAU 2006)
+  → mean-obliquity projection into the ecliptic of date
+  → normalized tropical longitude
+```
+
+Precession is a three-dimensional frame rotation owned by the astronomy
+provider. It is not a scalar correction applied after extracting longitude.
+Horizons is likewise an ephemeris-build input: sampled vectors are converted to
+ANISE-supported Type 13 SPKs, independently validated, checksummed, and then
+consumed offline through the same provider boundary. It is not a per-chart
+online position service.
 
 ## Runtime flows
 
@@ -147,6 +165,10 @@ Frontend → Tauri command → application use case
 6. One settings resolver determines effective calculation behavior.
 7. Presentation cannot affect astronomical or astrological computation.
 8. Shared behavior is verified through versioned fixtures and parity tests.
+9. Coordinate-frame transformations happen before reducing a state vector to
+   longitude or latitude.
+10. Remote ephemeris services generate or source local artifacts; ordinary chart
+    computation is deterministic and offline.
 
 ## Current implementation
 

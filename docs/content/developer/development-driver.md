@@ -58,8 +58,32 @@ remove or narrow the item here.
   direction and Swiss Ephemeris as compatibility/validation infrastructure.
 - Audit true-node behavior outside the documented JPL/Rust path so labels and
   provenance distinguish mean node, true node, and approximations.
-- Decide support for Chiron, TNOs, and other auxiliary bodies. Until then,
-  catalog-only entries remain visibly unavailable rather than silently omitted.
+- Extend the implemented Horizons small-body acquisition workflow as new objects
+  are selected. It generates bounded Type 13 SPKs from geometric vectors, stores
+  request/target/range/checksum provenance, validates held-out states, and performs
+  an in-range ANISE probe before registration. Live Horizons calls remain excluded
+  from chart compute. Chiron (`20002060`, 1900–2100) is the first bundled artifact;
+  native Type 21 can replace it when ANISE supports that representation. See
+  [Ephemeris manager](../ephemeris-manager/) and the
+  [Astronomy coordinate contract](../astronomy-coordinate-contract/).
+- Ceres/Pallas/Juno/Vesta plus 16 more minor planets are already computed on the
+  Rust/JPL path via bundled/downloadable BSP kernels. True Lilith is computed via
+  an osculating-elements formula in `domain::houses`. Chiron is now computed from
+  the bundled Type 13 SPK; other catalog-only entries remain visibly unavailable
+  rather than silently omitted.
+- TNOs (Eris, Haumea, Orcus, Quaoar, Varuna, at least) have NAIF kernels under
+  `spk/tno/`, but at 168-285MB each (multi-body system files) rather than the
+  ~1-60MB kernels used so far; evaluate before adding as downloadable catalog entries.
+  Sedna and Makemake did not obviously appear in that directory; confirm coverage
+  against its own summary file before assuming either is included.
+- Geocentric planetary nodes are a distinct technique from the already-implemented
+  node math: geocentric north/south crossings are not exactly 180° apart, unlike the
+  Moon's node. Confirm the exact definition before implementing — don't assume it
+  reuses `true_node_tropical_deg` unchanged.
+- Uranian/Hamburg-school hypothetical bodies (Cupido, Hades, Zeus, Kronos, Apollon,
+  Admetos, Vulcanus, Poseidon) and the ~70 fixed stars in `OBSERVABLE_OBJECTS` need
+  their reference data (published mean orbital elements; star catalog positions)
+  sourced and vetted before implementation, not just method design.
 - Remove or clearly label mock/fallback geometry that appears to be computed
   astrology data without backend provenance.
 - Add an end-to-end no-Swiss/no-sidecar smoke path.
