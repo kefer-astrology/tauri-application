@@ -1,0 +1,28 @@
+src-tauri/tauri.conf.json
+  s_a7bd7e289352a7::t_4ebc08223d2a17 34
+  s_a7bd7e289352a7::t_0b190cdd1c6d68 36-38
+src-tauri/Cargo.toml
+  s_a7bd7e289352a7::t_b34d12ac946d57 29
+  s_a7bd7e289352a7::t_4ee19858b832e9 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "be1398d669ea38b67dad1648b5e87b7a2f2280e9",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a7bd7e289352a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a90-8c4d-7f32-a8d9-647183b32c59",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
