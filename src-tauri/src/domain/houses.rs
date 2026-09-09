@@ -15,25 +15,22 @@ pub fn julian_day_from_unix(unix_secs: f64) -> f64 {
 }
 
 /// Julian centuries from J2000.0.
-fn j2000_centuries(jd_ut: f64) -> f64 {
-    (jd_ut - 2451545.0) / 36525.0
-}
-
-/// General precession in longitude (arcseconds), IAU 1976-style polynomial.
-/// Good enough here to shift J2000 ecliptic longitudes toward equinox-of-date tropical longitudes.
-pub fn general_precession_deg(jd_ut: f64) -> f64 {
-    let t = j2000_centuries(jd_ut);
-    let arcsec = 5028.796_195 * t + 1.105_434_8 * t * t + 0.000_079_64 * t * t * t;
-    arcsec / 3600.0
+fn j2000_centuries(jd: f64) -> f64 {
+    (jd - 2451545.0) / 36525.0
 }
 
 // ─── obliquity ───────────────────────────────────────────────────────────────
 
-/// Mean obliquity of the ecliptic (degrees), IAU 1980 formula.
-/// Accurate to better than 0.01" over ±2000 years from J2000.
-pub fn mean_obliquity_deg(jd_ut: f64) -> f64 {
-    let t = j2000_centuries(jd_ut);
-    23.439_291_111 - 0.013_004_167 * t - 0.000_000_164 * t * t + 0.000_000_504 * t * t * t
+/// Mean obliquity of the ecliptic (degrees), IAU 2006 polynomial.
+///
+/// The JPL backend applies ANISE's IAU 2006 mean-of-date frame rotation before
+/// using this angle to project equatorial MOD vectors into the mean ecliptic.
+pub fn mean_obliquity_deg(jd: f64) -> f64 {
+    let t = j2000_centuries(jd);
+    let arcsec = 84_381.406 - 46.836_769 * t - 0.000_183_1 * t.powi(2) + 0.002_003_40 * t.powi(3)
+        - 0.000_000_576 * t.powi(4)
+        - 0.000_000_043_4 * t.powi(5);
+    arcsec / 3600.0
 }
 
 // ─── sidereal time ───────────────────────────────────────────────────────────
@@ -82,6 +79,28 @@ pub fn ascendant_lon(ramc_deg: f64, obliquity_deg: f64, geo_lat_deg: f64) -> Res
     // Quadrant: when denominator x < 0 the atan2 already places the angle in the
     // correct semicircle; normalise to [0, 360).
     Ok(normalize_deg(asc + 180.0))
+}
+
+/// Ecliptic longitude of the Vertex — the oblique-ascension formula (same as the
+/// Ascendant) evaluated at the co-latitude (90° − latitude) instead of latitude,
+/// with the same RAMC and obliquity. Antivertex is the opposite point on the
+/// ecliptic, `(vertex + 180) % 360`.
+///
+/// Undefined at the geographic equator, where the co-latitude's tangent term is
+/// singular — unlike the Ascendant, which is undefined at the poles instead.
+pub fn vertex_lon(ramc_deg: f64, obliquity_deg: f64, geo_lat_deg: f64) -> Result<f64, String> {
+    if geo_lat_deg.abs() < 1e-9 {
+        return Err("Vertex undefined at the geographic equator".to_string());
+    }
+    let ramc = ramc_deg.to_radians();
+    let eps = obliquity_deg.to_radians();
+    let colat = (90.0 - geo_lat_deg).to_radians();
+
+    let y = -ramc.cos();
+    let x = eps.sin() * colat.tan() + eps.cos() * ramc.sin();
+
+    let vx = f64::atan2(y, x).to_degrees();
+    Ok(normalize_deg(vx + 180.0))
 }
 
 /// Compute all four cardinal axes (asc, mc, desc, ic) in degrees.
@@ -351,9 +370,14 @@ pub fn mean_node_motion(jd_ut: f64) -> AstronomyMotion {
     }
 }
 
-/// Rotate an ICRF/J2000 equatorial vector (km or km/s) into the mean ecliptic of date
-/// frame using the same obliquity convention as `icrf_to_ecliptic`.
-pub fn icrf_xyz_to_ecliptic_xyz(x: f64, y: f64, z: f64, obliquity_deg: f64) -> (f64, f64, f64) {
+/// Rotate an equatorial mean-of-date vector (km or km/s) into the mean ecliptic
+/// of date using the supplied obliquity.
+pub fn equatorial_xyz_to_ecliptic_xyz(
+    x: f64,
+    y: f64,
+    z: f64,
+    obliquity_deg: f64,
+) -> (f64, f64, f64) {
     let eps = obliquity_deg.to_radians();
     let cos_eps = eps.cos();
     let sin_eps = eps.sin();
@@ -363,18 +387,22 @@ pub fn icrf_xyz_to_ecliptic_xyz(x: f64, y: f64, z: f64, obliquity_deg: f64) -> (
     (x_e, y_e, z_e)
 }
 
-/// Ecliptic longitude (degrees, [0,360)) of the direction `(x,y,z)` in ICRF equatorial,
-/// using mean obliquity of date (same longitude definition as planetary longitudes here).
-pub fn ecliptic_longitude_deg_from_icrf_xyz(x: f64, y: f64, z: f64, obliquity_deg: f64) -> f64 {
-    let (x_e, y_e, _) = icrf_xyz_to_ecliptic_xyz(x, y, z, obliquity_deg);
+/// Ecliptic longitude (degrees, [0,360)) of an equatorial mean-of-date direction.
+pub fn ecliptic_longitude_deg_from_equatorial_xyz(
+    x: f64,
+    y: f64,
+    z: f64,
+    obliquity_deg: f64,
+) -> f64 {
+    let (x_e, y_e, _) = equatorial_xyz_to_ecliptic_xyz(x, y, z, obliquity_deg);
     normalize_deg(y_e.atan2(x_e).to_degrees())
 }
 
 /// True (osculating) ascending lunar node, **tropical** longitude (degrees).
 ///
-/// Uses the geocentric Moon position and velocity in the same inertial frame as the
-/// planetary BSP vectors (km, km/s), the mean obliquity of date, and `general_precession_deg`
-/// so the result matches other JPL/anise tropical longitudes in this backend.
+/// Expects the geocentric Moon position and velocity in Earth's equatorial
+/// mean-of-date frame (km, km/s). The caller owns the inertial-frame transform;
+/// this function only derives and projects the node in that already-dated frame.
 ///
 /// The line of nodes is `K × h` with `K` the ecliptic north pole in equatorial coordinates
 /// and `h = r × v` the Moon's orbital angular momentum. Returns `None` if degenerate.
@@ -385,7 +413,7 @@ pub fn true_node_tropical_deg(
     vx: f64,
     vy: f64,
     vz: f64,
-    jd_ut: f64,
+    jd_tt: f64,
 ) -> Option<f64> {
     let hx = ry * vz - rz * vy;
     let hy = rz * vx - rx * vz;
@@ -395,7 +423,7 @@ pub fn true_node_tropical_deg(
         return None;
     }
 
-    let eps_deg = mean_obliquity_deg(jd_ut);
+    let eps_deg = mean_obliquity_deg(jd_tt);
     let eps = eps_deg.to_radians();
     let kx = 0.0_f64;
     let ky = -eps.sin();
@@ -412,12 +440,11 @@ pub fn true_node_tropical_deg(
     let nys = ny / n_norm;
     let nzs = nz / n_norm;
 
-    let lambda_mean_ecliptic = ecliptic_longitude_deg_from_icrf_xyz(nxs, nys, nzs, eps_deg);
-    let mut tropical = normalize_deg(lambda_mean_ecliptic + general_precession_deg(jd_ut));
+    let mut tropical = ecliptic_longitude_deg_from_equatorial_xyz(nxs, nys, nzs, eps_deg);
 
     // Resolve ascending vs descending along the line of nodes: use Moon ecliptic latitude rate.
-    let (_, _, mz_e) = icrf_xyz_to_ecliptic_xyz(rx, ry, rz, eps_deg);
-    let (_, _, vz_e) = icrf_xyz_to_ecliptic_xyz(vx, vy, vz, eps_deg);
+    let (_, _, mz_e) = equatorial_xyz_to_ecliptic_xyz(rx, ry, rz, eps_deg);
+    let (_, _, vz_e) = equatorial_xyz_to_ecliptic_xyz(vx, vy, vz, eps_deg);
     let ascending = mz_e * vz_e < 0.0 || (mz_e.abs() < 1e-9 && vz_e > 0.0);
     if !ascending {
         tropical = normalize_deg(tropical + 180.0);
@@ -440,8 +467,8 @@ const MU_EARTH_MOON_KM3_S2: f64 = 403_503.235;
 ///
 /// Derived from the two-body eccentricity (Laplace–Runge–Lenz) vector of the Moon's
 /// instantaneous orbit around Earth, `e = [(v² − μ/r)·r − (r·v)·v] / μ`, which points
-/// toward perigee; apogee is the opposite direction. Same inertial frame, obliquity,
-/// and precession convention as `true_node_tropical_deg`. Returns `None` for a
+/// toward perigee; apogee is the opposite direction. The input must already be in
+/// Earth's equatorial mean-of-date frame, like `true_node_tropical_deg`. Returns `None` for a
 /// near-circular or rectilinear osculating orbit — never reached for the real Moon
 /// (eccentricity ≈ 0.055), only for degenerate synthetic inputs.
 pub fn true_apogee_tropical_deg(
@@ -451,7 +478,7 @@ pub fn true_apogee_tropical_deg(
     vx: f64,
     vy: f64,
     vz: f64,
-    jd_ut: f64,
+    jd_tt: f64,
 ) -> Option<f64> {
     let r_sq = rx * rx + ry * ry + rz * rz;
     let r = r_sq.sqrt();
@@ -472,18 +499,20 @@ pub fn true_apogee_tropical_deg(
     let e_mag = e_sq.sqrt();
 
     // Eccentricity vector points toward perigee; apogee is the opposite direction.
-    let eps_deg = mean_obliquity_deg(jd_ut);
-    let lambda_mean_ecliptic =
-        ecliptic_longitude_deg_from_icrf_xyz(-ex / e_mag, -ey / e_mag, -ez / e_mag, eps_deg);
-    Some(normalize_deg(
-        lambda_mean_ecliptic + general_precession_deg(jd_ut),
+    let eps_deg = mean_obliquity_deg(jd_tt);
+    Some(ecliptic_longitude_deg_from_equatorial_xyz(
+        -ex / e_mag,
+        -ey / e_mag,
+        -ez / e_mag,
+        eps_deg,
     ))
 }
 
 // ─── ecliptic transform ───────────────────────────────────────────────────────
 
-/// Convert an ICRF/J2000 position vector (km) to ecliptic longitude and latitude (degrees).
-pub fn icrf_to_ecliptic(x_km: f64, y_km: f64, z_km: f64, obliquity_deg: f64) -> (f64, f64) {
+/// Convert an equatorial mean-of-date position vector to mean-ecliptic longitude
+/// and latitude (degrees).
+pub fn equatorial_to_ecliptic(x_km: f64, y_km: f64, z_km: f64, obliquity_deg: f64) -> (f64, f64) {
     let eps = obliquity_deg.to_radians();
     let cos_eps = eps.cos();
     let sin_eps = eps.sin();
@@ -540,7 +569,7 @@ mod tests {
         let r_p = a * (1.0 - e);
         let v_p = (MU_EARTH_MOON_KM3_S2 * (1.0 + e) / r_p).sqrt();
 
-        let jd = 2451545.0; // J2000.0: general_precession_deg == 0
+        let jd = 2451545.0;
         let apogee = true_apogee_tropical_deg(r_p, 0.0, 0.0, 0.0, v_p, 0.0, jd)
             .expect("eccentric orbit should have a well-defined apogee");
         assert!((apogee - 180.0).abs() < 1e-6, "apogee: {apogee}");
@@ -562,9 +591,9 @@ mod tests {
     }
 
     #[test]
-    fn icrf_to_ecliptic_x_axis() {
-        // A point on the ICRF X axis should have lon=0, lat=0
-        let (lon, lat) = icrf_to_ecliptic(1.0, 0.0, 0.0, 23.439291);
+    fn equatorial_to_ecliptic_x_axis() {
+        // The equinox axis is shared by the equatorial and ecliptic frames.
+        let (lon, lat) = equatorial_to_ecliptic(1.0, 0.0, 0.0, 23.439291);
         assert!(lon.abs() < 1e-9, "lon={lon}");
         assert!(lat.abs() < 1e-9, "lat={lat}");
     }
@@ -574,6 +603,27 @@ mod tests {
         let cusps = whole_sign_cusps(45.0); // ASC at 15° Taurus
         assert_eq!(cusps.len(), 12);
         assert!((cusps[0] - 30.0).abs() < 1e-9); // Taurus starts at 30°
+    }
+
+    #[test]
+    fn vertex_equals_ascendant_at_latitude_45() {
+        // At latitude 45°, the co-latitude is also 45°, so the Vertex (evaluated
+        // at co-latitude) and Ascendant (evaluated at latitude) formulas coincide
+        // exactly — a derivable identity, not an approximation.
+        let jd = 2451545.0;
+        let eps = mean_obliquity_deg(jd);
+        let ramc = local_sidereal_time_deg(jd, 14.4214);
+        let vertex = vertex_lon(ramc, eps, 45.0).expect("vertex should be defined");
+        let asc = ascendant_lon(ramc, eps, 45.0).expect("ascendant should be defined");
+        assert!((vertex - asc).abs() < 1e-9, "vertex={vertex}, asc={asc}");
+    }
+
+    #[test]
+    fn vertex_is_undefined_at_the_equator() {
+        let jd = 2451545.0;
+        let eps = mean_obliquity_deg(jd);
+        let ramc = local_sidereal_time_deg(jd, 14.4214);
+        assert!(vertex_lon(ramc, eps, 0.0).is_err());
     }
 
     #[test]

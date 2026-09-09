@@ -239,7 +239,7 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             ObjectType::CalculatedPoint,
             false,
             false,
-            EngineSupport::SwissOnly,
+            EngineSupport::Both,
         ),
         // Osculating/"true" Black Moon Lilith (lunar apogee), computed via the
         // eccentricity vector of the Moon's instantaneous orbit — see
@@ -254,6 +254,48 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::JplOnly,
         ),
+        // Vertex/Antivertex: oblique-ascension formula at co-latitude — see
+        // `domain::houses::vertex_lon`. Swiss Ephemeris already computes this
+        // internally (`ascmc[SE_VERTEX]`); exposing it there is a small follow-up,
+        // not yet wired into this backend's swisseph adapter.
+        body_definition(
+            "vertex",
+            "Vertex",
+            "Vx",
+            ObjectType::CalculatedPoint,
+            true,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "antivertex",
+            "Antivertex",
+            "AVx",
+            ObjectType::CalculatedPoint,
+            true,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        // Arabic Parts (Lots) of Fortune and Spirit: day/night-sect arithmetic on
+        // already-computed Sun/Moon/Ascendant — see `domain::astrology::day_night_parts`.
+        body_definition(
+            "part_of_fortune",
+            "Part of Fortune",
+            "PF",
+            ObjectType::Part,
+            true,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "part_of_spirit",
+            "Part of Spirit",
+            "PS",
+            ObjectType::Part,
+            true,
+            false,
+            EngineSupport::JplOnly,
+        ),
         body_definition(
             "chiron",
             "Chiron",
@@ -261,7 +303,7 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             ObjectType::Asteroid,
             false,
             false,
-            EngineSupport::SwissOnly,
+            EngineSupport::Both,
         ),
         body_definition(
             "ceres",
@@ -454,7 +496,6 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
 #[derive(Clone, Copy)]
 enum EngineSupport {
     Both,
-    SwissOnly,
     /// Resolvable today only via the anise/JPL path (bundled or downloadable BSP
     /// kernels). Swiss Ephemeris support would require asteroid `.se1` files this
     /// project does not bundle, so it is left unclaimed rather than guessed at.

@@ -4,38 +4,37 @@
 /// `EphemerisManager` into a chained `Almanac`. Standard DE planetary kernels provide the
 /// 10 planets + Moon; asteroid bodies require a separate dedicated asteroid SPK kernel.
 /// Gaps handled above the astronomy layer:
-///   - Ecliptic longitude: ICRF → ecliptic via obliquity rotation in houses.rs
+///   - Ecliptic longitude: J2000/ICRS → Earth MOD via ANISE, then mean-ecliptic projection
 ///   - Lunar nodes: computed analytically in houses.rs
 ///   - House cusps: computed in houses.rs
-///   - Chiron: not in any standard DE file; the Python sidecar already computes it
-///     from vendored MPCORB osculating elements (`function-wrapper/module/services.py`),
-///     using the same two-body Kepler propagation `anise::Orbit` already exposes
-///     (`try_keplerian_mean_anomaly` + `at_epoch`) — not yet wired up in Rust
+///   - Chiron/custom small bodies: validated Horizons vectors converted to Type 13 SPKs
+///     are discovered from adjacent manifests and evaluated through the same frame pipeline
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock, RwLock};
 
 use anise::constants::frames::{
-    EARTH_J2000, JUPITER_BARYCENTER_J2000, MARS_BARYCENTER_J2000, MERCURY_J2000, MOON_J2000,
+    EARTH_MOD_FRAME, JUPITER_BARYCENTER_J2000, MARS_BARYCENTER_J2000, MERCURY_J2000, MOON_J2000,
     NEPTUNE_BARYCENTER_J2000, PLUTO_BARYCENTER_J2000, SATURN_BARYCENTER_J2000, SUN_J2000,
     URANUS_BARYCENTER_J2000, VENUS_J2000,
 };
 use anise::prelude::*;
 use hifitime::Epoch;
 
+use crate::domain::astrology::day_night_parts;
 use crate::domain::houses::{
-    campanus_cusps, compute_axes, general_precession_deg, icrf_to_ecliptic, julian_day_from_unix,
-    mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps,
-    true_apogee_tropical_deg, true_node_tropical_deg, whole_sign_cusps,
+    campanus_cusps, compute_axes, equatorial_to_ecliptic, julian_day_from_unix,
+    local_sidereal_time_deg, mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg,
+    placidus_cusps, true_apogee_tropical_deg, true_node_tropical_deg, vertex_lon, whole_sign_cusps,
 };
 use crate::infrastructure::astronomy::{
     AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion,
 };
 use crate::infrastructure::ephemeris::{
-    load_almanac_from_paths, EphemerisManager, ASTRAEA_J2000, CERES_J2000, EGERIA_J2000,
-    EUNOMIA_J2000, FLORA_J2000, FORTUNA_J2000, HEBE_J2000, HYGIEA_J2000, IRENE_J2000, IRIS_J2000,
-    JUNO_J2000, MASSALIA_J2000, MELPOMENE_J2000, METIS_J2000, PALLAS_J2000, PARTHENOPE_J2000,
-    PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
+    load_almanac_from_paths, small_body_kernels_for_bsp_paths, EphemerisManager, ASTRAEA_J2000,
+    CERES_J2000, EGERIA_J2000, EUNOMIA_J2000, FLORA_J2000, FORTUNA_J2000, HEBE_J2000, HYGIEA_J2000,
+    IRENE_J2000, IRIS_J2000, JUNO_J2000, MASSALIA_J2000, MELPOMENE_J2000, METIS_J2000,
+    PALLAS_J2000, PARTHENOPE_J2000, PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem};
 
@@ -61,7 +60,7 @@ fn body_frames() -> &'static [(&'static str, Frame)] {
 }
 
 /// Small-body NAIF `2000001` … frames; each body resolves when a matching SPK segment
-/// is present (bundled `ceres_1900_2100.bsp`, optional Pallas/Vesta singles, or `codes_300ast`).
+/// is present (optional single-body kernels or bundled `codes_300ast`).
 fn asteroid_body_frames() -> &'static [(&'static str, Frame)] {
     &[
         ("ceres", CERES_J2000),
@@ -132,20 +131,18 @@ fn sample_tropical_longitude(
     frame: Frame,
     unix_secs: f64,
 ) -> Result<f64, String> {
-    let jd_ut = julian_day_from_unix(unix_secs);
     let epoch = Epoch::from_unix_seconds(unix_secs);
-    let obliquity = mean_obliquity_deg(jd_ut);
-    let tropical_offset = general_precession_deg(jd_ut);
+    let obliquity = mean_obliquity_deg(epoch.to_jde_tt_days());
     let state = almanac
-        .translate(frame, EARTH_J2000, epoch, None)
+        .transform(frame, EARTH_MOD_FRAME, epoch, None)
         .map_err(|e| e.to_string())?;
-    let (lon, _lat) = icrf_to_ecliptic(
+    let (lon, _lat) = equatorial_to_ecliptic(
         state.radius_km.x,
         state.radius_km.y,
         state.radius_km.z,
         obliquity,
     );
-    Ok(normalize_deg(lon + tropical_offset))
+    Ok(lon)
 }
 
 fn angular_delta_deg(from: f64, to: f64) -> f64 {
@@ -175,10 +172,9 @@ fn sample_motion(
 }
 
 fn true_node_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64, String> {
-    let jd_ut = julian_day_from_unix(unix_secs);
     let epoch = Epoch::from_unix_seconds(unix_secs);
     let state = almanac
-        .translate(MOON_J2000, EARTH_J2000, epoch, None)
+        .transform(MOON_J2000, EARTH_MOD_FRAME, epoch, None)
         .map_err(|e| e.to_string())?;
     true_node_tropical_deg(
         state.radius_km.x,
@@ -187,7 +183,7 @@ fn true_node_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64, 
         state.velocity_km_s.x,
         state.velocity_km_s.y,
         state.velocity_km_s.z,
-        jd_ut,
+        epoch.to_jde_tt_days(),
     )
     .ok_or_else(|| "true_node_unavailable: degenerate Moon state".to_string())
 }
@@ -205,10 +201,9 @@ fn true_node_motion(almanac: &Almanac, unix_secs: f64) -> Result<AstronomyMotion
 }
 
 fn true_apogee_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64, String> {
-    let jd_ut = julian_day_from_unix(unix_secs);
     let epoch = Epoch::from_unix_seconds(unix_secs);
     let state = almanac
-        .translate(MOON_J2000, EARTH_J2000, epoch, None)
+        .transform(MOON_J2000, EARTH_MOD_FRAME, epoch, None)
         .map_err(|e| e.to_string())?;
     true_apogee_tropical_deg(
         state.radius_km.x,
@@ -217,7 +212,7 @@ fn true_apogee_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64
         state.velocity_km_s.x,
         state.velocity_km_s.y,
         state.velocity_km_s.z,
-        jd_ut,
+        epoch.to_jde_tt_days(),
     )
     .ok_or_else(|| "true_lilith_unavailable: degenerate Moon state".to_string())
 }
@@ -240,11 +235,20 @@ fn true_apogee_motion(almanac: &Almanac, unix_secs: f64) -> Result<AstronomyMoti
 pub struct JplAstronomyBackend {
     /// All BSP files to load, in priority order. The first valid file wins for any given body.
     bsp_paths: Vec<PathBuf>,
+    /// Manifest-defined bodies whose checked SPKs are present in `bsp_paths`.
+    small_body_frames: Vec<(String, Frame)>,
 }
 
 impl JplAstronomyBackend {
     pub fn new(bsp_paths: Vec<PathBuf>) -> Self {
-        Self { bsp_paths }
+        let small_body_frames = small_body_kernels_for_bsp_paths(&bsp_paths)
+            .into_iter()
+            .map(|kernel| (kernel.body_id, kernel.frame))
+            .collect();
+        Self {
+            bsp_paths,
+            small_body_frames,
+        }
     }
 
     fn build_almanac(&self) -> Result<Arc<Almanac>, String> {
@@ -305,9 +309,7 @@ impl AstronomyBackend for JplAstronomyBackend {
         let unix_secs =
             event_time.timestamp() as f64 + event_time.timestamp_subsec_nanos() as f64 * 1e-9;
         let jd_ut = julian_day_from_unix(unix_secs);
-        let epoch = Epoch::from_unix_seconds(unix_secs);
         let obliquity = mean_obliquity_deg(jd_ut);
-        let tropical_offset = general_precession_deg(jd_ut);
 
         let wanted = |id: &str| {
             requested_objects
@@ -324,15 +326,9 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match almanac.translate(frame, EARTH_J2000, epoch, None) {
-                Ok(state) => {
-                    let (lon, _lat) = icrf_to_ecliptic(
-                        state.radius_km.x,
-                        state.radius_km.y,
-                        state.radius_km.z,
-                        obliquity,
-                    );
-                    positions.insert(id.to_string(), normalize_deg(lon + tropical_offset));
+            match sample_tropical_longitude(&almanac, frame, unix_secs) {
+                Ok(longitude) => {
+                    positions.insert(id.to_string(), longitude);
                     if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
                         motion.insert(id.to_string(), body_motion);
                     }
@@ -348,15 +344,9 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match almanac.translate(frame, EARTH_J2000, epoch, None) {
-                Ok(state) => {
-                    let (lon, _lat) = icrf_to_ecliptic(
-                        state.radius_km.x,
-                        state.radius_km.y,
-                        state.radius_km.z,
-                        obliquity,
-                    );
-                    positions.insert(id.to_string(), normalize_deg(lon + tropical_offset));
+            match sample_tropical_longitude(&almanac, frame, unix_secs) {
+                Ok(longitude) => {
+                    positions.insert(id.to_string(), longitude);
                     if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
                         motion.insert(id.to_string(), body_motion);
                     }
@@ -364,6 +354,22 @@ impl AstronomyBackend for JplAstronomyBackend {
                 Err(e) => {
                     warnings.push(format!("{id}_unavailable: {e}"));
                 }
+            }
+        }
+
+        // ── Manifest-defined Horizons-derived small bodies ───────────────
+        for (id, frame) in &self.small_body_frames {
+            if !wanted(id) {
+                continue;
+            }
+            match sample_tropical_longitude(&almanac, *frame, unix_secs) {
+                Ok(longitude) => {
+                    positions.insert(id.clone(), longitude);
+                    if let Ok(body_motion) = sample_motion(&almanac, *frame, unix_secs) {
+                        motion.insert(id.clone(), body_motion);
+                    }
+                }
+                Err(error) => warnings.push(format!("{id}_unavailable: {error}")),
             }
         }
 
@@ -435,13 +441,9 @@ impl AstronomyBackend for JplAstronomyBackend {
             }
         }
 
-        // Chiron is not in any standard DE planetary ephemeris; the vendored-MPCORB
-        // Kepler-propagation path the Python sidecar uses is not yet ported to Rust.
-        if wanted("chiron") {
-            warnings.push(
-                "chiron_not_available: not in standard DE files; MPCORB orbital-elements path not yet implemented in Rust"
-                    .to_string(),
-            );
+        if wanted("chiron") && !positions.contains_key("chiron") {
+            warnings
+                .push("chiron_unavailable: no validated local SPK covers this epoch".to_string());
         }
 
         // ── Axes and house cusps ──────────────────────────────────────────
@@ -455,6 +457,59 @@ impl AstronomyBackend for JplAstronomyBackend {
         for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
             if wanted(id) {
                 positions.insert(id.to_string(), longitude);
+            }
+        }
+
+        if wanted("vertex") || wanted("antivertex") {
+            let ramc = local_sidereal_time_deg(jd_ut, lon);
+            match vertex_lon(ramc, obliquity, lat) {
+                Ok(vertex) => {
+                    if wanted("vertex") {
+                        positions.insert("vertex".to_string(), vertex);
+                    }
+                    if wanted("antivertex") {
+                        positions.insert("antivertex".to_string(), normalize_deg(vertex + 180.0));
+                    }
+                }
+                Err(e) => {
+                    if wanted("vertex") {
+                        warnings.push(format!("vertex_unavailable: {e}"));
+                    }
+                    if wanted("antivertex") {
+                        warnings.push(format!("antivertex_unavailable: {e}"));
+                    }
+                }
+            }
+        }
+
+        if wanted("part_of_fortune") || wanted("part_of_spirit") {
+            match (
+                positions.get("sun").copied(),
+                positions.get("moon").copied(),
+            ) {
+                (Some(sun_lon), Some(moon_lon)) => {
+                    let (fortune, spirit) = day_night_parts(asc, sun_lon, moon_lon);
+                    if wanted("part_of_fortune") {
+                        positions.insert("part_of_fortune".to_string(), fortune);
+                    }
+                    if wanted("part_of_spirit") {
+                        positions.insert("part_of_spirit".to_string(), spirit);
+                    }
+                }
+                _ => {
+                    if wanted("part_of_fortune") {
+                        warnings.push(
+                            "part_of_fortune_unavailable: requires sun and moon positions"
+                                .to_string(),
+                        );
+                    }
+                    if wanted("part_of_spirit") {
+                        warnings.push(
+                            "part_of_spirit_unavailable: requires sun and moon positions"
+                                .to_string(),
+                        );
+                    }
+                }
             }
         }
 
@@ -503,8 +558,8 @@ pub fn jpl_backend_for_chart(chart: &ChartInstance) -> Result<JplAstronomyBacken
     let paths = manager.available_bsp_paths();
     if paths.is_empty() {
         return Err(
-            "No BSP ephemeris file found. Set KEFER_BSP_PATH, place de440s.bsp next to the \
-             binary, or download one via the ephemeris manager."
+            "No BSP ephemeris file found. Place de440s.bsp next to the binary or download \
+             one via the ephemeris manager."
                 .to_string(),
         );
     }
@@ -516,11 +571,47 @@ pub fn jpl_backend_for_chart(chart: &ChartInstance) -> Result<JplAstronomyBacken
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anise::constants::frames::EARTH_J2000;
+    use anise::math::cartesian::CartesianState;
 
     #[test]
     fn no_bsp_returns_error() {
         let backend = JplAstronomyBackend::new(vec![PathBuf::from("nonexistent.bsp")]);
         assert!(backend.build_almanac().is_err());
+    }
+
+    #[test]
+    fn earth_mod_transform_changes_more_than_scalar_longitude() {
+        // A scalar longitude correction cannot change ecliptic latitude. A full
+        // precession rotation generally does, which guards the frame boundary
+        // this backend relies on for inclined planetary and lunar vectors.
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let almanac = load_almanac_from_paths(&[bsp]).expect("almanac should load");
+        let epoch = Epoch::from_gregorian_utc(2100, 1, 1, 0, 0, 0, 0);
+        let state = CartesianState::new(1.0, 2.0, 3.0, 0.0, 0.0, 0.0, epoch, EARTH_J2000);
+        let dated = almanac
+            .rotate_to(state, EARTH_MOD_FRAME)
+            .expect("Earth MOD rotation should use the bundled planetary constants");
+
+        let (_, original_lat) = equatorial_to_ecliptic(
+            state.radius_km.x,
+            state.radius_km.y,
+            state.radius_km.z,
+            mean_obliquity_deg(2_451_545.0),
+        );
+        let (_, dated_lat) = equatorial_to_ecliptic(
+            dated.radius_km.x,
+            dated.radius_km.y,
+            dated.radius_km.z,
+            mean_obliquity_deg(epoch.to_jde_tt_days()),
+        );
+
+        assert!(
+            (dated_lat - original_lat).abs() > 1e-4,
+            "a 3D mean-of-date rotation should alter this vector's latitude: {original_lat} / {dated_lat}"
+        );
+        assert_eq!(dated.frame.ephemeris_id, EARTH_MOD_FRAME.ephemeris_id);
+        assert_eq!(dated.frame.orientation_id, EARTH_MOD_FRAME.orientation_id);
     }
 
     /// Cross-checks `true_apogee_tropical_at_unix` against JPL Horizons' own osculating
@@ -546,6 +637,51 @@ mod tests {
             delta < 0.5,
             "true_lilith at J2000.0: got {apogee:.4}°, expected ~{expected:.4}° (Horizons), delta {delta:.4}°"
         );
+    }
+
+    #[test]
+    fn vertex_and_parts_resolve_and_match_direct_computation() {
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let chart = j2000_chart(bsp.to_str().unwrap());
+        let backend = JplAstronomyBackend::new(vec![bsp]);
+        let requested: Vec<String> = [
+            "sun",
+            "moon",
+            "asc",
+            "vertex",
+            "antivertex",
+            "part_of_fortune",
+            "part_of_spirit",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+        let data = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .expect("compute should succeed");
+
+        for id in ["vertex", "antivertex", "part_of_fortune", "part_of_spirit"] {
+            assert!(
+                data.positions.contains_key(id),
+                "{id} missing; warnings: {:?}",
+                data.warnings
+            );
+        }
+
+        let vertex = data.positions["vertex"];
+        let antivertex = data.positions["antivertex"];
+        assert!(
+            (crate::domain::houses::normalize_deg(antivertex - vertex) - 180.0).abs() < 1e-9,
+            "antivertex should be exactly opposite vertex: {vertex} / {antivertex}"
+        );
+
+        let asc = data.positions["asc"];
+        let sun = data.positions["sun"];
+        let moon = data.positions["moon"];
+        let (expected_fortune, expected_spirit) =
+            crate::domain::astrology::day_night_parts(asc, sun, moon);
+        assert!((data.positions["part_of_fortune"] - expected_fortune).abs() < 1e-9);
+        assert!((data.positions["part_of_spirit"] - expected_spirit).abs() < 1e-9);
     }
 
     /// Confirms the minor planets added to the body catalog alongside `codes_300ast`
@@ -602,6 +738,80 @@ mod tests {
             data.warnings.iter().all(|w| !w.contains("_unavailable")),
             "unexpected unavailable warnings: {:?}",
             data.warnings
+        );
+    }
+
+    #[test]
+    fn bundled_chiron_type13_is_discovered_and_computed() {
+        let manager = crate::infrastructure::ephemeris::EphemerisManager::from_global();
+        let paths = manager.available_bsp_paths();
+        assert!(
+            paths
+                .iter()
+                .any(|path| path.file_name().and_then(|name| name.to_str())
+                    == Some("chiron_1900_2100_type13.bsp")),
+            "validated Chiron artifact was not discovered: {paths:?}"
+        );
+        assert!(
+            crate::infrastructure::ephemeris::bodies_available_for_bsp_paths(&paths)
+                .iter()
+                .any(|body| body == "chiron")
+        );
+
+        let chart = j2000_chart(paths[0].to_str().unwrap());
+        let backend = JplAstronomyBackend::new(paths);
+        let requested = vec!["chiron".to_string()];
+        let data = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .expect("Chiron computation should succeed");
+        let longitude = data
+            .positions
+            .get("chiron")
+            .expect("Chiron position should be present");
+        assert!((0.0..360.0).contains(longitude));
+        assert!(
+            data.warnings
+                .iter()
+                .all(|warning| !warning.starts_with("chiron_")),
+            "unexpected Chiron warning: {:?}",
+            data.warnings
+        );
+    }
+
+    #[test]
+    fn bundled_chiron_type13_matches_held_out_horizons_state() {
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        let almanac = load_almanac_from_paths(&paths).expect("bundled almanac should load");
+        // This epoch is halfway between the four-day source knots at 2000-01-01
+        // and 2000-01-05. The expected geometric heliocentric ICRF state is an
+        // independent Horizons VECTORS sample, not an input record in the SPK.
+        let epoch = Epoch::from_tdb_seconds(129_600.0);
+        let state = almanac
+            .transform(Frame::from_ephem_j2000(20_002_060), SUN_J2000, epoch, None)
+            .expect("Chiron Type 13 state should evaluate");
+        let expected_position = [
+            -526_904_532.089_611_8,
+            -1_298_634_835.180_773,
+            -439_390_243.533_057_9,
+        ];
+        let expected_velocity = [
+            8.610_310_542_141_214,
+            -6.271_953_448_156_347,
+            -1.427_451_092_837_696,
+        ];
+        let position_error = ((state.radius_km.x - expected_position[0]).powi(2)
+            + (state.radius_km.y - expected_position[1]).powi(2)
+            + (state.radius_km.z - expected_position[2]).powi(2))
+        .sqrt();
+        let velocity_error = ((state.velocity_km_s.x - expected_velocity[0]).powi(2)
+            + (state.velocity_km_s.y - expected_velocity[1]).powi(2)
+            + (state.velocity_km_s.z - expected_velocity[2]).powi(2))
+        .sqrt();
+        assert!(position_error < 1.0, "position error {position_error} km");
+        assert!(
+            velocity_error < 1e-5,
+            "velocity error {velocity_error} km/s"
         );
     }
 

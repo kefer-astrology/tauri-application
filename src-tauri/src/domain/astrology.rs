@@ -602,6 +602,28 @@ pub fn detect_chart_configurations(
     result.into_iter().collect()
 }
 
+/// Day/night-sect-dependent Arabic Parts (Lots) of Fortune and Spirit, degrees [0,360).
+/// Returns `(part_of_fortune, part_of_spirit)`.
+///
+/// Day chart (Sun above the horizon — in the ecliptic semicircle from the
+/// Descendant to the Ascendant through the MC, i.e. houses 7-12): Fortune =
+/// Asc + Moon − Sun, Spirit = Asc + Sun − Moon. Night chart: the two formulas
+/// swap. Day/night is read from the Sun's position relative to the Ascendant
+/// along the ecliptic — the standard sect determination used without needing
+/// full house cusps.
+pub fn day_night_parts(asc_deg: f64, sun_deg: f64, moon_deg: f64) -> (f64, f64) {
+    let is_day_chart = crate::domain::houses::normalize_deg(sun_deg - asc_deg) >= 180.0;
+    let (fortune, spirit) = if is_day_chart {
+        (asc_deg + moon_deg - sun_deg, asc_deg + sun_deg - moon_deg)
+    } else {
+        (asc_deg + sun_deg - moon_deg, asc_deg + moon_deg - sun_deg)
+    };
+    (
+        crate::domain::houses::normalize_deg(fortune),
+        crate::domain::houses::normalize_deg(spirit),
+    )
+}
+
 /// If `shapes`/`configurations` are absent (e.g. a Python-backend chart response), derive them
 /// from the same already-computed `positions`/`house_cusps`/`aspects` fields so every compute
 /// route exposes them, not just the Rust one.
@@ -658,6 +680,22 @@ pub fn inject_shapes_and_configurations_into_chart_map(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn day_night_parts_night_chart_swaps_fortune_and_spirit() {
+        // Sun at asc+100 is in houses 1-6 (below the horizon) -> night chart.
+        let (fortune, spirit) = day_night_parts(0.0, 100.0, 200.0);
+        assert!((fortune - 260.0).abs() < 1e-9, "fortune={fortune}");
+        assert!((spirit - 100.0).abs() < 1e-9, "spirit={spirit}");
+    }
+
+    #[test]
+    fn day_night_parts_day_chart_uses_the_day_formula() {
+        // Sun at asc+280 is in houses 7-12 (above the horizon) -> day chart.
+        let (fortune, spirit) = day_night_parts(0.0, 280.0, 50.0);
+        assert!((fortune - 130.0).abs() < 1e-9, "fortune={fortune}");
+        assert!((spirit - 230.0).abs() < 1e-9, "spirit={spirit}");
+    }
 
     #[test]
     fn model_definition_and_effective_orb_control_detection() {
@@ -827,11 +865,11 @@ mod tests {
         let requested = vec![
             " ASC ".to_string(),
             "asc".to_string(),
-            "lilith".to_string(),
+            "astraea".to_string(),
             "unknown_point".to_string(),
         ];
 
-        let selection = resolve_body_selection(&model.body_definitions, &requested, "jpl");
+        let selection = resolve_body_selection(&model.body_definitions, &requested, "swisseph");
 
         assert_eq!(selection.ids, vec!["asc"]);
         assert!(selection
@@ -841,7 +879,7 @@ mod tests {
         assert!(selection
             .warnings
             .iter()
-            .any(|warning| warning == "body_not_supported_by_engine: lilith (jpl)"));
+            .any(|warning| warning == "body_not_supported_by_engine: astraea (swisseph)"));
         assert!(selection
             .warnings
             .iter()
