@@ -1,0 +1,80 @@
+src-tauri/src/infrastructure/astronomy/jpl_backend.rs
+  s_a7bd7e289352a7::t_aa8f51f1d8b1ce 781-782,785-790,792,803-814
+  s_a7bd7e289352a7::t_b34d12ac946d57 7,17,26,137,139,145,177,206,329-331,347-349
+  s_a7bd7e289352a7::t_6e27693dfe9cd3 35-37,445-446,749-752,774-775,783-784,791,793-802
+  s_a7bd7e289352a7::t_778c29d3b3ada9 575
+  s_a7bd7e289352a7::t_7aa12c66c10de4 10-11,34,238-239,244-251,360-375,444
+  s_5241e6c69a41a3::t_a10f9dcfaea4dc 24,27
+  s_a7bd7e289352a7::t_fc69f35c5bca0e 615,685,744-748,753-773,776-780,815-816
+  s_5241e6c69a41a3::t_76b07de5aa0cff 28,486-489
+  s_a7bd7e289352a7::t_7c9548f511a3c3 593
+  s_a7bd7e289352a7::t_4ebc08223d2a17 588-589,592,594
+  s_5241e6c69a41a3::t_d4e1f56776cbec 514,642-684
+  s_5241e6c69a41a3::t_f63e1d6637837d 463-485,490-513
+  s_a7bd7e289352a7::t_62b03f89189879 135,186,215,561-562,574,583-587,590-591,595-612
+  s_a7bd7e289352a7::t_130298db0e62b8 613-614
+  s_a7bd7e289352a7::t_40bb1fa843ecb4 63
+  s_a7bd7e289352a7::t_307fefdd8d145f 515,616,686,817
+src-tauri/src/infrastructure/ephemeris.rs
+  s_a7bd7e289352a7::t_40bb1fa843ecb4 735
+  s_a7bd7e289352a7::t_1887b20b6ebb14 146-150,493,495-498,534-537,547,560-563,598-601,619,623-624,627-632
+  s_a7bd7e289352a7::t_e1b171cb8627ab 934
+  s_a7bd7e289352a7::t_ebd62c887d9804 638,643,651,654-659
+  s_a7bd7e289352a7::t_655ca030781f0f 330-353,369-374
+  s_a7bd7e289352a7::t_4ee19858b832e9 6-10,12-13,15,17-19,26-27
+  s_a7bd7e289352a7::t_277e583dfc020e 398-401,404,427-429
+  s_a7bd7e289352a7::t_4ebc08223d2a17 25,532,544-545,926-933,935-942
+  s_a7bd7e289352a7::t_9c2b95a0cedb3b 450,729,829-923
+  s_a7bd7e289352a7::t_6e27693dfe9cd3 410,697-701,708-712
+  s_a7bd7e289352a7::t_609ed8d09251f1 529,539-541,602
+  s_a7bd7e289352a7::t_b341c6e94b3c69 618,620-622,625-626,633-637,639-642,644-650,652-653,660-696,702-707,713-728,736,748-749
+  s_a7bd7e289352a7::t_a8f5a8c2c2260a 269-271,278-329,354-368,375-397,402-403,405-409,411-426,430-449
+  s_a7bd7e289352a7::t_398618c5cbb8f7 451,730,924
+src-tauri/src/domain/astrology.rs
+  s_5241e6c69a41a3::t_7ff0570b3cfe77 605-626
+  s_5241e6c69a41a3::t_331e18dbcc1dde 684-698
+  s_a7bd7e289352a7::t_8d64906309c608 868,872,882
+  s_5241e6c69a41a3::t_14b9efc8a2a62a 699
+src-tauri/src/domain/houses.rs
+  s_a7bd7e289352a7::t_ea0888dadcf997 30,443,515
+  s_a7bd7e289352a7::t_b1e5379ccae092 18-19,28-29,426,481,502
+  s_5241e6c69a41a3::t_c774636909e8ed 84-103
+  s_5241e6c69a41a3::t_9695c27e394b29 608-627
+  s_a7bd7e289352a7::t_b34d12ac946d57 24-27,31-33,373-380,390-397,403-405,446-447,470-471,503-507,513-514,572,594-596
+  s_a7bd7e289352a7::t_450c683369b2f0 416
+  s_5241e6c69a41a3::t_e50bcc01164d63 104-105
+  s_5241e6c69a41a3::t_b095a12953326b 628
+src-tauri/src/workspace/model_catalog.rs
+  s_a7bd7e289352a7::t_7aa12c66c10de4 242
+  s_a7bd7e289352a7::t_6f78d73e4966e1 306
+  s_5241e6c69a41a3::t_dc0d1f695a55d0 257-298
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "ea0e3f4f587e61be77f7ed3931ae9569ce71243b",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5241e6c69a41a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "147e2ecd-6b4f-489d-ac4f-f3d2633178c5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_a7bd7e289352a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a90-8c4d-7f32-a8d9-647183b32c59",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
