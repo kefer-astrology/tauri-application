@@ -1,0 +1,36 @@
+apps/web-svelte/src/lib/astrology/observableObjects.ts
+  s_a7bd7e289352a7::t_68edbabb87b19f 82,86,116,122,129,136
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_a7bd7e289352a7::t_68edbabb87b19f 212,217,401,409,417,425
+apps/web-svelte/src/lib/components/MiddleContent.svelte
+  s_a7bd7e289352a7::t_68edbabb87b19f 203
+src-tauri/src/infrastructure/astronomy/jpl_backend.rs
+  s_a7bd7e289352a7::t_68edbabb87b19f 486-487,498-499,508-516,518,521
+  s_a7bd7e289352a7::t_2df9e95b806cfa 488-497,696,698,700-704
+  s_a7bd7e289352a7::t_dd7a3c3ce1bafd 697,699
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_a7bd7e289352a7::t_68edbabb87b19f 110-122
+apps/web-react/src/lib/astrology/glyphs.ts
+  s_a7bd7e289352a7::t_68edbabb87b19f 58-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4885ed1804b9b171ff6d6104fd0891bf88fcc28f",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a7bd7e289352a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a90-8c4d-7f32-a8d9-647183b32c59",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
