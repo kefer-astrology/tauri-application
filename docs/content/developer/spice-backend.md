@@ -2,6 +2,9 @@
 title: 'SPICE backend'
 description: 'JPL/SPICE backend contract, implementation boundary, and current status.'
 weight: 41
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
 This page is intentionally narrower than [architecture](../architecture/): it is about the astronomy backend layer itself, not the whole app.
@@ -39,23 +42,27 @@ It should not own:
 
 ## File format boundary
 
-The Rust and Python JPL paths target **SPICE BSP/SPK** planetary kernels such as `de440s.bsp` and `de440.bsp`, with optional **additional SPK files** chained in the same almanac for asteroids and other small bodies. On Rust, `EphemerisManager` resolves and appends NAIF asteroid BSPs when present (including bundled `ceres_1900_2100.bsp` and optional catalog downloads such as `codes_300ast`).
+The Rust and Python JPL paths target **SPICE BSP/SPK** planetary kernels such as `de440s.bsp` and `de440.bsp`, with **additional SPK files** chained in the same almanac for asteroids and other small bodies. On Rust, `EphemerisManager` appends the bundled `codes_300ast_20100725.bsp` and any optional single-body catalog downloads that are present.
 
 That is distinct from Swiss Ephemeris JPL support through old-format `.eph` files in `swejpl.c` mode. `JplViaSwissAstronomyBackend` is still Swiss-backed and does not replace the SPICE/BSP path.
 
 ## Rust implementation
 
-Rust uses [`anise`](https://github.com/nyx-space/anise) to read BSP files directly.
+Rust uses [`anise`](https://github.com/nyx-space/anise) 0.10.6 to read BSP files
+directly and to perform dynamic Earth frame transformations.
 
 Current Rust module split:
 
 ```text
 src-tauri/src/
-  astronomy.rs         # AstronomyBackend trait + backend selection
-  jpl_backend.rs       # JplAstronomyBackend using anise
-  ephemeris_manager.rs # BSP catalog, download, cache, multi-file almanac
-  houses.rs            # obliquity, axes, cusps, node helpers, transforms
-  swisseph.rs          # Swiss-backed compatibility path, feature-gated
+  domain/
+    houses.rs                    # obliquity, axes, cusps, node helpers, transforms
+  infrastructure/
+    astronomy/
+      mod.rs                     # AstronomyBackend trait + backend selection
+      jpl_backend.rs             # JplAstronomyBackend using anise
+      swisseph.rs                # Swiss-backed compatibility path, feature-gated
+    ephemeris.rs                 # BSP catalog, download, cache, multi-file almanac
 ```
 
 What the Rust SPICE backend currently provides:
@@ -64,12 +71,53 @@ What the Rust SPICE backend currently provides:
 - axes and house cusp support through the Rust astronomy layer
 - explicit `backend_used` / `ephemeris_source` style provenance
 - multi-file kernel loading via `EphemerisManager`
+- geometric J2000/ICRS to Earth mean-of-date transformation through ANISE's
+  IAU 2006 `EARTH_MOD_FRAME`
+- bundled `pck11.pca` planetary constants loaded before SPKs to supply ANISE's
+  orientation graph offline
+
+The PCA is ANISE's published v0.10 artifact, generated from NAIF/JPL `pck00011`
+and DE431 gravity constants. Its pinned checksum and load-order rules are recorded
+in [Ephemeris manager](../ephemeris-manager/).
+
+## Coordinate pipeline
+
+For planets, asteroids, the osculating lunar node, and true lunar apogee, the
+backend follows one pipeline:
+
+1. ANISE obtains the Earth-centred geometric state from the loaded SPKs.
+2. ANISE rotates the complete position/velocity state into Earth mean-of-date
+   (`EARTH_MOD_FRAME`, IAU 2006).
+3. Rust rotates that dated equatorial vector by IAU 2006 mean obliquity into the
+   mean ecliptic of date.
+4. Longitude is extracted and normalized to `[0, 360)`.
+
+This produces geometric mean-tropical longitude. No light-time, stellar
+aberration, nutation, or scalar "general precession in longitude" is applied.
+The full frame rotation must precede longitude extraction because precession can
+also change the ecliptic latitude of an inclined vector. See the normative
+[Astronomy coordinate contract](../astronomy-coordinate-contract/).
+
+## Horizons-generated kernels
+
+Horizons is treated as an artifact generator, not an online calculator in the
+chart request path. `scripts/generate-horizons-type13.py` requests bounded
+geometric state vectors, validates degree-7 Hermite interpolation against
+held-out vectors, and asks NAIF `mkspk` to create an ANISE-supported Type 13 SPK.
+It writes an adjacent `.bsp.json` provenance manifest.
+
+At runtime `EphemerisManager` verifies that manifest, the BSP checksum, and an
+in-range ANISE state before appending the kernel to the ordinary almanac. The
+bundled Chiron artifact uses this path because native Horizons SPKs currently use
+unsupported Type 21 segments. A successful DAF load alone is never treated as
+proof that a target is queryable. Per-chart Horizons calls remain outside this
+architecture.
 
 What still sits above or beside it:
 
 - astrology-layer interpretation
 - some house-system fallback policy
-- asteroid availability for bodies **not** included in any loaded kernel (e.g. Chiron, TNOs, or minor planets absent from your SPK set)
+- asteroid availability for bodies **not** included in any loaded kernel (e.g. TNOs or minor planets absent from your SPK set)
 
 ## Python implementation
 
@@ -115,17 +163,24 @@ Implemented:
 
 - `JplAstronomyBackend` in Rust using `anise`
 - feature-gated Swiss path in Rust
-- pure-Rust support for key transforms and baseline house/axis calculations in `houses.rs`
+- pure-Rust support for key transforms and baseline house/axis calculations in `domain/houses.rs`
 - `EphemerisManager` integration for resolving active BSP files (planetary primary, optional de441 supplements, optional NAIF asteroid kernels)
 - bundled `de440s.bsp` as the default planetary kernel (`de440` is the documented wider-range upgrade)
-- bundled `ceres_1900_2100.bsp` and catalog entries for additional asteroid SPKs (`pallas_spk`, `vesta_spk`, `codes_300ast`)
+- bundled `codes_300ast_20100725.bsp`, including Ceres through the configured
+  20-body subset, plus optional single-body catalog downloads for Ceres, Pallas,
+  and Vesta
+- bundled, validated Chiron Type 13 SPK (1900–2100) generated from Horizons
+  vectors, with manifest-driven discovery that can support additional small bodies
 - Python JPL backend path aligned around structured chart-data output
 - osculating **true lunar node** (and true south node) from geocentric Moon state on both Rust and Python JPL paths
 - **`moon_details`** on chart compute responses: lunar phase from tropical Sun–Moon longitudes (see [lunar-phase](../lunar-phase/))
 
 Still incomplete:
 
-- asteroid coverage beyond what is shipped or downloaded (Chiron, TNOs, arbitrary small bodies) still needs extra SPKs or another ephemeris source; see [ephemeris-manager](../ephemeris-manager/)
+- native Horizons Type 21 ingestion remains blocked on evaluator support; the
+  verified Type 13 acquisition path is active; see [ephemeris-manager](../ephemeris-manager/)
+- asteroid coverage beyond what is shipped or generated (TNOs, arbitrary
+  small bodies) still needs compatible local SPKs
 - ayanamsha remains incomplete on the Rust-owned side
 - validation and parity coverage between backends is still partial
 

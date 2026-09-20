@@ -59,7 +59,11 @@ export interface ModelOverrideEntryDto {
 	default_orb?: number | null;
 	only_for?: string[] | null;
 	i18n?: Record<string, string> | null;
+	enabled?: boolean | null;
+	/** Legacy function-wrapper metadata; persisted but not used as enablement. */
 	computed?: boolean | null;
+	valid_contexts?: Array<'chart' | 'transit' | 'direction'> | null;
+	interpretation_weight?: number | null;
 }
 
 export interface ModelOverridesDto {
@@ -70,6 +74,7 @@ export interface ModelOverridesDto {
 
 export interface BodyDefinitionDto {
 	id: string;
+	enabled: boolean;
 	glyph: string;
 	formula: string;
 	element?: string | null;
@@ -84,6 +89,7 @@ export interface BodyDefinitionDto {
 
 export interface AspectDefinitionDto {
 	id: string;
+	enabled: boolean;
 	glyph: string;
 	angle: number;
 	default_orb: number;
@@ -94,6 +100,7 @@ export interface AspectDefinitionDto {
 	line_width?: number | null;
 	show_label?: boolean | null;
 	valid_contexts?: string[] | null;
+	interpretation_weight?: number | null;
 }
 
 export interface SignDefinitionDto {
@@ -120,6 +127,8 @@ export interface ModelSettingsDto {
 
 export interface AstroModelDto {
 	name: string;
+	school?: string | null;
+	version: number;
 	body_definitions: BodyDefinitionDto[];
 	aspect_definitions: AspectDefinitionDto[];
 	signs: SignDefinitionDto[];
@@ -182,6 +191,8 @@ export interface EffectiveSettingsSourcesDto {
 }
 
 export interface CurrentModelReport {
+	requested_school?: string | null;
+	resolved_school?: string | null;
 	requested_model?: string | null;
 	resolved_model: string;
 	source: string;
@@ -215,10 +226,14 @@ export interface ChartDetails {
 		zodiac_type: string;
 		engine: string | null;
 		model: string | null;
+		model_overrides?: ModelOverridesDto | null;
 		override_ephemeris: string | null;
 		observable_objects?: string[];
 		aspect_orbs?: Record<string, number>;
 		selected_aspects?: string[];
+		included_points?: string[];
+		display_style?: string;
+		color_theme?: string;
 		ayanamsa?: string | null;
 		time_system?: string | null;
 	};
@@ -276,8 +291,14 @@ export interface TransitSetup {
 	transiting_bodies: string[];
 	transited_bodies: string[];
 	aspect_types: string[];
+	aspect_orbs?: Record<string, number>;
+	school?: string | null;
+	model?: string | null;
+	model_overrides?: ModelOverridesDto | null;
 	house_transitions: boolean;
 	sign_transitions: boolean;
+	exact_hits?: boolean;
+	station_events?: boolean;
 	transit_limits: boolean;
 	precession_correction: boolean;
 }

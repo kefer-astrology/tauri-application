@@ -1,6 +1,9 @@
 ---
 title: 'Rust workspace contract'
 weight: 35
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This page defines the current Rust-side implementation direction for the desktop app.

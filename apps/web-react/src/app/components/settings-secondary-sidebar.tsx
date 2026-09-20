@@ -9,7 +9,8 @@ export type SettingsSectionId =
 	| 'system_domu'
 	| 'pozorovane_objekty'
 	| 'nastaveni_aspektu'
-	| 'vzhled'
+	| 'rozlozeni_symbolu'
+	| 'rozlozeni_aplikace'
 	| 'manual';
 
 export interface SettingsSecondarySidebarProps {
@@ -26,16 +27,19 @@ export function SettingsSecondarySidebar({
 	const { t } = useTranslation();
 
 	const items = useMemo(
-		() =>
-			[
-				{ id: 'jazyk' as const, label: t('section_jazyk') },
-				{ id: 'lokace' as const, label: t('section_lokace') },
-				{ id: 'system_domu' as const, label: t('section_system_domu') },
-				{ id: 'pozorovane_objekty' as const, label: t('section_observable_objects', { defaultValue: 'Observable objects' }) },
-				{ id: 'nastaveni_aspektu' as const, label: t('section_nastaveni_aspektu') },
-				{ id: 'vzhled' as const, label: t('section_vzhled') },
-				{ id: 'manual' as const, label: t('section_manual') }
-			],
+		() => [
+			{ id: 'jazyk' as const, label: t('section_jazyk') },
+			{ id: 'lokace' as const, label: t('section_lokace') },
+			{ id: 'system_domu' as const, label: t('section_system_domu') },
+			{
+				id: 'pozorovane_objekty' as const,
+				label: t('section_observable_objects', { defaultValue: 'Observable objects' })
+			},
+			{ id: 'nastaveni_aspektu' as const, label: t('section_nastaveni_aspektu') },
+			{ id: 'rozlozeni_symbolu' as const, label: t('section_symbols_layout') },
+			{ id: 'rozlozeni_aplikace' as const, label: t('section_app_layout') },
+			{ id: 'manual' as const, label: t('section_manual') }
+		],
 		[t]
 	);
 

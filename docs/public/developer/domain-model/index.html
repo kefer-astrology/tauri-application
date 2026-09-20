@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Domain model and extensibility | Kefer Astrology</title>
+    <meta name="description" content="Canonical concepts and extension boundaries for supporting multiple astrology schools." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/developer/domain-model/" aria-current="page">English</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Domain model and extensibility</h1>
+      <p class="lede">Canonical concepts and extension boundaries for supporting multiple astrology schools.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Architecture</span>
+          <span>Current</span>
+          <span>Normative</span>
+        </div>
+      
+    </header>
+    <div class="prose">
+      <p>This page defines the concepts that must remain stable across persistence,
+calculation backends, and frontend implementations. It does not define their
+serialized fields; those belong to the
+<a href="../workspace-yaml/">Workspace YAML contract</a>.</p>
+<h2 id="core-model">Core model</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Subject / event facts
+</span></span><span style="display:flex;"><span>        │
+</span></span><span style="display:flex;"><span>        ▼
+</span></span><span style="display:flex;"><span>Chart ──selects──&gt; Astrology model ──classified by──&gt; School
+</span></span><span style="display:flex;"><span>  │                    │
+</span></span><span style="display:flex;"><span>  │                    ├── point and body definitions
+</span></span><span style="display:flex;"><span>  │                    ├── aspect definitions and orb policy
+</span></span><span style="display:flex;"><span>  │                    ├── zodiac and ayanamsha policy
+</span></span><span style="display:flex;"><span>  │                    └── house and calculation defaults
+</span></span><span style="display:flex;"><span>  │
+</span></span><span style="display:flex;"><span>  ├── selects an astronomy provider through resolved settings
+</span></span><span style="display:flex;"><span>  └── produces a backend-neutral calculation result
+</span></span></code></pre></div><h3 id="subject">Subject</h3>
+<p>A subject records source facts about a person, event, or other chart subject:
+identity, event time, and location. Those facts are not an astrological
+interpretation and should be reusable by multiple charts.</p>
+<h3 id="chart">Chart</h3>
+<p>A chart applies one model and a set of scoped overrides to subject facts. Two
+charts may therefore interpret the same subject using different schools,
+models, house systems, or research assumptions.</p>
+<h3 id="school">School</h3>
+<p>A school is an extensible string identifier that classifies models and may
+select a default model. It is not a closed application enum. School lineage is
+metadata and does not implicitly copy calculation settings.</p>
+<h3 id="astrology-model">Astrology model</h3>
+<p>A model is the versioned, executable definition of astrological semantics. It
+owns available points, aspects, default orbs, zodiac policy, calculation
+defaults, and other rules whose meaning must be the same regardless of the
+astronomy provider.</p>
+<h3 id="astronomy-provider">Astronomy provider</h3>
+<p>An astronomy provider supplies astronomical measurements such as positions,
+motion, axes, and house cusps. Rust JPL/SPICE, Swiss Ephemeris, or a Python
+integration may implement this boundary. A provider must not silently redefine
+the selected astrology model.</p>
+<h3 id="calculation-service">Calculation service</h3>
+<p>The calculation service resolves the model and all setting scopes, requests
+astronomical data, applies backend-neutral astrological rules, and produces a
+frontend-facing result with provenance.</p>
+<h3 id="frontend">Frontend</h3>
+<p>A frontend edits domain inputs and renders contract results. React and Svelte
+may use different framework structures, but neither frontend owns astrological
+rules or reimplements backend calculations.</p>
+<h2 id="configuration-scopes">Configuration scopes</h2>
+<p>Calculation settings follow the single precedence defined by the workspace
+contract:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>application fallback &lt; model &lt; workspace &lt; chart preset &lt; chart &lt; operation
+</span></span></code></pre></div><p>An absent value inherits. Explicit emptiness is meaningful only where the
+relevant contract defines it. Every resolved value should be explainable by
+reporting the scope that supplied it.</p>
+<h2 id="extension-points">Extension points</h2>
+<p>An extension is complete only when its contract, implementation, and tests are
+updated together.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Extension</th>
+					<th>Canonical change</th>
+					<th>Required verification</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>School</td>
+					<td>Add an ID and default-model relationship</td>
+					<td>Resolution and unknown-reference tests</td>
+			</tr>
+			<tr>
+					<td>Model</td>
+					<td>Add a versioned model definition</td>
+					<td>Schema, resolution, and round-trip tests</td>
+			</tr>
+			<tr>
+					<td>Body or calculated point</td>
+					<td>Add a definition and provider capability mapping</td>
+					<td>Selection, availability, and numerical tests</td>
+			</tr>
+			<tr>
+					<td>Aspect</td>
+					<td>Add angle, orb, enabled state, and valid contexts</td>
+					<td>Detection boundary and override tests</td>
+			</tr>
+			<tr>
+					<td>House system</td>
+					<td>Add a canonical ID and computation support</td>
+					<td>Normal and high-latitude cases</td>
+			</tr>
+			<tr>
+					<td>Astronomy provider</td>
+					<td>Implement the provider input/result boundary</td>
+					<td>Contract, provenance, failure, and parity tests</td>
+			</tr>
+			<tr>
+					<td>Calculation type</td>
+					<td>Define request, result, persistence intent, and errors</td>
+					<td>Unit, command, parity, and workflow tests</td>
+			</tr>
+			<tr>
+					<td>Frontend consumer</td>
+					<td>Consume existing command contracts</td>
+					<td>Bridge and user-workflow tests in both shells</td>
+			</tr>
+	</tbody>
+</table>
+<p>Adding a school or model must not require changing a closed frontend switch.
+Frontends should render backend-provided catalogs and capability status where
+the contract supplies them.</p>
+<h2 id="ownership-rules">Ownership rules</h2>
+<ul>
+<li>Subject facts and portable chart intent belong to the workspace contract.</li>
+<li>Astrological semantics belong to the model and shared astrology core.</li>
+<li>Ephemeris access and external processes belong to infrastructure adapters.</li>
+<li>Backend selection belongs behind the Tauri/application boundary.</li>
+<li>Presentation belongs to the frontend and <code>workspace.yaml:presentation</code>.</li>
+<li>Computed results are derived data unless a future contract explicitly makes
+them persistent.</li>
+</ul>
+<h2 id="related-contracts">Related contracts</h2>
+<ul>
+<li><a href="../workspace-yaml/">Workspace YAML contract</a> — serialized schools, models, charts, and overrides.</li>
+<li><a href="../backend-structure/">Backend structure</a> — current implementation ownership.</li>
+<li><a href="../shared-core/">Shared astrology core</a> — cross-language extraction direction.</li>
+<li><a href="../tauri-command-contracts/">Tauri command contracts</a> — frontend-visible API.</li>
+<li><a href="../testing-strategy/">Testing strategy</a> — required verification layers.</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

@@ -2,6 +2,9 @@
 title: 'Physical properties'
 description: 'Reference notes for richer astronomy fields exposed by JPL-backed results.'
 weight: 70
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
 These fields are additive. They should enrich the common result shape, not break it.

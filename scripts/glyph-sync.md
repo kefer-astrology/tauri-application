@@ -3,7 +3,11 @@
 Refine the astrology glyphs visually on the pen.dev canvas, then write the
 refinements back into `static/glyphs/`.
 
-- **Canvas:** `Glyphs.pen` (repo root's parent — the "Space" folder)
+> The design-side overview lives in `graphical-sources/SYNC.md` and covers both
+> this canvas and the app-shell icons (`appshell-sync.py`). This file is the
+> detailed reference for the glyph set specifically.
+
+- **Canvas:** `graphical-sources/Glyphs.pen` (sibling repo of this one)
 - **Assets:** `tauri-application/static/glyphs/{default,modern}/{aspects,planets,zodiac}/*.svg`
 - **Tool:** `python3 tauri-application/scripts/glyph-sync.py <command>`
 
@@ -128,6 +132,13 @@ wrapped in a `translate()/scale()` derived from its flattened tight bounding
 box, centred on the badge and scaled to a max radial reach of 7.8 (the badge
 inner edge is 9.25). Stroke-based glyphs target ~8.9; filled ones sit smaller
 because solid shapes read heavier at 56px.
+
+Coverage against the app's registries — which ids have dedicated art, which
+share a placeholder, which files are orphaned — is reported by:
+
+```bash
+python3 tauri-application/scripts/glyph-coverage.py
+```
 
 Check the fit of anything you add with:
 

@@ -2,6 +2,9 @@
 title: 'Discussion summary'
 description: 'Historical architecture notes from the earlier UI phase.'
 weight: 90
+doc_kind: archive
+status: historical
+authority: non-normative
 ---
 
 Do not treat this page as the live implementation contract.

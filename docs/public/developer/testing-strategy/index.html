@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Testing strategy | Kefer Astrology</title>
+    <meta name="description" content="Canonical test levels, contract traceability, shared fixtures, and Rust/Python/frontend parity." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/developer/testing-strategy/" aria-current="page">English</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Testing strategy</h1>
+      <p class="lede">Canonical test levels, contract traceability, shared fixtures, and Rust/Python/frontend parity.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Policy</span>
+          <span>Current</span>
+          <span>Normative</span>
+        </div>
+      
+    </header>
+    <div class="prose">
+      <p>Every normative behavior should be traceable from a contract statement to an
+automated test or an explicitly recorded testing gap. Acceptance prose is not a
+substitute for that traceability.</p>
+<h2 id="test-levels">Test levels</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Level</th>
+					<th>Verifies</th>
+					<th>Typical owner</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Domain unit</td>
+					<td>Pure astrology, time, validation, and resolution rules</td>
+					<td>Shared core, Rust, or Python</td>
+			</tr>
+			<tr>
+					<td>Contract fixture</td>
+					<td>The same versioned input has the required output</td>
+					<td><code>contracts/</code> plus every implementation</td>
+			</tr>
+			<tr>
+					<td>Provider</td>
+					<td>Astronomy-provider correctness, capabilities, and failures</td>
+					<td>Rust/Python provider adapter</td>
+			</tr>
+			<tr>
+					<td>Command integration</td>
+					<td>Tauri request, routing, serialization, and errors</td>
+					<td>Rust command/application layer</td>
+			</tr>
+			<tr>
+					<td>Frontend bridge</td>
+					<td>Payload construction and result normalization</td>
+					<td>React and Svelte Tauri bridges</td>
+			</tr>
+			<tr>
+					<td>Component</td>
+					<td>Interaction and rendering states</td>
+					<td>Owning frontend</td>
+			</tr>
+			<tr>
+					<td>Workflow</td>
+					<td>A user-visible flow across UI and backend</td>
+					<td>Desktop/browser integration suite</td>
+			</tr>
+			<tr>
+					<td>Cross-language parity</td>
+					<td>Rust and Python preserve shared semantics</td>
+					<td>Shared fixture runner</td>
+			</tr>
+			<tr>
+					<td>Smoke/build</td>
+					<td>Supported app configuration starts and builds</td>
+					<td>Root scripts and CI</td>
+			</tr>
+	</tbody>
+</table>
+<p>Type checking and compilation are necessary checks, but they are not behavioral
+frontend tests.</p>
+<h2 id="required-test-definition">Required test definition</h2>
+<p>Use a stable ID for contract-level behavior. A definition should record:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">id</span>: <span style="color:#ae81ff">MODEL-002</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">contract</span>: <span style="color:#ae81ff">settings resolution</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">level</span>: <span style="color:#ae81ff">contract-fixture</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">implementations</span>: [<span style="color:#ae81ff">rust, python]</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">fixture</span>: <span style="color:#ae81ff">contracts/settings-resolution.json</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">given</span>: <span style="color:#ae81ff">workspace and chart provide the same setting</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">when</span>: <span style="color:#ae81ff">effective settings are resolved</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">then</span>: <span style="color:#ae81ff">the chart value wins and its source is &#34;chart&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">tolerance</span>: <span style="color:#ae81ff">exact</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">automation</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rust</span>: <span style="color:#ae81ff">shared_resolution_fixture_matches_cross_language_contract</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">python</span>: <span style="color:#ae81ff">PythonContractParityTests</span>
+</span></span></code></pre></div><p>Tests may live beside the code they exercise. This document owns the inventory
+and traceability, not the physical test files.</p>
+<h2 id="initial-traceability-matrix">Initial traceability matrix</h2>
+<table>
+	<thead>
+			<tr>
+					<th>ID</th>
+					<th>Required behavior</th>
+					<th>Level</th>
+					<th>Current automation</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>TIME-001</td>
+					<td>Offset-aware input preserves the represented instant</td>
+					<td>Contract parity</td>
+					<td><code>contracts/event-time.json</code>; Rust <code>event_time</code> test; Python contract-parity tests</td>
+			</tr>
+			<tr>
+					<td>MODEL-001</td>
+					<td>A school selects its default model</td>
+					<td>Domain/contract</td>
+					<td>Rust workspace settings tests; workspace fixture</td>
+			</tr>
+			<tr>
+					<td>MODEL-002</td>
+					<td>Settings resolve fallback → model → workspace → preset → chart → operation</td>
+					<td>Contract parity</td>
+					<td><code>contracts/settings-resolution.json</code>; Rust and Python fixture tests</td>
+			</tr>
+			<tr>
+					<td>MODEL-003</td>
+					<td>Model definitions and overrides affect aspect calculation</td>
+					<td>Domain</td>
+					<td>Rust astrology/settings tests; Python parity coverage must be kept aligned</td>
+			</tr>
+			<tr>
+					<td>WORKSPACE-001</td>
+					<td>A complete workspace round-trips without losing portable fields</td>
+					<td>Integration/parity</td>
+					<td>Rust workspace command tests; Python workspace interoperability test</td>
+			</tr>
+			<tr>
+					<td>WORKSPACE-002</td>
+					<td>Referenced paths cannot escape the workspace root</td>
+					<td>Integration/security</td>
+					<td>Rust loader coverage; record a gap if no direct case exists</td>
+			</tr>
+			<tr>
+					<td>COMPUTE-001</td>
+					<td>A radix result exposes the required backend-neutral fields</td>
+					<td>Command contract</td>
+					<td>Rust command tests; Python contract-parity tests</td>
+			</tr>
+			<tr>
+					<td>TRANSIT-001</td>
+					<td>Transit ranges reject invalid order and non-positive step</td>
+					<td>Command contract</td>
+					<td>Rust command tests; Python parity coverage required for supported routing</td>
+			</tr>
+			<tr>
+					<td>ROUTE-001</td>
+					<td>Auto routing uses Rust when Python is unavailable</td>
+					<td>Integration</td>
+					<td>Rust route-selection tests</td>
+			</tr>
+			<tr>
+					<td>ROUTE-002</td>
+					<td>Forced Python fails clearly when unavailable</td>
+					<td>Integration</td>
+					<td>Rust route-selection tests</td>
+			</tr>
+			<tr>
+					<td>PROVIDER-001</td>
+					<td>Provider numerical output matches a named reference within tolerance</td>
+					<td>Provider</td>
+					<td>Rust/Python JPL reference tests, dependent on fixture availability</td>
+			</tr>
+			<tr>
+					<td>FRONTEND-001</td>
+					<td>Both bridges serialize the same chart calculation intent</td>
+					<td>Frontend bridge/parity</td>
+					<td>Partial inline coverage; dedicated runner is a current gap</td>
+			</tr>
+			<tr>
+					<td>FRONTEND-002</td>
+					<td>Both shells open the same workspace and apply the same effective defaults</td>
+					<td>Workflow/parity</td>
+					<td>Manual/structural coverage; automated workflow coverage is a current gap</td>
+			</tr>
+			<tr>
+					<td>STATIC-001</td>
+					<td>Static documentation mode renders the normal shell without native services</td>
+					<td>Smoke/workflow</td>
+					<td>Build coverage; automated behavior coverage is a current gap</td>
+			</tr>
+	</tbody>
+</table>
+<p>When a gap is filled, replace the gap text with the test file and test name. Do
+not remove the row.</p>
+<h2 id="shared-fixtures">Shared fixtures</h2>
+<p>Use <code>contracts/</code> for inputs that must be understood outside one implementation:</p>
+<ul>
+<li>valid and invalid schemas</li>
+<li>settings precedence</li>
+<li>model and school selection</li>
+<li>datetime normalization</li>
+<li>workspace interoperability</li>
+<li>canonical aspect cases</li>
+<li>expected diagnostics</li>
+<li>reference astronomical cases and tolerances</li>
+</ul>
+<p>A fixture should declare its schema version. Changes that intentionally alter
+meaning require either a new version or explicit migration expectations.</p>
+<h2 id="exact-and-numerical-assertions">Exact and numerical assertions</h2>
+<p>Assert exact equality for:</p>
+<ul>
+<li>identifiers and ordering where order is contractual</li>
+<li>selected model and school</li>
+<li>settings provenance</li>
+<li>diagnostics and error codes</li>
+<li>request/result structure</li>
+<li>persistence round trips</li>
+</ul>
+<p>Use explicit tolerances for:</p>
+<ul>
+<li>longitude, latitude, declination, and right ascension</li>
+<li>house cusps and axes</li>
+<li>time refinements</li>
+<li>speed and derived physical quantities</li>
+</ul>
+<p>Tolerance belongs to the fixture or provider comparison policy, never as an
+unexplained number inside an individual test.</p>
+<h2 id="frontend-parity">Frontend parity</h2>
+<p>React and Svelte do not need identical component tests. They do need shared
+contract cases for their Tauri payload builders and the same workflow outcomes.
+At minimum, test:</p>
+<ul>
+<li>workspace and chart settings produce equivalent command payloads</li>
+<li>selected bodies, aspects, orbs, time, and location reach the backend</li>
+<li>backend diagnostics and unavailable-provider states are visible</li>
+<li>empty, loading, error, and static-mode states do not fabricate results</li>
+</ul>
+<p>The current frontend packages provide type checks but no dedicated behavioral
+test command. Adding a runner and a root <code>test:frontends</code> script is therefore a
+documented implementation gap, not an already satisfied check.</p>
+<h2 id="commands-available-today">Commands available today</h2>
+<p>From the repository root:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo test --manifest-path src-tauri/Cargo.toml --lib
+</span></span><span style="display:flex;"><span>npm run check
+</span></span><span style="display:flex;"><span>npm run check:svelte
+</span></span><span style="display:flex;"><span>npm run docs:build
+</span></span></code></pre></div><p>For the Python sidecar currently present in this checkout:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd backend-python
+</span></span><span style="display:flex;"><span>python -m unittest discover .
+</span></span></code></pre></div><p>Provider tests that require BSP files or optional dependencies may skip. CI and
+local output must make those skips visible so a skipped provider suite is not
+mistaken for passing numerical validation.</p>
+<h2 id="contract-maintenance-rule">Contract maintenance rule</h2>
+<p>When behavior changes:</p>
+<ol>
+<li>Update the normative contract.</li>
+<li>Add or update its stable test-matrix row.</li>
+<li>Update shared fixtures when multiple implementations are affected.</li>
+<li>Implement the change.</li>
+<li>Run every affected layer, including Rust/Python or React/Svelte parity where applicable.</li>
+</ol>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

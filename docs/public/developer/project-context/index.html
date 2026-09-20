@@ -3,11 +3,11 @@
   <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Project context | Kefer Astrology</title>
-    <meta name="description" content="The Kefer Astrology manual, developer reference, and guided product tour." />
+    <title>Repository and contribution guide | Kefer Astrology</title>
+    <meta name="description" content="Repository map, documentation rules, and the contract-first contribution workflow." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <link rel="stylesheet" href="/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css" integrity="sha256-OAfbqZKJaBkqBpUre/S5HixSCIiVbh6YvTdTpnVh48c=" />
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
   </head>
   <body>
     <div class="shell">
@@ -31,115 +31,146 @@
   <article class="content">
     <header class="page-header">
       <p class="eyebrow">developer</p>
-      <h1>Project context</h1>
+      <h1>Repository and contribution guide</h1>
+      <p class="lede">Repository map, documentation rules, and the contract-first contribution workflow.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Guide</span>
+          <span>Current</span>
+          <span>Normative</span>
+        </div>
       
     </header>
     <div class="prose">
-      <h2 id="repo-shape">Repo shape</h2>
+      <p>This is the starting point for implementation work. The user-facing
+<strong><a href="/manual/">Manual</a></strong> explains how to use the application; the Developer
+Manual defines how it is designed, implemented, extended, and verified.</p>
+<h2 id="repository-map">Repository map</h2>
 <ul>
-<li><code>apps/web-react/</code>: React + Vite frontend workspace.</li>
-<li><code>apps/web-svelte/</code>: Svelte + Vite frontend workspace, intended as the alternate richer UI target.</li>
-<li><code>src-tauri/</code>: Tauri desktop shell and Rust command layer.</li>
-<li><code>backend-python/</code>: optional Python computation and service code when that sidecar source tree is present.</li>
-<li><code>static/</code>: Shared public assets used by both frontends.
+<li><code>apps/web-react/</code> — React + Vite frontend and the default desktop shell.</li>
+<li><code>apps/web-svelte/</code> — alternate Svelte + Vite frontend.</li>
+<li><code>src-tauri/</code> — Tauri shell, Rust commands, application services, and the
+no-sidecar computation path.</li>
+<li><code>backend-python/</code> — optional local Python computation and service code. It may
+be extracted or omitted while the Rust-supported flows remain functional.</li>
+<li><code>contracts/</code> — language-neutral fixtures shared by Rust and Python.</li>
+<li><code>static/</code> — shared frontend assets.</li>
+<li><code>docs/</code> — Hugo source for the Manual, Developer Manual, and Guided Tour.</li>
+</ul>
+<h2 id="source-and-generated-files">Source and generated files</h2>
+<p>Edit source files, not generated copies:</p>
 <ul>
-<li><code>static/app-shell/</code>: shared logos and app-shell icon families.</li>
-<li><code>static/glyphs/</code>: shared astrology glyph sets.</li>
+<li>shared logos and shell icons: <code>static/app-shell/</code></li>
+<li>shared astrology glyphs: <code>static/glyphs/</code></li>
+<li>translated copy: <code>translations.csv</code></li>
+<li>documentation source: <code>docs/content/</code></li>
+<li>generated frontend documentation builds: <code>docs/static/apps/</code></li>
+<li>generated documentation data: <code>docs/data/generated/</code></li>
+<li>generated Hugo output: <code>docs/public/</code> or <code>dist-docs/</code></li>
 </ul>
-</li>
-<li><code>docs/</code>: Hugo source for the Manual, Developer Manual, Guided Tour, and generated frontend copies.</li>
-</ul>
-<h2 id="working-assumptions">Working assumptions</h2>
+<p>Run <code>npm run i18n:sync</code> after changing translated copy. Run
+<code>npm run docs:prepare</code> when frontend output embedded in the documentation
+changes.</p>
+<h2 id="starting-a-task">Starting a task</h2>
+<ol>
+<li>Inspect current uncommitted changes and preserve unrelated work.</li>
+<li>Read this guide and the <a href="/developer/">Developer Manual index</a>.</li>
+<li>Read the task-specific current contract.</li>
+<li>Read architecture and implementation references needed to understand the
+affected boundary.</li>
+<li>Read the <a href="../development-driver/">Development roadmap</a> only when the task
+changes planned direction or closes an active gap.</li>
+<li>Find the corresponding IDs in the <a href="../testing-strategy/">Testing strategy</a>.</li>
+<li>Change the contract, implementation, tests, and documentation together when
+behavior changes.</li>
+</ol>
+<p>When a current contract and a roadmap differ, preserve the current contract
+unless the task explicitly advances the implementation and updates both.</p>
+<h2 id="document-roles">Document roles</h2>
+<p>Developer pages declare three front-matter fields:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Field</th>
+					<th>Meaning</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>doc_kind</code></td>
+					<td>Contract, architecture, implementation reference, guide/policy, roadmap, or archive</td>
+			</tr>
+			<tr>
+					<td><code>status</code></td>
+					<td>Current, evolving, active, proposed, or historical</td>
+			</tr>
+			<tr>
+					<td><code>authority</code></td>
+					<td>Normative or informative/non-normative</td>
+			</tr>
+	</tbody>
+</table>
+<p>A current normative contract wins over implementation commentary, roadmap
+language, examples, and historical notes.</p>
+<h2 id="usable-contract-checklist">Usable contract checklist</h2>
+<p>A task-specific contract should define:</p>
 <ul>
-<li>The repo is a monorepo with npm workspaces at the root.</li>
-<li>The default frontend is currently <code>apps/web-react</code>, but <code>apps/web-svelte</code> can also be built into Tauri via the dedicated root scripts.</li>
-<li>Both frontends are first-class build targets:
-<ul>
-<li>Tauri/Desktop uses the normal app builds in each workspace <code>dist/</code>.</li>
-<li>The Guided Tour uses a browser-safe React build published under <code>/apps/web-react/</code>.</li>
-<li>The alternate Svelte build is published under <code>/apps/web-svelte/</code> for developer inspection.</li>
+<li>scope and non-goals</li>
+<li>inputs and preconditions</li>
+<li>required behavior and invariants</li>
+<li>failure and empty-state behavior</li>
+<li>outputs and observable side effects</li>
+<li>compatibility or migration behavior</li>
+<li>acceptance criteria</li>
+<li>stable test IDs, or an explicitly recorded automation gap</li>
 </ul>
-</li>
-<li>Tauri invokes Rust commands, which coordinate with workspace storage and whichever computation backend path is selected.</li>
-<li><code>docs/static/apps/</code> and <code>docs/data/generated/</code> are generated by <code>npm run docs:prepare</code> and should not be edited by hand.</li>
-<li>Shared asset source of truth:
-<ul>
-<li>app-shell icons live under <code>static/app-shell/icons/default/</code> and <code>static/app-shell/icons/modern/</code></li>
-<li>logos live under <code>static/app-shell/logo-*.svg</code></li>
-<li>glyphs live under <code>static/glyphs/default/{planets,zodiac}/</code> and <code>static/glyphs/modern/{planets,zodiac}/</code></li>
-<li>app-shell files are shared source assets, but render normalization happens in frontend helpers because the families mix different intrinsic boxes (<code>209x209</code>, <code>24x24</code>, and wide logo ratios), and several icons need per-icon scaling to look even within the same selected set</li>
-</ul>
-</li>
-</ul>
-<h2 id="documentation-structure">Documentation structure</h2>
-<ul>
-<li><code>docs/content/manual/</code> is task-oriented product help for application users.</li>
-<li><code>docs/content/developer/</code> is the shared home for technical contracts, architecture, workflows, plans, and historical context.</li>
-<li><code>docs/content/guides/</code> offers free-form previews of both demonstration builds plus the React build&rsquo;s scripted interactive-overlay tours.</li>
-<li><code>docs/content/developer/development-driver.md</code> is the active high-level task driver, including backend/runtime direction.</li>
-<li>When starting implementation, look for specs in <code>docs/content/developer/</code> first.</li>
-<li>Use <code>docs/content/developer/</code> to understand the current system and confirm how the pieces fit together.</li>
-<li>Use the development driver and task-specific <code>/developer/</code> specs when the task touches staged movement from Swiss-centered implementation toward backend-neutral and JPL-centered architecture.</li>
-</ul>
+<p>If those are absent, inspect the current code and related contracts, choose the
+narrowest compatible behavior, and record assumptions before expanding scope.</p>
 <h2 id="implementation-principles">Implementation principles</h2>
 <ul>
-<li>Prefer repo-root <code>static/</code> shared assets over app-local assets whenever the resource can be reused across frontends.</li>
-<li>Prefer backend-neutral data contracts over backend-specific payload shapes whenever computation data crosses app boundaries.</li>
-<li>Do not introduce new app-local icons, logos, glyphs, or similar visual source assets when an equivalent shared asset belongs in <code>static/</code>.</li>
-<li>If a visual can be expressed cleanly in CSS or tokens, prefer that over adding a one-off raster asset to a frontend workspace.</li>
-<li>Keep project consistency above local convenience: reuse existing helpers, wrappers, layout shells, and state patterns before inventing a parallel path.</li>
-<li>Avoid repeating the same logic, markup structure, or styling rules in multiple places. Extract helpers, hooks, shared config, or small components when repetition starts to emerge.</li>
-<li>When two features are materially similar, prefer a shared container, shared page shell, or composable building block instead of cloning and diverging.</li>
-<li>New features should be added concisely: integrate with the existing structure, minimize bespoke patterns, and favor extension over duplication.</li>
-<li>Prefer naming and placement that reinforce the current boundaries:
-<ul>
-<li>app-specific composition and providers in <code>src/app/</code></li>
-<li>feature-facing UI in <code>src/app/components/</code></li>
-<li>shared presentational primitives in <code>src/ui/</code></li>
-<li>non-visual logic and metadata in <code>src/lib/</code></li>
+<li>Keep frontend-facing and cross-language data contracts backend-neutral.</li>
+<li>Keep schools and models independent of a particular astronomy provider.</li>
+<li>Keep domain rules free of Tauri, HTTP, filesystem, YAML, and process concerns.</li>
+<li>Reuse shared assets, component primitives, typed bridges, and application
+services instead of creating parallel implementations.</li>
+<li>Values that affect calculation belong in resolved workspace/chart/operation
+state, not frontend-only widget state.</li>
+<li>React and Svelte must implement the same frontend-visible contract, or the
+current spec must name the intentional gap and its acceptance criteria.</li>
+<li>Preserve no-sidecar Rust operation for supported flows.</li>
 </ul>
-</li>
-</ul>
-<h2 id="ui-implementation-rules">UI implementation rules</h2>
+<p>Frontend styling, assets, themes, and translation details have one owner:
+<a href="../ui-conventions/">UI conventions</a>. Framework-specific wiring belongs in
+<a href="../frontend-react/">React frontend</a> and <a href="../frontend-svelte/">Svelte frontend</a>.</p>
+<h2 id="verification-and-definition-of-done">Verification and definition of done</h2>
+<p>At minimum, a completed change has:</p>
 <ul>
-<li>Prefer the shared shadcn-style component layer first when building or restyling UI.</li>
-<li>In React, that means starting from the existing shadcn/Radix-style primitives in <code>apps/web-react/src/app/components/ui/</code>.</li>
-<li>In Svelte, that means starting from the existing shared UI primitives built around Bits UI in <code>apps/web-svelte/src/lib/components/ui/</code>.</li>
-<li>Translation workflow is CSV-first:
-<ul>
-<li>add or edit keys in repo-root <code>translations.csv</code></li>
-<li>regenerate locale bundles with <code>npm run i18n:sync</code></li>
-<li>do not treat generated locale JSON in <code>apps/web-react/src/locales/</code> or <code>apps/web-svelte/src/lib/i18n/</code> as the primary place to author copy</li>
+<li>an updated normative contract when observable behavior changed</li>
+<li>a test-matrix entry or an explicit recorded gap</li>
+<li>focused tests for the affected layer</li>
+<li>Rust/Python or React/Svelte parity checks when the shared boundary changed</li>
+<li>successful type/build checks for affected packages</li>
+<li>regenerated documentation assets only when their source changed</li>
 </ul>
-</li>
-<li>Do not introduce ad-hoc bespoke controls when an existing shadcn-style primitive can be extended with tokens, variants, spacing, or composition.</li>
-<li>Styling should flow through shared theme tokens and shared component surfaces before adding one-off CSS.</li>
-<li>In React specifically, prefer existing shared building blocks such as:
+<p>Use the exact commands and coverage inventory in the
+<a href="../testing-strategy/">Testing strategy</a>.</p>
+<h2 id="documentation-publishing">Documentation publishing</h2>
 <ul>
-<li><code>useAppFormFieldTheme()</code> for themed form surfaces</li>
-<li><code>AppMainContentRoot</code> / <code>AppMainContentContainer</code> for top-level page shells</li>
-<li><code>src/lib/app-shell.ts</code> + <code>src/ui/app-shell-icon.tsx</code> for app-shell asset selection and rendering</li>
+<li>Hugo source lives under <code>docs/</code>.</li>
+<li>Frontend artifacts embedded in docs are generated under
+<code>docs/static/apps/&lt;app&gt;/</code>.</li>
+<li>GitHub Pages publishes Hugo output, not raw source content.</li>
+<li>Lowercase filenames and URLs are preferred.</li>
 </ul>
-</li>
-<li>In Svelte specifically, prefer existing shared building blocks such as:
+<h2 id="reliable-entry-points">Reliable entry points</h2>
 <ul>
-<li><code>src/lib/stores/app-shell-icons.svelte.ts</code> for app-shell asset selection and normalization</li>
-<li><code>src/lib/stores/glyphs.svelte.ts</code> for glyph set resolution</li>
-<li><code>src/lib/components/ui/</code> primitives before custom mode-specific markup</li>
-<li>extracted <code>src/lib/components/</code> feature pieces instead of growing <code>App.svelte</code> with more inline feature branches</li>
-</ul>
-</li>
-<li>Treat <code>apps/web-svelte/src/lib/icons/</code> as an unapproved source for shell/navigation icons.</li>
-</ul>
-<h2 id="best-entrypoints">Best entrypoints</h2>
-<ul>
-<li><a href="../specs-workflow/">contract workflow</a> for the shared contract-first rule.</li>
-<li><a href="../rust-workspace-contract/">rust-workspace-contract</a> for current Rust workspace, storage, and no-sidecar rules.</li>
-<li><a href="/">Developer Manual</a> for the complete technical index.</li>
-<li><a href="../frontend-react/">frontend-react</a> for UI and workspace wiring.</li>
-<li><a href="../frontend-svelte/">frontend-svelte</a> for the alternate Svelte workspace.</li>
-<li><a href="../architecture/">architecture</a> for cross-layer flow.</li>
-<li><a href="../continuation-guide/">continuation-guide</a> for safe continuation rules.</li>
+<li><a href="../domain-model/">Domain model and extensibility</a> — schools, models, providers, and extension points.</li>
+<li><a href="../architecture/">System architecture</a> — cross-layer runtime flow.</li>
+<li><a href="../backend-structure/">Backend structure</a> — Rust/Python ownership and migration boundaries.</li>
+<li><a href="../workspace-yaml/">Workspace YAML contract</a> — portable persistence.</li>
+<li><a href="../tauri-command-contracts/">Tauri command contracts</a> — frontend-visible API.</li>
+<li><a href="../frontend-workflow-baseline/">Frontend workflow baseline</a> — shared user-facing workflows.</li>
+<li><a href="../testing-strategy/">Testing strategy</a> — contract traceability and commands.</li>
 </ul>
 
     </div>

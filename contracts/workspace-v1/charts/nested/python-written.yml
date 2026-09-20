@@ -1,0 +1,40 @@
+id: interoperability-chart
+subject:
+  id: interoperability-subject
+  name: Interoperability Subject
+  event_time: '2000-01-01T12:00:00Z'
+  location:
+    name: Prague
+    latitude: 50.0875
+    longitude: 14.4214
+    timezone: Europe/Prague
+    utc_offset: UTC+01:00
+    location_mode: manual
+    timezone_mode: auto
+config:
+  mode: NATAL
+  house_system: Whole Sign
+  zodiac_type: Tropical
+  model: traditional-test
+  model_overrides:
+    points: []
+    aspects:
+      - id: square
+        enabled: true
+        angle: 91.0
+        default_orb: 2.0
+        only_for: [traditional]
+        valid_contexts: [chart]
+        interpretation_weight: 0.6
+    override_orbs: {}
+  engine: jpl
+  observable_objects: [sun, moon]
+  selected_aspects: [square]
+  aspect_orbs: { square: 2.0 }
+  included_points: []
+  display_style: ''
+  color_theme: ''
+  time_system: gregorian
+tags: [compatibility]
+tag_colors: { compatibility: '#336699' }
+roden_rating: AA

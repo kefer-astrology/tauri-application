@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Workspace YAML contract | Kefer Astrology</title>
+    <meta name="description" content="Authoritative persisted project structure, settings inheritance, overrides, schools, charts, subjects, and transits." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/developer/workspace-yaml/" aria-current="page">English</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Workspace YAML contract</h1>
+      <p class="lede">Authoritative persisted project structure, settings inheritance, overrides, schools, charts, subjects, and transits.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Contract</span>
+          <span>Current</span>
+          <span>Normative</span>
+        </div>
+      
+    </header>
+    <div class="prose">
+      <p>This is the authoritative description of the portable workspace format. The
+Rust types in <code>src-tauri/src/workspace/models.rs</code> are the executable contract.
+Paths in <code>workspace.yaml</code> are relative to the workspace root, may use nested
+folders, and may not escape that root.</p>
+<h2 id="folder-composition">Folder composition</h2>
+<p>Folders are organizational only; scope comes from the referenced YAML content.
+The manifest can therefore point into any depth of subfolder:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>my-project/
+</span></span><span style="display:flex;"><span>├── workspace.yaml
+</span></span><span style="display:flex;"><span>├── subjects/
+</span></span><span style="display:flex;"><span>│   ├── clients/alice.yml
+</span></span><span style="display:flex;"><span>│   └── events/company-founded.yml
+</span></span><span style="display:flex;"><span>├── charts/
+</span></span><span style="display:flex;"><span>│   ├── clients/alice/natal.yml
+</span></span><span style="display:flex;"><span>│   └── research/elections/2028.yml
+</span></span><span style="display:flex;"><span>├── presets/charts/research.yml
+</span></span><span style="display:flex;"><span>├── transits/
+</span></span><span style="display:flex;"><span>│   └── clients/alice/natal.yml
+</span></span><span style="display:flex;"><span>├── layouts/comparisons/alice-current-sky.yml
+</span></span><span style="display:flex;"><span>└── notes/research-method.md
+</span></span></code></pre></div><p><code>workspace.yaml</code> is an index and the top-level settings owner:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">schema_version</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">owner</span>: <span style="color:#ae81ff">Example astrologer</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">active_school</span>: <span style="color:#ae81ff">traditional</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">active_model</span>: <span style="color:#ae81ff">traditional-primary      </span> <span style="color:#75715e"># optional; overrides school.default_model</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">schools</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">hellenistic</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">id</span>: <span style="color:#ae81ff">hellenistic</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">default_model</span>: <span style="color:#ae81ff">hellenistic-primary</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">traditional</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">id</span>: <span style="color:#ae81ff">traditional</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">extends</span>: <span style="color:#ae81ff">hellenistic                </span> <span style="color:#75715e"># taxonomy/metadata, not automatic model merging</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">default_model</span>: <span style="color:#ae81ff">traditional-primary</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">modern</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">id</span>: <span style="color:#ae81ff">modern</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">default_model</span>: <span style="color:#ae81ff">modern-primary</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">models</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">traditional-primary</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traditional-primary</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">school</span>: <span style="color:#ae81ff">traditional</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">version</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">engine</span>: <span style="color:#ae81ff">swisseph</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">zodiac_type</span>: <span style="color:#ae81ff">Tropical</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">settings</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_house_system</span>: <span style="color:#ae81ff">Whole Sign</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_aspects</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_transit_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn]</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_transit_aspects</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">standard_orb</span>: <span style="color:#ae81ff">6.0</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">degrees_in_circle</span>: <span style="color:#ae81ff">360.0</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">obliquity_j2000</span>: <span style="color:#ae81ff">23.4392911</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">coordinate_tolerance</span>: <span style="color:#ae81ff">0.000001</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">body_definitions</span>: []                 <span style="color:#75715e"># full entries shown below</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">aspect_definitions</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">signs</span>: []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">model_overrides</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">points</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">id</span>: <span style="color:#ae81ff">pluto</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">only_for</span>: [<span style="color:#ae81ff">traditional]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">aspects</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">id</span>: <span style="color:#ae81ff">square</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_orb</span>: <span style="color:#ae81ff">5.0</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">valid_contexts</span>: [<span style="color:#ae81ff">chart, transit]</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">interpretation_weight</span>: <span style="color:#ae81ff">1.0</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">override_orbs</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">conjunction</span>: <span style="color:#ae81ff">7.0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">default</span>:                                <span style="color:#75715e"># calculation defaults only</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ephemeris_engine</span>: <span style="color:#ae81ff">swisseph</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_house_system</span>: <span style="color:#ae81ff">Whole Sign</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspects</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspect_orbs</span>: { <span style="color:#f92672">conjunction</span>: <span style="color:#f92672">7.0, square</span>: <span style="color:#ae81ff">5.0</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">time_system</span>: <span style="color:#ae81ff">gregorian</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_location</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Prague</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">latitude</span>: <span style="color:#ae81ff">50.0875</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">longitude</span>: <span style="color:#ae81ff">14.4214</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">timezone</span>: <span style="color:#ae81ff">Europe/Prague</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">presentation</span>:                           <span style="color:#75715e"># UI input only; never computation input</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">theme</span>: <span style="color:#ae81ff">midnight</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">language</span>: <span style="color:#ae81ff">en</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">glyph_set</span>: <span style="color:#ae81ff">classic</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">element_colors</span>: { <span style="color:#f92672">fire</span>: <span style="color:#e6db74">&#39;#c24d3d&#39;</span><span style="color:#f92672">, earth</span>: <span style="color:#e6db74">&#39;#6d7d3d&#39;</span><span style="color:#f92672">, air</span>: <span style="color:#e6db74">&#39;#ca9b42&#39;</span><span style="color:#f92672">, water</span>: <span style="color:#e6db74">&#39;#3979a8&#39;</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">aspect_colors</span>: { <span style="color:#f92672">conjunction</span>: <span style="color:#e6db74">&#39;#555555&#39;</span><span style="color:#f92672">, square</span>: <span style="color:#e6db74">&#39;#d04444&#39;</span> }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">subjects</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">subjects/clients/alice.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">charts</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">charts/clients/alice/natal.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">chart_presets</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">presets/charts/research.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">transit_analyses</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">transits/clients/alice/natal.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">layouts</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">layouts/comparisons/alice-current-sky.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">notes/research-method.md</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">aspects</span>: []                             <span style="color:#75715e"># legacy external catalog references</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">bodies</span>: []                              <span style="color:#75715e"># legacy external catalog references</span>
+</span></span></code></pre></div><p>For compatibility, older visual fields under <code>default</code> and visual metadata in
+model definitions are still readable. New files should use <code>presentation</code>.</p>
+<h2 id="subject-versus-chart">Subject versus chart</h2>
+<p>A <strong>subject</strong> is source evidence: who or what happened, when, and where. A
+<strong>chart</strong> is one astrological interpretation of that evidence. Multiple charts
+can therefore represent one subject with different models, house systems, or
+research assumptions. Current chart files embed their subject for compatibility;
+the separate <code>subjects</code> collection is the reusable normalized form.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># subjects/clients/alice.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">id</span>: <span style="color:#ae81ff">alice</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Alice Example</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">event_time</span>: <span style="color:#e6db74">&#39;1990-04-12T08:15:00Z&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">location</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Prague</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">latitude</span>: <span style="color:#ae81ff">50.0875</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">longitude</span>: <span style="color:#ae81ff">14.4214</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">timezone</span>: <span style="color:#ae81ff">Europe/Prague</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># charts/clients/alice/natal.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">id</span>: <span style="color:#ae81ff">alice-natal-traditional</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">subject</span>:                              <span style="color:#75715e"># embedded compatibility representation</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">id</span>: <span style="color:#ae81ff">alice</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Alice Example</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">event_time</span>: <span style="color:#e6db74">&#39;1990-04-12T08:15:00Z&#39;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">location</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Prague</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">latitude</span>: <span style="color:#ae81ff">50.0875</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">longitude</span>: <span style="color:#ae81ff">14.4214</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">timezone</span>: <span style="color:#ae81ff">Europe/Prague</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">config</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">mode</span>: <span style="color:#ae81ff">NATAL</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">model</span>: <span style="color:#ae81ff">traditional-primary</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">house_system</span>: <span style="color:#ae81ff">Whole Sign</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">zodiac_type</span>: <span style="color:#ae81ff">Tropical</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">observable_objects</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selected_aspects</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">aspect_orbs</span>: { <span style="color:#f92672">conjunction</span>: <span style="color:#ae81ff">6.0</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">model_overrides</span>:                   <span style="color:#75715e"># exceptional definition changes for this chart only</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">points</span>:
+</span></span><span style="display:flex;"><span>      - { <span style="color:#f92672">id</span>: <span style="color:#f92672">pluto, enabled</span>: <span style="color:#66d9ef">true</span> }
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">aspects</span>:
+</span></span><span style="display:flex;"><span>      - { <span style="color:#f92672">id</span>: <span style="color:#f92672">square, angle</span>: <span style="color:#f92672">90.0, default_orb</span>: <span style="color:#f92672">4.0, valid_contexts</span>: [<span style="color:#ae81ff">chart] }</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">override_orbs</span>: {}
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">included_points</span>: []
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">display_style</span>: <span style="color:#e6db74">&#39;&#39;</span>                  <span style="color:#75715e"># legacy visual keys; prefer presentation</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">color_theme</span>: <span style="color:#e6db74">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">tags</span>: [<span style="color:#ae81ff">client]</span>
+</span></span></code></pre></div><h2 id="complete-calculation-definition">Complete calculation definition</h2>
+<p>A body definition supports <code>id</code>, <code>enabled</code>, <code>formula</code>, <code>element</code>, <code>avg_speed</code>,
+<code>max_orb</code>, <code>object_type</code>, <code>computation_map</code>, <code>requires_location</code>, and
+<code>requires_house_system</code>. <code>glyph</code> and <code>i18n</code> remain legacy presentation metadata.</p>
+<p>An aspect definition supports <code>id</code>, <code>enabled</code>, <code>angle</code>, <code>default_orb</code>,
+<code>valid_contexts</code> (<code>chart</code>, <code>transit</code>, <code>direction</code>), and
+<code>interpretation_weight</code>. <code>glyph</code>, <code>color</code>, <code>line_style</code>, <code>line_width</code>,
+<code>show_label</code>, <code>importance</code>, and <code>i18n</code> are legacy UI metadata.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">body_definitions</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">id</span>: <span style="color:#ae81ff">asc</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">glyph</span>: <span style="color:#e6db74">&#39;&#39;</span>                         <span style="color:#75715e"># legacy; the UI chooses the glyph</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">formula</span>: <span style="color:#ae81ff">local horizon/ecliptic intersection</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">element</span>: <span style="color:#66d9ef">null</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">avg_speed</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">max_orb</span>: <span style="color:#ae81ff">0.0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">i18n</span>: {}
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">object_type</span>: <span style="color:#ae81ff">angle</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">computation_map</span>: { <span style="color:#f92672">swisseph</span>: <span style="color:#f92672">asc, jpl</span>: <span style="color:#f92672">asc, jyotish</span>: <span style="color:#ae81ff">asc }</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requires_location</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requires_house_system</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">aspect_definitions</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">id</span>: <span style="color:#ae81ff">square</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">glyph</span>: <span style="color:#e6db74">&#39;&#39;</span>                         <span style="color:#75715e"># legacy</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">angle</span>: <span style="color:#ae81ff">90.0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">default_orb</span>: <span style="color:#ae81ff">6.0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">i18n</span>: {}
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">color</span>: <span style="color:#66d9ef">null</span>                       <span style="color:#75715e"># legacy</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">importance</span>: <span style="color:#66d9ef">null</span>                  <span style="color:#75715e"># legacy UI ranking</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">line_style</span>: <span style="color:#66d9ef">null</span>                  <span style="color:#75715e"># legacy</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">line_width</span>: <span style="color:#66d9ef">null</span>                  <span style="color:#75715e"># legacy</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">show_label</span>: <span style="color:#66d9ef">null</span>                  <span style="color:#75715e"># legacy</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">valid_contexts</span>: [<span style="color:#ae81ff">chart, transit]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">interpretation_weight</span>: <span style="color:#ae81ff">1.0</span>
+</span></span></code></pre></div><p>Sparse <code>model_overrides</code> can change a matching point/aspect&rsquo;s <code>enabled</code>,
+<code>angle</code>, <code>default_orb</code>, <code>valid_contexts</code>, or <code>interpretation_weight</code>.
+<code>only_for</code> limits an entry to matching model names or school IDs. The legacy
+<code>computed</code> flag from <code>function-wrapper</code> is retained losslessly as metadata but
+does not enable or disable an entry; use the explicit <code>enabled</code> field for that.</p>
+<h2 id="resolution-order">Resolution order</h2>
+<p>Calculation settings resolve in this order; the last explicit value wins:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>application fallback &lt; model &lt; workspace &lt; chart preset &lt; chart &lt; operation
+</span></span></code></pre></div><p>Model-definition patches resolve separately in the same direction:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>workspace model_overrides &lt; preset model_overrides &lt; chart model_overrides
+</span></span><span style="display:flex;"><span>  &lt; operation model_overrides
+</span></span></code></pre></div><p>An absent field inherits. An explicitly empty body/aspect collection means
+“none” in preset and operation layers. Existing chart
+<code>observable_objects: []</code> retains its legacy “inherit” meaning.</p>
+<p>School is an extensible string ID, not a closed enum. It classifies a model and
+provides its default model. <code>extends</code> records lineage; it does not copy settings.</p>
+<h2 id="persisted-transit-intent">Persisted transit intent</h2>
+<p>Transit YAML stores everything needed to repeat the calculation, but never the
+computed positions/aspects:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">source_chart_id</span>: <span style="color:#ae81ff">alice-natal-traditional</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">transit_type</span>: <span style="color:#ae81ff">transit</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">period_mode</span>: <span style="color:#ae81ff">custom</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from_date</span>: <span style="color:#e6db74">&#39;2026-09-01&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from_time</span>: <span style="color:#e6db74">&#39;00:00&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">to_date</span>: <span style="color:#e6db74">&#39;2026-10-01&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">to_time</span>: <span style="color:#e6db74">&#39;00:00&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">time_step_seconds</span>: <span style="color:#ae81ff">3600</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">school</span>: <span style="color:#ae81ff">traditional</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">model</span>: <span style="color:#ae81ff">traditional-primary</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">model_overrides</span>: <span style="color:#66d9ef">null</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">transiting_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn]</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">transited_bodies</span>: [<span style="color:#ae81ff">sun, moon, asc, mc]</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">aspect_types</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">aspect_orbs</span>: { <span style="color:#f92672">conjunction</span>: <span style="color:#f92672">2.0, square</span>: <span style="color:#ae81ff">1.5</span> }
+</span></span><span style="display:flex;"><span><span style="color:#f92672">house_transitions</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">sign_transitions</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">exact_hits</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">station_events</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">transit_limits</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">precession_correction</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><p>The source chart supplies subject coordinates and inherited settings. The
+transit file chooses the interval, sampling, moving and target bodies, aspects,
+orbs, and event families. Exact-time refinement is represented by <code>exact_hits</code>;
+the current series engine still samples at <code>time_step_seconds</code> and may refine
+execution in a later compatible implementation.</p>
+<h2 id="what-is-intentionally-not-persisted">What is intentionally not persisted</h2>
+<p>Computed longitudes, houses, detected aspects, configurations, and transit
+series are derived cache candidates, not workspace truth. Reopening a workspace
+loads definitions and recomputes results. Device-only UI state such as open
+panels, zoom, and window geometry belongs in local frontend storage, not YAML.
+Unknown extension keys are ignored when reading and are not guaranteed to
+survive a typed Rust save; version and add them to the contract before relying
+on them.</p>
+<h2 id="how-to-test-the-contract">How to test the contract</h2>
+<p>This contract is tracked by the <code>MODEL-*</code> and <code>WORKSPACE-*</code> entries in the
+<a href="../testing-strategy/">testing strategy</a>. The commands below are the currently
+available checks; the central matrix owns cross-contract traceability.</p>
+<p>From the repository root:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo test --manifest-path src-tauri/Cargo.toml --lib
+</span></span><span style="display:flex;"><span>npm run check
+</span></span><span style="display:flex;"><span>npm run check:svelte
+</span></span><span style="display:flex;"><span>npm run docs:build
+</span></span></code></pre></div><p>Useful focused Rust tests:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cargo test --manifest-path src-tauri/Cargo.toml save_workspace_preserves_the_complete_manifest_contract
+</span></span><span style="display:flex;"><span>cargo test --manifest-path src-tauri/Cargo.toml school_default_and_chart_definition_override_are_resolved
+</span></span><span style="display:flex;"><span>cargo test --manifest-path src-tauri/Cargo.toml aspect_enabled_and_context_are_computation_rules
+</span></span><span style="display:flex;"><span>cargo test --manifest-path src-tauri/Cargo.toml transit_setup_round_trips_without_computed_results
+</span></span><span style="display:flex;"><span>cargo test --manifest-path src-tauri/Cargo.toml rust_loads_the_shared_python_writer_fixture
+</span></span></code></pre></div><p>Run the persistence-only Python interoperability test without installing the
+optional astronomy/UI extras:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd ../function-wrapper
+</span></span><span style="display:flex;"><span>python -m unittest tests.test_workspace_interop -v
+</span></span></code></pre></div><p>Both tests consume <code>contracts/workspace-v1/</code>. Rust verifies that it can load the
+Python-shaped modular files. Python then loads the same Rust contract, resolves
+school and chart overrides, writes a new modular workspace, and reopens it.</p>
+<p>For a manual fixture, copy the examples above into a temporary folder, include
+full body/aspect/sign definitions in the selected model, open it in the app,
+then call the <code>validate_workspace</code> Tauri command. A safe round-trip is: load the
+workspace, save without editing, validate again, and diff the YAML. Catalogs,
+schools, overrides, presentation, and references must remain present; computed
+results must not appear.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,4 +1,9 @@
+pub mod calculation;
+pub mod charts;
 pub mod default;
+pub mod dialogs;
 pub mod ephemeris;
+pub mod location;
 pub mod storage;
+pub mod transits;
 pub mod workspace;

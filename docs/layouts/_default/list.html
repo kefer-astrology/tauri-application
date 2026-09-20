@@ -4,6 +4,13 @@
       <p class="eyebrow">{{ .Section }}</p>
       <h1>{{ .Title }}</h1>
       {{ with .Description }}<p class="lede">{{ . }}</p>{{ end }}
+      {{ if eq .Section "developer" }}
+        <div class="doc-meta" aria-label="Document classification">
+          {{ with .Params.doc_kind }}<span>{{ . | humanize }}</span>{{ end }}
+          {{ with .Params.status }}<span>{{ . | humanize }}</span>{{ end }}
+          {{ with .Params.authority }}<span>{{ . | humanize }}</span>{{ end }}
+        </div>
+      {{ end }}
     </header>
     <div class="prose">
       {{ .Content }}

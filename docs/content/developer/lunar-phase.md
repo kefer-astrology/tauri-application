@@ -2,6 +2,9 @@
 title: 'Lunar phase (moon details)'
 description: 'How Kefer derives geocentric lunar phase and illumination from chart positions.'
 weight: 43
+doc_kind: implementation-reference
+status: current
+authority: informative
 ---
 
 Chart compute commands attach a **`moon_details`** object to the JSON result whenever **`positions.sun`** and **`positions.moon`** are present (tropical longitude in degrees, same convention as the rest of the radix).

@@ -2,6 +2,9 @@
 title: 'Time navigation'
 description: 'Current reference for time navigation behavior and state.'
 weight: 60
+doc_kind: contract
+status: evolving
+authority: normative
 ---
 
 Time navigation exists to support:

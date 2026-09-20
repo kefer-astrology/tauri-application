@@ -1,6 +1,9 @@
 ---
 title: 'Transit series contract'
 weight: 44
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This page defines the frontend-visible contract for computing transit series.

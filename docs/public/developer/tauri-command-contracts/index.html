@@ -7,7 +7,7 @@
     <meta name="description" content="Normative command-level contract for the current desktop app." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <link rel="stylesheet" href="/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css" integrity="sha256-OAfbqZKJaBkqBpUre/S5HixSCIiVbh6YvTdTpnVh48c=" />
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
   </head>
   <body>
     <div class="shell">
@@ -33,6 +33,13 @@
       <p class="eyebrow">developer</p>
       <h1>Tauri command contracts</h1>
       <p class="lede">Normative command-level contract for the current desktop app.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Contract</span>
+          <span>Current</span>
+          <span>Normative</span>
+        </div>
+      
     </header>
     <div class="prose">
       <p>This page focuses on what the frontend can rely on today, including current no-op behavior.</p>
@@ -64,10 +71,15 @@
 </ul>
 <h3 id="save_workspaceworkspace_path-owner-charts-defaults---resultstring-string"><code>save_workspace(workspace_path, owner, charts, defaults?) -&gt; Result&lt;String, String&gt;</code></h3>
 <ul>
-<li>Creates <code>workspace.yaml</code> and <code>charts/*.yml</code> under <code>workspace_path</code>.</li>
+<li>Creates a new manifest or updates an existing <code>workspace.yaml</code>, and writes
+<code>charts/*.yml</code> under <code>workspace_path</code>.</li>
 <li>Sanitizes chart file names from chart ids.</li>
 <li>Accepts an optional <code>defaults</code> payload and persists it into <code>workspace.yaml</code> alongside chart references.</li>
 <li>Returns the <code>workspace_path</code> string on success.</li>
+<li>When updating, preserves schools, models, definition overrides,
+presentation, transit references, presets, subjects, layouts, and
+annotations. It replaces only the chart reference list and explicitly
+supplied defaults.</li>
 </ul>
 <p>Acceptance criteria:</p>
 <ul>
@@ -92,6 +104,20 @@
 <li>Creates the workspace directory and <code>charts/</code>.</li>
 <li>Writes an empty <code>workspace.yaml</code>.</li>
 <li>Returns an error if <code>workspace.yaml</code> already exists.</li>
+</ul>
+<h3 id="save_transit_setupworkspace_path-setup---resulttransitsetup-string"><code>save_transit_setup(workspace_path, setup) -&gt; Result&lt;TransitSetup, String&gt;</code></h3>
+<ul>
+<li>Persists reproducible transit intent under <code>transits/</code> and registers its
+relative path in <code>workspace.yaml:transit_analyses</code>.</li>
+<li>Stores source chart, period/step, bodies, aspects/orbs, optional
+school/model/definition overrides, and requested event families.</li>
+<li>Does not store computed positions, aspects, or series rows.</li>
+<li>Rejects unsupported versions, missing source charts, and zero time steps.</li>
+</ul>
+<h3 id="load_transit_setupworkspace_path-chart_id---resultoptiontransitsetup-string"><code>load_transit_setup(workspace_path, chart_id) -&gt; Result&lt;Option&lt;TransitSetup&gt;, String&gt;</code></h3>
+<ul>
+<li>Returns the registered source chart&rsquo;s persisted form state when present.</li>
+<li>Validates version and source-chart identity before returning it.</li>
 </ul>
 <h3 id="delete_workspaceworkspace_path---resultbool-string"><code>delete_workspace(workspace_path) -&gt; Result&lt;bool, String&gt;</code></h3>
 <ul>
@@ -137,7 +163,7 @@
 </ul>
 <h3 id="validate_workspaceworkspace_path---resultworkspacevalidationreport-string"><code>validate_workspace(workspace_path) -&gt; Result&lt;WorkspaceValidationReport, String&gt;</code></h3>
 <ul>
-<li>Strictly attempts every subject, chart, preset, layout, and annotation
+<li>Strictly attempts every subject, chart, preset, transit analysis, layout, and annotation
 reference under the workspace root.</li>
 <li>Returns <code>valid</code>, typed entity counts, workspace identity, and all structured
 diagnostics.</li>
@@ -146,6 +172,8 @@ diagnostics.</li>
 references have specific stable codes.</li>
 <li>An invalid referenced item does not prevent other items from being inspected.</li>
 <li>Neither frontend currently calls this command; it remains a backend-only capability until a UI surface needs it.</li>
+<li>The Rust loader and Python sidecar share the versioned
+<code>contracts/workspace-v1/</code> interoperability fixture.</li>
 </ul>
 <h3 id="get_workspace_defaultsworkspace_path---resultvalue-string"><code>get_workspace_defaults(workspace_path) -&gt; Result&lt;Value, String&gt;</code></h3>
 <ul>
@@ -155,7 +183,8 @@ references have specific stable codes.</li>
 <h3 id="get_current_model_reportworkspace_path-chart_id---resultcurrentmodelreport-string"><code>get_current_model_report(workspace_path, chart_id?) -&gt; Result&lt;CurrentModelReport, String&gt;</code></h3>
 <ul>
 <li>Returns one canonical model envelope for the workspace, optionally resolved through a specific chart.</li>
-<li>Includes the requested model name, resolved model name, available model names, model catalog, effective settings, model overrides, source, and warnings.</li>
+<li>Includes requested/resolved school and model names, available model names,
+the resolved model catalog, effective settings, model overrides, source, and warnings.</li>
 <li>Includes structured <code>diagnostics</code> for catalog, selection, override, and
 chart-level invariants.</li>
 <li><code>effective_settings.sources</code> identifies whether each effective setting came from the application fallback, model, workspace, preset, chart, or operation layer. Aspect-orb sources are reported per aspect id.</li>
@@ -180,7 +209,11 @@ chart-level invariants.</li>
 <h3 id="get_chart_detailsworkspace_path-chart_id---resultvalue-string"><code>get_chart_details(workspace_path, chart_id) -&gt; Result&lt;Value, String&gt;</code></h3>
 <ul>
 <li>Returns the full chart payload needed by the React and Svelte editor surfaces.</li>
-<li><code>config</code> includes <code>mode</code>, <code>house_system</code>, <code>zodiac_type</code>, <code>engine</code>, <code>model</code>, <code>override_ephemeris</code>, <code>observable_objects</code>, <code>aspect_orbs</code>, <code>selected_aspects</code>, <code>ayanamsa</code>, and <code>time_system</code> — the complete set of chart-level settings-layer fields, so callers can resolve chart-level overrides without falling back to workspace defaults.</li>
+<li><code>config</code> includes <code>mode</code>, <code>house_system</code>, <code>zodiac_type</code>, <code>engine</code>, <code>model</code>,
+<code>model_overrides</code>, <code>override_ephemeris</code>, <code>observable_objects</code>,
+<code>included_points</code>, <code>aspect_orbs</code>, <code>selected_aspects</code>, <code>ayanamsa</code>,
+<code>time_system</code>, and legacy visual keys. Both frontends retain these fields
+during load/save round-trips.</li>
 <li>Also returns top-level <code>tags</code>, <code>tag_colors</code>, and <code>roden_rating</code>.</li>
 <li>Returns an error when the chart id is not found.</li>
 </ul>

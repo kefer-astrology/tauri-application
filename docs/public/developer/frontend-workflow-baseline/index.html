@@ -7,7 +7,7 @@
     <meta name="description" content="The Kefer Astrology manual, developer reference, and guided product tour." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <link rel="stylesheet" href="/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css" integrity="sha256-OAfbqZKJaBkqBpUre/S5HixSCIiVbh6YvTdTpnVh48c=" />
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
   </head>
   <body>
     <div class="shell">
@@ -33,6 +33,13 @@
       <p class="eyebrow">developer</p>
       <h1>Frontend workflow baseline</h1>
       
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Contract</span>
+          <span>Current</span>
+          <span>Normative</span>
+        </div>
+      
     </header>
     <div class="prose">
       <p>Both frontend shells should be judged against these baseline workflows:</p>
@@ -50,7 +57,7 @@
 <li>React and Svelte use the same Tauri command contract and typed bridge shape.</li>
 <li>React and Svelte expose the same computation inputs, or the spec names the missing input and acceptance criteria.</li>
 <li>Selected objects, selected aspects, date/time ranges, and workspace/chart IDs must feed the command payload rather than remaining local-only widget state.</li>
-<li>A partial frontend implementation is not &ldquo;parity-compliant&rdquo;; it is an intentional gap that must be documented in this file or the feature-specific <code>/developer/</code> contract.</li>
+<li>A partial frontend implementation is not &ldquo;parity-compliant&rdquo;; it is an intentional gap that must be documented in the <a href="../development-driver/">Development roadmap</a> or the feature-specific contract.</li>
 </ul>
 <h2 id="readiness-rule">Readiness rule</h2>
 <p>A frontend is only &ldquo;ready&rdquo; for this baseline when:</p>
@@ -106,52 +113,11 @@
 </ul>
 </li>
 </ul>
-<h2 id="gap-closing-checklist">Gap-closing checklist</h2>
-<h2 id="1-tauri-contract-gaps">1. Tauri contract gaps</h2>
-<ul>
-<li>Keep <code>load_workspace</code>, <code>get_workspace_defaults</code>, <code>get_chart_details</code>, <code>create_chart</code>, <code>update_chart</code>, <code>compute_chart</code>, and <code>compute_chart_from_data</code> as the stable baseline for both frontends.</li>
-<li>Treat &ldquo;import chart into workspace&rdquo; as a real external-ingest workflow, not as chart creation from frontend form data.</li>
-<li>Add an explicit Tauri command and contract for chart import instead of overloading open-workspace behavior.</li>
-<li>Support importing previously created chart files, especially:
-<ul>
-<li>native chart YAML in the Rust path</li>
-<li>StarFisher/SFS when the backend parser path is available</li>
-</ul>
-</li>
-<li>Extend the chart/workspace contract if frontend-selected aspects must be persisted as <code>default_aspects</code> and/or <code>aspect_orbs</code>.</li>
-<li>Make sure the compute path accepts and respects selected objects and selected aspects through chart config or command arguments.</li>
-</ul>
-<h2 id="2-react-gaps">2. React gaps</h2>
-<ul>
-<li>Add an explicit &ldquo;import chart into workspace&rdquo; workflow or remove the ambiguity from the product language.</li>
-<li>Add a real external chart import workflow for supported file types.</li>
-<li>Add UI for selecting calculated objects, not only consuming <code>default_bodies</code> loaded from workspace.</li>
-<li>Connect settings changes for house system, location, calculated objects, and calculated aspects to real app state instead of local-only component state.</li>
-<li>Persist confirmed settings either to workspace defaults or to per-chart config, depending on the chosen contract.</li>
-<li>Ensure compute payloads include the settings that should affect computation.</li>
-<li>Keep React transit-series controls wired to the same command payload fields as Svelte when extending transits behavior.</li>
-<li>Replace React&rsquo;s fixed one-hour transit-series step with the shared time-step model once that model is specified for both shells.</li>
-</ul>
-<h2 id="3-svelte-gaps">3. Svelte gaps</h2>
-<ul>
-<li>Add a real external chart import workflow for supported file types.</li>
-<li>Connect settings controls for location, house system, and aspects to shared workspace/chart state.</li>
-<li>Decide whether <code>BodySelector</code> should also drive workspace-level default computed bodies, not only transit filters.</li>
-<li>Persist confirmed settings to workspace/chart config instead of leaving them as local view state.</li>
-<li>Ensure compute payloads include both selected objects and selected aspects where required.</li>
-<li>Keep Svelte transit-series controls wired to the same command payload fields as React when extending transits behavior.</li>
-<li>Keep Svelte&rsquo;s transit body selector aligned with the eventual shared canonical selector used by React.</li>
-</ul>
-<h2 id="4-recommended-implementation-order">4. Recommended implementation order</h2>
-<ol>
-<li>Define the supported import command shape and file types.</li>
-<li>Make one authoritative settings model for computed bodies and aspects.</li>
-<li>Wire that model into payload builders in both frontends.</li>
-<li>Verify Rust/Python compute respects the same inputs.</li>
-<li>Finish the missing import workflow in each frontend.</li>
-<li>Verify Rust/Python preserve the same instant for offset-aware datetimes.</li>
-<li>Only then mark the baseline workflows as ready.</li>
-</ol>
+<h2 id="verification">Verification</h2>
+<p>The cross-frontend contract is tracked by <code>FRONTEND-001</code>, <code>FRONTEND-002</code>, and
+<code>STATIC-001</code> in the <a href="../testing-strategy/">Testing strategy</a>. Unfinished work
+belongs in the <a href="../development-driver/">Development roadmap</a>, not in this
+normative baseline.</p>
 
     </div>
   </article>

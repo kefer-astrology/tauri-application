@@ -31,9 +31,11 @@
 		"targets": "all",
 		"resources": [
 			"binaries",
+			"resources/pck11.pca",
 			"resources/de440s.bsp",
-			"resources/ceres_1900_2100.bsp",
-			"resources/codes_300ast_20100725.bsp"
+			"resources/codes_300ast_20100725.bsp",
+			"resources/chiron_1900_2100_type13.bsp",
+			"resources/chiron_1900_2100_type13.bsp.json"
 		],
 		"windows": {
 			"certificateThumbprint": null,

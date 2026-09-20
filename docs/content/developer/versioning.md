@@ -2,6 +2,9 @@
 title: 'Versioning'
 description: 'SemVer policy for pre-1.0 releases and how commit types map to version bumps.'
 weight: 111
+doc_kind: policy
+status: current
+authority: normative
 ---
 
 The app is versioned with [SemVer](https://semver.org/) and currently sits pre-1.0 (`0.x.y`). Per the SemVer spec, major version zero is for initial development — anything may still change at any time, so `1.0.0` is reserved for a deliberate stability declaration, not something a commit can trigger on its own.

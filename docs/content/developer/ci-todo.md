@@ -2,6 +2,9 @@
 title: 'CI todo'
 description: 'Current automation follow-up for docs, i18n, and desktop builds.'
 weight: 110
+doc_kind: roadmap
+status: active
+authority: non-normative
 ---
 
 Not a frontend planning page — do not use it for general UI backlog notes.

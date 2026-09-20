@@ -1,0 +1,22 @@
+version: 1
+source_chart_id: interoperability-chart
+transit_type: transit
+period_mode: custom
+from_date: '2026-09-01'
+from_time: '00:00'
+to_date: '2026-09-02'
+to_time: '00:00'
+time_step_seconds: 3600
+transiting_bodies: [moon]
+transited_bodies: [sun]
+aspect_types: [square]
+aspect_orbs: { square: 1.0 }
+school: traditional
+model: traditional-test
+model_overrides: null
+house_transitions: true
+sign_transitions: true
+exact_hits: true
+station_events: true
+transit_limits: false
+precession_correction: true

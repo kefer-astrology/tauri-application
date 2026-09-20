@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -54,6 +55,7 @@ export function TimeRollerPicker({
 	iconClassName,
 	panelClassName
 }: TimeRollerPickerProps) {
+	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
 	const [draftValue, setDraftValue] = useState(() => formatTimeValue(value));
 
@@ -133,19 +135,19 @@ export function TimeRollerPicker({
 				<PopoverContent align="end" className={cn('w-[280px] p-3', panelClassName)}>
 					<div className="grid grid-cols-3 gap-3">
 						<TimeColumn
-							label="Hour"
+							label={t('open_date_hour')}
 							values={HOURS}
 							selected={parts.hour}
 							onSelect={(nextHour) => updatePart('hour', nextHour)}
 						/>
 						<TimeColumn
-							label="Minute"
+							label={t('open_date_minute')}
 							values={MINUTES}
 							selected={parts.minute}
 							onSelect={(nextMinute) => updatePart('minute', nextMinute)}
 						/>
 						<TimeColumn
-							label="Second"
+							label={t('open_date_second')}
 							values={SECONDS}
 							selected={parts.second}
 							onSelect={(nextSecond) => updatePart('second', nextSecond)}
@@ -170,7 +172,7 @@ function TimeColumn({
 }) {
 	return (
 		<div className="space-y-2">
-			<div className="text-[color:var(--theme-content-muted)] text-center text-xs font-medium uppercase tracking-[0.14em]">
+			<div className="text-center text-xs font-medium tracking-[0.14em] text-[color:var(--theme-content-muted)] uppercase">
 				{label}
 			</div>
 			<ScrollArea className="h-56 rounded-lg border">

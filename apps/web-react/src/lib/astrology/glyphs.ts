@@ -55,7 +55,8 @@ const glyphAliasMap: Record<string, string> = {
 	true_node: 'north_node',
 	true_north_node: 'north_node',
 	true_south_node: 'south_node',
-	black_moon: 'lilith'
+	black_moon: 'lilith',
+	true_lilith: 'lilith'
 };
 
 export function readStoredGlyphSet(): AstrologyGlyphSetId {

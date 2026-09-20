@@ -1,4 +1,4 @@
-import type { ChartDetails, MoonDetails } from './types';
+import type { ChartDetails, ModelOverridesDto, MoonDetails } from './types';
 import { DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import {
 	DEFAULT_ASPECT_COLORS,
@@ -20,6 +20,7 @@ export interface AppChart {
 	zodiacType?: string;
 	engine?: string | null;
 	model?: string | null;
+	modelOverrides?: ModelOverridesDto | null;
 	overrideEphemeris?: string | null;
 	latitude?: number;
 	longitude?: number;
@@ -31,6 +32,9 @@ export interface AppChart {
 	observableObjects?: string[];
 	aspectOrbs?: Record<string, number>;
 	selectedAspects?: string[];
+	includedPoints?: string[];
+	displayStyle?: string;
+	colorTheme?: string;
 	ayanamsa?: string | null;
 	timeSystem?: string | null;
 	computed?: {
@@ -243,6 +247,7 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		zodiacType: full.config.zodiac_type,
 		engine: full.config.engine,
 		model: full.config.model,
+		modelOverrides: full.config.model_overrides,
 		overrideEphemeris: full.config.override_ephemeris,
 		tags: full.tags,
 		tagColors: full.tag_colors,
@@ -250,6 +255,9 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		observableObjects: full.config.observable_objects,
 		aspectOrbs: full.config.aspect_orbs,
 		selectedAspects: full.config.selected_aspects,
+		includedPoints: full.config.included_points,
+		displayStyle: full.config.display_style,
+		colorTheme: full.config.color_theme,
 		ayanamsa: full.config.ayanamsa,
 		timeSystem: full.config.time_system
 	};
@@ -304,7 +312,7 @@ export function chartDataToComputePayload(
 				? defaults.defaultBodies
 				: undefined;
 	const selectedAspects =
-		chart.selectedAspects && chart.selectedAspects.length > 0
+		Array.isArray(chart.selectedAspects)
 			? chart.selectedAspects
 			: [...defaults.defaultAspects];
 	const aspectOrbs =
@@ -337,9 +345,13 @@ export function chartDataToComputePayload(
 			engine,
 			override_ephemeris: overrideEphemeris,
 			model,
+			model_overrides: chart.modelOverrides ?? null,
 			observable_objects: observableObjects,
+			included_points: chart.includedPoints ?? [],
 			selected_aspects: selectedAspects,
 			aspect_orbs: aspectOrbs,
+			display_style: chart.displayStyle ?? '',
+			color_theme: chart.colorTheme ?? '',
 			...(chart.ayanamsa ? { ayanamsa: chart.ayanamsa } : {}),
 			...(chart.timeSystem ? { time_system: chart.timeSystem } : {})
 		},

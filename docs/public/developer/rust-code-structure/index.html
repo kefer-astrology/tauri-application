@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rust code structure audit | Kefer Astrology</title>
+    <meta name="description" content="Current responsibility map for Tauri commands and the incremental extraction path." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/developer/rust-code-structure/" aria-current="page">English</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Rust code structure audit</h1>
+      <p class="lede">Current responsibility map for Tauri commands and the incremental extraction path.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Implementation reference</span>
+          <span>Evolving</span>
+          <span>Informative</span>
+        </div>
+      
+    </header>
+    <div class="prose">
+      <p>This audit compares the current Rust source with the target boundaries in
+<a href="../backend-structure/">Backend structure</a>. The source tree partially matches
+the intended dependency direction, but the Tauri command boundary is not yet
+consistently thin.</p>
+<h2 id="current-responsibility-map">Current responsibility map</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Area</th>
+					<th>Current state</th>
+					<th>Assessment</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>lib.rs</code></td>
+					<td>Registers commands and initializes application resources</td>
+					<td>Appropriate composition root</td>
+			</tr>
+			<tr>
+					<td><code>application/computation.rs</code></td>
+					<td>Owns typed resolved-chart calculation orchestration</td>
+					<td>Matches the application layer</td>
+			</tr>
+			<tr>
+					<td><code>application/transit.rs</code></td>
+					<td>Owns typed transit validation and series orchestration</td>
+					<td>Matches the application layer</td>
+			</tr>
+			<tr>
+					<td><code>astronomy.rs</code></td>
+					<td>Defines the provider trait and selects Rust astronomy adapters</td>
+					<td>Useful boundary; provider construction can later be injected</td>
+			</tr>
+			<tr>
+					<td><code>astrology.rs</code></td>
+					<td>Backend-neutral body selection and model-driven aspect rules over resolved positions; no Tauri, YAML, or engine dependency</td>
+					<td>Domain logic (~900 lines, the second-largest file); the clearest <code>domain/</code> extraction candidate, not yet in that boundary</td>
+			</tr>
+			<tr>
+					<td><code>houses.rs</code></td>
+					<td>Pure-Rust house/angle math and analytic lunar-node computation used in place of libswe by the anise-backed adapter</td>
+					<td>Domain-adjacent math with no external dependency; another <code>domain/</code> candidate</td>
+			</tr>
+			<tr>
+					<td><code>event_time.rs</code></td>
+					<td>Canonical event-time parsing shared by persistence and application inputs; accepts RFC 3339 and legacy naive formats</td>
+					<td>Permissive parser; <a href="../backend-structure/">Backend structure</a> calls for a canonical validated time type to replace it</td>
+			</tr>
+			<tr>
+					<td><code>lunar_phase.rs</code></td>
+					<td>Derives geocentric lunar phase from tropical Sun/Moon longitude for chart <code>moon_details</code></td>
+					<td>Small, backend-neutral domain calculation</td>
+			</tr>
+			<tr>
+					<td><code>backend.rs</code></td>
+					<td>Owns Python sidecar process lifecycle, port reservation, HTTP client, and availability state</td>
+					<td>Matches the target <code>infrastructure/python_sidecar/</code> responsibility but not yet relocated</td>
+			</tr>
+			<tr>
+					<td><code>ephemeris_manager.rs</code></td>
+					<td>Owns the BSP catalog, cache/resource directories, and chained <code>anise::Almanac</code> construction</td>
+					<td>Infrastructure boundary; candidate for <code>infrastructure/ephemeris/</code></td>
+			</tr>
+			<tr>
+					<td><code>jpl_backend.rs</code></td>
+					<td>Astronomy adapter using the <code>anise</code> crate over <code>EphemerisManager</code>-resolved BSP files</td>
+					<td>Astronomy adapter; belongs beside <code>swisseph.rs</code> under an astronomy infrastructure boundary</td>
+			</tr>
+			<tr>
+					<td><code>swisseph.rs</code></td>
+					<td>FFI bindings and computation calls into the Swiss Ephemeris C library</td>
+					<td>AGPL-licensed adapter correctly isolated behind the <code>swisseph</code> feature flag</td>
+			</tr>
+			<tr>
+					<td><code>workspace/models.rs</code></td>
+					<td>Owns serializable workspace and calculation definitions</td>
+					<td>Clear persistence/domain migration boundary</td>
+			</tr>
+			<tr>
+					<td><code>workspace/model_catalog.rs</code></td>
+					<td>Built-in fallback astrological model catalog</td>
+					<td>Cohesive data module; data construction only, no selection policy</td>
+			</tr>
+			<tr>
+					<td><code>workspace/settings.rs</code></td>
+					<td>Owns layered resolution and provenance</td>
+					<td>Correct responsibility, although still a large module</td>
+			</tr>
+			<tr>
+					<td><code>workspace/validation.rs</code></td>
+					<td>Workspace and model validation producing stable, serializable diagnostics</td>
+					<td>Cohesive infrastructure/domain boundary</td>
+			</tr>
+			<tr>
+					<td><code>workspace/loader.rs</code></td>
+					<td>Loads and validates referenced YAML aggregates</td>
+					<td>Cohesive infrastructure boundary</td>
+			</tr>
+			<tr>
+					<td><code>commands/ephemeris.rs</code></td>
+					<td>Delegates to <code>EphemerisManager</code></td>
+					<td>Good example of a thin command adapter</td>
+			</tr>
+			<tr>
+					<td><code>commands/storage.rs</code></td>
+					<td>Isolates legacy no-op compatibility commands</td>
+					<td>Cohesive but intentionally temporary</td>
+			</tr>
+			<tr>
+					<td><code>storage/models.rs</code></td>
+					<td>Defines legacy DTO shapes (<code>PositionData</code>, <code>AspectData</code>, etc.) for the no-op storage commands</td>
+					<td>Paired with <code>commands/storage.rs</code>; should be removed together if those commands are removed</td>
+			</tr>
+			<tr>
+					<td><code>commands/workspace.rs</code></td>
+					<td>Mixes commands, persistence, geocoding, native dialogs, routing, response normalization, DTO conversion, and tests</td>
+					<td>Main responsibility violation</td>
+			</tr>
+			<tr>
+					<td><code>commands/default.rs</code></td>
+					<td>Exposes path-based file read/write directly</td>
+					<td>Infrastructure behavior exposed without an application service</td>
+			</tr>
+	</tbody>
+</table>
+<h2 id="main-finding">Main finding</h2>
+<p><code>commands/workspace.rs</code> is currently about 2,800 lines. Size alone is not the
+problem: it contains unrelated reasons to change. Provider routing and fallback
+policy change the same module as Nominatim HTTP behavior, native folder-picker
+processes, workspace YAML writes, chart serialization, response normalization,
+and Tauri DTOs.</p>
+<p>The calculation commands do delegate Rust calculation to typed application
+services. They still own backend selection, Python HTTP payloads, fallback
+behavior, and response normalization. The application boundary is therefore
+incomplete rather than absent.</p>
+<p>A second gap sits above the command layer: <code>astrology.rs</code>, <code>houses.rs</code>, and
+<code>event_time.rs</code> already have no Tauri, YAML, or engine dependency and match the
+<code>domain</code> responsibility <a href="../backend-structure/">Backend structure</a> describes,
+but no <code>domain/</code> module exists yet to hold them. <code>backend.rs</code>,
+<code>ephemeris_manager.rs</code>, <code>jpl_backend.rs</code>, and <code>swisseph.rs</code> are similarly
+domain-adjacent or infrastructure-shaped code living at the crate root rather
+than under <code>infrastructure/</code>. The target shape below carries a <code>domain/</code>
+boundary forward from Backend structure so both documents describe the same
+end state.</p>
+<h2 id="target-command-shape">Target command shape</h2>
+<p>Commands should deserialize transport inputs, call one application use case,
+and serialize its result:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>commands/
+</span></span><span style="display:flex;"><span>├── workspace.rs       # thin workspace invoke adapters
+</span></span><span style="display:flex;"><span>├── charts.rs          # thin chart CRUD/import adapters
+</span></span><span style="display:flex;"><span>├── calculation.rs     # chart and cross-aspect invoke adapters
+</span></span><span style="display:flex;"><span>├── transits.rs        # transit persistence and compute adapters
+</span></span><span style="display:flex;"><span>├── location.rs        # location/timezone invoke adapters
+</span></span><span style="display:flex;"><span>├── dialogs.rs         # desktop dialog invoke adapter
+</span></span><span style="display:flex;"><span>├── ephemeris.rs
+</span></span><span style="display:flex;"><span>└── legacy_storage.rs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>application/
+</span></span><span style="display:flex;"><span>├── workspace.rs       # workspace and chart use cases
+</span></span><span style="display:flex;"><span>├── computation.rs     # resolved chart calculation
+</span></span><span style="display:flex;"><span>├── compute_router.rs  # Rust/Python selection, fallback, provenance
+</span></span><span style="display:flex;"><span>├── transit.rs
+</span></span><span style="display:flex;"><span>└── location.rs        # location resolution port/use case
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>domain/                # carried forward from Backend structure&#39;s target
+</span></span><span style="display:flex;"><span>├── chart.rs           # today: astrology.rs (body selection, aspect rules)
+</span></span><span style="display:flex;"><span>├── model.rs
+</span></span><span style="display:flex;"><span>├── calculation.rs
+</span></span><span style="display:flex;"><span>├── relation.rs
+</span></span><span style="display:flex;"><span>├── workspace.rs
+</span></span><span style="display:flex;"><span>├── event_time.rs      # today: event_time.rs, permissive parser to replace
+</span></span><span style="display:flex;"><span>└── error.rs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>infrastructure/
+</span></span><span style="display:flex;"><span>├── workspace_yaml/    # filesystem repository and serialization
+</span></span><span style="display:flex;"><span>├── geocoding/         # Nominatim client and timezone lookup
+</span></span><span style="display:flex;"><span>├── dialogs/           # platform process/plugin implementation
+</span></span><span style="display:flex;"><span>├── python_sidecar/    # today: backend.rs (sidecar lifecycle, HTTP client)
+</span></span><span style="display:flex;"><span>├── astronomy/         # today: astronomy.rs, jpl_backend.rs, swisseph.rs, houses.rs
+</span></span><span style="display:flex;"><span>└── ephemeris/         # today: ephemeris_manager.rs (BSP catalog/cache)
+</span></span></code></pre></div><p>This mirrors the four-layer split in <a href="../backend-structure/">Backend structure</a>
+rather than introducing a second target shape; <code>domain/</code> and <code>infrastructure/</code>
+here are the same boundaries that doc names, applied to the files that
+currently exist at the crate root.</p>
+<p>Splitting the command file without moving its logic would improve navigation
+but not responsibility boundaries. Extract complete use cases: application
+orchestration first, external mechanisms behind infrastructure ports second,
+then leave only Tauri adapters in <code>commands/</code>.</p>
+<h2 id="recommended-extraction-order">Recommended extraction order</h2>
+<ol>
+<li>Move native folder selection into <code>infrastructure/dialogs</code>.</li>
+<li>Move Nominatim and timezone implementation into
+<code>infrastructure/geocoding</code> behind a location service.</li>
+<li>Move workspace, chart, and transit YAML writes into a repository beside the
+existing loader.</li>
+<li>Move Rust/Python route selection, fallback, and response normalization into
+<code>application/compute_router.rs</code>.</li>
+<li>Split the remaining thin command adapters by use case.</li>
+<li>Move <code>astrology.rs</code> and <code>houses.rs</code> into <code>domain/</code>; move <code>backend.rs</code> into
+<code>infrastructure/python_sidecar/</code>; move <code>ephemeris_manager.rs</code> into
+<code>infrastructure/ephemeris/</code>; move <code>astronomy.rs</code>, <code>jpl_backend.rs</code>, and
+<code>swisseph.rs</code> into <code>infrastructure/astronomy/</code>.</li>
+<li>Replace <code>event_time.rs</code>&rsquo;s permissive parser with a canonical validated time
+type in <code>domain/event_time.rs</code>.</li>
+<li>Move unit tests with the extracted logic and retain command-level integration
+tests for serialization and Tauri-visible behavior.</li>
+</ol>
+<p>This order preserves command names and frontend contracts throughout the
+migration.</p>
+<h2 id="testing-boundary">Testing boundary</h2>
+<ul>
+<li>Domain/application tests should call pure services without constructing Tauri state.</li>
+<li>Infrastructure tests should exercise YAML, HTTP adapters, process selection, and provider behavior explicitly.</li>
+<li>Command tests should focus on DTO conversion, error mapping, and registered behavior.</li>
+<li>Cross-language routing and normalization remain integration/parity tests.</li>
+</ul>
+<p>Track those layers in the <a href="../testing-strategy/">Testing strategy</a>.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

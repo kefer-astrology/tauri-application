@@ -2,6 +2,9 @@
 title: 'Backend structure and data ownership'
 description: 'Target Rust boundaries, canonical data model, layered settings, and Python parity rules.'
 weight: 42
+doc_kind: architecture
+status: evolving
+authority: informative
 ---
 
 ## Purpose
@@ -29,46 +32,70 @@ implementation moves behind application services.
 
 ```text
 src-tauri/src/
-├── astrology.rs                    # current: body selection and pure aspect rules
-├── domain/                         # target: backend-neutral concepts
-│   ├── chart.rs
-│   ├── model.rs
-│   ├── calculation.rs
-│   ├── relation.rs
-│   ├── workspace.rs
-│   └── error.rs
-├── application/                    # current: typed use cases and orchestration
+├── domain/                         # backend-neutral concepts
+│   ├── astrology.rs                 # current: body selection and pure aspect rules
+│   ├── houses.rs                    # current: house/angle math, analytic lunar nodes
+│   ├── chart.rs                     # target: not yet split out of workspace/models.rs
+│   ├── model.rs                     # target
+│   ├── calculation.rs               # target
+│   ├── relation.rs                  # target
+│   ├── workspace.rs                 # target: not yet split out of workspace/models.rs
+│   └── error.rs                     # target
+├── application/                    # typed use cases and orchestration
 │   ├── computation.rs              # resolved radix request/result and service
-│   └── transit.rs                  # typed transit-series request/result and service
-├── infrastructure/                 # target: external mechanisms
-│   ├── workspace_yaml/
-│   ├── astronomy/
-│   ├── ephemeris/
-│   ├── geocoding/
-│   └── python_sidecar/
-├── commands/                       # Tauri DTO conversion only
-└── workspace/                      # current migration boundary
-    ├── models.rs                   # serializable definitions only
+│   ├── transit.rs                  # typed transit-series request/result and service
+│   ├── compute_router.rs           # Rust/Python selection, fallback, provenance
+│   ├── workspace.rs                # chart validation and shared workspace/chart helpers
+│   └── location.rs                 # location resolution use case
+├── infrastructure/                 # external mechanisms
+│   ├── astronomy/                   # current: provider trait, jpl_backend.rs, swisseph.rs
+│   ├── ephemeris.rs                  # current: BSP catalog/cache, Almanac construction
+│   ├── python_sidecar.rs             # current: sidecar lifecycle, HTTP client
+│   ├── geocoding.rs                   # current: Nominatim client, timezone lookup
+│   ├── dialogs.rs                     # current: platform folder-picker process
+│   └── workspace_yaml/               # target: workspace/loader.rs + writer.rs not yet moved here
+├── commands/                       # Tauri DTO conversion only (workspace, charts,
+│                                    # calculation, transits, location, dialogs, ephemeris, storage)
+└── workspace/                      # migration boundary predating domain/
+    ├── models.rs                   # serializable definitions only (domain/ target, not yet moved)
     ├── model_catalog.rs            # built-in fallback catalog
     ├── settings.rs                 # layered resolution and provenance
-    ├── validation.rs               # stable diagnostics and invariants
-    └── loader.rs                   # current YAML loading adapter
+    ├── validation.rs               # stable diagnostics and invariants (domain/ target, not yet moved)
+    ├── loader.rs                   # YAML read/lookup adapter
+    └── writer.rs                   # YAML write adapter
 ```
 
 The `workspace/` split is the first completed migration slice. It prevents
 catalog construction and resolution policy from accumulating in `models.rs`.
+The command-layer split into `commands/`, `application/`, `domain/`, and
+`infrastructure/` described above is now complete for everything except
+`workspace/models.rs` and `workspace/validation.rs`, which still await their
+move into `domain/`.
+
+## Current implementation status
+
+The code now matches most of this target: typed calculation services, the
+workspace module split, and the full command/application/domain/infrastructure
+split are established. The remaining gap is that `workspace/models.rs` and
+`workspace/validation.rs` have not yet moved into `domain/`, and
+`domain/houses.rs` still imports `AstronomyMotion` from
+`infrastructure::astronomy` — a dependency-direction violation of the "domain
+does not depend on a particular astronomy engine" rule above. See the
+[Rust code structure audit](../rust-code-structure/) for the full responsibility
+map and the prioritized list of remaining gaps.
 
 Rust radix and transit aspect detection now consume the resolved
 `AstroModel.aspect_definitions`. There is no second command-local list of aspect
 IDs, angles, or default orbs. Standalone chart computation uses the same
 canonical built-in model catalog. The algorithm and typed `ComputedAspect`
-result live in `astrology.rs`, outside the Tauri command layer.
+result live in `domain::astrology`, outside the Tauri command layer.
 
 Body selection follows the same boundary. Commands resolve one ordered list of
-canonical body IDs, `astrology::resolve_body_selection` validates it against the
-model catalog and the selected engine's capability map, and astronomy adapters
-receive only the validated IDs. Unsupported, unknown, duplicate, and
-engine-omitted bodies produce explicit warnings instead of disappearing.
+canonical body IDs, `domain::astrology::resolve_body_selection` validates it
+against the model catalog and the selected engine's capability map, and
+astronomy adapters receive only the validated IDs. Unsupported, unknown,
+duplicate, and engine-omitted bodies produce explicit warnings instead of
+disappearing.
 
 ## Python source direction
 
@@ -95,6 +122,10 @@ layers as Rust. Tauri therefore applies its normal backend selection rules;
 neither backend silently drops a supplied layer.
 
 ## Workspace representations
+
+The field-by-field persisted format, folder composition, examples, and test
+commands live in the [Workspace YAML contract](../workspace-yaml/). This page
+describes its implementation boundaries.
 
 Two workspace representations have different responsibilities and must not be
 collapsed into one type.
@@ -185,7 +216,7 @@ previous scope.
 | zodiac and ayanamsa          |     yes      |     yes      |   yes    |     yes     |    yes    |
 | selected bodies              |     yes      |     yes      |   yes    |     yes     |    yes    |
 | selected aspects and orbs    |     yes      |     yes      |   yes    |     yes     |    yes    |
-| language, theme, colors      |      no      |     yes      |   yes    |     yes     |    no     |
+| language, theme, glyphs, colors | UI only | presentation | UI only | legacy only | UI only |
 | subject event time           |      no      |  seed only   | template | owns value  | temporary |
 | subject location             |      no      |  seed only   | template | owns value  | temporary |
 | model definitions            | owns catalog | may override |    no    | exceptional |    no     |
@@ -322,9 +353,11 @@ Workspace YAML is primary. Positions, axes, houses, aspects, lunar details, and
 transit series are derived results unless a future storage design explicitly
 persists them.
 
-Compatibility storage commands must not report successful writes while
-discarding data. Each command must eventually be implemented, return an
-explicit unsupported error, or be removed together with its callers.
+The current normative command contract intentionally keeps compatibility
+storage writes as successful no-ops. This is a temporary transport-compatibility
+exception, not a persistence abstraction. A future version should implement
+the commands, return an explicit unsupported error, or remove them together
+with their callers.
 
 ## Python parity
 
@@ -349,6 +382,29 @@ The shared settings fixture compares:
 - model/default/override resolution
 - selected bodies, aspects, and orbs
 - result DTO shape
+
+## Relation to `function-wrapper`
+
+The sibling `function-wrapper/` design informed the layered shape here: a main
+model supplies defaults, narrower scopes carry sparse overrides, and effective
+settings are resolved before computation. This Rust contract goes further in
+four persisted areas: a typed school catalog, chart-local definition overrides,
+a computation-independent presentation section, and registered transit intent.
+
+The two implementations should not exchange their internal runtime types.
+Their compatibility boundary is serialized YAML plus shared resolution tests.
+In particular, a string such as `hellenic` is not itself a school unless it is
+registered in `schools`, and visual glyph/color metadata is no longer treated
+as a calculation override in new workspace files.
+
+The in-repository Python sidecar now reads and writes workspace schema v1,
+including schools, model versions, chart-local definition overrides,
+presentation, transit analyses, tag colors, Rodden ratings, and legacy
+`computed` metadata. Cross-language regression coverage uses the shared
+`contracts/workspace-v1/` fixture from both Rust and Python. The corresponding
+reader, writer, resolver, and test are maintained in the tracked sibling
+`function-wrapper/` repository; the ignored `backend-python/` directory is only
+the local sidecar mirror and must not be mistaken for the source of record.
 - warning and provenance fields
 - error category
 - numerical results using field-specific tolerances

@@ -56,6 +56,8 @@ pub(super) fn builtin_model_settings() -> ModelSettings {
 pub(crate) fn builtin_standard_model(name: &str) -> AstroModel {
     AstroModel {
         name: name.to_string(),
+        school: None,
+        version: 1,
         body_definitions: builtin_body_definitions(),
         aspect_definitions: builtin_aspect_definitions(),
         signs: builtin_signs(),
@@ -237,7 +239,62 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             ObjectType::CalculatedPoint,
             false,
             false,
-            EngineSupport::SwissOnly,
+            EngineSupport::Both,
+        ),
+        // Osculating/"true" Black Moon Lilith (lunar apogee), computed via the
+        // eccentricity vector of the Moon's instantaneous orbit — see
+        // `domain::houses::true_apogee_tropical_deg`. Swiss Ephemeris support
+        // (`SE_OSCU_APOG`) is not yet wired up in this backend's swisseph adapter.
+        body_definition(
+            "true_lilith",
+            "True Lilith",
+            "⚸",
+            ObjectType::CalculatedPoint,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        // Vertex/Antivertex: oblique-ascension formula at co-latitude — see
+        // `domain::houses::vertex_lon`. Swiss Ephemeris already computes this
+        // internally (`ascmc[SE_VERTEX]`); exposing it there is a small follow-up,
+        // not yet wired into this backend's swisseph adapter.
+        body_definition(
+            "vertex",
+            "Vertex",
+            "Vx",
+            ObjectType::CalculatedPoint,
+            true,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "antivertex",
+            "Antivertex",
+            "AVx",
+            ObjectType::CalculatedPoint,
+            true,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        // Arabic Parts (Lots) of Fortune and Spirit: day/night-sect arithmetic on
+        // already-computed Sun/Moon/Ascendant — see `domain::astrology::day_night_parts`.
+        body_definition(
+            "part_of_fortune",
+            "Part of Fortune",
+            "PF",
+            ObjectType::Part,
+            true,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "part_of_spirit",
+            "Part of Spirit",
+            "PS",
+            ObjectType::Part,
+            true,
+            false,
+            EngineSupport::JplOnly,
         ),
         body_definition(
             "chiron",
@@ -246,7 +303,7 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             ObjectType::Asteroid,
             false,
             false,
-            EngineSupport::SwissOnly,
+            EngineSupport::Both,
         ),
         body_definition(
             "ceres",
@@ -284,13 +341,165 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::Both,
         ),
+        // Resolvable via the bundled/downloadable `codes_300ast_20100725.bsp` kernel
+        // (see `infrastructure::ephemeris::CODES_300AST_MAJOR_BODIES`), but none of
+        // these has a dedicated astrological symbol in wide use — the glyph is the
+        // circled digit matching the minor-planet number, a convention several
+        // asteroid-ephemeris references already use for bodies without one.
+        body_definition(
+            "astraea",
+            "Astraea",
+            "⑤",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "hebe",
+            "Hebe",
+            "⑥",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "iris",
+            "Iris",
+            "⑦",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "flora",
+            "Flora",
+            "⑧",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "metis",
+            "Metis",
+            "⑨",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "hygiea",
+            "Hygiea",
+            "⑩",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "parthenope",
+            "Parthenope",
+            "⑪",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "victoria",
+            "Victoria",
+            "⑫",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "egeria",
+            "Egeria",
+            "⑬",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "irene",
+            "Irene",
+            "⑭",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "eunomia",
+            "Eunomia",
+            "⑮",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "psyche",
+            "Psyche",
+            "⑯",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "thetis",
+            "Thetis",
+            "⑰",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "melpomene",
+            "Melpomene",
+            "⑱",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "fortuna",
+            "Fortuna",
+            "⑲",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
+        body_definition(
+            "massalia",
+            "Massalia",
+            "⑳",
+            ObjectType::Asteroid,
+            false,
+            false,
+            EngineSupport::JplOnly,
+        ),
     ]
 }
 
 #[derive(Clone, Copy)]
 enum EngineSupport {
     Both,
-    SwissOnly,
+    /// Resolvable today only via the anise/JPL path (bundled or downloadable BSP
+    /// kernels). Swiss Ephemeris support would require asteroid `.se1` files this
+    /// project does not bundle, so it is left unclaimed rather than guessed at.
+    JplOnly,
 }
 
 fn body_definition(
@@ -302,14 +511,19 @@ fn body_definition(
     requires_house_system: bool,
     engine_support: EngineSupport,
 ) -> BodyDefinition {
-    let mut computation_map = HashMap::from([("swisseph".to_string(), Some(id.to_string()))]);
+    let mut computation_map = HashMap::from([(
+        "swisseph".to_string(),
+        (!matches!(engine_support, EngineSupport::JplOnly)).then(|| id.to_string()),
+    )]);
     computation_map.insert(
         "jpl".to_string(),
-        matches!(engine_support, EngineSupport::Both).then(|| id.to_string()),
+        matches!(engine_support, EngineSupport::Both | EngineSupport::JplOnly)
+            .then(|| id.to_string()),
     );
 
     BodyDefinition {
         id: id.to_string(),
+        enabled: true,
         glyph: glyph.to_string(),
         formula: id.to_string(),
         element: None,
@@ -348,6 +562,7 @@ fn builtin_aspect_definitions() -> Vec<AspectDefinition> {
 fn aspect_definition(id: &str, label: &str, angle: f64, default_orb: f64) -> AspectDefinition {
     AspectDefinition {
         id: id.to_string(),
+        enabled: true,
         glyph: label.to_string(),
         angle,
         default_orb,
@@ -358,6 +573,7 @@ fn aspect_definition(id: &str, label: &str, angle: f64, default_orb: f64) -> Asp
         line_width: None,
         show_label: None,
         valid_contexts: None,
+        interpretation_weight: None,
     }
 }
 

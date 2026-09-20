@@ -36,7 +36,7 @@ import { ASPECT_GLYPHS, ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import type { WheelStyleId } from '@/lib/astrology/wheelStyle';
+import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { BodySelector } from './body-selector';
 import { DetailSidePanel } from './detail-side-panel';
@@ -46,6 +46,7 @@ interface HoroscopeDashboardProps {
 	workspaceDefaults: WorkspaceDefaultsState;
 	glyphSet: AstrologyGlyphSetId;
 	wheelStyle?: WheelStyleId;
+	wheelOrientation?: WheelOrientationId;
 	elementColors: ElementColors;
 	lightPlanetFill: string;
 	onEdit?: (chart: import('@/lib/tauri/chartPayload').AppChart) => void;
@@ -107,11 +108,40 @@ const POSITION_META: Record<string, { labelKey?: string; fallbackLabel: string; 
 		icon: '☋'
 	},
 	lilith: { labelKey: 'point_lilith', fallbackLabel: 'Lilith', icon: '⚸' },
+	true_lilith: { labelKey: 'point_lilith_true', fallbackLabel: 'True Lilith', icon: '⚸' },
+	vertex: { labelKey: 'point_vertex', fallbackLabel: 'Vertex', icon: 'Vx' },
+	antivertex: { labelKey: 'point_antivertex', fallbackLabel: 'Antivertex', icon: 'AVx' },
+	part_of_fortune: {
+		labelKey: 'point_part_of_fortune',
+		fallbackLabel: 'Part of Fortune',
+		icon: 'PF'
+	},
+	part_of_spirit: {
+		labelKey: 'point_part_of_spirit',
+		fallbackLabel: 'Part of Spirit',
+		icon: 'PS'
+	},
 	chiron: { labelKey: 'point_chiron', fallbackLabel: 'Chiron', icon: '⚷' },
 	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
 	pallas: { labelKey: 'point_pallas', fallbackLabel: 'Pallas', icon: 'Pa' },
 	juno: { labelKey: 'point_juno', fallbackLabel: 'Juno', icon: 'Ju' },
-	vesta: { labelKey: 'point_vesta', fallbackLabel: 'Vesta', icon: 'Ve' }
+	vesta: { labelKey: 'point_vesta', fallbackLabel: 'Vesta', icon: 'Ve' },
+	astraea: { labelKey: 'point_astraea', fallbackLabel: 'Astraea', icon: 'As' },
+	hebe: { labelKey: 'point_hebe', fallbackLabel: 'Hebe', icon: 'He' },
+	iris: { labelKey: 'point_iris', fallbackLabel: 'Iris', icon: 'Ir' },
+	flora: { labelKey: 'point_flora', fallbackLabel: 'Flora', icon: 'Fl' },
+	metis: { labelKey: 'point_metis', fallbackLabel: 'Metis', icon: 'Mt' },
+	hygiea: { labelKey: 'point_hygiea', fallbackLabel: 'Hygiea', icon: 'Hy' },
+	parthenope: { labelKey: 'point_parthenope', fallbackLabel: 'Parthenope', icon: 'Pt' },
+	victoria: { labelKey: 'point_victoria', fallbackLabel: 'Victoria', icon: 'Vc' },
+	egeria: { labelKey: 'point_egeria', fallbackLabel: 'Egeria', icon: 'Eg' },
+	irene: { labelKey: 'point_irene', fallbackLabel: 'Irene', icon: 'Ie' },
+	eunomia: { labelKey: 'point_eunomia', fallbackLabel: 'Eunomia', icon: 'Eu' },
+	psyche: { labelKey: 'point_psyche', fallbackLabel: 'Psyche', icon: 'Ps' },
+	thetis: { labelKey: 'point_thetis', fallbackLabel: 'Thetis', icon: 'Th' },
+	melpomene: { labelKey: 'point_melpomene', fallbackLabel: 'Melpomene', icon: 'Mp' },
+	fortuna: { labelKey: 'point_fortuna', fallbackLabel: 'Fortuna', icon: 'Ft' },
+	massalia: { labelKey: 'point_massalia', fallbackLabel: 'Massalia', icon: 'Ma' }
 };
 
 function parseRadixAspect(raw: unknown): RadixAspectDrawInput | null {
@@ -200,6 +230,7 @@ export function HoroscopeDashboard({
 	workspaceDefaults,
 	glyphSet,
 	wheelStyle,
+	wheelOrientation = 'ascendant',
 	elementColors,
 	lightPlanetFill,
 	onEdit,
@@ -385,7 +416,8 @@ export function HoroscopeDashboard({
 		const meta = POSITION_META[id];
 		return meta?.labelKey ? t(meta.labelKey) : (meta?.fallbackLabel ?? id);
 	};
-	const normalizePointId = (id: string) => (id.trim().toLowerCase() === 'desc' ? 'dsc' : id.trim().toLowerCase());
+	const normalizePointId = (id: string) =>
+		id.trim().toLowerCase() === 'desc' ? 'dsc' : id.trim().toLowerCase();
 	const selectedBodyAspects =
 		selectedWheelObject?.layer === 'radix'
 			? radixAspects.filter(
@@ -710,7 +742,7 @@ export function HoroscopeDashboard({
 							transitBodyOrder={transitWheelBodyOrder}
 							axisLongitudes={axisLongitudes}
 							houseCusps={selectedChart?.computed?.houseCusps}
-							ascRotationLongitude={chartAscLongitude}
+							leftEdgeLongitude={wheelOrientation === 'ascendant' ? chartAscLongitude : 0}
 							useFallbackData={false}
 							showPlanetGlyphs
 							showAxisLines={showAxisLines}
@@ -784,7 +816,7 @@ export function HoroscopeDashboard({
 												<div
 													key={pos.id}
 													className={cn(
-														'flex items-center gap-0.5 rounded-md px-1 py-0.5 cursor-pointer transition-colors',
+														'flex cursor-pointer items-center gap-0.5 rounded-md px-1 py-0.5 transition-colors',
 														textColor,
 														'font-mono text-sm leading-none tabular-nums',
 														selectedWheelObject?.layer === 'radix' &&
@@ -981,14 +1013,20 @@ export function HoroscopeDashboard({
 									<AstrologyGlyph
 										glyphId={selectedWheelAspect.aspect.from}
 										glyphSet={glyphSet}
-										fallback={POSITION_META[selectedWheelAspect.aspect.from]?.icon ?? selectedWheelAspect.aspect.from.slice(0, 3)}
+										fallback={
+											POSITION_META[selectedWheelAspect.aspect.from]?.icon ??
+											selectedWheelAspect.aspect.from.slice(0, 3)
+										}
 										size={18}
 									/>
 									<span className={textColor}>→</span>
 									<AstrologyGlyph
 										glyphId={selectedWheelAspect.aspect.to}
 										glyphSet={glyphSet}
-										fallback={POSITION_META[selectedWheelAspect.aspect.to]?.icon ?? selectedWheelAspect.aspect.to.slice(0, 3)}
+										fallback={
+											POSITION_META[selectedWheelAspect.aspect.to]?.icon ??
+											selectedWheelAspect.aspect.to.slice(0, 3)
+										}
 										size={18}
 									/>
 								</div>

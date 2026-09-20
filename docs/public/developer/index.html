@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Developer Manual | Kefer Astrology</title>
-    <meta name="description" content="Architecture, contracts, implementation guidance, and project direction for people and coding agents." />
+    <meta name="description" content="Architecture, contracts, implementation guidance, and verification for contributors and coding agents." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <link rel="stylesheet" href="/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css" integrity="sha256-OAfbqZKJaBkqBpUre/S5HixSCIiVbh6YvTdTpnVh48c=" />
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
   </head>
   <body>
     <div class="shell">
@@ -32,19 +32,51 @@
     <header class="page-header">
       <p class="eyebrow">developer</p>
       <h1>Developer Manual</h1>
-      <p class="lede">Architecture, contracts, implementation guidance, and project direction for people and coding agents.</p>
+      <p class="lede">Architecture, contracts, implementation guidance, and verification for contributors and coding agents.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Index</span>
+          <span>Current</span>
+          <span>Informative</span>
+        </div>
+      
     </header>
     <div class="prose">
-      <p>The Developer Manual is the shared technical source of truth for contributors and coding agents. Read normative contracts before inferring behavior from an implementation or historical note.</p>
-<h2 id="start-here">Start here</h2>
+      <p>The Developer Manual explains how Kefer Astrology is designed, implemented,
+extended, and verified. The separate <strong><a href="/manual/">Manual</a></strong> describes the
+application from a user&rsquo;s point of view.</p>
+<p>Developer pages have distinct roles:</p>
 <ul>
-<li><strong><a href="/developer/project-context/">Project context</a></strong> — repository shape, technology choices, and reliable entry points.</li>
-<li><strong><a href="/developer/development-driver/">Development driver</a></strong> — current direction and definition of done.</li>
-<li><strong><a href="/developer/specs-workflow/">Contract workflow</a></strong> — how to distinguish binding behavior from guidance and plans.</li>
-<li><strong><a href="/developer/continuation-guide/">Continuation guide</a></strong> — the shortest safe path for resuming work.</li>
+<li><strong>Contract</strong> — normative behavior that implementations and consumers may rely on.</li>
+<li><strong>Architecture</strong> — system boundaries, ownership, and design rationale.</li>
+<li><strong>Implementation reference</strong> — where and how current code realizes a contract.</li>
+<li><strong>Guide or policy</strong> — how contributors work in this repository.</li>
+<li><strong>Roadmap</strong> — desired work that is not yet a current contract.</li>
+<li><strong>Archive</strong> — historical context only.</li>
+</ul>
+<p>When pages disagree, follow a current normative contract. Do not infer current
+behavior from a roadmap or archive page.</p>
+<h2 id="contributing">Contributing</h2>
+<ul>
+<li><strong><a href="/developer/project-context/">Repository and contribution guide</a></strong> — repository map,
+document roles, contract workflow, and definition of done.</li>
+<li><strong><a href="/developer/testing-strategy/">Testing strategy</a></strong> — test levels, shared fixtures, parity, and traceability.</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<ul>
+<li><strong><a href="/developer/architecture/">System architecture</a></strong> — cross-layer runtime overview.</li>
+<li><strong><a href="/developer/domain-model/">Domain model and extensibility</a></strong> — schools, models,
+calculations, providers, and extension points.</li>
+<li><strong><a href="/developer/shared-core/">Shared astrology core</a></strong> — the planned boundary shared by
+Rust and the separately extractable Python sidecar.</li>
+<li><strong><a href="/developer/backend-structure/">Backend structure</a></strong> — current and target Rust implementation boundaries.</li>
+<li><strong><a href="/developer/rust-code-structure/">Rust code structure audit</a></strong> — how closely the current command and service modules match those boundaries.</li>
 </ul>
 <h2 id="contracts">Contracts</h2>
 <ul>
+<li><strong><a href="/developer/workspace-yaml/">Workspace YAML contract</a></strong> — complete project tree,
+schools/models, settings inheritance, chart overrides, presentation, and
+persisted transit intent.</li>
 <li><strong><a href="/developer/tauri-command-contracts/">Tauri command contracts</a></strong> — frontend-facing native commands.</li>
 <li><strong><a href="/developer/rust-workspace-contract/">Rust workspace contract</a></strong> — persistence and no-sidecar rules.</li>
 <li><strong><a href="/developer/frontend-workflow-baseline/">Frontend workflow baseline</a></strong> — workflows both frontends are measured against.</li>
@@ -53,22 +85,19 @@
 <li><strong><a href="/developer/import-chart-contract/">Import chart contract</a></strong> — supported import behavior.</li>
 <li><strong><a href="/developer/radix-render-contract/">Radix render contract</a></strong> — computed output required for a radix view.</li>
 </ul>
-<h2 id="architecture-and-computation">Architecture and computation</h2>
+<h2 id="implementation-reference">Implementation reference</h2>
 <ul>
-<li><strong><a href="/developer/architecture/">System architecture</a></strong> and <strong><a href="/developer/backend-structure/">backend structure</a></strong> describe system boundaries and data ownership.</li>
 <li><strong><a href="/developer/spice-backend/">SPICE backend</a></strong>, <strong><a href="/developer/ephemeris-manager/">ephemeris manager</a></strong>, and <strong><a href="/developer/python-package/">Python package</a></strong> describe computation backends.</li>
 <li><strong><a href="/developer/house-systems/">House systems</a></strong>, <strong><a href="/developer/lunar-phase/">lunar phase</a></strong>, and <strong><a href="/developer/physical-properties/">physical properties</a></strong> document domain calculations and data.</li>
-</ul>
-<h2 id="frontend-and-interface">Frontend and interface</h2>
-<ul>
 <li><strong><a href="/developer/frontend-react/">React frontend</a></strong> — the primary desktop interface.</li>
 <li><strong><a href="/developer/frontend-svelte/">Svelte frontend</a></strong> — the alternate implementation and parity surface.</li>
 <li><strong><a href="/developer/guided-tour/">Guided Tour contract</a></strong> — tour mode, stable anchors, and overlay behavior.</li>
 <li><strong><a href="/developer/ui-conventions/">UI conventions</a></strong> and <strong><a href="/developer/time-navigation/">time navigation</a></strong> — shared interaction rules.</li>
 </ul>
-<h2 id="plans-automation-and-historical-context">Plans, automation, and historical context</h2>
+<h2 id="roadmap-and-history">Roadmap and history</h2>
 <ul>
-<li><strong><a href="/developer/frontend-gap-implementation-plan/">Frontend gap implementation plan</a></strong> and <strong><a href="/developer/ci-todo/">CI todo</a></strong> are forward-looking work plans, not current contracts.</li>
+<li><strong><a href="/developer/development-driver/">Development roadmap</a></strong> — active implementation and architecture gaps.</li>
+<li><strong><a href="/developer/ci-todo/">CI todo</a></strong> records remaining automation work.</li>
 <li><strong><a href="/developer/versioning/">Versioning</a></strong> defines the release-number policy.</li>
 <li><strong><a href="/developer/discussion-summary/">Discussion summary</a></strong> preserves historical context and is explicitly non-normative.</li>
 </ul>

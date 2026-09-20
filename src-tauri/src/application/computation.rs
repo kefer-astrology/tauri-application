@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::astrology::ComputedAspect;
-use crate::astronomy::AstronomyMotion;
+use crate::domain::astrology::ComputedAspect;
+use crate::infrastructure::astronomy::AstronomyMotion;
 use crate::lunar_phase::LunarPhaseDetails;
 use crate::workspace::models::{AstroModel, ChartInstance};
 use crate::workspace::settings::{
@@ -94,16 +94,17 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         selected_bodies,
         &resolved.warnings,
     )?;
-    let aspects = crate::astrology::compute_chart_aspects(
+    let aspects = crate::domain::astrology::compute_chart_aspects(
         &computed.positions,
         &resolved.model.aspect_definitions,
         &resolved.settings.aspect_orbs,
         Some(selected_aspects),
     );
     let moon_details = crate::lunar_phase::from_position_map(&computed.positions);
-    let shapes = crate::astrology::detect_chart_shapes(&computed.positions, &computed.house_cusps);
+    let shapes =
+        crate::domain::astrology::detect_chart_shapes(&computed.positions, &computed.house_cusps);
     let configurations =
-        crate::astrology::detect_chart_configurations(&computed.positions, &aspects);
+        crate::domain::astrology::detect_chart_configurations(&computed.positions, &aspects);
 
     Ok(ChartCalculation {
         positions: computed.positions,
@@ -138,8 +139,8 @@ pub(super) fn compute_positions(
     requested_ids: &[String],
     initial_warnings: &[String],
 ) -> Result<PositionCalculation, String> {
-    let backend = crate::astronomy::backend_for_chart(chart);
-    let selection = crate::astrology::resolve_body_selection(
+    let backend = crate::infrastructure::astronomy::backend_for_chart(chart);
+    let selection = crate::domain::astrology::resolve_body_selection(
         &model.body_definitions,
         requested_ids,
         backend.backend_id(),

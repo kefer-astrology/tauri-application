@@ -989,9 +989,7 @@ export function NewHoroscope({
 							<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
 							<Select
 								value={timeSystem}
-								onValueChange={(value) =>
-									handleTimeSystemChange(value as NewHoroscopeTimeSystem)
-								}
+								onValueChange={(value) => handleTimeSystemChange(value as NewHoroscopeTimeSystem)}
 							>
 								<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
 									<SelectValue />
@@ -1005,8 +1003,13 @@ export function NewHoroscope({
 								</SelectContent>
 							</Select>
 						</div>
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-							<div className="flex flex-col gap-2">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+							<div
+								className={cn(
+									'flex flex-col gap-2',
+									timeSystem === 'julian_day' && 'md:col-span-2'
+								)}
+							>
 								<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
 									{timeSystem === 'julian_day'
 										? t('new_julian_day')
@@ -1059,20 +1062,20 @@ export function NewHoroscope({
 									panelClassName={ft.selectContent}
 								/>
 							</div>
+						</div>
 
-							<div className="flex flex-col gap-2">
-								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_regime')}</Label>
-								<ModeSwitcherList
-									value={timeRegime}
-									onValueChange={setTimeRegime}
-									ariaLabel={t('new_time_regime')}
-									options={[
-										{ value: 'auto', label: t('new_time_regime_auto') },
-										{ value: 'manual', label: t('new_time_regime_manual') }
-									]}
-									className="min-w-[11rem]"
-								/>
-							</div>
+						<div className="flex items-center justify-between gap-3">
+							<Label className={ft.label}>{t('new_time_regime')}</Label>
+							<ModeSwitcherList
+								value={timeRegime}
+								onValueChange={setTimeRegime}
+								ariaLabel={t('new_time_regime')}
+								options={[
+									{ value: 'auto', label: t('new_time_regime_auto') },
+									{ value: 'manual', label: t('new_time_regime_manual') }
+								]}
+								className="w-fit min-w-[11rem]"
+							/>
 						</div>
 
 						<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
@@ -1141,7 +1144,7 @@ export function NewHoroscope({
 						onValueChange={(value) => setLocationRegime(value as LocationRegime)}
 						className="gap-3"
 					>
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
+						<div className="flex flex-col gap-2">
 							<TabsContent value="auto" className="flex flex-col gap-2">
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location')}</Label>
 								<LocationSelector
@@ -1169,24 +1172,7 @@ export function NewHoroscope({
 									}
 								/>
 							</TabsContent>
-
-							<div className="flex flex-col gap-2 md:col-start-2">
-								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_location_regime')}</Label>
-								<ModeSwitcherList
-									value={locationRegime}
-									onValueChange={setLocationRegime}
-									ariaLabel={t('new_location_regime')}
-									options={[
-										{ value: 'auto', label: t('new_time_regime_auto') },
-										{ value: 'manual', label: t('new_time_regime_manual') }
-									]}
-									className="min-w-[11rem]"
-								/>
-							</div>
-						</div>
-
-						<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
-							<div>
+							<TabsContent value="manual" className="flex flex-col gap-2">
 								<Label htmlFor="manual-location" className={cn('mb-1.5 block', ft.label)}>
 									{t('new_location')}
 								</Label>
@@ -1200,7 +1186,24 @@ export function NewHoroscope({
 									placeholder={t('new_placeholder_any_location')}
 									className={cn(ft.input, 'shadow-inner')}
 								/>
-							</div>
+							</TabsContent>
+						</div>
+
+						<div className="flex items-center justify-between gap-3">
+							<Label className={ft.label}>{t('new_location_regime')}</Label>
+							<ModeSwitcherList
+								value={locationRegime}
+								onValueChange={setLocationRegime}
+								ariaLabel={t('new_location_regime')}
+								options={[
+									{ value: 'auto', label: t('new_time_regime_auto') },
+									{ value: 'manual', label: t('new_time_regime_manual') }
+								]}
+								className="w-fit min-w-[11rem]"
+							/>
+						</div>
+
+						<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
 							{/* Latitude */}
 							<div>
 								<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>

@@ -2,6 +2,9 @@
 title: 'Tauri command contracts'
 description: 'Normative command-level contract for the current desktop app.'
 weight: 45
+doc_kind: contract
+status: current
+authority: normative
 ---
 
 This page focuses on what the frontend can rely on today, including current no-op behavior.
@@ -36,10 +39,15 @@ This page focuses on what the frontend can rely on today, including current no-o
 
 ### `save_workspace(workspace_path, owner, charts, defaults?) -> Result<String, String>`
 
-- Creates `workspace.yaml` and `charts/*.yml` under `workspace_path`.
+- Creates a new manifest or updates an existing `workspace.yaml`, and writes
+  `charts/*.yml` under `workspace_path`.
 - Sanitizes chart file names from chart ids.
 - Accepts an optional `defaults` payload and persists it into `workspace.yaml` alongside chart references.
 - Returns the `workspace_path` string on success.
+- When updating, preserves schools, models, definition overrides,
+  presentation, transit references, presets, subjects, layouts, and
+  annotations. It replaces only the chart reference list and explicitly
+  supplied defaults.
 
 Acceptance criteria:
 
@@ -64,6 +72,20 @@ Acceptance criteria:
 - Creates the workspace directory and `charts/`.
 - Writes an empty `workspace.yaml`.
 - Returns an error if `workspace.yaml` already exists.
+
+### `save_transit_setup(workspace_path, setup) -> Result<TransitSetup, String>`
+
+- Persists reproducible transit intent under `transits/` and registers its
+  relative path in `workspace.yaml:transit_analyses`.
+- Stores source chart, period/step, bodies, aspects/orbs, optional
+  school/model/definition overrides, and requested event families.
+- Does not store computed positions, aspects, or series rows.
+- Rejects unsupported versions, missing source charts, and zero time steps.
+
+### `load_transit_setup(workspace_path, chart_id) -> Result<Option<TransitSetup>, String>`
+
+- Returns the registered source chart's persisted form state when present.
+- Validates version and source-chart identity before returning it.
 
 ### `delete_workspace(workspace_path) -> Result<bool, String>`
 
@@ -109,7 +131,7 @@ Acceptance criteria:
 
 ### `validate_workspace(workspace_path) -> Result<WorkspaceValidationReport, String>`
 
-- Strictly attempts every subject, chart, preset, layout, and annotation
+- Strictly attempts every subject, chart, preset, transit analysis, layout, and annotation
   reference under the workspace root.
 - Returns `valid`, typed entity counts, workspace identity, and all structured
   diagnostics.
@@ -118,6 +140,8 @@ Acceptance criteria:
   references have specific stable codes.
 - An invalid referenced item does not prevent other items from being inspected.
 - Neither frontend currently calls this command; it remains a backend-only capability until a UI surface needs it.
+- The Rust loader and Python sidecar share the versioned
+  `contracts/workspace-v1/` interoperability fixture.
 
 ### `get_workspace_defaults(workspace_path) -> Result<Value, String>`
 
@@ -127,7 +151,8 @@ Acceptance criteria:
 ### `get_current_model_report(workspace_path, chart_id?) -> Result<CurrentModelReport, String>`
 
 - Returns one canonical model envelope for the workspace, optionally resolved through a specific chart.
-- Includes the requested model name, resolved model name, available model names, model catalog, effective settings, model overrides, source, and warnings.
+- Includes requested/resolved school and model names, available model names,
+  the resolved model catalog, effective settings, model overrides, source, and warnings.
 - Includes structured `diagnostics` for catalog, selection, override, and
   chart-level invariants.
 - `effective_settings.sources` identifies whether each effective setting came from the application fallback, model, workspace, preset, chart, or operation layer. Aspect-orb sources are reported per aspect id.
@@ -152,7 +177,11 @@ Acceptance criteria:
 ### `get_chart_details(workspace_path, chart_id) -> Result<Value, String>`
 
 - Returns the full chart payload needed by the React and Svelte editor surfaces.
-- `config` includes `mode`, `house_system`, `zodiac_type`, `engine`, `model`, `override_ephemeris`, `observable_objects`, `aspect_orbs`, `selected_aspects`, `ayanamsa`, and `time_system` — the complete set of chart-level settings-layer fields, so callers can resolve chart-level overrides without falling back to workspace defaults.
+- `config` includes `mode`, `house_system`, `zodiac_type`, `engine`, `model`,
+  `model_overrides`, `override_ephemeris`, `observable_objects`,
+  `included_points`, `aspect_orbs`, `selected_aspects`, `ayanamsa`,
+  `time_system`, and legacy visual keys. Both frontends retain these fields
+  during load/save round-trips.
 - Also returns top-level `tags`, `tag_colors`, and `roden_rating`.
 - Returns an error when the chart id is not found.
 
@@ -171,6 +200,12 @@ Recommended response metadata:
 - `fallback_used`
 - `warnings`
 - `ephemeris_source` when known
+
+All returned longitudes are normalized to `[0, 360)`. On the Rust JPL path,
+`positions` and `motion` use the geometric mean-tropical coordinate pipeline
+defined by the [Astronomy coordinate contract](../astronomy-coordinate-contract/).
+This is a semantic contract rather than an additional response field; changing
+it requires an explicit version/provenance decision.
 
 ### `compute_chart_from_data(chart_json, settings_overrides?) -> Result<Map<String, Value>, String>`
 
@@ -194,7 +229,7 @@ Acceptance criteria:
 - A valid chart payload returns `positions`, `aspects`, and `chart_id`.
 - Rust-supported radix output should also include `axes` and `house_cusps`.
 - Rust-supported radix output should include `motion` when the selected backend can derive it.
-- Rust-supported radix output should also include `shapes` (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and `configurations` (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed `house_cusps`, and the computed `aspects`. See `detect_chart_shapes`/`detect_chart_configurations` in `astrology.rs`.
+- Rust-supported radix output should also include `shapes` (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and `configurations` (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed `house_cusps`, and the computed `aspects`. See `detect_chart_shapes`/`detect_chart_configurations` in `domain/astrology.rs`.
 - When `positions.sun` and `positions.moon` exist, `moon_details` should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See [lunar-phase](../lunar-phase/).
 - When fallback occurs, the response should expose that fact instead of failing silently.
 
@@ -265,8 +300,11 @@ Acceptance criteria:
 
 ### `get_available_bodies() -> Vec<String>`
 
-- Returns the currently queryable body ids inferred from available BSP files.
-- This reflects file availability, not a guarantee that every body has a dedicated SPK segment in the loaded kernels.
+- Returns body ids from resolved static kernels plus accepted manifest-defined
+  small-body SPKs.
+- A manifest-defined body is returned only after schema, checksum, validation
+  thresholds, and an in-range ANISE state probe pass. Traditional static catalog
+  kernels continue to use their declared filename/body mapping.
 
 ## Storage commands
 
