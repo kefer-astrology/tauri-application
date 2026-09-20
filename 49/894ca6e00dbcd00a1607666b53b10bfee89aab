@@ -1,0 +1,64 @@
+static/app-shell/icon.svg
+  s_50fcc50d4d850d::t_da6c635d0ca67a 1
+static/app-shell/icons/default/aspects.svg
+  s_50fcc50d4d850d::t_c9d832fc072db5 1
+static/app-shell/icons/default/dynamics.svg
+  s_50fcc50d4d850d::t_509ddee217eeee 1
+static/app-shell/icons/default/export.svg
+  s_50fcc50d4d850d::t_421e3f950b621c 1
+static/app-shell/icons/default/favorite.svg
+  s_50fcc50d4d850d::t_e7398bb1266a61 1
+static/app-shell/icons/default/horoscope.svg
+  s_50fcc50d4d850d::t_aee7bed27c5bca 1
+static/app-shell/icons/default/information.svg
+  s_50fcc50d4d850d::t_1f45342ec9d33e 1
+static/app-shell/icons/default/menu.svg
+  s_50fcc50d4d850d::t_0536b6f8e39142 1
+static/app-shell/icons/default/new.svg
+  s_50fcc50d4d850d::t_29384c2174729e 1
+static/app-shell/icons/default/open.svg
+  s_50fcc50d4d850d::t_b995475d9d4ff0 1
+static/app-shell/icons/default/revolution.svg
+  s_50fcc50d4d850d::t_d47791df4139c9 1
+static/app-shell/icons/default/save.svg
+  s_50fcc50d4d850d::t_19951a46ea7699 1
+static/app-shell/icons/default/settings.svg
+  s_50fcc50d4d850d::t_e113e894141bd4 1
+static/app-shell/icons/default/synastry.svg
+  s_50fcc50d4d850d::t_18860a62bfb71b 1
+static/app-shell/icons/default/theme-midnight.svg
+  s_50fcc50d4d850d::t_a4c56c8b596056 1
+static/app-shell/icons/default/theme-noon.svg
+  s_50fcc50d4d850d::t_e8a8920437e669 1
+static/app-shell/icons/default/theme-sunrise.svg
+  s_50fcc50d4d850d::t_e7da955be5304f 1
+static/app-shell/icons/default/theme-twilight.svg
+  s_50fcc50d4d850d::t_efc4c6b66b93a0 1
+static/app-shell/icons/default/transits.svg
+  s_50fcc50d4d850d::t_fc9f90be7bb305 1
+static/app-shell/logo-full-default.svg
+  s_50fcc50d4d850d::t_8f65d5d89d8c0a 1-25
+static/app-shell/logo-mark-default.svg
+  s_50fcc50d4d850d::t_b6f1f993f5d264 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "49894ca6e00dbcd00a1607666b53b10bfee89aab",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_50fcc50d4d850d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "93151544-2b2c-47c6-9fec-8afa3e83f8e8",
+        "model": "claude-opus-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
