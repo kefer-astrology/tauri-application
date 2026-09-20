@@ -1,0 +1,40 @@
+apps/web-react/src/app/components/time-roller-picker.tsx
+  s_e84a5601928d86::t_d112838d9e0b06 3,58,138,144,150
+  s_e84a5601928d86::t_d4a7283709655e 175
+apps/web-react/src/app/components/date-picker-input.tsx
+  s_e84a5601928d86::t_955af0e9141a75 206-221
+  s_e84a5601928d86::t_0d3e768d6939b6 48-51
+  s_e84a5601928d86::t_d4a7283709655e 45-47,147-148,197-198
+  s_e84a5601928d86::t_64322fe6425006 134-138,154,172
+  s_e84a5601928d86::t_9c5b64e3be2d8c 139,144,155-171,173-189,194,205
+  s_e84a5601928d86::t_e3dde6deb779ac 150,200
+  s_e84a5601928d86::t_d112838d9e0b06 1-4,10,42,52-67,71,74-81,140-143,145-146,149,151-153,190-193,195-196,199,201-204,222
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_e84a5601928d86::t_00804333381d52 1067,1192
+  s_e84a5601928d86::t_b8b78f045643aa 992,1008-1011
+  s_e84a5601928d86::t_0d3e768d6939b6 1006,1065,1069-1078,1147,1190-1191,1194-1204
+  s_e84a5601928d86::t_2a8b7f8da361dc 1007,1012,1175,1189
+  s_e84a5601928d86::t_5e075ce9e20a1e 1068,1193
+  s_e84a5601928d86::t_a190d490ebb525 1205-1206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "22443228fa07d50d49143a330de8d3193cac016d",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e84a5601928d86": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c07b-d012-7783-802b-befd6ec3be9f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
