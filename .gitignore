@@ -25,7 +25,6 @@ build-artifacts/
 
 # lock files
 bun.lockb
-/src-tauri/Cargo.lock
 
 # Python (backend-python, tooling)
 __pycache__/
