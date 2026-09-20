@@ -1,0 +1,40 @@
+apps/web-svelte/src/lib/i18n/fr.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+apps/web-react/src/locales/es.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+apps/web-svelte/src/lib/i18n/en.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+apps/web-react/src/locales/cs.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+translations.csv
+  s_e84a5601928d86::t_5395fb32d9ea9f 71-72,74
+apps/web-react/src/locales/fr.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+apps/web-react/src/locales/en.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+apps/web-svelte/src/lib/i18n/cs.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+apps/web-svelte/src/lib/i18n/es.json
+  s_e84a5601928d86::t_615672ab513b27 71-72,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "00356f13691351609d50a712d3da2262e4a03015",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e84a5601928d86": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c07b-d012-7783-802b-befd6ec3be9f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
