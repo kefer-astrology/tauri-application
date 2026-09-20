@@ -29,12 +29,49 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPACE = os.path.abspath(os.path.join(HERE, "..", ".."))
 
-DEFAULT_PEN = os.path.join(SPACE, "Glyphs.pen")
+# The design repo that holds the canvas files. Glyphs.pen lived directly in
+# SPACE until it was moved here; the sync state sits next to it so the design
+# repo is self-contained.
+SOURCES = os.path.join(SPACE, "graphical-sources")
+
+DEFAULT_PEN = os.path.join(SOURCES, "Glyphs.pen")
 DEFAULT_GLYPHS = os.path.join(SPACE, "tauri-application", "static", "glyphs")
-DEFAULT_BASELINE = os.path.join(SPACE, ".glyphs-sync.json")
+DEFAULT_BASELINE = os.path.join(SOURCES, ".glyphs-sync.json")
 
 CATEGORIES = {"aspects": "Aspects", "planets": "Planets", "zodiac": "Zodiac"}
 SECTION_TO_CATEGORY = {v: k for k, v in CATEGORIES.items()}
+
+# Identity of the sheet `pull` writes. Split out as module state so a sibling
+# tool can drive the same engine against a different canvas (see
+# appshell-sync.py) instead of forking it.
+SHEET_ID = "bi8Au"
+SHEET_NAME = "Glyph Set — default"
+SHEET_TITLE = "Astrology Glyphs"
+SHEET_SOURCE = "tauri-application/static/glyphs/default"
+# Subfolder under --glyphs holding the editable set; "" when the categories
+# are already the leaf folders.
+SET_DIR = "default"
+
+# Optional explicit layout. Default (None) is one section per CATEGORIES entry,
+# holding every .svg in that folder, alphabetically. Set it to a list of
+# {"key", "title", "dir", "stems"} to control section split and cell order, or
+# to draw several sections out of a single folder. `key` namespaces the cell
+# ids, so two sections may share a `dir` as long as their stems differ.
+SECTION_PLAN = None
+
+
+def resolve_sections(glyphs_dir: str, setid: str | None = None) -> list[dict]:
+    if SECTION_PLAN is not None:
+        return SECTION_PLAN
+    setid = SET_DIR if setid is None else setid
+    out = []
+    for cat, title in CATEGORIES.items():
+        d = os.path.join(glyphs_dir, setid, cat)
+        stems = sorted(f[:-4] for f in os.listdir(d)
+                       if f.endswith(".svg")) if os.path.isdir(d) else []
+        out.append({"key": cat, "title": title,
+                    "dir": os.path.join(setid, cat), "stems": stems})
+    return out
 
 INK = "#161616"          # canvas ink; becomes currentColor in default/
 MODERN_INK = "#e5e7eb"   # what currentColor becomes in modern/
@@ -343,16 +380,20 @@ def emit_node(node, s, variables, report, label, out, indent):
                 f"skipped")
 
 
-def canvas_to_svg(box: dict, vb: float, variables: dict, report: Report,
-                  label: str) -> str:
-    s = vb / BOX
+def canvas_to_svg(box: dict, vbw: float, vbh: float, variables: dict,
+                  report: Report, label: str) -> str:
+    # Scale is uniform and normalised on height, so a non-square asset (the
+    # wordmark) simply gets a wider cell; square ones are unaffected.
+    s = vbh / BOX
     body: list[str] = []
     for kid in box.get("children") or []:
         emit_node(kid, s, variables, report, label, body, 1)
-    vbi = num(vb)
+    # Intrinsic size must keep the viewBox aspect or a non-square asset gets
+    # letterboxed into a square. Square assets still emit exactly 100x100.
     lines = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {vbi} {vbi}" '
-        f'width="100" height="100" fill="none">',
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {num(vbw)} {num(vbh)}" '
+        f'width="{num(100 * vbw / vbh)}" height="100" fill="none">',
         *body,
         "</svg>",
         "",
@@ -362,17 +403,20 @@ def canvas_to_svg(box: dict, vb: float, variables: dict, report: Report,
 
 # ------------------------------------------------------------- SVG -> canvas
 
-def parse_svg(path: str, report: Report) -> tuple[list[dict], float]:
+def parse_svg(path: str, report: Report) -> tuple[list[dict], float, float]:
     """Parse an SVG into flat canvas-space elements plus its viewBox size."""
     with open(path, encoding="utf-8") as fh:
         src = fh.read()
     m = re.search(r'viewBox="([^"]+)"', src)
     if not m:
         report.warn(f"{path}: no viewBox; assuming 24")
-        vb = 24.0
+        vbw = vbh = 24.0
     else:
-        vb = float(m.group(1).split()[2])
-    k = BOX / vb
+        parts = m.group(1).split()
+        vbw, vbh = float(parts[2]), float(parts[3])
+    # Height-normalised so the scale stays uniform; boxw is the cell width.
+    k = BOX / vbh
+    boxw = vbw * k
 
     def style_of(attrs):
         d = {}
@@ -403,26 +447,42 @@ def parse_svg(path: str, report: Report) -> tuple[list[dict], float]:
     els: list[dict] = []
     tx = ty = 0.0
     sc = 1.0
-    stack: list[tuple[float, float, float]] = []
+    # Paint and text properties inherit in SVG. Lucide-style icons declare
+    # stroke/stroke-width once on the root <svg> and leave the paths bare, so
+    # reading only the shape tags loses the stroke entirely; potrace puts fill
+    # on the wrapping <g> for the same reason. Carry an inherited style down
+    # the tree and let each element override it.
+    inherited = style_of(re.search(r"<svg\b([^>]*)>", src).group(1)
+                         if re.search(r"<svg\b([^>]*)>", src) else "")
+    stack: list[tuple[float, float, float, dict]] = []
     pattern = r'<(g|/g|circle|ellipse|rect|path|text)\b([^>]*?)(/?)>([^<]*)'
     for m2 in re.finditer(pattern, src):
         tag, attrs, _selfclose, inner = m2.groups()
         if tag == "g":
-            stack.append((tx, ty, sc))
+            stack.append((tx, ty, sc, dict(inherited)))
+            inherited.update(style_of(attrs))
             for t2 in re.finditer(r'(translate|scale)\(([^)]+)\)', attrs):
                 vals = [float(v) for v in
                         re.split(r'[,\s]+', t2.group(2).strip()) if v]
                 if t2.group(1) == "translate":
                     tx, ty = tx + sc * vals[0], ty + sc * (vals[1] if len(vals) > 1 else 0)
                 else:
+                    if len(vals) > 1 and abs(abs(vals[1]) - abs(vals[0])) > EPS:
+                        report.warn(f"{path}: non-uniform scale"
+                                    f"({vals[0]},{vals[1]}); using X")
+                    if len(vals) > 1 and vals[1] < 0:
+                        report.warn(f"{path}: negative Y scale (vertical flip) "
+                                    f"is not representable; run "
+                                    f"appshell-normalize.py on this file")
                     sc *= vals[0]
             continue
         if tag == "/g":
             if stack:
-                tx, ty, sc = stack.pop()
+                tx, ty, sc, inherited = stack.pop()
             continue
 
-        st = style_of(attrs)
+        st = dict(inherited)
+        st.update(style_of(attrs))
         fill, stroke = paint(st, "fill"), paint(st, "stroke")
         node: dict = {"layoutPosition": "absolute"}
         if fill:
@@ -462,10 +522,10 @@ def parse_svg(path: str, report: Report) -> tuple[list[dict], float]:
             if not d:
                 continue
             node.update(type="path", name="Path", x=0, y=0,
-                        width=BOX, height=BOX,
+                        width=round(boxw, 3), height=BOX,
                         geometry=" ".join(d.split()),
                         viewBox=[round(-tx / sc, 4), round(-ty / sc, 4),
-                                 round(vb / sc, 4), round(vb / sc, 4)])
+                                 round(vbw / sc, 4), round(vbh / sc, 4)])
             if st.get("fill-rule") == "evenodd":
                 node["fillRule"] = "evenodd"
         elif tag == "text":
@@ -479,9 +539,9 @@ def parse_svg(path: str, report: Report) -> tuple[list[dict], float]:
             ay = (ty + sc * cy) * k
             th = min(BOX, 2 * min(ay, BOX - ay)) if 0 < ay < BOX else BOX
             node.update(type="text", name="Symbol", content=txt,
-                        x=round((tx + sc * cx) * k - BOX / 2, 3),
+                        x=round((tx + sc * cx) * k - boxw / 2, 3),
                         y=round(ay - th / 2, 3),
-                        width=BOX, height=round(th, 3),
+                        width=round(boxw, 3), height=round(th, 3),
                         textGrowth="fixed-width-height",
                         textAlign="center", textAlignVertical="middle",
                         fontFamily="$font-ui",
@@ -490,20 +550,17 @@ def parse_svg(path: str, report: Report) -> tuple[list[dict], float]:
             if not node.get("fill"):
                 node["fill"] = "$ink"
         els.append(node)
-    return els, vb
+    return els, vbw, vbh
 
 
 # ------------------------------------------------------------------ commands
 
-def glyph_files(glyphs_dir: str, setid: str = "default") -> dict[tuple[str, str], str]:
+def glyph_files(glyphs_dir: str, setid: str | None = None) -> dict[tuple[str, str], str]:
     out = {}
-    for cat in CATEGORIES:
-        d = os.path.join(glyphs_dir, setid, cat)
-        if not os.path.isdir(d):
-            continue
-        for fn in sorted(os.listdir(d)):
-            if fn.endswith(".svg"):
-                out[(cat, fn[:-4])] = os.path.join(d, fn)
+    for sec in resolve_sections(glyphs_dir, setid):
+        for stem in sec["stems"]:
+            out[(sec["key"], stem)] = os.path.join(
+                glyphs_dir, sec["dir"], stem + ".svg")
     return out
 
 
@@ -530,7 +587,8 @@ def build_emissions(args, report):
     cells = find_glyph_cells(doc, report)
     if not cells:
         die("no glyph cells found on the canvas (expected section frames named "
-            "Aspects/Planets/Zodiac containing cells with a 'Glyph' frame)")
+            + "/".join(CATEGORIES.values())
+            + " containing cells with a 'Glyph' frame)")
     files = glyph_files(args.glyphs)
     emissions = {}
     for key, box in sorted(cells.items()):
@@ -541,9 +599,9 @@ def build_emissions(args, report):
                         f"default/{cat}/{stem}.svg; skipped (rename the cell "
                         f"to match a file, or create the file first)")
             continue
-        _, vb = parse_svg(target, Report())
-        emissions[key] = (target, canvas_to_svg(box, vb, variables, report,
-                                                f"{cat}/{stem}"))
+        _, vbw, vbh = parse_svg(target, Report())
+        emissions[key] = (target, canvas_to_svg(box, vbw, vbh, variables,
+                                                report, f"{cat}/{stem}"))
     for key in sorted(set(files) - set(cells)):
         report.warn(f"{key[0]}/{key[1]}.svg has no cell on the canvas; "
                     f"left untouched")
@@ -617,7 +675,7 @@ def cmd_pull(args):
     report = Report()
     files = glyph_files(args.glyphs)
     if not files:
-        die(f"no glyphs found under {args.glyphs}/default")
+        die(f"no glyphs found under {os.path.join(args.glyphs, SET_DIR)}")
 
     nid = [0]
 
@@ -632,16 +690,21 @@ def cmd_pull(args):
         n.update(kw)
         return n
 
+    def cell_width(cat, stem):
+        _e, vbw, vbh = parse_svg(files[(cat, stem)], Report())
+        return round(vbw * BOX / vbh, 3)
+
     def cell(cat, stem):
-        els, _vb = parse_svg(files[(cat, stem)], report)
+        els, vbw, vbh = parse_svg(files[(cat, stem)], report)
         for e in els:
             e["id"] = gid()
+        boxw = round(vbw * BOX / vbh, 3)
         return {
             "type": "frame", "id": gid(), "name": stem, "layout": "vertical",
-            "width": CELL, "alignItems": "center", "gap": 8,
+            "width": max(CELL, boxw), "alignItems": "center", "gap": 8,
             "children": [
                 {"type": "frame", "id": gid(), "name": "Glyph",
-                 "layout": "none", "width": BOX, "height": BOX,
+                 "layout": "none", "width": boxw, "height": BOX,
                  "children": els},
                 text(stem.replace("_", " "), name="Name", fontSize=10,
                      lineHeight=1.3, fill="$muted", textGrowth="fixed-width",
@@ -650,8 +713,8 @@ def cmd_pull(args):
             ],
         }
 
-    def section(cat):
-        stems = [s for (c, s) in sorted(files) if c == cat]
+    def section(sec):
+        cat, stems = sec["key"], sec["stems"]
         rows = []
         for i in range(0, len(stems), COLS):
             rows.append({"type": "frame", "id": gid(),
@@ -661,34 +724,39 @@ def cmd_pull(args):
         head = {"type": "frame", "id": gid(), "name": "Heading",
                 "layout": "horizontal", "width": "fill_container",
                 "alignItems": "center", "gap": 12, "children": [
-                    text(CATEGORIES[cat], name="Title", fontSize=20,
+                    text(sec["title"], name="Title", fontSize=20,
                          fontWeight="600", letterSpacing=-0.2),
                     text(str(len(stems)), name="Count", fontSize=13,
                          fill="$faint"),
                     {"type": "rectangle", "id": gid(), "name": "Rule",
                      "width": "fill_container", "height": 1, "fill": "$rule"},
                 ]}
-        return {"type": "frame", "id": gid(), "name": CATEGORIES[cat],
+        return {"type": "frame", "id": gid(), "name": sec["title"],
                 "layout": "vertical", "width": "fill_container", "gap": 24,
                 "children": [head, {"type": "frame", "id": gid(),
                                     "name": "Grid", "layout": "vertical",
                                     "gap": 24, "children": rows}]}
 
     width = COLS * CELL + (COLS - 1) * 12 + 2 * 56
+    for sec in resolve_sections(args.glyphs):
+        for i in range(0, len(sec["stems"]), COLS):
+            row = sec["stems"][i:i + COLS]
+            span = sum(max(CELL, cell_width(sec["key"], s)) for s in row)
+            width = max(width, span + (len(row) - 1) * 12 + 2 * 56)
     sheet = {
-        "type": "frame", "id": "bi8Au", "name": "Glyph Set — default",
+        "type": "frame", "id": SHEET_ID, "name": SHEET_NAME,
         "x": 0, "y": 0, "width": width, "height": "fit_content",
         "layout": "vertical", "gap": 48, "padding": 56, "fill": "#FFFFFF",
         "clip": True, "children": [
             {"type": "frame", "id": gid(), "name": "Header",
              "layout": "vertical", "gap": 6, "width": "fill_container",
              "children": [
-                 text("Astrology Glyphs", name="Title", fontSize=34,
+                 text(SHEET_TITLE, name="Title", fontSize=34,
                       fontWeight="700", letterSpacing=-0.8),
-                 text("tauri-application/static/glyphs/default", name="Source",
+                 text(SHEET_SOURCE, name="Source",
                       fontSize=13, fill="$faint", letterSpacing=0.2),
              ]},
-            *[section(c) for c in CATEGORIES],
+            *[section(sec) for sec in resolve_sections(args.glyphs)],
         ],
     }
 
@@ -707,7 +775,8 @@ def cmd_pull(args):
 
     report.flush()
     print(f"pulled {len(files)} glyph(s) into {args.pen}")
-    print("the editor ignores external writes - reopen Glyphs.pen to see it.")
+    print(f"the editor ignores external writes - reopen "
+          f"{os.path.basename(args.pen)} to see it.")
     args2 = argparse.Namespace(**vars(args))
     cmd_baseline(args2)
 
