@@ -242,9 +242,12 @@ function resolveDeclutteredPlacements(
 		const midRank = (size - 1) / 2;
 		const maxAbsRank = Math.max(...cluster.map((_, k) => Math.abs(k - midRank)));
 		const radialStep =
-			maxAbsRank > 0 ? Math.min(PLANET_FAN_RADIAL_STEP, (outerRadius - floorRadius) / maxAbsRank) : 0;
+			maxAbsRank > 0
+				? Math.min(PLANET_FAN_RADIAL_STEP, (outerRadius - floorRadius) / maxAbsRank)
+				: 0;
 		const innermostRadius = outerRadius - maxAbsRank * radialStep;
-		const angleStepDeg = (PLANET_FAN_PIXEL_GAP / (2 * Math.PI * Math.max(innermostRadius, 1))) * 360;
+		const angleStepDeg =
+			(PLANET_FAN_PIXEL_GAP / (2 * Math.PI * Math.max(innermostRadius, 1))) * 360;
 		cluster.forEach((idx, k) => {
 			const rank = k - midRank;
 			placements.set(sorted[idx]!.key, {
@@ -290,7 +293,11 @@ function maxOrbForAspectType(aspectType: string, aspectOrbs: Record<string, numb
 
 type AspectOrbTier = 'tight' | 'medium' | 'loose' | 'outer';
 
-function aspectOrbTier(orbDeg: number, maxOrbDeg: number, tier: AspectLineTierStyleState): AspectOrbTier {
+function aspectOrbTier(
+	orbDeg: number,
+	maxOrbDeg: number,
+	tier: AspectLineTierStyleState
+): AspectOrbTier {
 	const max = Math.max(maxOrbDeg, 1e-9);
 	const pct = (Math.abs(orbDeg) / max) * 100;
 	const t = tier.tightThresholdPct;
@@ -360,8 +367,8 @@ export interface HoroscopeWheelProps {
 	axisLongitudes?: Partial<HoroscopeWheelAxis>;
 	/** House cusps 1-12 in ecliptic longitude, from backend/Swiss/JPL. */
 	houseCusps?: readonly number[];
-	/** Longitude that should be pinned to the left edge; normally the computed ASC. */
-	ascRotationLongitude?: number;
+	/** Ecliptic longitude pinned to the left edge (computed ASC or 0° Aries). */
+	leftEdgeLongitude?: number;
 	useFallbackData?: boolean;
 	/** Bodies that receive a soft halo (badge hover, singleton, focal planets, …) */
 	highlightBodies?: ReadonlySet<HoroscopeWheelBody>;
@@ -399,7 +406,7 @@ export function HoroscopeWheel({
 	transitBodyOrder,
 	axisLongitudes,
 	houseCusps,
-	ascRotationLongitude,
+	leftEdgeLongitude,
 	useFallbackData = true,
 	highlightBodies = new Set(),
 	dimNonHighlighted = false,
@@ -449,7 +456,10 @@ export function HoroscopeWheel({
 	/** Fraction of the way from `houseOuterRadius` to `innerRadius`; above 0.5 biases glyphs outward, closer to the zodiac ring, so they're easier to find and click. */
 	const planetBandOuterBias = 0.62;
 	const planetRadius =
-		houseOuterRadius + (innerRadius - houseOuterRadius) * planetBandOuterBias - 8 + glyphRadialOutset;
+		houseOuterRadius +
+		(innerRadius - houseOuterRadius) * planetBandOuterBias -
+		8 +
+		glyphRadialOutset;
 	const houseLabelRadius = (houseInnerRadius + houseOuterRadius) / 2;
 	/** Aspect chords stop at the first inner circle, keeping the band to the second circle clear. */
 	const radixAspectChordRadius = innerCenterCore;
@@ -477,8 +487,8 @@ export function HoroscopeWheel({
 	const strokeSoft = 'var(--token-wheel-stroke-soft)';
 	const fillBg = 'var(--token-wheel-bg)';
 	const wheelRotationOffset =
-		typeof ascRotationLongitude === 'number' && Number.isFinite(ascRotationLongitude)
-			? -normalizeDeg(ascRotationLongitude)
+		typeof leftEdgeLongitude === 'number' && Number.isFinite(leftEdgeLongitude)
+			? -normalizeDeg(leftEdgeLongitude)
 			: 0;
 	const displayLon = (lon: number) => normalizeDeg(lon + wheelRotationOffset);
 	const wheelHouseCusps = normalizeHouseCusps(houseCusps);
@@ -1083,8 +1093,7 @@ export function HoroscopeWheel({
 							placement?.radius ?? planetRadius,
 							displayLon(placement?.renderLon ?? lon)
 						);
-						const isSelected =
-							selectedObject?.layer === 'radix' && selectedObject.bodyId === key;
+						const isSelected = selectedObject?.layer === 'radix' && selectedObject.bodyId === key;
 						const hi = highlightBodies.has(key);
 						let hemiDim = 1;
 						if (hemisphereOverlay !== 'off') {

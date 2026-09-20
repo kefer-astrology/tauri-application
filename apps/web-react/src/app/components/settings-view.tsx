@@ -6,6 +6,7 @@ import { LocationSelector } from './location-selector';
 import type { SettingsSectionId } from './settings-secondary-sidebar';
 import type { Theme } from './astrology-sidebar';
 import { Card, CardContent, CardFooter } from './ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ColorInput } from './ui/color-input';
@@ -18,7 +19,6 @@ import {
 	SelectContent,
 	SelectGroup,
 	SelectItem,
-	SelectLabel,
 	SelectTrigger,
 	SelectValue
 } from './ui/select';
@@ -36,6 +36,7 @@ import { persistGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyph
 import {
 	persistWheelStyle,
 	WHEEL_STYLE_OPTIONS,
+	type WheelOrientationId,
 	type WheelStyleId
 } from '@/lib/astrology/wheelStyle';
 import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
@@ -78,9 +79,9 @@ function parseThemeColor(value: string): ParsedThemeColor {
 		.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
 	if (!rgb) return { hex: '#000000', alpha: 1 };
 
-	const channels = rgb.slice(1, 4).map((channel) =>
-		Math.min(255, Math.max(0, Math.round(Number(channel))))
-	);
+	const channels = rgb
+		.slice(1, 4)
+		.map((channel) => Math.min(255, Math.max(0, Math.round(Number(channel)))));
 	return {
 		hex: `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`,
 		alpha: Math.min(1, Math.max(0, rgb[4] === undefined ? 1 : Number(rgb[4])))
@@ -90,7 +91,9 @@ function parseThemeColor(value: string): ParsedThemeColor {
 function formatThemeColor(hex: string, alpha: number): string {
 	if (alpha >= 1) return hex;
 	const normalized = hex.replace('#', '');
-	const channels = [0, 2, 4].map((offset) => Number.parseInt(normalized.slice(offset, offset + 2), 16));
+	const channels = [0, 2, 4].map((offset) =>
+		Number.parseInt(normalized.slice(offset, offset + 2), 16)
+	);
 	return `rgba(${channels.join(',')},${Number(alpha.toFixed(2))})`;
 }
 
@@ -108,11 +111,12 @@ function houseSystemLabel(
 	return key ? t(key, { defaultValue: name }) : name;
 }
 
-const PRESET_OPTIONS = [
-	{ value: 'default', label: 'Default' },
-	{ value: 'violet', label: 'Violet' },
-	{ value: 'rose', label: 'Rose' }
-] as const;
+const THEME_OPTIONS: { id: Theme; labelKey: string }[] = [
+	{ id: 'sunrise', labelKey: 'sidebar_theme_sunrise' },
+	{ id: 'noon', labelKey: 'sidebar_theme_noon' },
+	{ id: 'twilight', labelKey: 'sidebar_theme_twilight' },
+	{ id: 'midnight', labelKey: 'sidebar_theme_midnight' }
+];
 
 const ASPECT_LINE_OUTER_STYLE_OPTIONS: { id: AspectLineStyleId; label: string }[] = [
 	{ id: 'solid', label: 'Solid' },
@@ -142,6 +146,9 @@ interface SettingsViewProps {
 	onAstrologyGlyphSetChange: (value: AstrologyGlyphSetId) => void;
 	wheelStyle: WheelStyleId;
 	onWheelStyleChange: (value: WheelStyleId) => void;
+	wheelOrientation: WheelOrientationId;
+	onWheelOrientationChange: (value: WheelOrientationId) => void;
+	onThemeChange: (value: Theme) => void;
 	elementColors: ElementColors;
 	onElementColorsCommit: (value: ElementColors) => void;
 	themePalette: ThemePalette;
@@ -159,6 +166,9 @@ function SettingsView({
 	onAstrologyGlyphSetChange,
 	wheelStyle,
 	onWheelStyleChange,
+	wheelOrientation,
+	onWheelOrientationChange,
+	onThemeChange,
 	elementColors,
 	onElementColorsCommit,
 	themePalette,
@@ -174,9 +184,10 @@ function SettingsView({
 	const [longitude, setLongitude] = useState(String(workspaceDefaults.locationLongitude));
 	const [timezone, setTimezone] = useState(workspaceDefaults.timezone);
 	const [houseSystem, setHouseSystem] = useState<string>(workspaceDefaults.houseSystem);
-	const [presetValue, setPresetValue] = useState<string>('default');
 	const [glyphSetValue, setGlyphSetValue] = useState<AstrologyGlyphSetId>(astrologyGlyphSet);
 	const [wheelStyleValue, setWheelStyleValue] = useState<WheelStyleId>(wheelStyle);
+	const [wheelOrientationValue, setWheelOrientationValue] =
+		useState<WheelOrientationId>(wheelOrientation);
 	const [elementDraft, setElementDraft] = useState<ElementColors>(elementColors);
 	const [themePaletteDraft, setThemePaletteDraft] = useState<ThemePalette>(themePalette);
 	const [selectedBodies, setSelectedBodies] = useState<string[]>(
@@ -239,6 +250,9 @@ function SettingsView({
 	}, [wheelStyle]);
 
 	useEffect(() => {
+		setWheelOrientationValue(wheelOrientation);
+	}, [wheelOrientation]);
+	useEffect(() => {
 		setElementDraft(elementColors);
 	}, [elementColors]);
 
@@ -277,6 +291,16 @@ function SettingsView({
 			markChanged();
 		},
 		[markChanged, onWheelStyleChange]
+	);
+
+	const onWheelOrientationChangeHandler = useCallback(
+		(value: string) => {
+			const next: WheelOrientationId = value === 'aries' ? 'aries' : 'ascendant';
+			setWheelOrientationValue(next);
+			onWheelOrientationChange(next);
+			markChanged();
+		},
+		[markChanged, onWheelOrientationChange]
 	);
 
 	const onAppShellSetChange = useCallback(
@@ -321,6 +345,7 @@ function SettingsView({
 		setAspectLineTiers({ ...workspaceDefaults.aspectLineTierStyle });
 		setGlyphSetValue(astrologyGlyphSet);
 		setWheelStyleValue(wheelStyle);
+		setWheelOrientationValue(wheelOrientation);
 		setElementDraft(elementColors);
 		setThemePaletteDraft(themePalette);
 		onAppShellIconSetChange(readStoredAppShellIconSet());
@@ -330,6 +355,7 @@ function SettingsView({
 		onAppShellIconSetChange,
 		themePalette,
 		wheelStyle,
+		wheelOrientation,
 		workspaceDefaults
 	]);
 
@@ -851,7 +877,11 @@ function SettingsView({
 													</SelectTrigger>
 													<SelectContent className={ft.selectContent}>
 														{ASPECT_LINE_OUTER_STYLE_OPTIONS.map((option) => (
-															<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+															<SelectItem
+																key={option.id}
+																value={option.id}
+																className={ft.selectItem}
+															>
 																{option.label}
 															</SelectItem>
 														))}
@@ -863,302 +893,349 @@ function SettingsView({
 								</div>
 							)}
 
-							{section === 'vzhled' && (
-								<div className="flex flex-col gap-8 lg:max-w-2xl">
-									<div className="space-y-2">
-										<Label htmlFor="settings-preset" className={ft.label}>
-											{t('label_color_preset')}
-										</Label>
-										<Select
-											value={presetValue}
-											onValueChange={(value) => {
-												setPresetValue(value);
-												markChanged();
-											}}
-										>
-											<SelectTrigger
-												id="settings-preset"
-												className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
-											>
-												<SelectValue placeholder={t('select_preset')} />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												<SelectGroup>
-													<SelectLabel className={ft.muted}>{t('label_themes')}</SelectLabel>
-													{PRESET_OPTIONS.map((preset) => (
-														<SelectItem
-															key={preset.value}
-															value={preset.value}
-															className={ft.selectItem}
-														>
-															{preset.label}
-														</SelectItem>
-													))}
-												</SelectGroup>
-											</SelectContent>
-										</Select>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="settings-glyph-set" className={ft.label}>
-											{t('select_glyph_set')}
-										</Label>
-										<Select value={glyphSetValue} onValueChange={onGlyphSetChange}>
-											<SelectTrigger
-												id="settings-glyph-set"
-												className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
-											>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												{GLYPH_SET_OPTIONS.map((option) => (
-													<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
-														{option.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										{glyphDescription ? (
-											<p className={cn('text-xs', ft.muted)}>{glyphDescription}</p>
-										) : null}
-									</div>
-									<div className="space-y-2">
-										<Label className={ft.label}>{t('glyph_manager_title')}</Label>
-										<GlyphManager glyphSet={glyphSetValue} />
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="settings-wheel-style" className={ft.label}>
-											{t('select_wheel_style')}
-										</Label>
-										<Select value={wheelStyleValue} onValueChange={onWheelStyleChangeHandler}>
-											<SelectTrigger
-												id="settings-wheel-style"
-												className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
-											>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												{WHEEL_STYLE_OPTIONS.map((option) => (
-													<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
-														{option.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										{wheelStyleDescription ? (
-											<p className={cn('text-xs', ft.muted)}>{wheelStyleDescription}</p>
-										) : null}
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="settings-app-shell-set" className={ft.label}>
-											App shell icon set
-										</Label>
-										<Select value={appShellIconSet} onValueChange={onAppShellSetChange}>
-											<SelectTrigger
-												id="settings-app-shell-set"
-												className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
-											>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												{APP_SHELL_ICON_SET_OPTIONS.map((option) => (
-													<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
-														{option.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										{appShellDescription ? (
-											<p className={cn('text-xs', ft.muted)}>
-												{appShellDescription}. Ink variant switches automatically by theme.
-											</p>
-										) : null}
-									</div>
-									<Separator className="bg-[color:var(--theme-panel-border)]" />
-									<div className="space-y-4 pt-1">
-										<h3 className={cn('text-sm font-semibold', ft.title)}>
-											{t('settings_theme_palette_title')}
-										</h3>
-										<p className={cn('text-xs leading-relaxed', ft.muted)}>
-											{t('settings_theme_palette_blurb', { theme: t(`sidebar_theme_${theme}`) })}
-										</p>
-										<div className="space-y-2 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] p-4">
-											<div className="flex items-center justify-between gap-4">
-												<Label htmlFor="settings-popup-fuzziness" className={ft.label}>
-													{t('settings_popup_fuzziness')}
-												</Label>
-												<output
-													htmlFor="settings-popup-fuzziness"
-													className={cn('min-w-12 text-right text-sm tabular-nums', ft.title)}
-												>
-													{Math.round(themePaletteDraft.popupBackgroundFuzziness)}%
-												</output>
+							{section === 'rozlozeni_symbolu' && (
+								<Accordion type="multiple" className="w-full lg:max-w-2xl">
+									<AccordionItem value="glyph-set">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_symbol_selector')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-5">
+											<div className="space-y-2">
+												<Label className={ft.label}>{t('select_glyph_set')}</Label>
+												<Select value={glyphSetValue} onValueChange={onGlyphSetChange}>
+													<SelectTrigger
+														className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+													>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent className={ft.selectContent}>
+														{GLYPH_SET_OPTIONS.map((option) => (
+															<SelectItem
+																key={option.id}
+																value={option.id}
+																className={ft.selectItem}
+															>
+																{option.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												{glyphDescription ? (
+													<p className={cn('text-xs', ft.muted)}>{glyphDescription}</p>
+												) : null}
 											</div>
-											<input
-												id="settings-popup-fuzziness"
-												type="range"
-												min={0}
-												max={100}
-												step={1}
-												value={themePaletteDraft.popupBackgroundFuzziness}
-												onChange={(event) => {
-													const popupBackgroundFuzziness = Number(event.target.value);
-													setThemePaletteDraft((prev) => ({
-														...prev,
-														popupBackgroundFuzziness
-													}));
+											<div className="space-y-2">
+												<Label className={ft.label}>{t('settings_app_shell_icons')}</Label>
+												<Select value={appShellIconSet} onValueChange={onAppShellSetChange}>
+													<SelectTrigger
+														className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+													>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent className={ft.selectContent}>
+														{APP_SHELL_ICON_SET_OPTIONS.map((option) => (
+															<SelectItem
+																key={option.id}
+																value={option.id}
+																className={ft.selectItem}
+															>
+																{option.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												{appShellDescription ? (
+													<p className={cn('text-xs', ft.muted)}>{appShellDescription}</p>
+												) : null}
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+									<AccordionItem value="radix-style">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_radix_style')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-5">
+											<div className="space-y-2">
+												<Select value={wheelStyleValue} onValueChange={onWheelStyleChangeHandler}>
+													<SelectTrigger
+														className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+													>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent className={ft.selectContent}>
+														{WHEEL_STYLE_OPTIONS.map((option) => (
+															<SelectItem
+																key={option.id}
+																value={option.id}
+																className={ft.selectItem}
+															>
+																{option.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												{wheelStyleDescription ? (
+													<p className={cn('text-xs', ft.muted)}>{wheelStyleDescription}</p>
+												) : null}
+											</div>
+											<div className="space-y-2">
+												<Label className={ft.label}>{t('settings_wheel_orientation')}</Label>
+												<Select
+													value={wheelOrientationValue}
+													onValueChange={onWheelOrientationChangeHandler}
+												>
+													<SelectTrigger
+														className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+													>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent className={ft.selectContent}>
+														<SelectItem value="ascendant" className={ft.selectItem}>
+															{t('settings_wheel_orientation_ascendant')}
+														</SelectItem>
+														<SelectItem value="aries" className={ft.selectItem}>
+															{t('settings_wheel_orientation_aries')}
+														</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+									<AccordionItem value="element-colors">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_element_colors')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-4">
+											<p className={cn('text-xs leading-relaxed', ft.muted)}>
+												{t('settings_element_wheel_blurb')}
+											</p>
+											{(
+												['fire', 'earth', 'air', 'water'] as const satisfies readonly ElementId[]
+											).map((el) => (
+												<div key={el} className="flex flex-wrap items-center gap-3">
+													<Label className={cn(ft.label, 'min-w-[8rem] shrink-0')}>
+														{t(`settings_element_${el}`)}
+													</Label>
+													<ColorInput
+														className="w-14"
+														value={elementDraft[el]}
+														onChange={(event) => {
+															setElementDraft((draft) => ({ ...draft, [el]: event.target.value }));
+															markChanged();
+														}}
+														aria-label={t(`settings_element_${el}`)}
+													/>
+													<span className={cn('font-mono text-xs', ft.muted)}>
+														{elementDraft[el]}
+													</span>
+												</div>
+											))}
+										</AccordionContent>
+									</AccordionItem>
+									<AccordionItem value="glyph-manager">
+										<AccordionTrigger className={ft.title}>
+											{t('glyph_manager_title')}
+										</AccordionTrigger>
+										<AccordionContent>
+											<GlyphManager glyphSet={glyphSetValue} />
+										</AccordionContent>
+									</AccordionItem>
+								</Accordion>
+							)}
+
+							{section === 'rozlozeni_aplikace' && (
+								<Accordion type="multiple" className="w-full lg:max-w-2xl">
+									<AccordionItem value="theme">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_theme_selector')}
+										</AccordionTrigger>
+										<AccordionContent>
+											<Select
+												value={theme}
+												onValueChange={(value) => {
+													onThemeChange(value as Theme);
 													markChanged();
 												}}
-												className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[color:var(--theme-panel-border)]"
-												style={{ accentColor: 'var(--theme-accent)' }}
-											/>
+											>
+												<SelectTrigger
+													className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+												>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent className={ft.selectContent}>
+													{THEME_OPTIONS.map((option) => (
+														<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+															{t(option.labelKey)}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</AccordionContent>
+									</AccordionItem>
+									<AccordionItem value="palette">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_theme_palette_title')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-4">
 											<p className={cn('text-xs leading-relaxed', ft.muted)}>
-												{t('settings_popup_fuzziness_hint')}
+												{t('settings_theme_palette_blurb', { theme: t(`sidebar_theme_${theme}`) })}
 											</p>
-										</div>
-										<div className="grid gap-4 sm:grid-cols-2">
-											{(
-												[
-													['mainSidebarStart', 'settings_theme_main_sidebar_start'],
-													['mainSidebarEnd', 'settings_theme_main_sidebar_end'],
-													['secondarySidebarStart', 'settings_theme_secondary_sidebar_start'],
-													['secondarySidebarEnd', 'settings_theme_secondary_sidebar_end'],
-													['canvasStart', 'settings_theme_canvas_start'],
-													['canvasEnd', 'settings_theme_canvas_end'],
-													['navTextPrimary', 'settings_theme_nav_text_primary'],
-													['navTextSecondary', 'settings_theme_nav_text_secondary'],
-													['contentTextPrimary', 'settings_theme_content_text_primary'],
-													['contentTextSecondary', 'settings_theme_content_text_secondary'],
-													['contentMuted', 'settings_theme_content_muted'],
-													['accent', 'settings_theme_accent']
-												] as const
-											).map(([key, labelKey]) => (
-												<div key={key} className="flex items-center gap-3">
-													<div className="min-w-0 flex-1">
-														<Label className={cn(ft.label, 'mb-1 block')}>{t(labelKey)}</Label>
-														<Input
-															className={ft.inputCompact}
+											<div className="space-y-2 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] p-4">
+												<div className="flex items-center justify-between gap-4">
+													<Label htmlFor="settings-popup-fuzziness" className={ft.label}>
+														{t('settings_popup_fuzziness')}
+													</Label>
+													<output
+														htmlFor="settings-popup-fuzziness"
+														className={cn('min-w-12 text-right text-sm tabular-nums', ft.title)}
+													>
+														{Math.round(themePaletteDraft.popupBackgroundFuzziness)}%
+													</output>
+												</div>
+												<input
+													id="settings-popup-fuzziness"
+													type="range"
+													min={0}
+													max={100}
+													step={1}
+													value={themePaletteDraft.popupBackgroundFuzziness}
+													onChange={(event) => {
+														const popupBackgroundFuzziness = Number(event.target.value);
+														setThemePaletteDraft((prev) => ({
+															...prev,
+															popupBackgroundFuzziness
+														}));
+														markChanged();
+													}}
+													className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[color:var(--theme-panel-border)]"
+													style={{ accentColor: 'var(--theme-accent)' }}
+												/>
+												<p className={cn('text-xs leading-relaxed', ft.muted)}>
+													{t('settings_popup_fuzziness_hint')}
+												</p>
+											</div>
+											<div className="grid gap-4 sm:grid-cols-2">
+												{(
+													[
+														['mainSidebarStart', 'settings_theme_main_sidebar_start'],
+														['mainSidebarEnd', 'settings_theme_main_sidebar_end'],
+														['secondarySidebarStart', 'settings_theme_secondary_sidebar_start'],
+														['secondarySidebarEnd', 'settings_theme_secondary_sidebar_end'],
+														['canvasStart', 'settings_theme_canvas_start'],
+														['canvasEnd', 'settings_theme_canvas_end'],
+														['navTextPrimary', 'settings_theme_nav_text_primary'],
+														['navTextSecondary', 'settings_theme_nav_text_secondary'],
+														['contentTextPrimary', 'settings_theme_content_text_primary'],
+														['contentTextSecondary', 'settings_theme_content_text_secondary'],
+														['contentMuted', 'settings_theme_content_muted'],
+														['accent', 'settings_theme_accent']
+													] as const
+												).map(([key, labelKey]) => (
+													<div key={key} className="flex items-center gap-3">
+														<div className="min-w-0 flex-1">
+															<Label className={cn(ft.label, 'mb-1 block')}>{t(labelKey)}</Label>
+															<Input
+																className={ft.inputCompact}
+																value={themePaletteDraft[key]}
+																onChange={(e) => {
+																	const value = e.target.value;
+																	setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+																	markChanged();
+																}}
+															/>
+														</div>
+														<ColorInput
+															className="mt-5 w-14"
 															value={themePaletteDraft[key]}
 															onChange={(e) => {
 																const value = e.target.value;
 																setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
 																markChanged();
 															}}
+															aria-label={t(labelKey)}
 														/>
 													</div>
-													<ColorInput
-														className="mt-5 w-14"
-														value={themePaletteDraft[key]}
-														onChange={(e) => {
-															const value = e.target.value;
-															setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
-															markChanged();
-														}}
-														aria-label={t(labelKey)}
-													/>
-												</div>
-											))}
-										</div>
-										<div className="grid gap-4 sm:grid-cols-2">
-											{(
-												[
-													['hoverBackground', 'settings_theme_hover_background'],
-													['selectedBackground', 'settings_theme_selected_background']
-												] as const
-							).map(([key, labelKey]) => {
-								const parsedColor = parseThemeColor(themePaletteDraft[key]);
-								const defaultAlpha = parseThemeColor(DEFAULT_THEME_PALETTES[theme][key]).alpha;
-								const transparencyId = `settings-${key}-transparency`;
-								return (
-									<div key={key} className="space-y-2">
-										<Label className={ft.label}>{t(labelKey)}</Label>
-										<div className="flex items-center gap-3">
-											<Input
-												className={cn(ft.inputCompact, 'min-w-0 flex-1')}
-												value={themePaletteDraft[key]}
-												onChange={(e) => {
-													const value = e.target.value;
-													setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
-													markChanged();
-												}}
-											/>
-											<ColorInput
-												className="w-14"
-												value={parsedColor.hex}
-												onChange={(event) => {
-													const value = formatThemeColor(event.target.value, parsedColor.alpha);
-													setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
-													markChanged();
-												}}
-												aria-label={t(labelKey)}
-											/>
-										</div>
-										<div className="flex items-center gap-2">
-											<Switch
-												id={transparencyId}
-												checked={parsedColor.alpha < 1}
-												onCheckedChange={(checked) => {
-													const alpha = checked ? defaultAlpha : 1;
-													setThemePaletteDraft((prev) => ({
-														...prev,
-														[key]: formatThemeColor(parsedColor.hex, alpha)
-													}));
-													markChanged();
-												}}
-											/>
-											<Label htmlFor={transparencyId} className={cn('cursor-pointer text-xs', ft.muted)}>
-												{t('settings_theme_transparency')}
-											</Label>
-										</div>
-									</div>
-								);
-							})}
-										</div>
-										<div className="pt-1">
-											<Button
-												type="button"
-												variant="outline"
-												className={cn(ft.footerCancel, 'max-w-xs')}
-												onClick={() => {
-													setThemePaletteDraft(DEFAULT_THEME_PALETTES[theme]);
-													markChanged();
-												}}
-											>
-												{t('settings_theme_reset_current')}
-											</Button>
-										</div>
-									</div>
-									<Separator className="bg-[color:var(--theme-panel-border)]" />
-									<div className="space-y-4 pt-1">
-										<h3 className={cn('text-sm font-semibold', ft.title)}>
-											{t('settings_element_wheel_title')}
-										</h3>
-										<p className={cn('text-xs leading-relaxed', ft.muted)}>
-											{t('settings_element_wheel_blurb')}
-										</p>
-										{(
-											['fire', 'earth', 'air', 'water'] as const satisfies readonly ElementId[]
-										).map((el) => (
-											<div key={el} className="flex flex-wrap items-center gap-3">
-												<Label className={cn(ft.label, 'min-w-[8rem] shrink-0')}>
-													{t(`settings_element_${el}`)}
-												</Label>
-												<ColorInput
-													className="w-14"
-													value={elementDraft[el]}
-													onChange={(e) => {
-														const v = e.target.value;
-														setElementDraft((d) => ({ ...d, [el]: v }));
+												))}
+											</div>
+											<div className="grid gap-4 sm:grid-cols-2">
+												{(
+													[
+														['hoverBackground', 'settings_theme_hover_background'],
+														['selectedBackground', 'settings_theme_selected_background']
+													] as const
+												).map(([key, labelKey]) => {
+													const parsedColor = parseThemeColor(themePaletteDraft[key]);
+													const defaultAlpha = parseThemeColor(
+														DEFAULT_THEME_PALETTES[theme][key]
+													).alpha;
+													const transparencyId = `settings-${key}-transparency`;
+													return (
+														<div key={key} className="space-y-2">
+															<Label className={ft.label}>{t(labelKey)}</Label>
+															<div className="flex items-center gap-3">
+																<Input
+																	className={cn(ft.inputCompact, 'min-w-0 flex-1')}
+																	value={themePaletteDraft[key]}
+																	onChange={(e) => {
+																		const value = e.target.value;
+																		setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+																		markChanged();
+																	}}
+																/>
+																<ColorInput
+																	className="w-14"
+																	value={parsedColor.hex}
+																	onChange={(event) => {
+																		const value = formatThemeColor(
+																			event.target.value,
+																			parsedColor.alpha
+																		);
+																		setThemePaletteDraft((prev) => ({ ...prev, [key]: value }));
+																		markChanged();
+																	}}
+																	aria-label={t(labelKey)}
+																/>
+															</div>
+															<div className="flex items-center gap-2">
+																<Switch
+																	id={transparencyId}
+																	checked={parsedColor.alpha < 1}
+																	onCheckedChange={(checked) => {
+																		const alpha = checked ? defaultAlpha : 1;
+																		setThemePaletteDraft((prev) => ({
+																			...prev,
+																			[key]: formatThemeColor(parsedColor.hex, alpha)
+																		}));
+																		markChanged();
+																	}}
+																/>
+																<Label
+																	htmlFor={transparencyId}
+																	className={cn('cursor-pointer text-xs', ft.muted)}
+																>
+																	{t('settings_theme_transparency')}
+																</Label>
+															</div>
+														</div>
+													);
+												})}
+											</div>
+											<div className="pt-1">
+												<Button
+													type="button"
+													variant="outline"
+													className={cn(ft.footerCancel, 'max-w-xs')}
+													onClick={() => {
+														setThemePaletteDraft(DEFAULT_THEME_PALETTES[theme]);
 														markChanged();
 													}}
-													aria-label={t(`settings_element_${el}`)}
-												/>
-												<span className={cn('font-mono text-xs', ft.muted)}>
-													{elementDraft[el]}
-												</span>
+												>
+													{t('settings_theme_reset_current')}
+												</Button>
 											</div>
-										))}
-									</div>
-								</div>
+										</AccordionContent>
+									</AccordionItem>
+								</Accordion>
 							)}
 
 							{section === 'manual' && (

@@ -54,7 +54,13 @@ import {
 	type ElementColors
 } from '@/lib/astrology/elementColors';
 import { readStoredGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import { readStoredWheelStyle, type WheelStyleId } from '@/lib/astrology/wheelStyle';
+import {
+	persistWheelOrientation,
+	readStoredWheelOrientation,
+	readStoredWheelStyle,
+	type WheelOrientationId,
+	type WheelStyleId
+} from '@/lib/astrology/wheelStyle';
 import {
 	persistThemePalettes,
 	readStoredThemePalettes,
@@ -218,6 +224,9 @@ export default function App() {
 		readStoredGlyphSet()
 	);
 	const [wheelStyle, setWheelStyle] = useState<WheelStyleId>(() => readStoredWheelStyle());
+	const [wheelOrientation, setWheelOrientation] = useState<WheelOrientationId>(() =>
+		readStoredWheelOrientation()
+	);
 	const [elementWheelColors, setElementWheelColors] = useState<ElementColors>(() =>
 		readStoredElementColors()
 	);
@@ -226,6 +235,10 @@ export default function App() {
 	const commitElementWheelColors = useCallback((next: ElementColors) => {
 		setElementWheelColors(next);
 		persistElementColors(next);
+	}, []);
+	const changeWheelOrientation = useCallback((next: WheelOrientationId) => {
+		setWheelOrientation(next);
+		persistWheelOrientation(next);
 	}, []);
 	const [activeView, setActiveView] = useState<string>('horoskop');
 	const [activeTransitSection, setActiveTransitSection] = useState<TransitSection>('general');
@@ -647,6 +660,7 @@ export default function App() {
 										workspaceDefaults={workspaceDefaults}
 										glyphSet={astrologyGlyphSet}
 										wheelStyle={wheelStyle}
+										wheelOrientation={wheelOrientation}
 										elementColors={elementWheelColors}
 										lightPlanetFill={lightPlanetFill}
 										onEdit={(chart) => {
@@ -710,6 +724,9 @@ export default function App() {
 										onAstrologyGlyphSetChange={setAstrologyGlyphSet}
 										wheelStyle={wheelStyle}
 										onWheelStyleChange={setWheelStyle}
+										wheelOrientation={wheelOrientation}
+										onWheelOrientationChange={changeWheelOrientation}
+										onThemeChange={setTheme}
 										elementColors={elementWheelColors}
 										onElementColorsCommit={commitElementWheelColors}
 										themePalette={currentThemePalette}

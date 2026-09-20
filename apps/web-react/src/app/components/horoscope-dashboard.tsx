@@ -36,7 +36,7 @@ import { ASPECT_GLYPHS, ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import type { WheelStyleId } from '@/lib/astrology/wheelStyle';
+import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { BodySelector } from './body-selector';
 import { DetailSidePanel } from './detail-side-panel';
@@ -46,6 +46,7 @@ interface HoroscopeDashboardProps {
 	workspaceDefaults: WorkspaceDefaultsState;
 	glyphSet: AstrologyGlyphSetId;
 	wheelStyle?: WheelStyleId;
+	wheelOrientation?: WheelOrientationId;
 	elementColors: ElementColors;
 	lightPlanetFill: string;
 	onEdit?: (chart: import('@/lib/tauri/chartPayload').AppChart) => void;
@@ -229,6 +230,7 @@ export function HoroscopeDashboard({
 	workspaceDefaults,
 	glyphSet,
 	wheelStyle,
+	wheelOrientation = 'ascendant',
 	elementColors,
 	lightPlanetFill,
 	onEdit,
@@ -414,7 +416,8 @@ export function HoroscopeDashboard({
 		const meta = POSITION_META[id];
 		return meta?.labelKey ? t(meta.labelKey) : (meta?.fallbackLabel ?? id);
 	};
-	const normalizePointId = (id: string) => (id.trim().toLowerCase() === 'desc' ? 'dsc' : id.trim().toLowerCase());
+	const normalizePointId = (id: string) =>
+		id.trim().toLowerCase() === 'desc' ? 'dsc' : id.trim().toLowerCase();
 	const selectedBodyAspects =
 		selectedWheelObject?.layer === 'radix'
 			? radixAspects.filter(
@@ -739,7 +742,7 @@ export function HoroscopeDashboard({
 							transitBodyOrder={transitWheelBodyOrder}
 							axisLongitudes={axisLongitudes}
 							houseCusps={selectedChart?.computed?.houseCusps}
-							ascRotationLongitude={chartAscLongitude}
+							leftEdgeLongitude={wheelOrientation === 'ascendant' ? chartAscLongitude : 0}
 							useFallbackData={false}
 							showPlanetGlyphs
 							showAxisLines={showAxisLines}
@@ -813,7 +816,7 @@ export function HoroscopeDashboard({
 												<div
 													key={pos.id}
 													className={cn(
-														'flex items-center gap-0.5 rounded-md px-1 py-0.5 cursor-pointer transition-colors',
+														'flex cursor-pointer items-center gap-0.5 rounded-md px-1 py-0.5 transition-colors',
 														textColor,
 														'font-mono text-sm leading-none tabular-nums',
 														selectedWheelObject?.layer === 'radix' &&
@@ -1010,14 +1013,20 @@ export function HoroscopeDashboard({
 									<AstrologyGlyph
 										glyphId={selectedWheelAspect.aspect.from}
 										glyphSet={glyphSet}
-										fallback={POSITION_META[selectedWheelAspect.aspect.from]?.icon ?? selectedWheelAspect.aspect.from.slice(0, 3)}
+										fallback={
+											POSITION_META[selectedWheelAspect.aspect.from]?.icon ??
+											selectedWheelAspect.aspect.from.slice(0, 3)
+										}
 										size={18}
 									/>
 									<span className={textColor}>→</span>
 									<AstrologyGlyph
 										glyphId={selectedWheelAspect.aspect.to}
 										glyphSet={glyphSet}
-										fallback={POSITION_META[selectedWheelAspect.aspect.to]?.icon ?? selectedWheelAspect.aspect.to.slice(0, 3)}
+										fallback={
+											POSITION_META[selectedWheelAspect.aspect.to]?.icon ??
+											selectedWheelAspect.aspect.to.slice(0, 3)
+										}
 										size={18}
 									/>
 								</div>
