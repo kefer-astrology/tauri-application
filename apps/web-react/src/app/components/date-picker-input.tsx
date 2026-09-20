@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
-import { format, isValid, parse, type Locale } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { addMonths, format, isValid, parse, type Locale } from 'date-fns';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
 
 type DatePickerInputProps = {
@@ -37,12 +39,45 @@ export function DatePickerInput({
 	iconClassName,
 	panelClassName
 }: DatePickerInputProps) {
+	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
 	const [draftValue, setDraftValue] = useState(() => format(value, 'P', { locale }));
+	const [displayMonth, setDisplayMonth] = useState(
+		() => new Date(value.getFullYear(), value.getMonth(), 1)
+	);
+	const currentYear = new Date().getFullYear();
+	const selectedYear = value.getFullYear();
+	const firstSelectableYear = Math.min(1600, selectedYear);
+	const lastSelectableYear = Math.max(currentYear + 100, selectedYear);
+	const years = useMemo(
+		() =>
+			Array.from(
+				{ length: lastSelectableYear - firstSelectableYear + 1 },
+				(_, index) => firstSelectableYear + index
+			),
+		[firstSelectableYear, lastSelectableYear]
+	);
+	const months = useMemo(
+		() =>
+			Array.from({ length: 12 }, (_, month) => ({
+				value: month,
+				label: format(new Date(2024, month, 1), 'LLLL', { locale })
+			})),
+		[locale]
+	);
 
 	useEffect(() => {
 		setDraftValue(format(value, 'P', { locale }));
+		setDisplayMonth(new Date(value.getFullYear(), value.getMonth(), 1));
 	}, [value, locale]);
+
+	const changeDisplayedMonth = (month: number) => {
+		setDisplayMonth(new Date(displayMonth.getFullYear(), month, 1));
+	};
+
+	const changeDisplayedYear = (year: number) => {
+		setDisplayMonth(new Date(year, displayMonth.getMonth(), 1));
+	};
 
 	const commitDraftValue = () => {
 		const parsed = parse(draftValue.trim(), 'P', new Date(), { locale });
@@ -96,18 +131,95 @@ export function DatePickerInput({
 						</Button>
 					</PopoverTrigger>
 				</div>
-				<PopoverContent className={cn('w-auto p-0', panelClassName)} align="end">
-					<Calendar
-						mode="single"
-						selected={value}
-						onSelect={(date) => {
-							if (date) onValueChange(mergeDatePart(value, date));
-							setOpen(false);
-						}}
-						locale={locale}
-						initialFocus
-						defaultMonth={value}
-					/>
+				<PopoverContent
+					className={cn(panelClassName, 'w-[22rem] max-w-[calc(100vw-2rem)] p-0')}
+					align="end"
+				>
+					<div className="w-full">
+						<div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,0.7fr)_auto] items-end gap-2 px-3 pt-3">
+							<Button
+								type="button"
+								variant="outline"
+								size="icon"
+								className="size-8"
+								onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
+								disabled={
+									displayMonth.getFullYear() === firstSelectableYear &&
+									displayMonth.getMonth() === 0
+								}
+								aria-label={t('time_nav_previous')}
+							>
+								<ChevronLeft className="size-4" />
+							</Button>
+							<div className="min-w-0 space-y-1">
+								<Label className="text-xs">{t('open_date_month')}</Label>
+								<Select
+									value={String(displayMonth.getMonth())}
+									onValueChange={(nextMonth) => changeDisplayedMonth(Number(nextMonth))}
+								>
+									<SelectTrigger size="sm">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{months.map((month) => (
+											<SelectItem key={month.value} value={String(month.value)}>
+												{month.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="min-w-0 space-y-1">
+								<Label className="text-xs">{t('open_date_year')}</Label>
+								<Select
+									value={String(displayMonth.getFullYear())}
+									onValueChange={(nextYear) => changeDisplayedYear(Number(nextYear))}
+								>
+									<SelectTrigger size="sm">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{years.map((year) => (
+											<SelectItem key={year} value={String(year)}>
+												{year}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<Button
+								type="button"
+								variant="outline"
+								size="icon"
+								className="size-8"
+								onClick={() => setDisplayMonth(addMonths(displayMonth, 1))}
+								disabled={
+									displayMonth.getFullYear() === lastSelectableYear &&
+									displayMonth.getMonth() === 11
+								}
+								aria-label={t('time_nav_next')}
+							>
+								<ChevronRight className="size-4" />
+							</Button>
+						</div>
+						<Calendar
+							mode="single"
+							selected={value}
+							onSelect={(date) => {
+								if (date) onValueChange(mergeDatePart(value, date));
+								setOpen(false);
+							}}
+							locale={locale}
+							initialFocus
+							month={displayMonth}
+							onMonthChange={setDisplayMonth}
+							fromYear={firstSelectableYear}
+							toYear={lastSelectableYear}
+							disableNavigation
+							classNames={{ caption: 'hidden', nav: 'hidden' }}
+							className="mx-auto"
+						/>
+					</div>
 				</PopoverContent>
 			</Popover>
 		</div>
