@@ -1,0 +1,26 @@
+src-tauri/Cargo.toml
+  s_599140df968037::t_34c49f63e83cbd 32
+src-tauri/Cargo.lock
+  s_599140df968037::t_d7972eb709259c 1-5228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7d207012a449ab3a4bf6aa56387d6b5f3bd6912e",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_599140df968037": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "84c43af2-bef1-4cea-ba63-2ac9afbfaffe",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
