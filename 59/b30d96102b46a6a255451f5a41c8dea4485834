@@ -1,0 +1,76 @@
+apps/web-react/src/app/components/horoscope-wheel.tsx
+  s_e84a5601928d86::t_be3e49148d0392 370-371,409,490-491
+  s_e84a5601928d86::t_e0d0c7a740d010 245-247,249-250,296-300,459-462,1096
+apps/web-svelte/src/lib/i18n/es.json
+  s_e84a5601928d86::t_a2095951e02581 400-402
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_e84a5601928d86::t_91877fcf4aace7 39,49,233
+  s_e84a5601928d86::t_be3e49148d0392 745
+  s_e84a5601928d86::t_4c10fca47ee53e 419-420,819,1016-1019,1026-1029
+apps/web-svelte/src/lib/i18n/en.json
+  s_e84a5601928d86::t_a2095951e02581 400-402
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+apps/web-react/src/app/components/settings-secondary-sidebar.tsx
+  s_e84a5601928d86::t_91877fcf4aace7 12-13
+  s_e84a5601928d86::t_4c10fca47ee53e 30-42
+apps/web-react/src/app/components/settings-view.tsx
+  s_e84a5601928d86::t_4c10fca47ee53e 82-84,94-96,880-884,899,901,954,956,960-962,967-971,977-979,983-985,987-989,1013-1014,1028-1030,1036-1038,1060-1062,1081-1107,1110-1111,1113-1115,1117-1235
+  s_e84a5601928d86::t_8d4581772efaab 1046-1052,1063-1079
+  s_e84a5601928d86::t_0566c42731372a 9,39,114-119,149-151,169-171,189-190,252-254,296-305,348,358
+  s_e84a5601928d86::t_f0e3c4e99a82fa 896-898,951-953,957-959,963-966,972-976,980-982,990-1000,1002-1005,1007-1008,1010,1015-1018,1020-1023,1026,1033-1035,1039-1045
+  s_e84a5601928d86::t_d3bab61bba7f5c 913-917,937-941
+  s_e84a5601928d86::t_92e5cbfdb9a92a 1236-1238
+  s_e84a5601928d86::t_ecdb32c9a23088 900,955,1006
+  s_e84a5601928d86::t_07d40a1ba6ba02 902-912,918-936,942-950
+  s_e84a5601928d86::t_6d3dd3db660f50 1053-1056
+  s_e84a5601928d86::t_e624a57aec39fc 1080
+apps/web-react/src/locales/fr.json
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+  s_e84a5601928d86::t_a2095951e02581 400-402
+apps/web-svelte/src/lib/i18n/fr.json
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+  s_e84a5601928d86::t_a2095951e02581 400-402
+apps/web-react/src/locales/es.json
+  s_e84a5601928d86::t_a2095951e02581 400-402
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+apps/web-react/src/locales/en.json
+  s_e84a5601928d86::t_a2095951e02581 400-402
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+translations.csv
+  s_e84a5601928d86::t_91877fcf4aace7 389-390,395-399
+  s_e84a5601928d86::t_ecdb32c9a23088 400-402
+apps/web-react/src/lib/astrology/wheelStyle.ts
+  s_e84a5601928d86::t_91877fcf4aace7 2,5,47-68
+apps/web-react/src/locales/cs.json
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+  s_e84a5601928d86::t_a2095951e02581 400-402
+apps/web-react/src/app/App.tsx
+  s_e84a5601928d86::t_91877fcf4aace7 58-63,227-229,239-242,727-729
+  s_e84a5601928d86::t_4c10fca47ee53e 663
+  s_e84a5601928d86::t_a1e00e14cb6869 57
+apps/web-svelte/src/lib/i18n/cs.json
+  s_e84a5601928d86::t_ae8554c034a655 389-390,395-399
+  s_e84a5601928d86::t_a2095951e02581 400-402
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "59b30d96102b46a6a255451f5a41c8dea4485834",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e84a5601928d86": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0c07b-d012-7783-802b-befd6ec3be9f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
