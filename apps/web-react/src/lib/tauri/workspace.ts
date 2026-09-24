@@ -86,6 +86,27 @@ export async function openFolderDialog(): Promise<string | null> {
 	return invoke<string | null>('open_folder_dialog');
 }
 
+export async function openChartFileDialog(): Promise<string | null> {
+	if (!isTauriRuntime()) return null;
+	return invoke<string | null>('open_chart_file_dialog');
+}
+
+export async function importChartFile(
+	workspacePath: string,
+	sourcePath: string
+): Promise<AppChart> {
+	const chartId = await invoke<string>('import_chart', { workspacePath, sourcePath });
+	const details = await getChartDetails(workspacePath, chartId);
+	const chart = chartDetailsToAppChart(details);
+	try {
+		const result = await computeChart(workspacePath, chartId);
+		chart.computed = normalizeComputedChartPayload(result);
+	} catch (error) {
+		console.error(`compute_chart failed for imported chart ${chartId}:`, error);
+	}
+	return chart;
+}
+
 export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
 	return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
 }

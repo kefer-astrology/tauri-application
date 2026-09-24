@@ -445,7 +445,7 @@ function SettingsView({
 
 	return (
 		<AppMainContentRoot className="min-h-full">
-			<AppMainContentContainer layout="center-column">
+			<AppMainContentContainer width="wide">
 				<div className="flex min-h-0 w-full min-w-0 flex-col space-y-6">
 					<Card
 						variant="ghost"
@@ -455,7 +455,7 @@ function SettingsView({
 					>
 						<CardContent className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
 							{section === 'jazyk' && (
-								<div className="max-w-xl space-y-4">
+								<div className="space-y-4">
 									<div className="space-y-2">
 										<p className={ft.label}>{t('language')}</p>
 										<p className={cn('text-sm', ft.muted)}>{t('select_language')}</p>
@@ -488,7 +488,7 @@ function SettingsView({
 							)}
 
 							{section === 'lokace' && (
-								<div className="max-w-xl space-y-4">
+								<div className="space-y-4">
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('default_location')}</Label>
 										<LocationSelector
@@ -568,7 +568,7 @@ function SettingsView({
 							)}
 
 							{section === 'system_domu' && (
-								<div className="max-w-md space-y-4">
+								<div className="space-y-4">
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('house_system')}</Label>
 										<Select
@@ -612,7 +612,7 @@ function SettingsView({
 							)}
 
 							{section === 'nastaveni_aspektu' && (
-								<div className="max-w-2xl space-y-4">
+								<div className="space-y-4">
 									<div className="space-y-2">
 										<p className={ft.label}>{t('default_aspects')}</p>
 										<div className="space-y-3">
@@ -894,7 +894,7 @@ function SettingsView({
 							)}
 
 							{section === 'rozlozeni_symbolu' && (
-								<Accordion type="multiple" className="w-full lg:max-w-2xl">
+								<Accordion type="multiple" className="w-full">
 									<AccordionItem value="glyph-set">
 										<AccordionTrigger className={ft.title}>
 											{t('settings_symbol_selector')}
@@ -1044,7 +1044,7 @@ function SettingsView({
 							)}
 
 							{section === 'rozlozeni_aplikace' && (
-								<Accordion type="multiple" className="w-full lg:max-w-2xl">
+								<Accordion type="multiple" className="w-full">
 									<AccordionItem value="theme">
 										<AccordionTrigger className={ft.title}>
 											{t('settings_theme_selector')}
@@ -1239,7 +1239,7 @@ function SettingsView({
 							)}
 
 							{section === 'manual' && (
-								<div className="max-w-2xl space-y-4">
+								<div className="space-y-4">
 									<p className={cn('text-sm leading-relaxed', ft.muted)}>{t('settings_guide')}</p>
 								</div>
 							)}

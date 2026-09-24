@@ -72,7 +72,8 @@ export function getAppFormFieldTheme(theme: Theme) {
 
 	const dropdownHover = 'hover:bg-[color:var(--theme-soft-bg)]';
 
-	const dropdownActive = 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]';
+	const dropdownActive =
+		'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]';
 
 	const advancedPanel = 'rounded-xl border-0 bg-[color:var(--theme-soft-bg)] p-4 backdrop-blur-sm';
 
@@ -87,18 +88,16 @@ export function getAppFormFieldTheme(theme: Theme) {
 
 	const datePickerButton = 'hover:bg-[color:var(--theme-soft-bg)]';
 
-	const datePickerDay = 'hover:bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-primary)]';
+	const datePickerDay =
+		'hover:bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-primary)]';
 
-	const datePickerDayActive =
-		'bg-[color:var(--theme-accent)] text-white hover:brightness-95';
+	const datePickerDayActive = 'bg-[color:var(--theme-accent)] text-white hover:brightness-95';
 
 	/** Native checkbox accent color (Tailwind `text-*` tints the checkmark). */
 	const checkboxAccent = 'text-[color:var(--theme-accent)] focus:ring-[var(--theme-accent)]';
 
 	const formPageBg =
 		'bg-[linear-gradient(to_bottom_right,var(--theme-canvas-start),var(--theme-canvas-end))]';
-
-	const switchUnchecked = 'data-[state=unchecked]:bg-[color:var(--theme-content-muted)]';
 
 	const textDisabled = 'text-[color:var(--theme-content-muted)]';
 
@@ -152,7 +151,6 @@ export function getAppFormFieldTheme(theme: Theme) {
 		datePickerDay,
 		datePickerDayActive,
 		formPageBg,
-		switchUnchecked,
 		textDisabled,
 		bodyText,
 		checkboxAccent,

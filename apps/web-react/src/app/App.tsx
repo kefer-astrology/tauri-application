@@ -691,6 +691,7 @@ export default function App() {
 								) : activeView === 'novy' ? (
 									<NewHoroscope
 										theme={theme}
+										pageWidth={isSidebarExpanded ? 'standard' : 'relaxed'}
 										workspaceDefaults={workspaceDefaults}
 										existingChartIds={new Set(charts.map((c) => c.id))}
 										onCreated={handleChartCreated}
@@ -742,7 +743,7 @@ export default function App() {
 									/>
 								) : (
 									<AppMainContentRoot>
-										<AppMainContentContainer layout="center-column">
+										<AppMainContentContainer width="standard">
 											<Card variant="ghost" className="gap-0 p-0">
 												<CardContent className="space-y-3 p-6 md:p-8">
 													<h1 className={cn('text-xl font-semibold', formTheme.title)}>

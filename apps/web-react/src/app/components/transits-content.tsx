@@ -713,15 +713,11 @@ export function TransitsContent({
 		}
 	};
 
-	const isWideBodiesSection = section === 'transiting-bodies' || section === 'transited-bodies';
 	const hasTransitFeedback = transitLoading || transitError || transitSeries.length > 0;
 
 	return (
 		<AppMainContentRoot>
-			<AppMainContentContainer
-				layout="center-column"
-				maxWidth={isWideBodiesSection ? '6xl' : '4xl'}
-			>
+			<AppMainContentContainer width="wide">
 				{renderContent()}
 				{hasTransitFeedback && (
 					<Card variant="ghost" className="w-full rounded-xl">

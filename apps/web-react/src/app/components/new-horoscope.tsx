@@ -10,7 +10,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { DatePickerInput } from './date-picker-input';
 import { LocationSelector } from './location-selector';
-import { ModeSwitcherList } from './mode-switcher';
+import { ModeSwitcher, ModeSwitcherDetails } from './ui/mode-switcher';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent } from './ui/tabs';
@@ -23,7 +23,11 @@ import {
 	SheetTitle
 } from './ui/sheet';
 import { TimeRollerPicker } from './time-roller-picker';
-import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
+import {
+	AppMainContentContainer,
+	AppMainContentRoot,
+	type AppMainContentWidth
+} from './app-main-content';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import type { Theme } from './astrology-sidebar';
@@ -579,6 +583,7 @@ function TimezoneSelect({
 interface NewHoroscopeProps {
 	theme?: Theme;
 	presentation?: 'page' | 'panel';
+	pageWidth?: AppMainContentWidth;
 	/** Return to main horoscope view (sidebar **Horoskop**). */
 	onBack?: () => void;
 	workspaceDefaults: WorkspaceDefaultsState;
@@ -594,6 +599,7 @@ interface NewHoroscopeProps {
 export function NewHoroscope({
 	theme = 'noon',
 	presentation = 'page',
+	pageWidth = 'standard',
 	onBack,
 	workspaceDefaults,
 	existingChartIds,
@@ -941,10 +947,7 @@ export function NewHoroscope({
 					: cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')
 			)}
 		>
-			<AppMainContentContainer
-				layout={presentation === 'panel' ? 'centered' : 'center-column'}
-				maxWidth={presentation === 'panel' ? 'full' : '4xl'}
-			>
+			<AppMainContentContainer width={presentation === 'panel' ? 'full' : pageWidth}>
 				{/* <h1 className={cn('mb-5 text-xl font-semibold', ft.title)}>
 						{isEditMode ? t('edit_radix_title') : t('new_radix_title')}
 					</h1> */}
@@ -1066,7 +1069,7 @@ export function NewHoroscope({
 
 						<div className="flex items-center justify-between gap-3">
 							<Label className={ft.label}>{t('new_time_regime')}</Label>
-							<ModeSwitcherList
+							<ModeSwitcher
 								value={timeRegime}
 								onValueChange={setTimeRegime}
 								ariaLabel={t('new_time_regime')}
@@ -1074,11 +1077,13 @@ export function NewHoroscope({
 									{ value: 'auto', label: t('new_time_regime_auto') },
 									{ value: 'manual', label: t('new_time_regime_manual') }
 								]}
-								className="w-fit min-w-[11rem]"
 							/>
 						</div>
 
-						<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
+						<ModeSwitcherDetails
+							open={timeRegime === 'manual'}
+							contentClassName={cn('space-y-3', ft.advancedPanel)}
+						>
 							<div>
 								<Label className={cn('mb-1.5 block', ft.label)}>{t('new_timezone_region')}</Label>
 								<Select
@@ -1136,7 +1141,7 @@ export function NewHoroscope({
 									</SelectContent>
 								</Select>
 							</div>
-						</TabsContent>
+						</ModeSwitcherDetails>
 					</Tabs>
 
 					<Tabs
@@ -1191,7 +1196,7 @@ export function NewHoroscope({
 
 						<div className="flex items-center justify-between gap-3">
 							<Label className={ft.label}>{t('new_location_regime')}</Label>
-							<ModeSwitcherList
+							<ModeSwitcher
 								value={locationRegime}
 								onValueChange={setLocationRegime}
 								ariaLabel={t('new_location_regime')}
@@ -1199,11 +1204,13 @@ export function NewHoroscope({
 									{ value: 'auto', label: t('new_time_regime_auto') },
 									{ value: 'manual', label: t('new_time_regime_manual') }
 								]}
-								className="w-fit min-w-[11rem]"
 							/>
 						</div>
 
-						<TabsContent value="manual" className={cn('space-y-3', ft.advancedPanel)}>
+						<ModeSwitcherDetails
+							open={locationRegime === 'manual'}
+							contentClassName={cn('space-y-3', ft.advancedPanel)}
+						>
 							{/* Latitude */}
 							<div>
 								<Label htmlFor="latitude" className={cn('mb-1.5 block', ft.label)}>
@@ -1261,7 +1268,7 @@ export function NewHoroscope({
 									</Select>
 								</div>
 							</div>
-						</TabsContent>
+						</ModeSwitcherDetails>
 					</Tabs>
 
 					{/* Tags */}

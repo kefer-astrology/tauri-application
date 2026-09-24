@@ -5,12 +5,17 @@ import * as SwitchPrimitive from '@radix-ui/react-switch';
 
 import { cn } from './utils';
 
-function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+type SwitchProps = React.ComponentProps<typeof SwitchPrimitive.Root> & {
+	variant?: 'default' | 'prominent';
+};
+
+function Switch({ className, variant = 'default', ...props }: SwitchProps) {
 	return (
 		<SwitchPrimitive.Root
 			data-slot="switch"
 			className={cn(
-				'peer inline-flex h-[22px] w-10 shrink-0 items-center rounded-full border border-transparent bg-[color:var(--theme-content-muted)]/35 p-0.5 transition-colors outline-none data-[state=checked]:bg-[color:var(--theme-accent)] focus-visible:ring-2 focus-visible:ring-[color:var(--theme-accent)]/45 disabled:cursor-not-allowed disabled:opacity-50',
+				'peer inline-flex h-[22px] w-10 shrink-0 items-center rounded-full border border-transparent bg-[color:var(--theme-content-muted)]/35 p-0.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme-accent)]/45 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-[color:var(--theme-accent)]',
+				variant === 'prominent' && 'data-[state=unchecked]:bg-[color:var(--theme-content-muted)]',
 				className
 			)}
 			{...props}

@@ -3,7 +3,7 @@ import { cs, enUS, es, fr } from 'date-fns/locale';
 import { ArrowLeftRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { AppMainContentRoot } from './app-main-content';
+import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import type { Theme } from './astrology-sidebar';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
@@ -13,7 +13,7 @@ import { DatePickerInput } from './date-picker-input';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { LocationSelector } from './location-selector';
-import { ModeSwitcher } from './mode-switcher';
+import { ModeSwitcher, ModeSwitcherDetails } from './ui/mode-switcher';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Separator } from './ui/separator';
 import { TimeRollerPicker } from './time-roller-picker';
@@ -166,60 +166,51 @@ function PersonFields({
 							{ value: 'database', label: t('synastry_database') },
 							{ value: 'manual', label: t('synastry_manual') }
 						]}
-						listClassName="h-11"
 					/>
 				</div>
 			</div>
 
-			<div
-				className={cn(
-					'grid overflow-hidden transition-all duration-300',
-					manual ? 'max-h-80 gap-4 opacity-100' : 'max-h-0 opacity-0'
-				)}
-				aria-hidden={!manual}
-			>
-				<div className={cn('space-y-3', ft.advancedPanel)}>
-					<div className="grid gap-3 sm:grid-cols-2">
-						<DatePickerInput
-							id={`${personLabel}-date`}
-							label={t('synastry_date')}
-							value={dateTime}
-							onValueChange={(value) => set('date', localDateValue(value))}
-							locale={dateFnsLocale}
-							labelClassName={ft.label}
-							iconClassName={ft.iconColor}
-							panelClassName={ft.datePicker}
-						/>
-						<TimeRollerPicker
-							id={`${personLabel}-time`}
-							label={t('synastry_time')}
-							value={dateTime}
-							onValueChange={(value) => set('time', localTimeValue(value))}
-							labelClassName={ft.label}
-							iconClassName={ft.iconColor}
-							panelClassName={ft.selectContent}
-						/>
-					</div>
-					<div>
-						<Label className={cn('mb-1.5 block', ft.label)} htmlFor={`${personLabel}-location`}>
-							{t('synastry_location')}
-						</Label>
-						<LocationSelector
-							id={`${personLabel}-location`}
-							value={person.location}
-							onValueChange={(value) => set('location', value)}
-							options={locationOptions}
-							placeholder={t('synastry_location_placeholder')}
-							searchPlaceholder={t('new_location_search')}
-							emptyLabel={t('synastry_location_placeholder')}
-							loadingLabel={t('new_resolving_location')}
-							searchLocations={searchLocations}
-							className={ft.input}
-							iconClassName={ft.iconColor}
-						/>
-					</div>
+			<ModeSwitcherDetails open={manual} contentClassName={cn('space-y-3', ft.advancedPanel)}>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<DatePickerInput
+						id={`${personLabel}-date`}
+						label={t('synastry_date')}
+						value={dateTime}
+						onValueChange={(value) => set('date', localDateValue(value))}
+						locale={dateFnsLocale}
+						labelClassName={ft.label}
+						iconClassName={ft.iconColor}
+						panelClassName={ft.datePicker}
+					/>
+					<TimeRollerPicker
+						id={`${personLabel}-time`}
+						label={t('synastry_time')}
+						value={dateTime}
+						onValueChange={(value) => set('time', localTimeValue(value))}
+						labelClassName={ft.label}
+						iconClassName={ft.iconColor}
+						panelClassName={ft.selectContent}
+					/>
 				</div>
-			</div>
+				<div>
+					<Label className={cn('mb-1.5 block', ft.label)} htmlFor={`${personLabel}-location`}>
+						{t('synastry_location')}
+					</Label>
+					<LocationSelector
+						id={`${personLabel}-location`}
+						value={person.location}
+						onValueChange={(value) => set('location', value)}
+						options={locationOptions}
+						placeholder={t('synastry_location_placeholder')}
+						searchPlaceholder={t('new_location_search')}
+						emptyLabel={t('synastry_location_placeholder')}
+						loadingLabel={t('new_resolving_location')}
+						searchLocations={searchLocations}
+						className={ft.input}
+						iconClassName={ft.iconColor}
+					/>
+				</div>
+			</ModeSwitcherDetails>
 		</div>
 	);
 }
@@ -252,151 +243,156 @@ export function SynastryView({ theme }: { theme: Theme }) {
 
 	return (
 		<AppMainContentRoot className={ft.formPageBg}>
-			<form
-				className="mx-auto w-full max-w-[920px] py-2 pb-16 md:py-6"
-				onSubmit={(event) => {
-					event.preventDefault();
-					toast.success(t('synastry_submitted'), {
-						description: t(`synastry_type_${calculationType}`)
-					});
-				}}
-			>
-				<div className="mb-7">
-					<Label
-						htmlFor="synastry-name"
-						className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}
-					>
-						{t('synastry_name')}
-					</Label>
-					<Input
-						id="synastry-name"
-						value={name}
-						onChange={(event) => setName(event.target.value)}
-						placeholder={t('synastry_name_placeholder')}
-						className={ft.input}
-					/>
-				</div>
-
-				<Accordion type="multiple" defaultValue={openSections} className="w-full">
-					<AccordionItem value="person-a" className="border-[color:var(--theme-panel-border)]">
-						<AccordionTrigger className={cn('text-base hover:no-underline', ft.title)}>
-							<span>{t('synastry_person_a')}</span>
-						</AccordionTrigger>
-						<AccordionContent className="pb-5">
-							<PersonFields
-								person={personA}
-								onChange={setPersonA}
-								theme={theme}
-								personLabel="person-a"
-							/>
-						</AccordionContent>
-					</AccordionItem>
-				</Accordion>
-
-				<div className="flex justify-center py-3">
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						onClick={() => {
-							setPersonA(personB);
-							setPersonB(personA);
-						}}
-						className={cn(
-							ft.muted,
-							'hover:bg-[color:var(--theme-soft-bg)] hover:text-[color:var(--theme-accent)]'
-						)}
-					>
-						<ArrowLeftRight /> {t('synastry_swap')}
-					</Button>
-				</div>
-
-				<Accordion type="multiple" defaultValue={openSections} className="w-full">
-					<AccordionItem value="person-b" className="border-[color:var(--theme-panel-border)]">
-						<AccordionTrigger className={cn('text-base hover:no-underline', ft.title)}>
-							<span>{t('synastry_person_b')}</span>
-						</AccordionTrigger>
-						<AccordionContent className="pb-5">
-							<PersonFields
-								person={personB}
-								onChange={setPersonB}
-								theme={theme}
-								personLabel="person-b"
-							/>
-						</AccordionContent>
-					</AccordionItem>
-				</Accordion>
-
-				<section className="py-5">
-					<Label className={cn('mb-2 text-sm font-semibold', ft.iconColor)}>
-						{t('synastry_type_label')}
-					</Label>
-					<Select
-						value={calculationType}
-						onValueChange={(value) => setCalculationType(value as CalculationType)}
-					>
-						<SelectTrigger className={cn(ft.selectTrigger, 'min-h-12 rounded-full')}>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent className={cn(ft.selectContent, 'max-h-[420px]')}>
-							{CALCULATION_TYPES.map((type) => (
-								<SelectItem key={type} value={type} className={cn(ft.selectItem, 'py-2.5')}>
-									<span className="flex flex-col items-start">
-										<span className="font-medium">{t(`synastry_type_${type}`)}</span>
-										<span className={cn('text-xs font-normal', ft.muted)}>
-											{t(`synastry_type_${type}_description`)}
-										</span>
-									</span>
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</section>
-
-				<div
-					className={cn(
-						'overflow-hidden transition-all duration-300',
-						progressed ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
-					)}
-					aria-hidden={!progressed}
+			<AppMainContentContainer width="standard">
+				<form
+					className="w-full py-2 pb-16 md:py-6"
+					onSubmit={(event) => {
+						event.preventDefault();
+						toast.success(t('synastry_submitted'), {
+							description: t(`synastry_type_${calculationType}`)
+						});
+					}}
 				>
-					<Separator className="bg-[color:var(--theme-panel-border)]" />
-					<div className="py-5">
+					<div className="mb-7">
 						<Label
-							htmlFor="progression-date"
-							className={cn('mb-2 text-sm font-semibold', ft.iconColor)}
+							htmlFor="synastry-name"
+							className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}
 						>
-							{t('synastry_progression_date')}
+							{t('synastry_name')}
 						</Label>
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-							<Input
-								id="progression-date"
-								type="date"
-								value={progressionDate}
-								onChange={(event) => setProgressionDate(event.target.value)}
-								className={cn(ft.input, 'sm:max-w-xs')}
-								tabIndex={progressed ? 0 : -1}
-							/>
-							<Button
-								type="button"
-								variant="ghost"
-								onClick={() => setProgressionDate(todayInputValue())}
-								className={cn(ft.iconColor, 'justify-start hover:bg-[color:var(--theme-soft-bg)]')}
+						<Input
+							id="synastry-name"
+							value={name}
+							onChange={(event) => setName(event.target.value)}
+							placeholder={t('synastry_name_placeholder')}
+							className={ft.input}
+						/>
+					</div>
+
+					<Accordion type="multiple" defaultValue={openSections} className="w-full">
+						<AccordionItem value="person-a" className="border-[color:var(--theme-panel-border)]">
+							<AccordionTrigger className={cn('text-base hover:no-underline', ft.title)}>
+								<span>{t('synastry_person_a')}</span>
+							</AccordionTrigger>
+							<AccordionContent className="pb-5">
+								<PersonFields
+									person={personA}
+									onChange={setPersonA}
+									theme={theme}
+									personLabel="person-a"
+								/>
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
+
+					<div className="flex justify-center py-3">
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={() => {
+								setPersonA(personB);
+								setPersonB(personA);
+							}}
+							className={cn(
+								ft.muted,
+								'hover:bg-[color:var(--theme-soft-bg)] hover:text-[color:var(--theme-accent)]'
+							)}
+						>
+							<ArrowLeftRight /> {t('synastry_swap')}
+						</Button>
+					</div>
+
+					<Accordion type="multiple" defaultValue={openSections} className="w-full">
+						<AccordionItem value="person-b" className="border-[color:var(--theme-panel-border)]">
+							<AccordionTrigger className={cn('text-base hover:no-underline', ft.title)}>
+								<span>{t('synastry_person_b')}</span>
+							</AccordionTrigger>
+							<AccordionContent className="pb-5">
+								<PersonFields
+									person={personB}
+									onChange={setPersonB}
+									theme={theme}
+									personLabel="person-b"
+								/>
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
+
+					<section className="py-5">
+						<Label className={cn('mb-2 text-sm font-semibold', ft.iconColor)}>
+							{t('synastry_type_label')}
+						</Label>
+						<Select
+							value={calculationType}
+							onValueChange={(value) => setCalculationType(value as CalculationType)}
+						>
+							<SelectTrigger className={cn(ft.selectTrigger, 'min-h-12 rounded-full')}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent className={cn(ft.selectContent, 'max-h-[420px]')}>
+								{CALCULATION_TYPES.map((type) => (
+									<SelectItem key={type} value={type} className={cn(ft.selectItem, 'py-2.5')}>
+										<span className="flex flex-col items-start">
+											<span className="font-medium">{t(`synastry_type_${type}`)}</span>
+											<span className={cn('text-xs font-normal', ft.muted)}>
+												{t(`synastry_type_${type}_description`)}
+											</span>
+										</span>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</section>
+
+					<div
+						className={cn(
+							'overflow-hidden transition-all duration-300',
+							progressed ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+						)}
+						aria-hidden={!progressed}
+					>
+						<Separator className="bg-[color:var(--theme-panel-border)]" />
+						<div className="py-5">
+							<Label
+								htmlFor="progression-date"
+								className={cn('mb-2 text-sm font-semibold', ft.iconColor)}
 							>
-								{t('synastry_today')}
-							</Button>
+								{t('synastry_progression_date')}
+							</Label>
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+								<Input
+									id="progression-date"
+									type="date"
+									value={progressionDate}
+									onChange={(event) => setProgressionDate(event.target.value)}
+									className={cn(ft.input, 'sm:max-w-xs')}
+									tabIndex={progressed ? 0 : -1}
+								/>
+								<Button
+									type="button"
+									variant="ghost"
+									onClick={() => setProgressionDate(todayInputValue())}
+									className={cn(
+										ft.iconColor,
+										'justify-start hover:bg-[color:var(--theme-soft-bg)]'
+									)}
+								>
+									{t('synastry_today')}
+								</Button>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<Button
-					type="submit"
-					disabled={!ready}
-					className={cn(ft.footerPrimary, 'mt-6 h-12 w-full rounded-full text-base')}
-				>
-					{t('synastry_create')}
-				</Button>
-			</form>
+					<Button
+						type="submit"
+						disabled={!ready}
+						className={cn(ft.footerPrimary, 'mt-6 h-12 w-full rounded-full text-base')}
+					>
+						{t('synastry_create')}
+					</Button>
+				</form>
+			</AppMainContentContainer>
 		</AppMainContentRoot>
 	);
 }
