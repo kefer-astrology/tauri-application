@@ -226,6 +226,9 @@ async fn compute_chart_python(
         "chart_id": chart_id,
         "preset_id": preset_id,
         "settings_overrides": settings_overrides,
+        // Ask the JPL/Skyfield route for topocentric altitude/azimuth so the radix detail panel
+        // can show them; a no-op on the Swiss-ephemeris route, which never reads these flags.
+        "include_topocentric": true,
     });
     let response = crate::infrastructure::python_sidecar::post_json(
         app,

@@ -10,7 +10,6 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Separator } from './ui/separator';
 import { Table, TableBody, TableCell, TableRow } from './ui/table';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { cn } from './ui/utils';
@@ -20,9 +19,7 @@ import { DetailSidePanel } from './detail-side-panel';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import {
 	DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS,
-	DEFAULT_OBSERVABLE_OBJECT_IDS,
-	OBSERVABLE_OBJECTS,
-	getObservableObjectLabel
+	DEFAULT_OBSERVABLE_OBJECT_IDS
 } from '@/lib/astrology/observableObjects';
 import {
 	ASPECT_GLYPHS,
@@ -30,26 +27,17 @@ import {
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ENABLED_ASPECT_IDS
 } from '@/lib/astrology/aspects';
-import {
-	signIndexToZodiacId,
-	type AstrologyGlyphSetId
-} from '@/lib/astrology/glyphs';
+import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { normalizeLongitude } from '@/lib/astrology/chartSearch';
+import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
+import { parseComputedAspect, type ParsedAspect } from '@/lib/astrology/aspectParsing';
+import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
+import { AspectDetailPanel } from './aspect-detail-panel';
 
 interface AspectariumProps {
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
 	workspaceDefaults: WorkspaceDefaultsState;
-}
-
-interface ParsedAspect {
-	from: string;
-	to: string;
-	type: string;
-	orb: number;
-	angle?: number;
-	exactAngle?: number;
-	applying?: boolean;
-	separating?: boolean;
 }
 
 type AspectLayer = 'radix' | 'transit';
@@ -78,13 +66,6 @@ const ZODIAC_UNICODE_FALLBACK = [
 	'♓'
 ] as const;
 
-const OBSERVABLE_OBJECT_MAP = new Map(OBSERVABLE_OBJECTS.map((item) => [item.id, item] as const));
-const OBSERVABLE_OBJECT_ICON_MAP = new Map(
-	OBSERVABLE_OBJECTS.map((item) => [item.id, item.icon] as const)
-);
-const ASPECT_LABEL_KEY_MAP = new Map<string, string>(
-	ASPECT_ROWS.map((aspect) => [aspect.id, aspect.labelKey] as const)
-);
 const ORB_PRESETS: Array<{ id: OrbPreset; labelKey: string; maxOrb: number }> = [
 	{ id: 'default', labelKey: 'aspectarium_orb_default', maxOrb: 5 },
 	{ id: 'tight', labelKey: 'aspectarium_orb_tight', maxOrb: 1 },
@@ -92,57 +73,6 @@ const ORB_PRESETS: Array<{ id: OrbPreset; labelKey: string; maxOrb: number }> = 
 	{ id: 'wide', labelKey: 'aspectarium_orb_wide', maxOrb: 8 },
 	{ id: 'custom', labelKey: 'aspectarium_orb_custom', maxOrb: 5 }
 ];
-
-function normalizeLongitude(value: unknown): number | null {
-	if (typeof value === 'number' && Number.isFinite(value)) {
-		return ((value % 360) + 360) % 360;
-	}
-	if (value && typeof value === 'object') {
-		const longitude = (value as { longitude?: unknown }).longitude;
-		if (typeof longitude === 'number' && Number.isFinite(longitude)) {
-			return ((longitude % 360) + 360) % 360;
-		}
-	}
-	return null;
-}
-
-function parseAspect(raw: unknown): ParsedAspect | null {
-	if (!raw || typeof raw !== 'object') return null;
-	const aspect = raw as Record<string, unknown>;
-	const from = typeof aspect.from === 'string' ? aspect.from : null;
-	const to = typeof aspect.to === 'string' ? aspect.to : null;
-	const type = typeof aspect.type === 'string' ? aspect.type : null;
-	const orbRaw = aspect.orb;
-	const angleRaw = aspect.angle;
-	const exactAngleRaw = aspect.exact_angle;
-	if (!from || !to || !type) return null;
-	const orb =
-		typeof orbRaw === 'number' ? orbRaw : typeof orbRaw === 'string' ? Number(orbRaw) : NaN;
-	if (!Number.isFinite(orb)) return null;
-	return {
-		from,
-		to,
-		type,
-		orb,
-		angle: typeof angleRaw === 'number' && Number.isFinite(angleRaw) ? angleRaw : undefined,
-		exactAngle:
-			typeof exactAngleRaw === 'number' && Number.isFinite(exactAngleRaw)
-				? exactAngleRaw
-				: undefined,
-		applying: aspect.applying === true,
-		separating: aspect.separating === true
-	};
-}
-
-function bodyLabel(id: string, t: (key: string, options?: Record<string, unknown>) => string) {
-	const item = OBSERVABLE_OBJECT_MAP.get(id);
-	if (!item) return id;
-	return getObservableObjectLabel(item, t);
-}
-
-function bodyIcon(id: string) {
-	return OBSERVABLE_OBJECT_ICON_MAP.get(id) ?? id.slice(0, 3);
-}
 
 function canonicalPairKey(idA: string, idB: string, orderIndex: Map<string, number>) {
 	const idxA = orderIndex.get(idA) ?? Number.MAX_SAFE_INTEGER;
@@ -158,11 +88,6 @@ function aspectIdentity(aspect: ParsedAspect, orderIndex: Map<string, number>, l
 	return layer === 'transit'
 		? `transit::${directionalPairKey(aspect.from, aspect.to)}::${aspect.type}`
 		: `radix::${canonicalPairKey(aspect.from, aspect.to, orderIndex)}::${aspect.type}`;
-}
-
-function formatDegrees(value: number | undefined, digits = 2) {
-	if (!Number.isFinite(value)) return null;
-	return `${value!.toFixed(digits)}°`;
 }
 
 function formatOrb(orb: number | undefined) {
@@ -185,10 +110,6 @@ function positionParts(longitude: number | null) {
 	};
 }
 
-function fallbackAspectLabel(type: string) {
-	return type.charAt(0).toUpperCase() + type.slice(1).replaceAll('_', ' ');
-}
-
 function BodyGlyph({
 	bodyId,
 	glyphSet,
@@ -200,7 +121,7 @@ function BodyGlyph({
 	className?: string;
 	size?: number;
 }) {
-	const fallback = bodyIcon(bodyId);
+	const fallback = objectIcon(bodyId);
 
 	return (
 		<AstrologyGlyph
@@ -277,15 +198,6 @@ function AspectCellButton({
 				{formatOrb(aspect.orb)}
 			</span>
 		</Button>
-	);
-}
-
-function DetailRow({ label, value }: { label: string; value: ReactNode | null }) {
-	return (
-		<div className="flex items-start justify-between gap-3 text-sm">
-			<span className="text-[color:var(--theme-content-muted)]">{label}</span>
-			<span className="text-right text-[color:var(--theme-content-primary)]">{value ?? '—'}</span>
-		</div>
 	);
 }
 
@@ -401,7 +313,7 @@ function MultiSelectFilter({
 }
 
 export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumProps) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 	const { selectedChart, transitOverlay } = useWorkspaceCharts();
 	const [selectedAspectId, setSelectedAspectId] = useState<string | null>(null);
@@ -446,6 +358,10 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 
 	const positions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
 	const motion = selectedChart?.computed?.motion ?? {};
+	// Chart-wide only: Rust records which shapes/configurations the whole chart has, not which
+	// bodies belong to each one (see the radix wheel's own object-detail panel for the same note).
+	const chartShapeIds = selectedChart?.computed?.shapes ?? [];
+	const chartConfigurationIds = selectedChart?.computed?.configurations ?? [];
 	const activeTransitOverlay =
 		transitOverlay && transitOverlay.sourceChartId === selectedChart?.id ? transitOverlay : null;
 	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
@@ -453,6 +369,15 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 		unknown
 	>;
 	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? {};
+	// Unfiltered (not narrowed by the current orb/body/aspect-type filters): an object's own
+	// detail view should list every aspect it actually has, matching the radix wheel's own
+	// planet-click panel, not just the ones the matrix/list currently shows.
+	const fullRadixAspects: ParsedAspect[] = (selectedChart?.computed?.aspects ?? [])
+		.map(parseComputedAspect)
+		.filter((aspect): aspect is ParsedAspect => aspect !== null);
+	const fullTransitAspects: ParsedAspect[] = (activeTransitOverlay?.aspects ?? [])
+		.map(parseComputedAspect)
+		.filter((aspect): aspect is ParsedAspect => aspect !== null);
 	const availableBodyOrder = useMemo(
 		() =>
 			(activeTransitOverlay?.transitedBodies ?? DEFAULT_OBSERVABLE_OBJECT_IDS).filter((id) => {
@@ -489,7 +414,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 
 	const visibleRadixAspects = useMemo(() => {
 		return (selectedChart?.computed?.aspects ?? [])
-			.map(parseAspect)
+			.map(parseComputedAspect)
 			.filter((aspect): aspect is ParsedAspect => aspect !== null)
 			.filter(
 				(aspect) =>
@@ -502,7 +427,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 
 	const visibleTransitAspects = useMemo(() => {
 		return (activeTransitOverlay?.aspects ?? [])
-			.map(parseAspect)
+			.map(parseComputedAspect)
 			.filter((aspect): aspect is ParsedAspect => aspect !== null)
 			.filter(
 				(aspect) =>
@@ -561,7 +486,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 	);
 	const bodyFilterItems: FilterItem[] = availableSelectorBodyIds.map((id) => ({
 		id,
-		label: bodyLabel(id, t),
+		label: objectLabel(id, t),
 		icon: (
 			<BodyGlyph
 				bodyId={id}
@@ -607,7 +532,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 				className="text-[color:var(--theme-content-primary)]"
 			/>
 			<div className="min-w-0">
-				<p className={cn('truncate text-sm font-medium', ft.title)}>{bodyLabel(bodyId, t)}</p>
+				<p className={cn('truncate text-sm font-medium', ft.title)}>{objectLabel(bodyId, t)}</p>
 				<p className={cn('truncate text-xs', ft.muted)}>
 					{normalizeLongitude(positionsForLayer(layer)[bodyId]) === null ? (
 						t('loading_positions')
@@ -818,12 +743,10 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 											</span>
 											<span className="min-w-0 flex-1">
 												<span className={cn('block truncate text-sm font-medium', ft.title)}>
-													{bodyLabel(entry.aspect.from, t)} — {bodyLabel(entry.aspect.to, t)}
+													{objectLabel(entry.aspect.from, t)} — {objectLabel(entry.aspect.to, t)}
 												</span>
 												<span className={cn('block text-xs', ft.muted)}>
-													{ASPECT_LABEL_KEY_MAP.get(entry.aspect.type)
-														? t(ASPECT_LABEL_KEY_MAP.get(entry.aspect.type)!)
-														: fallbackAspectLabel(entry.aspect.type)}
+													{aspectLabel(entry.aspect.type, t)}
 												</span>
 											</span>
 											<span className={cn('shrink-0 font-mono text-sm', ft.muted)}>
@@ -853,139 +776,66 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 		</Card>
 	);
 
+	/** The exact same view-model + panel the radix wheel's own aspect-click detail uses (see
+	 *  `horoscope-dashboard.tsx`): aspect facts, then each side's full body detail, each in its
+	 *  own collapsed accordion item. */
+	const selectedAspectDetail = useMemo(() => {
+		if (!selectedAspect || !selectedAspectEntry) return null;
+		const buildSide = (bodyId: string, layer: AspectLayer) => {
+			const sourcePositions = layer === 'transit' ? transitPositions : positions;
+			const sourceMotion = layer === 'transit' ? transitMotion : motion;
+			const layerLabel =
+				layer === 'transit'
+					? t('transits_general_transit_transit')
+					: (selectedChart?.name ?? t('new_type_radix'));
+			return buildObjectDetailViewModel(
+				{
+					bodyId,
+					rawPosition: sourcePositions[bodyId],
+					motion: sourceMotion[bodyId],
+					extendedMaps: layer === 'transit' ? activeTransitOverlay?.transitChart.computed : selectedChart?.computed,
+					houseCusps: selectedChart?.computed?.houseCusps ?? [],
+					chartShapeIds,
+					chartConfigurationIds,
+					allAspects: layer === 'transit' ? fullTransitAspects : fullRadixAspects,
+					layerLabel
+				},
+				i18n.language,
+				t
+			);
+		};
+		const fromObject = buildSide(selectedAspect.from, selectedAspectEntry.fromLayer);
+		const toObject = buildSide(selectedAspect.to, selectedAspectEntry.toLayer);
+		if (!fromObject || !toObject) return null;
+		return { aspect: selectedAspect, fromObject, toObject };
+	}, [
+		activeTransitOverlay?.transitChart.computed,
+		chartConfigurationIds,
+		chartShapeIds,
+		fullRadixAspects,
+		fullTransitAspects,
+		i18n.language,
+		motion,
+		positions,
+		selectedAspect,
+		selectedAspectEntry,
+		selectedChart?.computed,
+		selectedChart?.name,
+		t,
+		transitMotion,
+		transitPositions
+	]);
+
 	const renderDetailContent = () =>
-		selectedAspect && selectedAspectEntry ? (
-			<div className="h-full min-h-0 overflow-y-auto rounded-2xl bg-[color:var(--theme-soft-bg)]/42 pr-2">
-				<div className="space-y-5 p-4">
-					<div>
-						<div className="flex items-center gap-3">
-							<div className="flex items-center gap-2">
-								<BodyGlyph
-									bodyId={selectedAspect.from}
-									glyphSet={glyphSet}
-									size={18}
-									className="text-[color:var(--theme-content-primary)]"
-								/>
-								<span className={cn('text-sm font-medium', ft.title)}>
-									{bodyLabel(selectedAspect.from, t)}
-								</span>
-							</div>
-							<span
-								className="flex items-center justify-center text-xl leading-none"
-								style={{
-									color:
-										workspaceDefaults.defaultAspectColors[selectedAspect.type] ??
-										DEFAULT_ASPECT_COLORS[
-											selectedAspect.type as keyof typeof DEFAULT_ASPECT_COLORS
-										] ??
-										'var(--theme-accent)'
-								}}
-							>
-								<AstrologyGlyph
-									glyphId={selectedAspect.type}
-									glyphSet={glyphSet}
-									domain="aspect"
-									fallback={ASPECT_GLYPHS[selectedAspect.type] ?? '•'}
-									size={20}
-								/>
-							</span>
-							<div className="flex items-center gap-2">
-								<BodyGlyph
-									bodyId={selectedAspect.to}
-									glyphSet={glyphSet}
-									size={18}
-									className="text-[color:var(--theme-content-primary)]"
-								/>
-								<span className={cn('text-sm font-medium', ft.title)}>
-									{bodyLabel(selectedAspect.to, t)}
-								</span>
-							</div>
-						</div>
-					</div>
-					<Separator className="bg-[color:var(--theme-panel-border)]" />
-
-					<div className="space-y-3">
-						<p className={cn('text-sm font-medium', ft.title)}>{t('details')}</p>
-						<DetailRow
-							label={t('transits_label_type')}
-							value={
-								ASPECT_LABEL_KEY_MAP.get(selectedAspect.type)
-									? t(ASPECT_LABEL_KEY_MAP.get(selectedAspect.type)!)
-									: fallbackAspectLabel(selectedAspect.type)
-							}
-						/>
-						<DetailRow label={t('label_orb')} value={formatOrb(selectedAspect.orb)} />
-						<DetailRow
-							label={t('aspectarium_angle')}
-							value={formatDegrees(selectedAspect.angle, 2)}
-						/>
-						<DetailRow
-							label={t('aspectarium_exact_angle')}
-							value={formatDegrees(selectedAspect.exactAngle, 2)}
-						/>
-						<DetailRow
-							label={t('aspectarium_applying')}
-							value={selectedAspect.applying ? t('selected') : null}
-						/>
-						<DetailRow
-							label={t('aspectarium_separating')}
-							value={selectedAspect.separating ? t('selected') : null}
-						/>
-					</div>
-					<Separator className="bg-[color:var(--theme-panel-border)]" />
-
-					{[
-						{
-							bodyId: selectedAspect.from,
-							layer: selectedAspectEntry.fromLayer,
-							label: t('aspectarium_body_a')
-						},
-						{
-							bodyId: selectedAspect.to,
-							layer: selectedAspectEntry.toLayer,
-							label: t('aspectarium_body_b')
-						}
-					].map(({ bodyId, layer, label }) => {
-						const sourcePositions = layer === 'transit' ? transitPositions : positions;
-						const sourceMotion = layer === 'transit' ? transitMotion : motion;
-						const longitude = normalizeLongitude(sourcePositions[bodyId]);
-						const motionInfo = sourceMotion[bodyId];
-						const layerLabel =
-							layer === 'transit'
-								? t('transits_general_transit_transit')
-								: (selectedChart?.name ?? t('new_type_radix'));
-						return (
-							<div key={`${selectedAspectId}:${layer}:${bodyId}`} className="space-y-3">
-								<div className="flex items-center gap-3">
-									<BodyGlyph
-										bodyId={bodyId}
-										glyphSet={glyphSet}
-										size={18}
-										className="text-[color:var(--theme-content-primary)]"
-									/>
-									<p className={cn('text-sm font-medium', ft.title)}>{label}</p>
-								</div>
-								<DetailRow label={t('charts')} value={`${bodyLabel(bodyId, t)} · ${layerLabel}`} />
-								<DetailRow
-									label={t('aspectarium_position')}
-									value={
-										longitude === null ? null : (
-											<PositionValue longitude={longitude} glyphSet={glyphSet} />
-										)
-									}
-								/>
-								<DetailRow
-									label={t('aspectarium_absolute_longitude')}
-									value={longitude === null ? null : formatDegrees(longitude, 2)}
-								/>
-								<DetailRow
-									label={t('open_filter_motion')}
-									value={motionInfo ? (motionInfo.retrograde ? 'R' : 'D') : null}
-								/>
-							</div>
-						);
-					})}
-				</div>
+		selectedAspectDetail ? (
+			<div className="h-full min-h-0 overflow-y-auto rounded-2xl bg-[color:var(--theme-soft-bg)]/42 p-4 pr-2">
+				<AspectDetailPanel
+					theme={theme}
+					glyphSet={glyphSet}
+					aspect={selectedAspectDetail.aspect}
+					fromObject={selectedAspectDetail.fromObject}
+					toObject={selectedAspectDetail.toObject}
+				/>
 			</div>
 		) : null;
 

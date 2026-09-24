@@ -527,6 +527,45 @@ pub fn equatorial_to_ecliptic(x_km: f64, y_km: f64, z_km: f64, obliquity_deg: f6
     (normalize_deg(lon), lat)
 }
 
+// ─── equatorial coordinates ───────────────────────────────────────────────────
+
+/// Right ascension (degrees, [0, 360)) and declination (degrees, [-90, 90]) of an
+/// equatorial mean-of-date position vector — the same vector `equatorial_to_ecliptic`
+/// takes, just read directly as spherical coordinates instead of rotated by the obliquity.
+pub fn equatorial_ra_dec_deg(x_km: f64, y_km: f64, z_km: f64) -> (f64, f64) {
+    let ra = f64::atan2(y_km, x_km).to_degrees();
+    let dec = f64::atan2(z_km, (x_km * x_km + y_km * y_km).sqrt()).to_degrees();
+    (normalize_deg(ra), dec)
+}
+
+// ─── horizontal coordinates ───────────────────────────────────────────────────
+
+/// Topocentric altitude and azimuth (both degrees) from equatorial coordinates and the
+/// observer's local sidereal time and geographic latitude. Azimuth is compass convention:
+/// 0=North, 90=East, matching Skyfield's `.altaz()` used by the Python backend, so both
+/// compute routes agree on what "azimuth" means for the same body/time/place.
+///
+/// Standard equatorial-to-horizontal transform (e.g. Meeus, *Astronomical Algorithms* ch.13),
+/// with the hour angle measured positive westward and the resulting south-referenced azimuth
+/// rotated 180 degrees to the compass (north-referenced) convention.
+pub fn equatorial_to_horizontal_deg(
+    ra_deg: f64,
+    dec_deg: f64,
+    lst_deg: f64,
+    latitude_deg: f64,
+) -> (f64, f64) {
+    let hour_angle = (lst_deg - ra_deg).to_radians();
+    let dec = dec_deg.to_radians();
+    let lat = latitude_deg.to_radians();
+
+    let altitude = (dec.sin() * lat.sin() + dec.cos() * lat.cos() * hour_angle.cos()).asin();
+    let azimuth_from_south =
+        f64::atan2(hour_angle.sin(), hour_angle.cos() * lat.sin() - dec.tan() * lat.cos());
+    let azimuth = normalize_deg(azimuth_from_south.to_degrees() + 180.0);
+
+    (altitude.to_degrees(), azimuth)
+}
+
 // ─── utilities ───────────────────────────────────────────────────────────────
 
 /// Normalize an angle to [0, 360).
@@ -548,6 +587,33 @@ mod tests {
             (eps - 23.439291).abs() < 0.0001,
             "obliquity at J2000: {eps}"
         );
+    }
+
+    /// Cross-checked against Skyfield/JPL for Mercury, 2024-04-10 12:00 Europe/Prague
+    /// (unix 1712743200), lat 50.0874654 / lon 14.4212535, using Skyfield's astrometric
+    /// (light-time corrected, no aberration/nutation) position precessed to the mean equinox
+    /// of date — the same precision level `equatorial_to_ecliptic`'s longitude already uses
+    /// elsewhere in this file, rather than Skyfield's full "apparent" place: RA 20.960824 deg,
+    /// Dec 11.554670 deg, mean GMST-based LST 3.549219 deg -> alt 48.889981 deg,
+    /// az 153.520290 deg.
+    #[test]
+    fn equatorial_to_horizontal_matches_skyfield_reference() {
+        let unix_secs = 1_712_743_200.0_f64;
+        let latitude_deg = 50.0874654;
+        let longitude_deg = 14.4212535;
+        let ra_deg = 20.960_824;
+        let dec_deg = 11.554_670;
+
+        let jd_ut = julian_day_from_unix(unix_secs);
+        let lst_deg = local_sidereal_time_deg(jd_ut, longitude_deg);
+        let (altitude, azimuth) =
+            equatorial_to_horizontal_deg(ra_deg, dec_deg, lst_deg, latitude_deg);
+
+        assert!(
+            (altitude - 48.889_981).abs() < 0.05,
+            "altitude: {altitude}"
+        );
+        assert!((azimuth - 153.520_290).abs() < 0.05, "azimuth: {azimuth}");
     }
 
     #[test]

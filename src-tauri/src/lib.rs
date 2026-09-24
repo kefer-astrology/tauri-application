@@ -13,7 +13,7 @@ use commands::calculation::{
 };
 use commands::charts::{create_chart, delete_chart, get_chart_details, import_chart, update_chart};
 use commands::default::{read, write};
-use commands::dialogs::open_folder_dialog;
+use commands::dialogs::{open_chart_file_dialog, open_folder_dialog};
 use commands::ephemeris::{download_ephemeris, get_available_bodies, list_ephemeris_catalog};
 use commands::location::{resolve_location, resolve_timezone, search_locations};
 use commands::storage::{
@@ -96,6 +96,7 @@ pub fn run() {
             compute_chart_from_data,
             compute_cross_aspects_from_data,
             compute_transit_series,
+            open_chart_file_dialog,
             open_folder_dialog,
             resolve_location,
             resolve_timezone,

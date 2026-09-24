@@ -23,8 +23,7 @@ import {
 	HoroscopeWheel,
 	type HoroscopeWheelAspectInteraction,
 	type HoroscopeWheelBody,
-	type HoroscopeWheelObjectInteraction,
-	type RadixAspectDrawInput
+	type HoroscopeWheelObjectInteraction
 } from './horoscope-wheel';
 import { toast } from 'sonner';
 import {
@@ -32,14 +31,23 @@ import {
 	OBSERVABLE_OBJECTS
 } from '@/lib/astrology/observableObjects';
 import { tagColor } from '@/lib/chartTags';
-import { ASPECT_GLYPHS, ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
+import { normalizeLongitude } from '@/lib/astrology/chartSearch';
+import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
+import {
+	normalizePointId,
+	parseComputedAspect,
+	type ParsedAspect
+} from '@/lib/astrology/aspectParsing';
+import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
 import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { BodySelector } from './body-selector';
 import { DetailSidePanel } from './detail-side-panel';
+import { ObjectDetailPanel } from './object-detail-panel';
+import { AspectDetailPanel } from './aspect-detail-panel';
 
 interface HoroscopeDashboardProps {
 	theme: Theme;
@@ -80,105 +88,15 @@ const ZODIAC_UNICODE_FALLBACK = [
 	'♓'
 ] as const;
 
-const POSITION_META: Record<string, { labelKey?: string; fallbackLabel: string; icon: string }> = {
-	sun: { labelKey: 'planet_sun', fallbackLabel: 'Sun', icon: '☉' },
-	moon: { labelKey: 'planet_moon', fallbackLabel: 'Moon', icon: '☽' },
-	mercury: { labelKey: 'planet_mercury', fallbackLabel: 'Mercury', icon: '☿' },
-	venus: { labelKey: 'planet_venus', fallbackLabel: 'Venus', icon: '♀' },
-	mars: { labelKey: 'planet_mars', fallbackLabel: 'Mars', icon: '♂' },
-	jupiter: { labelKey: 'planet_jupiter', fallbackLabel: 'Jupiter', icon: '♃' },
-	saturn: { labelKey: 'planet_saturn', fallbackLabel: 'Saturn', icon: '♄' },
-	uranus: { labelKey: 'planet_uranus', fallbackLabel: 'Uranus', icon: '♅' },
-	neptune: { labelKey: 'planet_neptune', fallbackLabel: 'Neptune', icon: '♆' },
-	pluto: { labelKey: 'planet_pluto', fallbackLabel: 'Pluto', icon: '♇' },
-	asc: { labelKey: 'point_asc', fallbackLabel: 'ASC', icon: 'Asc' },
-	desc: { labelKey: 'point_dsc', fallbackLabel: 'DSC', icon: 'Dsc' },
-	mc: { labelKey: 'point_mc', fallbackLabel: 'MC', icon: 'MC' },
-	ic: { labelKey: 'point_ic', fallbackLabel: 'IC', icon: 'IC' },
-	north_node: { labelKey: 'point_north_node', fallbackLabel: 'North Node', icon: '☊' },
-	south_node: { labelKey: 'point_south_node', fallbackLabel: 'South Node', icon: '☋' },
-	true_north_node: {
-		labelKey: 'point_true_north_node',
-		fallbackLabel: 'True North Node',
-		icon: '☊'
-	},
-	true_south_node: {
-		labelKey: 'point_true_south_node',
-		fallbackLabel: 'True South Node',
-		icon: '☋'
-	},
-	lilith: { labelKey: 'point_lilith', fallbackLabel: 'Lilith', icon: '⚸' },
-	true_lilith: { labelKey: 'point_lilith_true', fallbackLabel: 'True Lilith', icon: '⚸' },
-	vertex: { labelKey: 'point_vertex', fallbackLabel: 'Vertex', icon: 'Vx' },
-	antivertex: { labelKey: 'point_antivertex', fallbackLabel: 'Antivertex', icon: 'AVx' },
-	part_of_fortune: {
-		labelKey: 'point_part_of_fortune',
-		fallbackLabel: 'Part of Fortune',
-		icon: 'PF'
-	},
-	part_of_spirit: {
-		labelKey: 'point_part_of_spirit',
-		fallbackLabel: 'Part of Spirit',
-		icon: 'PS'
-	},
-	chiron: { labelKey: 'point_chiron', fallbackLabel: 'Chiron', icon: '⚷' },
-	ceres: { labelKey: 'point_ceres', fallbackLabel: 'Ceres', icon: 'Ce' },
-	pallas: { labelKey: 'point_pallas', fallbackLabel: 'Pallas', icon: 'Pa' },
-	juno: { labelKey: 'point_juno', fallbackLabel: 'Juno', icon: 'Ju' },
-	vesta: { labelKey: 'point_vesta', fallbackLabel: 'Vesta', icon: 'Ve' },
-	astraea: { labelKey: 'point_astraea', fallbackLabel: 'Astraea', icon: 'As' },
-	hebe: { labelKey: 'point_hebe', fallbackLabel: 'Hebe', icon: 'He' },
-	iris: { labelKey: 'point_iris', fallbackLabel: 'Iris', icon: 'Ir' },
-	flora: { labelKey: 'point_flora', fallbackLabel: 'Flora', icon: 'Fl' },
-	metis: { labelKey: 'point_metis', fallbackLabel: 'Metis', icon: 'Mt' },
-	hygiea: { labelKey: 'point_hygiea', fallbackLabel: 'Hygiea', icon: 'Hy' },
-	parthenope: { labelKey: 'point_parthenope', fallbackLabel: 'Parthenope', icon: 'Pt' },
-	victoria: { labelKey: 'point_victoria', fallbackLabel: 'Victoria', icon: 'Vc' },
-	egeria: { labelKey: 'point_egeria', fallbackLabel: 'Egeria', icon: 'Eg' },
-	irene: { labelKey: 'point_irene', fallbackLabel: 'Irene', icon: 'Ie' },
-	eunomia: { labelKey: 'point_eunomia', fallbackLabel: 'Eunomia', icon: 'Eu' },
-	psyche: { labelKey: 'point_psyche', fallbackLabel: 'Psyche', icon: 'Ps' },
-	thetis: { labelKey: 'point_thetis', fallbackLabel: 'Thetis', icon: 'Th' },
-	melpomene: { labelKey: 'point_melpomene', fallbackLabel: 'Melpomene', icon: 'Mp' },
-	fortuna: { labelKey: 'point_fortuna', fallbackLabel: 'Fortuna', icon: 'Ft' },
-	massalia: { labelKey: 'point_massalia', fallbackLabel: 'Massalia', icon: 'Ma' }
-};
-
-function parseRadixAspect(raw: unknown): RadixAspectDrawInput | null {
-	if (!raw || typeof raw !== 'object') return null;
-	const o = raw as Record<string, unknown>;
-	const from = typeof o.from === 'string' ? o.from : null;
-	const to = typeof o.to === 'string' ? o.to : null;
-	const type = typeof o.type === 'string' ? o.type : null;
-	const orbRaw = o.orb;
-	const orb =
-		typeof orbRaw === 'number' ? orbRaw : typeof orbRaw === 'string' ? Number(orbRaw) : NaN;
-	if (!from || !to || !type || !Number.isFinite(orb)) return null;
-	return { from, to, type, orb };
-}
-
 const ANGLE_POSITION_IDS = new Set(
 	OBSERVABLE_OBJECTS.filter((item) => item.category === 'angles').map((item) => item.id)
 );
-
-function normalizeLongitude(value: unknown): number | null {
-	if (typeof value === 'number' && Number.isFinite(value)) {
-		return ((value % 360) + 360) % 360;
-	}
-	if (value && typeof value === 'object') {
-		const longitude = (value as { longitude?: unknown }).longitude;
-		if (typeof longitude === 'number' && Number.isFinite(longitude)) {
-			return ((longitude % 360) + 360) % 360;
-		}
-	}
-	return null;
-}
 
 function longitudeToPosition(
 	id: string,
 	longitude: number,
 	retrograde: boolean,
-	t: (key: string) => string
+	t: (key: string, options?: Record<string, unknown>) => string
 ): PlanetPosition {
 	const withinSign = longitude % 30;
 	const totalSeconds = Math.round(withinSign * 3600);
@@ -186,11 +104,10 @@ function longitudeToPosition(
 	const minutes = Math.floor((totalSeconds % 3600) / 60);
 	const seconds = totalSeconds % 60;
 	const signIndex = Math.floor(longitude / 30) % 12;
-	const meta = POSITION_META[id] ?? { fallbackLabel: id, icon: id.slice(0, 3) };
 	return {
 		id,
-		label: meta.labelKey ? t(meta.labelKey) : meta.fallbackLabel,
-		icon: meta.icon,
+		label: objectLabel(id, t),
+		icon: objectIcon(id),
 		degrees,
 		signZodiacId: signIndexToZodiacId(signIndex),
 		signGlyphFallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
@@ -357,9 +274,14 @@ export function HoroscopeDashboard({
 	});
 	const showAxisLines = showAsc || showDsc || showMc || showIc;
 
-	const radixAspects: RadixAspectDrawInput[] = (selectedChart?.computed?.aspects ?? [])
-		.map(parseRadixAspect)
-		.filter((a): a is RadixAspectDrawInput => a !== null);
+	const radixAspects: ParsedAspect[] = (selectedChart?.computed?.aspects ?? [])
+		.map(parseComputedAspect)
+		.filter((a): a is ParsedAspect => a !== null);
+	// Chart-wide only: Rust records which shapes/configurations the whole chart has, not which
+	// bodies belong to each one, so the detail panel shows them as informational context rather
+	// than filtering them to the selected planet.
+	const chartShapeIds = selectedChart?.computed?.shapes ?? [];
+	const chartConfigurationIds = selectedChart?.computed?.configurations ?? [];
 	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
 		string,
 		unknown
@@ -373,7 +295,11 @@ export function HoroscopeDashboard({
 			})
 			.filter((entry): entry is [HoroscopeWheelBody, number] => entry[1] !== null)
 	) as Partial<Record<string, number>>;
-	const selectedWheelDetails = useMemo(() => {
+	/** The one view-model shared with the aspectarium's own aspect detail: every fact about a
+	 *  body worth showing (position, sign, element, house, motion, RA/Dec/alt/az, symbols,
+	 *  chart shapes/configurations, and the aspects touching it), built once here so both the
+	 *  wheel's own planet-click panel and its aspect-click panel render identically. */
+	const selectedObjectDetail = useMemo(() => {
 		if (!selectedWheelObject) return null;
 		const sourcePositions =
 			selectedWheelObject.layer === 'transit' ? transitPositions : computedPositions;
@@ -381,51 +307,91 @@ export function HoroscopeDashboard({
 			selectedWheelObject.layer === 'transit'
 				? (activeTransitOverlay?.transitChart.computed?.motion ?? {})
 				: computedMotion;
-		const longitude = normalizeLongitude(sourcePositions[selectedWheelObject.bodyId]);
-		if (longitude === null) return null;
-		const position = longitudeToPosition(
-			selectedWheelObject.bodyId,
-			longitude,
-			sourceMotion[selectedWheelObject.bodyId]?.retrograde ?? false,
-			t
-		);
+		const sourceExtendedMaps =
+			selectedWheelObject.layer === 'transit'
+				? activeTransitOverlay?.transitChart.computed
+				: selectedChart?.computed;
 		const layerLabel =
 			selectedWheelObject.layer === 'transit'
 				? t('transits_general_transit_transit')
 				: (selectedChart?.name ?? t('new_type_radix'));
-		return {
-			...selectedWheelObject,
-			longitude,
-			position,
-			layerLabel
-		};
+		return buildObjectDetailViewModel(
+			{
+				bodyId: selectedWheelObject.bodyId,
+				rawPosition: sourcePositions[selectedWheelObject.bodyId],
+				motion: sourceMotion[selectedWheelObject.bodyId],
+				extendedMaps: sourceExtendedMaps,
+				// A transiting body's house is always read against the radix chart's own cusps
+				// (the natal house it currently occupies), never a house system recomputed for
+				// the transit moment.
+				houseCusps: selectedChart?.computed?.houseCusps ?? [],
+				chartShapeIds,
+				chartConfigurationIds,
+				allAspects: selectedWheelObject.layer === 'radix' ? radixAspects : [],
+				layerLabel
+			},
+			i18n.language,
+			t
+		);
 	}, [
-		activeTransitOverlay?.transitChart.computed?.motion,
+		activeTransitOverlay?.transitChart.computed,
+		chartConfigurationIds,
+		chartShapeIds,
 		computedMotion,
 		computedPositions,
+		i18n.language,
+		radixAspects,
+		selectedChart?.computed,
 		selectedWheelObject,
 		selectedChart?.name,
 		t,
 		transitPositions
 	]);
-	const aspectLabel = (type: string) => {
-		const definition = ASPECT_ROWS.find((aspect) => aspect.id === type);
-		return definition ? t(definition.labelKey) : type;
-	};
-	const objectLabel = (id: string) => {
-		const meta = POSITION_META[id];
-		return meta?.labelKey ? t(meta.labelKey) : (meta?.fallbackLabel ?? id);
-	};
-	const normalizePointId = (id: string) =>
-		id.trim().toLowerCase() === 'desc' ? 'dsc' : id.trim().toLowerCase();
-	const selectedBodyAspects =
-		selectedWheelObject?.layer === 'radix'
-			? radixAspects.filter(
-					(aspect) =>
-						normalizePointId(aspect.from) === normalizePointId(selectedWheelObject.bodyId) ||
-						normalizePointId(aspect.to) === normalizePointId(selectedWheelObject.bodyId)
-				)
-			: [];
+	/** Same view-model, one per side, for the aspect-click panel. The wheel only ever reports
+	 *  radix-layer aspects, so (unlike `selectedObjectDetail`) there's no transit-layer case here. */
+	const selectedAspectDetail = useMemo(() => {
+		if (!selectedWheelAspect) return null;
+		const clicked = selectedWheelAspect.aspect;
+		const enrichedAspect =
+			radixAspects.find(
+				(candidate) =>
+					candidate.from === clicked.from &&
+					candidate.to === clicked.to &&
+					candidate.type === clicked.type
+			) ?? clicked;
+		const layerLabel = selectedChart?.name ?? t('new_type_radix');
+		const buildSide = (bodyId: string) =>
+			buildObjectDetailViewModel(
+				{
+					bodyId,
+					rawPosition: computedPositions[bodyId],
+					motion: computedMotion[bodyId],
+					extendedMaps: selectedChart?.computed,
+					houseCusps: selectedChart?.computed?.houseCusps ?? [],
+					chartShapeIds,
+					chartConfigurationIds,
+					allAspects: radixAspects,
+					layerLabel
+				},
+				i18n.language,
+				t
+			);
+		const fromObject = buildSide(enrichedAspect.from);
+		const toObject = buildSide(enrichedAspect.to);
+		if (!fromObject || !toObject) return null;
+		return { aspect: enrichedAspect, fromObject, toObject };
+	}, [
+		chartConfigurationIds,
+		chartShapeIds,
+		computedMotion,
+		computedPositions,
+		i18n.language,
+		radixAspects,
+		selectedChart?.computed,
+		selectedChart?.name,
+		selectedWheelAspect,
+		t
+	]);
 	/** Selecting a radix body highlights the aspect lines touching it; stays highlighted through the
 	 *  second click (detail panel), same as the wheel's own selected-object halo does. */
 	const highlightAspectIndicesForObject = useMemo(() => {
@@ -885,159 +851,27 @@ export function HoroscopeDashboard({
 					if (!open) setWheelDetailKind(null);
 				}}
 				title={
-					wheelDetailKind === 'aspect' && selectedWheelAspect
-						? aspectLabel(selectedWheelAspect.aspect.type)
-						: (selectedWheelDetails?.position.label ?? t('details'))
+					wheelDetailKind === 'aspect' && selectedAspectDetail
+						? aspectLabel(selectedAspectDetail.aspect.type, t)
+						: (selectedObjectDetail?.label ?? t('details'))
 				}
 				description={
-					wheelDetailKind === 'aspect' && selectedWheelAspect
-						? `${objectLabel(selectedWheelAspect.aspect.from)} → ${objectLabel(selectedWheelAspect.aspect.to)}`
-						: selectedWheelDetails?.layerLabel
+					wheelDetailKind === 'aspect' && selectedAspectDetail
+						? `${selectedAspectDetail.fromObject.label} → ${selectedAspectDetail.toObject.label}`
+						: selectedObjectDetail?.layerLabel
 				}
 				bodyClassName="overflow-y-auto"
 			>
-				{wheelDetailKind === 'object' && selectedWheelDetails ? (
-					<div className="space-y-6">
-						<div className="space-y-3">
-							<div className="flex items-center gap-3">
-								<AstrologyGlyph
-									glyphId={selectedWheelDetails.bodyId}
-									glyphSet={glyphSet}
-									fallback={selectedWheelDetails.position.icon}
-									size={28}
-									title={selectedWheelDetails.position.label}
-								/>
-								<div className={cn('text-base font-semibold', textColor)}>
-									{selectedWheelDetails.position.label}
-								</div>
-							</div>
-							<div className="space-y-2 text-sm">
-								<div className="flex items-center justify-between gap-3">
-									<span className={mutedColor}>{t('aspectarium_position')}</span>
-									<span className={cn('flex items-center gap-1 font-mono tabular-nums', textColor)}>
-										{selectedWheelDetails.position.degrees}°
-										<AstrologyGlyph
-											glyphId={selectedWheelDetails.position.signZodiacId}
-											glyphSet={glyphSet}
-											domain="zodiac"
-											fallback={selectedWheelDetails.position.signGlyphFallback}
-											size={18}
-										/>
-										{selectedWheelDetails.position.minutes}' {selectedWheelDetails.position.seconds}
-										"
-									</span>
-								</div>
-								<div className="flex items-center justify-between gap-3">
-									<span className={mutedColor}>{t('aspectarium_absolute_longitude')}</span>
-									<span className={cn('font-mono tabular-nums', textColor)}>
-										{selectedWheelDetails.longitude.toFixed(4)}°
-									</span>
-								</div>
-								<div className="flex items-center justify-between gap-3">
-									<span className={mutedColor}>{t('open_filter_motion')}</span>
-									<span className={textColor}>
-										{selectedWheelDetails.position.retrograde ? 'R' : 'D'}
-									</span>
-								</div>
-							</div>
-						</div>
-						<div>
-							<h4 className={cn('mb-3 text-sm font-semibold', textColor)}>{t('aspects')}</h4>
-							{selectedBodyAspects.length > 0 ? (
-								<div className="space-y-2">
-									{selectedBodyAspects.map((aspect, index) => {
-										const otherId =
-											aspect.from === selectedWheelDetails.bodyId ? aspect.to : aspect.from;
-										return (
-											<div
-												key={`${aspect.from}-${aspect.to}-${aspect.type}-${index}`}
-												className="rounded-lg bg-[color:var(--theme-soft-bg)] px-3 py-2"
-											>
-												<div className="flex items-center justify-between gap-3 text-sm">
-													<span className={cn('flex items-center gap-1.5', textColor)}>
-														{objectLabel(otherId)}
-														<AstrologyGlyph
-															glyphId={otherId}
-															glyphSet={glyphSet}
-															fallback={POSITION_META[otherId]?.icon ?? otherId.slice(0, 3)}
-															size={16}
-														/>
-													</span>
-													<span className={cn('flex items-center gap-1.5', mutedColor)}>
-														<AstrologyGlyph
-															glyphId={aspect.type}
-															glyphSet={glyphSet}
-															domain="aspect"
-															fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
-															size={16}
-														/>
-														{aspectLabel(aspect.type)}
-													</span>
-												</div>
-												<div
-													className={cn(
-														'mt-1 text-right font-mono text-xs tabular-nums',
-														mutedColor
-													)}
-												>
-													{t('label_orb')}: {aspect.orb.toFixed(2)}°
-												</div>
-											</div>
-										);
-									})}
-								</div>
-							) : (
-								<p className={cn('text-sm', mutedColor)}>{t('aspectarium_no_aspects')}</p>
-							)}
-						</div>
-					</div>
-				) : wheelDetailKind === 'aspect' && selectedWheelAspect ? (
-					<div className="space-y-4 text-sm">
-						<div className="rounded-lg bg-[color:var(--theme-soft-bg)] p-4">
-							<div className="flex items-center justify-between gap-3">
-								<span className={mutedColor}>{t('aspects')}</span>
-								<span className={cn('flex items-center gap-1.5 font-semibold', textColor)}>
-									<AstrologyGlyph
-										glyphId={selectedWheelAspect.aspect.type}
-										glyphSet={glyphSet}
-										domain="aspect"
-										fallback={ASPECT_GLYPHS[selectedWheelAspect.aspect.type] ?? '•'}
-										size={16}
-									/>
-									{aspectLabel(selectedWheelAspect.aspect.type)}
-								</span>
-							</div>
-							<div className="mt-3 flex items-center justify-between gap-3">
-								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.from)}</span>
-								<div className="flex items-center gap-2">
-									<AstrologyGlyph
-										glyphId={selectedWheelAspect.aspect.from}
-										glyphSet={glyphSet}
-										fallback={
-											POSITION_META[selectedWheelAspect.aspect.from]?.icon ??
-											selectedWheelAspect.aspect.from.slice(0, 3)
-										}
-										size={18}
-									/>
-									<span className={textColor}>→</span>
-									<AstrologyGlyph
-										glyphId={selectedWheelAspect.aspect.to}
-										glyphSet={glyphSet}
-										fallback={
-											POSITION_META[selectedWheelAspect.aspect.to]?.icon ??
-											selectedWheelAspect.aspect.to.slice(0, 3)
-										}
-										size={18}
-									/>
-								</div>
-								<span className={mutedColor}>{objectLabel(selectedWheelAspect.aspect.to)}</span>
-							</div>
-							<div className="mt-3 flex items-center justify-between gap-3 font-mono tabular-nums">
-								<span className={mutedColor}>{t('label_orb')}</span>
-								<span className={textColor}>{selectedWheelAspect.aspect.orb.toFixed(4)}°</span>
-							</div>
-						</div>
-					</div>
+				{wheelDetailKind === 'object' && selectedObjectDetail ? (
+					<ObjectDetailPanel theme={theme} glyphSet={glyphSet} data={selectedObjectDetail} />
+				) : wheelDetailKind === 'aspect' && selectedAspectDetail ? (
+					<AspectDetailPanel
+						theme={theme}
+						glyphSet={glyphSet}
+						aspect={selectedAspectDetail.aspect}
+						fromObject={selectedAspectDetail.fromObject}
+						toObject={selectedAspectDetail.toObject}
+					/>
 				) : null}
 			</DetailSidePanel>
 

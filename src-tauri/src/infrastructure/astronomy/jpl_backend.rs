@@ -23,9 +23,10 @@ use hifitime::Epoch;
 
 use crate::domain::astrology::day_night_parts;
 use crate::domain::houses::{
-    campanus_cusps, compute_axes, equatorial_to_ecliptic, julian_day_from_unix,
-    local_sidereal_time_deg, mean_node_lon, mean_node_motion, mean_obliquity_deg, normalize_deg,
-    placidus_cusps, true_apogee_tropical_deg, true_node_tropical_deg, vertex_lon, whole_sign_cusps,
+    campanus_cusps, compute_axes, equatorial_ra_dec_deg, equatorial_to_ecliptic,
+    equatorial_to_horizontal_deg, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
+    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, true_apogee_tropical_deg,
+    true_node_tropical_deg, vertex_lon, whole_sign_cusps,
 };
 use crate::infrastructure::astronomy::{
     AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion,
@@ -143,6 +144,20 @@ fn sample_tropical_longitude(
         obliquity,
     );
     Ok(lon)
+}
+
+/// Right ascension and declination (degrees) from the same equatorial mean-of-date state
+/// vector `sample_tropical_longitude` rotates into ecliptic coordinates.
+fn sample_equatorial(almanac: &Almanac, frame: Frame, unix_secs: f64) -> Result<(f64, f64), String> {
+    let epoch = Epoch::from_unix_seconds(unix_secs);
+    let state = almanac
+        .transform(frame, EARTH_MOD_FRAME, epoch, None)
+        .map_err(|e| e.to_string())?;
+    Ok(equatorial_ra_dec_deg(
+        state.radius_km.x,
+        state.radius_km.y,
+        state.radius_km.z,
+    ))
 }
 
 fn angular_delta_deg(from: f64, to: f64) -> f64 {
@@ -310,6 +325,11 @@ impl AstronomyBackend for JplAstronomyBackend {
             event_time.timestamp() as f64 + event_time.timestamp_subsec_nanos() as f64 * 1e-9;
         let jd_ut = julian_day_from_unix(unix_secs);
         let obliquity = mean_obliquity_deg(jd_ut);
+        // Needed up front (not just for axes/houses below) so the classical-planet loop can
+        // attach topocentric altitude/azimuth alongside each body's longitude.
+        let lat = chart.subject.location.latitude;
+        let lon = chart.subject.location.longitude;
+        let lst_deg = local_sidereal_time_deg(jd_ut, lon);
 
         let wanted = |id: &str| {
             requested_objects
@@ -319,9 +339,16 @@ impl AstronomyBackend for JplAstronomyBackend {
 
         let mut positions: HashMap<String, f64> = HashMap::new();
         let mut motion: HashMap<String, AstronomyMotion> = HashMap::new();
+        let mut right_ascension: HashMap<String, f64> = HashMap::new();
+        let mut declination: HashMap<String, f64> = HashMap::new();
+        let mut altitude: HashMap<String, f64> = HashMap::new();
+        let mut azimuth: HashMap<String, f64> = HashMap::new();
         let mut warnings: Vec<String> = Vec::new();
 
         // ── Standard planetary positions ─────────────────────────────────
+        // Equatorial (RA/Dec) and topocentric (alt/az) coordinates are only attached for
+        // this classical-body loop, matching the Python/Skyfield backend's own parity
+        // (jpl_supported = the 10 classical planets) rather than nodes, angles, or asteroids.
         for &(id, frame) in body_frames() {
             if !wanted(id) {
                 continue;
@@ -331,6 +358,13 @@ impl AstronomyBackend for JplAstronomyBackend {
                     positions.insert(id.to_string(), longitude);
                     if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
                         motion.insert(id.to_string(), body_motion);
+                    }
+                    if let Ok((ra, dec)) = sample_equatorial(&almanac, frame, unix_secs) {
+                        right_ascension.insert(id.to_string(), ra);
+                        declination.insert(id.to_string(), dec);
+                        let (alt, az) = equatorial_to_horizontal_deg(ra, dec, lst_deg, lat);
+                        altitude.insert(id.to_string(), alt);
+                        azimuth.insert(id.to_string(), az);
                     }
                 }
                 Err(e) => {
@@ -447,9 +481,6 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         // ── Axes and house cusps ──────────────────────────────────────────
-        let lat = chart.subject.location.latitude;
-        let lon = chart.subject.location.longitude;
-
         let (asc, mc, desc, ic) =
             compute_axes(jd_ut, lat, lon).map_err(|e| format!("Failed to compute axes: {e}"))?;
 
@@ -461,7 +492,8 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         if wanted("vertex") || wanted("antivertex") {
-            let ramc = local_sidereal_time_deg(jd_ut, lon);
+            // RAMC (right ascension of the midheaven) is the same quantity as local sidereal time.
+            let ramc = lst_deg;
             match vertex_lon(ramc, obliquity, lat) {
                 Ok(vertex) => {
                     if wanted("vertex") {
@@ -543,6 +575,10 @@ impl AstronomyBackend for JplAstronomyBackend {
         Ok(AstronomyChartData {
             positions,
             motion,
+            right_ascension,
+            declination,
+            altitude,
+            azimuth,
             axes,
             house_cusps,
             warnings,
@@ -915,6 +951,71 @@ mod tests {
         let sun = data.positions["sun"];
         let sun_diff = ((sun - 280.4 + 540.0) % 360.0) - 180.0;
         assert!(sun_diff.abs() < 1.0, "sun: {sun:.4}° expected ~280.4°");
+    }
+
+    /// Same reference case as `equatorial_to_horizontal_matches_skyfield_reference`
+    /// (Mercury, 2024-04-10 12:00 Europe/Prague), but end-to-end through
+    /// `JplAstronomyBackend::compute_chart_data` — confirms the whole wiring (not just the
+    /// pure trig helpers) actually attaches RA/Dec/alt/az to the classical-planet loop.
+    #[test]
+    fn compute_chart_data_attaches_equatorial_and_horizontal_coordinates() {
+        let manager = crate::infrastructure::ephemeris::EphemerisManager::from_global();
+        let paths = manager.available_bsp_paths();
+        let chart: crate::workspace::models::ChartInstance = serde_json::from_value(serde_json::json!({
+            "id": "mercury_ra_dec_test",
+            "subject": {
+                "id": "mercury_ra_dec_test",
+                "name": "Mercury RA/Dec test",
+                "event_time": "2024-04-10 12:00:00+02:00",
+                "location": {
+                    "name": "Prague, Czech Republic",
+                    "latitude": 50.0874654,
+                    "longitude": 14.4212535,
+                    "timezone": "Europe/Prague"
+                }
+            },
+            "config": {
+                "mode": "NATAL",
+                "zodiac_type": "Tropical",
+                "included_points": [],
+                "aspect_orbs": {},
+                "display_style": "",
+                "color_theme": "",
+                "engine": "jpl"
+            },
+            "tags": []
+        }))
+        .expect("valid chart JSON");
+
+        let backend = JplAstronomyBackend::new(paths);
+        let requested = vec!["mercury".to_string()];
+        let data = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .expect("compute should succeed");
+
+        let ra = *data
+            .right_ascension
+            .get("mercury")
+            .expect("mercury right_ascension missing");
+        let dec = *data
+            .declination
+            .get("mercury")
+            .expect("mercury declination missing");
+        let alt = *data
+            .altitude
+            .get("mercury")
+            .expect("mercury altitude missing");
+        let az = *data
+            .azimuth
+            .get("mercury")
+            .expect("mercury azimuth missing");
+
+        // Skyfield/JPL reference (mean-of-date, see the houses.rs test for derivation):
+        // RA 20.960824, Dec 11.554670, alt 48.889981, az 153.520290.
+        assert!((ra - 20.960_824).abs() < 0.05, "ra: {ra}");
+        assert!((dec - 11.554_670).abs() < 0.05, "dec: {dec}");
+        assert!((alt - 48.889_981).abs() < 0.05, "alt: {alt}");
+        assert!((az - 153.520_290).abs() < 0.05, "az: {az}");
     }
 
     /// Cross-check JPL vs Swiss Ephemeris at a fixed reference instant.

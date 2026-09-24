@@ -46,6 +46,11 @@ export interface AppChart {
 				retrograde: boolean;
 			}
 		>;
+		// Rust-native route only; see `ComputedChartPayload`'s fields of the same name.
+		rightAscension?: Record<string, number>;
+		declination?: Record<string, number>;
+		altitude?: Record<string, number>;
+		azimuth?: Record<string, number>;
 		aspects?: unknown[];
 		axes?: {
 			asc: number;
@@ -91,6 +96,13 @@ export interface ComputedChartPayload {
 			retrograde: boolean;
 		}
 	>;
+	// Sent by the Rust-native (anise-based JPL) route only, keyed by body id, classical
+	// planets only. Empty/absent on the Swiss-ephemeris route. The Python sidecar route instead
+	// nests this same data inside each `positions[id]` value, so these stay unset there.
+	right_ascension?: Record<string, number>;
+	declination?: Record<string, number>;
+	altitude?: Record<string, number>;
+	azimuth?: Record<string, number>;
 	aspects?: unknown[];
 	axes?: {
 		asc: number;
@@ -126,6 +138,10 @@ export function normalizeComputedChartPayload(
 	return {
 		positions,
 		motion: payload.motion ?? {},
+		rightAscension: payload.right_ascension ?? {},
+		declination: payload.declination ?? {},
+		altitude: payload.altitude ?? {},
+		azimuth: payload.azimuth ?? {},
 		aspects: payload.aspects ?? [],
 		axes,
 		houseCusps,

@@ -260,6 +260,13 @@ export interface ComputeChartResult {
 			retrograde: boolean;
 		}
 	>;
+	// Rust-native route only (anise-based JPL backend); empty/absent on the Swiss-ephemeris
+	// route and, on the Python sidecar route, absent here since the same data instead rides
+	// along inside each `positions[id]` value (see `chartPayload.ts`'s extended-fields handling).
+	right_ascension?: Record<string, number>;
+	declination?: Record<string, number>;
+	altitude?: Record<string, number>;
+	azimuth?: Record<string, number>;
 	aspects: unknown[];
 	axes?: {
 		asc: number;
