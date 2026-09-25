@@ -1,0 +1,35 @@
+apps/web-react/src/app/components/synastry-view.tsx
+  s_e65cc12a133265::t_f36b04661b6ee7 260-264,335
+apps/web-react/src/app/components/location-selector.tsx
+  s_e65cc12a133265::t_b51a5c7068a0b4 143
+  s_e65cc12a133265::t_2bacd4328dc3ac 1
+  s_e65cc12a133265::t_48c97687d70f06 144-146
+  s_e65cc12a133265::t_5f9203c78de828 49
+  s_e65cc12a133265::t_ba56d45fe8b946 147
+  s_e65cc12a133265::t_9de46d34a0e629 113
+  s_e65cc12a133265::t_3eff637622d4cb 2,5,29-31,58,84,86,108,112,114-115,117-133,135-137,142,149-153,155-156,158-159,163,165-182,184-188
+  s_e65cc12a133265::t_f36b04661b6ee7 139,183
+  s_e65cc12a133265::t_ac41c0b294eff8 134
+  s_e65cc12a133265::t_7445fd5d0c49d2 116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8d5e20bd246d0ee65b61722960613e28ec50a73b",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_e65cc12a133265": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3bf074b-a7e2-4c7f-96cd-6617f4ea1e9c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
