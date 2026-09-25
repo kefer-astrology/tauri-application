@@ -8,6 +8,7 @@ mod storage;
 #[cfg(test)]
 mod test_support;
 mod workspace;
+use commands::analyses::create_analysis;
 use commands::calculation::{
     compute_chart, compute_chart_from_data, compute_cross_aspects_from_data,
 };
@@ -86,6 +87,7 @@ pub fn run() {
             create_workspace,
             delete_workspace,
             create_chart,
+            create_analysis,
             import_chart,
             update_chart,
             delete_chart,

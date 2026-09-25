@@ -2,8 +2,8 @@ use crate::application::workspace::non_empty_str;
 use crate::workspace::loader::{find_chart_ref_by_id, load_chart};
 use crate::workspace::writer::write_workspace_manifest;
 use crate::workspace::{
-    chart_to_summary, load_all_charts, load_workspace_manifest, ChartSummary, CurrentModelReport,
-    WorkspaceInfo, WorkspaceValidationReport,
+    chart_to_summary, load_all_analyses, load_all_charts, load_workspace_manifest, ChartSummary,
+    CurrentModelReport, WorkspaceInfo, WorkspaceValidationReport,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -179,12 +179,14 @@ pub async fn load_workspace(workspace_path: String) -> Result<WorkspaceInfo, Str
 
     // Convert to summaries
     let chart_summaries: Vec<ChartSummary> = charts.iter().map(chart_to_summary).collect();
+    let analyses = load_all_analyses(workspace_dir, &manifest)?;
 
     Ok(WorkspaceInfo {
         path: workspace_path,
         owner: manifest.owner,
         active_model: manifest.active_model,
         charts: chart_summaries,
+        analyses,
     })
 }
 
@@ -321,6 +323,7 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
         chart_presets: vec![],
         subjects: vec![],
         charts: vec![],
+        analyses: vec![],
         layouts: vec![],
         annotations: vec![],
         transit_analyses: vec![],

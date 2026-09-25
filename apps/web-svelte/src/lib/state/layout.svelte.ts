@@ -9,7 +9,7 @@ import {
   normalizeAspectLineTierStyle,
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
-import type { CurrentModelReport, ModelOverridesDto } from '$lib/tauri/types';
+import type { ChartDefinitionDto, CurrentModelReport, ModelOverridesDto } from '$lib/tauri/types';
 
 export interface MoonDetailsDto {
   elongation_deg: number;
@@ -27,6 +27,8 @@ export type Tab = (typeof tabs)[number];
 export interface ChartData {
   id: string;
   name: string;
+  entityKind?: 'chart' | 'analysis';
+  definition?: ChartDefinitionDto;
   chartType: string;
   dateTime: string;
   location: string;
@@ -302,7 +304,15 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
   const timezone = asNonEmpty(chart.timezone) ?? defaults.timezone;
   const houseSystem = asNonEmpty(chart.houseSystem) ?? defaults.houseSystem;
   const zodiacType = asNonEmpty(chart.zodiacType) ?? defaults.zodiacType;
-  const mode = asNonEmpty(chart.chartType) ?? 'NATAL';
+  const definition: ChartDefinitionDto = chart.definition ?? {
+    kind: 'base',
+    purpose: (chart.chartType || 'NATAL').toLowerCase() as
+      | 'natal'
+      | 'event'
+      | 'horary'
+      | 'electional'
+      | 'moment'
+  };
   const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);
   const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
   const model = asNonEmpty(chart.model);
@@ -336,7 +346,7 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
       },
     },
     config: {
-      mode,
+      definition,
       house_system: houseSystem,
       zodiac_type: zodiacType,
       engine,

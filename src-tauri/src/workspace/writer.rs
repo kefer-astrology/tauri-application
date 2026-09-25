@@ -1,4 +1,4 @@
-use super::models::{TransitSetup, WorkspaceManifest};
+use super::models::{AnalysisInstance, TransitSetup, WorkspaceManifest};
 use std::fs;
 use std::path::Path;
 
@@ -25,6 +25,24 @@ pub fn write_chart_yaml(
         .map_err(|e| format!("Chart YAML serialization failed: {}", e))?;
     fs::write(&full_path, chart_yaml)
         .map_err(|e| format!("Write chart file {} failed: {}", full_path.display(), e))
+}
+
+pub fn write_analysis_yaml(base: &Path, analysis: &AnalysisInstance) -> Result<String, String> {
+    let relative_path = format!("analyses/{}.yml", sanitize_chart_filename(&analysis.id));
+    let full_path = base.join(&relative_path);
+    if let Some(parent) = full_path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Failed to create analysis directory: {error}"))?;
+    }
+    let yaml = serde_yaml::to_string(analysis)
+        .map_err(|error| format!("Analysis YAML serialization failed: {error}"))?;
+    fs::write(&full_path, yaml).map_err(|error| {
+        format!(
+            "Write analysis file {} failed: {error}",
+            full_path.display()
+        )
+    })?;
+    Ok(relative_path)
 }
 
 /// Write a transit setup YAML file and return its workspace-relative path.

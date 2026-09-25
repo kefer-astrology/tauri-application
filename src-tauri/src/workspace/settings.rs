@@ -713,8 +713,8 @@ fn aspect_orbs_from_model(model: &AstroModel) -> HashMap<String, f64> {
 mod tests {
     use super::*;
     use crate::workspace::models::{
-        AspectContext, AstrologySchool, ChartMode, ElementColorSettings, OverrideEntry,
-        RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
+        AspectContext, AstrologySchool, BaseChartPurpose, ChartDefinition, ElementColorSettings,
+        OverrideEntry, RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
     };
 
     fn empty_defaults() -> WorkspaceDefaults {
@@ -752,6 +752,7 @@ mod tests {
             chart_presets: vec![],
             subjects: vec![],
             charts: vec![],
+            analyses: vec![],
             transit_analyses: vec![],
             layouts: vec![],
             annotations: vec![],
@@ -760,7 +761,9 @@ mod tests {
 
     fn chart_config() -> ChartConfig {
         ChartConfig {
-            mode: ChartMode::NATAL,
+            definition: ChartDefinition::Base {
+                purpose: BaseChartPurpose::Natal,
+            },
             house_system: Some(HouseSystem::WholeSign),
             zodiac_type: ZodiacType::Sidereal,
             included_points: vec![],

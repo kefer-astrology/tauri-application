@@ -26,6 +26,8 @@ my-project/
 ├── charts/
 │   ├── clients/alice/natal.yml
 │   └── research/elections/2028.yml
+├── analyses/
+│   └── clients/alice-bob-synastry.yml
 ├── presets/charts/research.yml
 ├── transits/
 │   └── clients/alice/natal.yml
@@ -112,6 +114,8 @@ subjects:
   - subjects/clients/alice.yml
 charts:
   - charts/clients/alice/natal.yml
+analyses:
+  - analyses/clients/alice-bob-synastry.yml
 chart_presets:
   - presets/charts/research.yml
 transit_analyses:
@@ -160,7 +164,9 @@ subject:                              # embedded compatibility representation
     longitude: 14.4214
     timezone: Europe/Prague
 config:
-  mode: NATAL
+  definition:
+    kind: base
+    purpose: natal
   model: traditional-primary
   house_system: Whole Sign
   zodiac_type: Tropical
@@ -178,6 +184,64 @@ config:
   color_theme: ''
 tags: [client]
 ```
+
+`config.definition` is required. For a derived chart it records the method and
+chart graph explicitly:
+
+```yaml
+config:
+  definition:
+    kind: derived
+    method: composite
+    inputs: [alice-natal, bob-natal]
+    parameters: {}
+  zodiac_type: Tropical
+  included_points: []
+  aspect_orbs: {}
+  display_style: ''
+  color_theme: ''
+```
+
+## Analyses and views
+
+Comparisons are persisted independently from charts. A progressed synastry is
+represented by one stable analysis method plus derivations on its inputs:
+
+```yaml
+# analyses/clients/alice-bob-progressed.yml
+version: 1
+id: alice-bob-progressed
+name: Alice and Bob — progressed
+method: synastry
+inputs:
+  - role: person_a
+    chart_id: alice-natal
+    derivations:
+      - method: progression
+        parameters: { target_date: '2026-09-25T00:00:00Z' }
+  - role: person_b
+    chart_id: bob-natal
+    derivations:
+      - method: progression
+        parameters: { target_date: '2026-09-25T00:00:00Z' }
+parameters: {}
+tags: []
+```
+
+Manual comparison entries use `inline_subject` instead of `chart_id`; exactly
+one must be present for each input. A layout references chart and/or analysis
+IDs and selects only a presentation shape:
+
+```yaml
+name: alice-bob-biwheel
+layout_style: biwheel
+chart_instances: []
+analyses: [alice-bob-progressed]
+modules: []
+```
+
+Canonical layout values are `single`, `biwheel`, `triwheel`, `grid`, and
+`timeline`.
 
 ## Complete calculation definition
 

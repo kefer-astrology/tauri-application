@@ -3,9 +3,33 @@
 export interface WorkspaceChartSummary {
   id: string;
   name: string;
-  chart_type: string;
+  definition: ChartDefinitionDto;
   date_time: string;
   location: string;
+  tags: string[];
+}
+
+export type ChartDefinitionDto =
+  | { kind: 'base'; purpose: 'natal' | 'event' | 'horary' | 'electional' | 'moment' }
+  | {
+      kind: 'derived';
+      method: 'return' | 'progression' | 'direction' | 'relocation' | 'harmonic' | 'persona' | 'composite' | 'davison' | 'draconic' | 'coalescent';
+      inputs: string[];
+      parameters?: unknown;
+    };
+
+export interface AnalysisDto {
+  version: number;
+  id: string;
+  name: string;
+  method: 'synastry' | 'transit_comparison' | 'chart_comparison';
+  inputs: Array<{
+    role?: string | null;
+    chart_id?: string | null;
+    inline_subject?: unknown;
+    derivations: Array<{ method: string; parameters?: unknown }>;
+  }>;
+  parameters?: unknown;
   tags: string[];
 }
 
@@ -14,6 +38,7 @@ export interface WorkspaceInfo {
   owner: string;
   active_model: string | null;
   charts: WorkspaceChartSummary[];
+  analyses: AnalysisDto[];
 }
 
 export type DiagnosticSeverity = 'error' | 'warning';
@@ -219,7 +244,7 @@ export interface ChartDetails {
     };
   };
   config: {
-    mode: string;
+    definition: ChartDefinitionDto;
     house_system: string | null;
     zodiac_type: string;
     engine: string | null;

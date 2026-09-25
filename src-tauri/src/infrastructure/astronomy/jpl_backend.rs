@@ -886,7 +886,7 @@ mod tests {
                 }
             },
             "config": {
-                "mode": "NATAL",
+                "definition": { "kind": "base", "purpose": "natal" },
                 "zodiac_type": "Tropical",
                 "included_points": [],
                 "aspect_orbs": {},
@@ -975,7 +975,7 @@ mod tests {
                 }
             },
             "config": {
-                "mode": "NATAL",
+                "definition": { "kind": "base", "purpose": "natal" },
                 "zodiac_type": "Tropical",
                 "included_points": [],
                 "aspect_orbs": {},
@@ -1036,7 +1036,7 @@ mod tests {
                     "location": { "name": "Greenwich", "latitude": 51.4779, "longitude": 0.0, "timezone": "UTC" }
                 },
                 "config": {
-                    "mode": "NATAL", "house_system": "Placidus", "zodiac_type": "Tropical",
+                    "definition": { "kind": "base", "purpose": "natal" }, "house_system": "Placidus", "zodiac_type": "Tropical",
                     "included_points": [], "aspect_orbs": {}, "display_style": "", "color_theme": "",
                     "override_ephemeris": bsp, "engine": "jpl"
                 },
@@ -1052,7 +1052,7 @@ mod tests {
                     "location": { "name": "Greenwich", "latitude": 51.4779, "longitude": 0.0, "timezone": "UTC" }
                 },
                 "config": {
-                    "mode": "NATAL", "house_system": "Placidus", "zodiac_type": "Tropical",
+                    "definition": { "kind": "base", "purpose": "natal" }, "house_system": "Placidus", "zodiac_type": "Tropical",
                     "included_points": [], "aspect_orbs": {}, "display_style": "", "color_theme": "",
                     "engine": "swisseph"
                 },

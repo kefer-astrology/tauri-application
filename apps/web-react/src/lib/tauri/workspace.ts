@@ -12,6 +12,7 @@ import type {
 	WorkspaceInfo
 } from './types';
 import {
+	analysisToAppChart,
 	aspectLineTierStyleToDto,
 	chartDetailsToAppChart,
 	normalizeComputedChartPayload,
@@ -324,10 +325,11 @@ export async function openWorkspaceFolder(
 			charts.push(summaryToAppChart(ch));
 		}
 	}
+	charts.push(...workspace.analyses.map(analysisToAppChart));
 
 	await initStorage(workspace.path);
 
-	for (const chart of charts) {
+	for (const chart of charts.filter((entry) => entry.entityKind === 'chart')) {
 		try {
 			const result = await computeChart(workspace.path, chart.id);
 			chart.computed = normalizeComputedChartPayload(result);

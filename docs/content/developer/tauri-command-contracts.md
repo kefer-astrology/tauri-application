@@ -101,6 +101,14 @@ Acceptance criteria:
 - Returns the chart id.
 - Returns an error if the chart id already exists.
 
+### `create_analysis(workspace_path, analysis) -> Result<String, String>`
+
+- Persists a relationship/comparison separately from its input charts.
+- Requires schema version 1, an id, a name, and at least two inputs.
+- Each input must contain exactly one saved `chart_id` or one `inline_subject`.
+- Writes an analysis YAML file, registers it in `workspace.yaml:analyses`, and returns its id.
+- Compound labels such as progressed synastry are represented as input derivations, not as new analysis methods.
+
 ### `import_chart(workspace_path, source_path) -> Result<String, String>`
 
 - Imports an external chart file into the active workspace.
@@ -126,7 +134,7 @@ Acceptance criteria:
 ### `load_workspace(workspace_path) -> Result<WorkspaceInfo, String>`
 
 - Requires a readable `workspace.yaml`.
-- Loads all registered charts and returns chart summaries.
+- Returns registered charts and analyses as separate collections.
 - Does not compute chart positions.
 
 ### `validate_workspace(workspace_path) -> Result<WorkspaceValidationReport, String>`

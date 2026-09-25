@@ -5,8 +5,8 @@ use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 
 use super::models::{
-    Annotation, AstroModel, ChartConfig, ChartInstance, ChartPreset, ChartSubject, ModelOverrides,
-    TransitSetup, ViewLayout, WorkspaceManifest,
+    AnalysisInstance, Annotation, AstroModel, ChartConfig, ChartInstance, ChartPreset,
+    ChartSubject, ModelOverrides, TransitSetup, ViewLayout, WorkspaceManifest,
 };
 use super::settings::EffectiveModelSettings;
 
@@ -31,6 +31,7 @@ pub struct LoadedWorkspace {
     pub manifest: WorkspaceManifest,
     pub subjects: Vec<ChartSubject>,
     pub charts: Vec<ChartInstance>,
+    pub analyses: Vec<AnalysisInstance>,
     pub chart_presets: Vec<ChartPreset>,
     pub transit_analyses: Vec<TransitSetup>,
     pub layouts: Vec<ViewLayout>,
@@ -42,6 +43,7 @@ pub struct LoadedWorkspace {
 pub struct WorkspaceEntityCounts {
     pub subjects: usize,
     pub charts: usize,
+    pub analyses: usize,
     pub chart_presets: usize,
     pub transit_analyses: usize,
     pub layouts: usize,
@@ -70,6 +72,7 @@ impl LoadedWorkspace {
             counts: WorkspaceEntityCounts {
                 subjects: self.subjects.len(),
                 charts: self.charts.len(),
+                analyses: self.analyses.len(),
                 chart_presets: self.chart_presets.len(),
                 transit_analyses: self.transit_analyses.len(),
                 layouts: self.layouts.len(),
@@ -666,7 +669,9 @@ mod tests {
     #[test]
     fn effective_orb_keys_must_reference_the_model_catalog() {
         let config = ChartConfig {
-            mode: crate::workspace::models::ChartMode::NATAL,
+            definition: crate::workspace::models::ChartDefinition::Base {
+                purpose: crate::workspace::models::BaseChartPurpose::Natal,
+            },
             house_system: None,
             zodiac_type: crate::workspace::models::ZodiacType::Tropical,
             included_points: Vec::new(),

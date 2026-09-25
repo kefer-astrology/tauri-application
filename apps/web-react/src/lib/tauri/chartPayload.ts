@@ -1,4 +1,11 @@
-import type { ChartDetails, ModelOverridesDto, MoonDetails } from './types';
+import type {
+	AnalysisDto,
+	AnalysisInputDto,
+	ChartDetails,
+	ChartDefinitionDto,
+	ModelOverridesDto,
+	MoonDetails
+} from './types';
 import { DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import {
 	DEFAULT_ASPECT_COLORS,
@@ -7,11 +14,39 @@ import {
 } from '@/lib/astrology/aspects';
 import type { AspectLineTierStyleDto } from './types';
 
+/** One side of a synastry relation (see `AppChart.synastry`): either a reference to an existing
+ *  saved chart (`chartId`), or a standalone birth-data snapshot entered directly. */
+export interface SynastryParticipantState {
+	chartId?: string;
+	name?: string;
+	dateTime?: string;
+	location?: string;
+	latitude?: number;
+	longitude?: number;
+	timezone?: string;
+}
+
+/** Present only when `chartType` is `'SYNASTRY'`: a persisted link between two people/charts for
+ *  a relational calculation type (`'synastry' | 'progressed-synastry' | 'draconic-synastry'`).
+ *  Derived-chart types (composite/davison/coalescent/progressed-composite) aren't covered by
+ *  this yet — those need real midpoint/relocation computation, not just a link. */
+export interface SynastryState {
+	method: string;
+	personA?: SynastryParticipantState;
+	personB?: SynastryParticipantState;
+	progressionDate?: string;
+}
+
 /** In-memory chart row used by the React shell (until views own full editor state). */
 export interface AppChart {
 	id: string;
 	name: string;
+	/** Temporary shell discriminator while charts and analyses share one list context. */
+	entityKind?: 'chart' | 'analysis';
+	/** Used only to flush locally-created analyses after the user chooses a workspace folder. */
+	entityPersisted?: boolean;
 	chartType: string;
+	definition?: ChartDefinitionDto;
 	dateTime: string;
 	location: string;
 	tags: string[];
@@ -37,6 +72,7 @@ export interface AppChart {
 	colorTheme?: string;
 	ayanamsa?: string | null;
 	timeSystem?: string | null;
+	synastry?: SynastryState;
 	computed?: {
 		positions?: Record<string, unknown>;
 		motion?: Record<
@@ -246,11 +282,37 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }
 };
 
+function analysisInputToParticipant(dto: AnalysisInputDto): SynastryParticipantState {
+	return {
+		chartId: dto.chart_id ?? undefined,
+		name: dto.inline_subject?.name,
+		dateTime: dto.inline_subject?.event_time ?? undefined,
+		location: dto.inline_subject?.location.name,
+		latitude: dto.inline_subject?.location.latitude,
+		longitude: dto.inline_subject?.location.longitude,
+		timezone: dto.inline_subject?.location.timezone
+	};
+}
+
+export function chartTypeFromDefinition(definition: ChartDefinitionDto): string {
+	if (definition.kind === 'base') return definition.purpose.toUpperCase();
+	if (definition.method === 'return') {
+		const parameters = definition.parameters;
+		if (parameters && typeof parameters === 'object' && 'return_kind' in parameters) {
+			return `${String((parameters as { return_kind: unknown }).return_kind).toUpperCase()}_RETURN`;
+		}
+	}
+	return definition.method.toUpperCase();
+}
+
 export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 	return {
 		id: full.id,
 		name: full.subject.name,
-		chartType: full.config.mode,
+		entityKind: 'chart',
+		entityPersisted: true,
+		chartType: chartTypeFromDefinition(full.config.definition),
+		definition: full.config.definition,
 		dateTime: full.subject.event_time || '',
 		location: full.subject.location.name,
 		latitude: full.subject.location.latitude,
@@ -282,7 +344,7 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 export function summaryToAppChart(s: {
 	id: string;
 	name: string;
-	chart_type: string;
+	definition: ChartDefinitionDto;
 	date_time: string;
 	location: string;
 	tags: string[];
@@ -291,11 +353,111 @@ export function summaryToAppChart(s: {
 	return {
 		id: s.id,
 		name: s.name,
-		chartType: s.chart_type,
+		entityKind: 'chart',
+		entityPersisted: true,
+		chartType: chartTypeFromDefinition(s.definition),
+		definition: s.definition,
 		dateTime: s.date_time,
 		location: s.location,
 		tags: s.tags,
 		tagColors: s.tag_colors
+	};
+}
+
+export function analysisToAppChart(analysis: AnalysisDto): AppChart {
+	const allInputsUse = (method: string) =>
+		analysis.inputs.length > 0 &&
+		analysis.inputs.every((input) => input.derivations.some((step) => step.method === method));
+	const method =
+		analysis.method === 'synastry' && allInputsUse('progression')
+			? 'progressed-synastry'
+			: analysis.method === 'synastry' && allInputsUse('draconic')
+				? 'draconic-synastry'
+				: analysis.method;
+	const progressionStep = analysis.inputs
+		.flatMap((input) => input.derivations)
+		.find((step) => step.method === 'progression');
+	const targetDate =
+		progressionStep?.parameters &&
+		typeof progressionStep.parameters === 'object' &&
+		'target_date' in progressionStep.parameters
+			? String((progressionStep.parameters as { target_date: unknown }).target_date)
+			: undefined;
+	return {
+		id: analysis.id,
+		name: analysis.name,
+		entityKind: 'analysis',
+		entityPersisted: true,
+		chartType: 'ANALYSIS',
+		dateTime: '',
+		location: '',
+		tags: analysis.tags,
+		synastry:
+			analysis.method === 'synastry'
+				? {
+						method,
+						personA: analysisInputToParticipant(analysis.inputs[0]!),
+						personB: analysisInputToParticipant(analysis.inputs[1]!),
+						progressionDate: targetDate
+					}
+				: undefined
+	};
+}
+
+/** Convert the temporary chart-list facade used by the current React shell into the
+ * canonical persisted analysis shape. Compound UI labels become operand derivations. */
+export function synastryDataToAnalysisPayload(chart: AppChart): Record<string, unknown> {
+	if (!chart.synastry) throw new Error('Synastry analysis metadata is required');
+	const legacyMethod = chart.synastry.method;
+	const derivationMethod =
+		legacyMethod === 'progressed-synastry'
+			? 'progression'
+			: legacyMethod === 'draconic-synastry'
+				? 'draconic'
+				: null;
+	const toInput = (
+		role: 'person_a' | 'person_b',
+		participant: SynastryParticipantState | undefined
+	) => {
+		const derivations = derivationMethod
+			? [
+					{
+						method: derivationMethod,
+						parameters:
+							derivationMethod === 'progression' && chart.synastry?.progressionDate
+								? { target_date: chart.synastry.progressionDate }
+								: {}
+					}
+				]
+			: [];
+		if (participant?.chartId) return { role, chart_id: participant.chartId, derivations };
+		return {
+			role,
+			inline_subject: {
+				id: `${chart.id}-${role}`,
+				name: participant?.name || (role === 'person_a' ? 'Person A' : 'Person B'),
+				event_time: participant?.dateTime || null,
+				location: {
+					name: participant?.location || '',
+					latitude: participant?.latitude,
+					longitude: participant?.longitude,
+					timezone: participant?.timezone || 'UTC'
+				}
+			},
+			derivations
+		};
+	};
+	return {
+		version: 1,
+		id: chart.id,
+		name: chart.name,
+		method: 'synastry',
+		inputs: [
+			toInput('person_a', chart.synastry.personA),
+			toInput('person_b', chart.synastry.personB)
+		],
+		parameters: {},
+		tags: chart.tags
 	};
 }
 
@@ -317,7 +479,17 @@ export function chartDataToComputePayload(
 		normalizeSupportedHouseSystem(defaults.houseSystem) ??
 		'Placidus';
 	const zodiacType = asNonEmpty(chart.zodiacType) ?? defaults.zodiacType;
-	const mode = asNonEmpty(chart.chartType) ?? 'NATAL';
+	const definition: ChartDefinitionDto =
+		chart.definition ??
+		({
+			kind: 'base',
+			purpose: (chart.chartType || 'NATAL').toLowerCase() as
+				| 'natal'
+				| 'event'
+				| 'horary'
+				| 'electional'
+				| 'moment'
+		} satisfies ChartDefinitionDto);
 	const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);
 	const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
 	const model = asNonEmpty(chart.model);
@@ -355,7 +527,7 @@ export function chartDataToComputePayload(
 			}
 		},
 		config: {
-			mode,
+			definition,
 			house_system: houseSystem,
 			zodiac_type: zodiacType,
 			engine,

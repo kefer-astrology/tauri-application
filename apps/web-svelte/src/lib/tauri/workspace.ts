@@ -7,6 +7,8 @@ function asAspectLineStyleId(value: unknown, fallback: AspectLineStyleId): Aspec
 import type { ChartData, WorkspaceDefaultsState } from '$lib/state/layout';
 import type {
   Aspect,
+  AnalysisDto,
+  ChartDefinitionDto,
   ChartDetails,
   ComputeChartResult,
   ComputeSettingsOverrides,
@@ -20,6 +22,12 @@ import type {
   WorkspaceDefaultsDto,
   WorkspaceInfo
 } from './types';
+
+function chartTypeFromDefinition(definition: ChartDefinitionDto): string {
+  return definition.kind === 'base'
+    ? definition.purpose.toUpperCase()
+    : definition.method.toUpperCase();
+}
 
 export function workspaceDefaultsToDto(defaults: WorkspaceDefaultsState): WorkspaceDefaultsDto {
   return {
@@ -96,10 +104,24 @@ export function summaryToChartData(summary: WorkspaceChartSummary): ChartData {
   return {
     id: summary.id,
     name: summary.name,
-    chartType: summary.chart_type,
+    entityKind: 'chart',
+    definition: summary.definition,
+    chartType: chartTypeFromDefinition(summary.definition),
     dateTime: summary.date_time,
     location: summary.location,
     tags: summary.tags
+  };
+}
+
+function analysisToChartData(analysis: AnalysisDto): ChartData {
+  return {
+    id: analysis.id,
+    name: analysis.name,
+    entityKind: 'analysis',
+    chartType: 'ANALYSIS',
+    dateTime: '',
+    location: '',
+    tags: analysis.tags
   };
 }
 
@@ -107,7 +129,9 @@ export function chartDetailsToChartData(details: ChartDetails): ChartData {
   return {
     id: details.id,
     name: details.subject.name,
-    chartType: details.config.mode,
+    entityKind: 'chart',
+    definition: details.config.definition,
+    chartType: chartTypeFromDefinition(details.config.definition),
     dateTime: details.subject.event_time || '',
     location: details.subject.location.name,
     latitude: details.subject.location.latitude,
@@ -428,10 +452,11 @@ export async function openWorkspaceFolder(
       charts.push(summaryToChartData(summary));
     }
   }
+  charts.push(...workspace.analyses.map(analysisToChartData));
 
   await initStorage(workspace.path);
 
-  for (const chart of charts) {
+  for (const chart of charts.filter((entry) => entry.entityKind === 'chart')) {
     try {
       const result = await computeChart(workspace.path, chart.id);
       chart.computed = computeResultToComputed(result);

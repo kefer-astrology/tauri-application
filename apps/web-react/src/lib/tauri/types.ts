@@ -3,18 +3,82 @@
 export interface WorkspaceChartSummary {
 	id: string;
 	name: string;
-	chart_type: string;
+	definition: ChartDefinitionDto;
 	date_time: string;
 	location: string;
 	tags: string[];
 	tag_colors?: Record<string, string>;
 }
 
+export interface AnalysisInputDto {
+	role?: string | null;
+	chart_id?: string | null;
+	inline_subject?: {
+		id: string;
+		name: string;
+		event_time?: string | null;
+		location: {
+			name: string;
+			latitude: number;
+			longitude: number;
+			timezone: string;
+		};
+	} | null;
+	derivations: Array<{
+		method: DerivedChartMethodDto;
+		parameters?: unknown;
+	}>;
+}
+
+export interface AnalysisDto {
+	version: number;
+	id: string;
+	name: string;
+	method: 'synastry' | 'transit_comparison' | 'chart_comparison';
+	inputs: AnalysisInputDto[];
+	parameters?: unknown;
+	tags: string[];
+}
+
+export interface InlineSubjectDto {
+	name: string;
+	event_time?: string | null;
+	location: {
+		name: string;
+		latitude: number;
+		longitude: number;
+		timezone: string;
+	};
+}
+
+export type BaseChartPurposeDto = 'natal' | 'event' | 'horary' | 'electional' | 'moment';
+export type DerivedChartMethodDto =
+	| 'return'
+	| 'progression'
+	| 'direction'
+	| 'relocation'
+	| 'harmonic'
+	| 'persona'
+	| 'composite'
+	| 'davison'
+	| 'draconic'
+	| 'coalescent';
+
+export type ChartDefinitionDto =
+	| { kind: 'base'; purpose: BaseChartPurposeDto }
+	| {
+			kind: 'derived';
+			method: DerivedChartMethodDto;
+			inputs: string[];
+			parameters?: unknown;
+	  };
+
 export interface WorkspaceInfo {
 	path: string;
 	owner: string;
 	active_model: string | null;
 	charts: WorkspaceChartSummary[];
+	analyses: AnalysisDto[];
 }
 
 export type DiagnosticSeverity = 'error' | 'warning';
@@ -221,7 +285,7 @@ export interface ChartDetails {
 		};
 	};
 	config: {
-		mode: string;
+		definition: ChartDefinitionDto;
 		house_system: string | null;
 		zodiac_type: string;
 		engine: string | null;

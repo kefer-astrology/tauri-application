@@ -19,6 +19,12 @@ import { Separator } from './ui/separator';
 import { TimeRollerPicker } from './time-roller-picker';
 import { cn } from './ui/utils';
 import { searchLocations } from '@/lib/tauri/workspace';
+import {
+	normalizeChartId,
+	uniqueChartId,
+	type AppChart,
+	type SynastryParticipantState
+} from '@/lib/tauri/chartPayload';
 
 type PersonMode = 'database' | 'manual';
 type Person = {
@@ -27,6 +33,11 @@ type Person = {
 	date: string;
 	time: string;
 	location: string;
+	/** Resolved only once the user picks a suggestion from `LocationSelector`'s search — a typed
+	 *  location string alone isn't enough to persist a manual-entry person (see `isPersonReady`). */
+	latitude?: number;
+	longitude?: number;
+	timezone?: string;
 };
 
 type CalculationType =
@@ -47,6 +58,16 @@ const CALCULATION_TYPES: CalculationType[] = [
 	'progressed-composite',
 	'draconic-synastry'
 ];
+
+/** The only calculation types that can actually be saved today: a persisted link between two
+ *  existing people/charts. The rest (composite/davison/coalescent/progressed-composite) each
+ *  need their own midpoint/relocation computation — a separate feature, not yet implemented
+ *  anywhere in this app — so selecting one here is blocked at submit with an explanation. */
+const SUPPORTED_CALCULATION_TYPES = new Set<CalculationType>([
+	'synastry',
+	'progressed-synastry',
+	'draconic-synastry'
+]);
 
 function emptyPerson(): Person {
 	const now = new Date();
@@ -199,7 +220,15 @@ function PersonFields({
 					<LocationSelector
 						id={`${personLabel}-location`}
 						value={person.location}
-						onValueChange={(value) => set('location', value)}
+						onValueChange={(value) =>
+							onChange({
+								...person,
+								location: value,
+								latitude: undefined,
+								longitude: undefined,
+								timezone: undefined
+							})
+						}
 						options={locationOptions}
 						placeholder={t('synastry_location_placeholder')}
 						searchPlaceholder={t('new_location_search')}
@@ -208,6 +237,15 @@ function PersonFields({
 						searchLocations={searchLocations}
 						className={ft.input}
 						iconClassName={ft.iconColor}
+						onResolvedLocationSelect={(result) =>
+							onChange({
+								...person,
+								location: result.display_name,
+								latitude: result.latitude,
+								longitude: result.longitude,
+								timezone: result.timezone
+							})
+						}
 					/>
 				</div>
 			</ModeSwitcherDetails>
@@ -218,10 +256,23 @@ function PersonFields({
 function isPersonReady(person: Person): boolean {
 	return person.mode === 'database'
 		? Boolean(person.chartId)
-		: Boolean(person.date && person.time && person.location.trim());
+		: Boolean(
+				person.date &&
+					person.time &&
+					person.location.trim() &&
+					Number.isFinite(person.latitude) &&
+					Number.isFinite(person.longitude) &&
+					person.timezone
+			);
 }
 
-export function SynastryView({ theme }: { theme: Theme }) {
+export function SynastryView({
+	theme,
+	onCreated
+}: {
+	theme: Theme;
+	onCreated?: (chart: AppChart) => void;
+}) {
 	const { t } = useTranslation();
 	const { charts, selectedChartId } = useWorkspaceCharts();
 	const ft = useAppFormFieldTheme(theme);
@@ -239,7 +290,30 @@ export function SynastryView({ theme }: { theme: Theme }) {
 	const ready = isPersonReady(personA) && isPersonReady(personB);
 	const progressed =
 		calculationType === 'progressed-synastry' || calculationType === 'progressed-composite';
+	const isSupportedType = SUPPORTED_CALCULATION_TYPES.has(calculationType);
 	const openSections = useMemo(() => ['person-a', 'person-b'], []);
+
+	const toParticipant = (person: Person): SynastryParticipantState => {
+		if (person.mode === 'database') {
+			const chart = charts.find((c) => c.id === person.chartId);
+			return {
+				chartId: person.chartId,
+				name: chart?.name,
+				dateTime: chart?.dateTime,
+				location: chart?.location,
+				latitude: chart?.latitude,
+				longitude: chart?.longitude,
+				timezone: chart?.timezone
+			};
+		}
+		return {
+			dateTime: `${person.date} ${person.time}`,
+			location: person.location,
+			latitude: person.latitude,
+			longitude: person.longitude,
+			timezone: person.timezone
+		};
+	};
 
 	return (
 		<AppMainContentRoot className={ft.formPageBg}>
@@ -248,6 +322,40 @@ export function SynastryView({ theme }: { theme: Theme }) {
 					className="w-full py-2 pb-16 md:py-6"
 					onSubmit={(event) => {
 						event.preventDefault();
+						if (!isSupportedType || !ready) return;
+
+						const participantA = toParticipant(personA);
+						const participantB = toParticipant(personB);
+						// The synastry entry's own "subject" (needed since every chart carries one) is
+						// person A's real data — houses/positions still belong to the two linked
+						// participants, this is just what shows in a chart list row.
+						const chartName =
+							name.trim() ||
+							`${participantA.name ?? t('synastry_person_a')} & ${participantB.name ?? t('synastry_person_b')}`;
+						const chart: AppChart = {
+							id: uniqueChartId(
+								normalizeChartId(chartName),
+								new Set(charts.map((c) => c.id))
+							),
+							name: chartName,
+							entityKind: 'analysis',
+							entityPersisted: false,
+							chartType: 'SYNASTRY',
+							dateTime: participantA.dateTime ?? '',
+							location: participantA.location ?? '',
+							latitude: participantA.latitude,
+							longitude: participantA.longitude,
+							timezone: participantA.timezone,
+							tags: [],
+							synastry: {
+								method: calculationType,
+								personA: participantA,
+								personB: participantB,
+								progressionDate: progressed ? progressionDate : undefined
+							}
+						};
+
+						onCreated?.(chart);
 						toast.success(t('synastry_submitted'), {
 							description: t(`synastry_type_${calculationType}`)
 						});
@@ -343,6 +451,11 @@ export function SynastryView({ theme }: { theme: Theme }) {
 								))}
 							</SelectContent>
 						</Select>
+						{!isSupportedType && (
+							<p className={cn('mt-2 text-xs', ft.muted)}>
+								{t('synastry_type_not_implemented_notice')}
+							</p>
+						)}
 					</section>
 
 					<div
@@ -386,7 +499,7 @@ export function SynastryView({ theme }: { theme: Theme }) {
 
 					<Button
 						type="submit"
-						disabled={!ready}
+						disabled={!ready || !isSupportedType}
 						className={cn(ft.footerPrimary, 'mt-6 h-12 w-full rounded-full text-base')}
 					>
 						{t('synastry_create')}

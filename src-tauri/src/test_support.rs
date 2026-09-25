@@ -58,7 +58,7 @@ pub(crate) fn sample_chart_payload(chart_id: &str) -> serde_json::Value {
             }
         },
         "config": {
-            "mode": "NATAL",
+            "definition": { "kind": "base", "purpose": "natal" },
             "house_system": "Placidus",
             "zodiac_type": "Tropical",
             "included_points": [],

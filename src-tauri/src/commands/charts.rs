@@ -5,7 +5,7 @@ use crate::workspace::loader::find_chart_ref_by_id;
 use crate::workspace::writer::{
     chart_relative_path, sanitize_chart_filename, write_chart_yaml, write_workspace_manifest,
 };
-use crate::workspace::{load_all_charts, load_workspace_manifest};
+use crate::workspace::{load_all_analyses, load_all_charts, load_workspace_manifest};
 use std::path::Path;
 
 /// Create a chart YAML file and register it in workspace.yaml.
@@ -20,6 +20,12 @@ pub async fn create_chart(
     let chart_id = extract_chart_id(&chart)?.to_string();
     if find_chart_ref_by_id(base, &manifest, &chart_id)?.is_some() {
         return Err(format!("Chart {} already exists", chart_id));
+    }
+    if load_all_analyses(base, &manifest)?
+        .iter()
+        .any(|analysis| analysis.id == chart_id)
+    {
+        return Err(format!("Workspace entity id already exists: {}", chart_id));
     }
 
     upsert_chart_id(&mut chart, &chart_id)?;
@@ -112,6 +118,23 @@ pub async fn delete_chart(workspace_path: String, chart_id: String) -> Result<bo
         Some(path) => path,
         None => return Ok(false),
     };
+    let dependent_analyses: Vec<String> = load_all_analyses(base, &manifest)?
+        .into_iter()
+        .filter(|analysis| {
+            analysis
+                .inputs
+                .iter()
+                .any(|input| input.chart_id.as_deref() == Some(chart_id.as_str()))
+        })
+        .map(|analysis| analysis.id)
+        .collect();
+    if !dependent_analyses.is_empty() {
+        return Err(format!(
+            "Chart '{}' is used by analyses: {}",
+            chart_id,
+            dependent_analyses.join(", ")
+        ));
+    }
 
     let transit_setup_rel = format!("transits/{}.yml", sanitize_chart_filename(&chart_id));
     manifest.charts.retain(|p| p != &rel);
@@ -163,13 +186,6 @@ pub async fn get_chart_details(
         .ok_or_else(|| format!("Chart {} not found in workspace", chart_id))?;
 
     // Serialize to JSON
-
-    let mode_str = match chart.config.mode {
-        crate::workspace::models::ChartMode::NATAL => "NATAL",
-        crate::workspace::models::ChartMode::EVENT => "EVENT",
-        crate::workspace::models::ChartMode::HORARY => "HORARY",
-        crate::workspace::models::ChartMode::COMPOSITE => "COMPOSITE",
-    };
 
     let house_system_str = chart.config.house_system.as_ref().map(|h| match h {
         crate::workspace::models::HouseSystem::Placidus => "Placidus",
@@ -231,7 +247,7 @@ pub async fn get_chart_details(
             }
         },
         "config": {
-            "mode": mode_str,
+            "definition": chart.config.definition,
             "house_system": house_system_str,
             "zodiac_type": zodiac_type_str,
             "engine": engine_str,
