@@ -42,7 +42,7 @@ export function ExportWorkspaceView({ theme }: ExportWorkspaceViewProps) {
 
 	return (
 		<AppMainContentRoot className={ft.formPageBg}>
-			<AppMainContentContainer layout="center-column" className="space-y-6">
+			<AppMainContentContainer width="standard" className="space-y-6">
 				<div>
 					<h1 className={cn('text-xl font-semibold', ft.title)}>{t('export')}</h1>
 					<p className={cn('mt-1 text-sm', ft.muted)}>{t('export_include')}</p>
