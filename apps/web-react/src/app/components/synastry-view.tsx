@@ -231,7 +231,6 @@ function PersonFields({
 						}
 						options={locationOptions}
 						placeholder={t('synastry_location_placeholder')}
-						searchPlaceholder={t('new_location_search')}
 						emptyLabel={t('synastry_location_placeholder')}
 						loadingLabel={t('new_resolving_location')}
 						searchLocations={searchLocations}
@@ -258,11 +257,11 @@ function isPersonReady(person: Person): boolean {
 		? Boolean(person.chartId)
 		: Boolean(
 				person.date &&
-					person.time &&
-					person.location.trim() &&
-					Number.isFinite(person.latitude) &&
-					Number.isFinite(person.longitude) &&
-					person.timezone
+				person.time &&
+				person.location.trim() &&
+				Number.isFinite(person.latitude) &&
+				Number.isFinite(person.longitude) &&
+				person.timezone
 			);
 }
 
@@ -333,10 +332,7 @@ export function SynastryView({
 							name.trim() ||
 							`${participantA.name ?? t('synastry_person_a')} & ${participantB.name ?? t('synastry_person_b')}`;
 						const chart: AppChart = {
-							id: uniqueChartId(
-								normalizeChartId(chartName),
-								new Set(charts.map((c) => c.id))
-							),
+							id: uniqueChartId(normalizeChartId(chartName), new Set(charts.map((c) => c.id))),
 							name: chartName,
 							entityKind: 'analysis',
 							entityPersisted: false,

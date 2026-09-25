@@ -1161,7 +1161,6 @@ export function NewHoroscope({
 									}}
 									options={locationOptions}
 									placeholder={t('new_placeholder_any_location')}
-									searchPlaceholder={t('new_location_search')}
 									emptyLabel={t('new_placeholder_any_location')}
 									loadingLabel={t('new_resolving_location')}
 									className={ft.selectTrigger}
