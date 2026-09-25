@@ -8,8 +8,10 @@ import {
 	OBSERVABLE_OBJECT_CATEGORY_LABELS,
 	getObservableCategoryLabel,
 	getObservableObjectLabel,
+	starHemisphere,
 	type ObservableObjectCategory,
-	type ObservableObjectDefinition
+	type ObservableObjectDefinition,
+	type StarHemisphere
 } from '@/lib/astrology/observableObjects';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Card, CardContent } from './ui/card';
@@ -77,6 +79,7 @@ export function BodySelector({
 	const [manualOpen, setManualOpen] = useState<string[]>(
 		CATEGORY_ORDER.filter((category) => !COLLAPSED_BY_DEFAULT.has(category))
 	);
+	const [starHemisphereFilter, setStarHemisphereFilter] = useState<StarHemisphere | 'all'>('all');
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [panelQuery, setPanelQuery] = useState('');
 	const [highlighted, setHighlighted] = useState<string | null>(null);
@@ -266,24 +269,64 @@ export function BodySelector({
 									</div>
 									<AccordionContent className="pl-6">
 										{category === 'fixed_stars' ? (
-											<div className="grid grid-cols-2 gap-x-8 gap-y-1.5 sm:grid-cols-3">
-												{filtered.map((item) => (
-													<span
-														key={item.id}
-														title={t('transits_body_unsupported_hint')}
-														className={cn(
-															'cursor-not-allowed truncate text-sm opacity-50',
-															ft.bodyText
-														)}
-													>
-														<HighlightText text={labelFor(item)} query={trimmedQuery} />
-														{item.altName && (
-															<span className={cn('ml-1 text-xs italic', ft.muted)}>
-																({item.altName})
+											<div className="space-y-3">
+												<div
+													className="flex items-center gap-1.5"
+													role="group"
+													aria-label={t('settings_stars_hemisphere_filter', {
+														defaultValue: 'Filter by sky hemisphere'
+													})}
+												>
+													{(
+														[
+															['all', 'settings_stars_filter_all', 'All'],
+															['north', 'settings_stars_filter_north', 'Northern sky'],
+															['south', 'settings_stars_filter_south', 'Southern sky']
+														] as const
+													).map(([value, labelKey, fallback]) => (
+														<button
+															key={value}
+															type="button"
+															onClick={() => setStarHemisphereFilter(value)}
+															className={cn(
+																'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+																starHemisphereFilter === value
+																	? 'border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)] text-white'
+																	: cn(
+																			'border-[color:var(--theme-panel-border)] bg-transparent',
+																			ft.muted
+																		)
+															)}
+														>
+															{t(labelKey, { defaultValue: fallback })}
+														</button>
+													))}
+												</div>
+												<div className="grid grid-cols-2 gap-x-8 gap-y-1.5 sm:grid-cols-3">
+													{filtered
+														.filter(
+															(item) =>
+																starHemisphereFilter === 'all' ||
+																starHemisphere(item) === starHemisphereFilter
+														)
+														.map((item) => (
+															<span
+																key={item.id}
+																title={t('transits_body_unsupported_hint')}
+																className={cn(
+																	'cursor-not-allowed truncate text-sm opacity-50',
+																	ft.bodyText
+																)}
+															>
+																<HighlightText text={labelFor(item)} query={trimmedQuery} />
+																{item.altName && (
+																	<span className={cn('ml-1 text-xs italic', ft.muted)}>
+																		({item.altName})
+																	</span>
+																)}
 															</span>
-														)}
-													</span>
-												))}
+														))}
+												</div>
 											</div>
 										) : (
 											<div className="flex flex-col gap-2">

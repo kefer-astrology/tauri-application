@@ -7,7 +7,7 @@ use std::sync::{Mutex, OnceLock};
 use chrono::{DateTime, Datelike, Timelike, Utc};
 
 use crate::infrastructure::astronomy::AstronomyMotion;
-use crate::workspace::models::{Ayanamsa, ChartInstance, HouseSystem, ZodiacType};
+use crate::workspace::models::{Ayanamsa, ChartInstance, HouseSystem, PositionMode, ZodiacType};
 
 const SE_SUN: c_int = 0;
 const SE_MOON: c_int = 1;
@@ -30,6 +30,7 @@ const SE_VESTA: c_int = 20;
 
 const SEFLG_JPLEPH: i32 = 1;
 const SEFLG_SWIEPH: i32 = 2;
+const SEFLG_TRUEPOS: i32 = 16;
 const SEFLG_SPEED: i32 = 256;
 const SEFLG_SIDEREAL: i32 = 64 * 1024;
 
@@ -326,6 +327,9 @@ fn calc_flags(chart: &ChartInstance, ephemeris_flag: i32) -> i32 {
     let mut flags = ephemeris_flag | SEFLG_SPEED;
     if matches!(chart.config.zodiac_type, ZodiacType::Sidereal) {
         flags |= SEFLG_SIDEREAL;
+    }
+    if matches!(chart.config.position_mode, Some(PositionMode::Geometric)) {
+        flags |= SEFLG_TRUEPOS;
     }
     flags
 }

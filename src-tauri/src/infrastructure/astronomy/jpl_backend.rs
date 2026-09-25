@@ -37,7 +37,7 @@ use crate::infrastructure::ephemeris::{
     IRENE_J2000, IRIS_J2000, JUNO_J2000, MASSALIA_J2000, MELPOMENE_J2000, METIS_J2000,
     PALLAS_J2000, PARTHENOPE_J2000, PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
 };
-use crate::workspace::models::{ChartInstance, HouseSystem};
+use crate::workspace::models::{ChartInstance, HouseSystem, PositionMode};
 
 // ─── Body table ──────────────────────────────────────────────────────────────
 
@@ -131,11 +131,12 @@ fn sample_tropical_longitude(
     almanac: &Almanac,
     frame: Frame,
     unix_secs: f64,
+    ab_corr: Option<Aberration>,
 ) -> Result<f64, String> {
     let epoch = Epoch::from_unix_seconds(unix_secs);
     let obliquity = mean_obliquity_deg(epoch.to_jde_tt_days());
     let state = almanac
-        .transform(frame, EARTH_MOD_FRAME, epoch, None)
+        .transform(frame, EARTH_MOD_FRAME, epoch, ab_corr)
         .map_err(|e| e.to_string())?;
     let (lon, _lat) = equatorial_to_ecliptic(
         state.radius_km.x,
@@ -148,10 +149,15 @@ fn sample_tropical_longitude(
 
 /// Right ascension and declination (degrees) from the same equatorial mean-of-date state
 /// vector `sample_tropical_longitude` rotates into ecliptic coordinates.
-fn sample_equatorial(almanac: &Almanac, frame: Frame, unix_secs: f64) -> Result<(f64, f64), String> {
+fn sample_equatorial(
+    almanac: &Almanac,
+    frame: Frame,
+    unix_secs: f64,
+    ab_corr: Option<Aberration>,
+) -> Result<(f64, f64), String> {
     let epoch = Epoch::from_unix_seconds(unix_secs);
     let state = almanac
-        .transform(frame, EARTH_MOD_FRAME, epoch, None)
+        .transform(frame, EARTH_MOD_FRAME, epoch, ab_corr)
         .map_err(|e| e.to_string())?;
     Ok(equatorial_ra_dec_deg(
         state.radius_km.x,
@@ -174,10 +180,11 @@ fn sample_motion(
     almanac: &Almanac,
     frame: Frame,
     unix_secs: f64,
+    ab_corr: Option<Aberration>,
 ) -> Result<AstronomyMotion, String> {
     const SAMPLE_STEP_SECONDS: f64 = 3600.0;
-    let before = sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS)?;
-    let after = sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS)?;
+    let before = sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS, ab_corr)?;
+    let after = sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS, ab_corr)?;
     let delta = angular_delta_deg(before, after);
     let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
     Ok(AstronomyMotion {
@@ -186,10 +193,14 @@ fn sample_motion(
     })
 }
 
-fn true_node_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64, String> {
+fn true_node_tropical_at_unix(
+    almanac: &Almanac,
+    unix_secs: f64,
+    ab_corr: Option<Aberration>,
+) -> Result<f64, String> {
     let epoch = Epoch::from_unix_seconds(unix_secs);
     let state = almanac
-        .transform(MOON_J2000, EARTH_MOD_FRAME, epoch, None)
+        .transform(MOON_J2000, EARTH_MOD_FRAME, epoch, ab_corr)
         .map_err(|e| e.to_string())?;
     true_node_tropical_deg(
         state.radius_km.x,
@@ -203,10 +214,14 @@ fn true_node_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64, 
     .ok_or_else(|| "true_node_unavailable: degenerate Moon state".to_string())
 }
 
-fn true_node_motion(almanac: &Almanac, unix_secs: f64) -> Result<AstronomyMotion, String> {
+fn true_node_motion(
+    almanac: &Almanac,
+    unix_secs: f64,
+    ab_corr: Option<Aberration>,
+) -> Result<AstronomyMotion, String> {
     const SAMPLE_STEP_SECONDS: f64 = 3600.0;
-    let before = true_node_tropical_at_unix(almanac, unix_secs - SAMPLE_STEP_SECONDS)?;
-    let after = true_node_tropical_at_unix(almanac, unix_secs + SAMPLE_STEP_SECONDS)?;
+    let before = true_node_tropical_at_unix(almanac, unix_secs - SAMPLE_STEP_SECONDS, ab_corr)?;
+    let after = true_node_tropical_at_unix(almanac, unix_secs + SAMPLE_STEP_SECONDS, ab_corr)?;
     let delta = angular_delta_deg(before, after);
     let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
     Ok(AstronomyMotion {
@@ -215,10 +230,14 @@ fn true_node_motion(almanac: &Almanac, unix_secs: f64) -> Result<AstronomyMotion
     })
 }
 
-fn true_apogee_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64, String> {
+fn true_apogee_tropical_at_unix(
+    almanac: &Almanac,
+    unix_secs: f64,
+    ab_corr: Option<Aberration>,
+) -> Result<f64, String> {
     let epoch = Epoch::from_unix_seconds(unix_secs);
     let state = almanac
-        .transform(MOON_J2000, EARTH_MOD_FRAME, epoch, None)
+        .transform(MOON_J2000, EARTH_MOD_FRAME, epoch, ab_corr)
         .map_err(|e| e.to_string())?;
     true_apogee_tropical_deg(
         state.radius_km.x,
@@ -232,10 +251,14 @@ fn true_apogee_tropical_at_unix(almanac: &Almanac, unix_secs: f64) -> Result<f64
     .ok_or_else(|| "true_lilith_unavailable: degenerate Moon state".to_string())
 }
 
-fn true_apogee_motion(almanac: &Almanac, unix_secs: f64) -> Result<AstronomyMotion, String> {
+fn true_apogee_motion(
+    almanac: &Almanac,
+    unix_secs: f64,
+    ab_corr: Option<Aberration>,
+) -> Result<AstronomyMotion, String> {
     const SAMPLE_STEP_SECONDS: f64 = 3600.0;
-    let before = true_apogee_tropical_at_unix(almanac, unix_secs - SAMPLE_STEP_SECONDS)?;
-    let after = true_apogee_tropical_at_unix(almanac, unix_secs + SAMPLE_STEP_SECONDS)?;
+    let before = true_apogee_tropical_at_unix(almanac, unix_secs - SAMPLE_STEP_SECONDS, ab_corr)?;
+    let after = true_apogee_tropical_at_unix(almanac, unix_secs + SAMPLE_STEP_SECONDS, ab_corr)?;
     let delta = angular_delta_deg(before, after);
     let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
     Ok(AstronomyMotion {
@@ -330,6 +353,10 @@ impl AstronomyBackend for JplAstronomyBackend {
         let lat = chart.subject.location.latitude;
         let lon = chart.subject.location.longitude;
         let lst_deg = local_sidereal_time_deg(jd_ut, lon);
+        let ab_corr = match chart.config.position_mode.unwrap_or(PositionMode::Apparent) {
+            PositionMode::Apparent => Aberration::CN_S,
+            PositionMode::Geometric => Aberration::NONE,
+        };
 
         let wanted = |id: &str| {
             requested_objects
@@ -353,13 +380,13 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, frame, unix_secs) {
+            match sample_tropical_longitude(&almanac, frame, unix_secs, ab_corr) {
                 Ok(longitude) => {
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
+                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs, ab_corr) {
                         motion.insert(id.to_string(), body_motion);
                     }
-                    if let Ok((ra, dec)) = sample_equatorial(&almanac, frame, unix_secs) {
+                    if let Ok((ra, dec)) = sample_equatorial(&almanac, frame, unix_secs, ab_corr) {
                         right_ascension.insert(id.to_string(), ra);
                         declination.insert(id.to_string(), dec);
                         let (alt, az) = equatorial_to_horizontal_deg(ra, dec, lst_deg, lat);
@@ -378,10 +405,10 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, frame, unix_secs) {
+            match sample_tropical_longitude(&almanac, frame, unix_secs, ab_corr) {
                 Ok(longitude) => {
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs) {
+                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs, ab_corr) {
                         motion.insert(id.to_string(), body_motion);
                     }
                 }
@@ -396,10 +423,10 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, *frame, unix_secs) {
+            match sample_tropical_longitude(&almanac, *frame, unix_secs, ab_corr) {
                 Ok(longitude) => {
                     positions.insert(id.clone(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, *frame, unix_secs) {
+                    if let Ok(body_motion) = sample_motion(&almanac, *frame, unix_secs, ab_corr) {
                         motion.insert(id.clone(), body_motion);
                     }
                 }
@@ -432,9 +459,9 @@ impl AstronomyBackend for JplAstronomyBackend {
         let want_true_nn = wanted("true_north_node") || wanted("true_node");
         let want_true_sn = wanted("true_south_node");
         if want_true_nn || want_true_sn {
-            match true_node_tropical_at_unix(&almanac, unix_secs) {
+            match true_node_tropical_at_unix(&almanac, unix_secs, ab_corr) {
                 Ok(true_nn) => {
-                    let true_motion = true_node_motion(&almanac, unix_secs).ok();
+                    let true_motion = true_node_motion(&almanac, unix_secs, ab_corr).ok();
                     if want_true_nn {
                         positions.insert("true_north_node".to_string(), true_nn);
                         if wanted("true_node") {
@@ -462,10 +489,10 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         if wanted("true_lilith") {
-            match true_apogee_tropical_at_unix(&almanac, unix_secs) {
+            match true_apogee_tropical_at_unix(&almanac, unix_secs, ab_corr) {
                 Ok(true_apogee) => {
                     positions.insert("true_lilith".to_string(), true_apogee);
-                    if let Ok(apogee_motion) = true_apogee_motion(&almanac, unix_secs) {
+                    if let Ok(apogee_motion) = true_apogee_motion(&almanac, unix_secs, ab_corr) {
                         motion.insert("true_lilith".to_string(), apogee_motion);
                     }
                 }
@@ -521,12 +548,12 @@ impl AstronomyBackend for JplAstronomyBackend {
                 .get("sun")
                 .copied()
                 .map(Ok)
-                .unwrap_or_else(|| sample_tropical_longitude(&almanac, SUN_J2000, unix_secs));
+                .unwrap_or_else(|| sample_tropical_longitude(&almanac, SUN_J2000, unix_secs, ab_corr));
             let moon_lon = positions
                 .get("moon")
                 .copied()
                 .map(Ok)
-                .unwrap_or_else(|| sample_tropical_longitude(&almanac, MOON_J2000, unix_secs));
+                .unwrap_or_else(|| sample_tropical_longitude(&almanac, MOON_J2000, unix_secs, ab_corr));
             match (sun_lon, moon_lon) {
                 (Ok(sun_lon), Ok(moon_lon)) => {
                     let (fortune, spirit) = day_night_parts(asc, sun_lon, moon_lon);
@@ -675,7 +702,7 @@ mod tests {
         let epoch = Epoch::from_gregorian_utc(2000, 1, 1, 12, 0, 0, 0);
         let unix_secs = epoch.to_unix_seconds();
 
-        let apogee = true_apogee_tropical_at_unix(&almanac, unix_secs)
+        let apogee = true_apogee_tropical_at_unix(&almanac, unix_secs, Aberration::NONE)
             .expect("Moon state should be available in de440s.bsp at J2000.0");
 
         let expected = 252.880_728_1;

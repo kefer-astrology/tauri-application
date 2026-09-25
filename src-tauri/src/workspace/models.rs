@@ -143,6 +143,16 @@ pub enum EngineType {
     Custom,
 }
 
+/// Observer-relative correction applied to ephemeris body positions.
+/// `Apparent` includes light-time and stellar aberration; `Geometric` is the
+/// instantaneous true vector without those observational corrections.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PositionMode {
+    Apparent,
+    Geometric,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Ayanamsa {
     #[serde(rename = "Lahiri")]
@@ -408,6 +418,8 @@ pub struct ChartConfig {
     #[serde(default)]
     pub engine: Option<EngineType>,
     #[serde(default)]
+    pub position_mode: Option<PositionMode>,
+    #[serde(default)]
     pub ayanamsa: Option<Ayanamsa>,
     #[serde(default)]
     pub observable_objects: Option<Vec<String>>,
@@ -566,6 +578,8 @@ impl Default for AspectLineTierStyle {
 pub struct WorkspaceDefaults {
     #[serde(default)]
     pub ephemeris_engine: Option<EngineType>,
+    #[serde(default)]
+    pub position_mode: Option<PositionMode>,
     #[serde(default)]
     pub ephemeris_backend: Option<String>,
     #[serde(default)]
@@ -744,6 +758,8 @@ pub struct Sign {
 pub struct ModelSettings {
     #[serde(default)]
     pub default_house_system: Option<HouseSystem>,
+    #[serde(default)]
+    pub position_mode: Option<PositionMode>,
     #[serde(default)]
     pub default_aspects: Vec<String>,
     #[serde(default)]

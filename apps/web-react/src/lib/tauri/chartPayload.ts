@@ -54,6 +54,7 @@ export interface AppChart {
 	houseSystem?: string | null;
 	zodiacType?: string;
 	engine?: string | null;
+	positionMode?: 'apparent' | 'geometric' | null;
 	model?: string | null;
 	modelOverrides?: ModelOverridesDto | null;
 	overrideEphemeris?: string | null;
@@ -260,6 +261,7 @@ export interface WorkspaceDefaultsState {
 	locationLatitude: number;
 	locationLongitude: number;
 	engine: string | null;
+	positionMode: 'apparent' | 'geometric';
 	defaultBodies: string[];
 	defaultAspects: string[];
 	defaultAspectOrbs: Record<string, number>;
@@ -275,6 +277,7 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	locationLatitude: 50.0875,
 	locationLongitude: 14.4214,
 	engine: 'jpl',
+	positionMode: 'apparent',
 	defaultBodies: [...DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS],
 	defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
 	defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
@@ -324,6 +327,7 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		houseSystem: full.config.house_system,
 		zodiacType: full.config.zodiac_type,
 		engine: full.config.engine,
+		positionMode: full.config.position_mode,
 		model: full.config.model,
 		modelOverrides: full.config.model_overrides,
 		overrideEphemeris: full.config.override_ephemeris,
@@ -531,6 +535,7 @@ export function chartDataToComputePayload(
 			house_system: houseSystem,
 			zodiac_type: zodiacType,
 			engine,
+			position_mode: chart.positionMode ?? defaults.positionMode,
 			override_ephemeris: overrideEphemeris,
 			model,
 			model_overrides: chart.modelOverrides ?? null,

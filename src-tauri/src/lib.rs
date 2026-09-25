@@ -34,6 +34,7 @@ pub fn run() {
     let backend_state = infrastructure::python_sidecar::BackendState::new()
         .expect("failed to initialize backend state");
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .manage(backend_state)
         .setup(|app| {
             if cfg!(debug_assertions) {

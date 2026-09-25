@@ -683,6 +683,7 @@ mod tests {
             model: None,
             model_overrides: None,
             engine: None,
+            position_mode: None,
             ayanamsa: None,
             observable_objects: None,
             time_system: None,

@@ -23,7 +23,7 @@ import {
 	SelectValue
 } from './ui/select';
 import { cn } from './ui/utils';
-import type { AppLanguage } from '@/lib/i18n';
+import { SUPPORTED_LANGUAGES, type AppLanguage } from '@/lib/i18n';
 import {
 	APP_SHELL_ICON_SET_KEY,
 	APP_SHELL_ICON_SET_OPTIONS,
@@ -43,6 +43,8 @@ import {
 } from '@/lib/astrology/wheelStyle';
 import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
+import { JAN_KEFER_BIOGRAPHY } from '@/lib/content/janKefer';
+import { persistMonochrome } from '@/lib/appLayoutPreferences';
 import {
 	SUPPORTED_RUST_HOUSE_SYSTEMS,
 	type AspectLineStyleId,
@@ -53,11 +55,13 @@ import { searchLocations } from '@/lib/tauri/workspace';
 import { BodySelector } from './body-selector';
 import { GlyphManager } from './glyph-manager';
 
-const LANG_BUBBLES: { code: AppLanguage; label: string }[] = [
-	{ code: 'cs', label: 'CS' },
-	{ code: 'en', label: 'EN' },
-	{ code: 'fr', label: 'FR' },
-	{ code: 'es', label: 'ES' }
+/** Each language's own autonym — always shown in that language, not translated, so a user can
+ *  recognize their language regardless of which language the UI currently happens to be in. */
+const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
+	{ code: 'cs', label: 'Čeština' },
+	{ code: 'en', label: 'English' },
+	{ code: 'fr', label: 'Français' },
+	{ code: 'es', label: 'Español' }
 ];
 
 const HOUSE_SYSTEMS = SUPPORTED_RUST_HOUSE_SYSTEMS;
@@ -159,6 +163,8 @@ interface SettingsViewProps {
 	onThemePaletteCommit: (value: ThemePalette) => void;
 	workspaceDefaults: WorkspaceDefaultsState;
 	onWorkspaceDefaultsChange: (patch: Partial<WorkspaceDefaultsState>) => Promise<void> | void;
+	monochrome: boolean;
+	onMonochromeChange: (value: boolean) => void;
 }
 
 function SettingsView({
@@ -180,7 +186,9 @@ function SettingsView({
 	themePalette,
 	onThemePaletteCommit,
 	workspaceDefaults,
-	onWorkspaceDefaultsChange
+	onWorkspaceDefaultsChange,
+	monochrome,
+	onMonochromeChange
 }: SettingsViewProps) {
 	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
@@ -471,6 +479,14 @@ function SettingsView({
 		(option) => option.id === wheelStyleValue
 	)?.description;
 
+	const currentLanguageCode = i18n.language.split('-')[0];
+	const janKeferBiography =
+		JAN_KEFER_BIOGRAPHY[
+			(SUPPORTED_LANGUAGES as readonly string[]).includes(currentLanguageCode)
+				? (currentLanguageCode as AppLanguage)
+				: 'en'
+		];
+
 	return (
 		<AppMainContentRoot className="min-h-full">
 			<AppMainContentContainer width="wide">
@@ -482,41 +498,48 @@ function SettingsView({
 						)}
 					>
 						<CardContent className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
-							{section === 'jazyk' && (
-								<div className="space-y-4">
+							{section === 'jazyk_lokace' && (
+								<div className="space-y-6">
 									<div className="space-y-2">
-										<p className={ft.label}>{t('language')}</p>
+										<Label className={ft.label}>{t('language')}</Label>
 										<p className={cn('text-sm', ft.muted)}>{t('select_language')}</p>
-										<div
-											className="mt-3 flex flex-wrap gap-3"
-											role="group"
-											aria-label={t('label_languages')}
+										<Select
+											value={
+												LANGUAGE_OPTIONS.find(
+													(option) =>
+														i18n.language === option.code ||
+														i18n.language.startsWith(`${option.code}-`)
+												)?.code ?? i18n.language
+											}
+											onValueChange={(value) => {
+												void i18n.changeLanguage(value);
+												markChanged();
+											}}
 										>
-											{LANG_BUBBLES.map(({ code, label }) => {
-												const active =
-													i18n.language === code || i18n.language.startsWith(`${code}-`);
-												return (
-													<Button
-														key={code}
-														type="button"
-														variant="ghost"
-														onClick={() => {
-															void i18n.changeLanguage(code);
-															markChanged();
-														}}
-														className={ft.langBubble(active)}
-													>
-														{label}
-													</Button>
-												);
-											})}
-										</div>
+											<SelectTrigger
+												aria-label={t('label_languages')}
+												className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												<SelectGroup>
+													{LANGUAGE_OPTIONS.map((option) => (
+														<SelectItem
+															key={option.code}
+															value={option.code}
+															className={ft.selectItem}
+														>
+															{option.label}
+														</SelectItem>
+													))}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
 									</div>
-								</div>
-							)}
 
-							{section === 'lokace' && (
-								<div className="space-y-4">
+									<Separator className="bg-[color:var(--theme-panel-border)]" />
+
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('default_location')}</Label>
 										<LocationSelector
@@ -543,7 +566,7 @@ function SettingsView({
 											className={cn(ft.selectTrigger, 'shadow-inner')}
 											iconClassName={ft.muted}
 										/>
-									<p className={cn('text-xs', ft.muted)}>
+										<p className={cn('text-xs', ft.muted)}>
 											{t('settings_default_location_hint', {
 												defaultValue:
 													'Choose a searched location to sync its coordinates, or adjust latitude and longitude manually below.'
@@ -623,33 +646,33 @@ function SettingsView({
 											{t('settings_house_system_hint', {
 												defaultValue: 'Shown options are computed by the current Rust JPL backend.'
 											})}
-									</p>
+										</p>
+									</div>
+									<div className="space-y-2">
+										<Label className={ft.label}>{t('settings_position_mode')}</Label>
+										<Select
+											value={workspaceDefaults.positionMode}
+											onValueChange={(value) => {
+												const positionMode = value === 'geometric' ? 'geometric' : 'apparent';
+												markChanged();
+												void onWorkspaceDefaultsChange({ positionMode });
+											}}
+										>
+											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												<SelectItem value="apparent" className={ft.selectItem}>
+													{t('settings_position_mode_apparent')}
+												</SelectItem>
+												<SelectItem value="geometric" className={ft.selectItem}>
+													{t('settings_position_mode_geometric')}
+												</SelectItem>
+											</SelectContent>
+										</Select>
+										<p className={cn('text-xs', ft.muted)}>{t('settings_position_mode_hint')}</p>
+									</div>
 								</div>
-								<div className="space-y-2">
-									<Label className={ft.label}>{t('settings_position_mode')}</Label>
-									<Select
-										value={workspaceDefaults.positionMode}
-										onValueChange={(value) => {
-											const positionMode = value === 'geometric' ? 'geometric' : 'apparent';
-											markChanged();
-											void onWorkspaceDefaultsChange({ positionMode });
-										}}
-									>
-										<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent className={ft.selectContent}>
-											<SelectItem value="apparent" className={ft.selectItem}>
-												{t('settings_position_mode_apparent')}
-											</SelectItem>
-											<SelectItem value="geometric" className={ft.selectItem}>
-												{t('settings_position_mode_geometric')}
-											</SelectItem>
-										</SelectContent>
-									</Select>
-									<p className={cn('text-xs', ft.muted)}>{t('settings_position_mode_hint')}</p>
-								</div>
-							</div>
 							)}
 
 							{section === 'pozorovane_objekty' && (
@@ -1320,7 +1343,52 @@ function SettingsView({
 											</div>
 										</AccordionContent>
 									</AccordionItem>
+									<AccordionItem value="monochrome">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_monochrome_title', { defaultValue: 'Monochromatic view' })}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-3">
+											<div className="flex items-center gap-2">
+												<Switch
+													id="settings-monochrome"
+													checked={monochrome}
+													onCheckedChange={(checked) => {
+														onMonochromeChange(checked);
+														persistMonochrome(checked);
+														markChanged();
+													}}
+												/>
+												<Label
+													htmlFor="settings-monochrome"
+													className={cn('cursor-pointer', ft.label)}
+												>
+													{t('settings_monochrome_label', {
+														defaultValue: 'Use a monochromatic (grayscale) app appearance'
+													})}
+												</Label>
+											</div>
+											<p className={cn('text-xs leading-relaxed', ft.muted)}>
+												{t('settings_monochrome_hint', {
+													defaultValue:
+														'Desaturates the whole app on top of any theme or palette. Your theme and palette colors stay as-is underneath.'
+												})}
+											</p>
+										</AccordionContent>
+									</AccordionItem>
 								</Accordion>
+							)}
+
+							{section === 'jan_kefer' && (
+								<div className="space-y-4">
+									<p className={ft.label}>
+										{t('section_jan_kefer', { defaultValue: 'Jan Kefer' })}
+									</p>
+									{janKeferBiography.map((paragraph, index) => (
+										<p key={index} className={cn('text-sm leading-relaxed', ft.bodyText)}>
+											{paragraph}
+										</p>
+									))}
+								</div>
 							)}
 
 							{section === 'manual' && (

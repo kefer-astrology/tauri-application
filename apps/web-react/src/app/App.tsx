@@ -33,6 +33,7 @@ import {
 	DEFAULT_WORKSPACE_DEFAULTS,
 	normalizeSupportedHouseSystem,
 	normalizeComputedChartPayload,
+	synastryDataToAnalysisPayload,
 	type AppChart,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
@@ -54,6 +55,7 @@ import {
 	type ElementColors
 } from '@/lib/astrology/elementColors';
 import { readStoredGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { readStoredEnabledSymbolSetIds } from '@/lib/astrology/symbolSystems';
 import {
 	persistWheelOrientation,
 	readStoredWheelOrientation,
@@ -61,6 +63,7 @@ import {
 	type WheelOrientationId,
 	type WheelStyleId
 } from '@/lib/astrology/wheelStyle';
+import { readStoredMonochrome, persistMonochrome } from '@/lib/appLayoutPreferences';
 import {
 	persistThemePalettes,
 	readStoredThemePalettes,
@@ -103,6 +106,10 @@ function mergeWorkspaceDefaults(
 		locationLatitude: lat,
 		locationLongitude: lon,
 		engine: dto.default_engine?.trim() || prev.engine,
+		positionMode:
+			dto.position_mode === 'geometric' || dto.position_mode === 'apparent'
+				? dto.position_mode
+				: prev.positionMode,
 		defaultBodies: Array.isArray(dto.default_bodies) ? [...dto.default_bodies] : prev.defaultBodies,
 		defaultAspects: Array.isArray(dto.default_aspects)
 			? [...dto.default_aspects]
@@ -223,6 +230,9 @@ export default function App() {
 	const [astrologyGlyphSet, setAstrologyGlyphSet] = useState<AstrologyGlyphSetId>(() =>
 		readStoredGlyphSet()
 	);
+	const [enabledSymbolSetIds, setEnabledSymbolSetIds] = useState<string[]>(() =>
+		readStoredEnabledSymbolSetIds()
+	);
 	const [wheelStyle, setWheelStyle] = useState<WheelStyleId>(() => readStoredWheelStyle());
 	const [wheelOrientation, setWheelOrientation] = useState<WheelOrientationId>(() =>
 		readStoredWheelOrientation()
@@ -230,6 +240,7 @@ export default function App() {
 	const [elementWheelColors, setElementWheelColors] = useState<ElementColors>(() =>
 		readStoredElementColors()
 	);
+	const [monochrome, setMonochrome] = useState<boolean>(() => readStoredMonochrome());
 	const formTheme = useAppFormFieldTheme(theme);
 
 	const commitElementWheelColors = useCallback((next: ElementColors) => {
@@ -242,7 +253,8 @@ export default function App() {
 	}, []);
 	const [activeView, setActiveView] = useState<string>('horoskop');
 	const [activeTransitSection, setActiveTransitSection] = useState<TransitSection>('general');
-	const [activeSettingsSection, setActiveSettingsSection] = useState<SettingsSectionId>('jazyk');
+	const [activeSettingsSection, setActiveSettingsSection] =
+		useState<SettingsSectionId>('jazyk_lokace');
 	const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 	const [workspacePath, setWorkspacePath] = useState<string | null>(null);
 	const [charts, setCharts] = useState<AppChart[]>(() => [
@@ -447,6 +459,29 @@ export default function App() {
 		void computeChartInBackground(chart, persistedWorkspacePath);
 	};
 
+	/** Synastry is persisted as an analysis. AppChart remains only a temporary list-row facade
+	 *  until the shell has a dedicated analysis context. */
+	const handleSynastryCreated = async (chart: AppChart) => {
+		if (workspacePath) {
+			try {
+				await invoke<string>('create_analysis', {
+					workspacePath,
+					analysis: synastryDataToAnalysisPayload(chart)
+				});
+				chart.entityPersisted = true;
+				await initStorage(workspacePath);
+			} catch (e) {
+				console.error(e);
+				toast.error(t('toast_save_failed'), {
+					description: e instanceof Error ? e.message : String(e)
+				});
+				return;
+			}
+		}
+		addChart(chart);
+		setActiveView('otevrit');
+	};
+
 	const handleObservableObjectsChange = async (chartId: string, bodies: string[]) => {
 		const chart = charts.find((c) => c.id === chartId);
 		if (!chart) return;
@@ -552,8 +587,27 @@ export default function App() {
 				path = await openFolderDialog();
 				if (!path) return;
 			}
-			const payloads = charts.map((c) => chartDataToComputePayload(c, workspaceDefaults));
+			const payloads = charts
+				.filter((chart) => chart.entityKind !== 'analysis')
+				.map((chart) => chartDataToComputePayload(chart, workspaceDefaults));
 			await saveWorkspace(path, 'User', payloads, workspaceDefaults);
+			const pendingAnalyses = charts.filter(
+				(chart) => chart.entityKind === 'analysis' && !chart.entityPersisted
+			);
+			for (const analysis of pendingAnalyses) {
+				await invoke<string>('create_analysis', {
+					workspacePath: path,
+					analysis: synastryDataToAnalysisPayload(analysis)
+				});
+			}
+			if (pendingAnalyses.length > 0) {
+				const persistedIds = new Set(pendingAnalyses.map((analysis) => analysis.id));
+				setCharts((current) =>
+					current.map((entry) =>
+						persistedIds.has(entry.id) ? { ...entry, entityPersisted: true } : entry
+					)
+				);
+			}
 			await initStorage(path);
 			setWorkspacePath(path);
 			toast.success(t('toast_workspace_saved'), { description: path });
@@ -580,7 +634,7 @@ export default function App() {
 			setActiveTransitSection('general');
 		}
 		if (view === 'nastaveni') {
-			setActiveSettingsSection('jazyk');
+			setActiveSettingsSection('jazyk_lokace');
 		}
 	};
 
@@ -598,10 +652,16 @@ export default function App() {
 	const currentThemeStyle = useMemo<CSSProperties>(
 		() => ({
 			background: `linear-gradient(to bottom right, ${currentThemePalette.canvasStart} 0%, ${currentThemePalette.canvasEnd} 100%)`,
-			color: currentThemePalette.contentTextPrimary
+			color: currentThemePalette.contentTextPrimary,
+			filter: monochrome ? 'grayscale(1)' : undefined
 		}),
-		[currentThemePalette]
+		[currentThemePalette, monochrome]
 	);
+
+	const changeMonochrome = useCallback((next: boolean) => {
+		setMonochrome(next);
+		persistMonochrome(next);
+	}, []);
 
 	return (
 		<>
@@ -663,6 +723,7 @@ export default function App() {
 										wheelOrientation={wheelOrientation}
 										elementColors={elementWheelColors}
 										lightPlanetFill={lightPlanetFill}
+										enabledSymbolSetIds={enabledSymbolSetIds}
 										onEdit={(chart) => {
 											setEditingChart(chart);
 										}}
@@ -702,11 +763,12 @@ export default function App() {
 										theme={theme}
 										glyphSet={astrologyGlyphSet}
 										workspaceDefaults={workspaceDefaults}
+										enabledSymbolSetIds={enabledSymbolSetIds}
 									/>
 								) : activeView === 'revoluce' ? (
 									<RevolutionView theme={theme} />
 								) : activeView === 'synastrie' ? (
-									<SynastryView theme={theme} />
+									<SynastryView theme={theme} onCreated={handleSynastryCreated} />
 								) : activeView === 'tranzity' || activeView === 'dynamika' ? (
 									<TransitsContent
 										section={activeTransitSection}
@@ -723,6 +785,8 @@ export default function App() {
 										onAppShellIconSetChange={setAppShellIconSet}
 										astrologyGlyphSet={astrologyGlyphSet}
 										onAstrologyGlyphSetChange={setAstrologyGlyphSet}
+										enabledSymbolSetIds={enabledSymbolSetIds}
+										onEnabledSymbolSetIdsChange={setEnabledSymbolSetIds}
 										wheelStyle={wheelStyle}
 										onWheelStyleChange={setWheelStyle}
 										wheelOrientation={wheelOrientation}
@@ -740,6 +804,8 @@ export default function App() {
 										}}
 										workspaceDefaults={workspaceDefaults}
 										onWorkspaceDefaultsChange={applyWorkspaceDefaultsPatch}
+										monochrome={monochrome}
+										onMonochromeChange={changeMonochrome}
 									/>
 								) : (
 									<AppMainContentRoot>

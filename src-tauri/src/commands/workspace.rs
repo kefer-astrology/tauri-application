@@ -24,6 +24,8 @@ pub struct SaveWorkspaceDefaultsInput {
     #[serde(default)]
     pub default_engine: Option<String>,
     #[serde(default)]
+    pub position_mode: Option<String>,
+    #[serde(default)]
     pub default_bodies: Option<Vec<String>>,
     #[serde(default)]
     pub default_aspects: Option<Vec<String>>,
@@ -227,6 +229,10 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
         crate::workspace::models::EngineType::Jpl => "jpl",
         crate::workspace::models::EngineType::Custom => "custom",
     });
+    let position_mode = defaults.position_mode.map(|mode| match mode {
+        crate::workspace::models::PositionMode::Apparent => "apparent",
+        crate::workspace::models::PositionMode::Geometric => "geometric",
+    });
 
     let default_location_name = defaults
         .default_location
@@ -251,6 +257,7 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
     Ok(json!({
         "default_house_system": default_house_system,
         "default_engine": default_engine,
+        "position_mode": position_mode,
         "default_location_name": default_location_name,
         "default_location_latitude": default_location_latitude,
         "default_location_longitude": default_location_longitude,
@@ -305,6 +312,7 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
         model_overrides: None,
         default: crate::workspace::models::WorkspaceDefaults {
             ephemeris_engine: Some(crate::workspace::models::EngineType::Jpl),
+            position_mode: Some(crate::workspace::models::PositionMode::Apparent),
             ephemeris_backend: None,
             element_colors: None,
             radix_point_colors: None,
@@ -355,6 +363,14 @@ fn parse_engine_type(value: &str) -> Option<crate::workspace::models::EngineType
     }
 }
 
+fn parse_position_mode(value: &str) -> Option<crate::workspace::models::PositionMode> {
+    match value {
+        "apparent" => Some(crate::workspace::models::PositionMode::Apparent),
+        "geometric" => Some(crate::workspace::models::PositionMode::Geometric),
+        _ => None,
+    }
+}
+
 fn apply_workspace_defaults_patch(
     defaults: &mut crate::workspace::models::WorkspaceDefaults,
     patch: SaveWorkspaceDefaultsInput,
@@ -366,6 +382,12 @@ fn apply_workspace_defaults_patch(
     if let Some(value) = patch.default_engine.as_deref() {
         if let Some(engine) = parse_engine_type(value) {
             defaults.ephemeris_engine = Some(engine);
+        }
+    }
+
+    if let Some(value) = patch.position_mode.as_deref() {
+        if let Some(mode) = parse_position_mode(value) {
+            defaults.position_mode = Some(mode);
         }
     }
 

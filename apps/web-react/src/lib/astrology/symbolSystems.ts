@@ -21,7 +21,7 @@ export const SYMBOL_SYSTEMS: readonly SymbolSystemDefinition[] = [
 		(entry): SymbolSystemDefinition => ({
 			id: entry.id,
 			labelKey: entry.labelKey,
-			textForLongitude: (longitude) => degreeSymbolText(entry.id, longitude)
+			textForLongitude: (longitude, language) => degreeSymbolText(entry.id, longitude, language)
 		})
 	)
 ];

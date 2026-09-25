@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use super::model_catalog::{builtin_model_settings, builtin_standard_model};
 use super::models::{
-    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, TimeSystem,
-    WorkspaceManifest, ZodiacType,
+    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, PositionMode,
+    TimeSystem, WorkspaceManifest, ZodiacType,
 };
 use super::validation::Diagnostic;
 
@@ -39,6 +39,7 @@ pub struct SettingsLayer {
     pub aspects: Option<Vec<String>>,
     pub aspect_orbs: HashMap<String, f64>,
     pub engine: Option<EngineType>,
+    pub position_mode: Option<PositionMode>,
     pub zodiac_type: Option<ZodiacType>,
     pub ayanamsa: Option<Ayanamsa>,
     pub time_system: Option<TimeSystem>,
@@ -56,6 +57,7 @@ impl SettingsLayer {
             aspects: config.selected_aspects.clone(),
             aspect_orbs: config.aspect_orbs.clone(),
             engine: config.engine.clone(),
+            position_mode: config.position_mode,
             zodiac_type: Some(config.zodiac_type.clone()),
             ayanamsa: config.ayanamsa.clone(),
             time_system: config.time_system.clone(),
@@ -75,6 +77,7 @@ pub struct EffectiveSettingsSources {
     pub standard_orb: SettingSource,
     #[serde(default)]
     pub engine: Option<SettingSource>,
+    pub position_mode: SettingSource,
     #[serde(default)]
     pub zodiac_type: Option<SettingSource>,
     #[serde(default)]
@@ -106,6 +109,7 @@ pub struct EffectiveModelSettings {
     pub standard_orb: f64,
     #[serde(default)]
     pub engine: Option<EngineType>,
+    pub position_mode: PositionMode,
     #[serde(default)]
     pub zodiac_type: Option<ZodiacType>,
     #[serde(default)]
@@ -428,6 +432,14 @@ fn effective_model_settings(
     let mut aspects_source = settings_source;
     let mut engine = model.engine.clone();
     let mut engine_source = engine.as_ref().map(|_| SettingSource::Model);
+    let mut position_mode = model_settings
+        .position_mode
+        .unwrap_or(PositionMode::Apparent);
+    let mut position_mode_source = if model_settings.position_mode.is_some() {
+        settings_source
+    } else {
+        SettingSource::Application
+    };
     let mut zodiac_type = model.zodiac_type.clone();
     let mut zodiac_source = zodiac_type.as_ref().map(|_| SettingSource::Model);
     let mut ayanamsa = model.ayanamsa.clone();
@@ -472,6 +484,10 @@ fn effective_model_settings(
             engine = Some(value);
             engine_source = Some(SettingSource::Workspace);
         }
+        if let Some(value) = manifest.default.position_mode {
+            position_mode = value;
+            position_mode_source = SettingSource::Workspace;
+        }
         if let Some(value) = manifest.default.time_system.clone() {
             time_system = Some(value);
             time_source = Some(SettingSource::Workspace);
@@ -492,6 +508,8 @@ fn effective_model_settings(
             &mut aspect_orb_sources,
             &mut engine,
             &mut engine_source,
+            &mut position_mode,
+            &mut position_mode_source,
             &mut zodiac_type,
             &mut zodiac_source,
             &mut ayanamsa,
@@ -527,6 +545,10 @@ fn effective_model_settings(
             engine = Some(value);
             engine_source = Some(SettingSource::Chart);
         }
+        if let Some(value) = config.position_mode {
+            position_mode = value;
+            position_mode_source = SettingSource::Chart;
+        }
         zodiac_type = Some(config.zodiac_type.clone());
         zodiac_source = Some(SettingSource::Chart);
         if let Some(value) = config.ayanamsa.clone() {
@@ -553,6 +575,8 @@ fn effective_model_settings(
             &mut aspect_orb_sources,
             &mut engine,
             &mut engine_source,
+            &mut position_mode,
+            &mut position_mode_source,
             &mut zodiac_type,
             &mut zodiac_source,
             &mut ayanamsa,
@@ -573,6 +597,7 @@ fn effective_model_settings(
         aspect_orbs,
         standard_orb: model_settings.standard_orb,
         engine,
+        position_mode,
         zodiac_type,
         ayanamsa,
         time_system,
@@ -586,6 +611,7 @@ fn effective_model_settings(
             aspect_orbs: aspect_orb_sources,
             standard_orb: settings_source,
             engine: engine_source,
+            position_mode: position_mode_source,
             zodiac_type: zodiac_source,
             ayanamsa: ayanamsa_source,
             time_system: time_source,
@@ -603,6 +629,7 @@ pub fn apply_effective_settings(config: &mut ChartConfig, settings: &EffectiveMo
     config.selected_aspects = Some(settings.default_aspects.clone());
     config.aspect_orbs.clone_from(&settings.aspect_orbs);
     config.engine = settings.engine.clone();
+    config.position_mode = Some(settings.position_mode);
     if let Some(zodiac_type) = settings.zodiac_type.clone() {
         config.zodiac_type = zodiac_type;
     }
@@ -624,6 +651,8 @@ fn apply_settings_layer(
     aspect_orb_sources: &mut HashMap<String, SettingSource>,
     engine: &mut Option<EngineType>,
     engine_source: &mut Option<SettingSource>,
+    position_mode: &mut PositionMode,
+    position_mode_source: &mut SettingSource,
     zodiac_type: &mut Option<ZodiacType>,
     zodiac_source: &mut Option<SettingSource>,
     ayanamsa: &mut Option<Ayanamsa>,
@@ -652,6 +681,10 @@ fn apply_settings_layer(
     if let Some(value) = layer.engine.clone() {
         *engine = Some(value);
         *engine_source = Some(source);
+    }
+    if let Some(value) = layer.position_mode {
+        *position_mode = value;
+        *position_mode_source = source;
     }
     if let Some(value) = layer.zodiac_type.clone() {
         *zodiac_type = Some(value);
@@ -720,6 +753,7 @@ mod tests {
     fn empty_defaults() -> WorkspaceDefaults {
         WorkspaceDefaults {
             ephemeris_engine: None,
+            position_mode: None,
             ephemeris_backend: None,
             element_colors: None::<ElementColorSettings>,
             radix_point_colors: None::<RadixPointColorSettings>,
@@ -775,6 +809,7 @@ mod tests {
             model: Some("western".to_string()),
             model_overrides: None,
             engine: Some(EngineType::Swisseph),
+            position_mode: None,
             ayanamsa: Some(Ayanamsa::Lahiri),
             observable_objects: Some(vec!["moon".to_string()]),
             time_system: Some(TimeSystem::Gregorian),
