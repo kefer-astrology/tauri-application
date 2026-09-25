@@ -1,0 +1,36 @@
+{
+	"sets": [
+		{
+			"id": "sabian",
+			"labelKey": "symbol_set_sabian",
+			"available": false,
+			"source": "Marc Edmund Jones / Elsie Wheeler (1925), incl. Dane Rudhyar's rephrasing (1973)",
+			"license": "unresolved",
+			"licenseNote": "No verified public-domain wording exists for this set (Jones's original is still actively defended by the Sabian Assembly; Rudhyar's rephrasing runs under EU life+70 to 2055). Not bundled until licensed or rewritten from scratch."
+		},
+		{
+			"id": "sepharial",
+			"labelKey": "symbol_set_sepharial",
+			"available": true,
+			"file": "sepharial.json",
+			"source": "Sepharial (Walter Gorn Old, 1864–1929), English translation of the anonymous Italian \"La Volasfera\"",
+			"license": "public-domain"
+		},
+		{
+			"id": "charubel",
+			"labelKey": "symbol_set_charubel",
+			"available": true,
+			"file": "charubel.json",
+			"source": "Charubel (John Thomas, 1826–1908), \"The Degrees of the Zodiac Symbolised\" (1898)",
+			"license": "public-domain"
+		},
+		{
+			"id": "kefer",
+			"labelKey": "symbol_set_kefer",
+			"available": false,
+			"source": "Kefer Astrology (original)",
+			"license": "proprietary-original",
+			"licenseNote": "Awaiting original content."
+		}
+	]
+}
