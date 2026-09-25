@@ -1,0 +1,58 @@
+static/astrology-symbols/charubel.es.json
+  s_df663517fbd1b6::t_87163743a4ae9e 2-361
+  s_df663517fbd1b6::t_713cfcde259243 1,362
+static/astrology-symbols/sepharial.fr.json
+  s_df663517fbd1b6::t_c548c524806173 2-361
+  s_df663517fbd1b6::t_713cfcde259243 1,362
+static/astrology-symbols/sepharial.json
+  s_e65cc12a133265::t_2359a5bdb748f5 1-362
+static/astrology-symbols/charubel.fr.json
+  s_df663517fbd1b6::t_13bd177f331368 2-361
+  s_df663517fbd1b6::t_713cfcde259243 1,362
+static/astrology-symbols/charubel.cs.json
+  s_df663517fbd1b6::t_713cfcde259243 1,362
+  s_df663517fbd1b6::t_b85c79bd871a5e 2-361
+static/astrology-symbols/catalog.json
+  s_e65cc12a133265::t_7ce96c455e637d 1-36
+static/astrology-symbols/charubel.json
+  s_e65cc12a133265::t_2359a5bdb748f5 1-362
+static/astrology-symbols/sepharial.es.json
+  s_df663517fbd1b6::t_4950ca3050e990 1-362
+static/astrology-symbols/README.md
+  s_df663517fbd1b6::t_a86f0f62272a52 6-12
+  s_e65cc12a133265::t_fa5abcca1ffb6f 1-5,13-43,49-51
+  s_df663517fbd1b6::t_95b94c3926fcff 52-54
+  s_df663517fbd1b6::t_9e9eae31f08f3c 44-48
+static/astrology-symbols/sepharial.cs.json
+  s_df663517fbd1b6::t_586dd75edc2bfb 2-361
+  s_df663517fbd1b6::t_713cfcde259243 1,362
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0eadff13d99b0d5f9dcd983f13b2f72affb5dce2",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_df663517fbd1b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e246d565-a74e-4ae4-8c2d-920f535e6ec5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_e65cc12a133265": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3bf074b-a7e2-4c7f-96cd-6617f4ea1e9c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
