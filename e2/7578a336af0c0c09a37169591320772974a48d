@@ -1,0 +1,55 @@
+apps/web-react/src/lib/astrology/symbolSystems.ts
+  s_e65cc12a133265::t_a306786418bb72 1,19-26,35-38,42-43,45,50-77
+apps/web-react/src/lib/astrology/degreeSymbolSets.ts
+  s_e65cc12a133265::t_65193be8539467 1-36
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_e65cc12a133265::t_4af7aa9782b2c0 336-337,345
+  s_e65cc12a133265::t_037d5e0c22d19a 154
+  s_e65cc12a133265::t_739ce846350690 381-382,393
+  s_e65cc12a133265::t_ea4d1cad7bed33 60
+apps/web-react/src/lib/astrology/objectDetail.ts
+  s_e65cc12a133265::t_ce27c7246da4a0 122-123
+  s_e65cc12a133265::t_7c6af16f39fb31 148
+apps/web-react/src/app/components/settings-view.tsx
+  s_4e5dd19f61efdd::t_ca1d418c19759e 546,626,628-652
+  s_e65cc12a133265::t_119c20637038e3 194-196
+  s_e65cc12a133265::t_de8969d02c0928 298-310
+  s_e65cc12a133265::t_dfc175b5626107 36-37
+  s_e65cc12a133265::t_db1cc80f03dc5a 1004-1035
+  s_e65cc12a133265::t_b3649b75121c0e 258-259
+  s_e65cc12a133265::t_764e43555cbb86 149-150
+  s_e65cc12a133265::t_b473d81487f9f5 171-172
+  s_e65cc12a133265::t_a96de305062512 257
+  s_e65cc12a133265::t_daf5645aeb88e7 260
+  s_e65cc12a133265::t_cb4b39c9a919f7 311-312
+  s_e65cc12a133265::t_bc2e12d9201a07 1036-1037
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e27578a336af0c0c09a37169591320772974a48d",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_4e5dd19f61efdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d4c9-86e3-7542-8061-dc2a7430715e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_e65cc12a133265": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3bf074b-a7e2-4c7f-96cd-6617f4ea1e9c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
