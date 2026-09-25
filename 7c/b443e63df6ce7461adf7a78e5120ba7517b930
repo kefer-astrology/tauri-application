@@ -1,0 +1,129 @@
+src-tauri/src/commands/workspace.rs
+  s_4e5dd19f61efdd::t_bc9d695a367134 27-28,232-235,260,315,366-373,388-390
+  s_4e5dd19f61efdd::t_cc809f12d16e7f 391-393
+apps/web-react/src/lib/astrology/degreeSymbolSets.ts
+  s_df663517fbd1b6::t_65fd177485ec49 31-33
+  s_df663517fbd1b6::t_1506e3cc9dbd4e 2-10,27-30,34-35,42-49,51-54
+src-tauri/src/workspace/validation.rs
+  s_4e5dd19f61efdd::t_bc9d695a367134 686
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_df663517fbd1b6::t_65fd177485ec49 786-789,797-800,802-809,819-821,829-831
+  s_df663517fbd1b6::t_722819b2e1c4b2 55-59,72-73
+  s_df663517fbd1b6::t_5e533d2c302f52 632-769
+  s_df663517fbd1b6::t_a692a296beb7b4 32-47
+src-tauri/src/workspace/settings.rs
+  s_4e5dd19f61efdd::t_bc9d695a367134 756,812
+  s_4e5dd19f61efdd::t_59d54c5d25747c 14-15,42,60,80,112,435-442,487-490,511-512,548-551,578-579,600,614,632,654-655,685-687
+  s_4e5dd19f61efdd::t_f0e74053164bdc 688
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_4e5dd19f61efdd::t_ca1d418c19759e 57,264,280,330,538
+apps/web-react/src/app/components/settings-view.tsx
+  s_df663517fbd1b6::t_ab1f147f4de10e 166-167
+  s_df663517fbd1b6::t_65fd177485ec49 569,649-674,1361-1364,1383-1385
+  s_df663517fbd1b6::t_0b036e0293ddb3 482-489
+  s_df663517fbd1b6::t_9c7fb2b8c0a1db 47
+  s_df663517fbd1b6::t_ef1805bf44b889 46
+  s_df663517fbd1b6::t_e5cffd5dbdb6b5 26
+  s_df663517fbd1b6::t_70a8dbf63eaae1 58-64
+  s_df663517fbd1b6::t_4a6357a00559de 533
+  s_df663517fbd1b6::t_fe280bc5423bfb 1346-1360,1365-1377,1381-1382,1386-1391
+  s_df663517fbd1b6::t_b0e2e1d6ad7be9 501-502,504,506-517,519-532,534-538,541-542
+  s_df663517fbd1b6::t_f93f2a6b498b0e 189-191
+  s_df663517fbd1b6::t_79e3ad9e9e4447 1392-1393
+apps/web-react/src/lib/chartListPreferences.ts
+  s_e65cc12a133265::t_ec528013265971 1-52
+apps/web-react/src/lib/tauri/workspace.ts
+  s_4e5dd19f61efdd::t_ca1d418c19759e 264,288
+apps/web-react/src/lib/tauri/types.ts
+  s_4e5dd19f61efdd::t_ca1d418c19759e 112,181,218,234,255,297
+src-tauri/src/infrastructure/astronomy/swisseph.rs
+  s_4e5dd19f61efdd::t_d0942cc2b77d76 10,33,331-332
+  s_4e5dd19f61efdd::t_ea194b9be395bb 333
+apps/web-react/src/lib/astrology/symbolSystems.ts
+  s_df663517fbd1b6::t_65535da06fa7d8 24
+src-tauri/src/workspace/models.rs
+  s_4e5dd19f61efdd::t_59d54c5d25747c 146-155,421-422,582-583,762-763
+apps/web-react/src/app/App.tsx
+  s_e65cc12a133265::t_ac3aabf42d46b4 726
+  s_e65cc12a133265::t_3e538925e9ef27 233-235
+  s_df663517fbd1b6::t_9497c73d6a29ec 243
+  s_df663517fbd1b6::t_5151681e7b227b 807-808
+  s_e65cc12a133265::t_7970b824d635ae 58
+  s_4e5dd19f61efdd::t_8db52d6ea15947 590-592
+  s_df663517fbd1b6::t_1d3c1e8769f287 637
+  s_b91376ba5cd779::t_2678779af70984 771
+  s_df663517fbd1b6::t_65fd177485ec49 256-257
+  s_df663517fbd1b6::t_1aa7a0435d50fb 66
+  s_4e5dd19f61efdd::t_bb6406ccdbe2fb 36,462-463,467,469
+  s_4e5dd19f61efdd::t_c1956b9e852d61 471,594-610
+  s_e65cc12a133265::t_2ddceaa9e52080 766
+  s_b91376ba5cd779::t_0acf6cd39421c6 464-466,468,470,472-482
+  s_df663517fbd1b6::t_57d03f361430db 655-656,658,661-664
+  s_e65cc12a133265::t_2ea2a4a6c3593f 788-789
+  s_4e5dd19f61efdd::t_ca1d418c19759e 109-112
+  s_df663517fbd1b6::t_4477cb9a54371c 483-484,665
+apps/web-react/src/app/components/body-selector.tsx
+  s_df663517fbd1b6::t_636c422bc2b340 272-326,328-329
+  s_df663517fbd1b6::t_4a20fe4a9947d6 82
+  s_df663517fbd1b6::t_aec45645e93adb 11,13-14
+src-tauri/src/infrastructure/astronomy/jpl_backend.rs
+  s_4e5dd19f61efdd::t_d0942cc2b77d76 356-359,383,386,389,408,411,426,429,462,464,492,495,551,556
+  s_4e5dd19f61efdd::t_febdc1b339c651 705
+  s_4e5dd19f61efdd::t_54244c58770bbf 40,134,139,152-157,160,183,186-187,196-200,203,217-221,223-224,233-237,240,254-258,260-261
+apps/web-react/src/lib/content/janKefer.ts
+  s_df663517fbd1b6::t_39b9b805bd2396 1-21,23-33
+  s_df663517fbd1b6::t_65fd177485ec49 22
+src-tauri/src/lib.rs
+  s_df663517fbd1b6::t_719674dd5c8386 37
+apps/web-react/src/app/components/settings-secondary-sidebar.tsx
+  s_df663517fbd1b6::t_f7ddf9565d8c35 3-4,6-7,10,16,19-20,33,37-40,49,63-79
+src-tauri/src/workspace/model_catalog.rs
+  s_4e5dd19f61efdd::t_59d54c5d25747c 11,17
+apps/web-react/src/lib/appLayoutPreferences.ts
+  s_df663517fbd1b6::t_3a735878fcc2b2 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7cb443e63df6ce7461adf7a78e5120ba7517b930",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_4e5dd19f61efdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d4c9-86e3-7542-8061-dc2a7430715e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_b91376ba5cd779": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "035bb13b-fb21-4041-a1f2-93b95b4e4981",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_df663517fbd1b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e246d565-a74e-4ae4-8c2d-920f535e6ec5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_e65cc12a133265": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3bf074b-a7e2-4c7f-96cd-6617f4ea1e9c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
