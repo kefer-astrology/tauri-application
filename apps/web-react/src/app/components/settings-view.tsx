@@ -33,6 +33,8 @@ import {
 import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import { type ElementColors, type ElementId } from '@/lib/astrology/elementColors';
 import { persistGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { DEGREE_SYMBOL_SET_CATALOG } from '@/lib/astrology/degreeSymbolSets';
+import { persistEnabledSymbolSetIds } from '@/lib/astrology/symbolSystems';
 import {
 	persistWheelStyle,
 	WHEEL_STYLE_OPTIONS,
@@ -144,6 +146,8 @@ interface SettingsViewProps {
 	onAppShellIconSetChange: (value: AppShellIconSetId) => void;
 	astrologyGlyphSet: AstrologyGlyphSetId;
 	onAstrologyGlyphSetChange: (value: AstrologyGlyphSetId) => void;
+	enabledSymbolSetIds: readonly string[];
+	onEnabledSymbolSetIdsChange: (value: string[]) => void;
 	wheelStyle: WheelStyleId;
 	onWheelStyleChange: (value: WheelStyleId) => void;
 	wheelOrientation: WheelOrientationId;
@@ -164,6 +168,8 @@ function SettingsView({
 	onAppShellIconSetChange,
 	astrologyGlyphSet,
 	onAstrologyGlyphSetChange,
+	enabledSymbolSetIds,
+	onEnabledSymbolSetIdsChange,
 	wheelStyle,
 	onWheelStyleChange,
 	wheelOrientation,
@@ -185,6 +191,9 @@ function SettingsView({
 	const [timezone, setTimezone] = useState(workspaceDefaults.timezone);
 	const [houseSystem, setHouseSystem] = useState<string>(workspaceDefaults.houseSystem);
 	const [glyphSetValue, setGlyphSetValue] = useState<AstrologyGlyphSetId>(astrologyGlyphSet);
+	const [enabledSymbolSetIdsValue, setEnabledSymbolSetIdsValue] = useState<string[]>(() => [
+		...enabledSymbolSetIds
+	]);
 	const [wheelStyleValue, setWheelStyleValue] = useState<WheelStyleId>(wheelStyle);
 	const [wheelOrientationValue, setWheelOrientationValue] =
 		useState<WheelOrientationId>(wheelOrientation);
@@ -246,6 +255,10 @@ function SettingsView({
 	}, [astrologyGlyphSet]);
 
 	useEffect(() => {
+		setEnabledSymbolSetIdsValue([...enabledSymbolSetIds]);
+	}, [enabledSymbolSetIds]);
+
+	useEffect(() => {
 		setWheelStyleValue(wheelStyle);
 	}, [wheelStyle]);
 
@@ -280,6 +293,21 @@ function SettingsView({
 			markChanged();
 		},
 		[markChanged, onAstrologyGlyphSetChange]
+	);
+
+	const onToggleSymbolSet = useCallback(
+		(id: string) => {
+			setEnabledSymbolSetIdsValue((current) => {
+				const next = current.includes(id)
+					? current.filter((value) => value !== id)
+					: [...current, id];
+				onEnabledSymbolSetIdsChange(next);
+				persistEnabledSymbolSetIds(next);
+				return next;
+			});
+			markChanged();
+		},
+		[markChanged, onEnabledSymbolSetIdsChange]
 	);
 
 	const onWheelStyleChangeHandler = useCallback(
@@ -510,13 +538,12 @@ function SettingsView({
 												});
 											}}
 											placeholder={t('placeholder_default_location')}
-											searchPlaceholder={t('new_location_search')}
 											emptyLabel={t('open_search_no_results')}
 											loadingLabel={t('new_resolving_location')}
 											className={cn(ft.selectTrigger, 'shadow-inner')}
 											iconClassName={ft.muted}
 										/>
-										<p className={cn('text-xs', ft.muted)}>
+									<p className={cn('text-xs', ft.muted)}>
 											{t('settings_default_location_hint', {
 												defaultValue:
 													'Choose a searched location to sync its coordinates, or adjust latitude and longitude manually below.'
@@ -596,9 +623,33 @@ function SettingsView({
 											{t('settings_house_system_hint', {
 												defaultValue: 'Shown options are computed by the current Rust JPL backend.'
 											})}
-										</p>
-									</div>
+									</p>
 								</div>
+								<div className="space-y-2">
+									<Label className={ft.label}>{t('settings_position_mode')}</Label>
+									<Select
+										value={workspaceDefaults.positionMode}
+										onValueChange={(value) => {
+											const positionMode = value === 'geometric' ? 'geometric' : 'apparent';
+											markChanged();
+											void onWorkspaceDefaultsChange({ positionMode });
+										}}
+									>
+										<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent className={ft.selectContent}>
+											<SelectItem value="apparent" className={ft.selectItem}>
+												{t('settings_position_mode_apparent')}
+											</SelectItem>
+											<SelectItem value="geometric" className={ft.selectItem}>
+												{t('settings_position_mode_geometric')}
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									<p className={cn('text-xs', ft.muted)}>{t('settings_position_mode_hint')}</p>
+								</div>
+							</div>
 							)}
 
 							{section === 'pozorovane_objekty' && (
@@ -948,6 +999,40 @@ function SettingsView({
 													<p className={cn('text-xs', ft.muted)}>{appShellDescription}</p>
 												) : null}
 											</div>
+										</AccordionContent>
+									</AccordionItem>
+									<AccordionItem value="degree-symbol-sets">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_degree_symbol_sets')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-3">
+											<p className={cn('text-xs leading-relaxed', ft.muted)}>
+												{t('settings_degree_symbol_sets_blurb')}
+											</p>
+											{DEGREE_SYMBOL_SET_CATALOG.map((entry) => (
+												<div key={entry.id} className="flex items-center gap-2">
+													<Checkbox
+														id={`symbol-set-${entry.id}`}
+														checked={enabledSymbolSetIdsValue.includes(entry.id)}
+														disabled={!entry.available}
+														onCheckedChange={() => onToggleSymbolSet(entry.id)}
+													/>
+													<Label
+														htmlFor={`symbol-set-${entry.id}`}
+														className={cn(
+															'text-sm',
+															entry.available ? cn('cursor-pointer', ft.bodyText) : ft.muted
+														)}
+													>
+														{t(entry.labelKey)}
+													</Label>
+													{!entry.available ? (
+														<span className={cn('text-xs italic', ft.muted)}>
+															{t('settings_degree_symbol_set_unavailable')}
+														</span>
+													) : null}
+												</div>
+											))}
 										</AccordionContent>
 									</AccordionItem>
 									<AccordionItem value="radix-style">

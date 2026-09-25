@@ -57,6 +57,7 @@ interface HoroscopeDashboardProps {
 	wheelOrientation?: WheelOrientationId;
 	elementColors: ElementColors;
 	lightPlanetFill: string;
+	enabledSymbolSetIds: readonly string[];
 	onEdit?: (chart: import('@/lib/tauri/chartPayload').AppChart) => void;
 	onObservableObjectsChange?: (chartId: string, bodies: string[]) => void;
 }
@@ -150,6 +151,7 @@ export function HoroscopeDashboard({
 	wheelOrientation = 'ascendant',
 	elementColors,
 	lightPlanetFill,
+	enabledSymbolSetIds,
 	onEdit,
 	onObservableObjectsChange
 }: HoroscopeDashboardProps) {
@@ -331,7 +333,8 @@ export function HoroscopeDashboard({
 				layerLabel
 			},
 			i18n.language,
-			t
+			t,
+			enabledSymbolSetIds
 		);
 	}, [
 		activeTransitOverlay?.transitChart.computed,
@@ -339,6 +342,7 @@ export function HoroscopeDashboard({
 		chartShapeIds,
 		computedMotion,
 		computedPositions,
+		enabledSymbolSetIds,
 		i18n.language,
 		radixAspects,
 		selectedChart?.computed,
@@ -374,7 +378,8 @@ export function HoroscopeDashboard({
 					layerLabel
 				},
 				i18n.language,
-				t
+				t,
+				enabledSymbolSetIds
 			);
 		const fromObject = buildSide(enrichedAspect.from);
 		const toObject = buildSide(enrichedAspect.to);
@@ -385,6 +390,7 @@ export function HoroscopeDashboard({
 		chartShapeIds,
 		computedMotion,
 		computedPositions,
+		enabledSymbolSetIds,
 		i18n.language,
 		radixAspects,
 		selectedChart?.computed,

@@ -119,7 +119,8 @@ export interface ObjectDetailSource {
 export function buildObjectDetailViewModel(
 	source: ObjectDetailSource,
 	language: string,
-	t: Translate
+	t: Translate,
+	enabledSymbolSetIds: readonly string[]
 ): ObjectDetailViewModel | null {
 	const longitude = normalizeLongitude(source.rawPosition);
 	if (longitude === null) return null;
@@ -144,7 +145,7 @@ export function buildObjectDetailViewModel(
 				? source.motion.speed
 				: undefined,
 		...extendedPositionFields(source.rawPosition, source.extendedMaps, source.bodyId),
-		symbols: symbolEntriesForLongitude(longitude, language, t),
+		symbols: symbolEntriesForLongitude(longitude, language, t, enabledSymbolSetIds),
 		chartShapeIds: [...source.chartShapeIds],
 		chartConfigurationIds: [...source.chartConfigurationIds],
 		aspects: aspectsTouchingBody(source.allAspects, source.bodyId)
