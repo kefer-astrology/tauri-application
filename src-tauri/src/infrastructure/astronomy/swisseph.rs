@@ -328,10 +328,30 @@ fn calc_flags(chart: &ChartInstance, ephemeris_flag: i32) -> i32 {
     if matches!(chart.config.zodiac_type, ZodiacType::Sidereal) {
         flags |= SEFLG_SIDEREAL;
     }
-    if matches!(chart.config.position_mode, Some(PositionMode::Geometric)) {
-        flags |= SEFLG_TRUEPOS;
-    }
+    flags |= position_mode_flags(chart.config.position_mode);
     flags
+}
+
+fn position_mode_flags(mode: Option<PositionMode>) -> i32 {
+    match mode.unwrap_or(PositionMode::Apparent) {
+        PositionMode::Apparent => 0,
+        PositionMode::Geometric => SEFLG_TRUEPOS,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apparent_is_default_and_geometric_requests_true_positions() {
+        assert_eq!(position_mode_flags(None), 0);
+        assert_eq!(position_mode_flags(Some(PositionMode::Apparent)), 0);
+        assert_eq!(
+            position_mode_flags(Some(PositionMode::Geometric)),
+            SEFLG_TRUEPOS
+        );
+    }
 }
 
 fn read_error(buffer: &[i8]) -> String {

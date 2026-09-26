@@ -48,9 +48,7 @@ pub struct SettingsLayer {
 
 impl SettingsLayer {
     pub fn from_chart_config(config: &ChartConfig) -> Self {
-        let bodies = config.observable_objects.clone().or_else(|| {
-            (!config.included_points.is_empty()).then(|| config.included_points.clone())
-        });
+        let bodies = config.observable_objects.clone();
         Self {
             house_system: config.house_system.clone(),
             bodies,
@@ -171,8 +169,7 @@ pub fn standalone_model_report_with_operation(
     let model = builtin_standard_model(&resolved_model);
     let effective_settings =
         effective_model_settings(None, &model, None, Some(chart_config), operation);
-    let mut warnings = Vec::new();
-    append_chart_compatibility_warnings(Some(chart_config), &mut warnings);
+    let warnings = Vec::new();
     let mut diagnostics = super::validation::validate_model(&model, "model");
     diagnostics.extend(super::validation::validate_effective_settings(
         &model,
@@ -247,7 +244,6 @@ pub fn current_model_report_with_layers(
     }
     let effective_settings =
         effective_model_settings(Some(manifest), &model, preset, chart_config, operation);
-    append_chart_compatibility_warnings(chart_config, &mut warnings);
     let mut diagnostics = super::validation::validate_manifest_model_references(manifest, &model);
     if source == "builtin_standard_model" {
         diagnostics.extend(super::validation::validate_model(&model, "model"));
@@ -524,11 +520,8 @@ fn effective_model_settings(
             house_system = Some(value);
             house_source = Some(SettingSource::Chart);
         }
-        if let Some(value) = non_empty_vec(config.observable_objects.as_ref()) {
+        if let Some(value) = config.observable_objects.clone() {
             bodies = value;
-            bodies_source = SettingSource::Chart;
-        } else if !config.included_points.is_empty() {
-            bodies.clone_from(&config.included_points);
             bodies_source = SettingSource::Chart;
         }
         if let Some(value) = config.selected_aspects.clone() {
@@ -718,18 +711,6 @@ fn non_empty_string(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|value| !value.is_empty())
 }
 
-fn append_chart_compatibility_warnings(
-    chart_config: Option<&ChartConfig>,
-    warnings: &mut Vec<String>,
-) {
-    if chart_config.is_some_and(|config| {
-        config.observable_objects.as_ref().is_none_or(Vec::is_empty)
-            && !config.included_points.is_empty()
-    }) {
-        warnings.push("included_points_deprecated: use observable_objects".to_string());
-    }
-}
-
 fn non_empty_vec(value: Option<&Vec<String>>) -> Option<Vec<String>> {
     value.filter(|items| !items.is_empty()).cloned()
 }
@@ -800,11 +781,8 @@ mod tests {
             },
             house_system: Some(HouseSystem::WholeSign),
             zodiac_type: ZodiacType::Sidereal,
-            included_points: vec![],
             aspect_orbs: HashMap::from([("conjunction".to_string(), 4.0)]),
             selected_aspects: Some(vec!["square".to_string()]),
-            display_style: String::new(),
-            color_theme: String::new(),
             override_ephemeris: None,
             model: Some("western".to_string()),
             model_overrides: None,
@@ -1027,25 +1005,6 @@ mod tests {
     }
 
     #[test]
-    fn legacy_included_points_are_resolved_as_a_deprecated_chart_override() {
-        let mut config = chart_config();
-        config.observable_objects = None;
-        config.included_points = vec!["sun".to_string(), "asc".to_string()];
-
-        let report = standalone_model_report(&config);
-
-        assert_eq!(report.effective_settings.default_bodies, vec!["sun", "asc"]);
-        assert_eq!(
-            report.effective_settings.sources.default_bodies,
-            SettingSource::Chart
-        );
-        assert_eq!(
-            report.warnings,
-            vec!["included_points_deprecated: use observable_objects"]
-        );
-    }
-
-    #[test]
     fn shared_resolution_fixture_matches_cross_language_contract() {
         let fixture: serde_json::Value =
             serde_json::from_str(include_str!("../../../contracts/settings-resolution.json"))
@@ -1104,6 +1063,10 @@ mod tests {
             expected["engine"]
         );
         assert_eq!(
+            serde_json::to_value(settings.position_mode).unwrap(),
+            expected["positionMode"]
+        );
+        assert_eq!(
             serde_json::to_value(&settings.zodiac_type).unwrap(),
             expected["zodiacType"]
         );
@@ -1131,6 +1094,7 @@ mod tests {
         assert_eq!(settings.sources.default_bodies, SettingSource::Operation);
         assert_eq!(settings.sources.default_aspects, SettingSource::Operation);
         assert_eq!(settings.sources.engine, Some(SettingSource::Operation));
+        assert_eq!(settings.sources.position_mode, SettingSource::Operation);
         assert_eq!(settings.sources.zodiac_type, Some(SettingSource::Chart));
         assert_eq!(settings.sources.ayanamsa, Some(SettingSource::Chart));
         assert_eq!(settings.sources.time_system, Some(SettingSource::Operation));

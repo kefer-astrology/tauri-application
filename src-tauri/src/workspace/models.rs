@@ -399,15 +399,9 @@ pub struct ChartConfig {
     pub house_system: Option<HouseSystem>,
     pub zodiac_type: ZodiacType,
     #[serde(default)]
-    pub included_points: Vec<String>,
-    #[serde(default)]
     pub aspect_orbs: HashMap<String, f64>,
     #[serde(default)]
     pub selected_aspects: Option<Vec<String>>,
-    #[serde(default)]
-    pub display_style: String,
-    #[serde(default)]
-    pub color_theme: String,
     #[serde(default)]
     pub override_ephemeris: Option<String>,
     #[serde(default)]

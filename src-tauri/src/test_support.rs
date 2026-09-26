@@ -27,7 +27,7 @@ impl Drop for TestWorkspaceDir {
 
 pub(crate) fn sample_workspace_path() -> String {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../backend-python/tests/sample")
+        .join("tests/fixtures/sample-workspace")
         .canonicalize()
         .expect("sample workspace should exist")
         .to_string_lossy()
@@ -36,7 +36,7 @@ pub(crate) fn sample_workspace_path() -> String {
 
 pub(crate) fn sample_chart_source_path() -> String {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../backend-python/tests/sample/charts/base-chart.yml")
+        .join("tests/fixtures/sample-workspace/charts/base-chart.yml")
         .canonicalize()
         .expect("sample chart should exist")
         .to_string_lossy()
@@ -61,13 +61,10 @@ pub(crate) fn sample_chart_payload(chart_id: &str) -> serde_json::Value {
             "definition": { "kind": "base", "purpose": "natal" },
             "house_system": "Placidus",
             "zodiac_type": "Tropical",
-            "included_points": [],
             "aspect_orbs": {
                 "conjunction": 8.0,
                 "square": 6.0
             },
-            "display_style": "",
-            "color_theme": "",
             "override_ephemeris": null,
             "model": null,
             "engine": "jpl",

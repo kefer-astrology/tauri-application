@@ -560,6 +560,7 @@ mod tests {
                 default_location_latitude: Some(50.0875),
                 default_location_longitude: Some(14.4214),
                 default_engine: Some("jpl".to_string()),
+                position_mode: Some("geometric".to_string()),
                 default_bodies: Some(vec![
                     "sun".to_string(),
                     "moon".to_string(),
@@ -578,6 +579,10 @@ mod tests {
         assert_eq!(
             defaults.get("default_engine"),
             Some(&serde_json::json!("jpl"))
+        );
+        assert_eq!(
+            defaults.get("position_mode"),
+            Some(&serde_json::json!("geometric"))
         );
         assert_eq!(
             defaults.get("default_bodies"),

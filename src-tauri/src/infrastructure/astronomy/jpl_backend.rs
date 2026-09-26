@@ -127,6 +127,13 @@ fn almanac_cache_key(paths: &[PathBuf]) -> String {
         .join("|")
 }
 
+fn aberration_for_position_mode(mode: Option<PositionMode>) -> Option<Aberration> {
+    match mode.unwrap_or(PositionMode::Apparent) {
+        PositionMode::Apparent => Aberration::CN_S,
+        PositionMode::Geometric => Aberration::NONE,
+    }
+}
+
 fn sample_tropical_longitude(
     almanac: &Almanac,
     frame: Frame,
@@ -183,8 +190,10 @@ fn sample_motion(
     ab_corr: Option<Aberration>,
 ) -> Result<AstronomyMotion, String> {
     const SAMPLE_STEP_SECONDS: f64 = 3600.0;
-    let before = sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS, ab_corr)?;
-    let after = sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS, ab_corr)?;
+    let before =
+        sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS, ab_corr)?;
+    let after =
+        sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS, ab_corr)?;
     let delta = angular_delta_deg(before, after);
     let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
     Ok(AstronomyMotion {
@@ -353,10 +362,7 @@ impl AstronomyBackend for JplAstronomyBackend {
         let lat = chart.subject.location.latitude;
         let lon = chart.subject.location.longitude;
         let lst_deg = local_sidereal_time_deg(jd_ut, lon);
-        let ab_corr = match chart.config.position_mode.unwrap_or(PositionMode::Apparent) {
-            PositionMode::Apparent => Aberration::CN_S,
-            PositionMode::Geometric => Aberration::NONE,
-        };
+        let ab_corr = aberration_for_position_mode(chart.config.position_mode);
 
         let wanted = |id: &str| {
             requested_objects
@@ -544,16 +550,12 @@ impl AstronomyBackend for JplAstronomyBackend {
         if wanted("part_of_fortune") || wanted("part_of_spirit") {
             // Lots depend on the luminaries even when the caller requests only a Lot.
             // Sample missing prerequisites without adding unrequested Sun/Moon rows.
-            let sun_lon = positions
-                .get("sun")
-                .copied()
-                .map(Ok)
-                .unwrap_or_else(|| sample_tropical_longitude(&almanac, SUN_J2000, unix_secs, ab_corr));
-            let moon_lon = positions
-                .get("moon")
-                .copied()
-                .map(Ok)
-                .unwrap_or_else(|| sample_tropical_longitude(&almanac, MOON_J2000, unix_secs, ab_corr));
+            let sun_lon = positions.get("sun").copied().map(Ok).unwrap_or_else(|| {
+                sample_tropical_longitude(&almanac, SUN_J2000, unix_secs, ab_corr)
+            });
+            let moon_lon = positions.get("moon").copied().map(Ok).unwrap_or_else(|| {
+                sample_tropical_longitude(&almanac, MOON_J2000, unix_secs, ab_corr)
+            });
             match (sun_lon, moon_lon) {
                 (Ok(sun_lon), Ok(moon_lon)) => {
                     let (fortune, spirit) = day_night_parts(asc, sun_lon, moon_lon);
@@ -645,6 +647,19 @@ pub fn jpl_backend_for_chart(chart: &ChartInstance) -> Result<JplAstronomyBacken
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn apparent_is_default_and_geometric_disables_aberration() {
+        assert_eq!(aberration_for_position_mode(None), Aberration::CN_S);
+        assert_eq!(
+            aberration_for_position_mode(Some(PositionMode::Apparent)),
+            Aberration::CN_S
+        );
+        assert_eq!(
+            aberration_for_position_mode(Some(PositionMode::Geometric)),
+            Aberration::NONE
+        );
+    }
     use anise::constants::frames::EARTH_J2000;
     use anise::math::cartesian::CartesianState;
 
@@ -915,10 +930,7 @@ mod tests {
             "config": {
                 "definition": { "kind": "base", "purpose": "natal" },
                 "zodiac_type": "Tropical",
-                "included_points": [],
                 "aspect_orbs": {},
-                "display_style": "",
-                "color_theme": "",
                 "override_ephemeris": bsp_path,
                 "engine": "jpl"
             },
@@ -988,31 +1000,29 @@ mod tests {
     fn compute_chart_data_attaches_equatorial_and_horizontal_coordinates() {
         let manager = crate::infrastructure::ephemeris::EphemerisManager::from_global();
         let paths = manager.available_bsp_paths();
-        let chart: crate::workspace::models::ChartInstance = serde_json::from_value(serde_json::json!({
-            "id": "mercury_ra_dec_test",
-            "subject": {
+        let chart: crate::workspace::models::ChartInstance =
+            serde_json::from_value(serde_json::json!({
                 "id": "mercury_ra_dec_test",
-                "name": "Mercury RA/Dec test",
-                "event_time": "2024-04-10 12:00:00+02:00",
-                "location": {
-                    "name": "Prague, Czech Republic",
-                    "latitude": 50.0874654,
-                    "longitude": 14.4212535,
-                    "timezone": "Europe/Prague"
-                }
-            },
-            "config": {
-                "definition": { "kind": "base", "purpose": "natal" },
-                "zodiac_type": "Tropical",
-                "included_points": [],
-                "aspect_orbs": {},
-                "display_style": "",
-                "color_theme": "",
-                "engine": "jpl"
-            },
-            "tags": []
-        }))
-        .expect("valid chart JSON");
+                "subject": {
+                    "id": "mercury_ra_dec_test",
+                    "name": "Mercury RA/Dec test",
+                    "event_time": "2024-04-10 12:00:00+02:00",
+                    "location": {
+                        "name": "Prague, Czech Republic",
+                        "latitude": 50.0874654,
+                        "longitude": 14.4212535,
+                        "timezone": "Europe/Prague"
+                    }
+                },
+                "config": {
+                    "definition": { "kind": "base", "purpose": "natal" },
+                    "zodiac_type": "Tropical",
+                    "aspect_orbs": {},
+                    "engine": "jpl"
+                },
+                "tags": []
+            }))
+            .expect("valid chart JSON");
 
         let backend = JplAstronomyBackend::new(paths);
         let requested = vec!["mercury".to_string()];
@@ -1064,7 +1074,7 @@ mod tests {
                 },
                 "config": {
                     "definition": { "kind": "base", "purpose": "natal" }, "house_system": "Placidus", "zodiac_type": "Tropical",
-                    "included_points": [], "aspect_orbs": {}, "display_style": "", "color_theme": "",
+                    "aspect_orbs": {},
                     "override_ephemeris": bsp, "engine": "jpl"
                 },
                 "tags": []
@@ -1080,7 +1090,7 @@ mod tests {
                 },
                 "config": {
                     "definition": { "kind": "base", "purpose": "natal" }, "house_system": "Placidus", "zodiac_type": "Tropical",
-                    "included_points": [], "aspect_orbs": {}, "display_style": "", "color_theme": "",
+                    "aspect_orbs": {},
                     "engine": "swisseph"
                 },
                 "tags": []
