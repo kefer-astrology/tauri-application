@@ -38,8 +38,8 @@ source of truth.
 - In Svelte, start with `apps/web-svelte/src/lib/components/ui/`.
 - Treat those as the default styling surface for forms, overlays, panels, selectors, and interactive controls.
 - When visuals need tuning, prefer variants, theme tokens, spacing, and composition over isolated per-component CSS forks.
-- Feature-level UI should not introduce raw native controls (`<button>`, `<select>`, checkbox `<input>`) when a shared primitive exists.
-- If a required primitive is missing, add it to that frontend's shared `ui/` layer first, then consume it from feature components.
+- Feature-level UI should not introduce raw native controls (`<button>`, `<select>`, checkbox `<input>`, or a hand-rolled wrapper around a text `<input>` such as a search box, tag field, or icon-prefixed field) when a shared primitive exists.
+- If a required primitive is missing, add it to that frontend's shared `ui/` layer first, then consume it from feature components. This includes compound fields (icon + input, input + trailing button/clear action) — wrap the shared `Input` rather than reinventing the border/background/focus styling on a bare `<input>`.
 
 ## Shared primitive baseline
 
@@ -55,11 +55,20 @@ exists. Framework-specific implementation status belongs in the
 unfinished alignment work belongs in the
 [Development roadmap](../development-driver/).
 
+## Focus and selected state
+
+- The focused/selected "glow" (tinted border + soft outer ring) is owned entirely by the shared primitives (`ui/input.tsx`, `ui/select.tsx`, `ui/checkbox.tsx`, and any future primitive with a value state) — never redefine it in a feature component or in `form-field-theme.ts`.
+- These primitives gate the ring on plain `:focus`, not `:focus-visible`. This is a deliberate choice, not an oversight: browsers only match `:focus-visible` on a `<button>`-based control (Select trigger, Checkbox) via keyboard, never on an ordinary mouse click, which made those controls look inert or "flatter" than text inputs (which always match `:focus-visible`). Using `:focus` keeps the same glow consistent across every input modality and every control type. Don't revert this to `:focus-visible` to "match standard practice" — it was tried and produced the inconsistency this rule exists to prevent.
+- A compound field (icon + input, input + trailing button, tag input, date/time picker) that wraps the shared `Input` in its own bordered container must reuse the same tokens on the wrapper via `focus-within:`, e.g. `focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]`. Do not invent a different width, color, or opacity for these wrappers — see `date-picker-input.tsx` / `time-roller-picker.tsx` for the reference pattern. The inner `Input` then suppresses its own ring with `focus:ring-0` so only the wrapper glows.
+- `form-field-theme.ts` may style borders, backgrounds, radii, and shadows, but must not add its own `focus:`/`focus-visible:` ring or border-color rules — those compete with the primitive's own focus classes and silently win or lose depending on control type, which is exactly how this inconsistency happened previously.
+- The Svelte frontend's primitives currently still gate on `focus-visible:` only (it never accumulated the competing-override problem React did). If Svelte's controls are audited for the same "flat on click" issue, apply the same `:focus` change there for parity.
+
 ## Interior surfaces
 
 - Avoid stacking borders on most nested blocks inside a screen; it tends to create awkward visual margins and padding relationships across the whole layout.
 - Prefer a single outer surface for a major region, then use spacing, softer background layers, typography, and occasional separators to organize content inside it.
 - Use inner borders sparingly for true boundaries or strong interactive affordances, not as the default way to separate every subsection.
+- Focus/selected indication is a `box-shadow` ring that extends a few pixels past a control's border. Any ancestor with `overflow-hidden` and no padding buffer will clip that ring wherever a control sits flush against its edge — this bit `AccordionContent` (needed `overflow-hidden` for its collapse animation, had zero padding). Settings is built almost entirely out of accordions, so treat this as a recurring hazard, not a one-off: any `overflow-hidden` container that can host a bordered/ring-bearing child needs a small (`p-1`) padding buffer.
 - Current React baseline follows this in `Aspectarium` and `Settings`: one primary card/sheet surface, soft interior backgrounds, and `Separator` for semantic section breaks.
 - `OpenWorkspaceView` and `InformationView` should use shared `Button`/`Badge` primitives for interactive chips, toggles, and list actions instead of ad-hoc raw button styling.
 
@@ -101,6 +110,7 @@ The product uses exactly four named themes (no ad‑hoc palettes in feature code
   - wheel/chart semantics: `--token-wheel-*`
   - visualization accents: `--token-viz-1..4`
 - Keep these semantic tokens defined in `themePaletteVars()` and consume them in feature components rather than hardcoding `blue-*`/`gray-*`/hex values in view files.
+- `--ring` (the shadcn/Tailwind focus-ring color token) is deliberately mapped to `palette.accent` in `themePaletteVars()`, the same value as `--theme-accent`. This keeps the shared primitives' `ring-ring/50` focus glow on-theme without any per-component override — don't redefine `--ring` separately from `--theme-accent`, and don't reintroduce a component-level `ring-[var(--theme-accent)]` override thinking `--ring` is an unrelated generic default.
 - Hover policy: use `--token-hover-subtle` for lightweight affordances and `--token-hover-strong` for primary navigation and dense selectable rows where higher contrast feedback is needed.
 
 ## Internationalization (i18n)
@@ -126,6 +136,8 @@ Transits-related keys use the `transits_*` prefix where grouped; shared labels r
 **`src/app/components/form-field-theme.ts`** exports `getAppFormFieldTheme(theme)` — labels, inputs, selects, date-picker surfaces, advanced panel, switches, and footer actions using shared `--theme-*` and `--token-*` variables.
 
 **Create new chart** (`new-horoscope.tsx`) and **Settings** both use this helper on top of shadcn **`Card`**, **`Input`**, **`Label`**, **`Select`**, **`Switch`**, and **`Button`** primitives.
+
+Focus/selected-state classes are explicitly out of scope for this helper — see [Focus and selected state](#focus-and-selected-state).
 
 ## Related docs
 

@@ -65,6 +65,7 @@ models:
     zodiac_type: Tropical
     settings:
       default_house_system: Whole Sign
+      position_mode: apparent
       default_bodies: [sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]
       default_aspects: [conjunction, opposition, trine, square, sextile]
       default_transit_bodies: [sun, moon, mercury, venus, mars, jupiter, saturn]
@@ -92,6 +93,7 @@ model_overrides:
 
 default:                                # calculation defaults only
   ephemeris_engine: swisseph
+  position_mode: apparent
   default_house_system: Whole Sign
   default_bodies: [sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]
   default_aspects: [conjunction, opposition, trine, square, sextile]
@@ -128,16 +130,17 @@ aspects: []                             # legacy external catalog references
 bodies: []                              # legacy external catalog references
 ```
 
-For compatibility, older visual fields under `default` and visual metadata in
-model definitions are still readable. New files should use `presentation`.
+The unreleased schema has one canonical representation: visual settings belong
+under `presentation`; calculation settings belong under `default` or a model,
+preset, chart, or operation layer.
 
 ## Subject versus chart
 
 A **subject** is source evidence: who or what happened, when, and where. A
 **chart** is one astrological interpretation of that evidence. Multiple charts
 can therefore represent one subject with different models, house systems, or
-research assumptions. Current chart files embed their subject for compatibility;
-the separate `subjects` collection is the reusable normalized form.
+research assumptions. A chart embeds its subject snapshot; the separate
+`subjects` collection is the reusable normalized form.
 
 ```yaml
 # subjects/clients/alice.yml
@@ -154,7 +157,7 @@ location:
 ```yaml
 # charts/clients/alice/natal.yml
 id: alice-natal-traditional
-subject:                              # embedded compatibility representation
+subject:                              # calculation-time subject snapshot
   id: alice
   name: Alice Example
   event_time: '1990-04-12T08:15:00Z'
@@ -179,13 +182,11 @@ config:
     aspects:
       - { id: square, angle: 90.0, default_orb: 4.0, valid_contexts: [chart] }
     override_orbs: {}
-  included_points: []
-  display_style: ''                  # legacy visual keys; prefer presentation
-  color_theme: ''
 tags: [client]
 ```
 
-`config.definition` is required. For a derived chart it records the method and
+`config.definition` is required; `mode` and overloaded synastry chart types are
+not accepted. For a derived chart it records the method and
 chart graph explicitly:
 
 ```yaml
@@ -196,10 +197,7 @@ config:
     inputs: [alice-natal, bob-natal]
     parameters: {}
   zodiac_type: Tropical
-  included_points: []
   aspect_orbs: {}
-  display_style: ''
-  color_theme: ''
 ```
 
 ## Analyses and views

@@ -41,6 +41,8 @@ behavior from a roadmap or archive page.
 
 ## Contracts
 
+- **[Configuration reference](./configuration-reference/)** — all calculation,
+  chart, analysis, object, aspect, symbol, and presentation options.
 - **[Workspace YAML contract](./workspace-yaml/)** — complete project tree,
   schools/models, settings inheritance, chart overrides, presentation, and
   persisted transit intent.
