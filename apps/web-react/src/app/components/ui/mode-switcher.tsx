@@ -99,7 +99,7 @@ export function ModeSwitcherDetails({
 			aria-hidden={!open}
 			{...(!open ? { inert: '' } : {})}
 		>
-			<div className="min-h-0 overflow-hidden">
+			<div className="min-h-0 overflow-hidden p-1">
 				<div className={contentClassName}>{children}</div>
 			</div>
 		</div>
