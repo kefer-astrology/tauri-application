@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { cs, enUS, es, fr } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import {
 	computeChartFromData,
@@ -14,7 +15,11 @@ import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { ModeSwitcher, ModeSwitcherDetails } from './ui/mode-switcher';
+import { Separator } from './ui/separator';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
+import { DatePickerInput } from './date-picker-input';
+import { TimeRollerPicker } from './time-roller-picker';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
@@ -66,18 +71,15 @@ function formatDateInput(date: Date): string {
 	return `${year}-${month}-${day}`;
 }
 
+function parseLocalDateTime(dateValue: string, timeValue: string, fallback: Date): Date {
+	const parsed = new Date(`${dateValue}T${timeValue || '00:00'}:00`);
+	return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+}
+
 function formatTimeInput(date: Date): string {
 	const hours = String(date.getHours()).padStart(2, '0');
 	const minutes = String(date.getMinutes()).padStart(2, '0');
 	return `${hours}:${minutes}`;
-}
-
-function buildLocalIso(dateValue: string, timeValue: string): string {
-	const date = new Date(`${dateValue}T${timeValue || '00:00'}:00`);
-	if (Number.isNaN(date.getTime())) {
-		throw new Error('Invalid transit date or time.');
-	}
-	return date.toISOString();
 }
 
 function positionsForIds(
@@ -99,8 +101,15 @@ export function TransitsContent({
 	workspacePath,
 	workspaceDefaults
 }: TransitsContentProps) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
+	const dateFnsLocale = useMemo(() => {
+		const base = i18n.language.split('-')[0]?.toLowerCase() ?? 'en';
+		if (base === 'cs') return cs;
+		if (base === 'fr') return fr;
+		if (base === 'es') return es;
+		return enUS;
+	}, [i18n.language]);
 	const {
 		charts,
 		selectedChartId,
@@ -125,10 +134,8 @@ export function TransitsContent({
 		return date;
 	}, [now]);
 	const [sourceChartId, setSourceChartId] = useState('');
-	const [fromDate, setFromDate] = useState(formatDateInput(now));
-	const [fromTime, setFromTime] = useState(formatTimeInput(now));
-	const [toDate, setToDate] = useState(formatDateInput(tomorrow));
-	const [toTime, setToTime] = useState(formatTimeInput(now));
+	const [fromDateTime, setFromDateTime] = useState<Date>(() => now);
+	const [toDateTime, setToDateTime] = useState<Date>(() => tomorrow);
 	const [transitingBodies, setTransitingBodies] = useState<string[]>(DEFAULT_TRANSIT_BODY_IDS);
 	const [transitedBodies, setTransitedBodies] = useState<string[]>(DEFAULT_TRANSIT_BODY_IDS);
 	const [selectedAspects, setSelectedAspects] = useState<string[]>(DEFAULT_TRANSIT_ASPECT_IDS);
@@ -160,10 +167,8 @@ export function TransitsContent({
 				if (cancelled || !setup) return;
 				setSelectedTypeId(setup.transit_type);
 				setPeriodModeId(setup.period_mode);
-				setFromDate(setup.from_date);
-				setFromTime(setup.from_time);
-				setToDate(setup.to_date);
-				setToTime(setup.to_time);
+				setFromDateTime((prev) => parseLocalDateTime(setup.from_date, setup.from_time, prev));
+				setToDateTime((prev) => parseLocalDateTime(setup.to_date, setup.to_time, prev));
 				setTransitingBodies(setup.transiting_bodies);
 				setTransitedBodies(setup.transited_bodies);
 				setSelectedAspects(setup.aspect_types);
@@ -219,22 +224,16 @@ export function TransitsContent({
 			return;
 		}
 
-		let range: { startDatetime: string; endDatetime: string };
-		try {
-			range =
-				periodModeId === 'current'
-					? (() => {
-							const instant = new Date().toISOString();
-							return { startDatetime: instant, endDatetime: instant };
-						})()
-					: {
-							startDatetime: buildLocalIso(fromDate, fromTime),
-							endDatetime: buildLocalIso(toDate, toTime)
-						};
-		} catch (err) {
-			setTransitError(err instanceof Error ? err.message : 'Invalid transit date or time.');
-			return;
-		}
+		const range: { startDatetime: string; endDatetime: string } =
+			periodModeId === 'current'
+				? (() => {
+						const instant = new Date().toISOString();
+						return { startDatetime: instant, endDatetime: instant };
+					})()
+				: {
+						startDatetime: fromDateTime.toISOString(),
+						endDatetime: toDateTime.toISOString()
+					};
 
 		setTransitLoading(true);
 		setTransitError(null);
@@ -247,10 +246,10 @@ export function TransitsContent({
 					source_chart_id: effectiveSourceChartId,
 					transit_type: selectedTypeId,
 					period_mode: periodModeId,
-					from_date: fromDate,
-					from_time: fromTime,
-					to_date: toDate,
-					to_time: toTime,
+					from_date: formatDateInput(fromDateTime),
+					from_time: formatTimeInput(fromDateTime),
+					to_date: formatDateInput(toDateTime),
+					to_time: formatTimeInput(toDateTime),
 					time_step_seconds: 3600,
 					transiting_bodies: transitingBodies,
 					transited_bodies: transitedBodies,
@@ -358,15 +357,6 @@ export function TransitsContent({
 		[t]
 	);
 
-	const periodOptions = useMemo<DropdownOption[]>(
-		() => [
-			{ id: 'current', label: t('transits_period_current') },
-			{ id: 'custom', label: t('transits_period_custom') }
-		],
-		[t]
-	);
-
-	const isPeriodDisabled = periodModeId === 'current';
 	const areCheckboxesDisabled = true;
 	const areTimezoneInputsDisabled = true;
 
@@ -399,20 +389,19 @@ export function TransitsContent({
 								</Select>
 							</div>
 
-							<div data-tour="transits-period">
-								<Label className={cn('mb-2 block', ft.label)}>{t('transits_label_period')}</Label>
-								<Select value={periodModeId} onValueChange={setPeriodModeId}>
-									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent className={ft.selectContent}>
-										{periodOptions.map((option) => (
-											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
-												{option.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+							<Separator className="bg-[color:var(--theme-panel-border)]" />
+
+							<div data-tour="transits-period" className="flex items-center justify-between gap-3">
+								<Label className={cn('text-sm', ft.title)}>{t('transits_label_period')}</Label>
+								<ModeSwitcher
+									value={periodModeId}
+									onValueChange={setPeriodModeId}
+									ariaLabel={t('transits_label_period')}
+									options={[
+										{ value: 'current', label: t('transits_period_current') },
+										{ value: 'custom', label: t('transits_period_custom') }
+									]}
+								/>
 							</div>
 
 							<div>
@@ -544,129 +533,96 @@ export function TransitsContent({
 								</div>
 							</div>
 
-							<div>
-								<Label className={cn('mb-2 block', ft.label)}>{t('transits_period_from')}:</Label>
-								<div className="grid grid-cols-3 gap-3">
-									<div>
-										<Label className={cn('mb-1 block text-xs', ft.muted)}>
-											{t('transits_general_item_date')}
-										</Label>
-										<Input
-											type="date"
-											value={fromDate}
-											onChange={(event) => setFromDate(event.currentTarget.value)}
-											disabled={isPeriodDisabled}
-											className={cn(
-												ft.input,
-												'h-10 py-2 text-sm shadow-inner',
-												isPeriodDisabled && ft.inputDisabled
-											)}
+							<ModeSwitcherDetails
+								open={periodModeId === 'custom'}
+								contentClassName={cn('space-y-4', ft.advancedPanel)}
+							>
+								<div>
+									<Label className={cn('mb-2 block', ft.label)}>{t('transits_period_from')}:</Label>
+									<div className="grid grid-cols-3 gap-3">
+										<DatePickerInput
+											label={t('transits_general_item_date')}
+											value={fromDateTime}
+											onValueChange={setFromDateTime}
+											locale={dateFnsLocale}
+											showLabel
+											labelClassName={cn('mb-1 block text-xs', ft.muted)}
+											iconClassName={ft.iconColor}
+											panelClassName={ft.datePicker}
 										/>
-									</div>
-									<div>
-										<Label className={cn('mb-1 block text-xs', ft.muted)}>
-											{t('transits_general_item_time')}
-										</Label>
-										<Input
-											type="time"
-											value={fromTime}
-											onChange={(event) => setFromTime(event.currentTarget.value)}
-											disabled={isPeriodDisabled}
-											className={cn(
-												ft.input,
-												'h-10 py-2 text-sm shadow-inner',
-												isPeriodDisabled && ft.inputDisabled
-											)}
+										<TimeRollerPicker
+											label={t('transits_general_item_time')}
+											value={fromDateTime}
+											onValueChange={setFromDateTime}
+											showLabel
+											labelClassName={cn('mb-1 block text-xs', ft.muted)}
+											iconClassName={ft.iconColor}
+											panelClassName={ft.datePicker}
 										/>
-									</div>
-									<div>
-										<Label className={cn('mb-1 block text-xs', ft.muted)}>
-											{t('transits_general_item_timezone')}
-										</Label>
-										<Input
-											type="text"
-											placeholder={t('transits_timezone_placeholder')}
-											disabled={areTimezoneInputsDisabled}
-											className={cn(
-												ft.input,
-												'h-10 py-2 text-sm shadow-inner',
-												areTimezoneInputsDisabled && ft.inputDisabled
-											)}
-										/>
+										<div>
+											<Label className={cn('mb-1 block text-xs', ft.muted)}>
+												{t('transits_general_item_timezone')}
+											</Label>
+											<Input
+												type="text"
+												placeholder={t('transits_timezone_placeholder')}
+												disabled={areTimezoneInputsDisabled}
+												className={cn(
+													ft.input,
+													'h-10 py-2 text-sm shadow-inner',
+													areTimezoneInputsDisabled && ft.inputDisabled
+												)}
+											/>
+										</div>
 									</div>
 								</div>
-							</div>
 
-							<div>
-								<Label className={cn('mb-2 block', ft.label)}>{t('transits_period_to')}:</Label>
-								<div className="grid grid-cols-3 gap-3">
-									<div>
-										<Label className={cn('mb-1 block text-xs', ft.muted)}>
-											{t('transits_general_item_date')}
-										</Label>
-										<Input
-											type="date"
-											value={toDate}
-											onChange={(event) => setToDate(event.currentTarget.value)}
-											disabled={isPeriodDisabled}
-											className={cn(
-												ft.input,
-												'h-10 py-2 text-sm shadow-inner',
-												isPeriodDisabled && ft.inputDisabled
-											)}
+								<div>
+									<Label className={cn('mb-2 block', ft.label)}>{t('transits_period_to')}:</Label>
+									<div className="grid grid-cols-3 gap-3">
+										<DatePickerInput
+											label={t('transits_general_item_date')}
+											value={toDateTime}
+											onValueChange={setToDateTime}
+											locale={dateFnsLocale}
+											showLabel
+											labelClassName={cn('mb-1 block text-xs', ft.muted)}
+											iconClassName={ft.iconColor}
+											panelClassName={ft.datePicker}
 										/>
-									</div>
-									<div>
-										<Label className={cn('mb-1 block text-xs', ft.muted)}>
-											{t('transits_general_item_time')}
-										</Label>
-										<Input
-											type="time"
-											value={toTime}
-											onChange={(event) => setToTime(event.currentTarget.value)}
-											disabled={isPeriodDisabled}
-											className={cn(
-												ft.input,
-												'h-10 py-2 text-sm shadow-inner',
-												isPeriodDisabled && ft.inputDisabled
-											)}
+										<TimeRollerPicker
+											label={t('transits_general_item_time')}
+											value={toDateTime}
+											onValueChange={setToDateTime}
+											showLabel
+											labelClassName={cn('mb-1 block text-xs', ft.muted)}
+											iconClassName={ft.iconColor}
+											panelClassName={ft.datePicker}
 										/>
-									</div>
-									<div>
-										<Label className={cn('mb-1 block text-xs', ft.muted)}>
-											{t('transits_general_item_timezone')}
-										</Label>
-										<Input
-											type="text"
-											placeholder={t('transits_timezone_placeholder')}
-											disabled={areTimezoneInputsDisabled}
-											className={cn(
-												ft.input,
-												'h-10 py-2 text-sm shadow-inner',
-												areTimezoneInputsDisabled && ft.inputDisabled
-											)}
-										/>
+										<div>
+											<Label className={cn('mb-1 block text-xs', ft.muted)}>
+												{t('transits_general_item_timezone')}
+											</Label>
+											<Input
+												type="text"
+												placeholder={t('transits_timezone_placeholder')}
+												disabled={areTimezoneInputsDisabled}
+												className={cn(
+													ft.input,
+													'h-10 py-2 text-sm shadow-inner',
+													areTimezoneInputsDisabled && ft.inputDisabled
+												)}
+											/>
+										</div>
 									</div>
 								</div>
-							</div>
+							</ModeSwitcherDetails>
 
-							<div className="flex items-center justify-center gap-4 pt-6">
-								<Button
-									type="button"
-									variant="outline"
-									className={cn(ft.footerCancel, '!flex-none')}
-									onClick={() => {
-										setTransitError(null);
-										setTransitSeries([]);
-										clearTransitOverlay();
-									}}
-								>
-									{t('button_close')}
-								</Button>
+							<div className="pt-6">
 								<Button
 									data-tour="transits-calculate"
 									type="button"
-									className={cn(ft.footerPrimary, '!flex-none')}
+									className={cn(ft.footerPrimary, 'w-full')}
 									onClick={() => void handleComputeTransits()}
 									disabled={transitLoading}
 								>

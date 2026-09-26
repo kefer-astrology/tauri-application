@@ -20,21 +20,14 @@ interface ObjectDetailSectionsProps {
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
 	data: ObjectDetailViewModel;
-	/** `single`+`collapsible` (nested inside an aspect's accordion item, where space is tight)
-	 *  or `multiple` (the object is the whole panel, so several sections open at once reads better). */
-	variant?: 'standalone' | 'nested';
 }
 
 /** The reusable core shown for one body wherever it appears: the radix wheel's own planet-click
  *  panel, and — nested inside an aspect's own detail — each side of the aspect. Four expandable
  *  sections: position facts, symbolic-degree systems (Sabian today, room for more), the chart's
- *  shapes/configurations, and the aspects touching this body. */
-export function ObjectDetailSections({
-	theme,
-	glyphSet,
-	data,
-	variant = 'standalone'
-}: ObjectDetailSectionsProps) {
+ *  shapes/configurations, and the aspects touching this body. Only position facts are expanded
+ *  by default; the rest start collapsed. */
+export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSectionsProps) {
 	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 	const textColor = ft.title;
@@ -45,12 +38,7 @@ export function ObjectDetailSections({
 		data.chartShapeIds.length > 0 || data.chartConfigurationIds.length > 0;
 
 	return (
-		<Accordion
-			type="multiple"
-			defaultValue={
-				variant === 'standalone' ? ['details', 'symbols', 'shapes', 'aspects'] : ['details']
-			}
-		>
+		<Accordion type="multiple" defaultValue={['details']}>
 			<AccordionItem value="details" className="border-0">
 				<AccordionTrigger className="py-2 hover:no-underline">
 					<h4 className={cn('text-sm font-semibold', textColor)}>{t('details')}</h4>
@@ -281,7 +269,7 @@ export function ObjectDetailPanel({ theme, glyphSet, data }: ObjectDetailPanelPr
 				/>
 				<div className={cn('text-base font-semibold', ft.title)}>{data.label}</div>
 			</div>
-			<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={data} variant="standalone" />
+			<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={data} />
 		</div>
 	);
 }

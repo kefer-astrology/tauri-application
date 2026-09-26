@@ -38,6 +38,7 @@ interface AspectariumProps {
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
 	workspaceDefaults: WorkspaceDefaultsState;
+	enabledSymbolSetIds: readonly string[];
 }
 
 type AspectLayer = 'radix' | 'transit';
@@ -312,7 +313,12 @@ function MultiSelectFilter({
 	);
 }
 
-export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumProps) {
+export function Aspectarium({
+	theme,
+	glyphSet,
+	workspaceDefaults,
+	enabledSymbolSetIds
+}: AspectariumProps) {
 	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 	const { selectedChart, transitOverlay } = useWorkspaceCharts();
@@ -793,7 +799,10 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 					bodyId,
 					rawPosition: sourcePositions[bodyId],
 					motion: sourceMotion[bodyId],
-					extendedMaps: layer === 'transit' ? activeTransitOverlay?.transitChart.computed : selectedChart?.computed,
+					extendedMaps:
+						layer === 'transit'
+							? activeTransitOverlay?.transitChart.computed
+							: selectedChart?.computed,
 					houseCusps: selectedChart?.computed?.houseCusps ?? [],
 					chartShapeIds,
 					chartConfigurationIds,
@@ -801,7 +810,8 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 					layerLabel
 				},
 				i18n.language,
-				t
+				t,
+				enabledSymbolSetIds
 			);
 		};
 		const fromObject = buildSide(selectedAspect.from, selectedAspectEntry.fromLayer);
@@ -812,6 +822,7 @@ export function Aspectarium({ theme, glyphSet, workspaceDefaults }: AspectariumP
 		activeTransitOverlay?.transitChart.computed,
 		chartConfigurationIds,
 		chartShapeIds,
+		enabledSymbolSetIds,
 		fullRadixAspects,
 		fullTransitAspects,
 		i18n.language,

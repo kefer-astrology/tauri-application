@@ -52,14 +52,17 @@ export function ExportWorkspaceView({ theme }: ExportWorkspaceViewProps) {
 					<CardContent className="space-y-6 p-6">
 						<p className={cn('text-sm font-medium', ft.label)}>{t('export_include')}</p>
 
-						<div className="flex flex-wrap gap-2">
+						<div className="flex gap-2">
 							{EXPORT_TYPES.map(({ id, labelKey }) => (
 								<Button
 									key={id}
 									type="button"
 									variant={exportKind === id ? 'default' : 'outline'}
 									size="sm"
-									className={exportKind === id ? '' : ft.footerCancel}
+									className={cn(
+									'min-w-0 flex-1',
+									exportKind === id ? '' : cn(ft.footerCancel, 'rounded-lg px-3 py-0')
+								)}
 									onClick={() => setExportKind(id)}
 								>
 									{t(labelKey)}

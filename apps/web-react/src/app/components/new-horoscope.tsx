@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cs, enUS, es, fr } from 'date-fns/locale';
 import { Check, ChevronDown, Pencil, Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -255,15 +255,10 @@ function TagInput({
 		<div
 			className={cn(
 				'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-				'focus-within:border-transparent focus-within:ring-2',
+				'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
 				panelBg,
 				panelBorder
 			)}
-			style={
-				{
-					'--tw-ring-color': `var(--theme-accent)`
-				} as CSSProperties
-			}
 		>
 			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 px-3 py-2">
 				{tags.map((tag, index) => (

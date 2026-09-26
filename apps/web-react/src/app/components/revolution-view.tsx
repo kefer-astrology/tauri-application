@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { cs, enUS, es, fr } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import type { Theme } from './astrology-sidebar';
+import { DatePickerInput } from './date-picker-input';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,7 +12,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Separator } from './ui/separator';
 import { Switch } from './ui/switch';
-import { ModeSwitcherDetails } from './ui/mode-switcher';
+import { ModeSwitcher, ModeSwitcherDetails } from './ui/mode-switcher';
 import { cn } from './ui/utils';
 
 type RevolutionKind = 'solar' | 'lunar' | 'relative';
@@ -20,15 +22,23 @@ const REVOLUTION_KINDS: RevolutionKind[] = ['solar', 'lunar', 'relative'];
 const REVOLUTION_SCOPES: RevolutionScope[] = ['return', 'quarters', 'fraction'];
 
 export function RevolutionView({ theme }: { theme: Theme }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 	const [kind, setKind] = useState<RevolutionKind>('solar');
 	const [includeTransReturn, setIncludeTransReturn] = useState(false);
 	const [scope, setScope] = useState<RevolutionScope>('return');
 	const [fraction, setFraction] = useState('10');
 	const [customPeriod, setCustomPeriod] = useState(false);
-	const [dateFrom, setDateFrom] = useState('');
-	const [dateTo, setDateTo] = useState('');
+	const [dateFrom, setDateFrom] = useState<Date>(() => new Date());
+	const [dateTo, setDateTo] = useState<Date>(() => new Date());
+
+	const dateFnsLocale = useMemo(() => {
+		const base = i18n.language.split('-')[0]?.toLowerCase() ?? 'en';
+		if (base === 'cs') return cs;
+		if (base === 'fr') return fr;
+		if (base === 'es') return es;
+		return enUS;
+	}, [i18n.language]);
 
 	const calculate = () => {
 		toast.success(t('revolution_submitted'), {
@@ -51,7 +61,7 @@ export function RevolutionView({ theme }: { theme: Theme }) {
 							{t('revolution_kind_label')}
 						</Label>
 						<Select value={kind} onValueChange={(value) => setKind(value as RevolutionKind)}>
-							<SelectTrigger className={cn(ft.selectTrigger, 'min-h-11 rounded-full')}>
+							<SelectTrigger className={cn(ft.selectTrigger, 'rounded-full')}>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className={ft.selectContent}>
@@ -126,56 +136,45 @@ export function RevolutionView({ theme }: { theme: Theme }) {
 
 					<section className="mb-9">
 						<div className="flex items-center justify-between gap-4">
-							<Label htmlFor="revolution-period" className={cn('text-sm', ft.title)}>
-								{t('revolution_set_period')}
-							</Label>
-							<Switch
-								id="revolution-period"
-								variant="prominent"
-								checked={customPeriod}
-								onCheckedChange={setCustomPeriod}
+							<Label className={cn('text-sm', ft.title)}>{t('revolution_set_period')}</Label>
+							<ModeSwitcher
+								value={customPeriod ? 'custom' : 'current'}
+								onValueChange={(value) => setCustomPeriod(value === 'custom')}
+								ariaLabel={t('revolution_set_period')}
+								options={[
+									{ value: 'current', label: t('transits_period_current') },
+									{ value: 'custom', label: t('transits_period_custom') }
+								]}
 							/>
 						</div>
 						<ModeSwitcherDetails
 							open={customPeriod}
 							contentClassName="grid gap-3 pt-4 sm:grid-cols-2"
 						>
-							<div>
-								<Label
-									htmlFor="revolution-date-from"
-									className={cn('mb-2 text-xs uppercase', ft.muted)}
-								>
-									{t('revolution_date_from')}
-								</Label>
-								<Input
-									id="revolution-date-from"
-									type="date"
-									value={dateFrom}
-									onChange={(event) => setDateFrom(event.target.value)}
-									className={ft.inputCompact}
-									tabIndex={customPeriod ? 0 : -1}
-								/>
-							</div>
-							<div>
-								<Label
-									htmlFor="revolution-date-to"
-									className={cn('mb-2 text-xs uppercase', ft.muted)}
-								>
-									{t('revolution_date_to')}
-								</Label>
-								<Input
-									id="revolution-date-to"
-									type="date"
-									value={dateTo}
-									onChange={(event) => setDateTo(event.target.value)}
-									className={ft.inputCompact}
-									tabIndex={customPeriod ? 0 : -1}
-								/>
-							</div>
+							<DatePickerInput
+								id="revolution-date-from"
+								label={t('revolution_date_from')}
+								value={dateFrom}
+								onValueChange={setDateFrom}
+								locale={dateFnsLocale}
+								labelClassName={cn('mb-2 text-xs uppercase', ft.muted)}
+								iconClassName={ft.iconColor}
+								panelClassName={ft.datePicker}
+							/>
+							<DatePickerInput
+								id="revolution-date-to"
+								label={t('revolution_date_to')}
+								value={dateTo}
+								onValueChange={setDateTo}
+								locale={dateFnsLocale}
+								labelClassName={cn('mb-2 text-xs uppercase', ft.muted)}
+								iconClassName={ft.iconColor}
+								panelClassName={ft.datePicker}
+							/>
 						</ModeSwitcherDetails>
 					</section>
 
-					<Button type="submit" className={cn(ft.footerPrimary, 'h-11 w-full')}>
+					<Button type="submit" className={cn(ft.footerPrimary, 'w-full')}>
 						{t('revolution_calculate')}
 					</Button>
 				</form>

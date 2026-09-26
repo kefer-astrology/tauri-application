@@ -662,7 +662,7 @@ export function HoroscopeDashboard({
 										value={chartDateLabel}
 										className={cn(
 											ft.input,
-											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0'
+											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0'
 										)}
 									/>
 									<Calendar className={cn('h-4 w-4 shrink-0', mutedColor)} />
@@ -674,7 +674,7 @@ export function HoroscopeDashboard({
 										value={chartTimeLabel}
 										className={cn(
 											ft.input,
-											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0'
+											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0'
 										)}
 									/>
 									<Clock className={cn('h-4 w-4 shrink-0', mutedColor)} />
@@ -686,7 +686,7 @@ export function HoroscopeDashboard({
 										value={chartLocationLabel}
 										className={cn(
 											ft.input,
-											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0'
+											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0'
 										)}
 									/>
 									<MapPin className={cn('h-4 w-4 shrink-0', mutedColor)} />

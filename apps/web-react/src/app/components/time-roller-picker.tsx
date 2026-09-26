@@ -41,9 +41,11 @@ type TimeRollerPickerProps = {
 	label: string;
 	value: Date;
 	onValueChange: (value: Date) => void;
+	showLabel?: boolean;
 	labelClassName?: string;
 	iconClassName?: string;
 	panelClassName?: string;
+	disabled?: boolean;
 };
 
 export function TimeRollerPicker({
@@ -51,9 +53,11 @@ export function TimeRollerPicker({
 	label,
 	value,
 	onValueChange,
+	showLabel = true,
 	labelClassName,
 	iconClassName,
-	panelClassName
+	panelClassName,
+	disabled = false
 }: TimeRollerPickerProps) {
 	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
@@ -93,15 +97,18 @@ export function TimeRollerPicker({
 
 	return (
 		<div className="flex flex-col gap-2">
-			<Label htmlFor={id} className={cn('mb-1.5 block', labelClassName)}>
-				{label}
-			</Label>
-			<Popover open={open} onOpenChange={setOpen}>
+			{showLabel ? (
+				<Label htmlFor={id} className={cn('mb-1.5 block', labelClassName)}>
+					{label}
+				</Label>
+			) : null}
+			<Popover open={open && !disabled} onOpenChange={(next) => setOpen(disabled ? false : next)}>
 				<div
 					className={cn(
 						'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
 						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
-						'focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--theme-accent)]'
+						'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
+						disabled && 'cursor-not-allowed opacity-50'
 					)}
 				>
 					<Input
@@ -117,7 +124,8 @@ export function TimeRollerPicker({
 								setOpen(false);
 							}
 						}}
-						className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 tabular-nums shadow-none focus-visible:ring-0"
+						disabled={disabled}
+						className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 tabular-nums shadow-none focus:ring-0 disabled:cursor-not-allowed"
 						placeholder="HH:MM:SS"
 						aria-label={label}
 					/>
@@ -125,6 +133,7 @@ export function TimeRollerPicker({
 						<Button
 							type="button"
 							variant="ghost"
+							disabled={disabled}
 							className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
 							aria-label={label}
 						>

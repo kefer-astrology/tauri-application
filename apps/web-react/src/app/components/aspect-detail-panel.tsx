@@ -134,12 +134,7 @@ export function AspectDetailPanel({
 						</div>
 					</AccordionTrigger>
 					<AccordionContent className="pt-1">
-						<ObjectDetailSections
-							theme={theme}
-							glyphSet={glyphSet}
-							data={fromObject}
-							variant="nested"
-						/>
+						<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={fromObject} />
 					</AccordionContent>
 				</AccordionItem>
 
@@ -157,7 +152,7 @@ export function AspectDetailPanel({
 						</div>
 					</AccordionTrigger>
 					<AccordionContent className="pt-1">
-						<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={toObject} variant="nested" />
+						<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={toObject} />
 					</AccordionContent>
 				</AccordionItem>
 			</Accordion>

@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Button } from './ui/button';
 import { cn } from './ui/utils';
 import type { Theme } from './astrology-sidebar';
@@ -18,6 +18,8 @@ type SecondaryNavPanelProps = {
 	ariaLabel: string;
 	/** Merged onto the aside (e.g. min-height when paired with a tall content card). */
 	className?: string;
+	/** Rendered below the scrollable nav list, pinned to the bottom of the aside. */
+	footer?: ReactNode;
 };
 
 export function SecondaryNavPanel({
@@ -27,12 +29,14 @@ export function SecondaryNavPanel({
 	activeId,
 	onSelect,
 	ariaLabel,
-	className
+	className,
+	footer
 }: SecondaryNavPanelProps) {
 	const st = sidebarThemeStyles[theme];
 
 	const asideStyle: CSSProperties | undefined = {
-		background: 'linear-gradient(to bottom, var(--theme-secondary-sidebar-start) 0%, var(--theme-secondary-sidebar-end) 100%)',
+		background:
+			'linear-gradient(to bottom, var(--theme-secondary-sidebar-start) 0%, var(--theme-secondary-sidebar-end) 100%)',
 		borderColor: 'var(--theme-sidebar-border)'
 	};
 
@@ -79,6 +83,8 @@ export function SecondaryNavPanel({
 					);
 				})}
 			</nav>
+
+			{footer ? <div className={cn('shrink-0 border-t px-3 py-3', st.border)}>{footer}</div> : null}
 		</aside>
 	);
 }
