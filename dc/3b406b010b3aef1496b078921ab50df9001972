@@ -1,0 +1,28 @@
+apps/web-react/src/app/components/ui/mode-switcher.tsx
+  s_8623cb43c1cfc4::t_4bff778283f294 102
+apps/web-react/src/app/components/astrology-sidebar.tsx
+  s_8623cb43c1cfc4::t_a521b0440d2b10 215
+  s_8623cb43c1cfc4::t_7b4b6bfb2a5179 219
+  s_8623cb43c1cfc4::t_66469f2c8aa8a5 225,229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "dc3b406b010b3aef1496b078921ab50df9001972",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8623cb43c1cfc4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6cf50fd8-fd5a-4679-ab87-06f0ba78059d",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
