@@ -1,0 +1,72 @@
+src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml
+  s_dece23126407a5::t_6069aa24885bb3 1-5
+src-tauri/icons/android/values/ic_launcher_background.xml
+  s_dece23126407a5::t_c899aaf6d6a7f7 1-4
+static/app-shell/icon.svg
+  s_dece23126407a5::t_94a3c975beb0d7 1-6
+static/app-shell/icons/default/aspects.svg
+  s_dece23126407a5::t_3be9e583bdff3c 1-3
+static/app-shell/icons/default/dynamics.svg
+  s_dece23126407a5::t_f4eca2ee7db1b4 1-4
+static/app-shell/icons/default/export.svg
+  s_dece23126407a5::t_f66c036b7a3b28 1-4
+static/app-shell/icons/default/favorite.svg
+  s_dece23126407a5::t_19b6aba4051a04 1-4
+static/app-shell/icons/default/horoscope.svg
+  s_dece23126407a5::t_10af58de416a96 1-3
+static/app-shell/icons/default/information.svg
+  s_dece23126407a5::t_4df9f9661dafdb 1-5
+static/app-shell/icons/default/new.svg
+  s_dece23126407a5::t_1d141280f2d3f7 1-4
+static/app-shell/icons/default/open.svg
+  s_dece23126407a5::t_75679f808da0fd 1-3
+static/app-shell/icons/default/revolution.svg
+  s_dece23126407a5::t_6925ed177a59ce 1-4
+static/app-shell/icons/default/save.svg
+  s_dece23126407a5::t_6628f4097589b5 1-4
+static/app-shell/icons/default/settings.svg
+  s_dece23126407a5::t_a4a462fe4a69b8 1-4
+static/app-shell/icons/default/synastry.svg
+  s_dece23126407a5::t_3f2dd30a8311b2 1-6
+static/app-shell/icons/default/theme-noon.svg
+  s_dece23126407a5::t_275c186b17027d 1-10
+static/app-shell/icons/default/transits.svg
+  s_dece23126407a5::t_c546674e9c8b6f 1-4
+static/app-shell/logo-full-default.svg
+  s_dece23126407a5::t_494154d17bd9a5 1-3,5-6,8-9,11-12,14-15,17-18,20-21,23-27
+static/app-shell/logo-full-modern.svg
+  s_696d783a837f15::t_bce9e4aa80da32 1-2
+static/app-shell/logo-mark-default.svg
+  s_dece23126407a5::t_b51abf02680511 1-3
+static/app-shell/logo-mark-modern.svg
+  s_696d783a837f15::t_8314b5f5e86008 1-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "20d4630c32949a6a5cdecca52eaa407efcbef3e6",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_696d783a837f15": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e0fdca92-c65f-4ee3-8a1b-8a4e5e8d1ae8",
+        "model": "claude-opus-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_dece23126407a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aa67d7a0-d12d-4af4-8801-9221ff5a9f7a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
