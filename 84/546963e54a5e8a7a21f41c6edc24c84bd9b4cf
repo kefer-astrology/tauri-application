@@ -1,0 +1,54 @@
+contracts/settings-resolution.json
+  s_4e5dd19f61efdd::t_54d5ac4f44cc43 13,45,58,67
+  s_4e5dd19f61efdd::t_c329b58d269005 25
+src-tauri/tests/fixtures/sample-workspace/charts/base-chart.yml
+  s_4e5dd19f61efdd::t_d77830831b407a 1-26
+src-tauri/tests/fixtures/sample-workspace/workspace.yaml
+  s_4e5dd19f61efdd::t_d77830831b407a 1-19
+src-tauri/capabilities/default.json
+  s_df663517fbd1b6::t_b11c8b7f9ba094 11
+  s_df663517fbd1b6::t_ee79b3f2cf7e55 12
+apps/web-react/vite.config.ts
+  s_e65cc12a133265::t_017321401c01cc 16-20,31-33
+apps/web-react/tsconfig.app.json
+  s_e65cc12a133265::t_55fc52e5b690f5 23-24
+contracts/workspace-v1/charts/nested/python-written.yml
+  s_4e5dd19f61efdd::t_c329b58d269005 15-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "84546963e54a5e8a7a21f41c6edc24c84bd9b4cf",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_4e5dd19f61efdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d4c9-86e3-7542-8061-dc2a7430715e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_df663517fbd1b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e246d565-a74e-4ae4-8c2d-920f535e6ec5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_e65cc12a133265": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3bf074b-a7e2-4c7f-96cd-6617f4ea1e9c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
