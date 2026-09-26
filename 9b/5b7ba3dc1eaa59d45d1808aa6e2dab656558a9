@@ -1,0 +1,75 @@
+docs/content/developer/tauri-command-contracts.md
+  s_4e5dd19f61efdd::t_0e55fb510777ec 188,190-191,212,224,227-228
+docs/content/manual/settings-and-appearance.es.md
+  s_4e5dd19f61efdd::t_644d2f4f152720 11
+  s_df663517fbd1b6::t_d5d19888c569ca 13-19
+docs/content/manual/settings-and-appearance.fr.md
+  s_4e5dd19f61efdd::t_644d2f4f152720 11
+  s_df663517fbd1b6::t_beccda6cca16d8 13-19
+docs/content/developer/astronomy-coordinate-contract.md
+  s_4e5dd19f61efdd::t_5721ac9d041309 24,26,32
+docs/content/developer/ui-conventions.md
+  s_8623cb43c1cfc4::t_52a44b4c479b75 41-42
+  s_8623cb43c1cfc4::t_7924eb6a739379 113
+  s_8623cb43c1cfc4::t_6faf58516c015f 71
+  s_8623cb43c1cfc4::t_4660a351bfa5bd 140
+  s_8623cb43c1cfc4::t_a3359b0ef05c44 58-65
+  s_4e5dd19f61efdd::t_4dc396159ce3aa 141
+docs/content/developer/backend-structure.md
+  s_4e5dd19f61efdd::t_0e55fb510777ec 343-344
+docs/content/developer/workspace-yaml.md
+  s_4e5dd19f61efdd::t_54d5ac4f44cc43 68,96,133-135,188-189
+  s_4e5dd19f61efdd::t_f499a5f1f3a46d 142-143,160
+docs/content/developer/configuration-reference.md
+  s_4e5dd19f61efdd::t_d1f5862ee05724 1-55,72-124,127-144,152-172
+  s_4e5dd19f61efdd::t_72f815a69231aa 56-71,125-126,145-151
+docs/content/manual/settings-and-appearance.md
+  s_df663517fbd1b6::t_9438e139908943 23-29
+  s_4e5dd19f61efdd::t_644d2f4f152720 12-16
+docs/content/developer/_index.md
+  s_4e5dd19f61efdd::t_54d5ac4f44cc43 44-45
+docs/content/developer/spice-backend.md
+  s_4e5dd19f61efdd::t_54d5ac4f44cc43 74,88-90,97-99
+docs/content/manual/settings-and-appearance.cs.md
+  s_df663517fbd1b6::t_21c0ccb5b32b2c 13-19
+  s_4e5dd19f61efdd::t_644d2f4f152720 11
+docs/content/developer/ephemeris-manager.md
+  s_4e5dd19f61efdd::t_f499a5f1f3a46d 107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9b5b7ba3dc1eaa59d45d1808aa6e2dab656558a9",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_4e5dd19f61efdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d4c9-86e3-7542-8061-dc2a7430715e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_8623cb43c1cfc4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6cf50fd8-fd5a-4679-ab87-06f0ba78059d",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_df663517fbd1b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e246d565-a74e-4ae4-8c2d-920f535e6ec5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
