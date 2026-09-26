@@ -3,10 +3,11 @@
 		{
 			"id": "sabian",
 			"labelKey": "symbol_set_sabian",
-			"available": false,
+			"available": true,
+			"file": "sabian.json",
 			"source": "Marc Edmund Jones / Elsie Wheeler (1925), incl. Dane Rudhyar's rephrasing (1973)",
 			"license": "unresolved",
-			"licenseNote": "No verified public-domain wording exists for this set (Jones's original is still actively defended by the Sabian Assembly; Rudhyar's rephrasing runs under EU life+70 to 2055). Not bundled until licensed or rewritten from scratch."
+			"licenseNote": "No verified public-domain wording exists for this set (Jones's original is still actively defended by the Sabian Assembly; Rudhyar's rephrasing runs under EU life+70 to 2055). Enabled anyway per product owner's explicit decision for private/local use only -- re-evaluate before any public release or redistribution of this build."
 		},
 		{
 			"id": "sepharial",
@@ -27,10 +28,11 @@
 		{
 			"id": "kefer",
 			"labelKey": "symbol_set_kefer",
-			"available": false,
+			"available": true,
+			"file": "kefer.json",
 			"source": "Kefer Astrology (original)",
 			"license": "proprietary-original",
-			"licenseNote": "Awaiting original content."
+			"licenseNote": "Original 360-entry set: a short keynote per degree built from classical decan rulership (triplicity-based) and a ten-stage progression within each decan. Not derived from Jones/Wheeler's or Rudhyar's Sabian wording or degree-theme assignments."
 		}
 	]
 }

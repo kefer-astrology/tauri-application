@@ -1,30 +1,24 @@
 import { DEGREE_SYMBOL_SET_CATALOG, degreeSymbolText } from './degreeSymbolSets';
-import { sabianSymbolForLongitude } from './sabianSymbols';
 import type { Translate } from './objectLabels';
 
-/** A per-degree symbolic interpretation system (Sabian, and — once their degree data exists —
- *  others such as Kefer's own or Sepharial's). Adding a system means adding one entry here; no
- *  consuming component needs to change. */
+/** A per-degree symbolic interpretation system (Sabian, Sepharial, Charubel, Kefer's own — every
+ *  catalogued, available set in `static/astrology-symbols/catalog.json`). Adding a system means
+ *  dropping its `<id>.json` files and a catalog entry; no consuming component needs to change. */
 export interface SymbolSystemDefinition {
 	id: string;
 	labelKey: string;
 	textForLongitude: (longitude: number, language: string) => string | null | undefined;
 }
 
-export const SYMBOL_SYSTEMS: readonly SymbolSystemDefinition[] = [
-	{
-		id: 'sabian',
-		labelKey: 'detail_sabian_symbol',
-		textForLongitude: (longitude, language) => sabianSymbolForLongitude(longitude, language)
-	},
-	...DEGREE_SYMBOL_SET_CATALOG.filter((entry) => entry.available && entry.id !== 'sabian').map(
-		(entry): SymbolSystemDefinition => ({
-			id: entry.id,
-			labelKey: entry.labelKey,
-			textForLongitude: (longitude, language) => degreeSymbolText(entry.id, longitude, language)
-		})
-	)
-];
+export const SYMBOL_SYSTEMS: readonly SymbolSystemDefinition[] = DEGREE_SYMBOL_SET_CATALOG.filter(
+	(entry) => entry.available
+).map(
+	(entry): SymbolSystemDefinition => ({
+		id: entry.id,
+		labelKey: entry.labelKey,
+		textForLongitude: (longitude, language) => degreeSymbolText(entry.id, longitude, language)
+	})
+);
 
 export interface SymbolEntry {
 	systemId: string;
@@ -34,8 +28,8 @@ export interface SymbolEntry {
 
 /** Every enabled symbol system's text for `longitude`, skipping systems with nothing to say for
  *  it. `enabledSetIds` is the user's setting (see `readStoredEnabledSymbolSetIds`) — a system not
- *  in that list is omitted even if registered above (this is how a licensed-but-unresolved set
- *  like Sabian stays out of the result without being ripped out of the registry). */
+ *  in that list is omitted even if registered above (this is how a user can turn off an available
+ *  set in settings without it being ripped out of the registry). */
 export function symbolEntriesForLongitude(
 	longitude: number,
 	language: string,

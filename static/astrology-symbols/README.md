@@ -13,6 +13,20 @@ language missing a translated file falls back to the English text.
 
 ## Provenance
 
+- **Sabian** (`sabian.json`, `sabian.cs.json`): Marc Edmund Jones's original
+  (1925) with Dane Rudhyar's rephrasing (1973), extracted from what was
+  previously a standalone module
+  (`apps/web-react/src/lib/astrology/sabianSymbols.ts`, sourced from a
+  third-party program's shipped data files) into the standard per-set JSON
+  files so it follows the same convention as every other set here. No version
+  of this text could be confirmed as public domain or otherwise licensed for
+  redistribution — see `catalog.json`'s `licenseNote` for that entry. Enabled
+  by default anyway per an explicit, informed decision by the product owner,
+  on the basis that this build stays private and isn't redistributed;
+  re-evaluate before any public release. `sabian.cs.json`'s one degree with no
+  separate Czech wording in the source (degree 204) has the English text
+  copied in directly, since this flat-array format has no per-entry fallback
+  (only whole-file fallback — see below).
 - **Sepharial** (`sepharial.json`): Sepharial's (Walter Gorn Old, 1864–1929)
   1898 English translation of the anonymous Italian "La Volasfera", published
   alongside Charubel's book. Public domain (translator died 1929; expired
@@ -30,16 +44,15 @@ language missing a translated file falls back to the English text.
   (`iapsop.com/ssoc/1902__charubel___degrees_of_the_zodiac_symbolised.pdf`),
   reading rendered page images directly rather than relying on the scan's
   own OCR layer.
-- **Sabian**: not bundled. No version of the widely-known Sabian symbols
-  (Marc Edmund Jones's original, Dane Rudhyar's rephrasing, or any other
-  popular retelling) could be confirmed as public domain or otherwise
-  licensed for redistribution — see `catalog.json`'s `licenseNote` for that
-  entry. `apps/web-react/src/lib/astrology/sabianSymbols.ts` still exists in
-  the repo (sourced from a third-party program's shipped data files, which
-  is itself a separate licensing problem) but is intentionally not wired
-  into the enabled-by-default set list.
-- **Kefer**: reserved slot for the app's own original degree symbols; no
-  content yet.
+- **Kefer** (`kefer.json`): the app's own original 360-entry set. Each
+  degree's keynote is built systematically from classical decan rulership
+  (each sign's 10° decans ruled by its own triplicity, e.g. Aries/Leo/
+  Sagittarius rotating Mars/Sun/Jupiter) crossed with a ten-stage progression
+  within the decan (opening stirring through earned arrival). Deliberately
+  not derived from Jones/Wheeler's or Rudhyar's Sabian wording or degree-theme
+  assignments — see `catalog.json`'s `licenseNote` for that entry. English
+  only for now (`kefer.json`); no `kefer.cs/fr/es.json` yet, so it falls back
+  to English everywhere until a proper per-language pass is written.
 
 The `cs`/`fr`/`es` files for Sepharial and Charubel are machine-translated
 from the English text above (not independently sourced), preserving each

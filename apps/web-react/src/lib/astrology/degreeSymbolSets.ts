@@ -1,4 +1,6 @@
 import catalogJson from '@static/astrology-symbols/catalog.json';
+import sabianEn from '@static/astrology-symbols/sabian.json';
+import sabianCs from '@static/astrology-symbols/sabian.cs.json';
 import charubelEn from '@static/astrology-symbols/charubel.json';
 import charubelCs from '@static/astrology-symbols/charubel.cs.json';
 import charubelFr from '@static/astrology-symbols/charubel.fr.json';
@@ -7,12 +9,12 @@ import sepharialEn from '@static/astrology-symbols/sepharial.json';
 import sepharialCs from '@static/astrology-symbols/sepharial.cs.json';
 import sepharialFr from '@static/astrology-symbols/sepharial.fr.json';
 import sepharialEs from '@static/astrology-symbols/sepharial.es.json';
+import keferEn from '@static/astrology-symbols/kefer.json';
 import type { AppLanguage } from '@/lib/i18n';
 
 /** One entry in the shared `static/astrology-symbols/catalog.json` — see that folder's README
  *  for sourcing/attribution/license notes per set. `available` is false for sets that are
- *  catalogued (so they can appear, disabled, in settings) but have no bundled text yet, either
- *  because the content doesn't exist (Kefer) or its license isn't resolved (Sabian). */
+ *  catalogued (so they can appear, disabled, in settings) but have no bundled text yet. */
 export interface DegreeSymbolSetCatalogEntry {
 	id: string;
 	labelKey: string;
@@ -31,8 +33,10 @@ export const DEGREE_SYMBOL_SET_CATALOG: readonly DegreeSymbolSetCatalogEntry[] =
 const DEGREE_SYMBOL_DATA: Readonly<
 	Record<string, Partial<Record<AppLanguage, readonly string[]>>>
 > = {
+	sabian: { en: sabianEn, cs: sabianCs },
 	sepharial: { en: sepharialEn, cs: sepharialCs, fr: sepharialFr, es: sepharialEs },
-	charubel: { en: charubelEn, cs: charubelCs, fr: charubelFr, es: charubelEs }
+	charubel: { en: charubelEn, cs: charubelCs, fr: charubelFr, es: charubelEs },
+	kefer: { en: keferEn }
 };
 
 function normalizeLongitude(longitude: number): number {
