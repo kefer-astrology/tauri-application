@@ -96,7 +96,9 @@
 
       if (!folderPath) return;
 
-      const chartsPayload = layout.contexts.map((c) => chartDataToComputePayload(c));
+      const chartsPayload = layout.contexts
+        .filter((chart) => chart.entityKind !== 'analysis')
+        .map((chart) => chartDataToComputePayload(chart));
       await saveWorkspace(folderPath, 'User', chartsPayload, layout.workspaceDefaults);
       await initStorage(folderPath);
       layout.workspacePath = folderPath;
