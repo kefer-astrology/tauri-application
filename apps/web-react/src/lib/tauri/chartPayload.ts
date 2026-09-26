@@ -68,9 +68,6 @@ export interface AppChart {
 	observableObjects?: string[];
 	aspectOrbs?: Record<string, number>;
 	selectedAspects?: string[];
-	includedPoints?: string[];
-	displayStyle?: string;
-	colorTheme?: string;
 	ayanamsa?: string | null;
 	timeSystem?: string | null;
 	synastry?: SynastryState;
@@ -337,9 +334,6 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		observableObjects: full.config.observable_objects,
 		aspectOrbs: full.config.aspect_orbs,
 		selectedAspects: full.config.selected_aspects,
-		includedPoints: full.config.included_points,
-		displayStyle: full.config.display_style,
-		colorTheme: full.config.color_theme,
 		ayanamsa: full.config.ayanamsa,
 		timeSystem: full.config.time_system
 	};
@@ -540,11 +534,8 @@ export function chartDataToComputePayload(
 			model,
 			model_overrides: chart.modelOverrides ?? null,
 			observable_objects: observableObjects,
-			included_points: chart.includedPoints ?? [],
 			selected_aspects: selectedAspects,
 			aspect_orbs: aspectOrbs,
-			display_style: chart.displayStyle ?? '',
-			color_theme: chart.colorTheme ?? '',
 			...(chart.ayanamsa ? { ayanamsa: chart.ayanamsa } : {}),
 			...(chart.timeSystem ? { time_system: chart.timeSystem } : {})
 		},

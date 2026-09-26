@@ -68,6 +68,7 @@ export interface WorkspaceDefaultsDto {
   default_location_latitude?: number | null;
   default_location_longitude?: number | null;
   default_engine?: string | null;
+  position_mode?: 'apparent' | 'geometric' | null;
   default_bodies?: string[] | null;
   default_aspects?: string[] | null;
   default_aspect_orbs?: Record<string, number> | null;
@@ -157,6 +158,7 @@ export interface AstroModelDto {
   signs: SignDefinitionDto[];
   settings?: ModelSettingsDto | null;
   engine?: string | null;
+  positionMode?: 'apparent' | 'geometric' | null;
   zodiac_type?: string | null;
   ayanamsa?: string | null;
 }
@@ -248,15 +250,13 @@ export interface ChartDetails {
     house_system: string | null;
     zodiac_type: string;
     engine: string | null;
+    position_mode?: 'apparent' | 'geometric' | null;
     model: string | null;
     model_overrides?: ModelOverridesDto | null;
     override_ephemeris: string | null;
     observable_objects?: string[];
     aspect_orbs?: Record<string, number>;
     selected_aspects?: string[];
-    included_points?: string[];
-    display_style?: string;
-    color_theme?: string;
     ayanamsa?: string | null;
     time_system?: string | null;
   };

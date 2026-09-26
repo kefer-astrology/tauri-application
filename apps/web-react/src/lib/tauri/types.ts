@@ -301,9 +301,6 @@ export interface ChartDetails {
 		observable_objects?: string[];
 		aspect_orbs?: Record<string, number>;
 		selected_aspects?: string[];
-		included_points?: string[];
-		display_style?: string;
-		color_theme?: string;
 		ayanamsa?: string | null;
 		time_system?: string | null;
 	};
