@@ -1,0 +1,158 @@
+apps/web-react/src/app/components/revolution-view.tsx
+  s_e65cc12a133265::t_4bf9064564b568 1-2,7
+  s_8623cb43c1cfc4::t_53e38600195b05 64
+  s_8623cb43c1cfc4::t_cd018f7afbe7c7 177
+  s_8623cb43c1cfc4::t_f8fca8e4b63a78 15
+  s_e65cc12a133265::t_c0e3f97aef515e 154-173
+  s_e65cc12a133265::t_786efdad5b3743 25,32-41
+  s_8623cb43c1cfc4::t_ade4f18b9ea96f 139-147
+apps/web-react/src/app/components/synastry-view.tsx
+  s_8623cb43c1cfc4::t_12d033cb442616 148-156,158-168,170-175,177-187
+  s_8623cb43c1cfc4::t_3b66d6717f3636 495
+  s_8623cb43c1cfc4::t_8046a3c23d3635 157
+  s_8623cb43c1cfc4::t_880b0c6ccccb09 372,374-402
+  s_8623cb43c1cfc4::t_22251268c6f12f 373
+  s_8623cb43c1cfc4::t_e296567f4fca51 464
+apps/web-react/src/app/components/new-horoscope.tsx
+  s_8623cb43c1cfc4::t_3e1aa97394bf89 258
+  s_8623cb43c1cfc4::t_903f172130cf3a 1
+apps/web-react/src/app/components/form-field-theme.ts
+  s_8623cb43c1cfc4::t_0a223dced62810 24,30,35
+  s_8623cb43c1cfc4::t_ecb0183f66df3f 94-95
+apps/web-react/src/app/components/ui/select.tsx
+  s_8623cb43c1cfc4::t_2d7be3e82ad041 34
+apps/web-react/src/app/components/secondary-nav-panel.tsx
+  s_df663517fbd1b6::t_65fd177485ec49 38-39
+  s_df663517fbd1b6::t_e1eebb619260cf 86-87
+  s_df663517fbd1b6::t_6da03481e36aad 22
+  s_df663517fbd1b6::t_0383d3d4254ec6 1
+  s_df663517fbd1b6::t_e35bd406d26de0 21,32-33
+apps/web-react/src/app/components/object-detail-panel.tsx
+  s_8623cb43c1cfc4::t_8394ffd9e0d9db 41
+  s_8623cb43c1cfc4::t_ebfdea7d4b9d00 28-30
+  s_8623cb43c1cfc4::t_36175144091476 272
+apps/web-react/src/app/components/ui/accordion.tsx
+  s_8623cb43c1cfc4::t_6a835112d29dcf 56
+apps/web-react/src/app/components/time-roller-picker.tsx
+  s_8623cb43c1cfc4::t_2e0dfc8abc7987 48,59-60
+  s_8623cb43c1cfc4::t_36e5f776460522 105,110-111,127-128,136
+  s_8623cb43c1cfc4::t_b1a9f88b1339d4 44,56
+  s_8623cb43c1cfc4::t_63cc819f5bc228 100-104
+apps/web-react/src/app/components/export-workspace-view.tsx
+  s_8623cb43c1cfc4::t_8799521e9e60ad 62-65
+  s_8623cb43c1cfc4::t_e8faabeb6c8a0c 55
+apps/web-react/src/app/components/date-picker-input.tsx
+  s_8623cb43c1cfc4::t_9495f716f6c962 41-42
+  s_8623cb43c1cfc4::t_f6aaed6b5b7cda 100,105-106,122-123,131
+  s_8623cb43c1cfc4::t_7790233d3944e2 23
+apps/web-react/src/app/components/horoscope-dashboard.tsx
+  s_8623cb43c1cfc4::t_45795c14ea7ba5 665,677,689
+apps/web-react/src/app/components/aspect-selector.tsx
+  s_8623cb43c1cfc4::t_51b11c4054922a 414-416
+  s_8623cb43c1cfc4::t_dbdd50c3b7c979 272-274
+apps/web-react/src/app/components/aspectarium.tsx
+  s_e65cc12a133265::t_0b97b607e0c0b5 41
+  s_e65cc12a133265::t_e79772ea6f83ef 316-321
+  s_e65cc12a133265::t_2226c3b3f0b92a 813-814,825
+  s_e65cc12a133265::t_c2847f878cdc9c 802-805
+apps/web-react/src/app/components/aspect-detail-panel.tsx
+  s_8623cb43c1cfc4::t_30ee762d05f7e9 155
+  s_8623cb43c1cfc4::t_40b5b24ecd574a 137
+apps/web-react/src/app/components/open-workspace-view.tsx
+  s_8623cb43c1cfc4::t_fccbac613defd1 757-763
+  s_4e5dd19f61efdd::t_f07fa037583b13 22,63,302,333,500-515,1259,1267,1269,1276-1278
+  s_e65cc12a133265::t_06a121bd9cb6c4 23-28,31,40,46-51
+  s_e65cc12a133265::t_ed265219705670 477-484
+  s_e65cc12a133265::t_d901acbd65807c 1339-1342
+  s_e65cc12a133265::t_f36b04661b6ee7 11-21,1307-1309
+  s_e65cc12a133265::t_52434289f7a8f8 29-30
+  s_4e5dd19f61efdd::t_3ca8e5814a6fb6 1272,1279-1283
+  s_4e5dd19f61efdd::t_debb0df7f13811 686
+  s_e65cc12a133265::t_751f8ad29a32cd 1332-1338,1343-1353
+  s_e65cc12a133265::t_8418ec9fd61636 527-668
+  s_e65cc12a133265::t_e03b38cd1f65fc 1322-1330
+  s_b91376ba5cd779::t_8feeba0a111f2c 772-777,780-800
+  s_b91376ba5cd779::t_9c932f827c64d8 258-262
+  s_b91376ba5cd779::t_37dafabb440826 77-86,108-130
+  s_e65cc12a133265::t_4251c99b118cd7 1302-1306,1311-1321,1354-1381
+  s_4e5dd19f61efdd::t_8ac2eb380ac84a 765
+  s_e65cc12a133265::t_ff683afc412caa 307-309
+  s_4e5dd19f61efdd::t_088d83c39db021 516-517
+  s_4e5dd19f61efdd::t_13de66389b7f86 1273-1275
+apps/web-react/src/app/components/ui/checkbox.tsx
+  s_8623cb43c1cfc4::t_8f94ce288b4ed3 14
+apps/web-react/src/app/components/ui/input.tsx
+  s_8623cb43c1cfc4::t_95cf7c687a605a 12
+apps/web-react/src/app/components/body-selector.tsx
+  s_8623cb43c1cfc4::t_6241f1cd45c85f 409-411
+  s_8623cb43c1cfc4::t_b149ef92a73b50 207-209
+apps/web-react/src/app/components/transits-content.tsx
+  s_8623cb43c1cfc4::t_200bd1892b7cdd 536-551,553-560,562-576,580-591,593-600,602-616,619
+  s_8623cb43c1cfc4::t_23dd10b6c8ecdc 227-236
+  s_8623cb43c1cfc4::t_438b19dc3fe3d4 621
+  s_8623cb43c1cfc4::t_8562e49cbd7f55 21-22
+  s_8623cb43c1cfc4::t_5ebdd43d9414fd 19
+  s_8623cb43c1cfc4::t_1ad0423c607c77 249-252
+  s_8623cb43c1cfc4::t_4f730887e02178 74-78
+  s_8623cb43c1cfc4::t_7942d5ff90180c 392-393,395
+  s_8623cb43c1cfc4::t_270667907aabd3 2
+  s_8623cb43c1cfc4::t_a000d2a4383a87 170-171
+  s_8623cb43c1cfc4::t_113aba5bd7c585 18
+  s_8623cb43c1cfc4::t_bd18a8c1042233 137-138
+  s_8623cb43c1cfc4::t_03a9616f20fa7c 394,396-404
+  s_8623cb43c1cfc4::t_ab058faa48f8d2 104,106-112
+  s_8623cb43c1cfc4::t_5d08cfed23493f 625
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "272f42a3cb876f3c6583def10d32bc36c0c0ff7c",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_4e5dd19f61efdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d4c9-86e3-7542-8061-dc2a7430715e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_8623cb43c1cfc4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6cf50fd8-fd5a-4679-ab87-06f0ba78059d",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_b91376ba5cd779": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "035bb13b-fb21-4041-a1f2-93b95b4e4981",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_df663517fbd1b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e246d565-a74e-4ae4-8c2d-920f535e6ec5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_e65cc12a133265": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3bf074b-a7e2-4c7f-96cd-6617f4ea1e9c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
