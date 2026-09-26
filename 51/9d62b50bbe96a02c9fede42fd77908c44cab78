@@ -1,0 +1,195 @@
+apps/web-react/src/locales/fr.json
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_e65cc12a133265::t_5d8700e7554571 422
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_b91376ba5cd779::t_736f69c3966f19 625
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+apps/web-svelte/src/lib/i18n/en.json
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_e65cc12a133265::t_5d8700e7554571 422
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+  s_b91376ba5cd779::t_736f69c3966f19 625
+apps/web-react/src/locales/en.json
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_e65cc12a133265::t_5d8700e7554571 422
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_b91376ba5cd779::t_736f69c3966f19 625
+translations.csv
+  s_e65cc12a133265::t_2a84f4b7653adb 489
+  s_4e5dd19f61efdd::t_f959076299b579 66
+  s_e65cc12a133265::t_40b9c2c4cf21ba 422
+  s_b91376ba5cd779::t_c332d7937ed90a 105-110
+  s_b91376ba5cd779::t_ccfe471f7b7f9a 112
+  s_8623cb43c1cfc4::t_e3c2aff71791e2 606
+  s_e65cc12a133265::t_8065c195e30b10 299
+  s_df663517fbd1b6::t_47ce47dac02ddd 429-435
+  s_e65cc12a133265::t_191c692d51a3cf 414-420
+  s_e65cc12a133265::t_22f66360a0d362 232
+  s_4e5dd19f61efdd::t_f07fa037583b13 246-247,505-506
+  s_e65cc12a133265::t_da15d8d267fe09 196
+  s_df663517fbd1b6::t_ab144198ee442b 394
+  s_b91376ba5cd779::t_f9fe6322027a29 254
+  s_8623cb43c1cfc4::t_665c7fe579ebf3 567
+  s_df663517fbd1b6::t_6d1ad921dd4296 402-403
+  s_e65cc12a133265::t_b1faf3f3c86ad0 473
+  s_b91376ba5cd779::t_b581f3db6f0d18 256
+  s_8623cb43c1cfc4::t_0d7e1700d47d96 574
+  s_b91376ba5cd779::t_e77eda51019cfc 111,113
+  s_e65cc12a133265::t_2b5ebb0ab84ca7 50
+  s_b91376ba5cd779::t_789e31fd64f4b0 625
+apps/web-svelte/src/lib/i18n/cs.json
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_e65cc12a133265::t_deeeef9e7dfea1 196,232,489
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_b91376ba5cd779::t_736f69c3966f19 625
+  s_e65cc12a133265::t_294aeed6d605c3 50
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+  s_4e5dd19f61efdd::t_c5610be9012742 66
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_e65cc12a133265::t_5d8700e7554571 422
+apps/web-svelte/src/lib/i18n/fr.json
+  s_e65cc12a133265::t_5d8700e7554571 422
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_b91376ba5cd779::t_736f69c3966f19 625
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+apps/web-svelte/src/lib/i18n/es.json
+  s_b91376ba5cd779::t_736f69c3966f19 625
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+  s_e65cc12a133265::t_5d8700e7554571 422
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+apps/web-react/src/locales/cs.json
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+  s_b91376ba5cd779::t_736f69c3966f19 625
+  s_e65cc12a133265::t_fa174a3236620f 50
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_e65cc12a133265::t_deeeef9e7dfea1 196,232,489
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+  s_e65cc12a133265::t_5d8700e7554571 422
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_4e5dd19f61efdd::t_c5610be9012742 66
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+apps/web-react/src/locales/es.json
+  s_e65cc12a133265::t_5d8700e7554571 422
+  s_b91376ba5cd779::t_2f23903157a820 111,113
+  s_b91376ba5cd779::t_76106e88ee28ae 105-110
+  s_b91376ba5cd779::t_93fee170095036 112
+  s_e65cc12a133265::t_9cb0cba7b00e5a 414-420
+  s_b91376ba5cd779::t_736f69c3966f19 625
+  s_b91376ba5cd779::t_6e208efe36e9b0 254,256
+  s_4e5dd19f61efdd::t_6d82211a3d5504 246-247,505-506
+  s_e65cc12a133265::t_426feeac1083cb 473
+  s_df663517fbd1b6::t_c1a709031582c1 394,402-403,429-435
+  s_e65cc12a133265::t_7495d0a1995c75 299
+  s_8623cb43c1cfc4::t_b1732dd5bc6004 567,574
+  s_8623cb43c1cfc4::t_31c7325d19a0e9 606
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "519d62b50bbe96a02c9fede42fd77908c44cab78",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_4e5dd19f61efdd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0d4c9-86e3-7542-8061-dc2a7430715e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_8623cb43c1cfc4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6cf50fd8-fd5a-4679-ab87-06f0ba78059d",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_b91376ba5cd779": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "035bb13b-fb21-4041-a1f2-93b95b4e4981",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_df663517fbd1b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e246d565-a74e-4ae4-8c2d-920f535e6ec5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_e65cc12a133265": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d3bf074b-a7e2-4c7f-96cd-6617f4ea1e9c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
