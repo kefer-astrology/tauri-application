@@ -212,26 +212,21 @@ export function AstrologySidebar({
 				themeStyle.border,
 				isExpanded ? 'w-[220px]' : 'w-16'
 			)}
-			style={{ paddingTop: '12px', ...themeStyle.customStyle }}
+			style={{ paddingTop: '6px', ...themeStyle.customStyle }}
 		>
 			{/* Logo Area */}
 			<div className="mb-2.5 px-3">
-				<div
-					className={cn(
-						'flex h-11 items-center',
-						isExpanded ? 'justify-start px-2.5' : 'justify-center'
-					)}
-				>
+				<div className={cn('flex h-11 items-center', isExpanded ? 'pl-4' : 'pl-[4px]')}>
 					{isExpanded ? (
 						<div className={cn('flex items-center gap-2.5', themeStyle.text)}>
 							<AppShellLogoFull
 								iconSet={appShellIconSet}
 								className={themeStyle.text}
-								iconSize={32}
+								iconSize={44}
 							/>
 						</div>
 					) : (
-						<AppShellLogoMark iconSet={appShellIconSet} className={themeStyle.text} size={32} />
+						<AppShellLogoMark iconSet={appShellIconSet} className={themeStyle.text} size={34} />
 					)}
 				</div>
 			</div>

@@ -23,7 +23,7 @@ import {
 	SelectValue
 } from './ui/select';
 import { cn } from './ui/utils';
-import type { AppLanguage } from '@/lib/i18n';
+import { SUPPORTED_LANGUAGES, type AppLanguage } from '@/lib/i18n';
 import {
 	APP_SHELL_ICON_SET_KEY,
 	APP_SHELL_ICON_SET_OPTIONS,
@@ -33,6 +33,8 @@ import {
 import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import { type ElementColors, type ElementId } from '@/lib/astrology/elementColors';
 import { persistGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { DEGREE_SYMBOL_SET_CATALOG } from '@/lib/astrology/degreeSymbolSets';
+import { persistEnabledSymbolSetIds } from '@/lib/astrology/symbolSystems';
 import {
 	persistWheelStyle,
 	WHEEL_STYLE_OPTIONS,
@@ -41,6 +43,8 @@ import {
 } from '@/lib/astrology/wheelStyle';
 import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
+import { JAN_KEFER_BIOGRAPHY } from '@/lib/content/janKefer';
+import { persistMonochrome } from '@/lib/appLayoutPreferences';
 import {
 	SUPPORTED_RUST_HOUSE_SYSTEMS,
 	type AspectLineStyleId,
@@ -51,11 +55,13 @@ import { searchLocations } from '@/lib/tauri/workspace';
 import { BodySelector } from './body-selector';
 import { GlyphManager } from './glyph-manager';
 
-const LANG_BUBBLES: { code: AppLanguage; label: string }[] = [
-	{ code: 'cs', label: 'CS' },
-	{ code: 'en', label: 'EN' },
-	{ code: 'fr', label: 'FR' },
-	{ code: 'es', label: 'ES' }
+/** Each language's own autonym — always shown in that language, not translated, so a user can
+ *  recognize their language regardless of which language the UI currently happens to be in. */
+const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
+	{ code: 'cs', label: 'Čeština' },
+	{ code: 'en', label: 'English' },
+	{ code: 'fr', label: 'Français' },
+	{ code: 'es', label: 'Español' }
 ];
 
 const HOUSE_SYSTEMS = SUPPORTED_RUST_HOUSE_SYSTEMS;
@@ -144,6 +150,8 @@ interface SettingsViewProps {
 	onAppShellIconSetChange: (value: AppShellIconSetId) => void;
 	astrologyGlyphSet: AstrologyGlyphSetId;
 	onAstrologyGlyphSetChange: (value: AstrologyGlyphSetId) => void;
+	enabledSymbolSetIds: readonly string[];
+	onEnabledSymbolSetIdsChange: (value: string[]) => void;
 	wheelStyle: WheelStyleId;
 	onWheelStyleChange: (value: WheelStyleId) => void;
 	wheelOrientation: WheelOrientationId;
@@ -155,6 +163,8 @@ interface SettingsViewProps {
 	onThemePaletteCommit: (value: ThemePalette) => void;
 	workspaceDefaults: WorkspaceDefaultsState;
 	onWorkspaceDefaultsChange: (patch: Partial<WorkspaceDefaultsState>) => Promise<void> | void;
+	monochrome: boolean;
+	onMonochromeChange: (value: boolean) => void;
 }
 
 function SettingsView({
@@ -164,6 +174,8 @@ function SettingsView({
 	onAppShellIconSetChange,
 	astrologyGlyphSet,
 	onAstrologyGlyphSetChange,
+	enabledSymbolSetIds,
+	onEnabledSymbolSetIdsChange,
 	wheelStyle,
 	onWheelStyleChange,
 	wheelOrientation,
@@ -174,7 +186,9 @@ function SettingsView({
 	themePalette,
 	onThemePaletteCommit,
 	workspaceDefaults,
-	onWorkspaceDefaultsChange
+	onWorkspaceDefaultsChange,
+	monochrome,
+	onMonochromeChange
 }: SettingsViewProps) {
 	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
@@ -185,6 +199,9 @@ function SettingsView({
 	const [timezone, setTimezone] = useState(workspaceDefaults.timezone);
 	const [houseSystem, setHouseSystem] = useState<string>(workspaceDefaults.houseSystem);
 	const [glyphSetValue, setGlyphSetValue] = useState<AstrologyGlyphSetId>(astrologyGlyphSet);
+	const [enabledSymbolSetIdsValue, setEnabledSymbolSetIdsValue] = useState<string[]>(() => [
+		...enabledSymbolSetIds
+	]);
 	const [wheelStyleValue, setWheelStyleValue] = useState<WheelStyleId>(wheelStyle);
 	const [wheelOrientationValue, setWheelOrientationValue] =
 		useState<WheelOrientationId>(wheelOrientation);
@@ -246,6 +263,10 @@ function SettingsView({
 	}, [astrologyGlyphSet]);
 
 	useEffect(() => {
+		setEnabledSymbolSetIdsValue([...enabledSymbolSetIds]);
+	}, [enabledSymbolSetIds]);
+
+	useEffect(() => {
 		setWheelStyleValue(wheelStyle);
 	}, [wheelStyle]);
 
@@ -280,6 +301,21 @@ function SettingsView({
 			markChanged();
 		},
 		[markChanged, onAstrologyGlyphSetChange]
+	);
+
+	const onToggleSymbolSet = useCallback(
+		(id: string) => {
+			setEnabledSymbolSetIdsValue((current) => {
+				const next = current.includes(id)
+					? current.filter((value) => value !== id)
+					: [...current, id];
+				onEnabledSymbolSetIdsChange(next);
+				persistEnabledSymbolSetIds(next);
+				return next;
+			});
+			markChanged();
+		},
+		[markChanged, onEnabledSymbolSetIdsChange]
 	);
 
 	const onWheelStyleChangeHandler = useCallback(
@@ -443,9 +479,17 @@ function SettingsView({
 		(option) => option.id === wheelStyleValue
 	)?.description;
 
+	const currentLanguageCode = i18n.language.split('-')[0];
+	const janKeferBiography =
+		JAN_KEFER_BIOGRAPHY[
+			(SUPPORTED_LANGUAGES as readonly string[]).includes(currentLanguageCode)
+				? (currentLanguageCode as AppLanguage)
+				: 'en'
+		];
+
 	return (
 		<AppMainContentRoot className="min-h-full">
-			<AppMainContentContainer layout="center-column">
+			<AppMainContentContainer width="wide">
 				<div className="flex min-h-0 w-full min-w-0 flex-col space-y-6">
 					<Card
 						variant="ghost"
@@ -454,41 +498,48 @@ function SettingsView({
 						)}
 					>
 						<CardContent className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
-							{section === 'jazyk' && (
-								<div className="max-w-xl space-y-4">
+							{section === 'jazyk_lokace' && (
+								<div className="space-y-6">
 									<div className="space-y-2">
-										<p className={ft.label}>{t('language')}</p>
+										<Label className={ft.label}>{t('language')}</Label>
 										<p className={cn('text-sm', ft.muted)}>{t('select_language')}</p>
-										<div
-											className="mt-3 flex flex-wrap gap-3"
-											role="group"
-											aria-label={t('label_languages')}
+										<Select
+											value={
+												LANGUAGE_OPTIONS.find(
+													(option) =>
+														i18n.language === option.code ||
+														i18n.language.startsWith(`${option.code}-`)
+												)?.code ?? i18n.language
+											}
+											onValueChange={(value) => {
+												void i18n.changeLanguage(value);
+												markChanged();
+											}}
 										>
-											{LANG_BUBBLES.map(({ code, label }) => {
-												const active =
-													i18n.language === code || i18n.language.startsWith(`${code}-`);
-												return (
-													<Button
-														key={code}
-														type="button"
-														variant="ghost"
-														onClick={() => {
-															void i18n.changeLanguage(code);
-															markChanged();
-														}}
-														className={ft.langBubble(active)}
-													>
-														{label}
-													</Button>
-												);
-											})}
-										</div>
+											<SelectTrigger
+												aria-label={t('label_languages')}
+												className={cn(ft.selectTrigger, 'max-w-[280px] shadow-inner')}
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												<SelectGroup>
+													{LANGUAGE_OPTIONS.map((option) => (
+														<SelectItem
+															key={option.code}
+															value={option.code}
+															className={ft.selectItem}
+														>
+															{option.label}
+														</SelectItem>
+													))}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
 									</div>
-								</div>
-							)}
 
-							{section === 'lokace' && (
-								<div className="max-w-xl space-y-4">
+									<Separator className="bg-[color:var(--theme-panel-border)]" />
+
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('default_location')}</Label>
 										<LocationSelector
@@ -510,7 +561,6 @@ function SettingsView({
 												});
 											}}
 											placeholder={t('placeholder_default_location')}
-											searchPlaceholder={t('new_location_search')}
 											emptyLabel={t('open_search_no_results')}
 											loadingLabel={t('new_resolving_location')}
 											className={cn(ft.selectTrigger, 'shadow-inner')}
@@ -568,7 +618,7 @@ function SettingsView({
 							)}
 
 							{section === 'system_domu' && (
-								<div className="max-w-md space-y-4">
+								<div className="space-y-4">
 									<div className="space-y-2">
 										<Label className={ft.label}>{t('house_system')}</Label>
 										<Select
@@ -598,6 +648,30 @@ function SettingsView({
 											})}
 										</p>
 									</div>
+									<div className="space-y-2">
+										<Label className={ft.label}>{t('settings_position_mode')}</Label>
+										<Select
+											value={workspaceDefaults.positionMode}
+											onValueChange={(value) => {
+												const positionMode = value === 'geometric' ? 'geometric' : 'apparent';
+												markChanged();
+												void onWorkspaceDefaultsChange({ positionMode });
+											}}
+										>
+											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												<SelectItem value="apparent" className={ft.selectItem}>
+													{t('settings_position_mode_apparent')}
+												</SelectItem>
+												<SelectItem value="geometric" className={ft.selectItem}>
+													{t('settings_position_mode_geometric')}
+												</SelectItem>
+											</SelectContent>
+										</Select>
+										<p className={cn('text-xs', ft.muted)}>{t('settings_position_mode_hint')}</p>
+									</div>
 								</div>
 							)}
 
@@ -612,7 +686,7 @@ function SettingsView({
 							)}
 
 							{section === 'nastaveni_aspektu' && (
-								<div className="max-w-2xl space-y-4">
+								<div className="space-y-4">
 									<div className="space-y-2">
 										<p className={ft.label}>{t('default_aspects')}</p>
 										<div className="space-y-3">
@@ -894,7 +968,7 @@ function SettingsView({
 							)}
 
 							{section === 'rozlozeni_symbolu' && (
-								<Accordion type="multiple" className="w-full lg:max-w-2xl">
+								<Accordion type="multiple" className="w-full">
 									<AccordionItem value="glyph-set">
 										<AccordionTrigger className={ft.title}>
 											{t('settings_symbol_selector')}
@@ -948,6 +1022,40 @@ function SettingsView({
 													<p className={cn('text-xs', ft.muted)}>{appShellDescription}</p>
 												) : null}
 											</div>
+										</AccordionContent>
+									</AccordionItem>
+									<AccordionItem value="degree-symbol-sets">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_degree_symbol_sets')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-3">
+											<p className={cn('text-xs leading-relaxed', ft.muted)}>
+												{t('settings_degree_symbol_sets_blurb')}
+											</p>
+											{DEGREE_SYMBOL_SET_CATALOG.map((entry) => (
+												<div key={entry.id} className="flex items-center gap-2">
+													<Checkbox
+														id={`symbol-set-${entry.id}`}
+														checked={enabledSymbolSetIdsValue.includes(entry.id)}
+														disabled={!entry.available}
+														onCheckedChange={() => onToggleSymbolSet(entry.id)}
+													/>
+													<Label
+														htmlFor={`symbol-set-${entry.id}`}
+														className={cn(
+															'text-sm',
+															entry.available ? cn('cursor-pointer', ft.bodyText) : ft.muted
+														)}
+													>
+														{t(entry.labelKey)}
+													</Label>
+													{!entry.available ? (
+														<span className={cn('text-xs italic', ft.muted)}>
+															{t('settings_degree_symbol_set_unavailable')}
+														</span>
+													) : null}
+												</div>
+											))}
 										</AccordionContent>
 									</AccordionItem>
 									<AccordionItem value="radix-style">
@@ -1044,7 +1152,7 @@ function SettingsView({
 							)}
 
 							{section === 'rozlozeni_aplikace' && (
-								<Accordion type="multiple" className="w-full lg:max-w-2xl">
+								<Accordion type="multiple" className="w-full">
 									<AccordionItem value="theme">
 										<AccordionTrigger className={ft.title}>
 											{t('settings_theme_selector')}
@@ -1235,11 +1343,56 @@ function SettingsView({
 											</div>
 										</AccordionContent>
 									</AccordionItem>
+									<AccordionItem value="monochrome">
+										<AccordionTrigger className={ft.title}>
+											{t('settings_monochrome_title', { defaultValue: 'Monochromatic view' })}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-3">
+											<div className="flex items-center gap-2">
+												<Switch
+													id="settings-monochrome"
+													checked={monochrome}
+													onCheckedChange={(checked) => {
+														onMonochromeChange(checked);
+														persistMonochrome(checked);
+														markChanged();
+													}}
+												/>
+												<Label
+													htmlFor="settings-monochrome"
+													className={cn('cursor-pointer', ft.label)}
+												>
+													{t('settings_monochrome_label', {
+														defaultValue: 'Use a monochromatic (grayscale) app appearance'
+													})}
+												</Label>
+											</div>
+											<p className={cn('text-xs leading-relaxed', ft.muted)}>
+												{t('settings_monochrome_hint', {
+													defaultValue:
+														'Desaturates the whole app on top of any theme or palette. Your theme and palette colors stay as-is underneath.'
+												})}
+											</p>
+										</AccordionContent>
+									</AccordionItem>
 								</Accordion>
 							)}
 
+							{section === 'jan_kefer' && (
+								<div className="space-y-4">
+									<p className={ft.label}>
+										{t('section_jan_kefer', { defaultValue: 'Jan Kefer' })}
+									</p>
+									{janKeferBiography.map((paragraph, index) => (
+										<p key={index} className={cn('text-sm leading-relaxed', ft.bodyText)}>
+											{paragraph}
+										</p>
+									))}
+								</div>
+							)}
+
 							{section === 'manual' && (
-								<div className="max-w-2xl space-y-4">
+								<div className="space-y-4">
 									<p className={cn('text-sm leading-relaxed', ft.muted)}>{t('settings_guide')}</p>
 								</div>
 							)}

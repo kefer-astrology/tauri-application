@@ -24,23 +24,29 @@ export type AppShellIconId =
 export const APP_SHELL_ICON_SET_KEY = 'app_shell_icon_set';
 /** Set by the reverted swap; remove and flip stored id back to pre-swap semantics. */
 const APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY = 'app_shell_icon_set_swap_v1';
+/**
+ * The script-K family (`default`) became the shipped set. Picks stored while the labels
+ * were swapped meant "whatever is called Default", not a real preference for the compass
+ * family, so drop them once and let the new fallback apply.
+ */
+const APP_SHELL_ICON_SET_DEFAULT_MIGRATION_KEY = 'app_shell_icon_set_default_v2';
 
 export const APP_SHELL_ICON_SET_OPTIONS = [
 	{
-		id: 'modern' as const,
+		id: 'default' as const,
 		label: 'Default',
 		description: 'Default app-shell SVG family.'
 	},
 	{
-		id: 'default' as const,
+		id: 'modern' as const,
 		label: 'Alternative',
 		description: 'Alternative app-shell SVG family.'
 	}
 ];
 
 const APP_SHELL_FULL_LOGO_ASPECT_RATIO: Record<AppShellIconSetId, number> = {
-	default: 247 / 77,
-	modern: 220 / 60
+	default: 72.981 / 34.224,
+	modern: 74.208 / 35.334
 };
 
 export const APP_SHELL_MARK_MASK_SCALE = 0.88;
@@ -102,7 +108,7 @@ function assetUrl(relativePath: string): string {
 	return `${normalizedBase}${normalizedPath}`;
 }
 
-/** Resolve folder / logo suffix: UI “Default” → `default`, “Modern” → `modern`. */
+/** Resolve folder / logo suffix: UI “Default” → `default`, “Alternative” → `modern`. */
 function appShellAssetSet(iconSet: AppShellIconSetId): AppShellIconSetId {
 	return iconSet;
 }
@@ -137,6 +143,10 @@ export function readStoredAppShellIconSet(): AppShellIconSetId {
 			else if (prev === 'modern') localStorage.setItem(APP_SHELL_ICON_SET_KEY, 'default');
 			localStorage.removeItem(APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY);
 		}
+		if (!localStorage.getItem(APP_SHELL_ICON_SET_DEFAULT_MIGRATION_KEY)) {
+			localStorage.removeItem(APP_SHELL_ICON_SET_KEY);
+			localStorage.setItem(APP_SHELL_ICON_SET_DEFAULT_MIGRATION_KEY, '1');
+		}
 		const value = localStorage.getItem(APP_SHELL_ICON_SET_KEY);
 		if (value === 'default' || value === 'modern') {
 			return value;
@@ -144,5 +154,5 @@ export function readStoredAppShellIconSet(): AppShellIconSetId {
 	} catch {
 		/* ignore */
 	}
-	return 'modern';
+	return 'default';
 }

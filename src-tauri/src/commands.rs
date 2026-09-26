@@ -1,3 +1,4 @@
+pub mod analyses;
 pub mod calculation;
 pub mod charts;
 pub mod default;

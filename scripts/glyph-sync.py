@@ -59,6 +59,22 @@ SET_DIR = "default"
 # ids, so two sections may share a `dir` as long as their stems differ.
 SECTION_PLAN = None
 
+# Optional multi-screen layout. Default (None) is the single sheet described by
+# the SHEET_* globals above. Set it to a list of
+# {"id", "name", "title", "source", "plan", "writable"} to draw several screens
+# into one canvas - `pull` rewrites them all, and `push` only ever reads the
+# sheet whose id is SHEET_ID, so a read-only upstream set can be mapped beside
+# the editable one without becoming writable by accident.
+SHEETS = None
+
+
+def sheet_specs() -> list[dict]:
+    if SHEETS is not None:
+        return SHEETS
+    return [{"id": SHEET_ID, "name": SHEET_NAME, "title": SHEET_TITLE,
+             "source": SHEET_SOURCE, "setid": SET_DIR, "plan": SECTION_PLAN,
+             "writable": True}]
+
 
 def resolve_sections(glyphs_dir: str, setid: str | None = None) -> list[dict]:
     if SECTION_PLAN is not None:
@@ -160,8 +176,14 @@ def resolve_color(value, variables: dict):
     return value
 
 
-def find_glyph_cells(doc: dict, report: Report) -> dict[tuple[str, str], dict]:
-    """Map (category, stem) -> the 56px Glyph frame node."""
+def find_glyph_cells(doc: dict, report: Report,
+                     sheet_id: str | None = None) -> dict[tuple[str, str], dict]:
+    """Map (category, stem) -> the 56px Glyph frame node.
+
+    With several sheets on one canvas the same (section, stem) exists on each,
+    so `sheet_id` narrows the walk to one screen. Left None the whole document
+    is searched, which is what a single-sheet canvas wants.
+    """
     found: dict[tuple[str, str], dict] = {}
 
     def walk(node, section):
@@ -185,7 +207,12 @@ def find_glyph_cells(doc: dict, report: Report) -> dict[tuple[str, str], dict]:
         for k in kids:
             walk(k, section)
 
-    for child in doc.get("children") or []:
+    roots = doc.get("children") or []
+    if sheet_id is not None:
+        roots = [c for c in roots if c.get("id") == sheet_id]
+        if not roots:
+            die(f"sheet {sheet_id!r} is not on the canvas; run `pull` first")
+    for child in roots:
         walk(child, None)
     return found
 
@@ -455,7 +482,8 @@ def parse_svg(path: str, report: Report) -> tuple[list[dict], float, float]:
     inherited = style_of(re.search(r"<svg\b([^>]*)>", src).group(1)
                          if re.search(r"<svg\b([^>]*)>", src) else "")
     stack: list[tuple[float, float, float, dict]] = []
-    pattern = r'<(g|/g|circle|ellipse|rect|path|text)\b([^>]*?)(/?)>([^<]*)'
+    pattern = (r'<(g|/g|circle|ellipse|rect|path|text|line|polyline|polygon)'
+               r'\b([^>]*?)(/?)>([^<]*)')
     for m2 in re.finditer(pattern, src):
         tag, attrs, _selfclose, inner = m2.groups()
         if tag == "g":
@@ -480,6 +508,23 @@ def parse_svg(path: str, report: Report) -> tuple[list[dict], float, float]:
             if stack:
                 tx, ty, sc, inherited = stack.pop()
             continue
+
+        # <line>/<polyline>/<polygon> carry no `d`. Lucide uses all three
+        # (menu, export, horoscope), and dropping them loses whole strokes, so
+        # rewrite each as an equivalent path and fall through to that branch.
+        if tag in ("line", "polyline", "polygon"):
+            if tag == "line":
+                pts = [(float(attr(attrs, "x1", 0)), float(attr(attrs, "y1", 0))),
+                       (float(attr(attrs, "x2", 0)), float(attr(attrs, "y2", 0)))]
+            else:
+                raw = [float(v) for v in re.split(
+                    r'[,\s]+', (attr(attrs, "points", "") or "").strip()) if v]
+                pts = list(zip(raw[0::2], raw[1::2]))
+            if len(pts) < 2:
+                continue
+            d_syn = "M " + " L ".join(f"{num(x)} {num(y)}" for x, y in pts)
+            attrs += ' d="%s"' % (d_syn + (" Z" if tag == "polygon" else ""))
+            tag = "path"
 
         st = dict(inherited)
         st.update(style_of(attrs))
@@ -555,9 +600,10 @@ def parse_svg(path: str, report: Report) -> tuple[list[dict], float, float]:
 
 # ------------------------------------------------------------------ commands
 
-def glyph_files(glyphs_dir: str, setid: str | None = None) -> dict[tuple[str, str], str]:
+def glyph_files(glyphs_dir: str, setid: str | None = None,
+                plan: list[dict] | None = None) -> dict[tuple[str, str], str]:
     out = {}
-    for sec in resolve_sections(glyphs_dir, setid):
+    for sec in (plan if plan is not None else resolve_sections(glyphs_dir, setid)):
         for stem in sec["stems"]:
             out[(sec["key"], stem)] = os.path.join(
                 glyphs_dir, sec["dir"], stem + ".svg")
@@ -584,7 +630,8 @@ def save_baseline(path: str, data: dict) -> None:
 def build_emissions(args, report):
     doc = load_pen(args.pen)
     variables = doc.get("variables") or {}
-    cells = find_glyph_cells(doc, report)
+    cells = find_glyph_cells(doc, report,
+                             SHEET_ID if SHEETS is not None else None)
     if not cells:
         die("no glyph cells found on the canvas (expected section frames named "
             + "/".join(CATEGORIES.values())
@@ -671,11 +718,30 @@ def cmd_baseline(args):
     print("push will now only write glyphs edited after this point.")
 
 
+# Sheet metrics. `pull` places sheets itself - the document root has no layout
+# - so a sheet's height is derived here rather than measured. These mirror the
+# layout emitted below: a 13px name label under a BOX-tall glyph frame, and a
+# 34px title over a 13px source line.
+ROW_H = BOX + 8 + 13
+HEAD_H = 24
+SECT_GAP = 24
+SHEET_PAD = 56
+SHEET_GAP = 48
+HEADER_H = 63
+SHEET_MARGIN = 120
+
+
+def sheet_height(sections: list[dict]) -> int:
+    h = 2 * SHEET_PAD + HEADER_H
+    for sec in sections:
+        rows = max(1, -(-len(sec["stems"]) // COLS))
+        h += (SHEET_GAP + HEAD_H + SECT_GAP
+              + rows * ROW_H + (rows - 1) * SECT_GAP)
+    return h
+
+
 def cmd_pull(args):
     report = Report()
-    files = glyph_files(args.glyphs)
-    if not files:
-        die(f"no glyphs found under {os.path.join(args.glyphs, SET_DIR)}")
 
     nid = [0]
 
@@ -690,75 +756,97 @@ def cmd_pull(args):
         n.update(kw)
         return n
 
-    def cell_width(cat, stem):
-        _e, vbw, vbh = parse_svg(files[(cat, stem)], Report())
-        return round(vbw * BOX / vbh, 3)
+    def build_sheet(spec, y):
+        """One screen. Returns the frame plus what it took to size it."""
+        sections = (spec["plan"] if spec.get("plan") is not None
+                    else resolve_sections(args.glyphs, spec.get("setid")))
+        files = glyph_files(args.glyphs, spec.get("setid"), spec.get("plan"))
+        if not files:
+            die(f"no glyphs found for sheet {spec['name']!r} "
+                f"under {args.glyphs}")
 
-    def cell(cat, stem):
-        els, vbw, vbh = parse_svg(files[(cat, stem)], report)
-        for e in els:
-            e["id"] = gid()
-        boxw = round(vbw * BOX / vbh, 3)
-        return {
-            "type": "frame", "id": gid(), "name": stem, "layout": "vertical",
-            "width": max(CELL, boxw), "alignItems": "center", "gap": 8,
-            "children": [
-                {"type": "frame", "id": gid(), "name": "Glyph",
-                 "layout": "none", "width": boxw, "height": BOX,
-                 "children": els},
-                text(stem.replace("_", " "), name="Name", fontSize=10,
-                     lineHeight=1.3, fill="$muted", textGrowth="fixed-width",
-                     width="fill_container", textAlign="center",
-                     letterSpacing=0.2),
+        def cell_width(cat, stem):
+            _e, vbw, vbh = parse_svg(files[(cat, stem)], Report())
+            return round(vbw * BOX / vbh, 3)
+
+        def cell(cat, stem):
+            els, vbw, vbh = parse_svg(files[(cat, stem)], report)
+            for e in els:
+                e["id"] = gid()
+            boxw = round(vbw * BOX / vbh, 3)
+            return {
+                "type": "frame", "id": gid(), "name": stem,
+                "layout": "vertical", "width": max(CELL, boxw),
+                "alignItems": "center", "gap": 8,
+                "children": [
+                    {"type": "frame", "id": gid(), "name": "Glyph",
+                     "layout": "none", "width": boxw, "height": BOX,
+                     "children": els},
+                    text(stem.replace("_", " "), name="Name", fontSize=10,
+                         lineHeight=1.3, fill="$muted",
+                         textGrowth="fixed-width", width="fill_container",
+                         textAlign="center", letterSpacing=0.2),
+                ],
+            }
+
+        def section(sec):
+            cat, stems = sec["key"], sec["stems"]
+            rows = []
+            for i in range(0, len(stems), COLS):
+                rows.append({"type": "frame", "id": gid(),
+                             "name": f"Row {i // COLS + 1}",
+                             "layout": "horizontal", "gap": 12,
+                             "alignItems": "start",
+                             "children": [cell(cat, s)
+                                          for s in stems[i:i + COLS]]})
+            head = {"type": "frame", "id": gid(), "name": "Heading",
+                    "layout": "horizontal", "width": "fill_container",
+                    "alignItems": "center", "gap": 12, "children": [
+                        text(sec["title"], name="Title", fontSize=20,
+                             fontWeight="600", letterSpacing=-0.2),
+                        text(str(len(stems)), name="Count", fontSize=13,
+                             fill="$faint"),
+                        {"type": "rectangle", "id": gid(), "name": "Rule",
+                         "width": "fill_container", "height": 1,
+                         "fill": "$rule"},
+                    ]}
+            return {"type": "frame", "id": gid(), "name": sec["title"],
+                    "layout": "vertical", "width": "fill_container", "gap": 24,
+                    "children": [head, {"type": "frame", "id": gid(),
+                                        "name": "Grid", "layout": "vertical",
+                                        "gap": 24, "children": rows}]}
+
+        width = COLS * CELL + (COLS - 1) * 12 + 2 * SHEET_PAD
+        for sec in sections:
+            for i in range(0, len(sec["stems"]), COLS):
+                row = sec["stems"][i:i + COLS]
+                span = sum(max(CELL, cell_width(sec["key"], s)) for s in row)
+                width = max(width, span + (len(row) - 1) * 12 + 2 * SHEET_PAD)
+
+        sheet = {
+            "type": "frame", "id": spec["id"], "name": spec["name"],
+            "x": 0, "y": y, "width": width, "height": "fit_content",
+            "layout": "vertical", "gap": SHEET_GAP, "padding": SHEET_PAD,
+            "fill": "#FFFFFF", "clip": True, "children": [
+                {"type": "frame", "id": gid(), "name": "Header",
+                 "layout": "vertical", "gap": 6, "width": "fill_container",
+                 "children": [
+                     text(spec["title"], name="Title", fontSize=34,
+                          fontWeight="700", letterSpacing=-0.8),
+                     text(spec["source"], name="Source",
+                          fontSize=13, fill="$faint", letterSpacing=0.2),
+                 ]},
+                *[section(sec) for sec in sections],
             ],
         }
+        return sheet, sections, len(files)
 
-    def section(sec):
-        cat, stems = sec["key"], sec["stems"]
-        rows = []
-        for i in range(0, len(stems), COLS):
-            rows.append({"type": "frame", "id": gid(),
-                         "name": f"Row {i // COLS + 1}", "layout": "horizontal",
-                         "gap": 12, "alignItems": "start",
-                         "children": [cell(cat, s) for s in stems[i:i + COLS]]})
-        head = {"type": "frame", "id": gid(), "name": "Heading",
-                "layout": "horizontal", "width": "fill_container",
-                "alignItems": "center", "gap": 12, "children": [
-                    text(sec["title"], name="Title", fontSize=20,
-                         fontWeight="600", letterSpacing=-0.2),
-                    text(str(len(stems)), name="Count", fontSize=13,
-                         fill="$faint"),
-                    {"type": "rectangle", "id": gid(), "name": "Rule",
-                     "width": "fill_container", "height": 1, "fill": "$rule"},
-                ]}
-        return {"type": "frame", "id": gid(), "name": sec["title"],
-                "layout": "vertical", "width": "fill_container", "gap": 24,
-                "children": [head, {"type": "frame", "id": gid(),
-                                    "name": "Grid", "layout": "vertical",
-                                    "gap": 24, "children": rows}]}
-
-    width = COLS * CELL + (COLS - 1) * 12 + 2 * 56
-    for sec in resolve_sections(args.glyphs):
-        for i in range(0, len(sec["stems"]), COLS):
-            row = sec["stems"][i:i + COLS]
-            span = sum(max(CELL, cell_width(sec["key"], s)) for s in row)
-            width = max(width, span + (len(row) - 1) * 12 + 2 * 56)
-    sheet = {
-        "type": "frame", "id": SHEET_ID, "name": SHEET_NAME,
-        "x": 0, "y": 0, "width": width, "height": "fit_content",
-        "layout": "vertical", "gap": 48, "padding": 56, "fill": "#FFFFFF",
-        "clip": True, "children": [
-            {"type": "frame", "id": gid(), "name": "Header",
-             "layout": "vertical", "gap": 6, "width": "fill_container",
-             "children": [
-                 text(SHEET_TITLE, name="Title", fontSize=34,
-                      fontWeight="700", letterSpacing=-0.8),
-                 text(SHEET_SOURCE, name="Source",
-                      fontSize=13, fill="$faint", letterSpacing=0.2),
-             ]},
-            *[section(sec) for sec in resolve_sections(args.glyphs)],
-        ],
-    }
+    sheets, y, pulled = [], 0, 0
+    for spec in sheet_specs():
+        node, sections, count = build_sheet(spec, y)
+        sheets.append(node)
+        pulled += count
+        y += sheet_height(sections) + SHEET_MARGIN
 
     doc = load_pen(args.pen) if os.path.exists(args.pen) else {"version": "2.17"}
     doc["variables"] = {
@@ -768,13 +856,15 @@ def cmd_pull(args):
         "rule": {"type": "color", "value": "#E4E4E4"},
         "font-ui": {"type": "string", "value": "Inter"},
     }
-    doc["children"] = [sheet]
+    doc["children"] = sheets
     with open(args.pen, "w", encoding="utf-8") as fh:
         json.dump(doc, fh, ensure_ascii=False, indent=1)
         fh.write("\n")
 
     report.flush()
-    print(f"pulled {len(files)} glyph(s) into {args.pen}")
+    noun = "sheet" if len(sheets) == 1 else "sheets"
+    print(f"pulled {pulled} glyph(s) into {len(sheets)} {noun} "
+          f"in {args.pen}")
     print(f"the editor ignores external writes - reopen "
           f"{os.path.basename(args.pen)} to see it.")
     args2 = argparse.Namespace(**vars(args))

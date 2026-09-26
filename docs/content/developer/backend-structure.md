@@ -336,16 +336,12 @@ Selected bodies use this precedence:
 ```text
 operation selection
   > resolved chart observable_objects
-  > legacy chart included_points
   > model default_bodies
   > all model body definitions
 ```
 
-An empty operation list currently inherits the resolved chart selection for
-compatibility with the transit command contract. `included_points` is a
-deprecated read alias; using it emits
-`included_points_deprecated: use observable_objects`. New persisted data should
-write only `observable_objects`.
+An explicit empty operation list selects no bodies. The only chart-level body
+selection field is `observable_objects`.
 
 ## Persisted and derived data
 

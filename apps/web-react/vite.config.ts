@@ -13,7 +13,11 @@ export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	resolve: {
 		alias: {
-			'@': path.resolve(__dirname, './src')
+			'@': path.resolve(__dirname, './src'),
+			// Data shared across frontends (degree symbol sets, …) — repo root `static/`, same
+			// directory served at runtime via `publicDir` above, imported here at build time for
+			// code that needs it synchronously (see degreeSymbolSets.ts).
+			'@static': path.resolve(__dirname, '../../static')
 		}
 	},
 	assetsInclude: ['**/*.svg', '**/*.csv'],
@@ -24,6 +28,9 @@ export default defineConfig({
 		hmr: host ? { protocol: 'ws', host, port: 1421 } : undefined,
 		watch: {
 			ignored: ['../../src-tauri/**']
+		},
+		fs: {
+			allow: [path.resolve(__dirname, '../..')]
 		}
 	},
 	envPrefix: ['VITE_', 'TAURI_ENV_*'],

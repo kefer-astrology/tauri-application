@@ -518,6 +518,33 @@
             </Select.Content>
           </Select.Root>
         </div>
+        <div class="space-y-2">
+          <div class="block text-sm font-medium opacity-90">{t('settings_position_mode', {}, 'Planet positions')}</div>
+          <Select.Root
+            type="single"
+            value={layout.workspaceDefaults.positionMode}
+            onValueChange={(value) => {
+              const positionMode = value === 'geometric' ? 'geometric' : 'apparent';
+              settingsChanged = true;
+              void persistWorkspaceDefaultsPatch({ positionMode }, { recomputeCharts: true });
+            }}
+          >
+            <Select.Trigger class="w-full h-9 px-3">
+              {layout.workspaceDefaults.positionMode === 'geometric'
+                ? t('settings_position_mode_geometric', {}, 'Geometric / true')
+                : t('settings_position_mode_apparent', {}, 'Apparent (recommended)')}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Item value="apparent" label={t('settings_position_mode_apparent', {}, 'Apparent (recommended)')}>
+                {t('settings_position_mode_apparent', {}, 'Apparent (recommended)')}
+              </Select.Item>
+              <Select.Item value="geometric" label={t('settings_position_mode_geometric', {}, 'Geometric / true')}>
+                {t('settings_position_mode_geometric', {}, 'Geometric / true')}
+              </Select.Item>
+            </Select.Content>
+          </Select.Root>
+          <p class="text-xs opacity-70">{t('settings_position_mode_hint', {}, 'Apparent positions account for light travel time and stellar aberration.')}</p>
+        </div>
       </div>
     {:else if section === 'pozorovane_objekty'}
       <h3 class="text-sm font-semibold mb-4">{t('section_observable_objects', {}, 'Observable objects')}</h3>

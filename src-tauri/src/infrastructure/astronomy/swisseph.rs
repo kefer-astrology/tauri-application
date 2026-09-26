@@ -7,7 +7,7 @@ use std::sync::{Mutex, OnceLock};
 use chrono::{DateTime, Datelike, Timelike, Utc};
 
 use crate::infrastructure::astronomy::AstronomyMotion;
-use crate::workspace::models::{Ayanamsa, ChartInstance, HouseSystem, ZodiacType};
+use crate::workspace::models::{Ayanamsa, ChartInstance, HouseSystem, PositionMode, ZodiacType};
 
 const SE_SUN: c_int = 0;
 const SE_MOON: c_int = 1;
@@ -30,6 +30,7 @@ const SE_VESTA: c_int = 20;
 
 const SEFLG_JPLEPH: i32 = 1;
 const SEFLG_SWIEPH: i32 = 2;
+const SEFLG_TRUEPOS: i32 = 16;
 const SEFLG_SPEED: i32 = 256;
 const SEFLG_SIDEREAL: i32 = 64 * 1024;
 
@@ -327,7 +328,30 @@ fn calc_flags(chart: &ChartInstance, ephemeris_flag: i32) -> i32 {
     if matches!(chart.config.zodiac_type, ZodiacType::Sidereal) {
         flags |= SEFLG_SIDEREAL;
     }
+    flags |= position_mode_flags(chart.config.position_mode);
     flags
+}
+
+fn position_mode_flags(mode: Option<PositionMode>) -> i32 {
+    match mode.unwrap_or(PositionMode::Apparent) {
+        PositionMode::Apparent => 0,
+        PositionMode::Geometric => SEFLG_TRUEPOS,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apparent_is_default_and_geometric_requests_true_positions() {
+        assert_eq!(position_mode_flags(None), 0);
+        assert_eq!(position_mode_flags(Some(PositionMode::Apparent)), 0);
+        assert_eq!(
+            position_mode_flags(Some(PositionMode::Geometric)),
+            SEFLG_TRUEPOS
+        );
+    }
 }
 
 fn read_error(buffer: &[i8]) -> String {

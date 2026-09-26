@@ -14,8 +14,8 @@ function appShellAssetSet(setId: AppShellIconSetId): AppShellIconSetId {
   return setId;
 }
 export const APP_SHELL_FULL_LOGO_ASPECT_RATIO: Record<AppShellIconSetId, number> = {
-  default: 247 / 77,
-  modern: 220 / 60,
+  default: 72.981 / 34.224,
+  modern: 74.208 / 35.334,
 };
 export const APP_SHELL_MARK_MASK_SCALE = 0.88;
 type AppShellAssetId =

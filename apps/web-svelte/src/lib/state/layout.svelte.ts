@@ -9,7 +9,7 @@ import {
   normalizeAspectLineTierStyle,
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
-import type { CurrentModelReport, ModelOverridesDto } from '$lib/tauri/types';
+import type { ChartDefinitionDto, CurrentModelReport, ModelOverridesDto } from '$lib/tauri/types';
 
 export interface MoonDetailsDto {
   elongation_deg: number;
@@ -27,6 +27,8 @@ export type Tab = (typeof tabs)[number];
 export interface ChartData {
   id: string;
   name: string;
+  entityKind?: 'chart' | 'analysis';
+  definition?: ChartDefinitionDto;
   chartType: string;
   dateTime: string;
   location: string;
@@ -35,6 +37,7 @@ export interface ChartData {
   houseSystem?: string | null;
   zodiacType?: string;
   engine?: string | null;
+  positionMode?: 'apparent' | 'geometric' | null;
   model?: string | null;
   modelOverrides?: ModelOverridesDto | null;
   overrideEphemeris?: string | null;
@@ -47,9 +50,6 @@ export interface ChartData {
   observableObjects?: string[];
   aspectOrbs?: Record<string, number>;
   selectedAspects?: string[];
-  includedPoints?: string[];
-  displayStyle?: string;
-  colorTheme?: string;
   ayanamsa?: string | null;
   timeSystem?: string | null;
   rodenRating?: string | null;
@@ -77,6 +77,7 @@ export interface WorkspaceDefaultsState {
   locationLatitude: number;
   locationLongitude: number;
   engine: string | null;
+  positionMode: 'apparent' | 'geometric';
   defaultBodies: string[];
   defaultAspects: string[];
   defaultAspectOrbs: Record<string, number>;
@@ -92,6 +93,7 @@ const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
   locationLatitude: 50.0875,
   locationLongitude: 14.4214,
   engine: 'swisseph',
+  positionMode: 'apparent',
   defaultBodies: [...DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS],
   defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
   defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
@@ -162,6 +164,10 @@ export function setWorkspaceDefaults(defaults: Partial<WorkspaceDefaultsState>) 
     locationLatitude: asFiniteNumber(defaults.locationLatitude) ?? layout.workspaceDefaults.locationLatitude,
     locationLongitude: asFiniteNumber(defaults.locationLongitude) ?? layout.workspaceDefaults.locationLongitude,
     engine: asNonEmpty(defaults.engine) ?? layout.workspaceDefaults.engine,
+    positionMode:
+      defaults.positionMode === 'geometric' || defaults.positionMode === 'apparent'
+        ? defaults.positionMode
+        : layout.workspaceDefaults.positionMode,
     defaultBodies: Array.isArray(defaults.defaultBodies) ? [...defaults.defaultBodies] : layout.workspaceDefaults.defaultBodies,
     defaultAspects: Array.isArray(defaults.defaultAspects) ? [...defaults.defaultAspects] : layout.workspaceDefaults.defaultAspects,
     defaultAspectOrbs:
@@ -302,7 +308,15 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
   const timezone = asNonEmpty(chart.timezone) ?? defaults.timezone;
   const houseSystem = asNonEmpty(chart.houseSystem) ?? defaults.houseSystem;
   const zodiacType = asNonEmpty(chart.zodiacType) ?? defaults.zodiacType;
-  const mode = asNonEmpty(chart.chartType) ?? 'NATAL';
+  const definition: ChartDefinitionDto = chart.definition ?? {
+    kind: 'base',
+    purpose: (chart.chartType || 'NATAL').toLowerCase() as
+      | 'natal'
+      | 'event'
+      | 'horary'
+      | 'electional'
+      | 'moment'
+  };
   const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);
   const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
   const model = asNonEmpty(chart.model);
@@ -336,19 +350,17 @@ export function chartDataToComputePayload(chart: ChartData): Record<string, unkn
       },
     },
     config: {
-      mode,
+      definition,
       house_system: houseSystem,
       zodiac_type: zodiacType,
       engine,
+      position_mode: chart.positionMode ?? defaults.positionMode,
       override_ephemeris: overrideEphemeris,
       model,
       model_overrides: chart.modelOverrides ?? null,
       observable_objects: observableObjects,
-      included_points: chart.includedPoints ?? [],
       selected_aspects: selectedAspects,
       aspect_orbs: aspectOrbs,
-      display_style: chart.displayStyle ?? '',
-      color_theme: chart.colorTheme ?? '',
       ...(chart.ayanamsa ? { ayanamsa: chart.ayanamsa } : {}),
       ...(chart.timeSystem ? { time_system: chart.timeSystem } : {}),
     },

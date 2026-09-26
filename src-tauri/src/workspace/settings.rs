@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use super::model_catalog::{builtin_model_settings, builtin_standard_model};
 use super::models::{
-    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, TimeSystem,
-    WorkspaceManifest, ZodiacType,
+    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, PositionMode,
+    TimeSystem, WorkspaceManifest, ZodiacType,
 };
 use super::validation::Diagnostic;
 
@@ -39,6 +39,7 @@ pub struct SettingsLayer {
     pub aspects: Option<Vec<String>>,
     pub aspect_orbs: HashMap<String, f64>,
     pub engine: Option<EngineType>,
+    pub position_mode: Option<PositionMode>,
     pub zodiac_type: Option<ZodiacType>,
     pub ayanamsa: Option<Ayanamsa>,
     pub time_system: Option<TimeSystem>,
@@ -47,15 +48,14 @@ pub struct SettingsLayer {
 
 impl SettingsLayer {
     pub fn from_chart_config(config: &ChartConfig) -> Self {
-        let bodies = config.observable_objects.clone().or_else(|| {
-            (!config.included_points.is_empty()).then(|| config.included_points.clone())
-        });
+        let bodies = config.observable_objects.clone();
         Self {
             house_system: config.house_system.clone(),
             bodies,
             aspects: config.selected_aspects.clone(),
             aspect_orbs: config.aspect_orbs.clone(),
             engine: config.engine.clone(),
+            position_mode: config.position_mode,
             zodiac_type: Some(config.zodiac_type.clone()),
             ayanamsa: config.ayanamsa.clone(),
             time_system: config.time_system.clone(),
@@ -75,6 +75,7 @@ pub struct EffectiveSettingsSources {
     pub standard_orb: SettingSource,
     #[serde(default)]
     pub engine: Option<SettingSource>,
+    pub position_mode: SettingSource,
     #[serde(default)]
     pub zodiac_type: Option<SettingSource>,
     #[serde(default)]
@@ -106,6 +107,7 @@ pub struct EffectiveModelSettings {
     pub standard_orb: f64,
     #[serde(default)]
     pub engine: Option<EngineType>,
+    pub position_mode: PositionMode,
     #[serde(default)]
     pub zodiac_type: Option<ZodiacType>,
     #[serde(default)]
@@ -167,8 +169,7 @@ pub fn standalone_model_report_with_operation(
     let model = builtin_standard_model(&resolved_model);
     let effective_settings =
         effective_model_settings(None, &model, None, Some(chart_config), operation);
-    let mut warnings = Vec::new();
-    append_chart_compatibility_warnings(Some(chart_config), &mut warnings);
+    let warnings = Vec::new();
     let mut diagnostics = super::validation::validate_model(&model, "model");
     diagnostics.extend(super::validation::validate_effective_settings(
         &model,
@@ -243,7 +244,6 @@ pub fn current_model_report_with_layers(
     }
     let effective_settings =
         effective_model_settings(Some(manifest), &model, preset, chart_config, operation);
-    append_chart_compatibility_warnings(chart_config, &mut warnings);
     let mut diagnostics = super::validation::validate_manifest_model_references(manifest, &model);
     if source == "builtin_standard_model" {
         diagnostics.extend(super::validation::validate_model(&model, "model"));
@@ -428,6 +428,14 @@ fn effective_model_settings(
     let mut aspects_source = settings_source;
     let mut engine = model.engine.clone();
     let mut engine_source = engine.as_ref().map(|_| SettingSource::Model);
+    let mut position_mode = model_settings
+        .position_mode
+        .unwrap_or(PositionMode::Apparent);
+    let mut position_mode_source = if model_settings.position_mode.is_some() {
+        settings_source
+    } else {
+        SettingSource::Application
+    };
     let mut zodiac_type = model.zodiac_type.clone();
     let mut zodiac_source = zodiac_type.as_ref().map(|_| SettingSource::Model);
     let mut ayanamsa = model.ayanamsa.clone();
@@ -472,6 +480,10 @@ fn effective_model_settings(
             engine = Some(value);
             engine_source = Some(SettingSource::Workspace);
         }
+        if let Some(value) = manifest.default.position_mode {
+            position_mode = value;
+            position_mode_source = SettingSource::Workspace;
+        }
         if let Some(value) = manifest.default.time_system.clone() {
             time_system = Some(value);
             time_source = Some(SettingSource::Workspace);
@@ -492,6 +504,8 @@ fn effective_model_settings(
             &mut aspect_orb_sources,
             &mut engine,
             &mut engine_source,
+            &mut position_mode,
+            &mut position_mode_source,
             &mut zodiac_type,
             &mut zodiac_source,
             &mut ayanamsa,
@@ -506,11 +520,8 @@ fn effective_model_settings(
             house_system = Some(value);
             house_source = Some(SettingSource::Chart);
         }
-        if let Some(value) = non_empty_vec(config.observable_objects.as_ref()) {
+        if let Some(value) = config.observable_objects.clone() {
             bodies = value;
-            bodies_source = SettingSource::Chart;
-        } else if !config.included_points.is_empty() {
-            bodies.clone_from(&config.included_points);
             bodies_source = SettingSource::Chart;
         }
         if let Some(value) = config.selected_aspects.clone() {
@@ -526,6 +537,10 @@ fn effective_model_settings(
         if let Some(value) = config.engine.clone() {
             engine = Some(value);
             engine_source = Some(SettingSource::Chart);
+        }
+        if let Some(value) = config.position_mode {
+            position_mode = value;
+            position_mode_source = SettingSource::Chart;
         }
         zodiac_type = Some(config.zodiac_type.clone());
         zodiac_source = Some(SettingSource::Chart);
@@ -553,6 +568,8 @@ fn effective_model_settings(
             &mut aspect_orb_sources,
             &mut engine,
             &mut engine_source,
+            &mut position_mode,
+            &mut position_mode_source,
             &mut zodiac_type,
             &mut zodiac_source,
             &mut ayanamsa,
@@ -573,6 +590,7 @@ fn effective_model_settings(
         aspect_orbs,
         standard_orb: model_settings.standard_orb,
         engine,
+        position_mode,
         zodiac_type,
         ayanamsa,
         time_system,
@@ -586,6 +604,7 @@ fn effective_model_settings(
             aspect_orbs: aspect_orb_sources,
             standard_orb: settings_source,
             engine: engine_source,
+            position_mode: position_mode_source,
             zodiac_type: zodiac_source,
             ayanamsa: ayanamsa_source,
             time_system: time_source,
@@ -603,6 +622,7 @@ pub fn apply_effective_settings(config: &mut ChartConfig, settings: &EffectiveMo
     config.selected_aspects = Some(settings.default_aspects.clone());
     config.aspect_orbs.clone_from(&settings.aspect_orbs);
     config.engine = settings.engine.clone();
+    config.position_mode = Some(settings.position_mode);
     if let Some(zodiac_type) = settings.zodiac_type.clone() {
         config.zodiac_type = zodiac_type;
     }
@@ -624,6 +644,8 @@ fn apply_settings_layer(
     aspect_orb_sources: &mut HashMap<String, SettingSource>,
     engine: &mut Option<EngineType>,
     engine_source: &mut Option<SettingSource>,
+    position_mode: &mut PositionMode,
+    position_mode_source: &mut SettingSource,
     zodiac_type: &mut Option<ZodiacType>,
     zodiac_source: &mut Option<SettingSource>,
     ayanamsa: &mut Option<Ayanamsa>,
@@ -652,6 +674,10 @@ fn apply_settings_layer(
     if let Some(value) = layer.engine.clone() {
         *engine = Some(value);
         *engine_source = Some(source);
+    }
+    if let Some(value) = layer.position_mode {
+        *position_mode = value;
+        *position_mode_source = source;
     }
     if let Some(value) = layer.zodiac_type.clone() {
         *zodiac_type = Some(value);
@@ -685,18 +711,6 @@ fn non_empty_string(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|value| !value.is_empty())
 }
 
-fn append_chart_compatibility_warnings(
-    chart_config: Option<&ChartConfig>,
-    warnings: &mut Vec<String>,
-) {
-    if chart_config.is_some_and(|config| {
-        config.observable_objects.as_ref().is_none_or(Vec::is_empty)
-            && !config.included_points.is_empty()
-    }) {
-        warnings.push("included_points_deprecated: use observable_objects".to_string());
-    }
-}
-
 fn non_empty_vec(value: Option<&Vec<String>>) -> Option<Vec<String>> {
     value.filter(|items| !items.is_empty()).cloned()
 }
@@ -713,13 +727,14 @@ fn aspect_orbs_from_model(model: &AstroModel) -> HashMap<String, f64> {
 mod tests {
     use super::*;
     use crate::workspace::models::{
-        AspectContext, AstrologySchool, ChartMode, ElementColorSettings, OverrideEntry,
-        RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
+        AspectContext, AstrologySchool, BaseChartPurpose, ChartDefinition, ElementColorSettings,
+        OverrideEntry, RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
     };
 
     fn empty_defaults() -> WorkspaceDefaults {
         WorkspaceDefaults {
             ephemeris_engine: None,
+            position_mode: None,
             ephemeris_backend: None,
             element_colors: None::<ElementColorSettings>,
             radix_point_colors: None::<RadixPointColorSettings>,
@@ -752,6 +767,7 @@ mod tests {
             chart_presets: vec![],
             subjects: vec![],
             charts: vec![],
+            analyses: vec![],
             transit_analyses: vec![],
             layouts: vec![],
             annotations: vec![],
@@ -760,18 +776,18 @@ mod tests {
 
     fn chart_config() -> ChartConfig {
         ChartConfig {
-            mode: ChartMode::NATAL,
+            definition: ChartDefinition::Base {
+                purpose: BaseChartPurpose::Natal,
+            },
             house_system: Some(HouseSystem::WholeSign),
             zodiac_type: ZodiacType::Sidereal,
-            included_points: vec![],
             aspect_orbs: HashMap::from([("conjunction".to_string(), 4.0)]),
             selected_aspects: Some(vec!["square".to_string()]),
-            display_style: String::new(),
-            color_theme: String::new(),
             override_ephemeris: None,
             model: Some("western".to_string()),
             model_overrides: None,
             engine: Some(EngineType::Swisseph),
+            position_mode: None,
             ayanamsa: Some(Ayanamsa::Lahiri),
             observable_objects: Some(vec!["moon".to_string()]),
             time_system: Some(TimeSystem::Gregorian),
@@ -989,25 +1005,6 @@ mod tests {
     }
 
     #[test]
-    fn legacy_included_points_are_resolved_as_a_deprecated_chart_override() {
-        let mut config = chart_config();
-        config.observable_objects = None;
-        config.included_points = vec!["sun".to_string(), "asc".to_string()];
-
-        let report = standalone_model_report(&config);
-
-        assert_eq!(report.effective_settings.default_bodies, vec!["sun", "asc"]);
-        assert_eq!(
-            report.effective_settings.sources.default_bodies,
-            SettingSource::Chart
-        );
-        assert_eq!(
-            report.warnings,
-            vec!["included_points_deprecated: use observable_objects"]
-        );
-    }
-
-    #[test]
     fn shared_resolution_fixture_matches_cross_language_contract() {
         let fixture: serde_json::Value =
             serde_json::from_str(include_str!("../../../contracts/settings-resolution.json"))
@@ -1066,6 +1063,10 @@ mod tests {
             expected["engine"]
         );
         assert_eq!(
+            serde_json::to_value(settings.position_mode).unwrap(),
+            expected["positionMode"]
+        );
+        assert_eq!(
             serde_json::to_value(&settings.zodiac_type).unwrap(),
             expected["zodiacType"]
         );
@@ -1093,6 +1094,7 @@ mod tests {
         assert_eq!(settings.sources.default_bodies, SettingSource::Operation);
         assert_eq!(settings.sources.default_aspects, SettingSource::Operation);
         assert_eq!(settings.sources.engine, Some(SettingSource::Operation));
+        assert_eq!(settings.sources.position_mode, SettingSource::Operation);
         assert_eq!(settings.sources.zodiac_type, Some(SettingSource::Chart));
         assert_eq!(settings.sources.ayanamsa, Some(SettingSource::Chart));
         assert_eq!(settings.sources.time_system, Some(SettingSource::Operation));

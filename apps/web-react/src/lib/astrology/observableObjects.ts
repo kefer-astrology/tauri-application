@@ -29,6 +29,22 @@ export interface ObservableObjectDefinition {
 	 * but should still display 'planned' entries, disabled, for discoverability.
 	 */
 	status: ObservableObjectStatus;
+	/**
+	 * Geocentric ecliptic latitude in degrees (J2000), only set for fixed stars. Positive is
+	 * north of the ecliptic, negative is south. Derived from the Swiss Ephemeris fixed-star
+	 * catalog (equatorial RA/Dec converted to ecliptic coordinates) — ecliptic latitude barely
+	 * moves over centuries, unlike RA/Dec, which makes it a stable basis for a north/south
+	 * quick-filter over ~2000 years of precession. Used to power the "northern/southern sky"
+	 * quick filter in the fixed-stars picker, not for chart computation.
+	 */
+	eclipticLatitude?: number;
+}
+
+export type StarHemisphere = 'north' | 'south';
+
+export function starHemisphere(item: ObservableObjectDefinition): StarHemisphere | undefined {
+	if (item.eclipticLatitude === undefined) return undefined;
+	return item.eclipticLatitude >= 0 ? 'north' : 'south';
 }
 
 type ObservableObjectCategoryLabel = {
@@ -36,7 +52,11 @@ type ObservableObjectCategoryLabel = {
 	fallbackLabel: string;
 };
 
-function fixedStar(name: string, altName?: string): ObservableObjectDefinition {
+function fixedStar(
+	name: string,
+	eclipticLatitude: number,
+	altName?: string
+): ObservableObjectDefinition {
 	const slug = name
 		.toLowerCase()
 		.normalize('NFD')
@@ -49,7 +69,8 @@ function fixedStar(name: string, altName?: string): ObservableObjectDefinition {
 		altName,
 		icon: name.charAt(0),
 		category: 'fixed_stars',
-		status: 'planned'
+		status: 'planned',
+		eclipticLatitude
 	};
 }
 
@@ -608,71 +629,144 @@ export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [
 		category: 'hypothetical',
 		status: 'planned'
 	},
-	fixedStar('Deneb Kaitos', 'Diphda'),
-	fixedStar('Algenib'),
-	fixedStar('Alpheratz', 'Sirra'),
-	fixedStar('Baten Kaitos'),
-	fixedStar('Mirach'),
-	fixedStar('Sheratan'),
-	fixedStar('Hamal'),
-	fixedStar('Alamak'),
-	fixedStar('Menkar'),
-	fixedStar('Algol'),
-	fixedStar('Alcyone'),
-	fixedStar('Hyades'),
-	fixedStar('Aldebaran'),
-	fixedStar('Rigel'),
-	fixedStar('Bellatrix'),
-	fixedStar('Capella'),
-	fixedStar('Mintaka'),
-	fixedStar('Nath'),
-	fixedStar('Alnilam'),
-	fixedStar('Polaris'),
-	fixedStar('Betelgeuse'),
-	fixedStar('Alhena'),
-	fixedStar('Sirius'),
-	fixedStar('Canopus'),
-	fixedStar('Propus'),
-	fixedStar('Castor'),
-	fixedStar('Pollux'),
-	fixedStar('Procyon'),
-	fixedStar('Praesepe'),
-	fixedStar('Asellus Borealis'),
-	fixedStar('Asellus Australis'),
-	fixedStar('Alfard'),
-	fixedStar('Regulus'),
-	fixedStar('Zosma'),
-	fixedStar('Denebola'),
-	fixedStar('Vindemiatrix'),
-	fixedStar('Algorab'),
-	fixedStar('Spica', 'Arista'),
-	fixedStar('Arcturus'),
-	fixedStar('Acrux'),
-	fixedStar('Alphecca', 'Gemma / Gnosia'),
-	fixedStar('Kiffa Australis', 'Zuben Elgenubi'),
-	fixedStar('Kiffa Borealis', 'Zuben Elschemali'),
-	fixedStar('Unuk Elhaia'),
-	fixedStar('Agena'),
-	fixedStar('Bungula'),
-	fixedStar('Acrab', 'Grafias'),
-	fixedStar('Antares'),
-	fixedStar('Rastaban'),
-	fixedStar('Ras Alhague'),
-	fixedStar('Lesath'),
-	fixedStar('Sinistra'),
-	fixedStar('Vega'),
-	fixedStar('Altair'),
-	fixedStar('Giedi', 'Gredi'),
-	fixedStar('Dabih'),
-	fixedStar('Deneb Algiedi'),
-	fixedStar('Albireo'),
-	fixedStar('Sadalmelek'),
-	fixedStar('Fomalhaut'),
-	fixedStar('Deneb Adige', 'Deneb Cygni'),
-	fixedStar('Deneb'),
-	fixedStar('Achernar'),
-	fixedStar('Markeb'),
-	fixedStar('Scheat')
+	fixedStar('Deneb Kaitos', -10.0, 'Diphda'),
+	fixedStar('Algenib', 12.6),
+	fixedStar('Alpheratz', 25.7, 'Sirra'),
+	fixedStar('Baten Kaitos', -20.3),
+	fixedStar('Mirach', 25.9),
+	fixedStar('Sheratan', 8.5),
+	fixedStar('Hamal', 10.0),
+	fixedStar('Alamak', 27.8),
+	fixedStar('Menkar', -12.6),
+	fixedStar('Algol', 22.4),
+	fixedStar('Alcyone', 4.1),
+	fixedStar('Hyades', -5.8),
+	fixedStar('Aldebaran', -5.5),
+	fixedStar('Rigel', -31.1),
+	fixedStar('Bellatrix', -16.8),
+	fixedStar('Capella', 22.9),
+	fixedStar('Mintaka', -23.6),
+	fixedStar('Nath', 5.4),
+	fixedStar('Alnilam', -24.5),
+	fixedStar('Polaris', 66.1),
+	fixedStar('Betelgeuse', -16.0),
+	fixedStar('Alhena', -6.7),
+	fixedStar('Sirius', -39.6),
+	fixedStar('Canopus', -75.8),
+	fixedStar('Propus', -0.9),
+	fixedStar('Castor', 10.1),
+	fixedStar('Pollux', 6.7),
+	fixedStar('Procyon', -16.0),
+	fixedStar('Praesepe', 1.6),
+	fixedStar('Asellus Borealis', 3.2),
+	fixedStar('Asellus Australis', 0.1),
+	fixedStar('Alfard', -22.4),
+	fixedStar('Regulus', 0.5),
+	fixedStar('Zosma', 14.3),
+	fixedStar('Denebola', 12.3),
+	fixedStar('Vindemiatrix', 16.2),
+	fixedStar('Algorab', -12.2),
+	fixedStar('Spica', -2.1, 'Arista'),
+	fixedStar('Arcturus', 30.7),
+	fixedStar('Acrux', -52.9),
+	fixedStar('Alphecca', 44.3, 'Gemma / Gnosia'),
+	fixedStar('Kiffa Australis', 0.3, 'Zuben Elgenubi'),
+	fixedStar('Kiffa Borealis', 8.5, 'Zuben Elschemali'),
+	fixedStar('Unuk Elhaia', 25.5),
+	fixedStar('Agena', -44.1),
+	fixedStar('Bungula', -42.6),
+	fixedStar('Acrab', 1.0, 'Grafias'),
+	fixedStar('Antares', -4.6),
+	fixedStar('Rastaban', 75.3),
+	fixedStar('Ras Alhague', 35.8),
+	fixedStar('Lesath', -14.0),
+	fixedStar('Sinistra', 13.7),
+	fixedStar('Vega', 61.7),
+	fixedStar('Altair', 29.3),
+	fixedStar('Giedi', 7.0, 'Gredi'),
+	fixedStar('Dabih', 4.6),
+	fixedStar('Deneb Algiedi', -2.6),
+	fixedStar('Albireo', 49.0),
+	fixedStar('Sadalmelek', 10.7),
+	fixedStar('Fomalhaut', -21.1),
+	fixedStar('Deneb Adige', 59.9, 'Deneb Cygni'),
+	fixedStar('Deneb', 59.9),
+	fixedStar('Achernar', -59.4),
+	fixedStar('Markeb', -63.7),
+	fixedStar('Scheat', 31.1),
+	// Extended set — additional bright, traditionally named fixed stars (ecliptic latitude and
+	// magnitude sourced the same way as the set above, via the Swiss Ephemeris fixed-star
+	// catalog). Still 'planned': no backend computes fixed-star positions yet.
+	fixedStar('Rigil Kentaurus', -42.6),
+	fixedStar('Mimosa', -48.6),
+	fixedStar('Adhara', -51.4),
+	fixedStar('Shaula', -13.8),
+	fixedStar('Gacrux', -47.8),
+	fixedStar('Miaplacidus', -72.2),
+	fixedStar('Alnair', -32.9),
+	fixedStar('Alioth', 54.3),
+	fixedStar('Alnitak', -25.3),
+	fixedStar('Mirfak', 30.1),
+	fixedStar('Dubhe', 49.7),
+	fixedStar('Regor', -64.5),
+	fixedStar('Wezen', -48.5),
+	fixedStar('Kaus Australis', -11.1),
+	fixedStar('Alkaid', 54.4),
+	fixedStar('Sargas', -19.6),
+	fixedStar('Menkalinan', 21.5),
+	fixedStar('Peacock', -36.3),
+	fixedStar('Atria', -46.2),
+	fixedStar('Avior', -72.7),
+	fixedStar('Alsephina', -67.2),
+	fixedStar('Mirzam', -41.3),
+	fixedStar('Algieba', 8.8),
+	fixedStar('Menkent', -22.1),
+	fixedStar('Saiph', -33.1),
+	fixedStar('Nunki', -3.4),
+	fixedStar('Kochab', 73.0),
+	fixedStar('Gruid', -35.4),
+	fixedStar('Muhlifain', -40.2),
+	fixedStar('Suhail', -55.9),
+	fixedStar('Schedar', 46.6),
+	fixedStar('Sadr', 57.1),
+	fixedStar('Eltanin', 74.9),
+	fixedStar('Naos', -58.3),
+	fixedStar('Aspidiske', -67.1),
+	fixedStar('Caph', 51.2),
+	fixedStar('Mizar', 56.4),
+	fixedStar('Girtab', -15.6),
+	fixedStar('Dschubba', -2.0),
+	fixedStar('Ankaa', -40.6),
+	fixedStar('Merak', 45.1),
+	fixedStar('Izar', 40.6),
+	fixedStar('Ruchbah', 46.4),
+	fixedStar('Enif', 22.1),
+	fixedStar('Sabik', 7.2),
+	fixedStar('Phecda', 47.1),
+	fixedStar('Aludra', -50.6),
+	fixedStar('Alderamin', 68.9),
+	fixedStar('Gienah Cygni', 49.4),
+	fixedStar('Markab', 19.4),
+	fixedStar('Arneb', -41.1),
+	fixedStar('Ascella', -7.2),
+	fixedStar('Kraz', -18.0),
+	fixedStar('Phact', -57.4),
+	fixedStar('Kaus Media', -6.5),
+	fixedStar('Muphrid', 28.1),
+	fixedStar('Hassaleh', 10.5),
+	fixedStar('Tarazed', 31.2),
+	fixedStar('Athebyne', 78.4),
+	fixedStar('Porrima', 2.8),
+	fixedStar('Cebalrai', 27.9),
+	fixedStar('Yed Prior', 17.2),
+	fixedStar('Kornephoros', 42.7),
+	fixedStar('Cursa', -27.9),
+	fixedStar('Kaus Borealis', -2.1),
+	fixedStar('Cor Caroli', 40.1),
+	fixedStar('Sadalsuud', 8.6),
+	fixedStar('Gomeisa', -13.5),
+	fixedStar('Zaurak', -33.2),
+	fixedStar('Gienah Corvi', -14.5)
 ];
 
 export const DEFAULT_OBSERVABLE_OBJECT_IDS = OBSERVABLE_OBJECTS.map((item) => item.id);
@@ -689,7 +783,10 @@ export const OBSERVABLE_OBJECT_CATEGORY_LABELS: Record<
 	ObservableObjectCategoryLabel
 > = {
 	luminaries: { labelKey: 'transits_group_luminaries', fallbackLabel: 'Luminaries' },
-	personal_planets: { labelKey: 'transits_group_personal_planets', fallbackLabel: 'Personal Planets' },
+	personal_planets: {
+		labelKey: 'transits_group_personal_planets',
+		fallbackLabel: 'Personal Planets'
+	},
 	social_planets: { labelKey: 'transits_group_social', fallbackLabel: 'Social Planets' },
 	transpersonal_planets: {
 		labelKey: 'transits_group_transpersonal',
@@ -697,10 +794,19 @@ export const OBSERVABLE_OBJECT_CATEGORY_LABELS: Record<
 	},
 	angles: { labelKey: 'observable_category_angles', fallbackLabel: 'Angles' },
 	lunar_nodes: { labelKey: 'transits_group_lunar_nodes', fallbackLabel: 'Lunar Nodes' },
-	calculated_points: { labelKey: 'observable_category_calculated_points', fallbackLabel: 'Calculated Points' },
+	calculated_points: {
+		labelKey: 'observable_category_calculated_points',
+		fallbackLabel: 'Calculated Points'
+	},
 	asteroids: { labelKey: 'transits_group_asteroids', fallbackLabel: 'Asteroids' },
-	sensitive_points: { labelKey: 'observable_category_sensitive_points', fallbackLabel: 'Sensitive Points' },
-	geocentric_nodes: { labelKey: 'transits_group_geo_nodes', fallbackLabel: 'Geocentric Planetary Nodes' },
+	sensitive_points: {
+		labelKey: 'observable_category_sensitive_points',
+		fallbackLabel: 'Sensitive Points'
+	},
+	geocentric_nodes: {
+		labelKey: 'transits_group_geo_nodes',
+		fallbackLabel: 'Geocentric Planetary Nodes'
+	},
 	trans_neptunian: { labelKey: 'transits_group_tno', fallbackLabel: 'Trans-Neptunian Objects' },
 	fixed_stars: { labelKey: 'observable_category_fixed_stars', fallbackLabel: 'Fixed Stars' },
 	hypothetical: { labelKey: 'transits_group_hypotheticals', fallbackLabel: 'Hypothetical Bodies' }
@@ -710,7 +816,9 @@ export function getObservableObjectLabel(
 	item: ObservableObjectDefinition,
 	t: (key: string, options?: Record<string, unknown>) => string
 ): string {
-	return item.labelKey ? t(item.labelKey, { defaultValue: item.fallbackLabel }) : item.fallbackLabel;
+	return item.labelKey
+		? t(item.labelKey, { defaultValue: item.fallbackLabel })
+		: item.fallbackLabel;
 }
 
 export function getObservableCategoryLabel(
@@ -718,5 +826,7 @@ export function getObservableCategoryLabel(
 	t: (key: string, options?: Record<string, unknown>) => string
 ): string {
 	const meta = OBSERVABLE_OBJECT_CATEGORY_LABELS[category];
-	return meta.labelKey ? t(meta.labelKey, { defaultValue: meta.fallbackLabel }) : meta.fallbackLabel;
+	return meta.labelKey
+		? t(meta.labelKey, { defaultValue: meta.fallbackLabel })
+		: meta.fallbackLabel;
 }

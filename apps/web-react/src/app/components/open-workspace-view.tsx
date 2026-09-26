@@ -8,7 +8,27 @@ import {
 	type ReactNode
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FolderOpen, PanelRightOpen, Plus, Star, X } from 'lucide-react';
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	FolderOpen,
+	PanelRightOpen,
+	Plus,
+	Star,
+	Upload,
+	X
+} from 'lucide-react';
+import { toast } from 'sonner';
+import {
+	flexRender,
+	getCoreRowModel,
+	getSortedRowModel,
+	useReactTable,
+	type ColumnDef,
+	type RowSelectionState,
+	type SortingState
+} from '@tanstack/react-table';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
@@ -17,11 +37,18 @@ import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import type { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { tagColor } from '@/lib/chartTags';
+import {
+	persistChartFavorites,
+	persistChartListSort,
+	readStoredChartFavorites,
+	readStoredChartListSort
+} from '@/lib/chartListPreferences';
 import type { AppChart } from '@/lib/tauri/chartPayload';
 import { ASPECT_ROWS } from '@/lib/astrology/aspects';
 import {
@@ -33,6 +60,7 @@ import {
 	type ChartSearchMetadata,
 	type SearchPlanetId
 } from '@/lib/astrology/chartSearch';
+import { importChartFile, openChartFileDialog } from '@/lib/tauri/workspace';
 
 type OpenMode = 'my_radixes' | 'database';
 type PlanetFilter = { sign: string; degree: string; house: string; motion: string };
@@ -46,7 +74,16 @@ export type OpenWorkspaceViewProps = {
 	onActivateChart: (chartId: string) => void;
 };
 
-const CHART_TYPE_OPTIONS = [
+const CHART_TYPE_OPTIONS: Array<{
+	id: string;
+	values: readonly string[];
+	labelKey: string;
+	/** When set, also requires `chart.synastry?.method` to match — distinguishes the
+	 *  synastry-family sub-types, which all share the same `SYNASTRY` chart type string. */
+	method?: string;
+	indent?: number;
+	group?: boolean;
+}> = [
 	{ id: 'natal', values: ['NATAL'], labelKey: 'new_type_radix' },
 	{ id: 'event', values: ['EVENT'], labelKey: 'new_type_event' },
 	{ id: 'horary', values: ['HORARY'], labelKey: 'new_type_horary' },
@@ -68,8 +105,29 @@ const CHART_TYPE_OPTIONS = [
 		labelKey: 'revolution_kind_relative'
 	},
 	{ id: 'lunar', values: ['LUNAR', 'LUNAR_RETURN'], labelKey: 'open_type_lunar' },
-	{ id: 'synastry', values: ['SYNASTRY'], labelKey: 'open_type_synastry' }
-] as const;
+	{ id: 'synastry_group', values: [], labelKey: 'open_type_synastry', group: true },
+	{
+		id: 'synastry',
+		values: ['SYNASTRY'],
+		labelKey: 'synastry_type_synastry',
+		method: 'synastry',
+		indent: 1
+	},
+	{
+		id: 'synastry_progressed',
+		values: ['SYNASTRY'],
+		labelKey: 'synastry_type_progressed-synastry',
+		method: 'progressed-synastry',
+		indent: 1
+	},
+	{
+		id: 'synastry_draconic',
+		values: ['SYNASTRY'],
+		labelKey: 'synastry_type_draconic-synastry',
+		method: 'draconic-synastry',
+		indent: 1
+	}
+];
 
 const PLANET_LABEL_KEYS: Record<SearchPlanetId, string> = {
 	sun: 'planet_sun',
@@ -197,8 +255,11 @@ function parsedChartDate(value: string): Date | null {
 function chartTypeId(chart: AppChart): string | null {
 	const value = chart.chartType?.trim().toUpperCase();
 	return (
-		CHART_TYPE_OPTIONS.find((option) => (option.values as readonly string[]).includes(value))?.id ??
-		null
+		CHART_TYPE_OPTIONS.find((option) => {
+			if (option.group || !option.values.includes(value)) return false;
+			if (option.method) return chart.synastry?.method === option.method;
+			return true;
+		})?.id ?? null
 	);
 }
 
@@ -238,13 +299,14 @@ export function OpenWorkspaceView({
 }: OpenWorkspaceViewProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
-	const { charts, selectedChartId } = useWorkspaceCharts();
+	const { charts, selectedChartId, addChart } = useWorkspaceCharts();
 	const [openMode, setOpenMode] = useState<OpenMode>('my_radixes');
 	const splitPaneRef = useRef<HTMLDivElement>(null);
 	const [filterPaneWidth, setFilterPaneWidth] = useState<number | null>(null);
 	const [resizingFilters, setResizingFilters] = useState(false);
-	const [selectedRows, setSelectedRows] = useState<string[]>([]);
-	const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredChartFavorites);
+	const [sorting, setSorting] = useState<SortingState>(readStoredChartListSort);
 	const [focusedChartId, setFocusedChartId] = useState<string | null>(selectedChartId);
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 	const [tagQuery, setTagQuery] = useState('');
@@ -268,6 +330,7 @@ export function OpenWorkspaceView({
 		useState<Record<number, HouseFilter>>(initialHouseFilters);
 	const [selectedShapes, setSelectedShapes] = useState<string[]>([]);
 	const [selectedConfigurations, setSelectedConfigurations] = useState<string[]>([]);
+	const [isImporting, setIsImporting] = useState(false);
 
 	const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 	const availableTags = useMemo(
@@ -411,6 +474,14 @@ export function OpenWorkspaceView({
 		setAspectFilters((current) =>
 			current.map((filter) => (filter.id === id ? { ...filter, ...patch } : filter))
 		);
+	const toggleFavorite = (chartId: string) =>
+		setFavoriteIds((current) => {
+			const next = current.includes(chartId)
+				? current.filter((id) => id !== chartId)
+				: [...current, chartId];
+			persistChartFavorites(next);
+			return next;
+		});
 
 	const resetFilters = () => {
 		setSelectedTypes([]);
@@ -426,6 +497,24 @@ export function OpenWorkspaceView({
 		setSelectedConfigurations([]);
 	};
 
+	const importHoroscope = async () => {
+		if (!workspacePath || isImporting) return;
+		try {
+			const sourcePath = await openChartFileDialog();
+			if (!sourcePath) return;
+			setIsImporting(true);
+			const chart = await importChartFile(workspacePath, sourcePath);
+			addChart(chart);
+			toast.success(t('toast_chart_imported'), { description: chart.name });
+		} catch (error) {
+			toast.error(t('toast_chart_import_failed'), {
+				description: error instanceof Error ? error.message : String(error)
+			});
+		} finally {
+			setIsImporting(false);
+		}
+	};
+
 	const AnyItem = () => (
 		<SelectItem value="any" className={ft.selectItem}>
 			—
@@ -435,8 +524,148 @@ export function OpenWorkspaceView({
 		id: planet,
 		label: t(PLANET_LABEL_KEYS[planet])
 	}));
-	const gridColumns =
-		'grid-cols-[40px_40px_minmax(12rem,1.5fr)_minmax(8rem,1fr)_minmax(10rem,1fr)_minmax(7rem,.8fr)_minmax(6rem,.7fr)_minmax(10rem,1.2fr)]';
+
+	const columns = useMemo<ColumnDef<AppChart>[]>(
+		() => [
+			{
+				id: 'select',
+				header: ({ table }) => (
+					<Checkbox
+						checked={
+							table.getIsAllPageRowsSelected() ||
+							(table.getIsSomePageRowsSelected() && 'indeterminate')
+						}
+						onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+						aria-label={t('open_select_all')}
+					/>
+				),
+				cell: ({ row }) => (
+					<div onClick={(event) => event.stopPropagation()}>
+						<Checkbox
+							checked={row.getIsSelected()}
+							onCheckedChange={(value) => row.toggleSelected(!!value)}
+						/>
+					</div>
+				),
+				enableSorting: false,
+				size: 40
+			},
+			{
+				id: 'favorite',
+				accessorFn: (chart) => favorites.has(chart.id),
+				header: '',
+				cell: ({ row }) => (
+					<div onClick={(event) => event.stopPropagation()}>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="size-7"
+							onClick={() => toggleFavorite(row.original.id)}
+							aria-label={t('favorite')}
+						>
+							<Star
+								className={cn(
+									'size-4',
+									favorites.has(row.original.id)
+										? 'fill-[color:var(--theme-accent)] text-[color:var(--theme-accent)]'
+										: ft.muted
+								)}
+							/>
+						</Button>
+					</div>
+				),
+				sortDescFirst: true,
+				size: 40
+			},
+			{
+				id: 'name',
+				accessorKey: 'name',
+				header: t('table_name'),
+				cell: ({ getValue }) => (
+					<div className={cn('min-w-0 truncate', ft.bodyText)}>{getValue<string>()}</div>
+				)
+			},
+			{
+				id: 'type',
+				accessorFn: (chart) => chartTypeLabel(chart, t),
+				header: t('table_chart_type'),
+				cell: ({ getValue }) => (
+					<div className={cn('min-w-0 truncate', ft.muted)}>{getValue<string>()}</div>
+				)
+			},
+			{
+				id: 'tags',
+				accessorFn: (chart) => chart.tags ?? [],
+				header: t('table_tags'),
+				enableSorting: false,
+				cell: ({ row }) => (
+					<div className="flex min-w-0 flex-wrap gap-1">
+						{(row.original.tags ?? []).map((tag, index) => (
+							<Badge
+								key={`${row.original.id}-${tag}`}
+								variant="outline"
+								className="gap-1.5 px-2 py-0.5 text-xs"
+							>
+								<span
+									className="size-2 rounded-full"
+									style={{ backgroundColor: tagColor(row.original.tagColors, tag, index) }}
+								/>
+								{tag}
+							</Badge>
+						))}
+					</div>
+				)
+			},
+			{
+				id: 'date',
+				accessorFn: (chart) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
+				header: t('new_date'),
+				cell: ({ row }) => (
+					<div className={cn('truncate', ft.muted)}>
+						{splitDateTime(row.original.dateTime).date}
+					</div>
+				)
+			},
+			{
+				id: 'time',
+				accessorFn: (chart) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
+				header: t('new_time'),
+				cell: ({ row }) => (
+					<div className={cn('truncate', ft.muted)}>
+						{splitDateTime(row.original.dateTime).time}
+					</div>
+				)
+			},
+			{
+				id: 'location',
+				accessorKey: 'location',
+				header: t('table_place'),
+				cell: ({ getValue }) => (
+					<div className={cn('min-w-0 truncate', ft.muted)}>{getValue<string>()}</div>
+				)
+			}
+		],
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[favorites, t]
+	);
+
+	const table = useReactTable({
+		data: filtered,
+		columns,
+		getRowId: (chart) => chart.id,
+		state: { sorting, rowSelection },
+		onSortingChange: (updater) =>
+			setSorting((current) => {
+				const next = typeof updater === 'function' ? updater(current) : updater;
+				persistChartListSort(next);
+				return next;
+			}),
+		onRowSelectionChange: setRowSelection,
+		getCoreRowModel: getCoreRowModel(),
+		getSortedRowModel: getSortedRowModel()
+	});
+
 	const resizeFilterPane = (event: ReactPointerEvent<HTMLButtonElement>) => {
 		if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
 		const bounds = splitPaneRef.current?.getBoundingClientRect();
@@ -454,7 +683,7 @@ export function OpenWorkspaceView({
 
 	return (
 		<AppMainContentRoot className={cn(ft.formPageBg, 'h-full')} layout="edge-to-edge">
-			<AppMainContentContainer maxWidth="full" className="flex h-full min-h-0 flex-1 flex-col">
+			<AppMainContentContainer width="full" className="flex h-full min-h-0 flex-1 flex-col">
 				<div
 					ref={splitPaneRef}
 					className={cn(
@@ -525,32 +754,50 @@ export function OpenWorkspaceView({
 							</div>
 						</div>
 						<div className="px-4 pt-3 pb-1 sm:px-6">
-							<p className={cn('truncate text-xs', ft.muted)}>
-								{workspacePath ?? t('open_table_empty')}
-							</p>
+							<Input
+								type="search"
+								value={contentQuery}
+								onChange={(event) => setContentQuery(event.target.value)}
+								placeholder={t('open_filter_content_search')}
+								className={ft.inputCompact}
+							/>
 						</div>
-						<div className="min-h-0 flex-1 overflow-y-auto pb-20">
+						<div className="min-h-0 flex-1 overflow-y-auto pb-28">
 							<Accordion type="multiple" className="w-full">
 								<AccordionItem value="chart-type" className="border-none">
 									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
 										{t('open_filter_chart_type')}
 									</AccordionTrigger>
 									<AccordionContent className="space-y-2 px-4 sm:px-6">
-										{CHART_TYPE_OPTIONS.map((option) => (
-											<div key={option.id} className="flex items-center gap-2">
-												<Checkbox
-													id={`type-${option.id}`}
-													checked={selectedTypes.includes(option.id)}
-													onCheckedChange={() => toggleListValue(setSelectedTypes, option.id)}
-												/>
-												<Label
-													htmlFor={`type-${option.id}`}
-													className={cn('cursor-pointer text-sm', ft.bodyText)}
+										{CHART_TYPE_OPTIONS.map((option) =>
+											option.group ? (
+												<p
+													key={option.id}
+													className={cn('pt-1 text-xs font-medium', ft.muted)}
+													style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
 												>
 													{t(option.labelKey)}
-												</Label>
-											</div>
-										))}
+												</p>
+											) : (
+												<div
+													key={option.id}
+													className="flex items-center gap-2"
+													style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
+												>
+													<Checkbox
+														id={`type-${option.id}`}
+														checked={selectedTypes.includes(option.id)}
+														onCheckedChange={() => toggleListValue(setSelectedTypes, option.id)}
+													/>
+													<Label
+														htmlFor={`type-${option.id}`}
+														className={cn('cursor-pointer text-sm', ft.bodyText)}
+													>
+														{t(option.labelKey)}
+													</Label>
+												</div>
+											)
+										)}
 									</AccordionContent>
 								</AccordionItem>
 
@@ -582,16 +829,6 @@ export function OpenWorkspaceView({
 													{tag}
 												</Button>
 											))}
-										</div>
-										<div>
-											<FieldLabel>{t('open_filter_content_search')}</FieldLabel>
-											<Input
-												type="search"
-												value={contentQuery}
-												onChange={(event) => setContentQuery(event.target.value)}
-												placeholder={t('open_filter_content_search')}
-												className={cn(ft.inputCompact, 'mt-1.5')}
-											/>
 										</div>
 									</AccordionContent>
 								</AccordionItem>
@@ -1019,7 +1256,7 @@ export function OpenWorkspaceView({
 							</Accordion>
 						</div>
 						<div
-							className="absolute right-0 bottom-0 left-0 z-10 p-3 sm:px-6"
+							className="absolute right-0 bottom-0 left-0 z-10 space-y-2 p-3 sm:px-6"
 							style={{
 								background:
 									'linear-gradient(to top, var(--theme-secondary-sidebar-end) 0%, var(--theme-overlay-bg) 65%, transparent 100%)'
@@ -1027,29 +1264,28 @@ export function OpenWorkspaceView({
 						>
 							<Button
 								type="button"
-								variant="outline"
+								variant="ghost"
 								size="sm"
-								className={cn('h-8 w-full text-xs', ft.footerCancel)}
+								className={cn('h-9 w-full text-xs', ft.footerPrimary)}
 								onClick={resetFilters}
 							>
-								{t('clear')}
+								{t('open_clear_filters')}
+							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className={cn('h-9 w-full text-xs', ft.footerPrimary)}
+								onClick={() => void importHoroscope()}
+								disabled={!workspacePath || isImporting}
+							>
+								<Upload />
+								{t('open_import_horoscope')}
 							</Button>
 						</div>
 					</aside>
 
 					<section className="relative flex min-w-0 flex-1 flex-col">
-						<div className={cn('shrink-0 border-b px-4 sm:px-6', ft.footerBorder)}>
-							<div className={cn('grid min-h-16 items-center gap-2 text-sm', gridColumns)}>
-								<div />
-								<div />
-								<div className={cn('font-medium', ft.label)}>{t('table_name')}</div>
-								<div className={cn('font-medium', ft.label)}>{t('table_chart_type')}</div>
-								<div className={cn('font-medium', ft.label)}>{t('table_tags')}</div>
-								<div className={cn('font-medium', ft.label)}>{t('new_date')}</div>
-								<div className={cn('font-medium', ft.label)}>{t('new_time')}</div>
-								<div className={cn('font-medium', ft.label)}>{t('table_place')}</div>
-							</div>
-						</div>
 						<div className="flex-1 overflow-auto pb-16">
 							{openMode === 'database' ? (
 								<div className="flex min-h-full flex-col items-center justify-center gap-2 p-8 text-center">
@@ -1063,91 +1299,86 @@ export function OpenWorkspaceView({
 									</p>
 								</div>
 							) : (
-								filtered.map((chart) => {
-									const dateTime = splitDateTime(chart.dateTime);
-									return (
-										<div
-											key={chart.id}
-											className={cn(
-												'grid cursor-pointer items-center gap-2 border-b px-4 py-3 text-sm transition-colors sm:px-6',
-												gridColumns,
-												focusedChartId === chart.id
-													? 'bg-[color:var(--theme-selected-bg)]'
-													: 'hover:bg-[color:var(--token-hover-strong)]'
-											)}
-											onClick={() => setFocusedChartId(chart.id)}
-											onDoubleClick={() => onActivateChart(chart.id)}
-										>
-											<div
-												className="flex items-center"
-												onClick={(event) => event.stopPropagation()}
+								<Table>
+									<TableHeader>
+										{table.getHeaderGroups().map((headerGroup) => (
+											<TableRow
+												key={headerGroup.id}
+												className={cn(
+													'border-[color:var(--theme-panel-border)] hover:bg-transparent'
+												)}
 											>
-												<Checkbox
-													checked={selectedRows.includes(chart.id)}
-													onCheckedChange={() =>
-														setSelectedRows((current) =>
-															current.includes(chart.id)
-																? current.filter((id) => id !== chart.id)
-																: [...current, chart.id]
-														)
-													}
-												/>
-											</div>
-											<div
-												className="flex items-center"
-												onClick={(event) => event.stopPropagation()}
-											>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="size-7"
-													onClick={() =>
-														setFavoriteIds((current) =>
-															current.includes(chart.id)
-																? current.filter((id) => id !== chart.id)
-																: [...current, chart.id]
-														)
-													}
-													aria-label={t('favorite')}
-												>
-													<Star
-														className={cn(
-															'size-4',
-															favorites.has(chart.id)
-																? 'fill-[color:var(--theme-accent)] text-[color:var(--theme-accent)]'
-																: ft.muted
-														)}
-													/>
-												</Button>
-											</div>
-											<div className={cn('min-w-0 truncate', ft.bodyText)}>{chart.name}</div>
-											<div className={cn('min-w-0 truncate', ft.muted)}>
-												{chartTypeLabel(chart, t)}
-											</div>
-											<div className="min-w-0">
-												<div className="flex flex-wrap gap-1">
-													{(chart.tags ?? []).map((tag, index) => (
-														<Badge
-															key={`${chart.id}-${tag}`}
-															variant="outline"
-															className="gap-1.5 px-2 py-0.5 text-xs"
+												{headerGroup.headers.map((header) => {
+													const sortState = header.column.getIsSorted();
+													const SortIcon =
+														sortState === 'asc'
+															? ArrowUp
+															: sortState === 'desc'
+																? ArrowDown
+																: ArrowUpDown;
+													return (
+														<TableHead
+															key={header.id}
+															className={cn(
+																'sticky top-0 z-10 bg-[color:var(--theme-panel-bg-solid)] px-4 sm:px-6',
+																ft.label
+															)}
+															style={
+																header.column.columnDef.size
+																	? { width: header.column.columnDef.size }
+																	: undefined
+															}
 														>
-															<span
-																className="size-2 rounded-full"
-																style={{ backgroundColor: tagColor(chart.tagColors, tag, index) }}
-															/>
-															{tag}
-														</Badge>
-													))}
-												</div>
-											</div>
-											<div className={cn('truncate', ft.muted)}>{dateTime.date}</div>
-											<div className={cn('truncate', ft.muted)}>{dateTime.time}</div>
-											<div className={cn('min-w-0 truncate', ft.muted)}>{chart.location}</div>
-										</div>
-									);
-								})
+															<div className="flex flex-col gap-1.5 py-1.5">
+																{header.isPlaceholder ? null : header.column.getCanSort() ? (
+																	<button
+																		type="button"
+																		className="inline-flex items-center gap-1 font-medium"
+																		onClick={header.column.getToggleSortingHandler()}
+																	>
+																		{flexRender(
+																			header.column.columnDef.header,
+																			header.getContext()
+																		)}
+																		<SortIcon
+																			className={cn(
+																				'size-3.5',
+																				sortState ? 'opacity-100' : 'opacity-40'
+																			)}
+																		/>
+																	</button>
+																) : (
+																	flexRender(header.column.columnDef.header, header.getContext())
+																)}
+															</div>
+														</TableHead>
+													);
+												})}
+											</TableRow>
+										))}
+									</TableHeader>
+									<TableBody>
+										{table.getRowModel().rows.map((row) => (
+											<TableRow
+												key={row.id}
+												className={cn(
+													'cursor-pointer border-[color:var(--theme-panel-border)]',
+													focusedChartId === row.original.id
+														? 'bg-[color:var(--theme-selected-bg)] hover:bg-[color:var(--theme-selected-bg)]'
+														: 'hover:bg-[color:var(--token-hover-strong)]'
+												)}
+												onClick={() => setFocusedChartId(row.original.id)}
+												onDoubleClick={() => onActivateChart(row.original.id)}
+											>
+												{row.getVisibleCells().map((cell) => (
+													<TableCell key={cell.id} className="px-4 text-sm sm:px-6">
+														{flexRender(cell.column.columnDef.cell, cell.getContext())}
+													</TableCell>
+												))}
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
 							)}
 						</div>
 						<div className="absolute right-3 bottom-3 z-20 flex gap-1.5 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] p-1.5 shadow-lg">

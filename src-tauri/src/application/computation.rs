@@ -65,6 +65,10 @@ pub struct ChartAxes {
 pub struct ChartCalculation {
     pub positions: HashMap<String, f64>,
     pub motion: HashMap<String, AstronomyMotion>,
+    pub right_ascension: HashMap<String, f64>,
+    pub declination: HashMap<String, f64>,
+    pub altitude: HashMap<String, f64>,
+    pub azimuth: HashMap<String, f64>,
     pub aspects: Vec<ComputedAspect>,
     pub axes: ChartAxes,
     pub house_cusps: Vec<f64>,
@@ -109,6 +113,10 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
     Ok(ChartCalculation {
         positions: computed.positions,
         motion: computed.motion,
+        right_ascension: computed.right_ascension,
+        declination: computed.declination,
+        altitude: computed.altitude,
+        azimuth: computed.azimuth,
         aspects,
         axes: computed.axes,
         house_cusps: computed.house_cusps,
@@ -126,6 +134,10 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
 pub(super) struct PositionCalculation {
     pub positions: HashMap<String, f64>,
     pub motion: HashMap<String, AstronomyMotion>,
+    pub right_ascension: HashMap<String, f64>,
+    pub declination: HashMap<String, f64>,
+    pub altitude: HashMap<String, f64>,
+    pub azimuth: HashMap<String, f64>,
     pub axes: ChartAxes,
     pub house_cusps: Vec<f64>,
     pub backend_used: String,
@@ -154,6 +166,10 @@ pub(super) fn compute_positions(
     Ok(PositionCalculation {
         positions: computed.positions,
         motion: computed.motion,
+        right_ascension: computed.right_ascension,
+        declination: computed.declination,
+        altitude: computed.altitude,
+        azimuth: computed.azimuth,
         axes: ChartAxes {
             asc: computed.axes.asc,
             desc: computed.axes.desc,

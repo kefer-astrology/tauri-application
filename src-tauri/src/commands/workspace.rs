@@ -2,8 +2,8 @@ use crate::application::workspace::non_empty_str;
 use crate::workspace::loader::{find_chart_ref_by_id, load_chart};
 use crate::workspace::writer::write_workspace_manifest;
 use crate::workspace::{
-    chart_to_summary, load_all_charts, load_workspace_manifest, ChartSummary, CurrentModelReport,
-    WorkspaceInfo, WorkspaceValidationReport,
+    chart_to_summary, load_all_analyses, load_all_charts, load_workspace_manifest, ChartSummary,
+    CurrentModelReport, WorkspaceInfo, WorkspaceValidationReport,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -23,6 +23,8 @@ pub struct SaveWorkspaceDefaultsInput {
     pub default_location_longitude: Option<f64>,
     #[serde(default)]
     pub default_engine: Option<String>,
+    #[serde(default)]
+    pub position_mode: Option<String>,
     #[serde(default)]
     pub default_bodies: Option<Vec<String>>,
     #[serde(default)]
@@ -179,12 +181,14 @@ pub async fn load_workspace(workspace_path: String) -> Result<WorkspaceInfo, Str
 
     // Convert to summaries
     let chart_summaries: Vec<ChartSummary> = charts.iter().map(chart_to_summary).collect();
+    let analyses = load_all_analyses(workspace_dir, &manifest)?;
 
     Ok(WorkspaceInfo {
         path: workspace_path,
         owner: manifest.owner,
         active_model: manifest.active_model,
         charts: chart_summaries,
+        analyses,
     })
 }
 
@@ -225,6 +229,10 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
         crate::workspace::models::EngineType::Jpl => "jpl",
         crate::workspace::models::EngineType::Custom => "custom",
     });
+    let position_mode = defaults.position_mode.map(|mode| match mode {
+        crate::workspace::models::PositionMode::Apparent => "apparent",
+        crate::workspace::models::PositionMode::Geometric => "geometric",
+    });
 
     let default_location_name = defaults
         .default_location
@@ -249,6 +257,7 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
     Ok(json!({
         "default_house_system": default_house_system,
         "default_engine": default_engine,
+        "position_mode": position_mode,
         "default_location_name": default_location_name,
         "default_location_latitude": default_location_latitude,
         "default_location_longitude": default_location_longitude,
@@ -303,6 +312,7 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
         model_overrides: None,
         default: crate::workspace::models::WorkspaceDefaults {
             ephemeris_engine: Some(crate::workspace::models::EngineType::Jpl),
+            position_mode: Some(crate::workspace::models::PositionMode::Apparent),
             ephemeris_backend: None,
             element_colors: None,
             radix_point_colors: None,
@@ -321,6 +331,7 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
         chart_presets: vec![],
         subjects: vec![],
         charts: vec![],
+        analyses: vec![],
         layouts: vec![],
         annotations: vec![],
         transit_analyses: vec![],
@@ -352,6 +363,14 @@ fn parse_engine_type(value: &str) -> Option<crate::workspace::models::EngineType
     }
 }
 
+fn parse_position_mode(value: &str) -> Option<crate::workspace::models::PositionMode> {
+    match value {
+        "apparent" => Some(crate::workspace::models::PositionMode::Apparent),
+        "geometric" => Some(crate::workspace::models::PositionMode::Geometric),
+        _ => None,
+    }
+}
+
 fn apply_workspace_defaults_patch(
     defaults: &mut crate::workspace::models::WorkspaceDefaults,
     patch: SaveWorkspaceDefaultsInput,
@@ -363,6 +382,12 @@ fn apply_workspace_defaults_patch(
     if let Some(value) = patch.default_engine.as_deref() {
         if let Some(engine) = parse_engine_type(value) {
             defaults.ephemeris_engine = Some(engine);
+        }
+    }
+
+    if let Some(value) = patch.position_mode.as_deref() {
+        if let Some(mode) = parse_position_mode(value) {
+            defaults.position_mode = Some(mode);
         }
     }
 
@@ -535,6 +560,7 @@ mod tests {
                 default_location_latitude: Some(50.0875),
                 default_location_longitude: Some(14.4214),
                 default_engine: Some("jpl".to_string()),
+                position_mode: Some("geometric".to_string()),
                 default_bodies: Some(vec![
                     "sun".to_string(),
                     "moon".to_string(),
@@ -553,6 +579,10 @@ mod tests {
         assert_eq!(
             defaults.get("default_engine"),
             Some(&serde_json::json!("jpl"))
+        );
+        assert_eq!(
+            defaults.get("position_mode"),
+            Some(&serde_json::json!("geometric"))
         );
         assert_eq!(
             defaults.get("default_bodies"),

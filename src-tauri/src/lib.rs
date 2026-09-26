@@ -8,12 +8,13 @@ mod storage;
 #[cfg(test)]
 mod test_support;
 mod workspace;
+use commands::analyses::create_analysis;
 use commands::calculation::{
     compute_chart, compute_chart_from_data, compute_cross_aspects_from_data,
 };
 use commands::charts::{create_chart, delete_chart, get_chart_details, import_chart, update_chart};
 use commands::default::{read, write};
-use commands::dialogs::open_folder_dialog;
+use commands::dialogs::{open_chart_file_dialog, open_folder_dialog};
 use commands::ephemeris::{download_ephemeris, get_available_bodies, list_ephemeris_catalog};
 use commands::location::{resolve_location, resolve_timezone, search_locations};
 use commands::storage::{
@@ -33,6 +34,7 @@ pub fn run() {
     let backend_state = infrastructure::python_sidecar::BackendState::new()
         .expect("failed to initialize backend state");
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .manage(backend_state)
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -86,6 +88,7 @@ pub fn run() {
             create_workspace,
             delete_workspace,
             create_chart,
+            create_analysis,
             import_chart,
             update_chart,
             delete_chart,
@@ -96,6 +99,7 @@ pub fn run() {
             compute_chart_from_data,
             compute_cross_aspects_from_data,
             compute_transit_series,
+            open_chart_file_dialog,
             open_folder_dialog,
             resolve_location,
             resolve_timezone,

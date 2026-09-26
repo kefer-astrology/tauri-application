@@ -1,14 +1,104 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Why an independently calculated base chart exists.
+///
+/// This is deliberately separate from [`DerivedChartMethod`]: a natal chart and an
+/// event chart are both calculated directly from subject facts, whereas a return or
+/// composite chart is calculated from one or more other charts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BaseChartPurpose {
+    Natal,
+    Event,
+    Horary,
+    Electional,
+    Moment,
+}
+
+/// The operation that produces a chart from one or more chart inputs.
+///
+/// Variants are intentionally composable. For example, progressed synastry is not a
+/// chart method: it is a `synastry` analysis whose operands have a `progression` step.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DerivedChartMethod {
+    Return,
+    Progression,
+    Direction,
+    Relocation,
+    Harmonic,
+    Persona,
+    Composite,
+    Davison,
+    Draconic,
+    Coalescent,
+}
+
+/// Canonical chart classification. `parameters` contains method-specific, versioned
+/// values (for example `return_kind: solar` or `harmonic: 9`) without multiplying the
+/// top-level taxonomy for every algorithm option.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ChartDefinition {
+    Base {
+        purpose: BaseChartPurpose,
+    },
+    Derived {
+        method: DerivedChartMethod,
+        #[serde(default)]
+        inputs: Vec<String>,
+        #[serde(default)]
+        parameters: serde_json::Value,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalysisMethod {
+    Synastry,
+    TransitComparison,
+    ChartComparison,
+}
+
+/// An optional derivation applied to an analysis operand. This is what makes compound
+/// workflows such as progressed or draconic synastry possible without inventing new
+/// analysis methods.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DerivedChartStep {
+    pub method: DerivedChartMethod,
+    #[serde(default)]
+    pub parameters: serde_json::Value,
+}
+
+/// A chart supplied to an analysis. Exactly one of `chart_id` and `inline_subject`
+/// should be present. Inline subjects support unsaved manual entries in comparison UIs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
-#[allow(clippy::upper_case_acronyms)]
-pub enum ChartMode {
-    NATAL,
-    EVENT,
-    HORARY,
-    COMPOSITE,
+pub struct AnalysisInput {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chart_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inline_subject: Option<ChartSubject>,
+    #[serde(default)]
+    pub derivations: Vec<DerivedChartStep>,
+}
+
+/// A relationship/comparison produces analysis output, not another chart. It therefore
+/// has its own identity and operands and can be rendered by one or more view layouts.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnalysisInstance {
+    #[serde(default = "default_analysis_schema_version")]
+    pub version: u32,
+    pub id: String,
+    pub name: String,
+    pub method: AnalysisMethod,
+    pub inputs: Vec<AnalysisInput>,
+    #[serde(default)]
+    pub parameters: serde_json::Value,
+    #[serde(default)]
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,6 +141,16 @@ pub enum EngineType {
     Jpl,
     #[serde(rename = "custom")]
     Custom,
+}
+
+/// Observer-relative correction applied to ephemeris body positions.
+/// `Apparent` includes light-time and stellar aberration; `Geometric` is the
+/// instantaneous true vector without those observational corrections.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PositionMode {
+    Apparent,
+    Geometric,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -120,15 +220,6 @@ pub enum TimeSystem {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum RelationType {
-    Transit,
-    Synastry,
-    Progression,
-    Composite,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ViewModuleType {
     WheelView,
     TransitTimeline,
@@ -141,9 +232,10 @@ pub enum ViewModuleType {
 #[serde(rename_all = "kebab-case")]
 pub enum LayoutStyle {
     Single,
-    TimelineOverlay,
-    DualWheel,
-    Comparison,
+    Biwheel,
+    Triwheel,
+    Grid,
+    Timeline,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -302,20 +394,14 @@ where
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChartConfig {
-    pub mode: ChartMode,
+    pub definition: ChartDefinition,
     #[serde(default)]
     pub house_system: Option<HouseSystem>,
     pub zodiac_type: ZodiacType,
     #[serde(default)]
-    pub included_points: Vec<String>,
-    #[serde(default)]
     pub aspect_orbs: HashMap<String, f64>,
     #[serde(default)]
     pub selected_aspects: Option<Vec<String>>,
-    #[serde(default)]
-    pub display_style: String,
-    #[serde(default)]
-    pub color_theme: String,
     #[serde(default)]
     pub override_ephemeris: Option<String>,
     #[serde(default)]
@@ -325,6 +411,8 @@ pub struct ChartConfig {
     pub model_overrides: Option<ModelOverrides>,
     #[serde(default)]
     pub engine: Option<EngineType>,
+    #[serde(default)]
+    pub position_mode: Option<PositionMode>,
     #[serde(default)]
     pub ayanamsa: Option<Ayanamsa>,
     #[serde(default)]
@@ -387,23 +475,6 @@ pub struct TransitSetup {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DateRange {
-    pub start: chrono::DateTime<chrono::Utc>,
-    pub end: chrono::DateTime<chrono::Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChartRelation {
-    #[serde(rename = "type")]
-    pub relation_type: RelationType,
-    pub source: String,
-    pub target: String,
-    pub method: String,
-    #[serde(default)]
-    pub time_span: Option<DateRange>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ViewModule {
     #[serde(rename = "type")]
     pub module_type: ViewModuleType,
@@ -418,7 +489,7 @@ pub struct ViewLayout {
     #[serde(default)]
     pub chart_instances: Vec<String>,
     #[serde(default)]
-    pub relations: Vec<ChartRelation>,
+    pub analyses: Vec<String>,
     #[serde(default)]
     pub modules: Vec<ViewModule>,
 }
@@ -502,6 +573,8 @@ pub struct WorkspaceDefaults {
     #[serde(default)]
     pub ephemeris_engine: Option<EngineType>,
     #[serde(default)]
+    pub position_mode: Option<PositionMode>,
+    #[serde(default)]
     pub ephemeris_backend: Option<String>,
     #[serde(default)]
     pub element_colors: Option<ElementColorSettings>,
@@ -578,6 +651,8 @@ pub struct WorkspaceManifest {
     #[serde(default)]
     pub charts: Vec<String>, // File paths
     #[serde(default)]
+    pub analyses: Vec<String>, // File paths
+    #[serde(default)]
     pub layouts: Vec<String>, // File paths
     #[serde(default)]
     pub annotations: Vec<String>, // File paths
@@ -589,7 +664,7 @@ pub struct WorkspaceManifest {
 pub struct ChartSummary {
     pub id: String,
     pub name: String,
-    pub chart_type: String,
+    pub definition: ChartDefinition,
     pub date_time: String,
     pub location: String,
     pub tags: Vec<String>,
@@ -603,6 +678,7 @@ pub struct WorkspaceInfo {
     pub owner: String,
     pub active_model: Option<String>,
     pub charts: Vec<ChartSummary>,
+    pub analyses: Vec<AnalysisInstance>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -676,6 +752,8 @@ pub struct Sign {
 pub struct ModelSettings {
     #[serde(default)]
     pub default_house_system: Option<HouseSystem>,
+    #[serde(default)]
+    pub position_mode: Option<PositionMode>,
     #[serde(default)]
     pub default_aspects: Vec<String>,
     #[serde(default)]
@@ -789,6 +867,10 @@ fn default_model_version() -> u32 {
 }
 
 fn default_workspace_schema_version() -> u32 {
+    1
+}
+
+fn default_analysis_schema_version() -> u32 {
     1
 }
 

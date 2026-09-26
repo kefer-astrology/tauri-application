@@ -8,12 +8,13 @@ use std::collections::HashMap;
 
 use super::models::{
     AspectDefinition, AstroModel, BodyDefinition, Element, EngineType, HouseSystem, ModelSettings,
-    ObjectType, Sign, ZodiacType,
+    ObjectType, PositionMode, Sign, ZodiacType,
 };
 
 pub(super) fn builtin_model_settings() -> ModelSettings {
     ModelSettings {
         default_house_system: Some(HouseSystem::Placidus),
+        position_mode: Some(PositionMode::Apparent),
         default_aspects: vec![
             "conjunction".to_string(),
             "sextile".to_string(),

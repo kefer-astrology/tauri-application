@@ -28,6 +28,13 @@ pub struct AstronomyMotion {
 pub struct AstronomyChartData {
     pub positions: HashMap<String, f64>,
     pub motion: HashMap<String, AstronomyMotion>,
+    /// Equatorial/topocentric coordinates (degrees), keyed by body id. Only ever populated
+    /// for the classical planets, and only by backends that compute them today (the anise-based
+    /// JPL backend); empty for backends that don't (Swiss-ephemeris routes), never a hard error.
+    pub right_ascension: HashMap<String, f64>,
+    pub declination: HashMap<String, f64>,
+    pub altitude: HashMap<String, f64>,
+    pub azimuth: HashMap<String, f64>,
     pub axes: AstronomyAxes,
     pub house_cusps: Vec<f64>,
     pub warnings: Vec<String>,
@@ -75,6 +82,13 @@ impl AstronomyBackend for SwissAstronomyBackend {
         Ok(AstronomyChartData {
             positions: computed.positions,
             motion: computed.motion,
+            // TODO: libswe supports equatorial/topocentric output (SEFLG_EQUATORIAL /
+            // SEFLG_TOPOCTR) directly; not wired up yet, so this feature-gated route doesn't
+            // offer RA/Dec/alt/az today (only the default anise-based JPL backend does).
+            right_ascension: HashMap::new(),
+            declination: HashMap::new(),
+            altitude: HashMap::new(),
+            azimuth: HashMap::new(),
             axes: AstronomyAxes {
                 asc: computed.axes.asc,
                 desc: computed.axes.desc,
@@ -129,6 +143,11 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
         Ok(AstronomyChartData {
             positions: computed.positions,
             motion: computed.motion,
+            // See the same TODO on `SwissAstronomyBackend` above.
+            right_ascension: HashMap::new(),
+            declination: HashMap::new(),
+            altitude: HashMap::new(),
+            azimuth: HashMap::new(),
             axes: AstronomyAxes {
                 asc: computed.axes.asc,
                 desc: computed.axes.desc,

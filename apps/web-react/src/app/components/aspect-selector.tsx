@@ -269,8 +269,9 @@ export function AspectSelector({
 
 				<div
 					className={cn(
-						'mb-6 flex items-center gap-3 rounded-xl border px-4 py-2.5',
-						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] backdrop-blur-sm'
+						'mb-6 flex items-center gap-3 rounded-xl border px-4 py-2.5 transition-all',
+						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] backdrop-blur-sm',
+						'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]'
 					)}
 				>
 					<Search className={cn('h-4 w-4 shrink-0', ft.iconColor)} />
@@ -410,8 +411,9 @@ export function AspectSelector({
 					{selectedAspectIds.length > 0 && (
 						<div
 							className={cn(
-								'flex items-center gap-2 rounded-lg px-3 py-2',
-								'bg-[color:var(--theme-soft-bg)]'
+								'flex items-center gap-2 rounded-lg px-3 py-2 transition-all',
+								'bg-[color:var(--theme-soft-bg)]',
+								'focus-within:ring-ring/50 focus-within:ring-[3px]'
 							)}
 						>
 							<Search className={cn('h-3.5 w-3.5 shrink-0', ft.iconColor)} />

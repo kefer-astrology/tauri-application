@@ -37,6 +37,31 @@ pub fn load_chart(base_dir: &Path, chart_path: &str) -> Result<ChartInstance, St
     Ok(chart)
 }
 
+pub fn load_analysis(base_dir: &Path, analysis_path: &str) -> Result<AnalysisInstance, String> {
+    let full_path = resolve_relative_path(base_dir, analysis_path)?;
+    let content = fs::read_to_string(&full_path)
+        .map_err(|error| format!("Failed to read analysis file {analysis_path}: {error}"))?;
+    serde_yaml::from_str(&content)
+        .map_err(|error| format!("Failed to parse analysis file {analysis_path}: {error}"))
+}
+
+pub fn load_all_analyses(
+    base_dir: &Path,
+    manifest: &WorkspaceManifest,
+) -> Result<Vec<AnalysisInstance>, String> {
+    let mut analyses = Vec::new();
+    for analysis_path in &manifest.analyses {
+        match load_analysis(base_dir, analysis_path) {
+            Ok(analysis) => analyses.push(analysis),
+            Err(error) => eprintln!(
+                "Warning: Failed to load analysis {}: {}",
+                analysis_path, error
+            ),
+        }
+    }
+    Ok(analyses)
+}
+
 pub fn load_chart_preset(base_dir: &Path, preset_path: &str) -> Result<ChartPreset, String> {
     let full_path = resolve_relative_path(base_dir, preset_path)?;
     let content = fs::read_to_string(&full_path)
@@ -113,18 +138,10 @@ pub fn chart_to_summary(chart: &ChartInstance) -> ChartSummary {
         .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
         .unwrap_or_default();
 
-    let chart_type = match chart.config.mode {
-        crate::workspace::models::ChartMode::NATAL => "NATAL",
-        crate::workspace::models::ChartMode::EVENT => "EVENT",
-        crate::workspace::models::ChartMode::HORARY => "HORARY",
-        crate::workspace::models::ChartMode::COMPOSITE => "COMPOSITE",
-    }
-    .to_string();
-
     ChartSummary {
         id: chart.id.clone(),
         name: chart.subject.name.clone(),
-        chart_type,
+        definition: chart.config.definition.clone(),
         date_time,
         location: chart.subject.location.name.clone(),
         tags: chart.tags.clone(),
@@ -176,6 +193,7 @@ pub fn load_workspace_aggregate(
     let mut diagnostics = workspace_model_report.diagnostics;
     let mut subjects = Vec::new();
     let mut charts = Vec::new();
+    let mut analyses = Vec::new();
     let mut chart_presets = Vec::new();
     let mut transit_analyses = Vec::new();
     let mut layouts = Vec::new();
@@ -224,6 +242,12 @@ pub fn load_workspace_aggregate(
             Err(error) => diagnostics.push(reference_error("chart_preset", reference, error)),
         }
     }
+    for reference in &manifest.analyses {
+        match load_yaml_reference::<AnalysisInstance>(base_dir, reference, "analysis") {
+            Ok(analysis) => analyses.push(analysis),
+            Err(diagnostic) => diagnostics.push(diagnostic),
+        }
+    }
     for reference in &manifest.transit_analyses {
         match load_yaml_reference::<TransitSetup>(base_dir, reference, "transit analysis") {
             Ok(analysis) => transit_analyses.push(analysis),
@@ -262,6 +286,12 @@ pub fn load_workspace_aggregate(
         &mut diagnostics,
     );
     validate_named_items(
+        analyses.iter().map(|analysis| analysis.id.as_str()),
+        "duplicate_analysis_id",
+        "analysis",
+        &mut diagnostics,
+    );
+    validate_named_items(
         transit_analyses
             .iter()
             .map(|analysis| analysis.source_chart_id.as_str()),
@@ -295,6 +325,32 @@ pub fn load_workspace_aggregate(
         .iter()
         .map(|chart| chart.id.trim().to_ascii_lowercase())
         .collect();
+    for chart in &charts {
+        match &chart.config.definition {
+            ChartDefinition::Derived { inputs, .. } => {
+                for input in inputs {
+                    if !chart_ids.contains(&input.trim().to_ascii_lowercase()) {
+                        diagnostics.push(super::validation::Diagnostic::error(
+                            "derived_chart_input_missing",
+                            format!(
+                                "Derived chart '{}' references missing chart '{}'",
+                                chart.id, input
+                            ),
+                            Some(format!("charts.{}.config.definition.inputs", chart.id)),
+                        ));
+                    }
+                }
+            }
+            ChartDefinition::Base { .. } => {}
+        }
+    }
+    let analysis_ids: HashSet<String> = analyses
+        .iter()
+        .map(|analysis| analysis.id.trim().to_ascii_lowercase())
+        .collect();
+    for analysis in &analyses {
+        validate_analysis(analysis, &chart_ids, &mut diagnostics);
+    }
     for analysis in &transit_analyses {
         if !chart_ids.contains(&analysis.source_chart_id.trim().to_ascii_lowercase()) {
             diagnostics.push(super::validation::Diagnostic::error(
@@ -354,21 +410,17 @@ pub fn load_workspace_aggregate(
                 &mut diagnostics,
             );
         }
-        for relation in &layout.relations {
-            validate_layout_chart_reference(
-                &chart_ids,
-                &relation.source,
-                &layout.name,
-                "relations.source",
-                &mut diagnostics,
-            );
-            validate_layout_chart_reference(
-                &chart_ids,
-                &relation.target,
-                &layout.name,
-                "relations.target",
-                &mut diagnostics,
-            );
+        for analysis_id in &layout.analyses {
+            if !analysis_ids.contains(&analysis_id.trim().to_ascii_lowercase()) {
+                diagnostics.push(super::validation::Diagnostic::error(
+                    "unknown_layout_analysis",
+                    format!(
+                        "Layout '{}' references unknown analysis '{}'",
+                        layout.name, analysis_id
+                    ),
+                    Some(format!("layouts.{}.analyses", layout.name)),
+                ));
+            }
         }
     }
 
@@ -378,6 +430,7 @@ pub fn load_workspace_aggregate(
         manifest,
         subjects,
         charts,
+        analyses,
         chart_presets,
         transit_analyses,
         layouts,
@@ -533,6 +586,58 @@ fn validate_layout_chart_reference(
             format!("Layout '{layout_name}' references unknown chart '{chart_id}'"),
             Some(format!("layouts.{layout_name}.{field}")),
         ));
+    }
+}
+
+fn validate_analysis(
+    analysis: &AnalysisInstance,
+    chart_ids: &std::collections::HashSet<String>,
+    diagnostics: &mut Vec<super::validation::Diagnostic>,
+) {
+    let path = format!("analyses.{}", analysis.id);
+    if analysis.version != 1 {
+        diagnostics.push(super::validation::Diagnostic::error(
+            "unsupported_analysis_schema_version",
+            format!(
+                "Analysis schema version {} is not supported",
+                analysis.version
+            ),
+            Some(format!("{path}.version")),
+        ));
+    }
+    if analysis.name.trim().is_empty() {
+        diagnostics.push(super::validation::Diagnostic::error(
+            "analysis_name_missing",
+            "Analysis name must not be empty",
+            Some(format!("{path}.name")),
+        ));
+    }
+    if analysis.inputs.len() < 2 {
+        diagnostics.push(super::validation::Diagnostic::error(
+            "analysis_inputs_missing",
+            "An analysis requires at least two chart inputs",
+            Some(format!("{path}.inputs")),
+        ));
+    }
+    for (index, input) in analysis.inputs.iter().enumerate() {
+        let input_path = format!("{path}.inputs.{index}");
+        match (input.chart_id.as_deref(), input.inline_subject.as_ref()) {
+            (Some(chart_id), None) => {
+                if !chart_ids.contains(&chart_id.trim().to_ascii_lowercase()) {
+                    diagnostics.push(super::validation::Diagnostic::error(
+                        "analysis_chart_missing",
+                        format!("Analysis references missing chart '{chart_id}'"),
+                        Some(format!("{input_path}.chart_id")),
+                    ));
+                }
+            }
+            (None, Some(subject)) => validate_subject(subject, &input_path, diagnostics),
+            _ => diagnostics.push(super::validation::Diagnostic::error(
+                "invalid_analysis_input",
+                "Analysis input must contain exactly one of chart_id or inline_subject",
+                Some(input_path),
+            )),
+        }
     }
 }
 

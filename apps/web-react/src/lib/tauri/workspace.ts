@@ -12,6 +12,7 @@ import type {
 	WorkspaceInfo
 } from './types';
 import {
+	analysisToAppChart,
 	aspectLineTierStyleToDto,
 	chartDetailsToAppChart,
 	normalizeComputedChartPayload,
@@ -84,6 +85,27 @@ function findDemoLocations(query: string): ResolvedLocation[] {
 export async function openFolderDialog(): Promise<string | null> {
 	if (!isTauriRuntime()) return null;
 	return invoke<string | null>('open_folder_dialog');
+}
+
+export async function openChartFileDialog(): Promise<string | null> {
+	if (!isTauriRuntime()) return null;
+	return invoke<string | null>('open_chart_file_dialog');
+}
+
+export async function importChartFile(
+	workspacePath: string,
+	sourcePath: string
+): Promise<AppChart> {
+	const chartId = await invoke<string>('import_chart', { workspacePath, sourcePath });
+	const details = await getChartDetails(workspacePath, chartId);
+	const chart = chartDetailsToAppChart(details);
+	try {
+		const result = await computeChart(workspacePath, chartId);
+		chart.computed = normalizeComputedChartPayload(result);
+	} catch (error) {
+		console.error(`compute_chart failed for imported chart ${chartId}:`, error);
+	}
+	return chart;
 }
 
 export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
@@ -239,6 +261,7 @@ export async function saveWorkspace(
 					default_location_latitude: defaults.locationLatitude,
 					default_location_longitude: defaults.locationLongitude,
 					default_engine: defaults.engine,
+					position_mode: defaults.positionMode,
 					default_bodies: defaults.defaultBodies,
 					default_aspects: defaults.defaultAspects,
 					default_aspect_orbs: defaults.defaultAspectOrbs,
@@ -262,6 +285,7 @@ export async function saveWorkspaceDefaults(
 			default_location_latitude: defaults.locationLatitude,
 			default_location_longitude: defaults.locationLongitude,
 			default_engine: defaults.engine,
+			position_mode: defaults.positionMode,
 			default_bodies: defaults.defaultBodies,
 			default_aspects: defaults.defaultAspects,
 			default_aspect_orbs: defaults.defaultAspectOrbs,
@@ -303,10 +327,11 @@ export async function openWorkspaceFolder(
 			charts.push(summaryToAppChart(ch));
 		}
 	}
+	charts.push(...workspace.analyses.map(analysisToAppChart));
 
 	await initStorage(workspace.path);
 
-	for (const chart of charts) {
+	for (const chart of charts.filter((entry) => entry.entityKind === 'chart')) {
 		try {
 			const result = await computeChart(workspace.path, chart.id);
 			chart.computed = normalizeComputedChartPayload(result);

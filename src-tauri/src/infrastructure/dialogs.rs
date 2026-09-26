@@ -131,3 +131,127 @@ print(path or '', end='')
         Err("Unsupported platform".to_string())
     }
 }
+
+/// Open a native chart-file picker for formats accepted by `import_chart`.
+pub fn select_chart_file() -> Result<Option<String>, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let output = Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-Command",
+                "Add-Type -AssemblyName System.Windows.Forms; $dialog = New-Object System.Windows.Forms.OpenFileDialog; $dialog.Title = 'Import Horoscope'; $dialog.Filter = 'Horoscope files (*.sfs;*.yml;*.yaml)|*.sfs;*.yml;*.yaml'; if ($dialog.ShowDialog() -eq 'OK') { $dialog.FileName }",
+            ])
+            .output();
+
+        return match output {
+            Ok(out) if out.status.success() => {
+                let path = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                Ok((!path.is_empty()).then_some(path))
+            }
+            _ => Ok(None),
+        };
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let script = r#"tell application "System Events"
+    activate
+    set filePath to choose file with prompt "Import Horoscope"
+    return POSIX path of filePath
+end tell"#;
+        let output = Command::new("osascript").arg("-e").arg(script).output();
+
+        return match output {
+            Ok(out) if out.status.success() => {
+                let path = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                Ok((!path.is_empty()).then_some(path))
+            }
+            _ => Ok(None),
+        };
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let python_script = r#"
+import sys
+try:
+    import tkinter as tk
+    from tkinter import filedialog
+except Exception:
+    sys.exit(1)
+root = tk.Tk()
+root.withdraw()
+try:
+    root.attributes('-topmost', True)
+except Exception:
+    pass
+path = filedialog.askopenfilename(
+    title='Import Horoscope',
+    filetypes=[('Horoscope files', '*.sfs *.yml *.yaml')]
+)
+print(path or '', end='')
+"#;
+
+        for python in ["python3", "python"] {
+            if let Ok(output) = Command::new(python).args(["-c", python_script]).output() {
+                if output.status.success() {
+                    let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if !path.is_empty() {
+                        return Ok(Some(path));
+                    }
+                }
+            }
+        }
+
+        let commands = [
+            (
+                "zenity",
+                vec![
+                    "--file-selection",
+                    "--title=Import Horoscope",
+                    "--file-filter=Horoscope files | *.sfs *.yml *.yaml",
+                ],
+            ),
+            (
+                "kdialog",
+                vec![
+                    "--getopenfilename",
+                    ".",
+                    "*.sfs *.yml *.yaml|Horoscope files",
+                    "--title",
+                    "Import Horoscope",
+                ],
+            ),
+            (
+                "yad",
+                vec![
+                    "--file",
+                    "--title=Import Horoscope",
+                    "--file-filter=Horoscope files | *.sfs *.yml *.yaml",
+                ],
+            ),
+        ];
+
+        for (command, args) in commands {
+            if let Ok(output) = Command::new(command).args(args).output() {
+                if output.status.success() {
+                    let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if !path.is_empty() {
+                        return Ok(Some(path));
+                    }
+                }
+            }
+        }
+
+        return Err(
+            "No native file picker was available. Install python3-tk, zenity, kdialog, or yad."
+                .to_string(),
+        );
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        Err("Unsupported platform".to_string())
+    }
+}

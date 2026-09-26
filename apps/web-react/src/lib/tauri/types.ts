@@ -3,18 +3,82 @@
 export interface WorkspaceChartSummary {
 	id: string;
 	name: string;
-	chart_type: string;
+	definition: ChartDefinitionDto;
 	date_time: string;
 	location: string;
 	tags: string[];
 	tag_colors?: Record<string, string>;
 }
 
+export interface AnalysisInputDto {
+	role?: string | null;
+	chart_id?: string | null;
+	inline_subject?: {
+		id: string;
+		name: string;
+		event_time?: string | null;
+		location: {
+			name: string;
+			latitude: number;
+			longitude: number;
+			timezone: string;
+		};
+	} | null;
+	derivations: Array<{
+		method: DerivedChartMethodDto;
+		parameters?: unknown;
+	}>;
+}
+
+export interface AnalysisDto {
+	version: number;
+	id: string;
+	name: string;
+	method: 'synastry' | 'transit_comparison' | 'chart_comparison';
+	inputs: AnalysisInputDto[];
+	parameters?: unknown;
+	tags: string[];
+}
+
+export interface InlineSubjectDto {
+	name: string;
+	event_time?: string | null;
+	location: {
+		name: string;
+		latitude: number;
+		longitude: number;
+		timezone: string;
+	};
+}
+
+export type BaseChartPurposeDto = 'natal' | 'event' | 'horary' | 'electional' | 'moment';
+export type DerivedChartMethodDto =
+	| 'return'
+	| 'progression'
+	| 'direction'
+	| 'relocation'
+	| 'harmonic'
+	| 'persona'
+	| 'composite'
+	| 'davison'
+	| 'draconic'
+	| 'coalescent';
+
+export type ChartDefinitionDto =
+	| { kind: 'base'; purpose: BaseChartPurposeDto }
+	| {
+			kind: 'derived';
+			method: DerivedChartMethodDto;
+			inputs: string[];
+			parameters?: unknown;
+	  };
+
 export interface WorkspaceInfo {
 	path: string;
 	owner: string;
 	active_model: string | null;
 	charts: WorkspaceChartSummary[];
+	analyses: AnalysisDto[];
 }
 
 export type DiagnosticSeverity = 'error' | 'warning';
@@ -45,6 +109,7 @@ export interface WorkspaceDefaultsDto {
 	default_location_latitude?: number | null;
 	default_location_longitude?: number | null;
 	default_engine?: string | null;
+	position_mode?: 'apparent' | 'geometric' | null;
 	default_bodies?: string[] | null;
 	default_aspects?: string[] | null;
 	default_aspect_orbs?: Record<string, number> | null;
@@ -113,6 +178,7 @@ export interface SignDefinitionDto {
 
 export interface ModelSettingsDto {
 	default_house_system?: string | null;
+	position_mode?: 'apparent' | 'geometric' | null;
 	default_aspects: string[];
 	default_bodies: string[];
 	standard_orb: number;
@@ -149,6 +215,7 @@ export interface EffectiveModelSettingsDto {
 	aspect_orbs: Record<string, number>;
 	standard_orb: number;
 	engine?: string | null;
+	position_mode: 'apparent' | 'geometric';
 	zodiac_type?: string | null;
 	ayanamsa?: string | null;
 	time_system?: string | null;
@@ -164,6 +231,7 @@ export interface ComputeSettingsOverrides {
 	aspects?: string[] | null;
 	aspectOrbs?: Record<string, number>;
 	engine?: string | null;
+	positionMode?: 'apparent' | 'geometric' | null;
 	zodiacType?: string | null;
 	ayanamsa?: string | null;
 	timeSystem?: string | null;
@@ -184,6 +252,7 @@ export interface EffectiveSettingsSourcesDto {
 	aspect_orbs: Record<string, SettingSource>;
 	standard_orb: SettingSource;
 	engine?: SettingSource | null;
+	position_mode: SettingSource;
 	zodiac_type?: SettingSource | null;
 	ayanamsa?: SettingSource | null;
 	time_system?: SettingSource | null;
@@ -221,19 +290,17 @@ export interface ChartDetails {
 		};
 	};
 	config: {
-		mode: string;
+		definition: ChartDefinitionDto;
 		house_system: string | null;
 		zodiac_type: string;
 		engine: string | null;
+		position_mode?: 'apparent' | 'geometric' | null;
 		model: string | null;
 		model_overrides?: ModelOverridesDto | null;
 		override_ephemeris: string | null;
 		observable_objects?: string[];
 		aspect_orbs?: Record<string, number>;
 		selected_aspects?: string[];
-		included_points?: string[];
-		display_style?: string;
-		color_theme?: string;
 		ayanamsa?: string | null;
 		time_system?: string | null;
 	};
@@ -260,6 +327,13 @@ export interface ComputeChartResult {
 			retrograde: boolean;
 		}
 	>;
+	// Rust-native route only (anise-based JPL backend); empty/absent on the Swiss-ephemeris
+	// route and, on the Python sidecar route, absent here since the same data instead rides
+	// along inside each `positions[id]` value (see `chartPayload.ts`'s extended-fields handling).
+	right_ascension?: Record<string, number>;
+	declination?: Record<string, number>;
+	altitude?: Record<string, number>;
+	azimuth?: Record<string, number>;
 	aspects: unknown[];
 	axes?: {
 		asc: number;

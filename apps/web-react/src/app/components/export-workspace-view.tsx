@@ -42,7 +42,7 @@ export function ExportWorkspaceView({ theme }: ExportWorkspaceViewProps) {
 
 	return (
 		<AppMainContentRoot className={ft.formPageBg}>
-			<AppMainContentContainer layout="center-column" className="space-y-6">
+			<AppMainContentContainer width="standard" className="space-y-6">
 				<div>
 					<h1 className={cn('text-xl font-semibold', ft.title)}>{t('export')}</h1>
 					<p className={cn('mt-1 text-sm', ft.muted)}>{t('export_include')}</p>
@@ -52,14 +52,17 @@ export function ExportWorkspaceView({ theme }: ExportWorkspaceViewProps) {
 					<CardContent className="space-y-6 p-6">
 						<p className={cn('text-sm font-medium', ft.label)}>{t('export_include')}</p>
 
-						<div className="flex flex-wrap gap-2">
+						<div className="flex gap-2">
 							{EXPORT_TYPES.map(({ id, labelKey }) => (
 								<Button
 									key={id}
 									type="button"
 									variant={exportKind === id ? 'default' : 'outline'}
 									size="sm"
-									className={exportKind === id ? '' : ft.footerCancel}
+									className={cn(
+									'min-w-0 flex-1',
+									exportKind === id ? '' : cn(ft.footerCancel, 'rounded-lg px-3 py-0')
+								)}
 									onClick={() => setExportKind(id)}
 								>
 									{t(labelKey)}

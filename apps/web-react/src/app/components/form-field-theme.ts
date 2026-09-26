@@ -21,20 +21,18 @@ export function getAppFormFieldTheme(theme: Theme) {
 	const input = cn(
 		'w-full rounded-xl border px-4 py-2.5 text-base transition-all md:text-sm',
 		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
-		'placeholder:text-[color:var(--theme-content-muted)] shadow-inner backdrop-blur-sm',
-		'focus:border-transparent focus:ring-2 focus:ring-[var(--theme-accent)] focus:outline-none'
+		'placeholder:text-[color:var(--theme-content-muted)] shadow-inner backdrop-blur-sm'
 	);
 
 	const inputCompact = cn(
 		'h-9 rounded-xl border px-3 py-1 text-sm transition-all',
 		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
-		'backdrop-blur-sm focus:border-transparent focus:ring-2 focus:ring-[var(--theme-accent)] focus:outline-none'
+		'backdrop-blur-sm'
 	);
 
 	const selectTrigger = cn(
 		'flex h-auto min-h-10 w-full items-center justify-between rounded-xl border px-4 py-2.5 text-base transition-all md:text-sm [&>svg]:opacity-70',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-inner backdrop-blur-sm',
-		'focus:border-transparent focus:ring-2 focus:ring-[var(--theme-accent)] focus:outline-none'
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-inner backdrop-blur-sm'
 	);
 
 	const selectContent = cn(
@@ -72,7 +70,8 @@ export function getAppFormFieldTheme(theme: Theme) {
 
 	const dropdownHover = 'hover:bg-[color:var(--theme-soft-bg)]';
 
-	const dropdownActive = 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]';
+	const dropdownActive =
+		'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]';
 
 	const advancedPanel = 'rounded-xl border-0 bg-[color:var(--theme-soft-bg)] p-4 backdrop-blur-sm';
 
@@ -87,18 +86,16 @@ export function getAppFormFieldTheme(theme: Theme) {
 
 	const datePickerButton = 'hover:bg-[color:var(--theme-soft-bg)]';
 
-	const datePickerDay = 'hover:bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-primary)]';
+	const datePickerDay =
+		'hover:bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-primary)]';
 
-	const datePickerDayActive =
-		'bg-[color:var(--theme-accent)] text-white hover:brightness-95';
+	const datePickerDayActive = 'bg-[color:var(--theme-accent)] text-white hover:brightness-95';
 
-	/** Native checkbox accent color (Tailwind `text-*` tints the checkmark). */
-	const checkboxAccent = 'text-[color:var(--theme-accent)] focus:ring-[var(--theme-accent)]';
+	/** Native checkbox accent color (Tailwind `text-*` tints the checkmark). Focus ring comes from the shared `Checkbox` primitive. */
+	const checkboxAccent = 'text-[color:var(--theme-accent)]';
 
 	const formPageBg =
 		'bg-[linear-gradient(to_bottom_right,var(--theme-canvas-start),var(--theme-canvas-end))]';
-
-	const switchUnchecked = 'data-[state=unchecked]:bg-[color:var(--theme-content-muted)]';
 
 	const textDisabled = 'text-[color:var(--theme-content-muted)]';
 
@@ -152,7 +149,6 @@ export function getAppFormFieldTheme(theme: Theme) {
 		datePickerDay,
 		datePickerDayActive,
 		formPageBg,
-		switchUnchecked,
 		textDisabled,
 		bodyText,
 		checkboxAccent,

@@ -104,7 +104,7 @@ Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `infrastr
 
 All 20 named bodies in the table below (Ceres through Massalia) are also registered in the built-in `BodyDefinition` catalog (`workspace/model_catalog.rs`, mirrored in `backend-python/module/model_catalog.py`), so they are selectable objects, not just resolvable NAIF frames. `astraea` through `massalia` are marked JPL-only in `computation_map` — Swiss Ephemeris support would need asteroid `.se1` files this project does not bundle — and use a circled-digit glyph matching their minor-planet number, since none of them has a dedicated astrological symbol in wide use. A `codes_300ast_minor_planets_resolve_from_bundled_kernels` test in `jpl_backend.rs` confirms all 16 actually resolve from the bundled kernels, not just that the catalog entry exists.
 
-**Default chart** (`included_points` / requested objects unspecified): because
+**Default chart** (`observable_objects` unspecified): because
 `codes_300ast_*.bsp` is bundled and therefore on the normal load path, the backend
 evaluates the configured 20-body subset (`CODES_300AST_MAJOR_BODIES` in
 `infrastructure/ephemeris.rs`: Ceres through Massalia). Without that kernel, only

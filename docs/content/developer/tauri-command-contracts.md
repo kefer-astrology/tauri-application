@@ -101,6 +101,14 @@ Acceptance criteria:
 - Returns the chart id.
 - Returns an error if the chart id already exists.
 
+### `create_analysis(workspace_path, analysis) -> Result<String, String>`
+
+- Persists a relationship/comparison separately from its input charts.
+- Requires schema version 1, an id, a name, and at least two inputs.
+- Each input must contain exactly one saved `chart_id` or one `inline_subject`.
+- Writes an analysis YAML file, registers it in `workspace.yaml:analyses`, and returns its id.
+- Compound labels such as progressed synastry are represented as input derivations, not as new analysis methods.
+
 ### `import_chart(workspace_path, source_path) -> Result<String, String>`
 
 - Imports an external chart file into the active workspace.
@@ -126,7 +134,7 @@ Acceptance criteria:
 ### `load_workspace(workspace_path) -> Result<WorkspaceInfo, String>`
 
 - Requires a readable `workspace.yaml`.
-- Loads all registered charts and returns chart summaries.
+- Returns registered charts and analyses as separate collections.
 - Does not compute chart positions.
 
 ### `validate_workspace(workspace_path) -> Result<WorkspaceValidationReport, String>`
@@ -177,11 +185,10 @@ Acceptance criteria:
 ### `get_chart_details(workspace_path, chart_id) -> Result<Value, String>`
 
 - Returns the full chart payload needed by the React and Svelte editor surfaces.
-- `config` includes `mode`, `house_system`, `zodiac_type`, `engine`, `model`,
+- `config` includes required `definition`, `house_system`, `zodiac_type`, `engine`, `position_mode`, `model`,
   `model_overrides`, `override_ephemeris`, `observable_objects`,
-  `included_points`, `aspect_orbs`, `selected_aspects`, `ayanamsa`,
-  `time_system`, and legacy visual keys. Both frontends retain these fields
-  during load/save round-trips.
+  `aspect_orbs`, `selected_aspects`, `ayanamsa`, and `time_system`. Both
+  frontends retain these fields during load/save round-trips.
 - Also returns top-level `tags`, `tag_colors`, and `roden_rating`.
 - Returns an error when the chart id is not found.
 
@@ -202,7 +209,7 @@ Recommended response metadata:
 - `ephemeris_source` when known
 
 All returned longitudes are normalized to `[0, 360)`. On the Rust JPL path,
-`positions` and `motion` use the geometric mean-tropical coordinate pipeline
+`positions` and `motion` use the selected apparent/geometric mean-tropical coordinate pipeline
 defined by the [Astronomy coordinate contract](../astronomy-coordinate-contract/).
 This is a semantic contract rather than an additional response field; changing
 it requires an explicit version/provenance decision.
@@ -214,14 +221,11 @@ it requires an explicit version/provenance decision.
 - Returns an object with `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `shapes`, `configurations`, `moon_details`, `chart_id`, and backend provenance fields when available.
 - Rust standalone computation resolves built-in model defaults and chart
   overrides through the same settings service used by workspace charts.
-- Resolved house system, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
+- Resolved house system, position mode, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
   time system are materialized only on the in-memory computation copy.
-- Legacy `included_points` is accepted as a chart-level body selection and
-  produces a deprecation warning; new payloads should use
-  `observable_objects`.
 - `settings_overrides` is an optional operation layer with `houseSystem`,
-  `bodies`, `aspects`, `aspectOrbs`, `engine`, `zodiacType`, `ayanamsa`, and
-  `timeSystem`.
+  `bodies`, `aspects`, `aspectOrbs`, `engine`, `positionMode`, `zodiacType`,
+  `ayanamsa`, and `timeSystem`.
 - Uses Python or Rust depending on backend selection and availability.
 
 Acceptance criteria:

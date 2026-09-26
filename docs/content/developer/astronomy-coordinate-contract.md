@@ -21,14 +21,15 @@ For SPK-backed bodies and osculating points derived from their state vectors:
 | Source orientation | SPK J2000/ICRS orientation |
 | Dated equator/equinox | Earth mean-of-date, ANISE `EARTH_MOD_FRAME`, IAU 2006 |
 | Ecliptic | Mean ecliptic of date, IAU 2006 mean obliquity |
-| Aberration correction | None |
+| Aberration correction | `apparent`: converged reception light-time + stellar aberration (`CN+S`); `geometric`: none |
 | Nutation | None |
-| Output | Geometric mean-tropical longitude in `[0, 360)` |
+| Output | Apparent (default) or geometric mean-tropical longitude in `[0, 360)` |
 
 The mandatory operation order is:
 
 ```text
 Earth-centred J2000/ICRS position + velocity
+  → selected apparent/geometric correction
   → three-dimensional Earth MOD frame transform
   → mean-ecliptic projection
   → longitude/latitude extraction

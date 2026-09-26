@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronsUpDown, MapPin } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, MapPin } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Popover, PopoverAnchor, PopoverContent } from './ui/popover';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from './ui/utils';
 import type { ResolvedLocation } from '@/lib/tauri/types';
@@ -13,7 +13,6 @@ type LocationSelectorProps = {
 	onValueChange: (value: string) => void;
 	options?: string[];
 	placeholder: string;
-	searchPlaceholder: string;
 	emptyLabel: string;
 	disabled?: boolean;
 	className?: string;
@@ -27,13 +26,15 @@ function normalize(value: string) {
 	return value.trim().toLowerCase();
 }
 
+/** Direct-search location field: the field itself is the search box, and matches drop down
+ *  underneath as the user types (no separate trigger/dialog indirection). Shared by every
+ *  location input in the app (new chart, synastry participants, default location in settings). */
 export function LocationSelector({
 	id,
 	value,
 	onValueChange,
 	options = [],
 	placeholder,
-	searchPlaceholder,
 	emptyLabel,
 	disabled = false,
 	className,
@@ -43,13 +44,9 @@ export function LocationSelector({
 	loadingLabel = 'Searching...'
 }: LocationSelectorProps) {
 	const [open, setOpen] = useState(false);
-	const [query, setQuery] = useState(value);
 	const [searchResults, setSearchResults] = useState<ResolvedLocation[]>([]);
 	const [isSearching, setIsSearching] = useState(false);
-
-	useEffect(() => {
-		if (!open) setQuery(value);
-	}, [open, value]);
+	const anchorRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (!open || !searchLocations) {
@@ -58,7 +55,7 @@ export function LocationSelector({
 			return;
 		}
 
-		const trimmedQuery = query.trim();
+		const trimmedQuery = value.trim();
 		if (trimmedQuery.length < 2) {
 			setSearchResults([]);
 			setIsSearching(false);
@@ -84,9 +81,9 @@ export function LocationSelector({
 			active = false;
 			window.clearTimeout(timeoutId);
 		};
-	}, [open, query, searchLocations]);
+	}, [open, value, searchLocations]);
 
-	const normalizedQuery = normalize(query);
+	const normalizedQuery = normalize(value);
 
 	const uniqueOptions = useMemo(() => {
 		const seen = new Set<string>();
@@ -108,100 +105,87 @@ export function LocationSelector({
 		return searchResults.filter((result) => !localKeys.has(normalize(result.display_name)));
 	}, [searchResults, uniqueOptions]);
 
-	const showCustomOption =
-		normalizedQuery.length > 0 &&
-		!uniqueOptions.some((option) => normalize(option) === normalizedQuery) &&
-		!visibleSearchResults.some((result) => normalize(result.display_name) === normalizedQuery);
-
-	const hasAnyResults =
-		visibleSearchResults.length > 0 || filteredOptions.length > 0 || showCustomOption;
+	const hasAnyResults = visibleSearchResults.length > 0 || filteredOptions.length > 0;
 
 	return (
 		<Popover open={open} onOpenChange={(next) => !disabled && setOpen(next)}>
-			<PopoverTrigger asChild>
-				<Button
-					id={id}
-					type="button"
-					variant="outline"
-					role="combobox"
-					aria-expanded={open}
-					disabled={disabled}
-					className={cn(
-						'h-10 w-full justify-between text-left font-normal shadow-inner',
-						className
-					)}
-				>
-					<span className="flex min-w-0 items-center gap-2">
-						<MapPin className={cn('h-4 w-4 shrink-0', iconClassName)} />
-						<span className="truncate">{value.trim() || placeholder}</span>
-					</span>
-					<ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-				</Button>
-			</PopoverTrigger>
+			<PopoverAnchor asChild>
+				<div ref={anchorRef} className="relative">
+					<MapPin
+						className={cn(
+							'pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2 opacity-50',
+							iconClassName
+						)}
+					/>
+					<Input
+						id={id}
+						value={value}
+						onChange={(event) => onValueChange(event.target.value)}
+						onFocus={() => !disabled && setOpen(true)}
+						onKeyDown={(event) => {
+							if (event.key === 'Escape') {
+								setOpen(false);
+								event.currentTarget.blur();
+							}
+						}}
+						placeholder={placeholder}
+						disabled={disabled}
+						autoComplete="off"
+						className={cn('h-10 w-full shadow-inner', className, 'pl-9')}
+					/>
+				</div>
+			</PopoverAnchor>
 			<PopoverContent
-				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] p-2 border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm"
+				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] p-2 text-[color:var(--theme-content-primary)] backdrop-blur-sm"
 				align="start"
 				sideOffset={6}
+				onOpenAutoFocus={(event) => event.preventDefault()}
+				onInteractOutside={(event) => {
+					// Radix only exempts `PopoverTrigger` clicks from auto-dismiss; since this field
+					// opens the popover itself (via `PopoverAnchor`, not `Trigger`), we exempt it here.
+					if (anchorRef.current?.contains(event.target as Node)) event.preventDefault();
+				}}
 			>
-				<div className="space-y-2">
-					<Input
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-						placeholder={searchPlaceholder}
-						autoFocus
-					/>
-					<ScrollArea className="h-[240px] rounded-md border">
-						<div className="space-y-1 p-1">
-							{visibleSearchResults.map((result) => {
-								const selected = normalize(result.display_name) === normalize(value);
-								return (
-									<OptionRow
-										key={`${result.display_name}-${result.latitude}-${result.longitude}`}
-										selected={selected}
-										onSelect={() => {
-											onValueChange(result.display_name);
-											onResolvedLocationSelect?.(result);
-											setOpen(false);
-										}}
-									>
-										{result.display_name}
-									</OptionRow>
-								);
-							})}
-							{showCustomOption ? (
+				<ScrollArea className="h-[240px] rounded-md border">
+					<div className="space-y-1 p-1">
+						{visibleSearchResults.map((result) => {
+							const selected = normalize(result.display_name) === normalize(value);
+							return (
 								<OptionRow
-									selected={normalize(query) === normalize(value)}
+									key={`${result.display_name}-${result.latitude}-${result.longitude}`}
+									selected={selected}
 									onSelect={() => {
-										onValueChange(query.trim());
+										onValueChange(result.display_name);
+										onResolvedLocationSelect?.(result);
 										setOpen(false);
 									}}
 								>
-									{query.trim()}
+									{result.display_name}
 								</OptionRow>
-							) : null}
-							{filteredOptions.map((option) => {
-								const selected = normalize(option) === normalize(value);
-								return (
-									<OptionRow
-										key={option}
-										selected={selected}
-										onSelect={() => {
-											onValueChange(option);
-											setOpen(false);
-										}}
-									>
-										{option}
-									</OptionRow>
-								);
-							})}
-							{!hasAnyResults ? (
-								<div className="text-[color:var(--theme-content-muted)] py-6 text-center text-sm">
-									{isSearching ? loadingLabel : emptyLabel}
-								</div>
-							) : null}
-						</div>
-					</ScrollArea>
-				</div>
+							);
+						})}
+						{filteredOptions.map((option) => {
+							const selected = normalize(option) === normalize(value);
+							return (
+								<OptionRow
+									key={option}
+									selected={selected}
+									onSelect={() => {
+										onValueChange(option);
+										setOpen(false);
+									}}
+								>
+									{option}
+								</OptionRow>
+							);
+						})}
+						{!hasAnyResults ? (
+							<div className="py-6 text-center text-sm text-[color:var(--theme-content-muted)]">
+								{isSearching ? loadingLabel : emptyLabel}
+							</div>
+						) : null}
+					</div>
+				</ScrollArea>
 			</PopoverContent>
 		</Popover>
 	);

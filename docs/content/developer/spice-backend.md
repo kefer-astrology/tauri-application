@@ -71,7 +71,7 @@ What the Rust SPICE backend currently provides:
 - axes and house cusp support through the Rust astronomy layer
 - explicit `backend_used` / `ephemeris_source` style provenance
 - multi-file kernel loading via `EphemerisManager`
-- geometric J2000/ICRS to Earth mean-of-date transformation through ANISE's
+- configurable apparent or geometric J2000/ICRS to Earth mean-of-date transformation through ANISE's
   IAU 2006 `EARTH_MOD_FRAME`
 - bundled `pck11.pca` planetary constants loaded before SPKs to supply ANISE's
   orientation graph offline
@@ -85,15 +85,18 @@ in [Ephemeris manager](../ephemeris-manager/).
 For planets, asteroids, the osculating lunar node, and true lunar apogee, the
 backend follows one pipeline:
 
-1. ANISE obtains the Earth-centred geometric state from the loaded SPKs.
+1. ANISE obtains the Earth-centred state from the loaded SPKs. In the default
+   `apparent` mode it applies converged reception light-time and stellar
+   aberration (`CN+S`); `geometric` mode disables both corrections.
 2. ANISE rotates the complete position/velocity state into Earth mean-of-date
    (`EARTH_MOD_FRAME`, IAU 2006).
 3. Rust rotates that dated equatorial vector by IAU 2006 mean obliquity into the
    mean ecliptic of date.
 4. Longitude is extracted and normalized to `[0, 360)`.
 
-This produces geometric mean-tropical longitude. No light-time, stellar
-aberration, nutation, or scalar "general precession in longitude" is applied.
+This produces apparent mean-tropical longitude by default, or geometric
+mean-tropical longitude when selected. Nutation and a scalar "general
+precession in longitude" are not applied.
 The full frame rotation must precede longitude extraction because precession can
 also change the ecliptic latitude of an inclined vector. See the normative
 [Astronomy coordinate contract](../astronomy-coordinate-contract/).
