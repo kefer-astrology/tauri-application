@@ -20,7 +20,8 @@
 		"noUnusedParameters": false,
 		"noFallthroughCasesInSwitch": true,
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@static/*": ["../../static/*"]
 		}
 	},
 	"include": ["src/**/*.ts", "src/**/*.tsx"]

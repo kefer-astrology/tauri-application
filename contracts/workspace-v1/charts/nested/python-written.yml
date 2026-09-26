@@ -12,7 +12,9 @@ subject:
     location_mode: manual
     timezone_mode: auto
 config:
-  mode: NATAL
+  definition:
+    kind: base
+    purpose: natal
   house_system: Whole Sign
   zodiac_type: Tropical
   model: traditional-test
@@ -31,9 +33,6 @@ config:
   observable_objects: [sun, moon]
   selected_aspects: [square]
   aspect_orbs: { square: 2.0 }
-  included_points: []
-  display_style: ''
-  color_theme: ''
   time_system: gregorian
 tags: [compatibility]
 tag_colors: { compatibility: '#336699' }

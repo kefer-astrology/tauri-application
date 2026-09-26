@@ -10,6 +10,7 @@
       "conjunction": 5.0
     },
     "engine": "swisseph",
+    "positionMode": "geometric",
     "timeSystem": "gregorian"
   },
   "preset": {
@@ -21,16 +22,13 @@
     }
   },
   "chart": {
-    "mode": "NATAL",
+    "definition": { "kind": "base", "purpose": "natal" },
     "house_system": "Placidus",
     "zodiac_type": "Sidereal",
-    "included_points": [],
     "aspect_orbs": {
       "trine": 3.0
     },
     "selected_aspects": ["trine"],
-    "display_style": "",
-    "color_theme": "",
     "model": "standard",
     "engine": "swisseph",
     "ayanamsa": "Lahiri",
@@ -44,6 +42,7 @@
       "square": 2.0
     },
     "engine": "jpl",
+    "positionMode": "apparent",
     "timeSystem": "unix_timestamp"
   },
   "expected": {
@@ -56,6 +55,7 @@
       "trine": 3.0
     },
     "engine": "jpl",
+    "positionMode": "apparent",
     "zodiacType": "Sidereal",
     "ayanamsa": "Lahiri",
     "timeSystem": "unix_timestamp",
@@ -64,6 +64,7 @@
       "bodies": "operation",
       "aspects": "operation",
       "engine": "operation",
+      "positionMode": "operation",
       "zodiacType": "chart",
       "ayanamsa": "chart",
       "timeSystem": "operation",

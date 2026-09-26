@@ -1,0 +1,19 @@
+schema_version: 1
+owner: Test User
+active_model: default
+aspects: []
+bodies: []
+models: {}
+default:
+  ephemeris_engine: swisseph
+  position_mode: apparent
+  ephemeris_backend: de421
+  language: cs
+chart_presets: []
+subjects: []
+charts:
+  - charts/base-chart.yml
+analyses: []
+transit_analyses: []
+layouts: []
+annotations: []
