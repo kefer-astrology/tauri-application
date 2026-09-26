@@ -1,0 +1,44 @@
+apps/web-react/src/lib/astrology/degreeSymbolSets.ts
+  s_8623cb43c1cfc4::t_1b6d2f8e870018 17
+  s_8623cb43c1cfc4::t_509f0f87c3a824 2-3
+  s_8623cb43c1cfc4::t_91b4a6f6e902d0 12
+  s_8623cb43c1cfc4::t_ec6639ffebd406 38-39
+  s_8623cb43c1cfc4::t_461a4753a75c3a 36
+static/astrology-symbols/README.md
+  s_8623cb43c1cfc4::t_6968860ef33a5c 16-29
+  s_8623cb43c1cfc4::t_af5f86b191bcdc 47-55
+static/astrology-symbols/kefer.json
+  s_8623cb43c1cfc4::t_3e9f45062b2f41 1-362
+apps/web-react/src/lib/astrology/symbolSystems.ts
+  s_8623cb43c1cfc4::t_0fb4524c446e1a 4-6,13-21
+  s_8623cb43c1cfc4::t_4362ec8adf4604 31-32
+static/astrology-symbols/catalog.json
+  s_8623cb43c1cfc4::t_7d724f038b2d92 6,10
+  s_8623cb43c1cfc4::t_460a1946419031 31-32,35
+  s_8623cb43c1cfc4::t_0b8f201f61182b 7
+static/astrology-symbols/sabian.cs.json
+  s_8623cb43c1cfc4::t_b995fe41255ca5 1-362
+static/astrology-symbols/sabian.json
+  s_8623cb43c1cfc4::t_b995fe41255ca5 1-362
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d0e667bb3f814031326ec59af28a3fa998add3dc",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_8623cb43c1cfc4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6cf50fd8-fd5a-4679-ab87-06f0ba78059d",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
