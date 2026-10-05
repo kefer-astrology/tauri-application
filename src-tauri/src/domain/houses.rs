@@ -559,8 +559,10 @@ pub fn equatorial_to_horizontal_deg(
     let lat = latitude_deg.to_radians();
 
     let altitude = (dec.sin() * lat.sin() + dec.cos() * lat.cos() * hour_angle.cos()).asin();
-    let azimuth_from_south =
-        f64::atan2(hour_angle.sin(), hour_angle.cos() * lat.sin() - dec.tan() * lat.cos());
+    let azimuth_from_south = f64::atan2(
+        hour_angle.sin(),
+        hour_angle.cos() * lat.sin() - dec.tan() * lat.cos(),
+    );
     let azimuth = normalize_deg(azimuth_from_south.to_degrees() + 180.0);
 
     (altitude.to_degrees(), azimuth)
@@ -609,10 +611,7 @@ mod tests {
         let (altitude, azimuth) =
             equatorial_to_horizontal_deg(ra_deg, dec_deg, lst_deg, latitude_deg);
 
-        assert!(
-            (altitude - 48.889_981).abs() < 0.05,
-            "altitude: {altitude}"
-        );
+        assert!((altitude - 48.889_981).abs() < 0.05, "altitude: {altitude}");
         assert!((azimuth - 153.520_290).abs() < 0.05, "azimuth: {azimuth}");
     }
 
