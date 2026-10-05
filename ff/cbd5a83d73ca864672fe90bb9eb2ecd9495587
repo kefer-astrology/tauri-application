@@ -1,0 +1,28 @@
+docs/content/developer/development-driver.md
+  h_0907ec034f4a17 29-30
+docs/content/developer/frontend-workflow-baseline.md
+  h_0907ec034f4a17 44
+docs/content/developer/import-chart-contract.md
+  h_0907ec034f4a17 31,33,39,52-55,59
+docs/content/developer/rust-workspace-contract.md
+  h_0907ec034f4a17 36-37
+docs/content/developer/tauri-command-contracts.md
+  h_0907ec034f4a17 115-116,119
+src-tauri/src/commands/charts.rs
+  h_0907ec034f4a17 55,58,419,424-438,446-447,450-451,453-501
+src-tauri/src/workspace/mod.rs
+  h_0907ec034f4a17 5
+src-tauri/src/workspace/sfs.rs
+  h_0907ec034f4a17 1-621
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ffcbd5a83d73ca864672fe90bb9eb2ecd9495587",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
