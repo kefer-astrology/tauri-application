@@ -622,6 +622,13 @@ pub struct WorkspacePresentation {
     pub aspect_line_tier_style: Option<AspectLineTierStyle>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct WorkspaceTagDefinition {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkspaceManifest {
     #[serde(default = "default_workspace_schema_version")]
@@ -644,6 +651,8 @@ pub struct WorkspaceManifest {
     pub default: WorkspaceDefaults,
     #[serde(default)]
     pub presentation: WorkspacePresentation,
+    #[serde(default)]
+    pub tag_catalog: Vec<WorkspaceTagDefinition>,
     #[serde(default)]
     pub chart_presets: Vec<String>, // File paths
     #[serde(default)]
@@ -677,6 +686,7 @@ pub struct WorkspaceInfo {
     pub path: String,
     pub owner: String,
     pub active_model: Option<String>,
+    pub tag_catalog: Vec<WorkspaceTagDefinition>,
     pub charts: Vec<ChartSummary>,
     pub analyses: Vec<AnalysisInstance>,
 }

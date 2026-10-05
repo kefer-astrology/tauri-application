@@ -24,7 +24,8 @@ use commands::storage::{
 use commands::transits::{compute_transit_series, load_transit_setup, save_transit_setup};
 use commands::workspace::{
     create_workspace, delete_workspace, get_current_model_report, get_workspace_defaults,
-    load_workspace, save_workspace, save_workspace_defaults, validate_workspace,
+    load_workspace, save_workspace, save_workspace_defaults, save_workspace_tags,
+    validate_workspace,
 };
 use tauri::Manager;
 
@@ -85,6 +86,7 @@ pub fn run() {
             validate_workspace,
             save_workspace,
             save_workspace_defaults,
+            save_workspace_tags,
             create_workspace,
             delete_workspace,
             create_chart,

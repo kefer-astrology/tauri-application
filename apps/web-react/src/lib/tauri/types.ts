@@ -73,10 +73,16 @@ export type ChartDefinitionDto =
 			parameters?: unknown;
 	  };
 
+export interface WorkspaceTagDefinition {
+	name: string;
+	color?: string | null;
+}
+
 export interface WorkspaceInfo {
 	path: string;
 	owner: string;
 	active_model: string | null;
+	tag_catalog: WorkspaceTagDefinition[];
 	charts: WorkspaceChartSummary[];
 	analyses: AnalysisDto[];
 }

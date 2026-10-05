@@ -9,7 +9,8 @@ import type {
 	TransitSeriesRequest,
 	TransitSeriesResult,
 	WorkspaceDefaultsDto,
-	WorkspaceInfo
+	WorkspaceInfo,
+	WorkspaceTagDefinition
 } from './types';
 import {
 	analysisToAppChart,
@@ -110,6 +111,13 @@ export async function importChartFile(
 
 export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
 	return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
+}
+
+export async function saveWorkspaceTags(
+	workspacePath: string,
+	tags: WorkspaceTagDefinition[]
+): Promise<WorkspaceTagDefinition[]> {
+	return invoke<WorkspaceTagDefinition[]>('save_workspace_tags', { workspacePath, tags });
 }
 
 export async function initStorage(workspacePath: string): Promise<string> {
@@ -300,7 +308,7 @@ export async function openWorkspaceFolder(
 	folderPath: string,
 	onDefaults?: (d: WorkspaceDefaultsDto) => void,
 	onModelReport?: (r: CurrentModelReport) => void
-): Promise<{ path: string; charts: AppChart[] }> {
+): Promise<{ path: string; charts: AppChart[]; tagCatalog: WorkspaceTagDefinition[] }> {
 	const workspace = await loadWorkspace(folderPath);
 
 	try {
@@ -340,5 +348,5 @@ export async function openWorkspaceFolder(
 		}
 	}
 
-	return { path: workspace.path, charts };
+	return { path: workspace.path, charts, tagCatalog: workspace.tag_catalog };
 }

@@ -3,10 +3,10 @@ use crate::workspace::loader::{find_chart_ref_by_id, load_chart};
 use crate::workspace::writer::write_workspace_manifest;
 use crate::workspace::{
     chart_to_summary, load_all_analyses, load_all_charts, load_workspace_manifest, ChartSummary,
-    CurrentModelReport, WorkspaceInfo, WorkspaceValidationReport,
+    CurrentModelReport, WorkspaceInfo, WorkspaceTagDefinition, WorkspaceValidationReport,
 };
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -128,6 +128,50 @@ pub async fn save_workspace_defaults(
     get_workspace_defaults(workspace_path).await
 }
 
+/// Replace the workspace-level tag catalog after normalizing and validating it.
+#[tauri::command]
+pub async fn save_workspace_tags(
+    workspace_path: String,
+    tags: Vec<WorkspaceTagDefinition>,
+) -> Result<Vec<WorkspaceTagDefinition>, String> {
+    let mut normalized_tags = Vec::with_capacity(tags.len());
+    let mut names = HashSet::with_capacity(tags.len());
+
+    for tag in tags {
+        let name = tag.name.trim().to_string();
+        if name.is_empty() {
+            return Err("Workspace tag names cannot be empty".to_string());
+        }
+        if !names.insert(name.clone()) {
+            return Err(format!("Duplicate workspace tag name: {name}"));
+        }
+
+        let color = tag.color.map(|color| color.trim().to_string());
+        if let Some(color) = color.as_deref() {
+            if !is_css_hex_color(color) {
+                return Err(format!(
+                    "Invalid color for workspace tag '{name}': expected #RGB or #RRGGBB"
+                ));
+            }
+        }
+
+        normalized_tags.push(WorkspaceTagDefinition { name, color });
+    }
+
+    let base = Path::new(&workspace_path);
+    let mut manifest = load_workspace_manifest(base)?;
+    manifest.tag_catalog = normalized_tags.clone();
+    write_workspace_manifest(base, &manifest)?;
+    Ok(normalized_tags)
+}
+
+fn is_css_hex_color(color: &str) -> bool {
+    let Some(hex) = color.strip_prefix('#') else {
+        return false;
+    };
+    matches!(hex.len(), 3 | 6) && hex.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
 /// Create a new workspace with an empty manifest and charts directory.
 #[tauri::command]
 pub async fn create_workspace(workspace_path: String, owner: String) -> Result<String, String> {
@@ -187,6 +231,7 @@ pub async fn load_workspace(workspace_path: String) -> Result<WorkspaceInfo, Str
         path: workspace_path,
         owner: manifest.owner,
         active_model: manifest.active_model,
+        tag_catalog: manifest.tag_catalog,
         charts: chart_summaries,
         analyses,
     })
@@ -328,6 +373,7 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
             time_system: None,
         },
         presentation: crate::workspace::models::WorkspacePresentation::default(),
+        tag_catalog: vec![],
         chart_presets: vec![],
         subjects: vec![],
         charts: vec![],
@@ -479,6 +525,7 @@ mod tests {
 
         let manifest = load_workspace_manifest(&workspace_path).expect("manifest should load");
         assert_eq!(manifest.owner, "Tester");
+        assert!(manifest.tag_catalog.is_empty());
         assert!(manifest.charts.is_empty());
     }
 
@@ -517,6 +564,111 @@ mod tests {
         assert_eq!(report.counts.charts, 2);
         assert!(codes.contains("duplicate_chart_id"));
         assert!(codes.contains("referenced_item_load_failed"));
+    }
+
+    #[test]
+    fn legacy_manifest_without_tag_catalog_defaults_to_empty() {
+        let manifest = load_workspace_manifest(Path::new(&sample_workspace_path()))
+            .expect("legacy sample manifest should load");
+
+        assert!(manifest.tag_catalog.is_empty());
+    }
+
+    #[test]
+    fn save_workspace_tags_normalizes_and_persists_catalog() {
+        let temp = TestWorkspaceDir::new("workspace-tags");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_string = workspace_path.to_string_lossy().into_owned();
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_string.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        let saved = tauri::async_runtime::block_on(save_workspace_tags(
+            workspace_path_string.clone(),
+            vec![
+                WorkspaceTagDefinition {
+                    name: "  Important  ".to_string(),
+                    color: Some("  #A1b2C3 ".to_string()),
+                },
+                WorkspaceTagDefinition {
+                    name: "Personal".to_string(),
+                    color: None,
+                },
+            ],
+        ))
+        .expect("valid tags should save");
+
+        assert_eq!(
+            saved,
+            vec![
+                WorkspaceTagDefinition {
+                    name: "Important".to_string(),
+                    color: Some("#A1b2C3".to_string()),
+                },
+                WorkspaceTagDefinition {
+                    name: "Personal".to_string(),
+                    color: None,
+                },
+            ]
+        );
+        let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
+        assert_eq!(manifest.tag_catalog, saved);
+        let info = tauri::async_runtime::block_on(load_workspace(workspace_path_string))
+            .expect("workspace should load");
+        assert_eq!(info.tag_catalog, saved);
+    }
+
+    #[test]
+    fn save_workspace_tags_rejects_invalid_input_without_changing_manifest() {
+        let temp = TestWorkspaceDir::new("workspace-tags-invalid");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_string = workspace_path.to_string_lossy().into_owned();
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_string.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        let duplicate_error = tauri::async_runtime::block_on(save_workspace_tags(
+            workspace_path_string.clone(),
+            vec![
+                WorkspaceTagDefinition {
+                    name: "Repeated".to_string(),
+                    color: None,
+                },
+                WorkspaceTagDefinition {
+                    name: " Repeated ".to_string(),
+                    color: Some("#abc".to_string()),
+                },
+            ],
+        ))
+        .expect_err("normalized duplicate names should fail");
+        assert!(duplicate_error.contains("Duplicate workspace tag name"));
+
+        let empty_name_error = tauri::async_runtime::block_on(save_workspace_tags(
+            workspace_path_string.clone(),
+            vec![WorkspaceTagDefinition {
+                name: "   ".to_string(),
+                color: None,
+            }],
+        ))
+        .expect_err("empty normalized names should fail");
+        assert!(empty_name_error.contains("cannot be empty"));
+
+        let color_error = tauri::async_runtime::block_on(save_workspace_tags(
+            workspace_path_string,
+            vec![WorkspaceTagDefinition {
+                name: "Invalid color".to_string(),
+                color: Some("#abcd".to_string()),
+            }],
+        ))
+        .expect_err("invalid colors should fail");
+        assert!(color_error.contains("expected #RGB or #RRGGBB"));
+
+        let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
+        assert!(manifest.tag_catalog.is_empty());
     }
 
     #[test]

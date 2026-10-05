@@ -45,9 +45,14 @@ import {
 	openFolderDialog,
 	openWorkspaceFolder,
 	saveWorkspace,
-	saveWorkspaceDefaults
+	saveWorkspaceDefaults,
+	saveWorkspaceTags
 } from '@/lib/tauri/workspace';
-import type { CurrentModelReport, WorkspaceDefaultsDto } from '@/lib/tauri/types';
+import type {
+	CurrentModelReport,
+	WorkspaceDefaultsDto,
+	WorkspaceTagDefinition
+} from '@/lib/tauri/types';
 import { readStoredAppShellIconSet, type AppShellIconSetId } from '@/lib/app-shell';
 import {
 	persistElementColors,
@@ -74,6 +79,46 @@ import type { TransitOverlay } from '@/lib/astrology/transits';
 import { WindowTitlebar } from './components/window-titlebar';
 import { HoroscopeContextTabs } from './components/horoscope-context-tabs';
 import { DetailSidePanel } from './components/detail-side-panel';
+
+function mergeWorkspaceTagCatalog(
+	catalog: WorkspaceTagDefinition[],
+	charts: AppChart[]
+): WorkspaceTagDefinition[] {
+	const merged = new Map<string, WorkspaceTagDefinition>();
+	for (const tag of catalog) {
+		const name = tag.name.trim();
+		if (name) merged.set(name, { name, color: tag.color ?? undefined });
+	}
+	for (const chart of charts) {
+		for (const name of chart.tags ?? []) {
+			const normalized = name.trim();
+			if (!normalized || merged.has(normalized)) continue;
+			merged.set(normalized, {
+				name: normalized,
+				color: chart.tagColors?.[normalized]
+			});
+		}
+	}
+	return [...merged.values()];
+}
+
+function applyWorkspaceTagColors(
+	charts: AppChart[],
+	catalog: WorkspaceTagDefinition[]
+): AppChart[] {
+	const colors = new Map(
+		catalog.flatMap((tag) => (tag.color ? ([[tag.name, tag.color]] as const) : []))
+	);
+	return charts.map((chart) => ({
+		...chart,
+		tagColors: Object.fromEntries(
+			(chart.tags ?? []).flatMap((tag) => {
+				const color = colors.get(tag) ?? chart.tagColors?.[tag];
+				return color ? [[tag, color]] : [];
+			})
+		)
+	}));
+}
 
 const CHART_CONTEXT_VIEWS = new Set([
 	'horoskop',
@@ -267,6 +312,7 @@ export default function App() {
 	const [workspaceDefaults, setWorkspaceDefaults] = useState<WorkspaceDefaultsState>(() => ({
 		...DEFAULT_WORKSPACE_DEFAULTS
 	}));
+	const [workspaceTags, setWorkspaceTags] = useState<WorkspaceTagDefinition[]>([]);
 	const [currentModelReport, setCurrentModelReport] = useState<CurrentModelReport | null>(null);
 	const computingChartIdsRef = useRef<Set<string>>(new Set());
 	const bootstrapComputeAttemptedRef = useRef(false);
@@ -437,8 +483,30 @@ export default function App() {
 		[workspaceDefaults, workspacePath, charts, applyComputedChartResult]
 	);
 
+	const updateWorkspaceTagsForCharts = useCallback(
+		async (taggedCharts: AppChart[], targetWorkspacePath: string | null) => {
+			const nextCatalog = mergeWorkspaceTagCatalog(workspaceTags, taggedCharts);
+			const catalogByName = new Map(nextCatalog.map((tag) => [tag.name, tag]));
+			for (const chart of taggedCharts) {
+				for (const name of chart.tags ?? []) {
+					const color = chart.tagColors?.[name];
+					if (color) catalogByName.set(name, { name, color });
+				}
+			}
+			const updatedCatalog = [...catalogByName.values()];
+			setWorkspaceTags(updatedCatalog);
+			setCharts((current) => applyWorkspaceTagColors(current, updatedCatalog));
+			if (targetWorkspacePath) {
+				const saved = await saveWorkspaceTags(targetWorkspacePath, updatedCatalog);
+				setWorkspaceTags(saved);
+				setCharts((current) => applyWorkspaceTagColors(current, saved));
+			}
+		},
+		[workspaceTags]
+	);
+
 	const handleChartCreated = async (chart: AppChart) => {
-		let persistedWorkspacePath: string | null = workspacePath;
+		const persistedWorkspacePath: string | null = workspacePath;
 		if (workspacePath) {
 			try {
 				await invoke<string>('create_chart', {
@@ -453,6 +521,11 @@ export default function App() {
 				});
 				return;
 			}
+		}
+		try {
+			await updateWorkspaceTagsForCharts([chart], persistedWorkspacePath);
+		} catch (error) {
+			console.error('Failed to persist workspace tags:', error);
 		}
 		addChart(chart);
 		setActiveView('horoskop');
@@ -523,6 +596,11 @@ export default function App() {
 				return;
 			}
 		}
+		try {
+			await updateWorkspaceTagsForCharts([chart], workspacePath);
+		} catch (error) {
+			console.error('Failed to persist workspace tags:', error);
+		}
 		setCharts((prev) => prev.map((c) => (c.id === chart.id ? { ...c, ...chart } : c)));
 		setEditingChart(null);
 		void computeChartInBackground(chart, workspacePath);
@@ -547,7 +625,11 @@ export default function App() {
 		try {
 			const folder = await openFolderDialog();
 			if (!folder) return;
-			const { path, charts: loaded } = await openWorkspaceFolder(
+			const {
+				path,
+				charts: loaded,
+				tagCatalog
+			} = await openWorkspaceFolder(
 				folder,
 				(dto) => {
 					setWorkspaceDefaults((w) => mergeWorkspaceDefaults(w, dto));
@@ -562,8 +644,10 @@ export default function App() {
 					}
 				}
 			);
+			const mergedTagCatalog = mergeWorkspaceTagCatalog(tagCatalog, loaded);
+			setWorkspaceTags(mergedTagCatalog);
 			setWorkspacePath(path);
-			replaceChartsFromWorkspace(loaded);
+			replaceChartsFromWorkspace(applyWorkspaceTagColors(loaded, mergedTagCatalog));
 			setActiveView('horoskop');
 			toast.success(t('toast_workspace_loaded'), { description: path });
 		} catch (e) {
@@ -591,6 +675,9 @@ export default function App() {
 				.filter((chart) => chart.entityKind !== 'analysis')
 				.map((chart) => chartDataToComputePayload(chart, workspaceDefaults));
 			await saveWorkspace(path, 'User', payloads, workspaceDefaults);
+			const nextTagCatalog = mergeWorkspaceTagCatalog(workspaceTags, charts);
+			const savedTagCatalog = await saveWorkspaceTags(path, nextTagCatalog);
+			setWorkspaceTags(savedTagCatalog);
 			const pendingAnalyses = charts.filter(
 				(chart) => chart.entityKind === 'analysis' && !chart.entityPersisted
 			);
@@ -617,7 +704,7 @@ export default function App() {
 				description: e instanceof Error ? e.message : String(e)
 			});
 		}
-	}, [charts, workspacePath, workspaceDefaults, t]);
+	}, [charts, workspacePath, workspaceDefaults, workspaceTags, t]);
 
 	// Reset transit section when changing views
 	const handleMenuItemClick = (view: string) => {
@@ -754,6 +841,7 @@ export default function App() {
 										theme={theme}
 										pageWidth={isSidebarExpanded ? 'standard' : 'relaxed'}
 										workspaceDefaults={workspaceDefaults}
+										workspaceTags={workspaceTags}
 										existingChartIds={new Set(charts.map((c) => c.id))}
 										onCreated={handleChartCreated}
 										onBack={() => setActiveView('horoskop')}
@@ -847,6 +935,7 @@ export default function App() {
 								presentation="panel"
 								theme={theme}
 								workspaceDefaults={workspaceDefaults}
+								workspaceTags={workspaceTags}
 								existingChartIds={new Set(charts.map((chart) => chart.id))}
 								initialValues={editingChart}
 								onSaved={handleChartSaved}

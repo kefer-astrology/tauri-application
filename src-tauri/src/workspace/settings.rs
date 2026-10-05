@@ -764,6 +764,7 @@ mod tests {
             model_overrides: None,
             default: empty_defaults(),
             presentation: WorkspacePresentation::default(),
+            tag_catalog: vec![],
             chart_presets: vec![],
             subjects: vec![],
             charts: vec![],
