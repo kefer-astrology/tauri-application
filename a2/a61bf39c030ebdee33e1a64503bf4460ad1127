@@ -1,0 +1,36 @@
+apps/web-react/src/app/App.tsx
+  h_0907ec034f4a17 48-49,51-55,83-122,315,486-507,509,525-529,599-603,628-632,647-648,650,678-680,707,844,938
+apps/web-react/src/app/components/new-horoscope.tsx
+  h_0907ec034f4a17 47,222-354,358,371,393-394,427,429-434,437-439,449,463,473,489-490,530-531,534-537,539-540,546,716,732,753-758,833,838,1411,1474
+apps/web-react/src/lib/tauri/types.ts
+  h_0907ec034f4a17 76-80,85
+apps/web-react/src/lib/tauri/workspace.ts
+  h_0907ec034f4a17 12-13,116-122,311,351
+apps/web-svelte/src/lib/tauri/types.ts
+  h_0907ec034f4a17 36-40,45
+contracts/workspace-v1/workspace.yaml
+  h_0907ec034f4a17 90-92
+docs/content/developer/workspace-yaml.md
+  h_0907ec034f4a17 115-118,141-147
+src-tauri/src/commands/workspace.rs
+  h_0907ec034f4a17 6,9,131-174,234,376,528,569-673
+src-tauri/src/lib.rs
+  h_0907ec034f4a17 27-28,89
+src-tauri/src/workspace/loader.rs
+  h_0907ec034f4a17 669-689
+src-tauri/src/workspace/models.rs
+  h_0907ec034f4a17 625-631,655-656,689
+src-tauri/src/workspace/settings.rs
+  h_0907ec034f4a17 767
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a2a61bf39c030ebdee33e1a64503bf4460ad1127",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
