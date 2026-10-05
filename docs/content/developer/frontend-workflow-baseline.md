@@ -41,7 +41,7 @@ A frontend is only "ready" for this baseline when:
 - Import means ingesting a previously created external chart file into the active workspace.
 - Supported import targets should include:
   - native chart YAML compatible with the workspace/chart model
-  - StarFisher-style formats such as `.sfs`, when parsing support is available through the backend/tooling
+  - StarFisher EventData `.sfs` files, converted to native base-event charts and recomputed through JPL
 - Creating a chart counts only when the chart is persisted to workspace YAML when a workspace is active.
 - Create-new chart forms in both frontends should expose fields in this order:
   - chart name

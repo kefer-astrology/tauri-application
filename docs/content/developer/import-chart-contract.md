@@ -28,20 +28,15 @@ Use a dedicated Tauri command for import:
 ### Implemented now
 
 - native chart YAML: `.yml`, `.yaml`
+- StarFisher EventData: `.sfs`
 
-### Staged, not implemented in Rust yet
-
-- StarFisher / SFS: `.sfs`
-
-SFS remains in scope, but should use the Python-backed path once that parser flow is wired into the desktop app.
-
-The frontend and Tauri command contract should remain backend-neutral even if a specific parser path is currently implemented in Python first.
+SFS import accepts UTF-8 and BOM-marked UTF-16LE/UTF-16BE EventData scripts. It converts the persisted event facts—caption, local date and GMT/DST offset, coordinates, location, timezone, and keywords—into a native chart. StarFisher settings scripts are not event files and are rejected when required EventData fields are absent.
 
 ## Required behavior
 
 - The command loads the target workspace manifest first.
 - The command validates the external file against the Rust/Python chart model shape.
-- On successful YAML import, the chart is written into the workspace `charts/` directory as native YAML.
+- On successful YAML or SFS import, the chart is written into the workspace `charts/` directory as native YAML.
 - The imported chart is registered in `workspace.yaml`.
 - The imported chart id is the source of truth for the destination filename and manifest entry.
 
@@ -54,14 +49,14 @@ The frontend and Tauri command contract should remain backend-neutral even if a 
 
 ## Current implementation rule
 
-- Native YAML import must work without the Python backend.
-- SFS import should not pretend to work through Rust-only heuristics.
-- Until the Python-backed SFS path exists, `.sfs` import should fail explicitly and clearly.
-- Import responses and error handling should not imply that Python is the architectural owner of chart ingestion in the long term.
+- Native YAML and SFS import work without the Python backend.
+- SFS files are source-event records, not trusted computed-state snapshots.
+- Imported SFS charts explicitly select the JPL engine and apparent positions. No planetary positions, aspects, axes, or houses are copied into workspace YAML; the normal chart compute route recalculates them from the imported UTC event and location.
+- `GMT±H:MM DST` is interpreted as the stated standard offset plus one daylight-saving hour, and the effective offset is retained alongside the IANA zone.
 
 ## Acceptance checks
 
-- Importing a valid external YAML chart adds it to the current workspace.
+- Importing a valid external YAML or StarFisher EventData chart adds it to the current workspace.
 - Imported charts appear in `load_workspace`.
 - Duplicate imports by chart id are rejected.
 - Unsupported formats are rejected with a useful error.

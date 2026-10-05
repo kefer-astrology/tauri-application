@@ -33,8 +33,8 @@ Rust does not own persisted storage of computed positions, aspects, or transit s
 - Storage query commands may remain compatibility shims that return empty results.
 - Rust compute commands should continue to support local in-memory results for the no-sidecar path.
 - Workspace and chart file behavior should stay aligned with the Python workspace/model layer.
-- Native YAML chart import should work through Rust without requiring the Python backend.
-- StarFisher/SFS import remains in scope, but should stay explicitly staged until a Python-backed parser path is wired in.
+- Native YAML and StarFisher EventData chart import should work through Rust without requiring the Python backend.
+- SFS import persists source event facts only and routes derived positions through the normal JPL compute path.
 - Current implementation may use Swiss-backed paths locally, but the architecture should evolve toward a backend-neutral astronomy interface.
 - `jpl` / SPICE is the preferred long-term astronomy direction and should be added behind that interface rather than as a one-off special case.
 - Rust-side contracts should prefer backend-neutral result shapes even when current implementation details differ underneath.

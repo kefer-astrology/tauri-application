@@ -26,8 +26,8 @@ remove or narrow the item here.
 
 ## Workflow and persistence gaps
 
-- Finish the external chart-import workflow in both frontends. Native YAML is
-  supported by Rust; SFS remains staged until its parser path is available.
+- Keep the external chart-import workflow aligned across both frontends. Native
+  YAML and StarFisher EventData are supported by Rust.
 - Persist settings, selected bodies, selected aspects, and transit options at
   the contractually intended workspace/chart scope.
 - Keep payload builders aligned with the

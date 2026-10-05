@@ -52,15 +52,10 @@ pub async fn import_chart(workspace_path: String, source_path: String) -> Result
 
     let chart = match extension.as_deref() {
         Some("yml" | "yaml") => read_importable_chart_yaml(source)?,
-        Some("sfs") => {
-            return Err(
-                "StarFisher/SFS import is not implemented in Rust yet. Use the Python-backed import path once available."
-                    .to_string(),
-            )
-        }
+        Some("sfs") => crate::workspace::sfs::read_sfs_chart(source)?,
         Some(other) => {
             return Err(format!(
-                "Unsupported chart import format: .{other}. Supported formats: .yml, .yaml"
+                "Unsupported chart import format: .{other}. Supported formats: .yml, .yaml, .sfs"
             ))
         }
         None => {
@@ -421,16 +416,26 @@ mod tests {
     }
 
     #[test]
-    fn import_chart_rejects_unsupported_sfs_until_backend_path_exists() {
+    fn import_chart_converts_sfs_event_to_native_jpl_chart() {
         let temp = TestWorkspaceDir::new("chart-import-sfs");
         let workspace_path = temp.path.join("project");
         let workspace_path_str = workspace_path.to_string_lossy().into_owned();
         let source_path = temp.path.join("sample.sfs");
-        fs::write(
-            &source_path,
-            "_settings.Model.DefaultHouseSystem = \"Placidus\";\n",
-        )
-        .expect("temporary sfs file should be writable");
+        let source = "// *** Saved EventData\n\n\
+            EventData.New(_auto);\n\
+            _eventData.Latitude = \"49N13'35\";\n\
+            _eventData.Longitude = \"17E40'14\";\n\
+            _eventData.Date = \"2019-7-30 13:27:00 GMT+1:00 DST\";\n\
+            _eventData.Caption = \"Imported SFS Event\";\n\
+            _eventData.Location = \"Prague\";\n\
+            _eventData.Zone = \"Europe/Prague\";\n\
+            _eventData.Note = \"\";\n\
+            _eventData.Keywords = \"client; imported\";\n";
+        let mut encoded = vec![0xff, 0xfe];
+        for unit in source.encode_utf16() {
+            encoded.extend_from_slice(&unit.to_le_bytes());
+        }
+        fs::write(&source_path, encoded).expect("temporary SFS file should be writable");
 
         tauri::async_runtime::block_on(create_workspace(
             workspace_path_str.clone(),
@@ -438,12 +443,61 @@ mod tests {
         ))
         .expect("workspace should be created");
 
-        let err = tauri::async_runtime::block_on(import_chart(
-            workspace_path_str,
+        let imported_id = tauri::async_runtime::block_on(import_chart(
+            workspace_path_str.clone(),
             source_path.to_string_lossy().into_owned(),
         ))
-        .expect_err("sfs import should remain staged");
+        .expect("SFS event should import");
+        assert_eq!(imported_id, "Imported SFS Event");
 
-        assert!(err.contains("StarFisher/SFS import is not implemented in Rust yet"));
+        let details = tauri::async_runtime::block_on(get_chart_details(
+            workspace_path_str.clone(),
+            imported_id.clone(),
+        ))
+        .expect("imported SFS chart should load");
+        assert_eq!(
+            details.pointer("/config/engine"),
+            Some(&serde_json::json!("jpl"))
+        );
+        assert_eq!(
+            details.pointer("/subject/event_time"),
+            Some(&serde_json::json!("2019-07-30T11:27:00Z"))
+        );
+        assert_eq!(
+            details.pointer("/subject/location/utc_offset"),
+            Some(&serde_json::json!("UTC+02:00"))
+        );
+        assert_eq!(details.get("positions"), None);
+        assert_eq!(details.get("computed"), None);
+
+        let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
+        let rel = find_chart_ref_by_id(&workspace_path, &manifest, &imported_id)
+            .expect("chart lookup should succeed")
+            .expect("imported chart should be registered");
+        let chart = crate::workspace::loader::load_chart(&workspace_path, &rel)
+            .expect("imported chart should deserialize");
+        let report = crate::workspace::settings::current_model_report_with_layers(
+            &manifest,
+            None,
+            Some(&chart.config),
+            None,
+        );
+        let request = crate::application::computation::ChartComputeRequest::for_resolved_chart(
+            crate::application::computation::ResolvedChart::from_report(chart, report),
+        );
+        let calculation = crate::application::computation::compute_chart(request)
+            .expect("imported event should be recalculated");
+
+        assert_eq!(calculation.backend_used, "jpl");
+        for body in [
+            "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn",
+        ] {
+            assert!(
+                calculation.positions.contains_key(body),
+                "recalculated JPL positions missing {body}; available: {:?}; warnings: {:?}",
+                calculation.positions.keys().collect::<Vec<_>>(),
+                calculation.warnings
+            );
+        }
     }
 }

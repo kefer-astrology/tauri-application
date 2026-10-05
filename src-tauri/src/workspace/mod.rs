@@ -2,6 +2,7 @@ pub mod loader;
 mod model_catalog;
 pub mod models;
 pub mod settings;
+pub mod sfs;
 pub mod validation;
 pub mod writer;
 
