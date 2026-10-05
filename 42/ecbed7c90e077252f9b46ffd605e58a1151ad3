@@ -1,0 +1,14 @@
+src-tauri/src/domain/houses.rs
+  h_0907ec034f4a17 562-565,614
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "42ecbed7c90e077252f9b46ffd605e58a1151ad3",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
