@@ -330,10 +330,10 @@ export function chartDetailsToAppChart(full: ChartDetails): AppChart {
 		overrideEphemeris: full.config.override_ephemeris,
 		tags: full.tags,
 		tagColors: full.tag_colors,
-		rodenRating: full.roden_rating,
-		observableObjects: full.config.observable_objects,
+		rodenRating: full.roden_rating ?? undefined,
+		observableObjects: full.config.observable_objects ?? undefined,
 		aspectOrbs: full.config.aspect_orbs,
-		selectedAspects: full.config.selected_aspects,
+		selectedAspects: full.config.selected_aspects ?? undefined,
 		ayanamsa: full.config.ayanamsa,
 		timeSystem: full.config.time_system
 	};

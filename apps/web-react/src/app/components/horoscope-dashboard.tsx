@@ -233,12 +233,11 @@ export function HoroscopeDashboard({
 	const computedPositions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
 	const computedMotion = selectedChart?.computed?.motion ?? {};
 	const computedAxes = selectedChart?.computed?.axes;
-	const positionOrder =
-		selectedChart?.observableObjects !== undefined
-			? selectedChart.observableObjects
-			: workspaceDefaults.defaultBodies.length > 0
-				? workspaceDefaults.defaultBodies
-				: DEFAULT_OBSERVABLE_OBJECT_IDS;
+	const positionOrder = Array.isArray(selectedChart?.observableObjects)
+		? selectedChart.observableObjects
+		: workspaceDefaults.defaultBodies.length > 0
+			? workspaceDefaults.defaultBodies
+			: DEFAULT_OBSERVABLE_OBJECT_IDS;
 	const enabledPositionIds = new Set(positionOrder);
 	const showAsc = enabledPositionIds.has('asc');
 	const showDsc = enabledPositionIds.has('desc');

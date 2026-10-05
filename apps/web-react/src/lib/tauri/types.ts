@@ -304,15 +304,15 @@ export interface ChartDetails {
 		model: string | null;
 		model_overrides?: ModelOverridesDto | null;
 		override_ephemeris: string | null;
-		observable_objects?: string[];
+		observable_objects?: string[] | null;
 		aspect_orbs?: Record<string, number>;
-		selected_aspects?: string[];
+		selected_aspects?: string[] | null;
 		ayanamsa?: string | null;
 		time_system?: string | null;
 	};
 	tags: string[];
 	tag_colors?: Record<string, string>;
-	roden_rating?: string;
+	roden_rating?: string | null;
 }
 
 export interface MoonDetails {
