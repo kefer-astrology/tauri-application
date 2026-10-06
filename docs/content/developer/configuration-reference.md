@@ -10,8 +10,9 @@ authority: normative
 This is the option index for the current unreleased schema. It contains only the
 canonical format: there are no deprecated aliases or legacy chart
 classifications. The executable contract is
-`src-tauri/src/workspace/models.rs`; the named frontend catalogs supply
-selectable presentation and object IDs.
+`src-tauri/src/workspace/models.rs`; runtime semantic IDs come from the Rust
+domain catalog. Frontend catalogs add presentation support and availability
+projections, but do not define a second calculation catalog.
 
 ## Resolution and scope
 
@@ -86,19 +87,24 @@ selects layout and modules; it does not change calculation identity.
 
 ## Objects and model catalogs
 
-`observable_objects` and `default_bodies` contain stable object IDs. The
-selectable registry is `apps/web-react/src/lib/astrology/observableObjects.ts`;
-each entry declares `available` or `planned`. Available IDs currently are:
+`observable_objects` and `default_bodies` contain stable IDs from the resolved
+Rust model's `body_definitions`. Each body also declares provider capability in
+`computation_map`; a valid catalog entry may still be unavailable for a chosen
+provider or missing ephemeris data. Frontends project these definitions into
+selectable controls and may mark entries as available or planned, but that
+projection is not the source of truth.
+
+The built-in model currently includes these commonly exposed IDs:
 
 - Luminaries and planets: `sun`, `moon`, `mercury`, `venus`, `mars`, `jupiter`, `saturn`, `uranus`, `neptune`, `pluto`.
 - Angles and sensitive points: `asc`, `mc`, `desc`, `ic`, `vertex`, `antivertex`, `part_of_fortune`, `part_of_spirit`.
 - Nodes and lunar apogees: `north_node`, `south_node`, `true_north_node`, `true_south_node`, `lilith`, `true_lilith`.
 - Other bodies: `chiron`, `ceres`, `pallas`, `juno`, `vesta`, `astraea`, `hebe`, `iris`, `flora`, `metis`, `hygiea`, `parthenope`, `victoria`, `egeria`, `irene`, `eunomia`, `psyche`, `thetis`, `melpomene`, `fortuna`, `massalia`.
 
-The remaining registry entries are visible but `planned`: `lilith_oscu`, the
-geocentric planetary nodes, trans-Neptunian objects, Uranian/hypothetical
-points, and fixed stars. A requested small body is computable only when its
-provider mapping and a covering kernel are available.
+Additional model entries may be present in the runtime catalog. A requested
+small body is computable only when its provider mapping and a covering kernel
+are available. See [Domain model](../domain-model/) for the catalog lifecycle
+and presentation boundary.
 
 Model `body_definitions` can configure `id`, `enabled`, `glyph`, `formula`,
 `element`, `avg_speed`, `max_orb`, localized names, `object_type`, provider

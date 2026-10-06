@@ -126,6 +126,40 @@ owns available points, aspects, default orbs, zodiac policy, calculation
 defaults, and other rules whose meaning must be the same regardless of the
 astronomy provider.
 
+## Runtime domain catalog
+
+Rust is the source of truth for the runtime astrology catalog. The catalog is
+the frontend-facing projection of the resolved model plus the domain
+definitions needed by result and filtering UIs. It contains:
+
+- model body definitions and provider capability mappings;
+- aspect definitions, angles, default orbs, and valid contexts;
+- signs and their stable IDs;
+- supported house systems;
+- chart-shape and chart-configuration definitions, including generated variant
+  rules; and
+- model calculation defaults.
+
+The built-in catalog is returned by `get_builtin_domain_catalog` before a
+workspace is open. After a workspace or chart is opened, the frontend requests
+`get_domain_catalog`; Rust resolves the school/model and settings first, then
+returns the effective catalog for that context. React and Svelte perform the
+same startup load and refresh path, so model-specific entries are not frozen
+at module initialization.
+
+The catalog defines semantic IDs and computation capabilities, not the visual
+representation of those IDs. Translations, glyph files, colors, visual
+grouping, and other presentation behavior remain frontend-owned. Both
+frontends now derive their presentation registries from the runtime catalog
+and provide readable label, glyph, color, and category fallbacks for new IDs.
+Localized strings and dedicated artwork remain optional presentation
+enhancements rather than prerequisites for using a catalog entry.
+
+The [Rust workspace contract](../rust-workspace-contract/) describes loading
+and refresh boundaries. The [configuration reference](../configuration-reference/)
+describes the user-visible options; this section describes ownership and
+runtime identity rather than repeating every field.
+
 ### Astronomy provider
 
 An astronomy provider supplies astronomical measurements such as positions,
@@ -195,3 +229,5 @@ the contract supplies them.
 - [Shared astrology core](../shared-core/) — cross-language extraction direction.
 - [Tauri command contracts](../tauri-command-contracts/) — frontend-visible API.
 - [Testing strategy](../testing-strategy/) — required verification layers.
+- [Rust workspace contract](../rust-workspace-contract/) — workspace lifecycle,
+  catalog loading, and effective settings.

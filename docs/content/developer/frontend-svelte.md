@@ -50,6 +50,11 @@ Cross-frontend lint, translation, and documentation commands are defined in the
   positions when persisted query rows are unavailable.
 - Chart-level calculation settings override workspace defaults through the same
   payload precedence used by React.
+- `main.ts` loads the built-in Rust domain catalog before mounting Svelte;
+  `tauri/workspace.ts` refreshes it for the effective workspace/chart model.
+- `astrology/domainCatalog.ts` and `observableObjects.ts` project catalog IDs
+  into UI state. Translation strings, glyph assets, colors, and visual grouping
+  remain Svelte presentation concerns.
 
 ## Svelte-specific conventions
 

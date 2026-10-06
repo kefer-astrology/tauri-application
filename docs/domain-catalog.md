@@ -1,5 +1,11 @@
 ## Runtime astrology domain catalog
 
+This note is retained as a compatibility pointer, not as a published Hugo
+developer page. The canonical documentation is now
+[Developer: domain model and extensibility](content/developer/domain-model.md),
+with lifecycle details in
+[Developer: Rust workspace contract](content/developer/rust-workspace-contract.md).
+
 Rust owns the runtime astrology catalog. `get_builtin_domain_catalog` is used before a
 workspace is open; `get_domain_catalog` resolves the effective workspace/model catalog
 after a workspace is selected. Both commands return the same `DomainCatalog` contract:

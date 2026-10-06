@@ -32,12 +32,13 @@ behavior from a roadmap or archive page.
 ## Architecture
 
 - **[System architecture](./architecture/)** — cross-layer runtime overview.
-- **[Domain model and extensibility](./domain-model/)** — schools, models,
-  calculations, providers, and extension points.
+- **[Domain model and extensibility](./domain-model/)** — canonical concepts,
+  the Rust-owned runtime domain catalog, calculations, providers, and extension points.
 - **[Shared astrology core](./shared-core/)** — the planned boundary shared by
   Rust and the separately extractable Python sidecar.
 - **[Backend structure](./backend-structure/)** — current and target Rust implementation boundaries.
-- **[Rust code structure audit](./rust-code-structure/)** — how closely the current command and service modules match those boundaries.
+- **[Rust code structure](./rust-code-structure/)** — current Rust module and
+  responsibility map.
 
 ## Contracts
 
@@ -47,7 +48,8 @@ behavior from a roadmap or archive page.
   schools/models, settings inheritance, chart overrides, presentation, and
   persisted transit intent.
 - **[Tauri command contracts](./tauri-command-contracts/)** — frontend-facing native commands.
-- **[Rust workspace contract](./rust-workspace-contract/)** — persistence and no-sidecar rules.
+- **[Rust workspace contract](./rust-workspace-contract/)** — workspace lifecycle,
+  manifest/chart boundaries, catalog loading, and no-sidecar rules.
 - **[Frontend workflow baseline](./frontend-workflow-baseline/)** — workflows both frontends are measured against.
 - **[Chart datetime contract](./chart-datetime-contract/)** — canonical timestamps.
 - **[Transit series contract](./transit-series-contract/)** — transit computation payload and result.

@@ -14,13 +14,14 @@ external mechanisms, and frontend rendering.
 
 ```text
 React / Svelte
-      │ backend-neutral requests and results
+      │ startup/effective domain catalog + backend-neutral requests/results
       ▼
 Tauri commands
-      │ thin transport adapters (target)
+      │ thin transport adapters
       ▼
 Application services ───────> workspace/settings resolution
       │
+      ├── resolved runtime domain catalog
       ├── shared astrology semantics
       │
       └── astronomy provider port
@@ -32,7 +33,7 @@ Infrastructure: workspace YAML, ephemerides, geocoding, dialogs, sidecar process
 ```
 
 The [Domain model](../domain-model/) defines schools, models, charts, providers,
-and extension points. The [Shared astrology core](../shared-core/) describes the
+the runtime domain catalog, and extension points. The [Shared astrology core](../shared-core/) describes the
 planned cross-language contract boundary.
 
 ## Layer responsibilities
@@ -41,8 +42,11 @@ planned cross-language contract boundary.
 
 - Edit workspace, chart, and operation intent.
 - Invoke Tauri through typed bridge modules.
+- Load the built-in Rust domain catalog before mounting, then refresh the
+  effective catalog when a workspace or chart context changes.
 - Render calculation results and provenance.
-- Own presentation and device-local interaction state.
+- Own translations, glyphs, colors, visual grouping, and device-local
+  interaction state.
 - Never reimplement astrological calculations or infer provider behavior.
 
 React and Svelte share the [Frontend workflow baseline](../frontend-workflow-baseline/)
@@ -57,8 +61,8 @@ are documented separately in the [React](../frontend-react/) and
 - Serialize success or map failure into the command contract.
 
 Commands should not own filesystem formats, HTTP clients, platform processes,
-astrology rules, or provider-routing policy. The current code has not completed
-this extraction; see the [Rust code structure audit](../rust-code-structure/).
+astrology rules, or provider-routing policy. See the [Rust code structure](../rust-code-structure/)
+for the current module map and the few intentional compatibility boundaries.
 
 ### Application services
 
@@ -67,6 +71,7 @@ this extraction; see the [Rust code structure audit](../rust-code-structure/).
 - Select and invoke computation providers.
 - Apply fallback policy without losing the resolved request.
 - Return typed results, diagnostics, and provenance.
+- Resolve the model before exposing the effective runtime domain catalog.
 
 ### Domain and shared core
 
@@ -163,23 +168,26 @@ Frontend → Tauri command → application use case
 4. Rust-supported flows remain usable without the Python sidecar.
 5. Provider selection and fallback are visible through provenance.
 6. One settings resolver determines effective calculation behavior.
-7. Presentation cannot affect astronomical or astrological computation.
-8. Shared behavior is verified through versioned fixtures and parity tests.
-9. Coordinate-frame transformations happen before reducing a state vector to
+7. The Rust domain catalog owns runtime semantic IDs; frontends own their
+   presentation of those IDs.
+8. Presentation cannot affect astronomical or astrological computation.
+9. Shared behavior is verified through versioned fixtures and parity tests.
+10. Coordinate-frame transformations happen before reducing a state vector to
    longitude or latitude.
-10. Remote ephemeris services generate or source local artifacts; ordinary chart
+11. Remote ephemeris services generate or source local artifacts; ordinary chart
     computation is deterministic and offline.
 
 ## Current implementation
 
 - Typed Rust radix and transit application services are active.
 - Workspace models, loading, validation, and settings resolution have dedicated modules.
+- The runtime domain catalog is built in Rust and loaded by both frontends at
+  startup and after workspace/chart model resolution.
 - Rust and Python share initial time, settings, and workspace fixtures.
-- The primary command module still owns several application and infrastructure
-  responsibilities that are targeted for extraction.
 - Computed-data storage commands remain compatibility shims rather than a
   persistence layer.
 
-Use [Backend structure](../backend-structure/) for the target source boundaries,
-[Rust code structure audit](../rust-code-structure/) for the current mismatch,
-and [Development roadmap](../development-driver/) for unfinished work.
+Use [Backend structure](../backend-structure/) for persistence, representations,
+configuration resolution, and provenance; [Rust code structure](../rust-code-structure/)
+for the current module map; and [Development roadmap](../development-driver/)
+for unfinished work.

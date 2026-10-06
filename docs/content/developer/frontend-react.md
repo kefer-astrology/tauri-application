@@ -50,6 +50,11 @@ Cross-frontend lint, translation, and documentation commands are defined in the
   workspace defaults during payload construction.
 - Real chart and transit views consume Tauri calculation results. Static docs
   mode may demonstrate interface structure but must not fabricate backend data.
+- `main.tsx` loads the built-in Rust domain catalog before mounting React;
+  `tauri/workspace.ts` refreshes it for the effective workspace/chart model.
+- `astrology/domainCatalog.ts` and `observableObjects.ts` project catalog IDs
+  into UI state. Translation keys, glyph assets, colors, and visual grouping
+  remain React presentation concerns.
 
 ## React-specific conventions
 

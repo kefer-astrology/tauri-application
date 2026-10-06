@@ -1,51 +1,118 @@
 ---
 title: 'Rust workspace contract'
+description: 'Workspace lifecycle, persistence boundaries, catalog loading, and effective settings.'
 weight: 35
 doc_kind: contract
 status: current
 authority: normative
 ---
 
-This page defines the current Rust-side implementation direction for the desktop app.
+This page describes the Rust-owned workspace lifecycle and the contracts visible
+to the frontends. Field-by-field YAML examples belong in the [Workspace YAML
+contract](../workspace-yaml/); user-facing option semantics belong in the
+[Configuration reference](../configuration-reference/).
 
-## Scope
+## Workspace lifecycle
 
-Rust owns local workspace functionality and the no-sidecar execution path.
+1. Before a workspace is open, each frontend requests
+   `get_builtin_domain_catalog` during bootstrap and populates its runtime
+   catalog before mounting the application.
+2. Opening a workspace reads its `workspace.yaml`, loads referenced entities,
+   and exposes workspace summaries through `load_workspace`.
+3. The frontend requests the effective catalog and model report for the current
+   workspace, and repeats that refresh when the selected chart/model context
+   changes.
+4. Chart and analysis operations resolve settings from the same Rust resolver
+   before computation.
+5. Workspace edits validate typed data and write YAML through Rust commands.
 
-Rust does not own persisted storage of computed positions, aspects, or transit series.
+`load_workspace_aggregate` is the diagnostics-aware loading path: it attempts
+each referenced entity and returns structured diagnostics for malformed or
+missing references. A malformed manifest remains a fatal load error.
 
-## Rules
+## Manifest and chart boundaries
 
-- Keep workspace persistence focused on YAML manifests and chart files.
-- When the optional Python sidecar source tree is present, keep Rust workspace payloads compatible with `backend-python/module/models.py` and `backend-python/module/workspace.py`.
-- The desktop app must run without the Python sidecar.
-- The app should check whether the Python backend is available at startup and use that availability state as the general runtime decision source.
-- Do not repeatedly probe for Python sidecar existence in every feature flow when startup availability state can be reused.
-- If Python is unavailable, Rust fallback behavior must remain functional for supported features.
-- CI and desktop packaging must not be blocked by sidecar build failures while the Rust/no-sidecar path is the baseline.
-- `backend-python/` may be omitted from some packaging contexts as long as the resulting app still supports the documented Rust fallback flows.
-- Do not reintroduce DuckDB- or Parquet-based persistence on the Rust side unless a new `/developer/` spec explicitly changes this rule.
-- Keep backend provenance visible to callers; do not allow silent backend changes to be invisible in compute results.
+`workspace.yaml` is the manifest and index. It owns the workspace identity,
+active school/model, model and school catalogs, workspace defaults, model
+overrides, presentation choices, tags, and relative references to subjects,
+charts, presets, analyses, layouts, annotations, and transit analyses.
 
-## Practical implications
+A chart file owns one subject snapshot/reference and its chart definition and
+calculation overrides. A chart does not own the workspace catalog, and a
+workspace default does not retroactively mutate an existing subject or chart.
+Subjects store event facts; positions, houses, aspects, lunar details, and
+transit series are derived and are not persisted by the Rust workspace layer.
 
-- `init_storage` is a compatibility command only.
-- Storage query commands may remain compatibility shims that return empty results.
-- Rust compute commands should continue to support local in-memory results for the no-sidecar path.
-- Workspace and chart file behavior should stay aligned with the Python workspace/model layer.
-- Native YAML and StarFisher EventData chart import should work through Rust without requiring the Python backend.
-- SFS import persists source event facts only and routes derived positions through the normal JPL compute path.
-- Current implementation may use Swiss-backed paths locally, but the architecture should evolve toward a backend-neutral astronomy interface.
-- `jpl` / SPICE is the preferred long-term astronomy direction and should be added behind that interface rather than as a one-off special case.
-- Rust-side contracts should prefer backend-neutral result shapes even when current implementation details differ underneath.
-- Backend selection should follow this general rule:
-  - app starts
-  - app checks Python backend availability once
-  - if Python is available, Python-backed flows may be used
-  - if Python is unavailable, flows fall back to Rust where supported
+References are resolved relative to the workspace root. Absolute paths and
+path traversal are invalid. The manifest schema version defaults to `1` when
+omitted and is validated with the rest of the aggregate.
 
-## Dependency rule
+## Schema and invariants
 
-- Remove Rust dependencies that are no longer used.
-- Prefer deleting unused helper modules when removing a dependency.
-- When changing architecture direction, update the `/developer/` spec in the same change set.
+Rust deserializes the manifest and referenced YAML into `workspace::models`.
+`workspace::validation` produces stable diagnostics with `code`, `severity`,
+`message`, and an optional `path`. Validation covers duplicate/empty IDs,
+model and selection references, aspect angles/orbs, provider capability maps,
+locations, subject times, and references between workspace entities.
+
+Unknown or unsupported catalog entries do not silently disappear: callers
+receive a diagnostic or explicit availability warning. Validation of a valid
+catalog is separate from whether the selected provider has the required
+ephemeris data.
+
+## Effective settings resolution
+
+Rust resolves one effective settings object for a calculation using this order:
+
+```text
+application fallback < model < workspace < chart preset < chart < operation
+```
+
+An absent value inherits. Where the scope permits it, an explicitly empty body
+or aspect list means “select none.” The resolver returns both usable values and
+`EffectiveSettingsSources`, so the application and frontend can explain the
+source of a value. Model-definition overrides are applied at their owning
+scopes before catalog validation and computation.
+
+The resolved report also carries the selected model, available models, warnings,
+and validation diagnostics. The same resolution path is used for workspace
+charts and standalone/in-memory charts, with standalone charts omitting
+workspace and preset scopes rather than inventing a manifest.
+
+## Catalog loading and frontend ownership
+
+`get_builtin_domain_catalog` returns the built-in Rust catalog. When a workspace
+or chart is selected, `get_domain_catalog` resolves the effective model and
+returns a `DomainCatalog` containing:
+
+- body and aspect definitions and model defaults;
+- signs;
+- supported house systems; and
+- shape/configuration definitions and generated-variant rules.
+
+React and Svelte load the built-in catalog before application mount, then
+refresh it through their model-report/workspace flow. Catalog semantic IDs,
+calculation defaults, and provider capability mappings propagate automatically
+when Rust exposes them. Frontend adapters derive labels, glyph fallbacks,
+colors, and grouping from those entries, while localized strings, dedicated
+glyph assets, and bespoke component behavior remain optional frontend
+enhancements.
+
+The catalog is not a second persistence format and does not make presentation
+metadata part of calculation resolution. See [Domain model](../domain-model/)
+for the ownership model and catalog rationale.
+
+## Persistence and sidecar boundary
+
+Rust owns local workspace persistence and the supported no-sidecar execution
+path. The desktop app must remain usable when the optional Python sidecar is
+unavailable. Backend selection and fallback must remain visible through result
+provenance; a provider change must not silently change meaning.
+
+Rust does not reintroduce DuckDB or Parquet persistence for computed data.
+Legacy storage commands may remain compatibility no-ops. Native YAML and
+StarFisher EventData imports continue through Rust, with derived positions
+computed through the normal provider boundary.
+
+See [Backend structure](../backend-structure/) for the persistence
+representations, provenance, and implementation ownership behind this contract.
