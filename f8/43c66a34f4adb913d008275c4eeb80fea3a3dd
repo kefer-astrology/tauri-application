@@ -1,0 +1,48 @@
+apps/web-svelte/src/lib/tauri/workspace.ts
+  s_06fbed72e274fc::t_baf5b9155139a1 28,205
+apps/web-react/src/lib/astrology/aspects.ts
+  s_06fbed72e274fc::t_5b7158ad11f8a2 8-10,27-29,40-44,49-59
+  s_06fbed72e274fc::t_23d546b9240539 60
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_06fbed72e274fc::t_83727f5f8e6fd3 25-28,33
+apps/web-svelte/src/lib/astrology/observableObjects.ts
+  s_06fbed72e274fc::t_83727f5f8e6fd3 16-18,24
+apps/web-react/src/app/components/aspect-selector.tsx
+  s_06fbed72e274fc::t_ede9b3c1a49e73 78-79
+apps/web-svelte/src/lib/stores/glyphs.svelte.ts
+  s_06fbed72e274fc::t_abf0cc4f3395f4 139,323
+  s_06fbed72e274fc::t_622be90da2e83b 42-49,63-66,69-70,73-74,76-79,138,209-212
+  s_06fbed72e274fc::t_ef9eb6ac1c343d 213
+apps/web-svelte/src/main.ts
+  s_06fbed72e274fc::t_baf5b9155139a1 7,16
+apps/web-svelte/src/lib/components/BodySelector.svelte
+  s_06fbed72e274fc::t_ede9b3c1a49e73 4,31-36,39,41,43
+apps/web-svelte/src/lib/astrology/aspects.ts
+  s_06fbed72e274fc::t_5b7158ad11f8a2 8-10,27-29,40-44,49-57
+  s_06fbed72e274fc::t_f19ef9993b3041 58
+apps/web-svelte/src/lib/components/SettingsView.svelte
+  s_06fbed72e274fc::t_ede9b3c1a49e73 573
+apps/web-react/src/lib/astrology/objectLabels.ts
+  s_06fbed72e274fc::t_ede9b3c1a49e73 25-29,43,63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f843c66a34f4adb913d008275c4eeb80fea3a3dd",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_06fbed72e274fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a112e1-7229-79d3-9297-a7ebe0c69548",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
