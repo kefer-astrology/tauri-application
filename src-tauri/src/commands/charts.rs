@@ -53,16 +53,17 @@ pub async fn import_chart(workspace_path: String, source_path: String) -> Result
     let chart = match extension.as_deref() {
         Some("yml" | "yaml") => read_importable_chart_yaml(source)?,
         Some("sfs") => crate::workspace::sfs::read_sfs_chart(source)?,
+        Some("hor") => crate::workspace::morinus::read_morinus_chart(source)?,
+        Some("sfcht" | "cht" | "chm" | "se1" | "ald" | "cst") => {
+            crate::workspace::solar_fire::read_solar_fire_chart(source)?
+        }
         Some(other) => {
             return Err(format!(
-                "Unsupported chart import format: .{other}. Supported formats: .yml, .yaml, .sfs"
+                "Unsupported chart import format: .{other}. Supported formats: .yml, .yaml, .sfs, .hor, .SFcht, .cht"
             ))
         }
         None => {
-            return Err(
-                "Imported chart file must have a supported extension (.yml, .yaml, .sfs)"
-                    .to_string(),
-            )
+            return Err("Imported chart file must have a supported extension (.yml, .yaml, .sfs, .hor, .SFcht, .cht)".to_string())
         }
     };
 

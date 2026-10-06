@@ -29,6 +29,11 @@ Use a dedicated Tauri command for import:
 
 - native chart YAML: `.yml`, `.yaml`
 - StarFisher EventData: `.sfs`
+- Morinus saved horoscope: `.hor`
+
+Morinus `.hor` files are scalar Python pickle streams. The importer accepts
+the protocol variants emitted by the application, extracts the persisted chart
+facts, and recalculates positions through the native chart-compute route.
 
 SFS import accepts UTF-8 and BOM-marked UTF-16LE/UTF-16BE EventData scripts. It converts the persisted event facts—caption, local date and GMT/DST offset, coordinates, location, timezone, and keywords—into a native chart. StarFisher settings scripts are not event files and are rejected when required EventData fields are absent.
 
