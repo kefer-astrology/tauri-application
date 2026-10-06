@@ -540,32 +540,54 @@ fn body_definition(
 
 fn builtin_aspect_definitions() -> Vec<AspectDefinition> {
     vec![
-        aspect_definition("conjunction", "Conjunction", 0.0, 8.0),
-        aspect_definition("sextile", "Sextile", 60.0, 6.0),
-        aspect_definition("square", "Square", 90.0, 8.0),
-        aspect_definition("trine", "Trine", 120.0, 8.0),
-        aspect_definition("quincunx", "Quincunx", 150.0, 3.0),
-        aspect_definition("opposition", "Opposition", 180.0, 8.0),
-        aspect_definition("semisextile", "Semisextile", 30.0, 2.0),
-        aspect_definition("decile", "Decile", 36.0, 1.0),
-        aspect_definition("novile", "Novile", 40.0, 1.0),
-        aspect_definition("semisquare", "Semisquare", 45.0, 2.0),
-        aspect_definition("septile", "Septile", 51.428_571_428_571_43, 1.0),
-        aspect_definition("quintile", "Quintile", 72.0, 2.0),
-        aspect_definition("binovile", "Binovile", 80.0, 1.0),
-        aspect_definition("tridecile", "Tridecile", 108.0, 1.0),
-        aspect_definition("sesquiquadrate", "Sesquiquadrate", 135.0, 2.0),
-        aspect_definition("biquintile", "Biquintile", 144.0, 2.0),
-        aspect_definition("quadrinovile", "Quadrinovile", 160.0, 1.0),
+        aspect_definition("conjunction", "Conjunction", 0.0, 1, 8.0),
+        aspect_definition("semisextile", "Semisextile", 30.0, 12, 2.0),
+        aspect_definition("undecile", "Undecile", 360.0 / 11.0, 11, 1.0),
+        aspect_definition("decile", "Decile", 36.0, 10, 1.0),
+        aspect_definition("novile", "Novile", 40.0, 9, 1.0),
+        aspect_definition("octile", "Octile", 45.0, 8, 2.0),
+        aspect_definition("septile", "Septile", 360.0 / 7.0, 7, 1.0),
+        aspect_definition("sextile", "Sextile", 60.0, 6, 6.0),
+        aspect_definition("biundecile", "Biundecile", 720.0 / 11.0, 11, 1.0),
+        aspect_definition("quintile", "Quintile", 72.0, 5, 2.0),
+        aspect_definition("binovile", "Binovile", 80.0, 9, 1.0),
+        aspect_definition("triundecile", "Triundecile", 1080.0 / 11.0, 11, 1.0),
+        aspect_definition("square", "Square", 90.0, 4, 8.0),
+        aspect_definition("biseptile", "Biseptile", 720.0 / 7.0, 7, 1.0),
+        aspect_definition("tridecile", "Tridecile", 108.0, 10, 1.0),
+        aspect_definition("trine", "Trine", 120.0, 3, 8.0),
+        aspect_definition("quadriundecile", "Quadriundecile", 1440.0 / 11.0, 11, 1.0),
+        aspect_definition("trioctile", "Trioctile", 135.0, 8, 2.0),
+        aspect_definition("biquintile", "Biquintile", 144.0, 5, 2.0),
+        aspect_definition("quincunx", "Quincunx", 150.0, 12, 3.0),
+        aspect_definition("triseptile", "Triseptile", 1080.0 / 7.0, 7, 1.0),
+        aspect_definition("quadrinovile", "Quadrinovile", 160.0, 9, 1.0),
+        aspect_definition("quinundecile", "Quinundecile", 1800.0 / 11.0, 11, 1.0),
+        aspect_definition("opposition", "Opposition", 180.0, 2, 8.0),
     ]
 }
 
-fn aspect_definition(id: &str, label: &str, angle: f64, default_orb: f64) -> AspectDefinition {
+fn aspect_definition(
+    id: &str,
+    label: &str,
+    angle: f64,
+    harmonic: u32,
+    default_orb: f64,
+) -> AspectDefinition {
     AspectDefinition {
         id: id.to_string(),
+        aspect_type: if matches!(
+            id,
+            "conjunction" | "sextile" | "square" | "trine" | "opposition"
+        ) {
+            "major".to_string()
+        } else {
+            "minor".to_string()
+        },
         enabled: true,
         glyph: label.to_string(),
         angle,
+        harmonic,
         default_orb,
         i18n: HashMap::from([("en".to_string(), label.to_string())]),
         color: None,

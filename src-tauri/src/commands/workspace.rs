@@ -339,6 +339,13 @@ pub async fn get_current_model_report(
     ))
 }
 
+/// Return the built-in aspect catalog before a workspace has been opened.
+#[tauri::command]
+pub async fn get_builtin_aspect_catalog(
+) -> Result<Vec<crate::workspace::models::AspectDefinition>, String> {
+    Ok(crate::workspace::builtin_standard_model("builtin").aspect_definitions)
+}
+
 fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceManifest {
     let owner_value = if owner.is_empty() {
         "User".to_string()
@@ -797,6 +804,7 @@ mod tests {
                 id: "pluto".to_string(),
                 glyph: None,
                 angle: None,
+                harmonic: None,
                 default_orb: None,
                 only_for: Some(vec!["traditional".to_string()]),
                 i18n: None,

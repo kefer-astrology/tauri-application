@@ -127,6 +127,7 @@ export interface ModelOverrideEntryDto {
 	id: string;
 	glyph?: string | null;
 	angle?: number | null;
+	harmonic?: number | null;
 	default_orb?: number | null;
 	only_for?: string[] | null;
 	i18n?: Record<string, string> | null;
@@ -159,10 +160,12 @@ export interface BodyDefinitionDto {
 }
 
 export interface AspectDefinitionDto {
-	id: string;
-	enabled: boolean;
+  id: string;
+  type: 'major' | 'minor';
+  enabled: boolean;
 	glyph: string;
 	angle: number;
+	harmonic: number;
 	default_orb: number;
 	i18n: Record<string, string>;
 	color?: string | null;
@@ -355,6 +358,9 @@ export interface ComputeChartResult {
 export interface TransitSeriesEntry {
 	datetime: string;
 	transit_positions?: Record<string, unknown>;
+	/** Daily motion (degrees/day) per transiting body at this step — Rust-native route only;
+	 *  absent on the Python-sidecar fallback route. */
+	motion?: Record<string, { speed: number; retrograde: boolean }>;
 	aspects?: Array<Record<string, unknown>>;
 }
 
@@ -393,6 +399,19 @@ export interface TransitSeriesRequest extends Record<string, unknown> {
 	transitedObjects: string[];
 	aspectTypes: string[];
 	presetId?: string | null;
+	settingsOverrides?: ComputeSettingsOverrides | null;
+}
+
+/** `compute_transit_series_from_data` counterpart to `TransitSeriesRequest` — an in-memory chart
+ *  payload instead of a workspace/chart id, for when no workspace is open. Rust-native only. */
+export interface TransitSeriesFromDataRequest extends Record<string, unknown> {
+	chartJson: Record<string, unknown>;
+	startDatetime: string;
+	endDatetime: string;
+	timeStepSeconds: number;
+	transitingObjects: string[];
+	transitedObjects: string[];
+	aspectTypes: string[];
 	settingsOverrides?: ComputeSettingsOverrides | null;
 }
 

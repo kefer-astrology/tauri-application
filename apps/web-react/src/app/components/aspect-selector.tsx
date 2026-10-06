@@ -35,8 +35,8 @@ const PRESETS: { key: string; aspectIds: AspectRowId[] }[] = [
 			'opposition',
 			'quincunx',
 			'semisextile',
-			'semisquare',
-			'sesquiquadrate'
+			'octile',
+			'trioctile'
 		]
 	},
 	{ key: 'transits', aspectIds: ['conjunction', 'sextile', 'square', 'trine', 'opposition'] },

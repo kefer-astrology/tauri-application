@@ -277,7 +277,7 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	positionMode: 'apparent',
 	defaultBodies: [...DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS],
 	defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
-	defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
+	defaultAspectOrbs: DEFAULT_ASPECT_ORBS,
 	defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
 	aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }
 };

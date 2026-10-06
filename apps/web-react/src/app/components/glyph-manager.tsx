@@ -86,6 +86,7 @@ function GlyphManagerRow({
 	glyphSet: AstrologyGlyphSetId;
 	isCustom: boolean;
 }) {
+	const { t } = useTranslation();
 	const [error, setError] = useState<string | null>(null);
 
 	function handleUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -93,7 +94,7 @@ function GlyphManagerRow({
 		event.target.value = '';
 		if (!file) return;
 		if (!file.name.toLowerCase().endsWith('.svg') && file.type !== 'image/svg+xml') {
-			setError('Please upload an SVG file');
+			setError(t('glyph_upload_svg_error'));
 			return;
 		}
 		setError(null);
@@ -104,7 +105,7 @@ function GlyphManagerRow({
 				setCustomGlyph(row.id, row.label, svg, file.name);
 			}
 		};
-		reader.onerror = () => setError('Failed to read file');
+		reader.onerror = () => setError(t('glyph_upload_read_error'));
 		reader.readAsText(file);
 	}
 
@@ -120,14 +121,14 @@ function GlyphManagerRow({
 				/>
 				<span className="truncate text-sm">{row.label}</span>
 				{isCustom ? (
-					<span className="text-xs text-[color:var(--theme-content-muted)]">(custom)</span>
+				<span className="text-xs text-[color:var(--theme-content-muted)]">({t('glyph_custom')})</span>
 				) : null}
 			</div>
 			<div className="flex shrink-0 items-center gap-1">
 				<label className="cursor-pointer">
 					<input type="file" accept=".svg,image/svg+xml" className="hidden" onChange={handleUpload} />
 					<Button variant="ghost" size="sm" type="button" asChild>
-						<span>Upload</span>
+						<span>{t('glyph_upload')}</span>
 					</Button>
 				</label>
 				{isCustom ? (
@@ -137,7 +138,7 @@ function GlyphManagerRow({
 						type="button"
 						onClick={() => resetCustomGlyph(row.id)}
 					>
-						Reset
+						{t('glyph_reset')}
 					</Button>
 				) : null}
 			</div>
@@ -154,7 +155,7 @@ export function GlyphManager({ glyphSet }: { glyphSet: AstrologyGlyphSetId }) {
 	return (
 		<div className="space-y-2">
 			<p className="text-xs text-[color:var(--theme-content-muted)]">
-				Upload a custom SVG to replace any glyph below. Uploads are stored on this device only.
+				{t('glyph_upload_svg_hint')}
 			</p>
 			<Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
 				{groups.map((group) => (
