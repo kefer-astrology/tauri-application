@@ -1,0 +1,81 @@
+apps/web-react/src/app/components/aspect-selector.tsx
+  s_2b3ffbf1f31dc2::t_541c125767b8c7 38-39
+apps/web-svelte/src/lib/astrology/aspects.ts
+  s_2b3ffbf1f31dc2::t_f1cd1d2b1c2ec3 30-31
+  s_2b3ffbf1f31dc2::t_7b1adc6fcbbc8e 1-2,5,12,14-29,32-36,39,42-43,45-52,56-60
+  s_2b3ffbf1f31dc2::t_df445e4a348939 81-82,85
+apps/web-react/src/lib/astrology/aspects.ts
+  s_2b3ffbf1f31dc2::t_f1cd1d2b1c2ec3 30-31
+  s_2b3ffbf1f31dc2::t_df445e4a348939 105-152
+  s_2b3ffbf1f31dc2::t_899399d1c0da8a 1-2,5,12-29,32-34,36,38,48-49,51-52,59,62,64,67-68,70-71,73-76,87,90,92,95-99,101-103
+apps/web-svelte/src/lib/state/layout.svelte.ts
+  s_2b3ffbf1f31dc2::t_097af6eab5876b 99
+src-tauri/src/commands/workspace.rs
+  s_2b3ffbf1f31dc2::t_eed9e7f4d3ad46 807
+  s_2b3ffbf1f31dc2::t_da5152f706c13f 344-345
+  s_2b3ffbf1f31dc2::t_05be99a833d231 342-343,346-348
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_2b3ffbf1f31dc2::t_097af6eab5876b 280
+src-tauri/src/workspace/model_catalog.rs
+  s_2b3ffbf1f31dc2::t_8efd74d4bef20d 570-576
+  s_2b3ffbf1f31dc2::t_da5152f706c13f 579-582
+  s_2b3ffbf1f31dc2::t_94724bbd6ec8ed 543-566,590
+  s_2b3ffbf1f31dc2::t_e547848b8a7579 583-586
+apps/web-svelte/src/lib/components/OpenExportDialog.svelte
+  s_2b3ffbf1f31dc2::t_80a70f6e6629a6 4,6,19,27,32,36-37
+apps/web-svelte/src/main.ts
+  s_2b3ffbf1f31dc2::t_4b3ffd6519817e 15
+  s_2b3ffbf1f31dc2::t_097af6eab5876b 2,4-5,7-13,16-21
+apps/web-react/src/lib/astrology/aspectParsing.ts
+  s_b5b2f63fe6f013::t_891c21c7eac64d 31,42-44
+  s_b5b2f63fe6f013::t_d03aa035a198b8 12-14
+  s_b5b2f63fe6f013::t_d1a7a908afe04f 45
+apps/web-react/src/main.tsx
+  s_2b3ffbf1f31dc2::t_097af6eab5876b 2,4,6,9-16,18-25
+  s_2b3ffbf1f31dc2::t_4b3ffd6519817e 17
+apps/web-react/src/app/components/glyph-manager.tsx
+  s_2b3ffbf1f31dc2::t_80a70f6e6629a6 89,97,108,124,131,141,158
+apps/web-react/src/lib/dataviz/categoricalPalette.ts
+  s_2b3ffbf1f31dc2::t_92438e4d843ed3 4-9,11-15,18,20-21
+  s_b5b2f63fe6f013::t_770476d2cb7e95 1-3,10,16-17,19,22
+apps/web-svelte/src/lib/components/GlyphManager.svelte
+  s_2b3ffbf1f31dc2::t_80a70f6e6629a6 7,31,54,98,109,112,149,160,163,199,210,213,224,226,233,237,239,244
+apps/web-react/src/lib/astrology/foldedAngle.ts
+  s_b5b2f63fe6f013::t_01e9d741818090 1-22
+apps/web-react/src/lib/tauri/types.ts
+  s_b5b2f63fe6f013::t_180da02b1176ff 405-414
+  s_b5b2f63fe6f013::t_5e77223da57eec 361-363
+  s_2b3ffbf1f31dc2::t_a6a76cff5ae533 130
+  s_2b3ffbf1f31dc2::t_e547848b8a7579 163-165
+  s_2b3ffbf1f31dc2::t_541c125767b8c7 168
+  s_2b3ffbf1f31dc2::t_7a301555636e4b 415-417
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8b3cbde65d3d6b0a808d690772e2871f257edc6e",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2b3ffbf1f31dc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10fe1-5ceb-7622-9b32-5ae212d6130a",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_b5b2f63fe6f013": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc73755c-32e5-49de-9d21-12447f49fcb8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
