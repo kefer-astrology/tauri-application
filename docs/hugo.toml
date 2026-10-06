@@ -8,20 +8,20 @@ defaultContentLanguageInSubdir = false
 
 [languages]
   [languages.en]
-    languageName = "English"
-    languageCode = "en-US"
+    label = "English"
+    locale = "en-US"
     weight = 1
   [languages.cs]
-    languageName = "Čeština"
-    languageCode = "cs-CZ"
+    label = "Čeština"
+    locale = "cs-CZ"
     weight = 2
   [languages.es]
-    languageName = "Español"
-    languageCode = "es-ES"
+    label = "Español"
+    locale = "es-ES"
     weight = 3
   [languages.fr]
-    languageName = "Français"
-    languageCode = "fr-FR"
+    label = "Français"
+    locale = "fr-FR"
     weight = 4
 
 [params]
