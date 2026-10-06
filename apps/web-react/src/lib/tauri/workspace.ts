@@ -7,6 +7,7 @@ import type {
 	ResolvedLocation,
 	TransitSetup,
 	TransitSeriesRequest,
+	TransitSeriesFromDataRequest,
 	TransitSeriesResult,
 	WorkspaceDefaultsDto,
 	WorkspaceInfo,
@@ -196,6 +197,18 @@ export function computeTransitSeries(params: TransitSeriesRequest): Promise<Tran
 	return invoke<TransitSeriesResult>('compute_transit_series', {
 		...params,
 		presetId: params.presetId ?? null,
+		settingsOverrides: params.settingsOverrides ?? null
+	});
+}
+
+/** `computeTransitSeries` counterpart for when no workspace is open — the chart is passed
+ *  in-memory, same as `computeChartFromData`. */
+export function computeTransitSeriesFromData(
+	params: TransitSeriesFromDataRequest
+): Promise<TransitSeriesResult> {
+	if (!isTauriRuntime()) return Promise.resolve({ results: [] });
+	return invoke<TransitSeriesResult>('compute_transit_series_from_data', {
+		...params,
 		settingsOverrides: params.settingsOverrides ?? null
 	});
 }

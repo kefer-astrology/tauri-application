@@ -369,6 +369,9 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
             if let Some(angle) = override_entry.angle {
                 aspect.angle = angle;
             }
+            if let Some(harmonic) = override_entry.harmonic {
+                aspect.harmonic = harmonic;
+            }
             if let Some(default_orb) = override_entry.default_orb {
                 aspect.default_orb = default_orb;
             }
@@ -832,6 +835,7 @@ mod tests {
                 id: "square".to_string(),
                 glyph: None,
                 angle: None,
+                harmonic: None,
                 default_orb: Some(5.0),
                 only_for: None,
                 i18n: None,
@@ -931,6 +935,7 @@ mod tests {
                 id: "square".to_string(),
                 glyph: None,
                 angle: Some(91.0),
+                harmonic: None,
                 default_orb: Some(2.0),
                 only_for: Some(vec!["traditional".to_string()]),
                 i18n: None,

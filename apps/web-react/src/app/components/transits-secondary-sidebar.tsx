@@ -23,8 +23,8 @@ export function TransitsSecondarySidebar({
 	const items = useMemo(() => {
 		const sections = [
 			{ id: 'general' as const, label: t('transits_menu_general') },
-			{ id: 'transiting-bodies' as const, label: t('transits_menu_transiting') },
 			{ id: 'transited-bodies' as const, label: t('transits_menu_transited') },
+			{ id: 'transiting-bodies' as const, label: t('transits_menu_transiting') },
 			{ id: 'aspects' as const, label: t('transits_menu_aspects_used') }
 		];
 		return dynamic ? sections.filter((section) => section.id !== 'transited-bodies') : sections;

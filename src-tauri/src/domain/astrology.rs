@@ -72,6 +72,10 @@ pub struct ComputedAspect {
     pub angle: f64,
     pub orb: f64,
     pub exact_angle: f64,
+    /// The orb limit that admitted this aspect (model default or user override, whichever
+    /// `detect_aspect` matched against) — lets consumers express "closeness to exact" as a
+    /// fraction of the boundary that was actually used, rather than re-resolving orb settings.
+    pub allowed_orb: f64,
     pub applying: bool,
     pub separating: bool,
 }
@@ -114,7 +118,8 @@ pub fn compute_chart_aspects(
                 *positions.get(*from).unwrap_or(&0.0),
                 *positions.get(*to).unwrap_or(&0.0),
             );
-            if let Some((aspect_type, exact_angle, orb)) = detect_aspect(angle, &specs) {
+            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(angle, &specs)
+            {
                 aspects.push(ComputedAspect {
                     from: (*from).clone(),
                     to: (*to).clone(),
@@ -122,6 +127,7 @@ pub fn compute_chart_aspects(
                     angle,
                     orb,
                     exact_angle,
+                    allowed_orb,
                     applying: false,
                     separating: false,
                 });
@@ -155,7 +161,8 @@ pub fn compute_cross_aspects(
         for to in &transited_ids {
             let to_lon = *transited_positions.get(*to).unwrap_or(&0.0);
             let angle = shortest_arc_deg(from_lon, to_lon);
-            if let Some((aspect_type, exact_angle, orb)) = detect_aspect(angle, &specs) {
+            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(angle, &specs)
+            {
                 aspects.push(ComputedAspect {
                     from: from.clone(),
                     to: (*to).clone(),
@@ -163,6 +170,7 @@ pub fn compute_cross_aspects(
                     angle,
                     orb,
                     exact_angle,
+                    allowed_orb,
                     applying: false,
                     separating: false,
                 });
@@ -214,7 +222,7 @@ fn selected_aspects(
         .collect()
 }
 
-fn detect_aspect(angle: f64, specs: &[(String, f64, f64)]) -> Option<(String, f64, f64)> {
+fn detect_aspect(angle: f64, specs: &[(String, f64, f64)]) -> Option<(String, f64, f64, f64)> {
     for (id, exact_angle, allowed_orb) in specs {
         let normalized_exact = if *exact_angle > 180.0 {
             360.0 - *exact_angle
@@ -223,7 +231,7 @@ fn detect_aspect(angle: f64, specs: &[(String, f64, f64)]) -> Option<(String, f6
         };
         let orb = (angle - normalized_exact).abs();
         if orb <= *allowed_orb {
-            return Some((id.clone(), *exact_angle, orb));
+            return Some((id.clone(), *exact_angle, orb, *allowed_orb));
         }
     }
     None
@@ -701,9 +709,11 @@ mod tests {
     fn model_definition_and_effective_orb_control_detection() {
         let definitions = vec![AspectDefinition {
             id: "semisextile".to_string(),
+            aspect_type: "minor".to_string(),
             enabled: true,
             glyph: "⚺".to_string(),
             angle: 30.0,
+            harmonic: 12,
             default_orb: 0.5,
             i18n: HashMap::new(),
             color: None,
@@ -734,6 +744,7 @@ mod tests {
                 angle: 30.75,
                 orb: 0.75,
                 exact_angle: 30.0,
+                allowed_orb: 1.0,
                 applying: false,
                 separating: false,
             }]
@@ -744,9 +755,11 @@ mod tests {
     fn chart_aspects_exclude_structurally_locked_axis_and_node_pairs() {
         let definitions = vec![AspectDefinition {
             id: "opposition".to_string(),
+            aspect_type: "major".to_string(),
             enabled: true,
             glyph: "☍".to_string(),
             angle: 180.0,
+            harmonic: 2,
             default_orb: 8.0,
             i18n: HashMap::new(),
             color: None,
@@ -782,9 +795,11 @@ mod tests {
     fn cross_aspects_preserve_transiting_and_transited_direction() {
         let definitions = vec![AspectDefinition {
             id: "square".to_string(),
+            aspect_type: "major".to_string(),
             enabled: true,
             glyph: "□".to_string(),
             angle: 90.0,
+            harmonic: 4,
             default_orb: 1.0,
             i18n: HashMap::new(),
             color: None,
@@ -815,9 +830,11 @@ mod tests {
         let positions = HashMap::from([("mars".to_string(), 90.0), ("sun".to_string(), 0.0)]);
         let mut definition = AspectDefinition {
             id: "square".to_string(),
+            aspect_type: "major".to_string(),
             enabled: true,
             glyph: String::new(),
             angle: 90.0,
+            harmonic: 4,
             default_orb: 1.0,
             i18n: HashMap::new(),
             color: None,
@@ -921,6 +938,7 @@ mod tests {
             angle: 120.0,
             orb: 0.0,
             exact_angle: 120.0,
+            allowed_orb: 8.0,
             applying: false,
             separating: false,
         };

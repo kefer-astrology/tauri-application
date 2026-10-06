@@ -14,6 +14,8 @@ import {
 } from './components/settings-secondary-sidebar';
 import { TransitsSecondarySidebar, TransitSection } from './components/transits-secondary-sidebar';
 import { TransitsContent } from './components/transits-content';
+import { TransitedObjectsNav } from './components/transited-objects-nav';
+import { TransitsResultsDashboard } from './components/transits-results-dashboard';
 import { Aspectarium } from './components/aspectarium';
 import { HoroscopeDashboard } from './components/horoscope-dashboard';
 import { InformationView } from './components/information-view';
@@ -38,6 +40,7 @@ import {
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
 import { WorkspaceChartsProvider, type WorkspaceChartsValue } from './providers/workspace-charts';
+import { TransitsWorkspaceProvider, useTransitsWorkspace } from './providers/transits-workspace';
 import {
 	computeChart,
 	computeChartFromData,
@@ -261,6 +264,51 @@ function parseChartDateTime(value?: string): Date | null {
 
 function formatChartDateTimeUtc(value: Date): string {
 	return value.toISOString().slice(0, 19) + 'Z';
+}
+
+/** Secondary-sidebar slot for Transits/Dynamic transits — the setup tab list until a series is
+ *  computed, then the transited-objects nav for the results dashboard (`TransitsWorkspaceProvider`
+ *  owns which). */
+function TransitsSecondarySidebarSlot({
+	theme,
+	dynamic,
+	activeSection,
+	onSectionChange
+}: {
+	theme: Theme;
+	dynamic: boolean;
+	activeSection: TransitSection;
+	onSectionChange: (section: TransitSection) => void;
+}) {
+	const { mode } = useTransitsWorkspace();
+	if (mode === 'results') {
+		return <TransitedObjectsNav theme={theme} dynamic={dynamic} />;
+	}
+	return (
+		<TransitsSecondarySidebar
+			activeSection={activeSection}
+			onSectionChange={onSectionChange}
+			theme={theme}
+			dynamic={dynamic}
+		/>
+	);
+}
+
+/** Main-content slot counterpart to `TransitsSecondarySidebarSlot` — same `mode` switch. */
+function TransitsMainContentSlot({
+	theme,
+	glyphSet,
+	section
+}: {
+	theme: Theme;
+	glyphSet: AstrologyGlyphSetId;
+	section: TransitSection;
+}) {
+	const { mode } = useTransitsWorkspace();
+	if (mode === 'results') {
+		return <TransitsResultsDashboard theme={theme} glyphSet={glyphSet} />;
+	}
+	return <TransitsContent section={section} theme={theme} glyphSet={glyphSet} />;
 }
 
 export default function App() {
@@ -753,8 +801,12 @@ export default function App() {
 	return (
 		<>
 			<WorkspaceChartsProvider value={workspaceChartsValue}>
-				<div className="flex h-screen flex-col overflow-hidden" style={currentThemeStyle}>
-					<WindowTitlebar
+				<TransitsWorkspaceProvider
+					workspacePath={workspacePath}
+					workspaceDefaults={workspaceDefaults}
+				>
+					<div className="flex h-screen flex-col overflow-hidden" style={currentThemeStyle}>
+						<WindowTitlebar
 						isSidebarExpanded={isSidebarExpanded}
 						showSecondarySidebar={
 							activeView === 'otevrit' ||
@@ -777,7 +829,7 @@ export default function App() {
 
 						{/* Secondary Sidebar for Transits and Dynamic Transits */}
 						{(activeView === 'tranzity' || activeView === 'dynamika') && (
-							<TransitsSecondarySidebar
+							<TransitsSecondarySidebarSlot
 								activeSection={activeTransitSection}
 								onSectionChange={setActiveTransitSection}
 								theme={theme}
@@ -858,12 +910,10 @@ export default function App() {
 								) : activeView === 'synastrie' ? (
 									<SynastryView theme={theme} onCreated={handleSynastryCreated} />
 								) : activeView === 'tranzity' || activeView === 'dynamika' ? (
-									<TransitsContent
+									<TransitsMainContentSlot
 										section={activeTransitSection}
 										theme={theme}
 										glyphSet={astrologyGlyphSet}
-										workspacePath={workspacePath}
-										workspaceDefaults={workspaceDefaults}
 									/>
 								) : activeView === 'nastaveni' ? (
 									<SettingsView
@@ -944,6 +994,7 @@ export default function App() {
 						)}
 					</DetailSidePanel>
 				</div>
+				</TransitsWorkspaceProvider>
 			</WorkspaceChartsProvider>
 			<Toaster theme={shadcnDark ? 'dark' : 'light'} />
 			<GuidedTour />

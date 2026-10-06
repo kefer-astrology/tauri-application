@@ -86,6 +86,7 @@ export interface ModelOverrideEntryDto {
   id: string;
   glyph?: string | null;
   angle?: number | null;
+  harmonic?: number | null;
   default_orb?: number | null;
   only_for?: string[] | null;
   i18n?: Record<string, string> | null;
@@ -119,9 +120,11 @@ export interface BodyDefinitionDto {
 
 export interface AspectDefinitionDto {
   id: string;
+  type: 'major' | 'minor';
   enabled: boolean;
   glyph: string;
   angle: number;
+  harmonic: number;
   default_orb: number;
   i18n: Record<string, string>;
   color?: string | null;
