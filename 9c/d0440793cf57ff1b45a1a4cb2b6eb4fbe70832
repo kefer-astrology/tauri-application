@@ -1,0 +1,142 @@
+apps/web-react/src/app/components/settings-view.tsx
+  s_08ffd164a45837::t_d68aa3632bfaa9 53,105,111,635
+apps/web-react/src/locales/en.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318,604,685-686
+apps/web-react/src/main.tsx
+  s_08ffd164a45837::t_2455089b7219ff 5,8,13-14
+  s_08ffd164a45837::t_423b44b8568079 6,16
+  s_08ffd164a45837::t_b74820b8d92357 15
+apps/web-react/src/lib/tauri/workspace.ts
+  s_08ffd164a45837::t_76939c8648be85 17
+  s_08ffd164a45837::t_adf45f9229f5fd 16,139-143,146
+  s_08ffd164a45837::t_b74820b8d92357 144
+  s_08ffd164a45837::t_423b44b8568079 18,145
+apps/web-svelte/src/lib/components/SettingsView.svelte
+  s_08ffd164a45837::t_d68aa3632bfaa9 56,504
+apps/web-svelte/src/lib/astrology/observableObjects.ts
+  s_08ffd164a45837::t_2cce4c7e5007bc 1,3,5,7-14,16,18-25,27,29
+src-tauri/src/workspace/mod.rs
+  s_08ffd164a45837::t_529bf81d7deddd 232,237-240
+  s_08ffd164a45837::t_238449d0c0e5e5 33-48,50-56,58-60,62-67,69-87,109-116,118-123,125-144,176-180,251
+  s_08ffd164a45837::t_88ea4d594ba091 19,181-190,198,212-215,225,230-231
+  s_08ffd164a45837::t_574733e61b5f0c 57
+  s_08ffd164a45837::t_49196df6382ae7 88-93,95-96,99-107,145,166-175
+  s_08ffd164a45837::t_beb1bd524f72cc 18,20-25,32,61,68,117,124,252
+  s_08ffd164a45837::t_e0bfcd1923f51b 49,108
+  s_08ffd164a45837::t_e28fc87584244c 94
+  s_08ffd164a45837::t_3a510c88b1fd98 97-98,146-165,233-236
+  s_08ffd164a45837::t_ecd4d38b4f90f1 191-197,199-211,216-224,226-229,241-250
+  s_08ffd164a45837::t_b75f75318e0a63 26-31
+apps/web-react/src/app/providers/transits-workspace.tsx
+  s_08ffd164a45837::t_afe3f657f78d6d 29,31,44-50,228,411
+src-tauri/src/commands/workspace.rs
+  s_08ffd164a45837::t_574733e61b5f0c 356-382
+  s_08ffd164a45837::t_238449d0c0e5e5 351-352
+  s_08ffd164a45837::t_beb1bd524f72cc 349-350,353-355
+apps/web-react/src/app/components/transited-objects-nav.tsx
+  s_08ffd164a45837::t_afe3f657f78d6d 4,35
+apps/web-svelte/src/lib/tauri/workspace.ts
+  s_08ffd164a45837::t_423b44b8568079 27,203
+  s_08ffd164a45837::t_adf45f9229f5fd 25,197-201,204-205
+  s_08ffd164a45837::t_b74820b8d92357 202
+  s_08ffd164a45837::t_76939c8648be85 26
+translations.csv
+  s_08ffd164a45837::t_26aea7b9e038ca 320
+apps/web-svelte/src/main.ts
+  s_08ffd164a45837::t_c6676cf9ba1cfb 12
+  s_08ffd164a45837::t_2455089b7219ff 5,7,11
+  s_08ffd164a45837::t_b74820b8d92357 13
+  s_08ffd164a45837::t_423b44b8568079 6,14
+apps/web-react/src/lib/tauri/types.ts
+  s_08ffd164a45837::t_2455089b7219ff 286-304
+  s_08ffd164a45837::t_529bf81d7deddd 181
+docs/domain-catalog.md
+  s_08ffd164a45837::t_c02e22f9ade078 1-15
+apps/web-svelte/src/lib/astrology/domainCatalog.ts
+  s_08ffd164a45837::t_ac06fc178f10e6 13-22
+  s_08ffd164a45837::t_2455089b7219ff 1-12
+apps/web-svelte/src/lib/stores/glyphs.svelte.ts
+  s_08ffd164a45837::t_163fd21991ab86 40-47
+  s_08ffd164a45837::t_2d1cf1d504638a 7,93
+apps/web-react/src/locales/es.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318,604,685-686
+apps/web-react/src/app/components/glyph-manager.tsx
+  s_08ffd164a45837::t_cd7a87262f100f 40-44,55
+  s_08ffd164a45837::t_f4d9df26a5efd3 156
+  s_08ffd164a45837::t_93b891b1310773 4,51
+apps/web-svelte/src/lib/components/RadixChart.svelte
+  s_08ffd164a45837::t_cd7a87262f100f 52-55,58
+  s_08ffd164a45837::t_0f37228ef5c940 9,56-57,59-60
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_08ffd164a45837::t_cc17d6d0e43896 9,259-260
+  s_08ffd164a45837::t_ac06fc178f10e6 103,110
+apps/web-svelte/src/lib/i18n/es.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318
+apps/web-react/src/lib/astrology/domainCatalog.ts
+  s_08ffd164a45837::t_ac06fc178f10e6 13-22
+  s_08ffd164a45837::t_2455089b7219ff 1-12
+src-tauri/src/workspace/model_catalog.rs
+  s_08ffd164a45837::t_529bf81d7deddd 622
+apps/web-svelte/src/lib/state/layout.svelte.ts
+  s_08ffd164a45837::t_cc17d6d0e43896 13,90-91
+  s_08ffd164a45837::t_9404a5364670fd 229-230
+apps/web-svelte/src/lib/i18n/fr.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318
+apps/web-svelte/src/lib/tauri/types.ts
+  s_08ffd164a45837::t_2455089b7219ff 242-260
+  s_08ffd164a45837::t_529bf81d7deddd 140
+apps/web-svelte/src/lib/i18n/en.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318
+apps/web-react/src/app/components/open-workspace-view.tsx
+  s_08ffd164a45837::t_3dd040e084265d 148,154,1136,1173
+  s_08ffd164a45837::t_ab01238791835b 63
+  s_08ffd164a45837::t_2b2e72f76d8b16 149-153,155-158
+  s_08ffd164a45837::t_edb4aaa0c73bcc 146
+src-tauri/src/lib.rs
+  s_08ffd164a45837::t_574733e61b5f0c 117
+  s_08ffd164a45837::t_beb1bd524f72cc 116
+  s_08ffd164a45837::t_238449d0c0e5e5 29
+  s_08ffd164a45837::t_ecd4d38b4f90f1 30-31
+apps/web-react/src/locales/fr.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318,604,685-686
+apps/web-svelte/src/lib/i18n/cs.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318
+apps/web-react/src/lib/astrology/glyphs.ts
+  s_08ffd164a45837::t_93b891b1310773 3,23-25,29,107
+  s_08ffd164a45837::t_423b44b8568079 83
+src-tauri/src/workspace/models.rs
+  s_08ffd164a45837::t_529bf81d7deddd 758-759
+  s_08ffd164a45837::t_beb1bd524f72cc 819-850
+apps/web-react/src/app/components/horoscope-wheel.tsx
+  s_08ffd164a45837::t_cd7a87262f100f 112-116,121
+  s_08ffd164a45837::t_a925b432033a4b 14,117-120,122-123,645,776,824
+apps/web-react/src/lib/astrology/aspects.ts
+  s_08ffd164a45837::t_b74820b8d92357 17,34-36
+apps/web-react/src/locales/cs.json
+  s_08ffd164a45837::t_da11ee7958bb8b 318,604,685-686
+apps/web-svelte/src/lib/astrology/aspects.ts
+  s_08ffd164a45837::t_b74820b8d92357 17,34-36
+apps/web-react/src/lib/astrology/observableObjects.ts
+  s_08ffd164a45837::t_c4692f048361e4 1,3,5,7-17,19-22,25-32,34,36-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9cd0440793cf57ff1b45a1a4cb2b6eb4fbe70832",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_08ffd164a45837": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1127c-5e3c-73c0-ad75-2ddebf51cd3f",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
