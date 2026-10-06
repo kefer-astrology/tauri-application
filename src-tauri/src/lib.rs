@@ -21,11 +21,14 @@ use commands::storage::{
     compute_aspects, init_storage, query_aspects, query_positions, query_radix_relative,
     query_timestamps, store_positions, store_relation,
 };
-use commands::transits::{compute_transit_series, load_transit_setup, save_transit_setup};
+use commands::transits::{
+    compute_transit_series, compute_transit_series_from_data, load_transit_setup,
+    save_transit_setup,
+};
 use commands::workspace::{
-    create_workspace, delete_workspace, get_current_model_report, get_workspace_defaults,
-    load_workspace, save_workspace, save_workspace_defaults, save_workspace_tags,
-    validate_workspace,
+    create_workspace, delete_workspace, get_builtin_aspect_catalog, get_current_model_report,
+    get_workspace_defaults, load_workspace, save_workspace, save_workspace_defaults,
+    save_workspace_tags, validate_workspace,
 };
 use tauri::Manager;
 
@@ -101,6 +104,7 @@ pub fn run() {
             compute_chart_from_data,
             compute_cross_aspects_from_data,
             compute_transit_series,
+            compute_transit_series_from_data,
             open_chart_file_dialog,
             open_folder_dialog,
             resolve_location,
@@ -108,6 +112,7 @@ pub fn run() {
             search_locations,
             get_chart_details,
             get_current_model_report,
+            get_builtin_aspect_catalog,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

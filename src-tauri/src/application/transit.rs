@@ -6,6 +6,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 
 use crate::domain::astrology::ComputedAspect;
+use crate::infrastructure::astronomy::AstronomyMotion;
 
 use super::computation::{compute_positions, extend_unique, inherited_or_override, ResolvedChart};
 
@@ -32,6 +33,13 @@ pub struct TransitTimeRange {
 pub struct TransitSeriesStep {
     pub datetime: String,
     pub transit_positions: HashMap<String, f64>,
+    /// Daily motion (degrees/day) and retrograde flag per transiting body at this step — lets
+    /// consumers annotate exact hits caused by a station/retrograde loop without re-deriving
+    /// speed from position deltas.
+    pub motion: HashMap<String, AstronomyMotion>,
+    /// Transiting-vs-natal (fixed radix) aspects *and* mutual aspects among the transiting
+    /// bodies themselves (moving-to-moving) — both share the same `ComputedAspect` shape, so
+    /// consumers distinguish them by checking which side's id belongs to the transiting set.
     pub aspects: Vec<ComputedAspect>,
 }
 
@@ -97,16 +105,23 @@ pub fn compute_transit_series(
         transit_chart.subject.event_time = Some(current);
         let transit = compute_positions(&transit_chart, &resolved.model, transiting_ids, &[])?;
         extend_unique(&mut warnings, transit.warnings);
-        let aspects = crate::domain::astrology::compute_cross_aspects(
+        let mut aspects = crate::domain::astrology::compute_cross_aspects(
             &transit.positions,
             &radix.positions,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
             &request.aspect_types,
         );
+        aspects.extend(crate::domain::astrology::compute_chart_aspects(
+            &transit.positions,
+            &resolved.model.aspect_definitions,
+            &resolved.settings.aspect_orbs,
+            Some(&request.aspect_types),
+        ));
         results.push(TransitSeriesStep {
             datetime: current.to_rfc3339(),
             transit_positions: transit.positions,
+            motion: transit.motion,
             aspects,
         });
         current += step;
