@@ -1,0 +1,45 @@
+src-tauri/src/application/transit.rs
+  s_b5b2f63fe6f013::t_c0e340f3ba46be 108,115-120,124
+  s_b5b2f63fe6f013::t_0dd3b9ec7779c6 36-42
+  s_b5b2f63fe6f013::t_76d285980183e0 9
+src-tauri/src/lib.rs
+  s_b5b2f63fe6f013::t_f6f3646079c87f 107
+  s_2b3ffbf1f31dc2::t_05be99a833d231 115
+  s_2b3ffbf1f31dc2::t_da5152f706c13f 29-31
+  s_b5b2f63fe6f013::t_933acec5c979b7 24-27
+src-tauri/src/commands/transits.rs
+  s_2b3ffbf1f31dc2::t_da5152f706c13f 265-266
+  s_b5b2f63fe6f013::t_658217e646d7fa 335-362,368-381,384-391,394-402,407-408
+  s_b5b2f63fe6f013::t_cb0730eb87c0e0 242-264,267-285
+  s_b5b2f63fe6f013::t_f73e34a49da137 363-367,382-383,392-393,403-406
+  s_b5b2f63fe6f013::t_4a6611adebb6a4 334,409
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e26306caf61b002e1cb231bb2521a6d227b985f4",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2b3ffbf1f31dc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10fe1-5ceb-7622-9b32-5ae212d6130a",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_b5b2f63fe6f013": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc73755c-32e5-49de-9d21-12447f49fcb8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
