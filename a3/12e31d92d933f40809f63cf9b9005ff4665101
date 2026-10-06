@@ -1,0 +1,24 @@
+docs/hugo.toml
+  s_06fbed72e274fc::t_f09df16859e2af 11-12,15-16,19-20,23-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a312e31d92d933f40809f63cf9b9005ff4665101",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_06fbed72e274fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a112e1-7229-79d3-9297-a7ebe0c69548",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
