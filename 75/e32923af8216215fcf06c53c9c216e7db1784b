@@ -1,0 +1,46 @@
+docs/content/developer/backend-structure.md
+  s_06fbed72e274fc::t_300b78686c75f2 3,6,10-12,14,16-19,21-23,25,27-30,32-36,38-43,45,47,50,53-96
+docs/domain-catalog.md
+  s_06fbed72e274fc::t_574c409c0f4028 3-8
+docs/content/developer/_index.md
+  s_06fbed72e274fc::t_c6325b3d10ac5b 35-36,40-41,51-52
+docs/content/developer/rust-workspace-contract.md
+  s_06fbed72e274fc::t_6ae1c917364d91 96-99
+  s_06fbed72e274fc::t_8e7f477ebda237 3,10-95,100-118
+docs/content/developer/frontend-svelte.md
+  s_06fbed72e274fc::t_f09df16859e2af 53-57
+docs/content/developer/frontend-react.md
+  s_06fbed72e274fc::t_f09df16859e2af 53-57
+docs/content/developer/architecture.md
+  s_06fbed72e274fc::t_04f8b8d1b5eec7 64-65
+  s_06fbed72e274fc::t_c6325b3d10ac5b 17,24,36,45-46,48-49,74,171-175,177,184-185,190-193
+  s_06fbed72e274fc::t_4f14fa547acf81 20
+docs/content/developer/domain-model.md
+  s_06fbed72e274fc::t_49bdd584a75a8f 152-156
+  s_06fbed72e274fc::t_df19939d415d24 129-151,157-162,232-233
+docs/content/developer/configuration-reference.md
+  s_06fbed72e274fc::t_574c409c0f4028 13-15,90-97,104-107
+docs/content/developer/rust-code-structure.md
+  s_06fbed72e274fc::t_0ed46c0ba9cb45 2-3,6,10-12,14,17-50,53-83,87-92,94-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "75e32923af8216215fcf06c53c9c216e7db1784b",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_06fbed72e274fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a112e1-7229-79d3-9297-a7ebe0c69548",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
