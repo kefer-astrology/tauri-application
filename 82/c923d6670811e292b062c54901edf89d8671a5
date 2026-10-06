@@ -1,0 +1,38 @@
+src-tauri/src/commands/charts.rs
+  s_2b3ffbf1f31dc2::t_e9aa311e825e82 56,62,66
+  s_2b3ffbf1f31dc2::t_f3b1522ef41a48 57-59
+src-tauri/src/workspace/morinus.rs
+  s_2b3ffbf1f31dc2::t_11ef1028f2b47b 229,233-236,426,460-463,491-501,509-513
+  s_2b3ffbf1f31dc2::t_2651a774a21199 200-202,502-508
+  s_2b3ffbf1f31dc2::t_96d6db65a47029 75
+  s_2b3ffbf1f31dc2::t_e9aa311e825e82 1-28,33-40,42-74,76-199,203-211,216-218,224-228,230-232,237-241,245-297,305-351,356-357,362-425,429-432,437-451,454,459,514-515
+  s_2b3ffbf1f31dc2::t_89e808b61b889e 29-32,41,212-215,219-223,242-244,298-304,352-355,358-361,427-428,433-436,452-453,464-490
+  s_2b3ffbf1f31dc2::t_a418e045e8fb3a 455-458
+src-tauri/src/infrastructure/dialogs.rs
+  s_2b3ffbf1f31dc2::t_ad50d723ace365 191,213,221,231
+  s_2b3ffbf1f31dc2::t_e9aa311e825e82 143
+docs/content/developer/import-chart-contract.md
+  s_2b3ffbf1f31dc2::t_ad50d723ace365 32-36
+src-tauri/src/workspace/mod.rs
+  s_2b3ffbf1f31dc2::t_e9aa311e825e82 4
+  s_2b3ffbf1f31dc2::t_f3b1522ef41a48 7
+src-tauri/src/workspace/solar_fire.rs
+  s_2b3ffbf1f31dc2::t_ac686c23ba4be2 39-44,55-61,84-99,104-111
+  s_2b3ffbf1f31dc2::t_f3b1522ef41a48 1-38,45-54,62-83,100-103,112-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "82c923d6670811e292b062c54901edf89d8671a5",
+  "prompts": {},
+  "sessions": {
+    "s_2b3ffbf1f31dc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10fe1-5ceb-7622-9b32-5ae212d6130a",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
