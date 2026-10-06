@@ -1,0 +1,156 @@
+apps/web-react/src/app/App.tsx
+  s_b5b2f63fe6f013::t_62fee2bb1c7b97 997
+  s_b5b2f63fe6f013::t_96d9b8b88ce6a6 832
+  s_b5b2f63fe6f013::t_f142fd51cad0bf 43
+  s_b5b2f63fe6f013::t_4854e0680152ec 17-18
+  s_b5b2f63fe6f013::t_27732e7f868fc6 804-809
+  s_b5b2f63fe6f013::t_6e224015bc35c0 913
+  s_b5b2f63fe6f013::t_610fde97235ed0 269-313
+apps/web-react/src/lib/tauri/workspace.ts
+  s_b5b2f63fe6f013::t_61db70c2208400 10
+  s_b5b2f63fe6f013::t_ee065fb0121973 204-211
+  s_b5b2f63fe6f013::t_3cfa5a17486320 212-214
+  s_b5b2f63fe6f013::t_b02a26e9d6fbb5 215
+apps/web-react/src/app/components/folded-angle-view.tsx
+  s_b5b2f63fe6f013::t_2daeb5114bef76 245
+  s_b5b2f63fe6f013::t_5e3a2409219f37 1-12,14-22,24-71,73-244,246-250,252-295
+  s_b5b2f63fe6f013::t_3ec57f9159b50d 72
+  s_b5b2f63fe6f013::t_3e00337eafea05 251
+  s_b5b2f63fe6f013::t_e5085b710bac74 13,23
+src-tauri/src/workspace/models.rs
+  s_2b3ffbf1f31dc2::t_94724bbd6ec8ed 733-735,882-883
+  s_2b3ffbf1f31dc2::t_e547848b8a7579 725-726,884-888
+  s_2b3ffbf1f31dc2::t_a6a76cff5ae533 825-826
+  s_2b3ffbf1f31dc2::t_e5b2ff0b781226 889
+src-tauri/src/domain/astrology.rs
+  s_2b3ffbf1f31dc2::t_7b6f082de77257 716,762,802,837
+  s_b5b2f63fe6f013::t_8555077dc2b9da 121-122,130
+  s_2b3ffbf1f31dc2::t_c670f9ad36d315 712,758,798,833
+  s_b5b2f63fe6f013::t_a1c40874d230de 75-78
+  s_b5b2f63fe6f013::t_3eb4caeb0f26dc 747,941
+  s_b5b2f63fe6f013::t_19b30a472a26af 225,234
+  s_b5b2f63fe6f013::t_9f1c4116179dbd 164-165,173
+apps/web-react/src/app/components/ui/line-chart.tsx
+  s_b5b2f63fe6f013::t_ddadb59322d746 308-328
+  s_b5b2f63fe6f013::t_3f900952bd4a56 78-110
+  s_b5b2f63fe6f013::t_7babd9a2a048b8 285-295
+  s_b5b2f63fe6f013::t_8723a9deed7669 1-10,21-26,43-77,111-120,126-137,139-144,148-152,154-176,181-216,218-219,221-227,232-284,296-307,329-388,414-431
+  s_b5b2f63fe6f013::t_f79824d206f0a9 228-231
+  s_b5b2f63fe6f013::t_779294a72e9755 125,138,145-147,153
+  s_b5b2f63fe6f013::t_0c9b6c509ec94c 31-35
+  s_b5b2f63fe6f013::t_fc8e10748c93bd 11-20,27-30
+  s_b5b2f63fe6f013::t_37b7b659d7b2cf 40-42
+  s_b5b2f63fe6f013::t_7bc5adcf4a0684 124
+  s_b5b2f63fe6f013::t_f5b4774ccbf4ba 123
+  s_b5b2f63fe6f013::t_c4fd54516eb190 177-180
+  s_b5b2f63fe6f013::t_990e536b5dc836 121-122
+  s_b5b2f63fe6f013::t_18cfcbdb54b736 36-39
+  s_b5b2f63fe6f013::t_74ff50b7b2ada7 217,220
+  s_b5b2f63fe6f013::t_b0649824f7a590 389-413
+apps/web-react/src/app/providers/transits-workspace.tsx
+  s_b5b2f63fe6f013::t_56d2c8c595c91f 296-300
+  s_b5b2f63fe6f013::t_8349ada6ed6c5c 506
+  s_b5b2f63fe6f013::t_927d1e95049d08 1-13,15-19,22-42,56-112,116-149,153-160,165-213,222-226,228-230,232-295,301-359,361-363,365-402,404-414,416,418-441,465,486-505,507-508,510-512,515,518-544,546-549,552-571
+  s_b5b2f63fe6f013::t_b4340112448349 150-152
+  s_b5b2f63fe6f013::t_e3ab6e860383e8 227
+  s_b5b2f63fe6f013::t_3f89078a702533 466-469,477-480,482
+  s_b5b2f63fe6f013::t_74935e79d0da2e 14
+  s_b5b2f63fe6f013::t_9e7a1f193f53b4 220-221
+  s_b5b2f63fe6f013::t_a1d0c08ceff3e2 20
+  s_b5b2f63fe6f013::t_370cff9f6485b4 49
+  s_b5b2f63fe6f013::t_d4ece7f1182d25 231
+  s_b5b2f63fe6f013::t_1cc25d9c3241e0 364
+  s_b5b2f63fe6f013::t_64e8f04fb3948d 21
+  s_b5b2f63fe6f013::t_e8b61e6f69a127 113-115
+  s_b5b2f63fe6f013::t_12a05669be6cd2 403
+  s_b5b2f63fe6f013::t_9b07499c050403 415,417
+  s_b5b2f63fe6f013::t_280f52cccb1b85 50-55
+  s_b5b2f63fe6f013::t_faca42320300df 161-164
+  s_b5b2f63fe6f013::t_2f50c17521b19b 442-464
+  s_b5b2f63fe6f013::t_dba9c94b3d4265 470-476,481,483-485
+  s_b5b2f63fe6f013::t_2807ee8046e57c 48
+  s_b5b2f63fe6f013::t_51c8988325b105 509,513-514,516-517
+  s_b5b2f63fe6f013::t_00603544a6347f 43-47
+  s_b5b2f63fe6f013::t_74cbe88c2f8bdc 214-219
+  s_b5b2f63fe6f013::t_91ce1567355bdb 360
+  s_b5b2f63fe6f013::t_6142c5f52253f6 545
+  s_b5b2f63fe6f013::t_9fc88fb42df43a 550-551
+apps/web-react/src/lib/astrology/dms.ts
+  s_b5b2f63fe6f013::t_f239c2539c3f9b 1-10
+apps/web-react/src/app/components/transits-results-dashboard.tsx
+  s_b5b2f63fe6f013::t_61c10a111af1b6 187-189,205-212
+  s_b5b2f63fe6f013::t_5064f32103a5d8 397-404,421-441
+  s_b5b2f63fe6f013::t_c41df709d058ca 3-12,24,27,37-43,48,62-176,247,250-254,262,264,276,284,294,300-310,322,407-408,444-460,462-484,486-494
+  s_b5b2f63fe6f013::t_efd06e0c0bc96c 1-2,13-23,25-26,28-36,44-47,49-61,177-184,190-198,204,213-246,248-249,255-261,263,265-275,277-283,285-293,295-299,311-321,323-328,333-369,383-384,396,405-406,409-420,442-443,461,495-516
+  s_b5b2f63fe6f013::t_9869cc40cd320f 329-331
+  s_b5b2f63fe6f013::t_72577db546804d 485
+  s_b5b2f63fe6f013::t_25bf41217087fd 199-200
+  s_b5b2f63fe6f013::t_1bdf80d5ba0efc 185-186
+  s_b5b2f63fe6f013::t_c6647d59ae8196 370-382
+  s_b5b2f63fe6f013::t_27286f0de750ce 201
+  s_b5b2f63fe6f013::t_2d94fc5fd3ee4f 385-395
+  s_b5b2f63fe6f013::t_0e106768ea200c 332
+  s_b5b2f63fe6f013::t_92a08e68f79570 202-203
+apps/web-react/src/app/components/transits-content.tsx
+  s_b5b2f63fe6f013::t_8e8fa2349c1739 344-397
+  s_b5b2f63fe6f013::t_b5fba39482a0d3 418-422
+  s_b5b2f63fe6f013::t_2abd8346699d34 1,18,33-36,46,48-74,401-402,411,461
+  s_b5b2f63fe6f013::t_c53492a57a5fee 398
+apps/web-react/src/lib/astrology/aspectTimeline.ts
+  s_b5b2f63fe6f013::t_78d97e727d2cff 114-120
+  s_b5b2f63fe6f013::t_ea2374942c19f5 133
+  s_b5b2f63fe6f013::t_a7b4e7916d8f41 199
+  s_b5b2f63fe6f013::t_beab2cfd5b0994 35-37
+  s_b5b2f63fe6f013::t_e00ef93cfbbbc6 6
+  s_b5b2f63fe6f013::t_0aacd6f8706227 157,160,162-163,174,177
+  s_b5b2f63fe6f013::t_04b7edf65728f2 200
+  s_b5b2f63fe6f013::t_a268a18afaaaa2 1-5,7-34,41-113,121-132,134-139,149-156,158-159,161,164-173,175-176,178-198,201-206
+  s_b5b2f63fe6f013::t_2c854ff9818759 140-148
+  s_b5b2f63fe6f013::t_220576b5136a1a 38-40
+apps/web-react/src/app/components/transited-objects-nav.tsx
+  s_b5b2f63fe6f013::t_0061b54223889a 4,21,24,55-56
+  s_b5b2f63fe6f013::t_81938a513d3170 1-3,5-15,22,25-26,34-39,41-54,58-60
+  s_b5b2f63fe6f013::t_ce8bdda6d32328 57
+  s_b5b2f63fe6f013::t_b765d1abe2dd0c 17-20,23,27-33,40
+  s_b5b2f63fe6f013::t_249e0b6d7b73b8 16
+src-tauri/src/workspace/settings.rs
+  s_2b3ffbf1f31dc2::t_eed9e7f4d3ad46 838,938
+  s_2b3ffbf1f31dc2::t_a6a76cff5ae533 372-374
+apps/web-react/src/app/components/transits-secondary-sidebar.tsx
+  s_b5b2f63fe6f013::t_38dc0e88849e0a 27
+apps/web-react/src/app/components/cycle-analysis-panel.tsx
+  s_b5b2f63fe6f013::t_cf25757d815f49 1-203
+apps/web-svelte/src/lib/tauri/types.ts
+  s_2b3ffbf1f31dc2::t_e547848b8a7579 123
+  s_2b3ffbf1f31dc2::t_a6a76cff5ae533 89
+  s_2b3ffbf1f31dc2::t_541c125767b8c7 127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "668071d34a7248dbec36f61eb3fa7ecc48dc817d",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2b3ffbf1f31dc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10fe1-5ceb-7622-9b32-5ae212d6130a",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_b5b2f63fe6f013": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc73755c-32e5-49de-9d21-12447f49fcb8",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
