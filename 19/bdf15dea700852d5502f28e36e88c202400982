@@ -1,0 +1,24 @@
+static/app-shell/logo-full-modern.svg
+  s_f5cc6030dbe8d9::t_189de15b391f2d 1-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "19bdf15dea700852d5502f28e36e88c202400982",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_f5cc6030dbe8d9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57c71ce8-174d-4e65-ab83-c647431d0f54",
+        "model": "claude-opus-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
