@@ -13,13 +13,15 @@ function categoryForBody(body: BodyDefinitionDto): ObservableObjectCategory {
  if (['jupiter', 'saturn', 'uranus', 'neptune', 'pluto'].includes(body.id)) return 'social_outer_planets';
  return 'personal_planets';
 }
-function labelForBody(body: BodyDefinitionDto): string { return body.i18n.en ?? body.id; }
+function labelForBody(body: BodyDefinitionDto): string {
+ return body.i18n.en ?? body.id.replace(/[_-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [];
 export const DEFAULT_OBSERVABLE_OBJECT_IDS: string[] = [];
 export const DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS: string[] = [];
 export function setObservableObjectCatalog(catalog: DomainCatalogDto): void {
- const objects = catalog.model.body_definitions.map((body) => ({ id: body.id, label: labelForBody(body), icon: body.glyph || body.id.slice(0, 2), category: categoryForBody(body), status: Object.values(body.computation_map).some(Boolean) ? 'available' as const : 'planned' as const }));
+ const objects = catalog.model.body_definitions.map((body) => ({ id: body.id, label: labelForBody(body), icon: body.glyph || labelForBody(body).slice(0, 2), category: categoryForBody(body), status: Object.values(body.computation_map).some(Boolean) ? 'available' as const : 'planned' as const }));
  OBSERVABLE_OBJECTS.splice(0, OBSERVABLE_OBJECTS.length, ...objects);
  DEFAULT_OBSERVABLE_OBJECT_IDS.splice(0, DEFAULT_OBSERVABLE_OBJECT_IDS.length, ...objects.map((item) => item.id));
  setObservableObjectDefaults(catalog.model.settings?.default_bodies);

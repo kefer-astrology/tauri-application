@@ -4,6 +4,7 @@ import './app.css';
 import { setAspectDefinitions } from '$lib/astrology/aspects';
 import { setDomainCatalog } from '$lib/astrology/domainCatalog';
 import { setObservableObjectCatalog } from '$lib/astrology/observableObjects';
+import { refreshCatalogGlyphs } from '$lib/stores/glyphs.svelte';
 import type { DomainCatalogDto } from '$lib/tauri/types';
 
 async function bootstrap(): Promise<void> {
@@ -12,6 +13,7 @@ async function bootstrap(): Promise<void> {
     setDomainCatalog(catalog);
     setAspectDefinitions(catalog.model.aspect_definitions, catalog.model.settings?.default_aspects);
     setObservableObjectCatalog(catalog);
+    refreshCatalogGlyphs();
   } catch (error) {
     console.warn('Unable to load the Rust aspect catalog.', error);
   }

@@ -5,6 +5,9 @@ export type AspectType = 'major' | 'minor';
 export type AspectRow = {
 	id: string;
 	labelKey: string;
+	fallbackLabel: string;
+	glyph: string;
+	color: string;
 	angle: number;
 	harmonic: number;
 	type: AspectType;
@@ -21,6 +24,9 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[], default
 		...definitions.map((definition) => ({
 			id: definition.id,
 			labelKey: `aspect_${definition.id}`,
+			fallbackLabel: definition.i18n.en ?? humanizeId(definition.id),
+			glyph: definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3),
+			color: definition.color || DEFAULT_ASPECT_COLORS[definition.id] || colorForId(definition.id),
 			angle: definition.angle,
 			harmonic: definition.harmonic,
 			type: definition.type,
@@ -31,9 +37,25 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[], default
 	for (const row of ASPECT_ROWS) ASPECT_ANGLES[row.id] = row.angle;
 	for (const key of Object.keys(DEFAULT_ASPECT_ORBS)) delete DEFAULT_ASPECT_ORBS[key];
 	for (const row of ASPECT_ROWS) DEFAULT_ASPECT_ORBS[row.id] = row.defaultOrb;
-	if (defaultAspectIds?.length) {
+	for (const definition of definitions) {
+		ASPECT_GLYPHS[definition.id] = definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3);
+		DEFAULT_ASPECT_COLORS[definition.id] = definition.color || DEFAULT_ASPECT_COLORS[definition.id] || colorForId(definition.id);
+	}
+	if (defaultAspectIds) {
 		DEFAULT_ENABLED_ASPECT_IDS.splice(0, DEFAULT_ENABLED_ASPECT_IDS.length, ...defaultAspectIds);
 	}
+}
+
+function humanizeId(id: string): string {
+	return id
+		.replace(/[_-]+/g, ' ')
+		.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function colorForId(id: string): string {
+	let hash = 0;
+	for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+	return `hsl(${hash % 360} 65% 52%)`;
 }
 
 export type AspectRowId = string;

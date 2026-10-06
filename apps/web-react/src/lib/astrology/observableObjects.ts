@@ -22,11 +22,15 @@ function labelKeyForBody(body: BodyDefinitionDto): string {
  return `planet_${body.id}`;
 }
 
+function humanizeId(id: string): string {
+	return id.replace(/[_-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export const OBSERVABLE_OBJECTS: ObservableObjectDefinition[] = [];
 export const DEFAULT_OBSERVABLE_OBJECT_IDS: string[] = [];
 export const DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS: string[] = [];
 export function setObservableObjectCatalog(catalog: DomainCatalogDto): void {
- const objects = catalog.model.body_definitions.map((body) => ({ id: body.id, labelKey: labelKeyForBody(body), fallbackLabel: body.i18n.en ?? body.id, icon: body.glyph || body.id.slice(0, 2), category: categoryForBody(body), status: Object.values(body.computation_map).some(Boolean) ? 'available' as const : 'planned' as const }));
+ const objects = catalog.model.body_definitions.map((body) => ({ id: body.id, labelKey: labelKeyForBody(body), fallbackLabel: body.i18n.en ?? humanizeId(body.id), icon: body.glyph || humanizeId(body.id).slice(0, 2), category: categoryForBody(body), status: Object.values(body.computation_map).some(Boolean) ? 'available' as const : 'planned' as const }));
  OBSERVABLE_OBJECTS.splice(0, OBSERVABLE_OBJECTS.length, ...objects);
  DEFAULT_OBSERVABLE_OBJECT_IDS.splice(0, DEFAULT_OBSERVABLE_OBJECT_IDS.length, ...objects.map((item) => item.id));
  setObservableObjectDefaults(catalog.model.settings?.default_bodies);

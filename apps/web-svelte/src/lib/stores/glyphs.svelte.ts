@@ -39,12 +39,14 @@ type GlyphCatalogType = 'planet' | 'zodiac' | 'aspect';
 
 /** Presentation symbols stay ordered; sign IDs and names come from Rust. */
 const ZODIAC_PRESENTATION_SYMBOLS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
-const ZODIAC_META = Object.fromEntries(
-  catalogSigns().map((sign, index) => [
-    sign.id,
-    { name: sign.name, fallback: ZODIAC_PRESENTATION_SYMBOLS[index] ?? sign.glyph }
-  ])
-);
+function zodiacMeta() {
+  return Object.fromEntries(
+    catalogSigns().map((sign, index) => [
+      sign.id,
+      { name: sign.name, fallback: ZODIAC_PRESENTATION_SYMBOLS[index] ?? sign.glyph }
+    ])
+  );
+}
 
 function titleCase(id: string): string {
   return id
@@ -58,43 +60,29 @@ function titleCase(id: string): string {
  * `OBSERVABLE_OBJECTS`, zodiac signs, and aspect types from `ASPECT_ROWS` — derived directly
  * from those registries so this catalog can't silently drift out of sync with them again.
  */
-const glyphCatalog: Record<
-  string,
-  { name: string; type: GlyphCatalogType; fallback: string; size: number }
-> = {
-  ...Object.fromEntries(
-    OBSERVABLE_OBJECTS.map((item) => [
+function currentGlyphCatalog(): Record<string, { name: string; type: GlyphCatalogType; fallback: string; size: number }> {
+  const signs = zodiacMeta();
+  return {
+    ...Object.fromEntries(OBSERVABLE_OBJECTS.map((item) => [
       item.id,
       { name: item.label, type: 'planet' as const, fallback: item.icon, size: 24 }
-    ])
-  ),
-  ...Object.fromEntries(
-    Object.entries(ZODIAC_META).map(([id, meta]) => [
+    ])),
+    ...Object.fromEntries(Object.entries(signs).map(([id, meta]) => [
       id,
       { name: meta.name, type: 'zodiac' as const, fallback: meta.fallback, size: 24 }
-    ])
-  ),
-  ...Object.fromEntries(
-    ASPECT_ROWS.map((row) => [
+    ])),
+    ...Object.fromEntries(ASPECT_ROWS.map((row) => [
       row.id,
-      {
-        name: titleCase(row.id),
-        type: 'aspect' as const,
-        fallback: ASPECT_GLYPHS[row.id] ?? row.id.slice(0, 3),
-        size: 20
-      }
-    ])
-  )
-};
+      { name: row.fallbackLabel, type: 'aspect' as const, fallback: row.glyph, size: 20 }
+    ]))
+  };
+}
 
 export function signIdFromLongitude(longitude: number): string {
   const normalized = ((longitude % 360) + 360) % 360;
   const index = Math.floor(normalized / 30) % 12;
   return catalogSigns()[index]?.id ?? 'aries';
 }
-
-/** Every catalog id now has a generated (or hand-drawn) static asset behind it. */
-const fileBackedIds = new Set(Object.keys(glyphCatalog));
 
 /** Fixed stars (`star_*`, no per-star art yet) share one generic placeholder asset. */
 function planetAssetId(id: string): string {
@@ -147,8 +135,8 @@ function glyphPathForSet(setId: GlyphSetId, type: GlyphCatalogType, id: string):
 }
 
 function buildDefaultGlyphs(setId: GlyphSetId): Record<string, GlyphDefinition> {
-  return Object.entries(glyphCatalog).reduce((acc, [id, meta]) => {
-    const svg = fileBackedIds.has(id) ? glyphPathForSet(setId, meta.type, id) : meta.fallback;
+  return Object.entries(currentGlyphCatalog()).reduce((acc, [id, meta]) => {
+    const svg = glyphPathForSet(setId, meta.type, id);
     acc[id] = {
       id,
       name: meta.name,
@@ -216,6 +204,11 @@ export function setGlyphSet(setId: GlyphSetId) {
   glyphSettings.activeSet = setId;
   applyDefaultGlyphsForSet(setId);
   persistGlyphSet(setId);
+}
+
+/** Rebuild presentation entries after Rust refreshes the effective catalog. */
+export function refreshCatalogGlyphs(): void {
+  applyDefaultGlyphsForSet(glyphSettings.activeSet);
 }
 
 export function getGlyph(id: string): GlyphDefinition | undefined {
@@ -327,7 +320,7 @@ export function loadCustomGlyphs() {
 
       if (typeof glyph.size !== 'number') glyph.size = 24;
       if (!glyph.fallback) {
-        const meta = glyphCatalog[glyph.id];
+        const meta = currentGlyphCatalog()[glyph.id];
         glyph.fallback = meta?.fallback ?? glyph.name.charAt(0).toUpperCase();
       }
       const normalizedId = normalizeGlyphId(glyph.id);

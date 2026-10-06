@@ -22,7 +22,11 @@ export function objectIcon(id: string): string {
 /** Human label for an aspect type id (`trine`, `square`, ...). */
 export function aspectLabel(type: string, t: Translate): string {
 	const definition = ASPECT_ROWS.find((aspect) => aspect.id === type);
-	return definition ? t(definition.labelKey) : type;
+	return definition ? t(definition.labelKey, { defaultValue: definition.fallbackLabel }) : humanizeId(type);
+}
+
+function humanizeId(id: string): string {
+	return id.replace(/[_-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 /** `detect_chart_shapes` (Rust) emits per-planet variants (`bowl_leader_venus`, `bucket_mars`,
@@ -36,7 +40,7 @@ export function shapeLabel(id: string, t: Translate, exists: (key: string) => bo
 	const bucketMatch = id.match(/^bucket_(.+)$/);
 	if (bucketMatch) return `${t('open_shape_bucket')}: ${objectLabel(bucketMatch[1], t)}`;
 	if (id === 'stellium') return t('info_stellium');
-	return id;
+	return humanizeId(id);
 }
 
 /** Same idea for `detect_chart_configurations`'s modality/element variants
@@ -56,5 +60,5 @@ export function configurationLabel(
 	if (elementMatch) {
 		return `${t(`open_configuration_${elementMatch[1]}`)} (${t(`open_element_${elementMatch[2]}`)})`;
 	}
-	return id;
+	return humanizeId(id);
 }

@@ -570,7 +570,7 @@
                       void persistAspectSettings(next);
                     }}
                   />
-                  <span class="text-sm">{t(aspect.labelKey, {}, aspect.labelKey)}</span>
+                  <span class="text-sm">{t(aspect.labelKey, {}, aspect.fallbackLabel)}</span>
                 </label>
                 <div class="flex items-center gap-2">
                   <input
