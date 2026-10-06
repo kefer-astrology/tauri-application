@@ -2,12 +2,16 @@ import { mount } from 'svelte';
 import { invoke } from '@tauri-apps/api/core';
 import './app.css';
 import { setAspectDefinitions } from '$lib/astrology/aspects';
-import type { AspectDefinitionDto } from '$lib/tauri/types';
+import { setDomainCatalog } from '$lib/astrology/domainCatalog';
+import { setObservableObjectCatalog } from '$lib/astrology/observableObjects';
+import type { DomainCatalogDto } from '$lib/tauri/types';
 
 async function bootstrap(): Promise<void> {
   try {
-    const definitions = await invoke<AspectDefinitionDto[]>('get_builtin_aspect_catalog');
-    setAspectDefinitions(definitions);
+		const catalog = await invoke<DomainCatalogDto>('get_builtin_domain_catalog');
+    setDomainCatalog(catalog);
+    setAspectDefinitions(catalog.model.aspect_definitions, catalog.model.settings?.default_aspects);
+    setObservableObjectCatalog(catalog);
   } catch (error) {
     console.warn('Unable to load the Rust aspect catalog.', error);
   }

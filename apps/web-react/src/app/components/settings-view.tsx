@@ -46,11 +46,11 @@ import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
 import { JAN_KEFER_BIOGRAPHY } from '@/lib/content/janKefer';
 import { persistMonochrome } from '@/lib/appLayoutPreferences';
 import {
-	SUPPORTED_RUST_HOUSE_SYSTEMS,
 	type AspectLineStyleId,
 	type AspectLineTierStyleState,
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
+import { catalogHouseSystems } from '@/lib/astrology/domainCatalog';
 import { searchLocations } from '@/lib/tauri/workspace';
 import { BodySelector } from './body-selector';
 import { GlyphManager } from './glyph-manager';
@@ -63,8 +63,6 @@ const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
 	{ code: 'fr', label: 'Français' },
 	{ code: 'es', label: 'Español' }
 ];
-
-const HOUSE_SYSTEMS = SUPPORTED_RUST_HOUSE_SYSTEMS;
 
 type ParsedThemeColor = {
 	hex: string;
@@ -104,13 +102,13 @@ function formatThemeColor(hex: string, alpha: number): string {
 }
 
 /** Historical house-system names stay untranslated across languages; only real words get a key. */
-const HOUSE_SYSTEM_LABEL_KEYS: Partial<Record<(typeof HOUSE_SYSTEMS)[number], string>> = {
+const HOUSE_SYSTEM_LABEL_KEYS: Record<string, string> = {
 	'Whole Sign': 'house_system_whole_sign',
 	Equal: 'house_system_equal'
 };
 
 function houseSystemLabel(
-	name: (typeof HOUSE_SYSTEMS)[number],
+	name: string,
 	t: (key: string, options?: Record<string, unknown>) => string
 ): string {
 	const key = HOUSE_SYSTEM_LABEL_KEYS[name];
@@ -634,7 +632,7 @@ function SettingsView({
 											</SelectTrigger>
 											<SelectContent className={ft.selectContent}>
 												<SelectGroup>
-													{HOUSE_SYSTEMS.map((name) => (
+														{catalogHouseSystems().map((name) => (
 														<SelectItem key={name} value={name} className={ft.selectItem}>
 															{houseSystemLabel(name, t)}
 														</SelectItem>

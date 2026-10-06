@@ -14,7 +14,7 @@ export type AspectRow = {
 /** Runtime projection of the Rust model catalog. */
 export const ASPECT_ROWS: AspectRow[] = [];
 
-export function setAspectDefinitions(definitions: AspectDefinitionDto[]): void {
+export function setAspectDefinitions(definitions: AspectDefinitionDto[], defaultAspectIds?: string[]): void {
 	ASPECT_ROWS.splice(
 		0,
 		ASPECT_ROWS.length,
@@ -31,6 +31,9 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[]): void {
 	for (const row of ASPECT_ROWS) ASPECT_ANGLES[row.id] = row.angle;
 	for (const key of Object.keys(DEFAULT_ASPECT_ORBS)) delete DEFAULT_ASPECT_ORBS[key];
 	for (const row of ASPECT_ROWS) DEFAULT_ASPECT_ORBS[row.id] = row.defaultOrb;
+	if (defaultAspectIds?.length) {
+		DEFAULT_ENABLED_ASPECT_IDS.splice(0, DEFAULT_ENABLED_ASPECT_IDS.length, ...defaultAspectIds);
+	}
 }
 
 export type AspectRowId = string;

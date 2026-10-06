@@ -755,6 +755,8 @@ pub struct AspectDefinition {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sign {
+    #[serde(default)]
+    pub id: String,
     pub name: String,
     pub glyph: String,
     pub abbreviation: String,
@@ -812,6 +814,38 @@ pub struct AstroModel {
     pub zodiac_type: Option<ZodiacType>,
     #[serde(default)]
     pub ayanamsa: Option<Ayanamsa>,
+}
+
+/// Runtime domain catalog shared by all frontends. Presentation concerns such as
+/// colors and glyph-file choices intentionally do not belong here.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DomainCatalog {
+    pub model: AstroModel,
+    pub house_systems: Vec<HouseSystemDefinition>,
+    pub shapes: Vec<DomainDefinition>,
+    pub configurations: Vec<DomainDefinition>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HouseSystemDefinition {
+    pub id: String,
+    pub computation_supported: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DomainDefinition {
+    pub id: String,
+    pub translation_key: String,
+    #[serde(default)]
+    pub parent_id: Option<String>,
+    #[serde(default)]
+    pub generated_variant: Option<GeneratedVariantRule>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneratedVariantRule {
+    pub prefix: String,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -13,6 +13,9 @@ import type {
 	WorkspaceInfo,
 	WorkspaceTagDefinition
 } from './types';
+import { setDomainCatalog } from '@/lib/astrology/domainCatalog';
+import { setAspectDefinitions } from '@/lib/astrology/aspects';
+import { setObservableObjectCatalog } from '@/lib/astrology/observableObjects';
 import {
 	analysisToAppChart,
 	aspectLineTierStyleToDto,
@@ -133,7 +136,14 @@ export async function getCurrentModelReport(
 	workspacePath: string,
 	chartId?: string | null
 ): Promise<CurrentModelReport> {
-	return invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId });
+	const [report, catalog] = await Promise.all([
+		invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId }),
+		invoke<import('./types').DomainCatalogDto>('get_domain_catalog', { workspacePath, chartId })
+	]);
+	setDomainCatalog(catalog);
+	setAspectDefinitions(catalog.model.aspect_definitions, catalog.model.settings?.default_aspects);
+	setObservableObjectCatalog(catalog);
+	return report;
 }
 
 export async function getChartDetails(

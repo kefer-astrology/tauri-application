@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { objectLabel } from '@/lib/astrology/objectLabels';
-import { DEFAULT_TRANSIT_BODY_IDS, useTransitsWorkspace } from '../providers/transits-workspace';
+import { getDefaultTransitBodyIds, useTransitsWorkspace } from '../providers/transits-workspace';
 import { SecondaryNavPanel } from './secondary-nav-panel';
 import type { Theme } from './astrology-sidebar';
 
@@ -32,7 +32,7 @@ export function TransitedObjectsNav({ theme, dynamic = false }: TransitedObjects
 				if (s.kind === 'moving-fixed') ids.add(s.to);
 			}
 		}
-		const preferred = DEFAULT_TRANSIT_BODY_IDS.filter((id) => ids.has(id));
+		const preferred = getDefaultTransitBodyIds().filter((id) => ids.has(id));
 		const rest = Array.from(ids)
 			.filter((id) => !preferred.includes(id))
 			.sort();

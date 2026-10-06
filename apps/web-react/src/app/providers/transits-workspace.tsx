@@ -26,8 +26,9 @@ import {
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
 import { useWorkspaceCharts } from './workspace-charts';
+import { DOMAIN_CATALOG } from '@/lib/astrology/domainCatalog';
 
-export const DEFAULT_TRANSIT_BODY_IDS = [
+const BROWSER_TRANSIT_BODY_FALLBACK = [
 	'sun',
 	'moon',
 	'mercury',
@@ -39,6 +40,13 @@ export const DEFAULT_TRANSIT_BODY_IDS = [
 	'neptune',
 	'pluto'
 ];
+
+/** Rust model defaults are authoritative; this fallback is only for browser mode. */
+export function getDefaultTransitBodyIds(): string[] {
+	return DOMAIN_CATALOG?.model.settings?.default_bodies?.length
+		? [...DOMAIN_CATALOG.model.settings.default_bodies]
+		: [...BROWSER_TRANSIT_BODY_FALLBACK];
+}
 
 /** Default fixed-anchor selection (the "Transited Bodies" tab): the slow outer planets. A fixed
  *  anchor is picked once and shown in the results sidebar, so it should be something that still
@@ -217,7 +225,7 @@ export function TransitsWorkspaceProvider({
 	// sample; transited (tranzitovaná, passive) = resolved once, from the source chart's own
 	// moment, held fixed, and shown in the results sidebar once computed. The "Transiting Bodies" /
 	// "Transited Bodies" tabs (transits-content.tsx) edit these in that same order.
-	const [transitingBodies, setTransitingBodies] = useState<string[]>(DEFAULT_TRANSIT_BODY_IDS);
+	const [transitingBodies, setTransitingBodies] = useState<string[]>(getDefaultTransitBodyIds);
 	const [transitedBodies, setTransitedBodies] = useState<string[]>(DEFAULT_FIXED_ANCHOR_BODY_IDS);
 	const [selectedAspects, setSelectedAspects] = useState<string[]>(DEFAULT_TRANSIT_ASPECT_IDS);
 	const [timeStepValue, setTimeStepValue] = useState(1);
@@ -400,7 +408,7 @@ export function TransitsWorkspaceProvider({
 				chartType: 'EVENT',
 				dateTime: transitDateTime,
 				observableObjects:
-					transitingBodies.length > 0 ? transitingBodies : DEFAULT_TRANSIT_BODY_IDS,
+					transitingBodies.length > 0 ? transitingBodies : getDefaultTransitBodyIds(),
 				tags: [...(sourceChart.tags ?? []), 'transit']
 			};
 			const transitResult = await computeChartFromData(

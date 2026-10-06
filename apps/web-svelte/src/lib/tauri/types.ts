@@ -137,6 +137,7 @@ export interface AspectDefinitionDto {
 }
 
 export interface SignDefinitionDto {
+  id: string;
   name: string;
   glyph: string;
   abbreviation: string;
@@ -236,6 +237,25 @@ export interface CurrentModelReport {
   model_overrides?: ModelOverridesDto | null;
   warnings: string[];
   diagnostics: BackendDiagnostic[];
+}
+
+export interface DomainDefinitionDto {
+  id: string;
+  translation_key: string;
+  parent_id?: string | null;
+  generated_variant?: { prefix: string; source: string } | null;
+}
+
+export interface HouseSystemDefinitionDto {
+  id: string;
+  computation_supported: boolean;
+}
+
+export interface DomainCatalogDto {
+  model: AstroModelDto;
+  house_systems: HouseSystemDefinitionDto[];
+  shapes: DomainDefinitionDto[];
+  configurations: DomainDefinitionDto[];
 }
 
 export interface ChartDetails {

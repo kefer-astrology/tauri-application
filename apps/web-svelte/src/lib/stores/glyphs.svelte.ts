@@ -4,6 +4,7 @@
 
 import { OBSERVABLE_OBJECTS } from '../astrology/observableObjects';
 import { ASPECT_ROWS, ASPECT_GLYPHS } from '../astrology/aspects';
+import { catalogSigns } from '../astrology/domainCatalog';
 
 export type GlyphSetId = 'default' | 'modern';
 
@@ -36,22 +37,14 @@ const SVELTE_GLYPH_SCALE = 1.15;
 
 type GlyphCatalogType = 'planet' | 'zodiac' | 'aspect';
 
-/** Zodiac signs aren't in `OBSERVABLE_OBJECTS` (that registry is bodies/points only), so
- *  their names + 2-letter fallbacks stay a small local table. */
-const ZODIAC_META: Record<string, { name: string; fallback: string }> = {
-  aries: { name: 'Aries', fallback: 'Ar' },
-  taurus: { name: 'Taurus', fallback: 'Ta' },
-  gemini: { name: 'Gemini', fallback: 'Ge' },
-  cancer: { name: 'Cancer', fallback: 'Ca' },
-  leo: { name: 'Leo', fallback: 'Le' },
-  virgo: { name: 'Virgo', fallback: 'Vi' },
-  libra: { name: 'Libra', fallback: 'Li' },
-  scorpio: { name: 'Scorpio', fallback: 'Sc' },
-  sagittarius: { name: 'Sagittarius', fallback: 'Sg' },
-  capricorn: { name: 'Capricorn', fallback: 'Cp' },
-  aquarius: { name: 'Aquarius', fallback: 'Aq' },
-  pisces: { name: 'Pisces', fallback: 'Pi' },
-};
+/** Presentation symbols stay ordered; sign IDs and names come from Rust. */
+const ZODIAC_PRESENTATION_SYMBOLS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
+const ZODIAC_META = Object.fromEntries(
+  catalogSigns().map((sign, index) => [
+    sign.id,
+    { name: sign.name, fallback: ZODIAC_PRESENTATION_SYMBOLS[index] ?? sign.glyph }
+  ])
+);
 
 function titleCase(id: string): string {
   return id
@@ -94,13 +87,10 @@ const glyphCatalog: Record<
   )
 };
 
-/** Zodiac sign glyph ids in order: Aries 0°, Taurus 30°, ... Pisces 330°. Use for lookups, never hardcoded symbols. */
-export const ZODIAC_SIGN_IDS = ['aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'] as const;
-
 export function signIdFromLongitude(longitude: number): string {
   const normalized = ((longitude % 360) + 360) % 360;
   const index = Math.floor(normalized / 30) % 12;
-  return ZODIAC_SIGN_IDS[index] ?? 'aries';
+  return catalogSigns()[index]?.id ?? 'aries';
 }
 
 /** Every catalog id now has a generated (or hand-drawn) static asset behind it. */

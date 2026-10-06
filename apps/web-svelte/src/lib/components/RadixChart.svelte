@@ -6,6 +6,7 @@
   } from '$lib/astrology/aspects';
   import { getGlyphContent } from '$lib/stores/glyphs.svelte';
   import { wheelStyleSettings } from '$lib/stores/wheel-style.svelte';
+  import { catalogSigns } from '$lib/astrology/domainCatalog';
 
   interface Props {
     size?: number;
@@ -48,20 +49,15 @@
   const zodiacRadius = (innerRadius + outerRadius) / 2 + glyphRadialOutset;
   const angleMarkerRadius = outerRadius + 22;
 
-  const zodiacSigns = [
-    { id: 'aries', icon: '♈', angle: 0 },
-    { id: 'taurus', icon: '♉', angle: 30 },
-    { id: 'gemini', icon: '♊', angle: 60 },
-    { id: 'cancer', icon: '♋', angle: 90 },
-    { id: 'leo', icon: '♌', angle: 120 },
-    { id: 'virgo', icon: '♍', angle: 150 },
-    { id: 'libra', icon: '♎', angle: 180 },
-    { id: 'scorpio', icon: '♏', angle: 210 },
-    { id: 'sagittarius', icon: '♐', angle: 240 },
-    { id: 'capricorn', icon: '♑', angle: 270 },
-    { id: 'aquarius', icon: '♒', angle: 300 },
-    { id: 'pisces', icon: '♓', angle: 330 }
-  ] as const;
+  const ZODIAC_PRESENTATION_GLYPHS: Record<string, string> = {
+    aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
+    libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+  };
+  const zodiacSigns = catalogSigns().map((sign, index) => ({
+    id: sign.id,
+    icon: ZODIAC_PRESENTATION_GLYPHS[sign.id] ?? sign.glyph,
+    angle: index * 30
+  }));
 
   const ANGLE_IDS = new Set(['asc', 'desc', 'dsc', 'mc', 'ic']);
   const ELEMENT_BY_SIGN: Record<string, 'fire' | 'earth' | 'air' | 'water'> = {

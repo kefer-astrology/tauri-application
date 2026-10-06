@@ -26,9 +26,9 @@ use commands::transits::{
     save_transit_setup,
 };
 use commands::workspace::{
-    create_workspace, delete_workspace, get_builtin_aspect_catalog, get_current_model_report,
-    get_workspace_defaults, load_workspace, save_workspace, save_workspace_defaults,
-    save_workspace_tags, validate_workspace,
+    create_workspace, delete_workspace, get_builtin_aspect_catalog, get_builtin_domain_catalog,
+    get_current_model_report, get_domain_catalog, get_workspace_defaults, load_workspace,
+    save_workspace, save_workspace_defaults, save_workspace_tags, validate_workspace,
 };
 use tauri::Manager;
 
@@ -113,6 +113,8 @@ pub fn run() {
             get_chart_details,
             get_current_model_report,
             get_builtin_aspect_catalog,
+            get_builtin_domain_catalog,
+            get_domain_catalog,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

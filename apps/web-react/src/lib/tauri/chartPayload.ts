@@ -6,6 +6,7 @@ import type {
 	ModelOverridesDto,
 	MoonDetails
 } from './types';
+import { catalogHouseSystems, DOMAIN_CATALOG } from '@/lib/astrology/domainCatalog';
 import { DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
 import {
 	DEFAULT_ASPECT_COLORS,
@@ -99,26 +100,14 @@ export interface AppChart {
 	};
 }
 
-export const SUPPORTED_RUST_HOUSE_SYSTEMS = [
-	'Placidus',
-	'Whole Sign',
-	'Campanus',
-	'Koch',
-	'Equal',
-	'Regiomontanus',
-	'Vehlow',
-	'Porphyry',
-	'Alcabitius'
-] as const;
-
-export type SupportedRustHouseSystem = (typeof SUPPORTED_RUST_HOUSE_SYSTEMS)[number];
+export type SupportedRustHouseSystem = string;
 
 export function normalizeSupportedHouseSystem(
 	value?: string | null
 ): SupportedRustHouseSystem | null {
 	const normalized = value?.trim();
 	if (!normalized) return null;
-	return SUPPORTED_RUST_HOUSE_SYSTEMS.find((system) => system === normalized) ?? null;
+	return catalogHouseSystems().find((system) => system === normalized) ?? null;
 }
 
 export interface ComputedChartPayload {
@@ -267,8 +256,8 @@ export interface WorkspaceDefaultsState {
 }
 
 export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
-	houseSystem: 'Placidus',
-	zodiacType: 'Tropical',
+	houseSystem: DOMAIN_CATALOG?.model.settings?.default_house_system ?? 'Placidus',
+	zodiacType: DOMAIN_CATALOG?.model.zodiac_type ?? 'Tropical',
 	timezone: 'Europe/Prague',
 	locationName: 'Prague',
 	locationLatitude: 50.0875,

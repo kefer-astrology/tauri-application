@@ -619,6 +619,7 @@ fn builtin_signs() -> Vec<Sign> {
 
 fn sign(name: &str, glyph: &str, abbreviation: &str, element: Element) -> Sign {
     Sign {
+        id: name.to_ascii_lowercase(),
         name: name.to_string(),
         glyph: glyph.to_string(),
         abbreviation: abbreviation.to_string(),

@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
-import { normalizeGlyphId, ZODIAC_IDS, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { normalizeGlyphId, zodiacIds, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import {
 	OBSERVABLE_OBJECTS,
 	OBSERVABLE_OBJECT_CATEGORY_LABELS,
@@ -37,17 +37,22 @@ function titleCase(id: string): string {
 		.join(' ');
 }
 
+const ZODIAC_PRESENTATION_GLYPHS: Record<string, string> = {
+	aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
+	libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+};
+
 function useGlyphManagerGroups(): GlyphManagerGroup[] {
 	const { t } = useTranslation();
 
 	const zodiacGroup: GlyphManagerGroup = {
 		key: 'zodiac',
 		label: t('observable_category_zodiac', { defaultValue: 'Zodiac Signs' }),
-		rows: ZODIAC_IDS.map((id) => ({
+		rows: zodiacIds().map((id) => ({
 			id,
 			label: titleCase(id),
 			domain: 'zodiac' as const,
-			fallback: id.slice(0, 2).toUpperCase()
+			fallback: ZODIAC_PRESENTATION_GLYPHS[id] ?? id.slice(0, 2).toUpperCase()
 		}))
 	};
 
@@ -148,6 +153,7 @@ function GlyphManagerRow({
 }
 
 export function GlyphManager({ glyphSet }: { glyphSet: AstrologyGlyphSetId }) {
+	const { t } = useTranslation();
 	const groups = useGlyphManagerGroups();
 	const overrides = useCustomGlyphOverrides();
 	const defaultOpen = groups.map((g) => g.key).filter((key) => !COLLAPSED_BY_DEFAULT.has(key));

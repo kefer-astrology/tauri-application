@@ -11,6 +11,7 @@ import {
 } from '@/lib/astrology/elementColors';
 import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import { OBSERVABLE_OBJECTS } from '@/lib/astrology/observableObjects';
+import { catalogSigns } from '@/lib/astrology/domainCatalog';
 import {
 	getAstrologyGlyphSrc,
 	getZodiacGlyphSrc,
@@ -108,20 +109,18 @@ export type HemisphereOverlayKind =
 	| 'mc-ic-north'
 	| 'mc-ic-south';
 
-const zodiacSigns = [
-	{ name: 'Aries', id: 'aries', icon: '♈', angle: 0 },
-	{ name: 'Taurus', id: 'taurus', icon: '♉', angle: 30 },
-	{ name: 'Gemini', id: 'gemini', icon: '♊', angle: 60 },
-	{ name: 'Cancer', id: 'cancer', icon: '♋', angle: 90 },
-	{ name: 'Leo', id: 'leo', icon: '♌', angle: 120 },
-	{ name: 'Virgo', id: 'virgo', icon: '♍', angle: 150 },
-	{ name: 'Libra', id: 'libra', icon: '♎', angle: 180 },
-	{ name: 'Scorpio', id: 'scorpio', icon: '♏', angle: 210 },
-	{ name: 'Sagittarius', id: 'sagittarius', icon: '♐', angle: 240 },
-	{ name: 'Capricorn', id: 'capricorn', icon: '♑', angle: 270 },
-	{ name: 'Aquarius', id: 'aquarius', icon: '♒', angle: 300 },
-	{ name: 'Pisces', id: 'pisces', icon: '♓', angle: 330 }
-] as const;
+const ZODIAC_PRESENTATION_GLYPHS: Record<string, string> = {
+	aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
+	libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+};
+
+const zodiacSigns = () =>
+	catalogSigns().map((sign, index) => ({
+		name: sign.name,
+		id: sign.id,
+		icon: ZODIAC_PRESENTATION_GLYPHS[sign.id] ?? sign.glyph,
+		angle: index * 30
+	}));
 
 /** Ecliptic longitudes (°) — aligned with `horoscope-dashboard` mock radix for handoff */
 const DEFAULT_BODY_LONGITUDE: Record<string, number> = {
@@ -643,7 +642,7 @@ export function HoroscopeWheel({
 					</>
 				) : null}
 				{glyphSet
-					? zodiacSigns.map((sign) => {
+					? zodiacSigns().map((sign) => {
 							const href = zodiacGlyphSrc(sign.id);
 							if (!href) return null;
 							const el = elementForZodiacId(sign.id);
@@ -774,7 +773,7 @@ export function HoroscopeWheel({
 				strokeWidth={zodiacRingStrokeWidth}
 			/>
 
-			{zodiacSigns.map((sign, idx) => {
+			{zodiacSigns().map((sign, idx) => {
 				const rad = longitudeToScreenRadians(displayLon(sign.angle));
 				const x1 = center + innerRadius * Math.cos(rad);
 				const y1 = center + innerRadius * Math.sin(rad);
@@ -822,7 +821,7 @@ export function HoroscopeWheel({
 				</g>
 			)}
 
-			{zodiacSigns.map((sign) => {
+			{zodiacSigns().map((sign) => {
 				const rad = longitudeToScreenRadians(displayLon(sign.angle + 15));
 				const x = center + zodiacRadius * Math.cos(rad);
 				const y = center + zodiacRadius * Math.sin(rad);

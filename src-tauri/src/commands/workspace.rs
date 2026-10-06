@@ -346,6 +346,40 @@ pub async fn get_builtin_aspect_catalog(
     Ok(crate::workspace::builtin_standard_model("builtin").aspect_definitions)
 }
 
+/// Return the complete domain catalog before a workspace is open.
+#[tauri::command]
+pub async fn get_builtin_domain_catalog() -> Result<crate::workspace::models::DomainCatalog, String>
+{
+    Ok(crate::workspace::builtin_domain_catalog())
+}
+
+/// Return the effective catalog for a workspace/model, or the built-in catalog
+/// when no workspace is supplied.
+#[tauri::command]
+pub async fn get_domain_catalog(
+    workspace_path: Option<String>,
+    chart_id: Option<String>,
+) -> Result<crate::workspace::models::DomainCatalog, String> {
+    let Some(workspace_path) = workspace_path.filter(|path| !path.trim().is_empty()) else {
+        return Ok(crate::workspace::builtin_domain_catalog());
+    };
+    let workspace_dir = Path::new(&workspace_path);
+    let manifest = load_workspace_manifest(workspace_dir)?;
+    let chart = match chart_id.as_deref().and_then(non_empty_str) {
+        Some(id) => {
+            let rel = find_chart_ref_by_id(workspace_dir, &manifest, id)?
+                .ok_or_else(|| format!("Chart {id} not found in workspace"))?;
+            Some(load_chart(workspace_dir, &rel)?)
+        }
+        None => None,
+    };
+    let report = crate::workspace::current_model_report(
+        &manifest,
+        chart.as_ref().map(|chart| &chart.config),
+    );
+    Ok(crate::workspace::domain_catalog_for_model(report.model))
+}
+
 fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceManifest {
     let owner_value = if owner.is_empty() {
         "User".to_string()
