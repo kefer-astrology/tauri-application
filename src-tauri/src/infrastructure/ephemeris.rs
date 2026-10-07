@@ -15,6 +15,7 @@ use std::sync::{Mutex, OnceLock};
 use anise::constants::frames::EARTH_MOD_FRAME;
 use anise::prelude::{Almanac, Frame};
 use hifitime::Epoch;
+use hifitime::TimeScale;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter};
@@ -463,6 +464,36 @@ pub struct EphemerisInfo {
     pub is_default: bool,
     pub is_downloaded: bool,
     pub local_path: Option<String>,
+}
+
+/// Raw, loaded-SPK target coverage.  These intervals are read from segment
+/// summaries at runtime; callers must still account for center-chain coverage
+/// before claiming a target is observable from Earth.
+#[derive(Debug, Clone, Serialize)]
+pub struct LoadedSpkCoverage {
+    pub naif_target_id: i32,
+    pub start_et_seconds: f64,
+    pub end_et_seconds: f64,
+    pub start_tdb: String,
+    pub end_tdb: String,
+}
+
+pub fn loaded_spk_coverage(paths: &[PathBuf]) -> Result<Vec<LoadedSpkCoverage>, String> {
+    let almanac = load_almanac_from_paths(paths)?;
+    let mut coverage: Vec<_> = almanac
+        .spk_domains()
+        .map_err(|error| format!("cannot inspect loaded SPK coverage: {error}"))?
+        .into_iter()
+        .map(|(id, (start, end))| LoadedSpkCoverage {
+            naif_target_id: id,
+            start_et_seconds: start.to_et_seconds(),
+            end_et_seconds: end.to_et_seconds(),
+            start_tdb: start.to_gregorian_str(TimeScale::TDB),
+            end_tdb: end.to_gregorian_str(TimeScale::TDB),
+        })
+        .collect();
+    coverage.sort_by_key(|entry| entry.naif_target_id);
+    Ok(coverage)
 }
 
 // ─── Manager ─────────────────────────────────────────────────────────────────

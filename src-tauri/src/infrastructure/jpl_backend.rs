@@ -193,6 +193,16 @@ fn longitude_from_state(state: &CartesianState, jd_tt: f64) -> f64 {
     lon
 }
 
+/// IAU 2006 mean-obliquity derivative in radians per SI second.  It is the
+/// derivative of exactly the polynomial used by `mean_obliquity_deg`.
+fn mean_obliquity_rate_rad_s(jd_tt: f64) -> f64 {
+    let t = (jd_tt - 2_451_545.0) / 36_525.0;
+    let arcsec_per_century = -46.836_769 - 2.0 * 0.000_183_1 * t + 3.0 * 0.002_003_40 * t.powi(2)
+        - 4.0 * 0.000_000_576 * t.powi(3)
+        - 5.0 * 0.000_000_043_4 * t.powi(4);
+    (arcsec_per_century / 3600.0 / 36_525.0 / 86_400.0).to_radians()
+}
+
 /// Right ascension and declination (degrees) from the same equatorial mean-of-date state
 /// vector `sample_tropical_longitude` rotates into ecliptic coordinates.
 fn equatorial_from_state(state: &CartesianState) -> (f64, f64) {
@@ -214,7 +224,16 @@ fn motion_from_state(state: &CartesianState, jd_tt: f64) -> Result<AstronomyMoti
     let x = state.radius_km.x;
     let y = state.radius_km.y * eps.cos() + state.radius_km.z * eps.sin();
     let vx = state.velocity_km_s.x;
-    let vy = state.velocity_km_s.y * eps.cos() + state.velocity_km_s.z * eps.sin();
+    // ANISE applies its DCM state matrix when rotating into EARTH_MOD_FRAME, so
+    // its transformed velocity includes that frame rotation's transport term.
+    // Add the remaining time-dependent ecliptic rotation here.  For apparent
+    // states ANISE returns the velocity carried by its aberration calculation;
+    // it is validated below against complete-pipeline finite differences rather
+    // than assumed to be an exact derivative of converged CN+S position.
+    let vy = state.velocity_km_s.y * eps.cos()
+        + state.velocity_km_s.z * eps.sin()
+        + mean_obliquity_rate_rad_s(jd_tt)
+            * (-state.radius_km.y * eps.sin() + state.radius_km.z * eps.cos());
     let denominator = x * x + y * y;
     if denominator <= f64::MIN_POSITIVE {
         return Err("motion_unavailable: ecliptic longitude singularity".to_string());
@@ -456,13 +475,12 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, frame, unix_secs, ab_corr) {
-                Ok(longitude) => {
+            match sample_state(&almanac, frame, unix_secs, ab_corr) {
+                Ok(state) => {
+                    let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(state) = sample_state(&almanac, frame, unix_secs, ab_corr) {
-                        if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
-                            motion.insert(id.to_string(), body_motion);
-                        }
+                    if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
+                        motion.insert(id.to_string(), body_motion);
                     }
                 }
                 Err(e) => {
@@ -476,13 +494,12 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, *frame, unix_secs, ab_corr) {
-                Ok(longitude) => {
+            match sample_state(&almanac, *frame, unix_secs, ab_corr) {
+                Ok(state) => {
+                    let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.clone(), longitude);
-                    if let Ok(state) = sample_state(&almanac, *frame, unix_secs, ab_corr) {
-                        if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
-                            motion.insert(id.clone(), body_motion);
-                        }
+                    if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
+                        motion.insert(id.clone(), body_motion);
                     }
                 }
                 Err(error) => warnings.push(format!("{id}_unavailable: {error}")),
@@ -1003,6 +1020,48 @@ mod tests {
         resource.exists().then_some(resource)
     }
 
+    #[test]
+    fn longitude_velocity_matches_complete_pipeline_central_differences() {
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        let almanac = load_almanac_from_paths(&paths).expect("bundled almanac");
+        let epoch = Epoch::from_gregorian_utc(2024, 4, 10, 12, 0, 0, 0);
+        let t = epoch.to_unix_seconds();
+        // Moon, inner/outer planet, asteroid, and the bundled custom Type-13 body.
+        let frames = [
+            MOON_J2000,
+            MERCURY_J2000,
+            SATURN_BARYCENTER_J2000,
+            ASTRAEA_J2000,
+            Frame::from_ephem_j2000(20_002_060),
+        ];
+        for aberration in [Aberration::NONE, Aberration::CN_S] {
+            for frame in frames {
+                let state = sample_state(&almanac, frame, t, aberration).expect("state");
+                let analytic = motion_from_state(&state, epoch.to_jde_tt_days())
+                    .expect("motion")
+                    .speed;
+                let mut estimates = Vec::new();
+                for step in [1.0, 10.0, 60.0] {
+                    let before = sample_tropical_longitude(&almanac, frame, t - step, aberration)
+                        .expect("before");
+                    let after = sample_tropical_longitude(&almanac, frame, t + step, aberration)
+                        .expect("after");
+                    estimates.push(angular_delta_deg(before, after) / (2.0 * step / 86_400.0));
+                }
+                let reference = estimates[2];
+                assert!((estimates[1] - reference).abs() < 2e-3,
+                    "central differences did not converge for {frame:?} {aberration:?}: {estimates:?}");
+                // CN+S is a corrected apparent state, whose velocity is validated rather
+                // than assumed exact; 0.01 deg/day = 36 arcsec/day is deliberately looser
+                // than the geometric 0.002 deg/day transport/frame tolerance.
+                let tolerance = if aberration.is_some() { 1e-2 } else { 2e-3 };
+                assert!((analytic - reference).abs() < tolerance,
+                    "velocity mismatch for {frame:?} {aberration:?}: analytic={analytic}, fd={reference}");
+            }
+        }
+    }
+
     /// Repeatable direct-SPK benchmark.  This intentionally measures the public chart path,
     /// including apparent-place corrections and finite-difference motion, rather than only a
     /// raw segment lookup.  Run with:
@@ -1028,6 +1087,16 @@ mod tests {
             )
             .chain(std::iter::once("chiron".to_string()))
             .collect();
+        let almanac = backend.build_almanac().expect("benchmark almanac");
+        let unix_secs = chart.subject.event_time.expect("event time").timestamp() as f64;
+        let jd_tt = Epoch::from_unix_seconds(unix_secs).to_jde_tt_days();
+        const ITERATIONS: u32 = 10;
+        let frames: Vec<Frame> = body_frames()
+            .iter()
+            .map(|(_, frame)| *frame)
+            .chain(asteroid_body_frames().iter().map(|(_, frame)| *frame))
+            .chain(std::iter::once(Frame::from_ephem_j2000(20_002_060)))
+            .collect();
 
         // Cold means no in-process Almanac; OS page cache is intentionally not controlled.
         almanac_cache().write().expect("cache lock").clear();
@@ -1039,7 +1108,18 @@ mod tests {
         );
         let cold = cold_start.elapsed();
 
-        const ITERATIONS: u32 = 10;
+        let mut position_only_samples = Vec::with_capacity(ITERATIONS as usize);
+        for _ in 0..ITERATIONS {
+            let start = Instant::now();
+            for frame in &frames {
+                let state = sample_state(&almanac, *frame, unix_secs, Aberration::CN_S)
+                    .expect("position-only state");
+                let motion = motion_from_state(&state, jd_tt).expect("position-only motion");
+                black_box((longitude_from_state(&state, jd_tt), motion));
+            }
+            position_only_samples.push(start.elapsed());
+        }
+
         let mut warm_one_samples = Vec::with_capacity(ITERATIONS as usize);
         for _ in 0..ITERATIONS {
             let start = Instant::now();
@@ -1091,11 +1171,13 @@ mod tests {
 
         warm_one_samples.sort_unstable();
         warm_all_samples.sort_unstable();
+        position_only_samples.sort_unstable();
         let p95 = |samples: &[std::time::Duration]| {
             samples[(samples.len() * 95 / 100).min(samples.len() - 1)]
         };
         println!(
-            "direct JPL benchmark: cold={cold:?}, warm_one p50={:?} p95={:?}, warm_all p50={:?} p95={:?}, dense_{DENSE_SAMPLES}={dense:?} ({:.1} samples/s)",
+            "direct JPL benchmark: cold={cold:?}, position_only_{} p50={:?} p95={:?}, warm_one p50={:?} p95={:?}, warm_all p50={:?} p95={:?}, dense_{DENSE_SAMPLES}={dense:?} ({:.1} samples/s)", frames.len(),
+            position_only_samples[position_only_samples.len() / 2], p95(&position_only_samples),
             warm_one_samples[warm_one_samples.len() / 2], p95(&warm_one_samples),
             warm_all_samples[warm_all_samples.len() / 2], p95(&warm_all_samples),
             DENSE_SAMPLES as f64 / dense.as_secs_f64()

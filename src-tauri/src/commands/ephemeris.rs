@@ -22,3 +22,13 @@ pub fn get_available_bodies() -> Vec<String> {
     let available_paths = manager.available_bsp_paths();
     crate::infrastructure::ephemeris::bodies_available_for_bsp_paths(&available_paths)
 }
+
+/// Inspect actual loaded SPK segment domains.  This is intentionally raw target
+/// coverage; a client must not treat it as guaranteed Earth-relative coverage
+/// without considering required center-chain segments.
+#[tauri::command]
+pub fn get_loaded_spk_coverage(
+) -> Result<Vec<crate::infrastructure::ephemeris::LoadedSpkCoverage>, String> {
+    let manager = EphemerisManager::from_global();
+    crate::infrastructure::ephemeris::loaded_spk_coverage(&manager.available_bsp_paths())
+}
