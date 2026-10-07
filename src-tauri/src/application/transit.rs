@@ -6,7 +6,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 
 use crate::domain::astrology::ComputedAspect;
-use crate::infrastructure::astronomy::AstronomyMotion;
+use crate::infrastructure::position_provider::AstronomyMotion;
 
 use super::computation::{compute_positions, extend_unique, inherited_or_override, ResolvedChart};
 

@@ -1,12 +1,15 @@
-pub mod jpl_backend;
-#[cfg(feature = "swisseph")]
-pub mod swisseph;
+//! Provider boundary for chart positions, motion, axes, and house cusps.
+//!
+//! The JPL provider primarily exposes astronomical state vectors. The optional
+//! Swiss Ephemeris provider also performs astrology-oriented operations, so
+//! this module deliberately describes the shared output rather than calling
+//! every provider an astronomy backend.
 
 use std::collections::HashMap;
-
-use serde::Serialize;
 #[cfg(feature = "swisseph")]
 use std::path::Path;
+
+use serde::Serialize;
 
 use crate::workspace::models::{ChartInstance, EngineType};
 
@@ -28,9 +31,8 @@ pub struct AstronomyMotion {
 pub struct AstronomyChartData {
     pub positions: HashMap<String, f64>,
     pub motion: HashMap<String, AstronomyMotion>,
-    /// Equatorial/topocentric coordinates (degrees), keyed by body id. Only ever populated
-    /// for the classical planets, and only by backends that compute them today (the anise-based
-    /// JPL backend); empty for backends that don't (Swiss-ephemeris routes), never a hard error.
+    /// Equatorial/topocentric coordinates (degrees), keyed by body id. Only
+    /// populated by providers which support them for the requested bodies.
     pub right_ascension: HashMap<String, f64>,
     pub declination: HashMap<String, f64>,
     pub altitude: HashMap<String, f64>,
@@ -66,7 +68,7 @@ impl AstronomyBackend for SwissAstronomyBackend {
             .override_ephemeris
             .clone()
             .filter(|value| !value.trim().is_empty())
-            .or_else(crate::infrastructure::astronomy::swisseph::default_ephemeris_source)
+            .or_else(crate::infrastructure::swisseph::default_ephemeris_source)
     }
 
     fn compute_chart_data(
@@ -74,17 +76,11 @@ impl AstronomyBackend for SwissAstronomyBackend {
         chart: &ChartInstance,
         requested_objects: Option<&Vec<String>>,
     ) -> Result<AstronomyChartData, String> {
-        let computed = crate::infrastructure::astronomy::swisseph::compute_chart_data(
-            chart,
-            requested_objects,
-            None,
-        )?;
+        let computed =
+            crate::infrastructure::swisseph::compute_chart_data(chart, requested_objects, None)?;
         Ok(AstronomyChartData {
             positions: computed.positions,
             motion: computed.motion,
-            // TODO: libswe supports equatorial/topocentric output (SEFLG_EQUATORIAL /
-            // SEFLG_TOPOCTR) directly; not wired up yet, so this feature-gated route doesn't
-            // offer RA/Dec/alt/az today (only the default anise-based JPL backend does).
             right_ascension: HashMap::new(),
             declination: HashMap::new(),
             altitude: HashMap::new(),
@@ -101,10 +97,7 @@ impl AstronomyBackend for SwissAstronomyBackend {
     }
 }
 
-/// JPL DE backend routed through the Swiss Ephemeris C library's JPL mode.
-///
-/// Uses `SEFLG_JPLEPH` and requires a JPL binary ephemeris file (e.g. de440.eph)
-/// supplied via `chart.config.override_ephemeris`.
+/// JPL DE provider routed through Swiss Ephemeris compatibility mode.
 #[cfg(feature = "swisseph")]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct JplViaSwissAstronomyBackend;
@@ -120,7 +113,7 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
             .config
             .override_ephemeris
             .clone()
-            .filter(|v| !v.trim().is_empty())
+            .filter(|value| !value.trim().is_empty())
     }
 
     fn compute_chart_data(
@@ -132,10 +125,9 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
             .config
             .override_ephemeris
             .as_deref()
-            .filter(|v| !v.trim().is_empty())
+            .filter(|value| !value.trim().is_empty())
             .map(Path::new);
-
-        let computed = crate::infrastructure::astronomy::swisseph::compute_chart_data_jpl(
+        let computed = crate::infrastructure::swisseph::compute_chart_data_jpl(
             chart,
             requested_objects,
             jpl_file,
@@ -143,7 +135,6 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
         Ok(AstronomyChartData {
             positions: computed.positions,
             motion: computed.motion,
-            // See the same TODO on `SwissAstronomyBackend` above.
             right_ascension: HashMap::new(),
             declination: HashMap::new(),
             altitude: HashMap::new(),
@@ -160,17 +151,10 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
     }
 }
 
-/// Select the astronomy backend for a chart based on its engine configuration.
-///
-/// - `jpl` engine + resolvable `.bsp` → `JplAstronomyBackend` (anise/MPL-2.0, license-clean)
-/// - `jpl` engine + no BSP, feature `swisseph` → `JplViaSwissAstronomyBackend` (AGPL)
-/// - anything else + feature `swisseph` → `SwissAstronomyBackend` (AGPL)
-/// - without feature `swisseph` → `JplAstronomyBackend` is the only backend
+/// Select the provider for a chart based on its engine configuration.
 pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Send + Sync> {
     if matches!(chart.config.engine, Some(EngineType::Jpl)) {
-        if let Ok(backend) =
-            crate::infrastructure::astronomy::jpl_backend::jpl_backend_for_chart(chart)
-        {
+        if let Ok(backend) = crate::infrastructure::jpl_backend::jpl_backend_for_chart(chart) {
             return Box::new(backend);
         }
         #[cfg(feature = "swisseph")]
@@ -178,17 +162,15 @@ pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Se
     }
     #[cfg(feature = "swisseph")]
     return Box::new(SwissAstronomyBackend);
-    // License-clean default when swisseph feature is not enabled.
     #[cfg(not(feature = "swisseph"))]
     {
         Box::new(
-            crate::infrastructure::astronomy::jpl_backend::jpl_backend_for_chart(chart)
-                .unwrap_or_else(|_| {
-                    crate::infrastructure::astronomy::jpl_backend::JplAstronomyBackend::new(
-                        crate::infrastructure::ephemeris::EphemerisManager::from_global()
-                            .available_bsp_paths(),
-                    )
-                }),
+            crate::infrastructure::jpl_backend::jpl_backend_for_chart(chart).unwrap_or_else(|_| {
+                crate::infrastructure::jpl_backend::JplAstronomyBackend::new(
+                    crate::infrastructure::ephemeris::EphemerisManager::from_global()
+                        .available_bsp_paths(),
+                )
+            }),
         )
     }
 }

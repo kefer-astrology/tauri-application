@@ -2,7 +2,6 @@ use crate::application::compute_router::{
     annotate_transit_fallback, normalize_transit_response, python_fallback_enabled,
     select_transit_compute_route, selected_compute_backend, ComputeBackend, ComputeRoute,
 };
-use crate::application::workspace::resolve_settings_preset;
 use crate::workspace::loader::{find_chart_ref_by_id, load_chart};
 use crate::workspace::writer::{
     sanitize_chart_filename, write_transit_setup, write_workspace_manifest,
@@ -209,23 +208,13 @@ fn compute_transit_series_rust(
     let start_dt = crate::application::transit::parse_datetime_input(start_datetime)?;
     let end_dt = crate::application::transit::parse_datetime_input(end_datetime)?;
 
-    let base = Path::new(workspace_path);
-    let manifest = load_workspace_manifest(base)?;
-    let chart_rel = find_chart_ref_by_id(base, &manifest, chart_id)?
-        .ok_or_else(|| format!("Chart {} not found", chart_id))?;
-    let source_chart = load_chart(base, &chart_rel)?;
-    let preset = resolve_settings_preset(base, &manifest, preset_id)?;
-    let report = crate::workspace::settings::current_model_report_with_layers(
-        &manifest,
-        preset.as_ref(),
-        Some(&source_chart.config),
-        settings_overrides,
-    );
     let request = crate::application::transit::TransitSeriesRequest {
-        resolved_chart: crate::application::computation::ResolvedChart::from_report(
-            source_chart,
-            report,
-        ),
+        resolved_chart: crate::application::chart_resolution::resolve_workspace_chart(
+            workspace_path,
+            chart_id,
+            preset_id,
+            settings_overrides,
+        )?,
         start: start_dt,
         end: end_dt,
         time_step_seconds,
@@ -257,19 +246,14 @@ pub async fn compute_transit_series_from_data(
     if time_step_seconds <= 0 {
         return Err("time_step_seconds must be > 0".to_string());
     }
-    crate::application::workspace::validate_chart_payload(&chart_json)?;
-
     let start_dt = crate::application::transit::parse_datetime_input(&start_datetime)?;
     let end_dt = crate::application::transit::parse_datetime_input(&end_datetime)?;
 
-    let chart: crate::workspace::models::ChartInstance =
-        serde_json::from_value(chart_json).map_err(|e| format!("Invalid chart payload: {}", e))?;
-    let report = crate::workspace::settings::standalone_model_report_with_operation(
-        &chart.config,
-        settings_overrides.as_ref(),
-    );
     let request = crate::application::transit::TransitSeriesRequest {
-        resolved_chart: crate::application::computation::ResolvedChart::from_report(chart, report),
+        resolved_chart: crate::application::chart_resolution::resolve_standalone_chart(
+            &chart_json,
+            settings_overrides.as_ref(),
+        )?,
         start: start_dt,
         end: end_dt,
         time_step_seconds,
@@ -444,7 +428,7 @@ mod tests {
         assert_eq!(
             result.get("backend_used"),
             Some(&serde_json::json!(
-                crate::infrastructure::astronomy::backend_for_chart(&chart).backend_id()
+                crate::infrastructure::position_provider::backend_for_chart(&chart).backend_id()
             ))
         );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));

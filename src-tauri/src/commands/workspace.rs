@@ -1,4 +1,4 @@
-use crate::application::workspace::non_empty_str;
+use crate::application::chart_resolution::non_empty_str;
 use crate::workspace::loader::{find_chart_ref_by_id, load_chart};
 use crate::workspace::writer::write_workspace_manifest;
 use crate::workspace::{
@@ -57,7 +57,7 @@ pub async fn save_workspace(
 
     let mut chart_refs = Vec::new();
     for chart in &charts {
-        crate::application::workspace::validate_chart_payload(chart)?;
+        crate::application::chart_resolution::validate_chart_payload(chart)?;
         let id = chart.get("id").and_then(|v| v.as_str()).unwrap_or("chart");
         let safe_name: String = id
             .chars()

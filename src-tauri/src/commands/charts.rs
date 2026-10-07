@@ -1,4 +1,4 @@
-use crate::application::workspace::{
+use crate::application::chart_resolution::{
     extract_chart_id, upsert_chart_id, validate_chart_instance, validate_chart_payload,
 };
 use crate::workspace::loader::find_chart_ref_by_id;

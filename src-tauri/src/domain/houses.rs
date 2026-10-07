@@ -5,7 +5,7 @@
 /// Longitude conventions: ecliptic longitude in [0, 360).
 use std::f64::consts::PI;
 
-use crate::infrastructure::astronomy::AstronomyMotion;
+use crate::infrastructure::position_provider::AstronomyMotion;
 
 // ─── time helpers ────────────────────────────────────────────────────────────
 
