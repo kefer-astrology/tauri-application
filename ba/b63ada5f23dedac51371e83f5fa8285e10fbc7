@@ -1,0 +1,124 @@
+docs/content/developer/architecture.md
+  s_181f4cfdfe7db5::t_9cc76851e7214c 3,10-11,13,16-28,31-90,93,97-106
+  s_181f4cfdfe7db5::t_11c6452c6b9ffc 92,94-96
+  s_181f4cfdfe7db5::t_6d5aa93d794b22 91
+docs/content/developer/house-systems.md
+  s_181f4cfdfe7db5::t_b5c0fdc22a790a 63,68
+docs/public/developer/workspace-yaml/index.html
+  s_06fbed72e274fc::t_21cbda321028ac 176
+  s_06fbed72e274fc::t_bc93475a42994f 175
+  s_181f4cfdfe7db5::t_4dec6afbaab9ec 60-61,95,123,142-145,150-151,162-170,188,198-200,214-256
+docs/content/developer/_index.md
+  s_06fbed72e274fc::t_7ed60b9c0ff60a 19-20,23
+  s_181f4cfdfe7db5::t_8a269630f26673 41,47-48
+docs/content/developer/ephemeris-manager.md
+  s_181f4cfdfe7db5::t_b5c0fdc22a790a 42,103
+docs/content/developer/rust-code-structure.md
+  s_181f4cfdfe7db5::t_b5c0fdc22a790a 36-37,78-80
+  s_181f4cfdfe7db5::t_6d5aa93d794b22 15,31-32,34-35,51,53,55,66-69,76-77
+  s_181f4cfdfe7db5::t_51287f57584b0f 38-39,81-83
+  s_181f4cfdfe7db5::t_21af67f91c15d9 90,100
+  s_181f4cfdfe7db5::t_145a898267d96c 18-19,23
+  s_181f4cfdfe7db5::t_11c6452c6b9ffc 89,91-92
+  s_181f4cfdfe7db5::t_4b32d1afd2f71f 3,10,14,16-17,58-65,71-74,85,87-88,94-95,97,99,101-102,104-105
+  s_181f4cfdfe7db5::t_da5c794693f39b 20-22,24-30,33,40-50,52,54
+docs/content/developer/domain-model.md
+  s_181f4cfdfe7db5::t_4934fc6f6891ff 3,7,10-12,14,16-20,22-24,26,28-32,34-38,40,42-46
+  s_181f4cfdfe7db5::t_8ddc3189d43045 48-50
+docs/content/developer/testing-strategy.md
+  s_06fbed72e274fc::t_c0714f1716906f 3,18-19,25,59-65,68-70,73-75,84,118-119,124-127,146,153-155
+  s_06fbed72e274fc::t_b21631aae91a06 156
+docs/content/developer/backend-structure.md
+  s_181f4cfdfe7db5::t_4934fc6f6891ff 3,10-14,17-33
+docs/domain-catalog.md
+  s_181f4cfdfe7db5::t_31e7b7a99f81e7 15-18
+docs/content/developer/spice-backend.md
+  s_181f4cfdfe7db5::t_b5c0fdc22a790a 61-63
+docs/content/developer/rust-workspace-contract.md
+  s_181f4cfdfe7db5::t_4934fc6f6891ff 3,10,12-17,19-25,27-31,33,35-40,42-45,47,49-50,53,56-85
+docs/content/developer/configuration-reference.md
+  s_181f4cfdfe7db5::t_4934fc6f6891ff 3,10-56
+docs/content/developer/project-context.md
+  s_06fbed72e274fc::t_7ed60b9c0ff60a 63-64,68-78
+  s_181f4cfdfe7db5::t_8a269630f26673 80-94
+  s_181f4cfdfe7db5::t_1bc13c75cdccdd 79
+docs/public/developer/tauri-command-contracts/index.html
+  s_06fbed72e274fc::t_21cbda321028ac 223,242-246,254,257-258
+  s_06fbed72e274fc::t_acdee240306c92 222
+  s_181f4cfdfe7db5::t_cf22941eb21096 136-143,147-148,151,169,220,266,335-339
+docs/public/developer/spice-backend/index.html
+  s_06fbed72e274fc::t_21cbda321028ac 85-86,93-96,98-131,136
+  s_06fbed72e274fc::t_e08e215eef4106 82-84
+  s_181f4cfdfe7db5::t_b051280d6f20bb 73,76-77,80-81,173,176-180,187-190
+docs/public/developer/ephemeris-manager/index.html
+  s_06fbed72e274fc::t_21cbda321028ac 214
+  s_06fbed72e274fc::t_2bd4279e6058cc 211-213
+  s_181f4cfdfe7db5::t_d8bb642991f33b 46,58,65-67,71,127,149,151-159,165-173,201-203,207-210,216,229,253-254,260-265,270,276-285,287-329,481,506,533,537-538,542-543,547-548,561-563,572-573,576-578,581,583-593
+docs/public/developer/rust-code-structure/index.html
+  s_06fbed72e274fc::t_21cbda321028ac 6-7,34
+  s_06fbed72e274fc::t_a5d26a2023567c 35
+  s_181f4cfdfe7db5::t_44a81cfea473a9 39,45-111,113-118,120-128
+docs/public/developer/architecture/index.html
+  s_181f4cfdfe7db5::t_350c826c78ab4e 7,35,45-103,105-115,117-124
+docs/public/developer/astronomy-coordinate-contract/index.html
+  s_181f4cfdfe7db5::t_c2917c89b9727d 1-149
+docs/public/developer/backend-structure/index.html
+  s_181f4cfdfe7db5::t_3d682ea909c1bf 7,35,39,45-65
+docs/public/developer/configuration-reference/index.html
+  s_181f4cfdfe7db5::t_f4f6ca3945e7f4 1-89
+docs/public/developer/development-driver/index.html
+  s_181f4cfdfe7db5::t_775c365725be3e 60-61,92-117
+docs/public/developer/domain-model/index.html
+  s_181f4cfdfe7db5::t_4a2a7e5e49d256 7,35,40,45-76
+docs/public/developer/frontend-react/index.html
+  s_181f4cfdfe7db5::t_52a6f7fac214ba 81-85
+docs/public/developer/frontend-svelte/index.html
+  s_181f4cfdfe7db5::t_ec2541ce598a51 81-85
+docs/public/developer/frontend-workflow-baseline/index.html
+  s_181f4cfdfe7db5::t_f440c41488ca15 79
+docs/public/developer/house-systems/index.html
+  s_181f4cfdfe7db5::t_8460fff650e4a6 146,150-151,199-200
+docs/public/developer/import-chart-contract/index.html
+  s_181f4cfdfe7db5::t_e4cc4b7016faa6 62-63,65-68,73,86-89,93
+docs/public/developer/index.html
+  s_181f4cfdfe7db5::t_ffc46f1f36a1df 53-54,57,70-71,74-76,80-81,86-87
+docs/public/developer/project-context/index.html
+  s_181f4cfdfe7db5::t_643fad899796d2 90-91,102,106,110,114-173
+docs/public/developer/radix-render-contract/index.html
+  s_181f4cfdfe7db5::t_ffc8a0c182f1ec 64-70,93
+docs/public/developer/rust-workspace-contract/index.html
+  s_181f4cfdfe7db5::t_117703741c27a7 7,35,45-103
+docs/public/developer/testing-strategy/index.html
+  s_181f4cfdfe7db5::t_51119adc4cec21 7,35,61,66,95-96,149-150,156,161-162,168-174,180,186,204,210,216,226-228,235,265-266,271-274,287,290-293
+docs/public/developer/ui-conventions/index.html
+  s_181f4cfdfe7db5::t_5d5b6d39949030 72-73,87-94,100,160,201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bab63ada5f23dedac51371e83f5fa8285e10fbc7",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_06fbed72e274fc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a112e1-7229-79d3-9297-a7ebe0c69548",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_181f4cfdfe7db5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1152e-d8ab-72e3-9ad4-959d33612070",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
