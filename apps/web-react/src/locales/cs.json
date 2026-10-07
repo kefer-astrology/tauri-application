@@ -728,5 +728,20 @@
 	"glyphs_dialog_description": "Nahrajte vlastní SVG glyfy, kterými nahradíte výchozí symboly. Pouze soubory SVG.",
 	"open_export": "Otevřít / Exportovat",
 	"close_overlay": "Zavřít překryv",
-	"open_export_placeholder": "Tento zástupný dialog lze znovu použít pro postupy Otevřít i Exportovat."
+	"open_export_placeholder": "Tento zástupný dialog lze znovu použít pro postupy Otevřít i Exportovat.",
+	"settings_aspect_scope_planets": "Planety",
+	"settings_aspect_scope_angles_short": "úhly",
+	"settings_aspect_scope_include_angles": "Zahrnout úhly (ascendent / medium coeli)",
+	"settings_aspect_scope_include_extended": "Zahrnout rozšířené objekty (planetky, uzly, body, další počítané body) — použije užší orb",
+	"settings_aspect_scope_extended_orb": "Orb pro rozšířené objekty",
+	"settings_astrology_tradition_label": "Škola",
+	"settings_astrology_tradition_hint": "Nastaví výběr aspektů, jejich orby a zahrnutí úhlů podle zvolené tradice. Objekty a vlastní model orbů zatím neovlivňuje.",
+	"settings_astrology_tradition_none": "Nevybráno",
+	"tradition_hellenistic": "Helénistická",
+	"tradition_medieval_traditional": "Středověká / renesanční tradiční",
+	"tradition_modern_western": "Moderní západní / psychologická",
+	"tradition_harmonic": "Harmonická / vibrační",
+	"tradition_cosmobiology": "Kosmobiologie",
+	"tradition_uranian_hamburg": "Uránská / Hamburská",
+	"tradition_jyotish_parashari": "Džjótiš — Paráršari"
 }

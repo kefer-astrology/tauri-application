@@ -728,5 +728,20 @@
 	"glyphs_dialog_description": "Upload custom SVG glyphs to replace default symbols. SVG files only.",
 	"open_export": "Open / Export",
 	"close_overlay": "Close overlay",
-	"open_export_placeholder": "This is a placeholder dialog. You can reuse this component for both Open and Export flows."
+	"open_export_placeholder": "This is a placeholder dialog. You can reuse this component for both Open and Export flows.",
+	"settings_aspect_scope_planets": "Planets",
+	"settings_aspect_scope_angles_short": "Angles",
+	"settings_aspect_scope_include_angles": "Include angles (Ascendant / Midheaven)",
+	"settings_aspect_scope_include_extended": "Include extended objects (asteroids, nodes, parts, other calculated points) — uses a tighter orb",
+	"settings_aspect_scope_extended_orb": "Extended objects orb",
+	"settings_astrology_tradition_label": "School",
+	"settings_astrology_tradition_hint": "Sets which aspects are enabled, their orbs, and angle inclusion to match the chosen tradition. Does not yet affect objects or the orb model.",
+	"settings_astrology_tradition_none": "Not selected",
+	"tradition_hellenistic": "Hellenistic",
+	"tradition_medieval_traditional": "Medieval / Renaissance traditional",
+	"tradition_modern_western": "Modern Western / psychological",
+	"tradition_harmonic": "Harmonic / vibrational",
+	"tradition_cosmobiology": "Cosmobiology",
+	"tradition_uranian_hamburg": "Uranian / Hamburg",
+	"tradition_jyotish_parashari": "Jyotish — Parāśari"
 }

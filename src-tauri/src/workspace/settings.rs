@@ -11,8 +11,9 @@ use serde::{Deserialize, Serialize};
 
 use super::model_catalog::{builtin_model_settings, builtin_standard_model};
 use super::models::{
-    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, PositionMode,
-    TimeSystem, WorkspaceManifest, ZodiacType,
+    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, ObjectType,
+    ObjectTypeRule, PositionMode, TimeSystem, WorkspaceManifest, ZodiacType,
+    EXTENDED_ASPECT_OBJECT_TYPES,
 };
 use super::validation::Diagnostic;
 
@@ -242,6 +243,7 @@ pub fn current_model_report_with_layers(
     if let Some(layer) = operation {
         model = merge_model_with_overrides(model, layer.model_overrides.as_ref());
     }
+    apply_workspace_aspect_scope_defaults(&mut model, manifest);
     let effective_settings =
         effective_model_settings(Some(manifest), &model, preset, chart_config, operation);
     let mut diagnostics = super::validation::validate_manifest_model_references(manifest, &model);
@@ -390,6 +392,9 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
             if let Some(object_type_rule) = &override_entry.object_type_rule {
                 aspect.object_type_rule = Some(object_type_rule.clone());
             }
+            if let Some(extended_orb) = override_entry.extended_orb {
+                aspect.extended_orb = Some(extended_orb);
+            }
         }
     }
 
@@ -399,6 +404,62 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
         }
     }
     merged
+}
+
+/// Apply the workspace's "Settings > Aspects" object-scope choices onto the resolved model.
+///
+/// Scoped per aspect id: an aspect is only rebuilt here if it appears in at least one of
+/// the three maps. An aspect that was never saved from the settings UI keeps whatever
+/// `object_type_rule`/`extended_orb` the catalog (or `model_overrides`) already gave it —
+/// critically, this means an *untouched* aspect never loses its unrestricted (`None`)
+/// baseline just because a *different* aspect's scope was edited. Once an aspect IS
+/// present, a missing key within that aspect's own entries falls back to the baseline
+/// catalog rule (for angle inclusion) or to "off" (for extended-object inclusion), since
+/// the settings panel always persists the full per-aspect picture on every edit (like
+/// `default_aspect_orbs` already does), not a sparse patch.
+fn apply_workspace_aspect_scope_defaults(model: &mut AstroModel, manifest: &WorkspaceManifest) {
+    let include_angles = manifest.default.default_aspect_include_angles.as_ref();
+    let include_extended = manifest.default.default_aspect_include_extended.as_ref();
+    let extended_orbs = manifest.default.default_aspect_extended_orbs.as_ref();
+    if include_angles.is_none() && include_extended.is_none() && extended_orbs.is_none() {
+        return;
+    }
+
+    for aspect in &mut model.aspect_definitions {
+        let angles_entry = include_angles.and_then(|map| map.get(&aspect.id)).copied();
+        let extended_entry = include_extended
+            .and_then(|map| map.get(&aspect.id))
+            .copied();
+        let orb_entry = extended_orbs.and_then(|map| map.get(&aspect.id)).copied();
+        if angles_entry.is_none() && extended_entry.is_none() && orb_entry.is_none() {
+            continue;
+        }
+
+        let angles_on = angles_entry
+            .unwrap_or_else(|| rule_includes(aspect.object_type_rule.as_ref(), ObjectType::Angle));
+        let extended_on = extended_entry.unwrap_or(false);
+
+        let mut types = vec![ObjectType::Planet];
+        if angles_on {
+            types.push(ObjectType::Angle);
+        }
+        if extended_on {
+            types.extend(EXTENDED_ASPECT_OBJECT_TYPES);
+        }
+        aspect.object_type_rule = Some(ObjectTypeRule::OnlyBetween { types });
+
+        if let Some(orb) = orb_entry {
+            aspect.extended_orb = Some(orb);
+        }
+    }
+}
+
+fn rule_includes(rule: Option<&ObjectTypeRule>, object_type: ObjectType) -> bool {
+    match rule {
+        None => true,
+        Some(ObjectTypeRule::OnlyBetween { types }) => types.contains(&object_type),
+        Some(ObjectTypeRule::Exclude { types }) => !types.contains(&object_type),
+    }
 }
 
 fn override_applies(entry: &super::models::OverrideEntry, model: &AstroModel) -> bool {
@@ -752,6 +813,10 @@ mod tests {
             default_aspects: None,
             default_aspect_orbs: None,
             default_aspect_colors: None,
+            default_aspect_include_angles: None,
+            default_aspect_include_extended: None,
+            default_aspect_extended_orbs: None,
+            astrology_tradition: None,
             aspect_line_tier_style: None,
             time_system: None,
         }
@@ -847,6 +912,7 @@ mod tests {
                 valid_contexts: None,
                 interpretation_weight: None,
                 object_type_rule: None,
+                extended_orb: None,
             }],
             override_orbs: HashMap::new(),
         });
@@ -948,6 +1014,7 @@ mod tests {
                 valid_contexts: Some(vec![AspectContext::Transit]),
                 interpretation_weight: Some(0.5),
                 object_type_rule: None,
+                extended_orb: None,
             }],
             override_orbs: HashMap::new(),
         });
@@ -1119,5 +1186,72 @@ mod tests {
         assert!(report.diagnostics.iter().all(|diagnostic| {
             diagnostic.severity != super::super::validation::DiagnosticSeverity::Error
         }));
+    }
+
+    #[test]
+    fn untouched_workspace_leaves_aspect_object_type_rule_unrestricted() {
+        let mut manifest = empty_manifest();
+        manifest
+            .models
+            .insert("standard".to_string(), builtin_standard_model("standard"));
+        manifest.active_model = Some("standard".to_string());
+
+        let report = current_model_report(&manifest, None);
+        let square = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|aspect| aspect.id == "square")
+            .expect("square definition");
+
+        assert!(square.object_type_rule.is_none());
+        assert!(square.extended_orb.is_none());
+    }
+
+    #[test]
+    fn workspace_aspect_scope_settings_restrict_categories_and_tighten_extended_orb() {
+        let mut manifest = empty_manifest();
+        manifest
+            .models
+            .insert("standard".to_string(), builtin_standard_model("standard"));
+        manifest.active_model = Some("standard".to_string());
+        // Full-map persistence, matching how the settings UI always saves every
+        // aspect's current scope state together (never a sparse patch).
+        manifest.default.default_aspect_include_angles =
+            Some(HashMap::from([("quincunx".to_string(), false)]));
+        manifest.default.default_aspect_include_extended =
+            Some(HashMap::from([("quincunx".to_string(), true)]));
+        manifest.default.default_aspect_extended_orbs =
+            Some(HashMap::from([("quincunx".to_string(), 0.5)]));
+
+        let report = current_model_report(&manifest, None);
+        let quincunx = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|aspect| aspect.id == "quincunx")
+            .expect("quincunx definition");
+
+        assert_eq!(quincunx.extended_orb, Some(0.5));
+        match &quincunx.object_type_rule {
+            Some(super::super::models::ObjectTypeRule::OnlyBetween { types }) => {
+                assert!(types.contains(&super::super::models::ObjectType::Planet));
+                assert!(!types.contains(&super::super::models::ObjectType::Angle));
+                assert!(types.contains(&super::super::models::ObjectType::Asteroid));
+                assert!(types.contains(&super::super::models::ObjectType::LunarNode));
+            }
+            other => panic!("expected OnlyBetween rule, got {other:?}"),
+        }
+
+        // An aspect never mentioned in any of the three maps keeps computing
+        // exactly as before (model-catalog baseline, unrestricted).
+        let trine = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|aspect| aspect.id == "trine")
+            .expect("trine definition");
+        assert!(trine.object_type_rule.is_none());
+        assert!(trine.extended_orb.is_none());
     }
 }

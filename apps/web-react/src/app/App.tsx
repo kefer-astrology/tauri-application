@@ -170,6 +170,19 @@ function mergeWorkspaceDefaults(
 			dto.default_aspect_colors && typeof dto.default_aspect_colors === 'object'
 				? { ...prev.defaultAspectColors, ...dto.default_aspect_colors }
 				: prev.defaultAspectColors,
+		aspectIncludeAngles:
+			dto.default_aspect_include_angles && typeof dto.default_aspect_include_angles === 'object'
+				? { ...prev.aspectIncludeAngles, ...dto.default_aspect_include_angles }
+				: prev.aspectIncludeAngles,
+		aspectIncludeExtended:
+			dto.default_aspect_include_extended && typeof dto.default_aspect_include_extended === 'object'
+				? { ...prev.aspectIncludeExtended, ...dto.default_aspect_include_extended }
+				: prev.aspectIncludeExtended,
+		aspectExtendedOrbs:
+			dto.default_aspect_extended_orbs && typeof dto.default_aspect_extended_orbs === 'object'
+				? { ...prev.aspectExtendedOrbs, ...dto.default_aspect_extended_orbs }
+				: prev.aspectExtendedOrbs,
+		astrologyTradition: dto.astrology_tradition ?? prev.astrologyTradition,
 		aspectLineTierStyle: aspectLineTierStyleFromDto(dto.aspect_line_tier_style)
 	};
 }
@@ -193,6 +206,17 @@ function mergeWorkspaceDefaultsPatch(
 		defaultAspectColors: patch.defaultAspectColors
 			? { ...prev.defaultAspectColors, ...patch.defaultAspectColors }
 			: prev.defaultAspectColors,
+		aspectIncludeAngles: patch.aspectIncludeAngles
+			? { ...prev.aspectIncludeAngles, ...patch.aspectIncludeAngles }
+			: prev.aspectIncludeAngles,
+		aspectIncludeExtended: patch.aspectIncludeExtended
+			? { ...prev.aspectIncludeExtended, ...patch.aspectIncludeExtended }
+			: prev.aspectIncludeExtended,
+		aspectExtendedOrbs: patch.aspectExtendedOrbs
+			? { ...prev.aspectExtendedOrbs, ...patch.aspectExtendedOrbs }
+			: prev.aspectExtendedOrbs,
+		astrologyTradition:
+			patch.astrologyTradition !== undefined ? patch.astrologyTradition : prev.astrologyTradition,
 		aspectLineTierStyle: patch.aspectLineTierStyle
 			? { ...prev.aspectLineTierStyle, ...patch.aspectLineTierStyle }
 			: prev.aspectLineTierStyle

@@ -297,6 +297,9 @@ export async function saveWorkspace(
 					default_aspects: defaults.defaultAspects,
 					default_aspect_orbs: defaults.defaultAspectOrbs,
 					default_aspect_colors: defaults.defaultAspectColors,
+					default_aspect_include_angles: defaults.aspectIncludeAngles,
+					default_aspect_include_extended: defaults.aspectIncludeExtended,
+					default_aspect_extended_orbs: defaults.aspectExtendedOrbs,
 					aspect_line_tier_style: aspectLineTierStyleToDto(defaults.aspectLineTierStyle)
 				}
 			: undefined
@@ -321,6 +324,9 @@ export async function saveWorkspaceDefaults(
 			default_aspects: defaults.defaultAspects,
 			default_aspect_orbs: defaults.defaultAspectOrbs,
 			default_aspect_colors: defaults.defaultAspectColors,
+			default_aspect_include_angles: defaults.aspectIncludeAngles,
+			default_aspect_include_extended: defaults.aspectIncludeExtended,
+			default_aspect_extended_orbs: defaults.aspectExtendedOrbs,
 			aspect_line_tier_style: aspectLineTierStyleToDto(defaults.aspectLineTierStyle)
 		}
 	});

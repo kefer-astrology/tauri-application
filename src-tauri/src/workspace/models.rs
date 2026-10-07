@@ -293,6 +293,57 @@ pub struct AstrologySchool {
     pub default_model: String,
 }
 
+/// A closed set of well-known astrological traditions, each with a characteristic
+/// approach to objects, aspects, and orbs.
+///
+/// This is deliberately **not** the same concept as [`AstrologySchoolId`]/
+/// [`AstrologySchool`] above, which remains an open, user-definable label whose
+/// only job is picking a named [`AstroModel`]. `AstrologicalTradition` is the
+/// "Škola" workspace setting: choosing one rewrites the workspace's aspect
+/// selection, per-aspect orbs, and angle-inclusion (`WorkspaceDefaults
+/// ::default_aspects` / `default_aspect_orbs` / `default_aspect_include_angles`)
+/// to that tradition's suggested defaults — see `workspace::tradition
+/// ::tradition_aspect_preset`. A first iteration: it only touches aspects.
+/// Object selection and a tradition-specific orb *model* (whole-sign tolerance,
+/// planetary moieties, harmonic-scaled orbs, midpoint/dial orbs, or Jyotish
+/// directional drishti) are intentionally out of scope for now and remain
+/// future work — applying a tradition today is an approximation using the
+/// existing per-aspect-orb computation engine, not a true implementation of
+/// each school's native method.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AstrologicalTradition {
+    /// Sign-based major aspects (conjunction/sextile/square/trine/opposition);
+    /// angles and Lots are relevant targets. True whole-sign "no numeric orb"
+    /// aspect detection is not implemented — wide orbs approximate it.
+    Hellenistic,
+    /// Major aspects (including conjunction); applying/separating and
+    /// reception traditionally matter. True per-planet orb moieties are not
+    /// implemented — a single widened orb per aspect approximates them.
+    MedievalTraditional,
+    /// Major aspects plus a curated set of minor aspects — the app's existing
+    /// historical defaults.
+    ModernWestern,
+    /// Every harmonic family (quintile, septile, novile, undecile, …) enabled
+    /// at once, using the catalog's existing per-aspect orbs (already roughly
+    /// scaled down with harmonic number) rather than a true harmonic-number
+    /// orb formula.
+    Harmonic,
+    /// The hard-aspect family (0/45/90/135/180 degrees) with tight orbs,
+    /// echoing the 90-degree dial. True midpoint-dial computation is not
+    /// implemented.
+    Cosmobiology,
+    /// Same hard-aspect family as Cosmobiology with even tighter orbs,
+    /// echoing Uranian dial practice. True dial/midpoint computation and the
+    /// Uranian hypothetical bodies are not implemented.
+    UranianHamburg,
+    /// Placeholder using Western major aspects at default orbs. Real Parāśari
+    /// planetary aspects (directional per-planet "graha drishti", not a
+    /// mutual angle-plus-orb model) are not representable by this engine yet
+    /// and are explicitly future work.
+    JyotishParashari,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Location {
     pub name: String,
@@ -630,6 +681,30 @@ pub struct WorkspaceDefaults {
     pub default_aspect_orbs: Option<HashMap<String, f64>>,
     #[serde(default)]
     pub default_aspect_colors: Option<HashMap<String, String>>,
+    /// Per-aspect id: whether Ascendant/Midheaven may participate in that
+    /// aspect. `None` (the map, or a missing key within it) falls back to the
+    /// resolved model's own `AspectDefinition::object_type_rule` baseline.
+    #[serde(default)]
+    pub default_aspect_include_angles: Option<HashMap<String, bool>>,
+    /// Per-aspect id: whether extended objects (see
+    /// [`EXTENDED_ASPECT_OBJECT_TYPES`]) may participate in that aspect. A
+    /// missing key defaults to `false` — extended objects are opt-in.
+    #[serde(default)]
+    pub default_aspect_include_extended: Option<HashMap<String, bool>>,
+    /// Per-aspect id: the tighter orb to use when an extended object is
+    /// involved (only meaningful once that aspect's `include_extended` is
+    /// on). See `AspectDefinition::extended_orb`.
+    #[serde(default)]
+    pub default_aspect_extended_orbs: Option<HashMap<String, f64>>,
+    /// The workspace's chosen astrological tradition ("Škola"). Remembered so
+    /// the UI can show the current selection and so future iterations can use
+    /// it to drive object/orb-model choices too. Setting it (re)populates
+    /// `default_aspects`/`default_aspect_orbs`/`default_aspect_include_angles`
+    /// with that tradition's suggested values — see
+    /// `workspace::tradition::tradition_aspect_preset`. Distinct from
+    /// `WorkspaceManifest::active_school`.
+    #[serde(default)]
+    pub astrology_tradition: Option<AstrologicalTradition>,
     #[serde(default)]
     pub aspect_line_tier_style: Option<AspectLineTierStyle>,
     #[serde(default)]
@@ -790,7 +865,24 @@ pub struct AspectDefinition {
     /// matches prior behavior for existing catalogs.
     #[serde(default)]
     pub object_type_rule: Option<ObjectTypeRule>,
+    /// Tighter orb used instead of `default_orb` whenever either side of a
+    /// pair belongs to [`EXTENDED_ASPECT_OBJECT_TYPES`] (asteroids, lunar
+    /// nodes, parts, other calculated points). `None` means extended objects
+    /// use the same orb as everything else. Only takes effect for a pair that
+    /// already passes `object_type_rule` — it narrows the orb, not eligibility.
+    #[serde(default)]
+    pub extended_orb: Option<f64>,
 }
+
+/// Object categories treated as "extended" objects for `AspectDefinition::extended_orb`
+/// purposes: optional chart points that usually warrant a tighter orb than the
+/// core planets/angles (asteroids, lunar nodes, parts/lots, other calculated points).
+pub const EXTENDED_ASPECT_OBJECT_TYPES: [ObjectType; 4] = [
+    ObjectType::Asteroid,
+    ObjectType::LunarNode,
+    ObjectType::Part,
+    ObjectType::CalculatedPoint,
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sign {
@@ -916,6 +1008,8 @@ pub struct OverrideEntry {
     pub interpretation_weight: Option<f64>,
     #[serde(default)]
     pub object_type_rule: Option<ObjectTypeRule>,
+    #[serde(default)]
+    pub extended_orb: Option<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]

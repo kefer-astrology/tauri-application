@@ -34,6 +34,17 @@ pub struct SaveWorkspaceDefaultsInput {
     #[serde(default)]
     pub default_aspect_colors: Option<HashMap<String, String>>,
     #[serde(default)]
+    pub default_aspect_include_angles: Option<HashMap<String, bool>>,
+    #[serde(default)]
+    pub default_aspect_include_extended: Option<HashMap<String, bool>>,
+    #[serde(default)]
+    pub default_aspect_extended_orbs: Option<HashMap<String, f64>>,
+    /// Setting this ("Škola") (re)populates `default_aspects`,
+    /// `default_aspect_orbs`, and `default_aspect_include_angles` with that
+    /// tradition's suggested values — see `workspace::tradition`.
+    #[serde(default)]
+    pub astrology_tradition: Option<String>,
+    #[serde(default)]
     pub aspect_line_tier_style: Option<crate::workspace::models::AspectLineTierStyle>,
 }
 
@@ -55,9 +66,23 @@ pub async fn save_workspace(
     fs::create_dir_all(base.join("transits"))
         .map_err(|e| format!("Failed to create transits dir: {}", e))?;
 
+    // Saving an open workspace is an update, not an export. Preserve model
+    // catalogs, school definitions, definition overrides, referenced entities,
+    // presentation settings, and extension fields represented by the contract.
+    let manifest_path = base.join("workspace.yaml");
+    let mut manifest = if manifest_path.exists() {
+        load_workspace_manifest(base)?
+    } else {
+        empty_workspace_manifest(&owner)
+    };
+
     let mut chart_refs = Vec::new();
     for chart in &charts {
-        crate::application::chart_resolution::validate_chart_payload(chart)?;
+        let parsed = crate::application::chart_resolution::validate_chart_payload(chart)?;
+        crate::application::chart_resolution::enforce_single_project_house_system(
+            &mut manifest,
+            &parsed,
+        )?;
         let id = chart.get("id").and_then(|v| v.as_str()).unwrap_or("chart");
         let safe_name: String = id
             .chars()
@@ -81,16 +106,6 @@ pub async fn save_workspace(
         fs::write(&path, yaml).map_err(|e| format!("Write {}: {}", path.display(), e))?;
         chart_refs.push(rel);
     }
-
-    // Saving an open workspace is an update, not an export. Preserve model
-    // catalogs, school definitions, definition overrides, referenced entities,
-    // presentation settings, and extension fields represented by the contract.
-    let manifest_path = base.join("workspace.yaml");
-    let mut manifest = if manifest_path.exists() {
-        load_workspace_manifest(base)?
-    } else {
-        empty_workspace_manifest(&owner)
-    };
     manifest.owner = if owner.is_empty() {
         manifest.owner
     } else {
@@ -119,6 +134,34 @@ pub async fn save_workspace_defaults(
 ) -> Result<serde_json::Value, String> {
     let base = Path::new(&workspace_path);
     let mut manifest = load_workspace_manifest(base)?;
+    if let Some(requested) = defaults
+        .default_house_system
+        .as_deref()
+        .and_then(parse_house_system)
+    {
+        if manifest
+            .default
+            .default_house_system
+            .as_ref()
+            .is_none_or(|existing| *existing != requested)
+        {
+            let conflicting = load_all_charts(base, &manifest)?.into_iter().find(|chart| {
+                chart
+                    .config
+                    .house_system
+                    .as_ref()
+                    .is_some_and(|house_system| *house_system != requested)
+            });
+            if let Some(chart) = conflicting {
+                return Err(format!(
+                    "Cannot change the project's house system to '{}': chart '{}' explicitly uses '{}'. Update or clear that chart's house system first.",
+                    requested.label(),
+                    chart.id,
+                    chart.config.house_system.as_ref().expect("checked above").label(),
+                ));
+            }
+        }
+    }
     apply_workspace_presentation_patch(&mut manifest.presentation, &defaults);
     apply_workspace_defaults_patch(&mut manifest.default, defaults);
     if let Some(location) = manifest.default.default_location.as_ref() {
@@ -311,6 +354,10 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
         "default_aspects": defaults.default_aspects,
         "default_aspect_orbs": defaults.default_aspect_orbs,
         "default_aspect_colors": presentation.aspect_colors.or(defaults.default_aspect_colors),
+        "default_aspect_include_angles": defaults.default_aspect_include_angles,
+        "default_aspect_include_extended": defaults.default_aspect_include_extended,
+        "default_aspect_extended_orbs": defaults.default_aspect_extended_orbs,
+        "astrology_tradition": defaults.astrology_tradition,
         "aspect_line_tier_style": presentation.aspect_line_tier_style.or(defaults.aspect_line_tier_style),
         "time_system": defaults.time_system,
     }))
@@ -410,6 +457,10 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
             default_aspects: None,
             default_aspect_orbs: None,
             default_aspect_colors: None,
+            default_aspect_include_angles: None,
+            default_aspect_include_extended: None,
+            default_aspect_extended_orbs: None,
+            astrology_tradition: None,
             aspect_line_tier_style: None,
             time_system: None,
         },
@@ -438,6 +489,12 @@ fn parse_house_system(value: &str) -> Option<crate::workspace::models::HouseSyst
         "Alcabitius" => Some(crate::workspace::models::HouseSystem::Alcabitius),
         _ => None,
     }
+}
+
+fn parse_astrology_tradition(
+    value: &str,
+) -> Option<crate::workspace::models::AstrologicalTradition> {
+    serde_json::from_value(serde_json::Value::String(value.to_string())).ok()
 }
 
 fn parse_engine_type(value: &str) -> Option<crate::workspace::models::EngineType> {
@@ -524,6 +581,36 @@ fn apply_workspace_defaults_patch(
     }
     if let Some(value) = patch.default_aspect_colors {
         defaults.default_aspect_colors = Some(value);
+    }
+    if let Some(value) = patch.default_aspect_include_angles {
+        defaults.default_aspect_include_angles = Some(value);
+    }
+    if let Some(value) = patch.default_aspect_include_extended {
+        defaults.default_aspect_include_extended = Some(value);
+    }
+    if let Some(value) = patch.default_aspect_extended_orbs {
+        defaults.default_aspect_extended_orbs = Some(value);
+    }
+    if let Some(value) = patch.astrology_tradition.as_deref() {
+        if let Some(tradition) = parse_astrology_tradition(value) {
+            // Callers always resend the whole `WorkspaceDefaultsState`, including
+            // whatever default_aspects/orbs/include_angles and tradition are
+            // already set, on every save (e.g. tweaking one aspect's orb) — so
+            // this must run after the generic aspect-field assignments above,
+            // not before them, or a resent-but-unchanged tradition would do
+            // nothing while a resent STALE default_aspects/orbs (from before a
+            // same-call tradition switch) would otherwise win by running last.
+            // Only (re)apply the tradition's preset on an actual tradition
+            // change, so an unrelated save never wipes out per-aspect
+            // customizations made since the tradition was last set.
+            if defaults.astrology_tradition != Some(tradition) {
+                defaults.astrology_tradition = Some(tradition);
+                let preset = crate::workspace::tradition::tradition_aspect_preset(tradition);
+                defaults.default_aspects = Some(preset.enabled_aspects);
+                defaults.default_aspect_orbs = Some(preset.orbs);
+                defaults.default_aspect_include_angles = Some(preset.include_angles);
+            }
+        }
     }
     if let Some(value) = patch.aspect_line_tier_style {
         defaults.aspect_line_tier_style = Some(value);
@@ -810,6 +897,325 @@ mod tests {
     }
 
     #[test]
+    fn save_workspace_defaults_round_trips_aspect_object_scope_settings() {
+        let temp = TestWorkspaceDir::new("workspace-defaults-aspect-scope");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str.clone(),
+            SaveWorkspaceDefaultsInput {
+                default_aspect_include_angles: Some(HashMap::from([
+                    ("square".to_string(), true),
+                    ("quincunx".to_string(), false),
+                ])),
+                default_aspect_include_extended: Some(HashMap::from([(
+                    "quincunx".to_string(),
+                    true,
+                )])),
+                default_aspect_extended_orbs: Some(HashMap::from([("quincunx".to_string(), 0.5)])),
+                ..Default::default()
+            },
+        ))
+        .expect("aspect scope settings should persist");
+
+        assert_eq!(
+            defaults.get("default_aspect_include_angles"),
+            Some(&serde_json::json!({"square": true, "quincunx": false}))
+        );
+        assert_eq!(
+            defaults.get("default_aspect_include_extended"),
+            Some(&serde_json::json!({"quincunx": true}))
+        );
+        assert_eq!(
+            defaults.get("default_aspect_extended_orbs"),
+            Some(&serde_json::json!({"quincunx": 0.5}))
+        );
+
+        let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
+        let report = crate::workspace::settings::current_model_report(&manifest, None);
+        let quincunx = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|aspect| aspect.id == "quincunx")
+            .expect("quincunx definition");
+        assert_eq!(quincunx.extended_orb, Some(0.5));
+        assert!(matches!(
+            &quincunx.object_type_rule,
+            Some(crate::workspace::models::ObjectTypeRule::OnlyBetween { types })
+                if types.contains(&crate::workspace::models::ObjectType::Asteroid)
+                    && !types.contains(&crate::workspace::models::ObjectType::Angle)
+        ));
+    }
+
+    #[test]
+    fn selecting_an_astrology_tradition_overwrites_aspect_scope_defaults() {
+        let temp = TestWorkspaceDir::new("workspace-defaults-tradition");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str.clone(),
+            SaveWorkspaceDefaultsInput {
+                astrology_tradition: Some("cosmobiology".to_string()),
+                ..Default::default()
+            },
+        ))
+        .expect("tradition should persist");
+
+        assert_eq!(
+            defaults.get("astrology_tradition"),
+            Some(&serde_json::json!("cosmobiology"))
+        );
+        let enabled_aspects: std::collections::HashSet<String> = defaults
+            .get("default_aspects")
+            .and_then(|value| value.as_array())
+            .expect("default_aspects should be an array")
+            .iter()
+            .map(|value| value.as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(
+            enabled_aspects,
+            std::collections::HashSet::from([
+                "conjunction".to_string(),
+                "octile".to_string(),
+                "square".to_string(),
+                "trioctile".to_string(),
+                "opposition".to_string(),
+            ])
+        );
+        assert_eq!(
+            defaults
+                .get("default_aspect_orbs")
+                .and_then(|o| o.get("square")),
+            Some(&serde_json::json!(2.0))
+        );
+
+        let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
+        assert!(matches!(
+            manifest.default.astrology_tradition,
+            Some(crate::workspace::models::AstrologicalTradition::Cosmobiology)
+        ));
+
+        // Switching traditions again fully replaces the previous tradition's picks.
+        let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str,
+            SaveWorkspaceDefaultsInput {
+                astrology_tradition: Some("hellenistic".to_string()),
+                ..Default::default()
+            },
+        ))
+        .expect("switching tradition should persist");
+        let enabled_aspects: std::collections::HashSet<String> = defaults
+            .get("default_aspects")
+            .and_then(|value| value.as_array())
+            .expect("default_aspects should be an array")
+            .iter()
+            .map(|value| value.as_str().unwrap().to_string())
+            .collect();
+        assert!(
+            !enabled_aspects.contains("octile"),
+            "octile should no longer be enabled after switching to Hellenistic"
+        );
+        assert!(enabled_aspects.contains("sextile"));
+    }
+
+    #[test]
+    fn resaving_the_same_tradition_does_not_clobber_later_per_aspect_customizations() {
+        let temp = TestWorkspaceDir::new("workspace-defaults-tradition-idempotent");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        // Pick a tradition (frontend sends only the tradition field).
+        tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str.clone(),
+            SaveWorkspaceDefaultsInput {
+                astrology_tradition: Some("modern_western".to_string()),
+                ..Default::default()
+            },
+        ))
+        .expect("tradition should persist");
+
+        // User then hand-tunes one aspect's orb via the per-aspect panel,
+        // which resends the full orb map for every enabled aspect (as the
+        // real Settings > Aspects panel does) alongside the still-selected
+        // tradition, since the frontend always saves the whole
+        // WorkspaceDefaultsState.
+        let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str,
+            SaveWorkspaceDefaultsInput {
+                astrology_tradition: Some("modern_western".to_string()),
+                default_aspect_orbs: Some(HashMap::from([
+                    ("conjunction".to_string(), 8.0),
+                    ("sextile".to_string(), 5.0),
+                    ("square".to_string(), 1.0),
+                    ("trine".to_string(), 6.0),
+                    ("quincunx".to_string(), 2.0),
+                    ("semisextile".to_string(), 1.0),
+                    ("opposition".to_string(), 8.0),
+                ])),
+                ..Default::default()
+            },
+        ))
+        .expect("orb customization should persist");
+
+        assert_eq!(
+            defaults
+                .get("default_aspect_orbs")
+                .and_then(|orbs| orbs.get("square")),
+            Some(&serde_json::json!(1.0)),
+            "hand-tuned orb must survive resaving the same tradition, not get reset to the preset's 6.0"
+        );
+    }
+
+    #[test]
+    fn switching_tradition_wins_over_stale_aspect_fields_resent_in_the_same_call() {
+        // Mirrors exactly what the real frontend does: `saveWorkspaceDefaults`
+        // always sends the complete current `WorkspaceDefaultsState` in one
+        // call, so switching the tradition arrives together with the OLD
+        // (pre-switch) default_aspects/orbs/include_angles in the same
+        // SaveWorkspaceDefaultsInput. The new tradition's preset must win,
+        // not the stale fields that happen to be resent alongside it.
+        let temp = TestWorkspaceDir::new("workspace-defaults-tradition-same-call-stale-fields");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str.clone(),
+            SaveWorkspaceDefaultsInput {
+                astrology_tradition: Some("modern_western".to_string()),
+                ..Default::default()
+            },
+        ))
+        .expect("initial tradition should persist");
+
+        // Simulate the frontend switching to Hellenistic: it still echoes the
+        // (stale) Modern Western aspect fields in the very same call, since
+        // its local state hasn't been refreshed with the new preset yet.
+        let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str,
+            SaveWorkspaceDefaultsInput {
+                astrology_tradition: Some("hellenistic".to_string()),
+                default_aspects: Some(vec![
+                    "conjunction".to_string(),
+                    "sextile".to_string(),
+                    "square".to_string(),
+                    "trine".to_string(),
+                    "quincunx".to_string(),
+                    "semisextile".to_string(),
+                    "opposition".to_string(),
+                ]),
+                default_aspect_orbs: Some(HashMap::from([
+                    ("conjunction".to_string(), 8.0),
+                    ("sextile".to_string(), 5.0),
+                    ("square".to_string(), 6.0),
+                    ("trine".to_string(), 6.0),
+                    ("quincunx".to_string(), 2.0),
+                    ("semisextile".to_string(), 1.0),
+                    ("opposition".to_string(), 8.0),
+                ])),
+                ..Default::default()
+            },
+        ))
+        .expect("tradition switch should persist");
+
+        let enabled_aspects: std::collections::HashSet<String> = defaults
+            .get("default_aspects")
+            .and_then(|value| value.as_array())
+            .expect("default_aspects should be an array")
+            .iter()
+            .map(|value| value.as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(
+            enabled_aspects,
+            std::collections::HashSet::from([
+                "conjunction".to_string(),
+                "sextile".to_string(),
+                "square".to_string(),
+                "trine".to_string(),
+                "opposition".to_string(),
+            ]),
+            "Hellenistic's preset must win over the stale Modern Western fields resent in the same call"
+        );
+        assert_eq!(
+            defaults
+                .get("default_aspect_orbs")
+                .and_then(|orbs| orbs.get("square")),
+            Some(&serde_json::json!(9.0)),
+            "Hellenistic's own orb must win, not the stale Modern Western value"
+        );
+    }
+
+    #[test]
+    fn save_workspace_defaults_rejects_house_system_conflicting_with_an_existing_chart() {
+        let temp = TestWorkspaceDir::new("workspace-defaults-house-system-conflict");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        // sample_chart_payload bakes in house_system: "Placidus", which also
+        // locks the project's house system via enforce_single_project_house_system.
+        tauri::async_runtime::block_on(create_chart(
+            workspace_path_str.clone(),
+            sample_chart_payload("Chart A"),
+        ))
+        .expect("chart should be created");
+
+        let error = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str.clone(),
+            SaveWorkspaceDefaultsInput {
+                default_house_system: Some("Whole Sign".to_string()),
+                ..Default::default()
+            },
+        ))
+        .expect_err("changing the project's house system should be rejected");
+        assert!(
+            error.contains("Placidus") && error.contains("Whole Sign") && error.contains("Chart A"),
+            "unexpected error message: {error}"
+        );
+
+        // Re-affirming the same house system the project (and chart) already use is fine.
+        tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str,
+            SaveWorkspaceDefaultsInput {
+                default_house_system: Some("Placidus".to_string()),
+                ..Default::default()
+            },
+        ))
+        .expect("matching house system should be accepted");
+    }
+
+    #[test]
     fn save_workspace_preserves_the_complete_manifest_contract() {
         let temp = TestWorkspaceDir::new("manifest-preservation");
         let workspace_path = temp.path.join("project");
@@ -847,6 +1253,7 @@ mod tests {
                 valid_contexts: None,
                 interpretation_weight: None,
                 object_type_rule: None,
+                extended_orb: None,
             }],
             aspects: Vec::new(),
             override_orbs: HashMap::new(),

@@ -728,5 +728,20 @@
 	"glyphs_dialog_description": "Suba glifos SVG personalizados para reemplazar los símbolos predeterminados. Solo archivos SVG.",
 	"open_export": "Abrir / Exportar",
 	"close_overlay": "Cerrar superposición",
-	"open_export_placeholder": "Este diálogo es un marcador reutilizable para los flujos Abrir y Exportar."
+	"open_export_placeholder": "Este diálogo es un marcador reutilizable para los flujos Abrir y Exportar.",
+	"settings_aspect_scope_planets": "Planetas",
+	"settings_aspect_scope_angles_short": "ángulos",
+	"settings_aspect_scope_include_angles": "Incluir ángulos (Ascendente / Medio Cielo)",
+	"settings_aspect_scope_include_extended": "Incluir objetos extendidos (asteroides, nodos, partes, otros puntos calculados) — usa un orbe más estrecho",
+	"settings_aspect_scope_extended_orb": "Orbe de objetos extendidos",
+	"settings_astrology_tradition_label": "Escuela",
+	"settings_astrology_tradition_hint": "Define qué aspectos están activados, sus orbes y la inclusión de ángulos según la tradición elegida. Aún no afecta a los objetos ni al modelo de orbe.",
+	"settings_astrology_tradition_none": "No seleccionado",
+	"tradition_hellenistic": "Helenística",
+	"tradition_medieval_traditional": "Medieval / renacentista tradicional",
+	"tradition_modern_western": "Occidental moderna / psicológica",
+	"tradition_harmonic": "Armónica / vibracional",
+	"tradition_cosmobiology": "Cosmobiología",
+	"tradition_uranian_hamburg": "Uraniana / Hamburgo",
+	"tradition_jyotish_parashari": "Jyotish — Parashari"
 }

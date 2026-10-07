@@ -125,6 +125,11 @@ The manifest can therefore point into any depth of subfolder:</p>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspects</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspect_orbs</span>: { <span style="color:#f92672">conjunction</span>: <span style="color:#f92672">7.0, square</span>: <span style="color:#ae81ff">5.0</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspect_colors</span>: { <span style="color:#f92672">conjunction</span>: <span style="color:#e6db74">&#39;#555555&#39;</span><span style="color:#f92672">, square</span>: <span style="color:#e6db74">&#39;#d04444&#39;</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspect_include_angles</span>: { <span style="color:#f92672">square</span>: <span style="color:#f92672">true, quincunx</span>: <span style="color:#66d9ef">false</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspect_include_extended</span>: { <span style="color:#f92672">quincunx</span>: <span style="color:#66d9ef">true</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspect_extended_orbs</span>: { <span style="color:#f92672">quincunx</span>: <span style="color:#ae81ff">0.5</span> }
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">astrology_tradition</span>: <span style="color:#ae81ff">modern_western</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">time_system</span>: <span style="color:#ae81ff">gregorian</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_location</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Prague</span>
@@ -162,6 +167,44 @@ The manifest can therefore point into any depth of subfolder:</p>
 </span></span></code></pre></div><p>The unreleased schema has one canonical representation: visual settings belong
 under <code>presentation</code>; calculation settings belong under <code>default</code> or a model,
 preset, chart, or operation layer.</p>
+<h3 id="per-aspect-object-scope-and-the-astrology_tradition-škola-setting">Per-aspect object scope and the <code>astrology_tradition</code> (&ldquo;Škola&rdquo;) setting</h3>
+<p><code>default_aspect_include_angles</code>, <code>default_aspect_include_extended</code>, and
+<code>default_aspect_extended_orbs</code> are per-aspect-id maps that restrict which
+object categories an aspect may form between, mirroring
+<code>AspectDefinition::object_type_rule</code>/<code>extended_orb</code> in
+<code>src-tauri/src/workspace/models.rs</code>:</p>
+<ul>
+<li><code>default_aspect_include_angles</code>: whether Ascendant/Midheaven may
+participate in that aspect. A missing key falls back to the resolved
+model&rsquo;s own <code>object_type_rule</code> baseline (unrestricted, by default).</li>
+<li><code>default_aspect_include_extended</code>: whether extended objects — asteroids,
+lunar nodes, parts/lots, other calculated points
+(<code>EXTENDED_ASPECT_OBJECT_TYPES</code>) — may participate. A missing key defaults
+to <code>false</code>; extended objects are opt-in.</li>
+<li><code>default_aspect_extended_orbs</code>: the tighter orb used instead of
+<code>default_aspect_orbs</code> whenever an extended object is involved, once that
+aspect&rsquo;s <code>include_extended</code> is on.</li>
+</ul>
+<p>An untouched workspace (none of these three maps present) computes exactly as
+before — nothing here changes default behavior until a workspace explicitly
+sets it.</p>
+<p><code>astrology_tradition</code> is a closed-enum convenience, distinct from
+<code>active_school</code> below: picking one of <code>hellenistic</code>, <code>medieval_traditional</code>,
+<code>modern_western</code>, <code>harmonic</code>, <code>cosmobiology</code>, <code>uranian_hamburg</code>, or
+<code>jyotish_parashari</code> (re)populates <code>default_aspects</code>, <code>default_aspect_orbs</code>,
+and <code>default_aspect_include_angles</code> with that tradition&rsquo;s suggested values —
+see <code>workspace::tradition::tradition_aspect_preset</code> in
+<code>src-tauri/src/workspace/tradition.rs</code>. A user can still edit individual
+aspects afterward; their edits simply overwrite the preset&rsquo;s suggestion for
+that one aspect. Setting the same tradition again is a no-op for aspect
+settings (it only re-applies the preset on an actual change), so resaving
+unrelated settings — which resend the whole <code>WorkspaceDefaults</code> snapshot —
+never clobbers per-aspect customizations made after the tradition was picked.
+This is a first iteration: it only drives aspect selection/orbs/angle
+inclusion. Object selection and each tradition&rsquo;s native orb <em>model</em>
+(whole-sign tolerance, planetary moieties, harmonic-scaled orbs,
+midpoint/dial orbs, Jyotish directional drishti) are approximated with the
+existing per-aspect-orb engine, not truly implemented, and are future work.</p>
 <p><code>tag_catalog</code> is the workspace-wide registry used for tag completion and shared
 colors. Names must be non-empty and unique after surrounding whitespace is
 removed. A color, when present, must use <code>#RGB</code> or <code>#RRGGBB</code>. Charts and analyses
@@ -302,8 +345,12 @@ does not enable or disable an entry; use the explicit <code>enabled</code> field
 </span></span></code></pre></div><p>An absent field inherits. An explicitly empty body/aspect collection means
 “none” in preset and operation layers. Existing chart
 <code>observable_objects: []</code> retains its legacy “inherit” meaning.</p>
-<p>School is an extensible string ID, not a closed enum. It classifies a model and
-provides its default model. <code>extends</code> records lineage; it does not copy settings.</p>
+<p>School (<code>active_school</code>/<code>schools</code>/<code>AstrologySchoolId</code>) is an extensible string
+ID, not a closed enum. It classifies a model and provides its default model.
+<code>extends</code> records lineage; it does not copy settings. This is a different
+concept from <code>default.astrology_tradition</code> above — that one is a closed enum
+(&ldquo;Škola&rdquo; in the UI) whose job is seeding aspect settings for a well-known
+tradition, not selecting a named model.</p>
 <h2 id="persisted-transit-intent">Persisted transit intent</h2>
 <p>Transit YAML stores everything needed to repeat the calculation, but never the
 computed positions/aspects:</p>

@@ -5,6 +5,7 @@ pub mod morinus;
 pub mod settings;
 pub mod sfs;
 pub mod solar_fire;
+pub mod tradition;
 pub mod validation;
 pub mod writer;
 

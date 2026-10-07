@@ -30,7 +30,13 @@ import {
 	readStoredAppShellIconSet,
 	type AppShellIconSetId
 } from '@/lib/app-shell';
-import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
+import {
+	ASPECT_ROWS,
+	ASPECT_SUGGESTED_INCLUDE_ANGLES,
+	DEFAULT_ASPECT_COLORS,
+	DEFAULT_ASPECT_ORBS,
+	type AspectRow
+} from '@/lib/astrology/aspects';
 import { type ElementColors, type ElementId } from '@/lib/astrology/elementColors';
 import { persistGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import { DEGREE_SYMBOL_SET_CATALOG } from '@/lib/astrology/degreeSymbolSets';
@@ -52,8 +58,54 @@ import {
 } from '@/lib/tauri/chartPayload';
 import { catalogHouseSystems } from '@/lib/astrology/domainCatalog';
 import { searchLocations } from '@/lib/tauri/workspace';
+import type { AstrologicalTraditionId } from '@/lib/tauri/types';
 import { BodySelector } from './body-selector';
 import { GlyphManager } from './glyph-manager';
+
+const ASTROLOGY_TRADITION_OPTIONS: { id: AstrologicalTraditionId; labelKey: string }[] = [
+	{ id: 'hellenistic', labelKey: 'tradition_hellenistic' },
+	{ id: 'medieval_traditional', labelKey: 'tradition_medieval_traditional' },
+	{ id: 'modern_western', labelKey: 'tradition_modern_western' },
+	{ id: 'harmonic', labelKey: 'tradition_harmonic' },
+	{ id: 'cosmobiology', labelKey: 'tradition_cosmobiology' },
+	{ id: 'uranian_hamburg', labelKey: 'tradition_uranian_hamburg' },
+	{ id: 'jyotish_parashari', labelKey: 'tradition_jyotish_parashari' }
+];
+
+type AspectRowState = {
+	enabled: boolean;
+	orb: number;
+	color: string;
+	/** Whether Ascendant/Midheaven may participate in this aspect. */
+	includeAngles: boolean;
+	/** Whether extended objects (asteroids, nodes, parts, other calculated points) may participate. */
+	includeExtended: boolean;
+	/** Tighter orb used instead of `orb` once `includeExtended` is on. */
+	extendedOrb: number;
+};
+
+/** A sensible starting point for the extended-objects orb: half the base orb, floored at 0.5°. */
+function suggestedExtendedOrb(baseOrb: number): number {
+	return Math.max(0.5, Math.round((baseOrb / 2) * 2) / 2);
+}
+
+function aspectRowStateFromDefaults(
+	aspect: AspectRow,
+	workspaceDefaults: WorkspaceDefaultsState
+): AspectRowState {
+	const orb = workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb;
+	return {
+		enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
+		orb,
+		color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id],
+		includeAngles:
+			workspaceDefaults.aspectIncludeAngles[aspect.id] ??
+			ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ??
+			true,
+		includeExtended: workspaceDefaults.aspectIncludeExtended[aspect.id] ?? false,
+		extendedOrb: workspaceDefaults.aspectExtendedOrbs[aspect.id] ?? suggestedExtendedOrb(orb)
+	};
+}
 
 /** Each language's own autonym — always shown in that language, not translated, so a user can
  *  recognize their language regardless of which language the UI currently happens to be in. */
@@ -196,6 +248,9 @@ function SettingsView({
 	const [longitude, setLongitude] = useState(String(workspaceDefaults.locationLongitude));
 	const [timezone, setTimezone] = useState(workspaceDefaults.timezone);
 	const [houseSystem, setHouseSystem] = useState<string>(workspaceDefaults.houseSystem);
+	const [astrologyTradition, setAstrologyTradition] = useState<AstrologicalTraditionId | ''>(
+		workspaceDefaults.astrologyTradition ?? ''
+	);
 	const [glyphSetValue, setGlyphSetValue] = useState<AstrologyGlyphSetId>(astrologyGlyphSet);
 	const [enabledSymbolSetIdsValue, setEnabledSymbolSetIdsValue] = useState<string[]>(() => [
 		...enabledSymbolSetIds
@@ -210,19 +265,9 @@ function SettingsView({
 			? workspaceDefaults.defaultBodies
 			: DEFAULT_OBSERVABLE_OBJECT_IDS
 	);
-	const [aspects, setAspects] = useState<
-		Record<string, { enabled: boolean; orb: number; color: string }>
-	>(() =>
+	const [aspects, setAspects] = useState<Record<string, AspectRowState>>(() =>
 		Object.fromEntries(
-			ASPECT_ROWS.map((aspect) => [
-				aspect.id,
-				{
-					enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
-					orb: workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-					color:
-						workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
-				}
-			])
+			ASPECT_ROWS.map((aspect) => [aspect.id, aspectRowStateFromDefaults(aspect, workspaceDefaults)])
 		)
 	);
 	const [aspectLineTiers, setAspectLineTiers] = useState<AspectLineTierStyleState>(() => ({
@@ -235,6 +280,7 @@ function SettingsView({
 		setLongitude(String(workspaceDefaults.locationLongitude));
 		setTimezone(workspaceDefaults.timezone);
 		setHouseSystem(workspaceDefaults.houseSystem);
+		setAstrologyTradition(workspaceDefaults.astrologyTradition ?? '');
 		setSelectedBodies(
 			workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
@@ -358,6 +404,7 @@ function SettingsView({
 		setLongitude(String(workspaceDefaults.locationLongitude));
 		setTimezone(workspaceDefaults.timezone);
 		setHouseSystem(workspaceDefaults.houseSystem);
+		setAstrologyTradition(workspaceDefaults.astrologyTradition ?? '');
 		setSelectedBodies(
 			workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
@@ -440,7 +487,7 @@ function SettingsView({
 	);
 
 	const persistAspectSettings = useCallback(
-		async (nextAspects: Record<string, { enabled: boolean; orb: number; color: string }>) => {
+		async (nextAspects: Record<string, AspectRowState>) => {
 			const defaultAspects = ASPECT_ROWS.filter((aspect) => nextAspects[aspect.id]?.enabled).map(
 				(aspect) => aspect.id
 			);
@@ -458,10 +505,32 @@ function SettingsView({
 					nextAspects[aspect.id]?.color || DEFAULT_ASPECT_COLORS[aspect.id]
 				])
 			);
+			const aspectIncludeAngles = Object.fromEntries(
+				ASPECT_ROWS.map((aspect) => [
+					aspect.id,
+					nextAspects[aspect.id]?.includeAngles ??
+						ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ??
+						true
+				])
+			);
+			const aspectIncludeExtended = Object.fromEntries(
+				ASPECT_ROWS.map((aspect) => [aspect.id, nextAspects[aspect.id]?.includeExtended ?? false])
+			);
+			const aspectExtendedOrbs = Object.fromEntries(
+				ASPECT_ROWS.map((aspect) => [
+					aspect.id,
+					Number.isFinite(nextAspects[aspect.id]?.extendedOrb)
+						? nextAspects[aspect.id]!.extendedOrb
+						: suggestedExtendedOrb(DEFAULT_ASPECT_ORBS[aspect.id] ?? 1)
+				])
+			);
 			await onWorkspaceDefaultsChange({
 				defaultAspects,
 				defaultAspectOrbs,
-				defaultAspectColors
+				defaultAspectColors,
+				aspectIncludeAngles,
+				aspectIncludeExtended,
+				aspectExtendedOrbs
 			});
 		},
 		[onWorkspaceDefaultsChange]
@@ -685,84 +754,167 @@ function SettingsView({
 
 							{section === 'nastaveni_aspektu' && (
 								<div className="space-y-4">
+									<div className="space-y-2 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+										<Label className={ft.label}>{t('settings_astrology_tradition_label')}</Label>
+										<Select
+											value={astrologyTradition}
+											onValueChange={(value) => {
+												const next = value as AstrologicalTraditionId;
+												setAstrologyTradition(next);
+												markChanged();
+												void onWorkspaceDefaultsChange({ astrologyTradition: next });
+											}}
+										>
+											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+												<SelectValue placeholder={t('settings_astrology_tradition_none')} />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												<SelectGroup>
+													{ASTROLOGY_TRADITION_OPTIONS.map((option) => (
+														<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+															{t(option.labelKey)}
+														</SelectItem>
+													))}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<p className={cn('text-xs', ft.muted)}>
+											{t('settings_astrology_tradition_hint')}
+										</p>
+									</div>
 									<div className="space-y-2">
 										<p className={ft.label}>{t('default_aspects')}</p>
-										<div className="space-y-3">
+										<Accordion type="multiple" className="space-y-3">
 											{ASPECT_ROWS.map((aspect) => {
 												const row = aspects[aspect.id] ?? {
 													enabled: true,
 													orb: aspect.defaultOrb,
-													color: DEFAULT_ASPECT_COLORS[aspect.id]
+													color: DEFAULT_ASPECT_COLORS[aspect.id],
+													includeAngles: ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ?? true,
+													includeExtended: false,
+													extendedOrb: suggestedExtendedOrb(aspect.defaultOrb)
+												};
+												const updateRow = (
+													patch: Partial<AspectRowState>,
+													options?: { persist?: boolean }
+												) => {
+													const next = { ...aspects, [aspect.id]: { ...row, ...patch } };
+													setAspects(next);
+													markChanged();
+													if (options?.persist !== false) void persistAspectSettings(next);
 												};
 												return (
-													<div
+													<AccordionItem
 														key={aspect.id}
-														className="grid items-center gap-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_170px]"
+														value={aspect.id}
+														className="rounded-xl border-0 bg-[color:var(--theme-soft-bg)]/45 px-4"
 													>
-														<Label className="flex cursor-pointer items-center gap-3">
-															<Checkbox
-																checked={row.enabled}
-																onCheckedChange={(checked) => {
-																	const next = {
-																		...aspects,
-																		[aspect.id]: {
-																			...row,
-																			enabled: checked === true
-																		}
-																	};
-																	setAspects(next);
-																	markChanged();
-																	void persistAspectSettings(next);
-																}}
-															/>
-															<span className={cn('text-sm', ft.title)}>{t(aspect.labelKey)}</span>
-														</Label>
-														<div className="flex items-center gap-2">
+														<div className="flex items-center gap-3 py-3">
+															<Label className="flex flex-1 cursor-pointer items-center gap-3">
+																<Checkbox
+																	checked={row.enabled}
+																	onCheckedChange={(checked) =>
+																		updateRow({ enabled: checked === true })
+																	}
+																/>
+																<span className={cn('text-sm', ft.title)}>{t(aspect.labelKey)}</span>
+															</Label>
 															<ColorInput
 																value={row.color}
-																onChange={(e) => {
-																	const next = {
-																		...aspects,
-																		[aspect.id]: {
-																			...row,
-																			color: e.target.value
-																		}
-																	};
-																	setAspects(next);
-																	markChanged();
-																	void persistAspectSettings(next);
-																}}
+																onChange={(e) => updateRow({ color: e.target.value })}
 																aria-label={`${t(aspect.labelKey)} ${t('color_theme')}`}
 															/>
-															<span className={cn('text-xs tracking-wide uppercase', ft.muted)}>
-																{t('label_orb')}
-															</span>
-															<Input
-																type="number"
-																className={cn(ft.inputCompact, 'h-9 w-20')}
-																value={row.orb}
-																min={0}
-																max={30}
-																step={0.5}
-																onChange={(e) => {
-																	const n = Number(e.target.value);
-																	const next = {
-																		...aspects,
-																		[aspect.id]: {
-																			...row,
-																			orb: Number.isFinite(n) ? n : row.orb
-																		}
-																	};
-																	setAspects(next);
-																	markChanged();
-																}}
-																onBlur={() => void persistAspectSettings(aspects)}
-															/>
+															<AccordionTrigger className="w-auto flex-none gap-2 py-0 text-xs hover:no-underline">
+																<span className={cn('tracking-wide uppercase tabular-nums', ft.muted)}>
+																	{row.orb}° {t('label_orb')}
+																</span>
+															</AccordionTrigger>
 														</div>
-													</div>
+														<AccordionContent className="pt-0 pb-4">
+															<div className="space-y-3 rounded-lg bg-black/10 p-3 dark:bg-white/5">
+																<div className="grid grid-cols-[1fr_auto] items-center gap-3">
+																	<Label
+																		className={cn('text-xs', ft.muted)}
+																		htmlFor={`${aspect.id}-orb`}
+																	>
+																		{t('settings_aspect_scope_planets')}
+																		{row.includeAngles
+																			? ` + ${t('settings_aspect_scope_angles_short')}`
+																			: ''}
+																	</Label>
+																	<Input
+																		id={`${aspect.id}-orb`}
+																		type="number"
+																		className={cn(ft.inputCompact, 'h-9 w-20')}
+																		value={row.orb}
+																		min={0}
+																		max={30}
+																		step={0.5}
+																		onChange={(e) => {
+																			const n = Number(e.target.value);
+																			updateRow(
+																				{ orb: Number.isFinite(n) ? n : row.orb },
+																				{ persist: false }
+																			);
+																		}}
+																		onBlur={() => void persistAspectSettings(aspects)}
+																	/>
+																</div>
+																<label className="flex cursor-pointer items-center gap-2 text-sm">
+																	<Checkbox
+																		checked={row.includeAngles}
+																		onCheckedChange={(checked) =>
+																			updateRow({ includeAngles: checked === true })
+																		}
+																	/>
+																	{t('settings_aspect_scope_include_angles')}
+																</label>
+																<label className="flex cursor-pointer items-center gap-2 text-sm">
+																	<Checkbox
+																		checked={row.includeExtended}
+																		onCheckedChange={(checked) =>
+																			updateRow({ includeExtended: checked === true })
+																		}
+																	/>
+																	{t('settings_aspect_scope_include_extended')}
+																</label>
+																{row.includeExtended && (
+																	<div className="grid grid-cols-[1fr_auto] items-center gap-3 pl-6">
+																		<Label
+																			className={cn('text-xs', ft.muted)}
+																			htmlFor={`${aspect.id}-extended-orb`}
+																		>
+																			{t('settings_aspect_scope_extended_orb')}
+																		</Label>
+																		<Input
+																			id={`${aspect.id}-extended-orb`}
+																			type="number"
+																			className={cn(ft.inputCompact, 'h-9 w-20')}
+																			value={row.extendedOrb}
+																			min={0}
+																			max={row.orb}
+																			step={0.5}
+																			onChange={(e) => {
+																				const n = Number(e.target.value);
+																				updateRow(
+																					{
+																						extendedOrb: Number.isFinite(n)
+																							? n
+																							: row.extendedOrb
+																					},
+																					{ persist: false }
+																				);
+																			}}
+																			onBlur={() => void persistAspectSettings(aspects)}
+																		/>
+																	</div>
+																)}
+															</div>
+														</AccordionContent>
+													</AccordionItem>
 												);
 											})}
-										</div>
+										</Accordion>
 									</div>
 									<Separator className="bg-[color:var(--theme-panel-border)]" />
 									<div className="space-y-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">

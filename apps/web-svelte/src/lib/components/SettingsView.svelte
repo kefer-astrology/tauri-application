@@ -34,14 +34,24 @@
   } from '$lib/stores/wheel-style.svelte';
   import {
     ASPECT_ROWS,
+    ASPECT_SUGGESTED_INCLUDE_ANGLES,
     DEFAULT_ASPECT_COLORS,
     DEFAULT_ASPECT_ORBS,
     type AspectLineStyleId,
-    type AspectLineTierStyleState
+    type AspectLineTierStyleState,
+    type AspectRow
   } from '$lib/astrology/aspects';
+  import * as Accordion from '$lib/components/ui/accordion/index.js';
+  import type { AstrologicalTraditionId } from '$lib/tauri/types';
   import BodySelector from '$lib/components/BodySelector.svelte';
   import LocationSelector from '$lib/components/LocationSelector.svelte';
-  import { layout, chartDataToComputePayload, updateChartComputationAtTime, setWorkspaceDefaults } from '$lib/state/layout';
+  import {
+    layout,
+    chartDataToComputePayload,
+    updateChartComputationAtTime,
+    setWorkspaceDefaults,
+    type WorkspaceDefaultsState
+  } from '$lib/state/layout';
   import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '$lib/astrology/observableObjects';
   import { isTauriRuntime } from '$lib/tauri/runtime';
   import {
@@ -73,6 +83,9 @@
   let longitude = $state(String(layout.workspaceDefaults.locationLongitude));
   let timezone = $state(layout.workspaceDefaults.timezone);
   let houseSystem = $state(layout.workspaceDefaults.houseSystem);
+  let astrologyTradition = $state<AstrologicalTraditionId | ''>(
+    layout.workspaceDefaults.astrologyTradition ?? ''
+  );
   let isResolvingLocation = $state(false);
   let locationStatus = $state<string | null>(null);
   const locationOptions = $derived(
@@ -172,19 +185,45 @@
     }
   });
 
+  type AspectRowState = {
+    enabled: boolean;
+    orb: number;
+    color: string;
+    /** Whether Ascendant/Midheaven may participate in this aspect. */
+    includeAngles: boolean;
+    /** Whether extended objects (asteroids, nodes, parts, other calculated points) may participate. */
+    includeExtended: boolean;
+    /** Tighter orb used instead of `orb` once `includeExtended` is on. */
+    extendedOrb: number;
+  };
+
+  /** A sensible starting point for the extended-objects orb: half the base orb, floored at 0.5 deg. */
+  function suggestedExtendedOrb(baseOrb: number): number {
+    return Math.max(0.5, Math.round((baseOrb / 2) * 2) / 2);
+  }
+
+  function aspectRowStateFromDefaults(
+    aspect: AspectRow,
+    workspaceDefaults: WorkspaceDefaultsState
+  ): AspectRowState {
+    const orb = workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb;
+    return {
+      enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
+      orb,
+      color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id],
+      includeAngles:
+        workspaceDefaults.aspectIncludeAngles[aspect.id] ?? ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ?? true,
+      includeExtended: workspaceDefaults.aspectIncludeExtended[aspect.id] ?? false,
+      extendedOrb: workspaceDefaults.aspectExtendedOrbs[aspect.id] ?? suggestedExtendedOrb(orb)
+    };
+  }
+
   let selectedBodies = $state<string[]>(layout.workspaceDefaults.defaultBodies.length > 0
     ? [...layout.workspaceDefaults.defaultBodies]
     : [...DEFAULT_OBSERVABLE_OBJECT_IDS]);
-  let aspects = $state<Record<string, { enabled: boolean; orb: number; color: string }>>(
+  let aspects = $state<Record<string, AspectRowState>>(
     Object.fromEntries(
-      ASPECT_ROWS.map((aspect) => [
-        aspect.id,
-        {
-          enabled: layout.workspaceDefaults.defaultAspects.includes(aspect.id),
-          orb: layout.workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-          color: layout.workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
-        }
-      ])
+      ASPECT_ROWS.map((aspect) => [aspect.id, aspectRowStateFromDefaults(aspect, layout.workspaceDefaults)])
     )
   );
   let aspectLineTiers = $state<AspectLineTierStyleState>({
@@ -209,6 +248,15 @@
     { id: 'dashed', label: 'Dashed' },
     { id: 'dotted', label: 'Dotted' }
   ];
+  const ASTROLOGY_TRADITION_OPTIONS: { id: AstrologicalTraditionId; labelKey: string }[] = [
+    { id: 'hellenistic', labelKey: 'tradition_hellenistic' },
+    { id: 'medieval_traditional', labelKey: 'tradition_medieval_traditional' },
+    { id: 'modern_western', labelKey: 'tradition_modern_western' },
+    { id: 'harmonic', labelKey: 'tradition_harmonic' },
+    { id: 'cosmobiology', labelKey: 'tradition_cosmobiology' },
+    { id: 'uranian_hamburg', labelKey: 'tradition_uranian_hamburg' },
+    { id: 'jyotish_parashari', labelKey: 'tradition_jyotish_parashari' }
+  ];
 
   $effect(() => {
     defaultLocation = layout.workspaceDefaults.locationName;
@@ -216,18 +264,12 @@
     longitude = String(layout.workspaceDefaults.locationLongitude);
     timezone = layout.workspaceDefaults.timezone;
     houseSystem = layout.workspaceDefaults.houseSystem;
+    astrologyTradition = layout.workspaceDefaults.astrologyTradition ?? '';
     selectedBodies = layout.workspaceDefaults.defaultBodies.length > 0
       ? [...layout.workspaceDefaults.defaultBodies]
       : [...DEFAULT_OBSERVABLE_OBJECT_IDS];
     aspects = Object.fromEntries(
-      ASPECT_ROWS.map((aspect) => [
-        aspect.id,
-        {
-          enabled: layout.workspaceDefaults.defaultAspects.includes(aspect.id),
-          orb: layout.workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-          color: layout.workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
-        }
-      ])
+      ASPECT_ROWS.map((aspect) => [aspect.id, aspectRowStateFromDefaults(aspect, layout.workspaceDefaults)])
     );
     aspectLineTiers = { ...layout.workspaceDefaults.aspectLineTierStyle };
   });
@@ -275,7 +317,7 @@
     await persistWorkspaceDefaultsPatch({ defaultBodies: nextBodies }, { recomputeCharts: true });
   }
 
-  function buildAspectPatch(nextAspects: Record<string, { enabled: boolean; orb: number; color: string }>) {
+  function buildAspectPatch(nextAspects: Record<string, AspectRowState>) {
     return {
       defaultAspects: ASPECT_ROWS.filter((aspect) => nextAspects[aspect.id]?.enabled).map((aspect) => aspect.id),
       defaultAspectOrbs: Object.fromEntries(
@@ -291,11 +333,28 @@
           aspect.id,
           nextAspects[aspect.id]?.color || DEFAULT_ASPECT_COLORS[aspect.id]
         ])
+      ),
+      aspectIncludeAngles: Object.fromEntries(
+        ASPECT_ROWS.map((aspect) => [
+          aspect.id,
+          nextAspects[aspect.id]?.includeAngles ?? ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ?? true
+        ])
+      ),
+      aspectIncludeExtended: Object.fromEntries(
+        ASPECT_ROWS.map((aspect) => [aspect.id, nextAspects[aspect.id]?.includeExtended ?? false])
+      ),
+      aspectExtendedOrbs: Object.fromEntries(
+        ASPECT_ROWS.map((aspect) => [
+          aspect.id,
+          Number.isFinite(nextAspects[aspect.id]?.extendedOrb)
+            ? nextAspects[aspect.id]!.extendedOrb
+            : suggestedExtendedOrb(DEFAULT_ASPECT_ORBS[aspect.id] ?? 1)
+        ])
       )
     };
   }
 
-  async function persistAspectSettings(nextAspects: Record<string, { enabled: boolean; orb: number; color: string }>) {
+  async function persistAspectSettings(nextAspects: Record<string, AspectRowState>) {
     await persistWorkspaceDefaultsPatch(buildAspectPatch(nextAspects), { recomputeCharts: true });
   }
 
@@ -355,18 +414,12 @@
     longitude = String(layout.workspaceDefaults.locationLongitude);
     timezone = layout.workspaceDefaults.timezone;
     houseSystem = layout.workspaceDefaults.houseSystem;
+    astrologyTradition = layout.workspaceDefaults.astrologyTradition ?? '';
     selectedBodies = layout.workspaceDefaults.defaultBodies.length > 0
       ? [...layout.workspaceDefaults.defaultBodies]
       : [...DEFAULT_OBSERVABLE_OBJECT_IDS];
     aspects = Object.fromEntries(
-      ASPECT_ROWS.map((aspect) => [
-        aspect.id,
-        {
-          enabled: layout.workspaceDefaults.defaultAspects.includes(aspect.id),
-          orb: layout.workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-          color: layout.workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
-        }
-      ])
+      ASPECT_ROWS.map((aspect) => [aspect.id, aspectRowStateFromDefaults(aspect, layout.workspaceDefaults)])
     );
     aspectLineTiers = { ...layout.workspaceDefaults.aspectLineTierStyle };
     elementColors = { ...getElementColors() };
@@ -547,73 +600,145 @@
     {:else if section === 'nastaveni_aspektu'}
       <h3 class="text-sm font-semibold mb-4">{t('section_nastaveni_aspektu', {}, 'Aspect settings')}</h3>
       <div class="space-y-4 max-w-3xl">
+        <div class="space-y-2 rounded-xl bg-muted/40 px-4 py-4">
+          <div class="block text-sm font-medium opacity-90">
+            {t('settings_astrology_tradition_label', {}, 'School')}
+          </div>
+          <Select.Root
+            type="single"
+            bind:value={astrologyTradition}
+            onValueChange={(value) => {
+              const next = value as AstrologicalTraditionId;
+              astrologyTradition = next;
+              settingsChanged = true;
+              void persistWorkspaceDefaultsPatch({ astrologyTradition: next });
+            }}
+          >
+            <Select.Trigger class="w-full h-9 px-3">
+              {ASTROLOGY_TRADITION_OPTIONS.find((o) => o.id === astrologyTradition)
+                ? t(ASTROLOGY_TRADITION_OPTIONS.find((o) => o.id === astrologyTradition)!.labelKey)
+                : t('settings_astrology_tradition_none', {}, 'Not selected')}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Group>
+                {#each ASTROLOGY_TRADITION_OPTIONS as option (option.id)}
+                  <Select.Item value={option.id} label={t(option.labelKey)}>{t(option.labelKey)}</Select.Item>
+                {/each}
+              </Select.Group>
+            </Select.Content>
+          </Select.Root>
+          <p class="text-xs text-muted-foreground">
+            {t(
+              'settings_astrology_tradition_hint',
+              {},
+              'Sets which aspects are enabled, their orbs, and angle inclusion to match the chosen tradition. Does not yet affect objects or the orb model.'
+            )}
+          </p>
+        </div>
         <div class="space-y-2">
           <div class="block text-sm font-medium opacity-90">{t('default_aspects', {}, 'Default aspects')}</div>
-          <div class="space-y-2">
+          <Accordion.Root type="multiple" class="space-y-3">
             {#each ASPECT_ROWS as aspect}
-              {@const row = aspects[aspect.id]}
-              <div class="grid items-center gap-3 rounded-xl border border-border/60 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_170px]">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <Checkbox
-                    class="cursor-pointer"
-                    checked={row?.enabled}
-                    onchange={(e) => {
-                      const next = {
-                        ...aspects,
-                        [aspect.id]: {
-                          ...row,
-                          enabled: (e.currentTarget as HTMLInputElement).checked
-                        }
-                      };
-                      aspects = next;
-                      settingsChanged = true;
-                      void persistAspectSettings(next);
-                    }}
-                  />
-                  <span class="text-sm">{t(aspect.labelKey, {}, aspect.fallbackLabel)}</span>
-                </label>
-                <div class="flex items-center gap-2">
+              {@const row = aspects[aspect.id] ?? aspectRowStateFromDefaults(aspect, layout.workspaceDefaults)}
+              {@const updateRow = (patch: Partial<AspectRowState>, persist = true) => {
+                const next = { ...aspects, [aspect.id]: { ...row, ...patch } };
+                aspects = next;
+                settingsChanged = true;
+                if (persist) void persistAspectSettings(next);
+              }}
+              <Accordion.Item value={aspect.id} class="rounded-xl border-0 bg-muted/40 px-4">
+                <div class="flex items-center gap-3 py-3">
+                  <label class="flex flex-1 items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      class="cursor-pointer"
+                      checked={row.enabled}
+                      onchange={(e) => updateRow({ enabled: (e.currentTarget as HTMLInputElement).checked })}
+                    />
+                    <span class="text-sm">{t(aspect.labelKey, {}, aspect.fallbackLabel)}</span>
+                  </label>
                   <input
                     type="color"
                     class="h-9 w-10 shrink-0 cursor-pointer rounded-md border border-border/60 bg-background p-0"
-                    value={row?.color ?? DEFAULT_ASPECT_COLORS[aspect.id]}
-                    onchange={(e) => {
-                      const next = {
-                        ...aspects,
-                        [aspect.id]: {
-                          ...row,
-                          color: (e.currentTarget as HTMLInputElement).value
-                        }
-                      };
-                      aspects = next;
-                      settingsChanged = true;
-                      void persistAspectSettings(next);
-                    }}
+                    value={row.color}
+                    onchange={(e) => updateRow({ color: (e.currentTarget as HTMLInputElement).value })}
                   />
-                  <Input
-                    type="number"
-                    class="w-20 h-8 px-2 rounded-md bg-background text-foreground border text-xs"
-                    value={row?.orb ?? aspect.defaultOrb}
-                    min="0"
-                    max="30"
-                    step="0.5"
-                    oninput={(e) => {
-                      const next = {
-                        ...aspects,
-                        [aspect.id]: {
-                          ...row,
-                          orb: Number((e.currentTarget as HTMLInputElement).value) || 0
-                        }
-                      };
-                      aspects = next;
-                      settingsChanged = true;
-                    }}
-                    onblur={() => void persistAspectSettings(aspects)}
-                  />
+                  <Accordion.Trigger class="w-auto flex-none gap-2 py-0 text-xs hover:no-underline">
+                    <span class="uppercase tracking-wide tabular-nums text-muted-foreground">
+                      {row.orb}&deg; {t('label_orb', {}, 'Orb')}
+                    </span>
+                  </Accordion.Trigger>
                 </div>
-              </div>
+                <Accordion.Content class="pb-4 pt-0">
+                  <div class="space-y-3 rounded-lg bg-black/10 p-3 dark:bg-white/5">
+                    <div class="grid grid-cols-[1fr_auto] items-center gap-3">
+                      <span class="text-xs text-muted-foreground">
+                        {t('settings_aspect_scope_planets', {}, 'Planets')}{row.includeAngles
+                          ? ` + ${t('settings_aspect_scope_angles_short', {}, 'Angles')}`
+                          : ''}
+                      </span>
+                      <Input
+                        type="number"
+                        class="w-20 h-9 px-2 rounded-md bg-background text-foreground border text-xs"
+                        value={row.orb}
+                        min="0"
+                        max="30"
+                        step="0.5"
+                        oninput={(e) =>
+                          updateRow(
+                            { orb: Number((e.currentTarget as HTMLInputElement).value) || 0 },
+                            false
+                          )}
+                        onblur={() => void persistAspectSettings(aspects)}
+                      />
+                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox
+                        class="cursor-pointer"
+                        checked={row.includeAngles}
+                        onchange={(e) =>
+                          updateRow({ includeAngles: (e.currentTarget as HTMLInputElement).checked })}
+                      />
+                      {t('settings_aspect_scope_include_angles', {}, 'Include angles (Ascendant / Midheaven)')}
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox
+                        class="cursor-pointer"
+                        checked={row.includeExtended}
+                        onchange={(e) =>
+                          updateRow({ includeExtended: (e.currentTarget as HTMLInputElement).checked })}
+                      />
+                      {t(
+                        'settings_aspect_scope_include_extended',
+                        {},
+                        'Include extended objects (asteroids, nodes, parts, other calculated points) — uses a tighter orb'
+                      )}
+                    </label>
+                    {#if row.includeExtended}
+                      <div class="grid grid-cols-[1fr_auto] items-center gap-3 pl-6">
+                        <span class="text-xs text-muted-foreground">
+                          {t('settings_aspect_scope_extended_orb', {}, 'Extended objects orb')}
+                        </span>
+                        <Input
+                          type="number"
+                          class="w-20 h-9 px-2 rounded-md bg-background text-foreground border text-xs"
+                          value={row.extendedOrb}
+                          min="0"
+                          max={row.orb}
+                          step="0.5"
+                          oninput={(e) =>
+                            updateRow(
+                              { extendedOrb: Number((e.currentTarget as HTMLInputElement).value) || 0 },
+                              false
+                            )}
+                          onblur={() => void persistAspectSettings(aspects)}
+                        />
+                      </div>
+                    {/if}
+                  </div>
+                </Accordion.Content>
+              </Accordion.Item>
             {/each}
-          </div>
+          </Accordion.Root>
         </div>
         <div class="space-y-3 rounded-xl border border-border/60 px-4 py-4">
           <div class="block text-sm font-medium opacity-90">

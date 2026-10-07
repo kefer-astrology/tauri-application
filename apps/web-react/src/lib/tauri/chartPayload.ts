@@ -1,6 +1,7 @@
 import type {
 	AnalysisDto,
 	AnalysisInputDto,
+	AstrologicalTraditionId,
 	ChartDetails,
 	ChartDefinitionDto,
 	ModelOverridesDto,
@@ -252,6 +253,14 @@ export interface WorkspaceDefaultsState {
 	defaultAspects: string[];
 	defaultAspectOrbs: Record<string, number>;
 	defaultAspectColors: Record<string, string>;
+	/** Per-aspect id: whether Asc/MC may participate. Missing key = use the aspect's suggested default. */
+	aspectIncludeAngles: Record<string, boolean>;
+	/** Per-aspect id: whether extended objects (asteroids, nodes, parts, other points) may participate. */
+	aspectIncludeExtended: Record<string, boolean>;
+	/** Per-aspect id: tighter orb used once that aspect's extended objects are included. */
+	aspectExtendedOrbs: Record<string, number>;
+	/** The workspace's chosen astrological tradition ("Škola"), or `null` if unset. */
+	astrologyTradition: AstrologicalTraditionId | null;
 	aspectLineTierStyle: AspectLineTierStyleState;
 }
 
@@ -268,6 +277,10 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
 	defaultAspectOrbs: DEFAULT_ASPECT_ORBS,
 	defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
+	aspectIncludeAngles: {},
+	aspectIncludeExtended: {},
+	aspectExtendedOrbs: {},
+	astrologyTradition: null,
 	aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }
 };
 

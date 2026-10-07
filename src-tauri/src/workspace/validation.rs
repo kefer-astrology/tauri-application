@@ -222,6 +222,19 @@ pub fn validate_model(model: &AstroModel, path: &str) -> Vec<Diagnostic> {
                 Some(format!("{aspect_path}.interpretation_weight")),
             ));
         }
+        if aspect
+            .extended_orb
+            .is_some_and(|orb| !orb.is_finite() || orb < 0.0)
+        {
+            diagnostics.push(Diagnostic::error(
+                "invalid_aspect_extended_orb",
+                format!(
+                    "Aspect '{}' has invalid extended orb {:?}",
+                    aspect.id, aspect.extended_orb
+                ),
+                Some(format!("{aspect_path}.extended_orb")),
+            ));
+        }
     }
 
     for (index, sign) in model.signs.iter().enumerate() {

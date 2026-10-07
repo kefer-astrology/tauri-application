@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::workspace::models::{
     AspectContext, AspectDefinition, BodyDefinition, ObjectType, ObjectTypeRule,
+    EXTENDED_ASPECT_OBJECT_TYPES,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -227,6 +228,14 @@ struct AspectSpec<'a> {
     exact_angle: f64,
     allowed_orb: f64,
     object_type_rule: Option<&'a ObjectTypeRule>,
+    /// Tighter orb substituted for `allowed_orb` when either side of the pair
+    /// is an extended object (see [`EXTENDED_ASPECT_OBJECT_TYPES`]). Narrows
+    /// the match window only; `object_type_rule` still gates eligibility.
+    extended_orb: Option<f64>,
+}
+
+fn is_extended_object(object_type: Option<&ObjectType>) -> bool {
+    object_type.is_some_and(|value| EXTENDED_ASPECT_OBJECT_TYPES.contains(value))
 }
 
 fn selected_aspects<'a>(
@@ -271,6 +280,7 @@ fn selected_aspects<'a>(
                 exact_angle: definition.angle,
                 allowed_orb: orb,
                 object_type_rule: definition.object_type_rule.as_ref(),
+                extended_orb: definition.extended_orb,
             })
         })
         .collect()
@@ -286,14 +296,19 @@ fn detect_aspect(
         if !pair_allowed(spec.object_type_rule, from_type, to_type) {
             continue;
         }
+        let allowed_orb = if is_extended_object(from_type) || is_extended_object(to_type) {
+            spec.extended_orb.unwrap_or(spec.allowed_orb)
+        } else {
+            spec.allowed_orb
+        };
         let normalized_exact = if spec.exact_angle > 180.0 {
             360.0 - spec.exact_angle
         } else {
             spec.exact_angle
         };
         let orb = (angle - normalized_exact).abs();
-        if orb <= spec.allowed_orb {
-            return Some((spec.id.clone(), spec.exact_angle, orb, spec.allowed_orb));
+        if orb <= allowed_orb {
+            return Some((spec.id.clone(), spec.exact_angle, orb, allowed_orb));
         }
     }
     None
@@ -786,6 +801,7 @@ mod tests {
             valid_contexts: None,
             interpretation_weight: None,
             object_type_rule: None,
+            extended_orb: None,
         }];
         let positions = HashMap::from([("moon".to_string(), 30.75), ("sun".to_string(), 0.0)]);
         let selected = vec!["semisextile".to_string()];
@@ -843,6 +859,7 @@ mod tests {
             valid_contexts: None,
             interpretation_weight: None,
             object_type_rule: None,
+            extended_orb: None,
         }];
         let positions = HashMap::from([
             ("asc".to_string(), 10.0),
@@ -889,6 +906,7 @@ mod tests {
             valid_contexts: None,
             interpretation_weight: None,
             object_type_rule: None,
+            extended_orb: None,
         }];
         let transiting = HashMap::from([("mars".to_string(), 90.0)]);
         let transited = HashMap::from([("sun".to_string(), 0.0)]);
@@ -926,6 +944,7 @@ mod tests {
             valid_contexts: Some(vec![AspectContext::Transit]),
             interpretation_weight: None,
             object_type_rule: None,
+            extended_orb: None,
         };
 
         assert!(compute_chart_aspects(
@@ -982,6 +1001,7 @@ mod tests {
             object_type_rule: Some(ObjectTypeRule::Exclude {
                 types: vec![ObjectType::Angle],
             }),
+            extended_orb: None,
         }];
         let positions = HashMap::from([
             ("asc".to_string(), 0.0),
@@ -1043,6 +1063,7 @@ mod tests {
             object_type_rule: Some(ObjectTypeRule::OnlyBetween {
                 types: vec![ObjectType::Angle, ObjectType::Planet],
             }),
+            extended_orb: None,
         }];
         let positions = HashMap::from([
             ("asc".to_string(), 0.0),
@@ -1069,6 +1090,64 @@ mod tests {
         assert_eq!(aspects.len(), 1, "aspects: {aspects:?}");
         assert_eq!(aspects[0].from, "asc");
         assert_eq!(aspects[0].to, "mars");
+    }
+
+    #[test]
+    fn extended_orb_tightens_the_match_window_for_extended_objects_only() {
+        let definitions = vec![AspectDefinition {
+            id: "conjunction".to_string(),
+            aspect_type: "major".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle: 0.0,
+            harmonic: 1,
+            default_orb: 8.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+            interpretation_weight: None,
+            object_type_rule: Some(ObjectTypeRule::OnlyBetween {
+                types: vec![ObjectType::Planet, ObjectType::Asteroid],
+            }),
+            extended_orb: Some(1.0),
+        }];
+        // sun-moon (7 deg apart, both planets) fits the normal 8 deg orb.
+        // ceres-sun (0.5 deg apart) fits the tightened 1 deg extended orb.
+        // chiron-sun (5 deg apart) would fit the normal orb but not the tightened one.
+        let positions = HashMap::from([
+            ("sun".to_string(), 0.0),
+            ("moon".to_string(), 7.0),
+            ("chiron".to_string(), 5.0),
+            ("ceres".to_string(), 0.5),
+        ]);
+        let object_types = HashMap::from([
+            ("sun".to_string(), ObjectType::Planet),
+            ("moon".to_string(), ObjectType::Planet),
+            ("chiron".to_string(), ObjectType::Asteroid),
+            ("ceres".to_string(), ObjectType::Asteroid),
+        ]);
+        let selected = vec!["conjunction".to_string()];
+
+        let mut aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+        );
+        aspects.sort_by(|a, b| a.from.cmp(&b.from));
+
+        assert_eq!(aspects.len(), 2, "aspects: {aspects:?}");
+        assert_eq!(aspects[0].from, "ceres");
+        assert_eq!(aspects[0].to, "sun");
+        assert_eq!(aspects[0].allowed_orb, 1.0);
+        assert_eq!(aspects[1].from, "moon");
+        assert_eq!(aspects[1].to, "sun");
+        assert_eq!(aspects[1].allowed_orb, 8.0);
     }
 
     #[test]

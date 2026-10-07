@@ -728,5 +728,20 @@
 	"glyphs_dialog_description": "Importez des glyphes SVG personnalisés pour remplacer les symboles par défaut. Fichiers SVG uniquement.",
 	"open_export": "Ouvrir / Exporter",
 	"close_overlay": "Fermer la fenêtre superposée",
-	"open_export_placeholder": "Cette boîte de dialogue est un espace réservé réutilisable pour les flux Ouvrir et Exporter."
+	"open_export_placeholder": "Cette boîte de dialogue est un espace réservé réutilisable pour les flux Ouvrir et Exporter.",
+	"settings_aspect_scope_planets": "Planètes",
+	"settings_aspect_scope_angles_short": "angles",
+	"settings_aspect_scope_include_angles": "Inclure les angles (Ascendant / Milieu du Ciel)",
+	"settings_aspect_scope_include_extended": "Inclure les objets étendus (astéroïdes, nœuds, parts, autres points calculés) — orbe plus serré",
+	"settings_aspect_scope_extended_orb": "Orbe des objets étendus",
+	"settings_astrology_tradition_label": "École",
+	"settings_astrology_tradition_hint": "Définit les aspects activés, leurs orbes et l'inclusion des angles selon la tradition choisie. N'affecte pas encore les objets ni le modèle d'orbe.",
+	"settings_astrology_tradition_none": "Non sélectionné",
+	"tradition_hellenistic": "Hellénistique",
+	"tradition_medieval_traditional": "Médiévale / Renaissance traditionnelle",
+	"tradition_modern_western": "Occidentale moderne / psychologique",
+	"tradition_harmonic": "Harmonique / vibratoire",
+	"tradition_cosmobiology": "Cosmobiologie",
+	"tradition_uranian_hamburg": "Uranienne / École de Hambourg",
+	"tradition_jyotish_parashari": "Jyotish — Parashari"
 }

@@ -98,6 +98,11 @@ default:                                # calculation defaults only
   default_bodies: [sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]
   default_aspects: [conjunction, opposition, trine, square, sextile]
   default_aspect_orbs: { conjunction: 7.0, square: 5.0 }
+  default_aspect_colors: { conjunction: '#555555', square: '#d04444' }
+  default_aspect_include_angles: { square: true, quincunx: false }
+  default_aspect_include_extended: { quincunx: true }
+  default_aspect_extended_orbs: { quincunx: 0.5 }
+  astrology_tradition: modern_western
   time_system: gregorian
   default_location:
     name: Prague
@@ -137,6 +142,47 @@ bodies: []                              # legacy external catalog references
 The unreleased schema has one canonical representation: visual settings belong
 under `presentation`; calculation settings belong under `default` or a model,
 preset, chart, or operation layer.
+
+### Per-aspect object scope and the `astrology_tradition` ("Škola") setting
+
+`default_aspect_include_angles`, `default_aspect_include_extended`, and
+`default_aspect_extended_orbs` are per-aspect-id maps that restrict which
+object categories an aspect may form between, mirroring
+`AspectDefinition::object_type_rule`/`extended_orb` in
+`src-tauri/src/workspace/models.rs`:
+
+- `default_aspect_include_angles`: whether Ascendant/Midheaven may
+  participate in that aspect. A missing key falls back to the resolved
+  model's own `object_type_rule` baseline (unrestricted, by default).
+- `default_aspect_include_extended`: whether extended objects — asteroids,
+  lunar nodes, parts/lots, other calculated points
+  (`EXTENDED_ASPECT_OBJECT_TYPES`) — may participate. A missing key defaults
+  to `false`; extended objects are opt-in.
+- `default_aspect_extended_orbs`: the tighter orb used instead of
+  `default_aspect_orbs` whenever an extended object is involved, once that
+  aspect's `include_extended` is on.
+
+An untouched workspace (none of these three maps present) computes exactly as
+before — nothing here changes default behavior until a workspace explicitly
+sets it.
+
+`astrology_tradition` is a closed-enum convenience, distinct from
+`active_school` below: picking one of `hellenistic`, `medieval_traditional`,
+`modern_western`, `harmonic`, `cosmobiology`, `uranian_hamburg`, or
+`jyotish_parashari` (re)populates `default_aspects`, `default_aspect_orbs`,
+and `default_aspect_include_angles` with that tradition's suggested values —
+see `workspace::tradition::tradition_aspect_preset` in
+`src-tauri/src/workspace/tradition.rs`. A user can still edit individual
+aspects afterward; their edits simply overwrite the preset's suggestion for
+that one aspect. Setting the same tradition again is a no-op for aspect
+settings (it only re-applies the preset on an actual change), so resaving
+unrelated settings — which resend the whole `WorkspaceDefaults` snapshot —
+never clobbers per-aspect customizations made after the tradition was picked.
+This is a first iteration: it only drives aspect selection/orbs/angle
+inclusion. Object selection and each tradition's native orb *model*
+(whole-sign tolerance, planetary moieties, harmonic-scaled orbs,
+midpoint/dial orbs, Jyotish directional drishti) are approximated with the
+existing per-aspect-orb engine, not truly implemented, and are future work.
 
 `tag_catalog` is the workspace-wide registry used for tag completion and shared
 colors. Names must be non-empty and unique after surrounding whitespace is
@@ -318,8 +364,12 @@ An absent field inherits. An explicitly empty body/aspect collection means
 “none” in preset and operation layers. Existing chart
 `observable_objects: []` retains its legacy “inherit” meaning.
 
-School is an extensible string ID, not a closed enum. It classifies a model and
-provides its default model. `extends` records lineage; it does not copy settings.
+School (`active_school`/`schools`/`AstrologySchoolId`) is an extensible string
+ID, not a closed enum. It classifies a model and provides its default model.
+`extends` records lineage; it does not copy settings. This is a different
+concept from `default.astrology_tradition` above — that one is a closed enum
+("Škola" in the UI) whose job is seeding aspect settings for a well-known
+tradition, not selecting a named model.
 
 ## Persisted transit intent
 

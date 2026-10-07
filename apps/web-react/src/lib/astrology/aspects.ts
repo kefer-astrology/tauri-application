@@ -1,4 +1,4 @@
-import type { AspectDefinitionDto } from '@/lib/tauri/types';
+import type { AspectDefinitionDto, ObjectTypeRuleDto } from '@/lib/tauri/types';
 
 export type AspectType = 'major' | 'minor';
 
@@ -12,6 +12,47 @@ export type AspectRow = {
 	harmonic: number;
 	type: AspectType;
 	defaultOrb: number;
+	/** Raw catalog rule, once a workspace has configured this aspect's object scope. */
+	objectTypeRule: ObjectTypeRuleDto | null;
+	/** Tighter orb used for pairs involving an extended object, once configured. */
+	extendedOrb: number | null;
+};
+
+/**
+ * Suggested default for "include angles (Asc/MC)" per aspect, used only to seed the
+ * Settings > Aspects panel the first time a workspace has no saved choice for that
+ * aspect yet. Mirrors the common reference convention: aspects whose usual/core
+ * application already spans planets and angles default to true; aspects that treat
+ * angle participation as optional/specialist usage default to false. This never
+ * changes computed results by itself — it only decides what the panel shows before
+ * the user saves anything (see `WorkspaceDefaults::default_aspect_include_angles`
+ * in src-tauri/src/workspace/models.rs for the persisted, authoritative choice).
+ */
+export const ASPECT_SUGGESTED_INCLUDE_ANGLES: Record<string, boolean> = {
+	conjunction: true,
+	semisextile: false,
+	undecile: false,
+	decile: false,
+	novile: false,
+	octile: true,
+	septile: false,
+	sextile: true,
+	biundecile: false,
+	quintile: true,
+	binovile: false,
+	triundecile: false,
+	square: true,
+	biseptile: false,
+	tridecile: false,
+	trine: true,
+	quadriundecile: false,
+	trioctile: true,
+	biquintile: true,
+	quincunx: true,
+	triseptile: false,
+	quadrinovile: false,
+	quinundecile: false,
+	opposition: true
 };
 
 /** Runtime projection of the Rust model catalog. */
@@ -30,7 +71,9 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[], default
 			angle: definition.angle,
 			harmonic: definition.harmonic,
 			type: definition.type,
-			defaultOrb: definition.default_orb
+			defaultOrb: definition.default_orb,
+			objectTypeRule: definition.object_type_rule ?? null,
+			extendedOrb: definition.extended_orb ?? null
 		}))
 	);
 	for (const key of Object.keys(ASPECT_ANGLES)) delete ASPECT_ANGLES[key];
