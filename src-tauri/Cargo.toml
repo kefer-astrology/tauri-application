@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.1.0"
+version = "0.1.1"
 description = "Kefer astrology desktop application (Tauri 2, React UI, Python sidecar)."
 authors = ["Alysonhower Veras Vieira"]
 license = "MIT"
@@ -15,18 +15,18 @@ name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.6", features = [] }
+tauri-build = { version = "2.7.1", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 log = "0.4"
-tauri = { version = "2.10.3", features = [] }
-tauri-plugin-log = "2.8.0"
-tauri-plugin-opener = "2.5.5"
+tauri = { version = "2.12.1", features = [] }
+tauri-plugin-log = "2.10.0"
+tauri-plugin-opener = "2.7.0"
 chrono = { version = "0.4", features = ["serde"] }
-reqwest = { version = "0.12.22", default-features = false, features = ["json", "default-tls"] }
+reqwest = { version = "0.12.28", default-features = false, features = ["json", "default-tls"] }
 anise = { version = "=0.10.6", default-features = false }
 hifitime = "4"
 sha2 = "0.10"

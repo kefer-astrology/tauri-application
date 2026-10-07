@@ -1,7 +1,7 @@
 {
 	"name": "kefer-astrology",
 	"private": true,
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Kefer astrology monorepo: Tauri 2, React UI, Python sidecar.",
 	"type": "module",
 	"workspaces": [
@@ -35,31 +35,31 @@
 		"tauri:build:svelte": "tauri build --config src-tauri/tauri.svelte.conf.json"
 	},
 	"optionalDependencies": {
-		"@rolldown/binding-darwin-arm64": "1.0.2",
-		"@rolldown/binding-darwin-x64": "1.0.2",
-		"@rolldown/binding-linux-x64-gnu": "1.0.2",
-		"@rolldown/binding-win32-x64-msvc": "1.0.2",
-		"@tailwindcss/oxide-darwin-arm64": "4.3.0",
-		"@tailwindcss/oxide-darwin-x64": "4.3.0",
-		"@tailwindcss/oxide-linux-x64-gnu": "4.3.0",
-		"@tailwindcss/oxide-win32-x64-msvc": "4.3.0",
-		"@tauri-apps/cli-darwin-arm64": "2.11.2",
-		"@tauri-apps/cli-darwin-x64": "2.11.2",
-		"@tauri-apps/cli-linux-x64-gnu": "^2.11.2",
-		"@tauri-apps/cli-win32-x64-msvc": "2.11.2",
-		"lightningcss-darwin-arm64": "1.32.0",
-		"lightningcss-darwin-x64": "1.32.0",
-		"lightningcss-win32-x64-msvc": "1.32.0"
+		"@rolldown/binding-darwin-arm64": "1.2.12",
+		"@rolldown/binding-darwin-x64": "1.2.12",
+		"@rolldown/binding-linux-x64-gnu": "1.2.12",
+		"@rolldown/binding-win32-x64-msvc": "1.2.12",
+		"@tailwindcss/oxide-darwin-arm64": "4.3.3",
+		"@tailwindcss/oxide-darwin-x64": "4.3.3",
+		"@tailwindcss/oxide-linux-x64-gnu": "4.3.3",
+		"@tailwindcss/oxide-win32-x64-msvc": "4.3.3",
+		"@tauri-apps/cli-darwin-arm64": "2.12.1",
+		"@tauri-apps/cli-darwin-x64": "2.12.1",
+		"@tauri-apps/cli-linux-x64-gnu": "^2.12.1",
+		"@tauri-apps/cli-win32-x64-msvc": "2.12.1",
+		"lightningcss-darwin-arm64": "1.33.0",
+		"lightningcss-darwin-x64": "1.33.0",
+		"lightningcss-win32-x64-msvc": "1.33.0"
 	},
 	"devDependencies": {
-		"@eslint/compat": "^2.0.3",
-		"@eslint/js": "^9.39.4",
-		"@tauri-apps/cli": "^2.10.1",
-		"eslint": "^10.0.3",
+		"@eslint/compat": "^2.1.1",
+		"@eslint/js": "^9.39.5",
+		"@tauri-apps/cli": "^2.12.1",
+		"eslint": "^10.12.0",
 		"eslint-config-prettier": "^10.1.8",
 		"globals": "^16.5.0",
-		"prettier": "^3.8.1",
+		"prettier": "^3.9.9",
 		"prettier-plugin-tailwindcss": "^0.7.4",
-		"typescript-eslint": "^8.57.0"
+		"typescript-eslint": "^8.71.1"
 	}
 }
