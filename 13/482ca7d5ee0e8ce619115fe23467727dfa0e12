@@ -1,0 +1,30 @@
+src-tauri/src/infrastructure/jpl_backend.rs
+  s_a9ffa81a7a7e40::t_792b114910b021 1017,1042
+  s_a9ffa81a7a7e40::t_685af953170aa5 981-1001,1003-1016,1018-1041,1044-1056,1059
+  s_a9ffa81a7a7e40::t_ceb79f8a62150a 1043,1057-1058
+  s_a9ffa81a7a7e40::t_67be7b2b1ea1cd 16-17,22-26,382-384,391,407,546-547,619-620
+  s_a9ffa81a7a7e40::t_9ec7acfeb6c78a 12-15,18-21,27-31,376-378,381,385-386,472-474,972-978
+  s_a9ffa81a7a7e40::t_8f9a28eb9bf324 979-980
+  s_a9ffa81a7a7e40::t_813f9af7dd57ad 1002
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "13482ca7d5ee0e8ce619115fe23467727dfa0e12",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_a9ffa81a7a7e40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a117e1-ebaf-7601-9b9f-3f2e6c32b266",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
