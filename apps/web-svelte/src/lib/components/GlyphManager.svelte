@@ -4,6 +4,7 @@
   import { Button } from '$lib/components/ui/button/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import * as Dialog from '$lib/components/ui/dialog/index.js';
+  import { t } from '$lib/i18n/index.svelte';
   
   let { embedded = false } = $props();
   
@@ -27,7 +28,7 @@
     
     // Validate it's an SVG
     if (!file.name.endsWith('.svg') && !file.type.includes('svg')) {
-      uploadError = 'Please upload an SVG file';
+      uploadError = t('glyph_upload_svg_error');
       return;
     }
     
@@ -50,7 +51,7 @@
       }
     };
     reader.onerror = () => {
-      uploadError = 'Failed to read file';
+      uploadError = t('glyph_upload_read_error');
     };
     reader.readAsText(file);
   }
@@ -94,7 +95,7 @@
             {/if}
             <span class="text-sm">{glyph.name}</span>
             {#if glyph.isCustom}
-              <span class="text-xs text-muted-foreground">(custom)</span>
+              <span class="text-xs text-muted-foreground">({t('glyph_custom')})</span>
             {/if}
           </div>
           <div class="flex gap-1">
@@ -105,10 +106,10 @@
                 class="hidden"
                 onchange={(e) => handleFileUpload(e, glyph.id)}
               />
-              <Button variant="ghost" size="sm" type="button">Upload</Button>
+              <Button variant="ghost" size="sm" type="button">{t('glyph_upload')}</Button>
             </label>
             {#if glyph.isCustom}
-              <Button variant="ghost" size="sm" onclick={() => resetGlyph(glyph.id)}>Reset</Button>
+              <Button variant="ghost" size="sm" onclick={() => resetGlyph(glyph.id)}>{t('glyph_reset')}</Button>
             {/if}
           </div>
         </div>
@@ -145,7 +146,7 @@
             {/if}
             <span class="text-sm">{glyph.name}</span>
             {#if glyph.isCustom}
-              <span class="text-xs text-muted-foreground">(custom)</span>
+              <span class="text-xs text-muted-foreground">({t('glyph_custom')})</span>
             {/if}
           </div>
           <div class="flex gap-1">
@@ -156,10 +157,10 @@
                 class="hidden"
                 onchange={(e) => handleFileUpload(e, glyph.id)}
               />
-              <Button variant="ghost" size="sm" type="button">Upload</Button>
+              <Button variant="ghost" size="sm" type="button">{t('glyph_upload')}</Button>
             </label>
             {#if glyph.isCustom}
-              <Button variant="ghost" size="sm" onclick={() => resetGlyph(glyph.id)}>Reset</Button>
+              <Button variant="ghost" size="sm" onclick={() => resetGlyph(glyph.id)}>{t('glyph_reset')}</Button>
             {/if}
           </div>
         </div>
@@ -195,7 +196,7 @@
             {/if}
             <span class="text-sm">{glyph.name}</span>
             {#if glyph.isCustom}
-              <span class="text-xs text-muted-foreground">(custom)</span>
+              <span class="text-xs text-muted-foreground">({t('glyph_custom')})</span>
             {/if}
           </div>
           <div class="flex gap-1">
@@ -206,10 +207,10 @@
                 class="hidden"
                 onchange={(e) => handleFileUpload(e, glyph.id)}
               />
-              <Button variant="ghost" size="sm" type="button">Upload</Button>
+              <Button variant="ghost" size="sm" type="button">{t('glyph_upload')}</Button>
             </label>
             {#if glyph.isCustom}
-              <Button variant="ghost" size="sm" onclick={() => resetGlyph(glyph.id)}>Reset</Button>
+              <Button variant="ghost" size="sm" onclick={() => resetGlyph(glyph.id)}>{t('glyph_reset')}</Button>
             {/if}
           </div>
         </div>
@@ -220,27 +221,27 @@
 
 {#if embedded}
   <div class="space-y-3 rounded-md border p-3 max-h-[56vh] overflow-auto">
-    <div class="text-sm font-medium opacity-90">Glyphs management</div>
+    <div class="text-sm font-medium opacity-90">{t('glyphs_management')}</div>
     <div class="text-xs text-muted-foreground">
-      Upload custom SVG glyphs to replace default symbols.
+      {t('glyph_upload_svg_hint')}
     </div>
     {@render glyphManagerContent()}
   </div>
 {:else}
   <Dialog.Root bind:open>
     <Dialog.Trigger>
-      <Button variant="outline" size="sm">Manage Glyphs</Button>
+      <Button variant="outline" size="sm">{t('glyphs_manage')}</Button>
     </Dialog.Trigger>
     <Dialog.Content class="max-w-2xl max-h-[80vh] overflow-y-auto">
       <Dialog.Header>
-        <Dialog.Title>Glyph Management</Dialog.Title>
+        <Dialog.Title>{t('glyphs_management')}</Dialog.Title>
         <Dialog.Description>
-          Upload custom SVG glyphs to replace default symbols. SVG files only.
+          {t('glyphs_dialog_description')}
         </Dialog.Description>
       </Dialog.Header>
       {@render glyphManagerContent()}
       <Dialog.Footer>
-        <Button onclick={() => open = false}>Close</Button>
+        <Button onclick={() => open = false}>{t('button_close')}</Button>
       </Dialog.Footer>
     </Dialog.Content>
   </Dialog.Root>

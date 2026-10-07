@@ -78,6 +78,11 @@ structure. Shared rules are defined in the
 positions when persisted query rows are unavailable.</li>
 <li>Chart-level calculation settings override workspace defaults through the same
 payload precedence used by React.</li>
+<li><code>main.ts</code> loads the built-in Rust domain catalog before mounting Svelte;
+<code>tauri/workspace.ts</code> refreshes it for the effective workspace/chart model.</li>
+<li><code>astrology/domainCatalog.ts</code> and <code>observableObjects.ts</code> project catalog IDs
+into UI state. Translation strings, glyph assets, colors, and visual grouping
+remain Svelte presentation concerns.</li>
 </ul>
 <h2 id="svelte-specific-conventions">Svelte-specific conventions</h2>
 <ul>

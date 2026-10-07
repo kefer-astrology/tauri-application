@@ -143,12 +143,12 @@
 </ul>
 <p>Swiss Ephemeris maps the accepted list through:</p>
 <ul>
-<li><code>src-tauri/src/swisseph.rs</code></li>
+<li><code>src-tauri/src/infrastructure/swisseph.rs</code> (feature-gated)</li>
 </ul>
 <p>Rust JPL house support lives in:</p>
 <ul>
-<li><code>src-tauri/src/houses.rs</code></li>
-<li><code>src-tauri/src/jpl_backend.rs</code></li>
+<li><code>src-tauri/src/domain/houses.rs</code></li>
+<li><code>src-tauri/src/infrastructure/jpl_backend.rs</code></li>
 </ul>
 <p>The current Rust JPL implementation computes axes for all supported chart types, then:</p>
 <ul>
@@ -196,7 +196,8 @@
 <li>decide whether <code>Campanus</code>, <code>Regiomontanus</code>, <code>Alcabitius</code>, <code>Koch</code>, and <code>Vehlow</code> should be implemented directly in Rust or treated as Swiss-backed compatibility systems</li>
 <li>add backend tests that compare returned cusp count, ordering, and fallback warnings for every accepted system</li>
 <li>expose compute warnings in both frontend shells near the radix/chart metadata</li>
-<li>document any system-specific latitude limits once each implementation is in place</li>
+<li>document any system-specific latitude limits once each implementation is in place
+����</li>
 </ul>
 
     </div>

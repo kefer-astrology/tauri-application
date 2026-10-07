@@ -112,11 +112,11 @@ Acceptance criteria:
 ### `import_chart(workspace_path, source_path) -> Result<String, String>`
 
 - Imports an external chart file into the active workspace.
-- Native YAML (`.yml`, `.yaml`) is supported in the current Rust path.
+- Native YAML (`.yml`, `.yaml`) and StarFisher EventData (`.sfs`) are supported in the Rust path.
+- SFS import accepts UTF-8 and BOM-marked UTF-16, converts event metadata to a native base-event chart, and selects JPL/apparent recomputation without persisting source positions.
 - On success, writes the imported chart into `charts/` and registers it in `workspace.yaml`.
 - Returns the imported chart id.
-- Returns an error for duplicate chart ids.
-- Returns an explicit error for `.sfs` because the Python-backed StarFisher import path is not wired yet.
+- Returns an error for duplicate chart ids or malformed source events.
 
 ### `update_chart(workspace_path, chart_id, chart) -> Result<String, String>`
 

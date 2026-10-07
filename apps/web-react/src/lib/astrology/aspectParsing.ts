@@ -9,6 +9,9 @@ export interface ParsedAspect {
 	orb: number;
 	angle?: number;
 	exactAngle?: number;
+	/** The orb limit `orb` was checked against (model default or user override) — present on
+	 *  every aspect returned by the Rust backend; absent only for older/foreign payload shapes. */
+	allowedOrb?: number;
 	applying?: boolean;
 	separating?: boolean;
 }
@@ -25,6 +28,7 @@ export function parseComputedAspect(raw: unknown): ParsedAspect | null {
 	if (!from || !to || !type || !Number.isFinite(orb)) return null;
 	const angleRaw = value.angle;
 	const exactAngleRaw = value.exact_angle;
+	const allowedOrbRaw = value.allowed_orb;
 	return {
 		from,
 		to,
@@ -34,6 +38,10 @@ export function parseComputedAspect(raw: unknown): ParsedAspect | null {
 		exactAngle:
 			typeof exactAngleRaw === 'number' && Number.isFinite(exactAngleRaw)
 				? exactAngleRaw
+				: undefined,
+		allowedOrb:
+			typeof allowedOrbRaw === 'number' && Number.isFinite(allowedOrbRaw)
+				? allowedOrbRaw
 				: undefined,
 		applying: value.applying === true,
 		separating: value.separating === true

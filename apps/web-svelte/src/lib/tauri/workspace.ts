@@ -22,6 +22,10 @@ import type {
   WorkspaceDefaultsDto,
   WorkspaceInfo
 } from './types';
+import { setDomainCatalog } from '$lib/astrology/domainCatalog';
+import { setAspectDefinitions } from '$lib/astrology/aspects';
+import { setObservableObjectCatalog } from '$lib/astrology/observableObjects';
+import { refreshCatalogGlyphs } from '$lib/stores/glyphs.svelte';
 
 function chartTypeFromDefinition(definition: ChartDefinitionDto): string {
   return definition.kind === 'base'
@@ -191,7 +195,16 @@ export function getCurrentModelReport(
   workspacePath: string,
   chartId?: string | null
 ): Promise<CurrentModelReport> {
-  return invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId });
+  return Promise.all([
+    invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId }),
+    invoke<import('./types').DomainCatalogDto>('get_domain_catalog', { workspacePath, chartId })
+  ]).then(([report, catalog]) => {
+    setDomainCatalog(catalog);
+    setAspectDefinitions(catalog.model.aspect_definitions, catalog.model.settings?.default_aspects);
+    setObservableObjectCatalog(catalog);
+    refreshCatalogGlyphs();
+    return report;
+  });
 }
 
 export function getChartDetails(workspacePath: string, chartId: string): Promise<ChartDetails> {

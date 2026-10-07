@@ -35,8 +35,8 @@ const PRESETS: { key: string; aspectIds: AspectRowId[] }[] = [
 			'opposition',
 			'quincunx',
 			'semisextile',
-			'semisquare',
-			'sesquiquadrate'
+			'octile',
+			'trioctile'
 		]
 	},
 	{ key: 'transits', aspectIds: ['conjunction', 'sextile', 'square', 'trine', 'opposition'] },
@@ -75,7 +75,8 @@ export function AspectSelector({
 	const selected = useMemo(() => new Set(selectedAspectIds), [selectedAspectIds]);
 	const trimmedQuery = query.trim();
 
-	const labelFor = (row: (typeof ASPECT_ROWS)[number]) => t(row.labelKey);
+	const labelFor = (row: (typeof ASPECT_ROWS)[number]) =>
+		t(row.labelKey, { defaultValue: row.fallbackLabel });
 
 	const matchesQuery = (row: (typeof ASPECT_ROWS)[number]) => {
 		if (!trimmedQuery) return true;

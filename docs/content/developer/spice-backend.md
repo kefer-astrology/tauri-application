@@ -58,10 +58,9 @@ src-tauri/src/
   domain/
     houses.rs                    # obliquity, axes, cusps, node helpers, transforms
   infrastructure/
-    astronomy/
-      mod.rs                     # AstronomyBackend trait + backend selection
-      jpl_backend.rs             # JplAstronomyBackend using anise
-      swisseph.rs                # Swiss-backed compatibility path, feature-gated
+    jpl_backend.rs               # JplAstronomyBackend using anise
+    position_provider.rs         # provider trait, outputs, and backend selection
+    swisseph.rs                  # Swiss-backed compatibility path, feature-gated
     ephemeris.rs                 # BSP catalog, download, cache, multi-file almanac
 ```
 

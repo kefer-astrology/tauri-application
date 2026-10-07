@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use serde::Serialize;
 
 use crate::domain::astrology::ComputedAspect;
-use crate::infrastructure::astronomy::AstronomyMotion;
+use crate::infrastructure::position_provider::AstronomyMotion;
 use crate::lunar_phase::LunarPhaseDetails;
 use crate::workspace::models::{AstroModel, ChartInstance};
 use crate::workspace::settings::{
@@ -151,7 +151,7 @@ pub(super) fn compute_positions(
     requested_ids: &[String],
     initial_warnings: &[String],
 ) -> Result<PositionCalculation, String> {
-    let backend = crate::infrastructure::astronomy::backend_for_chart(chart);
+    let backend = crate::infrastructure::position_provider::backend_for_chart(chart);
     let selection = crate::domain::astrology::resolve_body_selection(
         &model.body_definitions,
         requested_ids,

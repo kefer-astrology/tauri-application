@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
-import { normalizeGlyphId, ZODIAC_IDS, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { normalizeGlyphId, zodiacIds, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import {
 	OBSERVABLE_OBJECTS,
 	OBSERVABLE_OBJECT_CATEGORY_LABELS,
@@ -37,17 +37,22 @@ function titleCase(id: string): string {
 		.join(' ');
 }
 
+const ZODIAC_PRESENTATION_GLYPHS: Record<string, string> = {
+	aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
+	libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+};
+
 function useGlyphManagerGroups(): GlyphManagerGroup[] {
 	const { t } = useTranslation();
 
 	const zodiacGroup: GlyphManagerGroup = {
 		key: 'zodiac',
 		label: t('observable_category_zodiac', { defaultValue: 'Zodiac Signs' }),
-		rows: ZODIAC_IDS.map((id) => ({
+		rows: zodiacIds().map((id) => ({
 			id,
 			label: titleCase(id),
 			domain: 'zodiac' as const,
-			fallback: id.slice(0, 2).toUpperCase()
+			fallback: ZODIAC_PRESENTATION_GLYPHS[id] ?? id.slice(0, 2).toUpperCase()
 		}))
 	};
 
@@ -86,6 +91,7 @@ function GlyphManagerRow({
 	glyphSet: AstrologyGlyphSetId;
 	isCustom: boolean;
 }) {
+	const { t } = useTranslation();
 	const [error, setError] = useState<string | null>(null);
 
 	function handleUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -93,7 +99,7 @@ function GlyphManagerRow({
 		event.target.value = '';
 		if (!file) return;
 		if (!file.name.toLowerCase().endsWith('.svg') && file.type !== 'image/svg+xml') {
-			setError('Please upload an SVG file');
+			setError(t('glyph_upload_svg_error'));
 			return;
 		}
 		setError(null);
@@ -104,7 +110,7 @@ function GlyphManagerRow({
 				setCustomGlyph(row.id, row.label, svg, file.name);
 			}
 		};
-		reader.onerror = () => setError('Failed to read file');
+		reader.onerror = () => setError(t('glyph_upload_read_error'));
 		reader.readAsText(file);
 	}
 
@@ -120,14 +126,14 @@ function GlyphManagerRow({
 				/>
 				<span className="truncate text-sm">{row.label}</span>
 				{isCustom ? (
-					<span className="text-xs text-[color:var(--theme-content-muted)]">(custom)</span>
+				<span className="text-xs text-[color:var(--theme-content-muted)]">({t('glyph_custom')})</span>
 				) : null}
 			</div>
 			<div className="flex shrink-0 items-center gap-1">
 				<label className="cursor-pointer">
 					<input type="file" accept=".svg,image/svg+xml" className="hidden" onChange={handleUpload} />
 					<Button variant="ghost" size="sm" type="button" asChild>
-						<span>Upload</span>
+						<span>{t('glyph_upload')}</span>
 					</Button>
 				</label>
 				{isCustom ? (
@@ -137,7 +143,7 @@ function GlyphManagerRow({
 						type="button"
 						onClick={() => resetCustomGlyph(row.id)}
 					>
-						Reset
+						{t('glyph_reset')}
 					</Button>
 				) : null}
 			</div>
@@ -147,6 +153,7 @@ function GlyphManagerRow({
 }
 
 export function GlyphManager({ glyphSet }: { glyphSet: AstrologyGlyphSetId }) {
+	const { t } = useTranslation();
 	const groups = useGlyphManagerGroups();
 	const overrides = useCustomGlyphOverrides();
 	const defaultOpen = groups.map((g) => g.key).filter((key) => !COLLAPSED_BY_DEFAULT.has(key));
@@ -154,7 +161,7 @@ export function GlyphManager({ glyphSet }: { glyphSet: AstrologyGlyphSetId }) {
 	return (
 		<div className="space-y-2">
 			<p className="text-xs text-[color:var(--theme-content-muted)]">
-				Upload a custom SVG to replace any glyph below. Uploads are stored on this device only.
+				{t('glyph_upload_svg_hint')}
 			</p>
 			<Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
 				{groups.map((group) => (

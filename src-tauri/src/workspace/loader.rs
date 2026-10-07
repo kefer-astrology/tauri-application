@@ -667,6 +667,27 @@ mod tests {
     }
 
     #[test]
+    fn rust_loads_the_tag_showcase_workspace() {
+        let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("sample-workspaces")
+            .join("tag-showcase");
+        let loaded = load_workspace_aggregate(&fixture).expect("tag showcase should load");
+
+        assert_eq!(loaded.charts.len(), 5);
+        assert_eq!(loaded.manifest.tag_catalog.len(), 22);
+        assert!(
+            loaded
+                .diagnostics
+                .iter()
+                .all(|diagnostic| diagnostic.severity
+                    != super::super::validation::DiagnosticSeverity::Error),
+            "showcase diagnostics: {:?}",
+            loaded.diagnostics
+        );
+    }
+
+    #[test]
     fn rust_loads_the_shared_python_writer_fixture() {
         let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("..")

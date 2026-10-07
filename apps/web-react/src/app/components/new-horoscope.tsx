@@ -44,6 +44,7 @@ import {
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
 import { resolveLocation, resolveTimezone, searchLocations } from '@/lib/tauri/workspace';
+import type { WorkspaceTagDefinition } from '@/lib/tauri/types';
 
 type ChartKind = 'radix' | 'event' | 'horary';
 type LatDir = 'north' | 'south';
@@ -218,9 +219,143 @@ function mergeTags(existing: string[], incoming: string[]): string[] {
 	return next;
 }
 
+function TagSuggestionInput({
+	id,
+	value,
+	onValueChange,
+	onCommit,
+	suggestions,
+	selectedTags,
+	placeholder,
+	className,
+	inputClassName,
+	onBackspaceEmpty
+}: {
+	id?: string;
+	value: string;
+	onValueChange: (value: string) => void;
+	onCommit: (value: string) => void;
+	suggestions: WorkspaceTagDefinition[];
+	selectedTags: string[];
+	placeholder?: string;
+	className?: string;
+	inputClassName?: string;
+	onBackspaceEmpty?: () => void;
+}) {
+	const [focused, setFocused] = useState(false);
+	const [activeIndex, setActiveIndex] = useState(0);
+	const normalizedQuery = value.trim().toLocaleLowerCase();
+	const options = suggestions
+		.filter((suggestion) => !selectedTags.includes(suggestion.name))
+		.filter(
+			(suggestion) =>
+				!normalizedQuery || suggestion.name.toLocaleLowerCase().includes(normalizedQuery)
+		)
+		.slice(0, 8);
+
+	useEffect(() => setActiveIndex(0), [value]);
+
+	const selectSuggestion = (name: string) => {
+		onCommit(name);
+		onValueChange('');
+	};
+
+	return (
+		<div className={cn('relative min-w-0', focused && 'z-[80]', className)}>
+			<input
+				id={id}
+				value={value}
+				onChange={(event) => {
+					onValueChange(event.target.value);
+					setFocused(true);
+				}}
+				onFocus={() => setFocused(true)}
+				onBlur={() => {
+					setFocused(false);
+					if (value.trim()) onCommit(value);
+				}}
+				onKeyDown={(event) => {
+					if (event.key === 'ArrowDown' && options.length > 0) {
+						event.preventDefault();
+						setActiveIndex((current) => (current + 1) % options.length);
+						return;
+					}
+					if (event.key === 'ArrowUp' && options.length > 0) {
+						event.preventDefault();
+						setActiveIndex((current) => (current - 1 + options.length) % options.length);
+						return;
+					}
+					if (event.key === 'Enter') {
+						event.preventDefault();
+						const suggestion = value.trim() ? options[activeIndex] : undefined;
+						if (suggestion) selectSuggestion(suggestion.name);
+						else if (value.trim()) onCommit(value);
+						return;
+					}
+					if (event.key === ',') {
+						event.preventDefault();
+						if (value.trim()) onCommit(value);
+						return;
+					}
+					if (event.key === 'Escape') {
+						setFocused(false);
+						return;
+					}
+					if (event.key === 'Backspace' && !value) onBackspaceEmpty?.();
+				}}
+				placeholder={placeholder}
+				className={inputClassName}
+				role="combobox"
+				aria-autocomplete="list"
+				aria-expanded={focused && options.length > 0}
+			/>
+			{focused && options.length > 0 && (
+				<div
+					role="listbox"
+					className={cn(
+						'absolute top-full right-0 left-0 z-[90] mt-1 max-h-52 overflow-y-auto rounded-xl border p-1 opacity-100 shadow-2xl ring-1 ring-black/10',
+						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]'
+					)}
+				>
+					{options.map((suggestion, index) => (
+						<button
+							key={suggestion.name}
+							type="button"
+							role="option"
+							aria-selected={index === activeIndex}
+							onMouseDown={(event) => event.preventDefault()}
+							onMouseEnter={() => setActiveIndex(index)}
+							onClick={() => selectSuggestion(suggestion.name)}
+							className={cn(
+								'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors',
+								index === activeIndex
+									? 'bg-[color:var(--theme-selected-bg)]'
+									: 'hover:bg-[color:var(--theme-soft-bg)]'
+							)}
+						>
+							<span
+								className="h-2.5 w-2.5 shrink-0 rounded-full"
+								style={{ backgroundColor: suggestion.color ?? tagDefaultColor(index) }}
+							/>
+							<span className="truncate">{suggestion.name}</span>
+							<Check
+								className={cn(
+									'ml-auto h-4 w-4',
+									index === activeIndex ? 'opacity-100' : 'opacity-0'
+								)}
+							/>
+						</button>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
 function TagInput({
 	tags,
 	tagColors,
+	suggestions,
 	onChange,
 	onOpenAdvanced,
 	advancedLabel,
@@ -233,6 +368,7 @@ function TagInput({
 }: {
 	tags: string[];
 	tagColors: Record<string, string>;
+	suggestions: WorkspaceTagDefinition[];
 	onChange: (tags: string[]) => void;
 	onOpenAdvanced: () => void;
 	advancedLabel: string;
@@ -254,8 +390,8 @@ function TagInput({
 	return (
 		<div
 			className={cn(
-				'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-				'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
+				'relative flex min-h-10 w-full items-stretch rounded-xl border text-base shadow-inner transition-all md:text-sm',
+				'focus-within:z-[80] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
 				panelBg,
 				panelBorder
 			)}
@@ -288,24 +424,19 @@ function TagInput({
 						</button>
 					</span>
 				))}
-				<input
+				<TagSuggestionInput
 					value={input}
-					onChange={(e) => setInput(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === 'Enter' || e.key === ',') {
-							e.preventDefault();
-							commit(input);
-						}
-						if (e.key === 'Backspace' && !input && tags.length > 0) {
-							onChange(tags.slice(0, -1));
-						}
-					}}
-					onBlur={() => {
-						if (input.trim()) commit(input);
+					onValueChange={setInput}
+					onCommit={commit}
+					suggestions={suggestions}
+					selectedTags={tags}
+					onBackspaceEmpty={() => {
+						if (tags.length > 0) onChange(tags.slice(0, -1));
 					}}
 					placeholder={tags.length === 0 ? placeholder : undefined}
-					className={cn(
-						'min-w-[6rem] flex-1 bg-transparent text-base outline-none md:text-sm',
+					className="min-w-[8rem] flex-1"
+					inputClassName={cn(
+						'w-full bg-transparent text-base outline-none md:text-sm',
 						`placeholder:${contentMuted}`,
 						contentPrimary
 					)}
@@ -315,7 +446,7 @@ function TagInput({
 				type="button"
 				variant="ghost"
 				onClick={onOpenAdvanced}
-				className="h-auto min-h-10 self-stretch rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+				className="h-auto min-h-10 self-stretch rounded-l-none rounded-r-xl border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
 				aria-label={advancedLabel}
 			>
 				<Pencil className={cn('h-4 w-4 shrink-0', iconClassName)} />
@@ -329,6 +460,7 @@ function AdvancedTagSheet({
 	onOpenChange,
 	tags,
 	tagColors,
+	suggestions,
 	onChange,
 	onRename,
 	onColorChange,
@@ -338,6 +470,7 @@ function AdvancedTagSheet({
 	onOpenChange: (open: boolean) => void;
 	tags: string[];
 	tagColors: Record<string, string>;
+	suggestions: WorkspaceTagDefinition[];
 	onChange: (tags: string[]) => void;
 	onRename: (tag: string, nextName: string) => void;
 	onColorChange: (tag: string, color: string) => void;
@@ -353,8 +486,8 @@ function AdvancedTagSheet({
 		setDraftNames(Object.fromEntries(tags.map((tag) => [tag, tag])));
 	}, [open, tags]);
 
-	const addDraftTags = () => {
-		const next = parseTags(draft);
+	const addDraftTags = (raw = draft) => {
+		const next = parseTags(raw);
 		if (next.length === 0) return;
 		onChange(mergeTags(tags, next));
 		setDraft('');
@@ -394,25 +527,23 @@ function AdvancedTagSheet({
 							<Label htmlFor="advanced-tags" className={ft.label}>
 								{t('new_tags')}
 							</Label>
-							<div className="flex gap-2">
-								<Input
+							<div className="flex items-start gap-2">
+								<TagSuggestionInput
 									id="advanced-tags"
 									value={draft}
-									onChange={(event) => setDraft(event.target.value)}
-									onKeyDown={(event) => {
-										if (event.key === 'Enter') {
-											event.preventDefault();
-											addDraftTags();
-										}
-									}}
+									onValueChange={setDraft}
+									onCommit={addDraftTags}
+									suggestions={suggestions}
+									selectedTags={tags}
 									placeholder={t('placeholder_tags_example')}
-									className={cn(ft.input, 'shadow-inner')}
+									className="flex-1"
+									inputClassName={cn(ft.input, 'shadow-inner')}
 								/>
 								<Button
 									type="button"
 									size="icon"
 									className={cn(ft.footerPrimary, 'h-10 w-10 flex-none rounded-xl')}
-									onClick={addDraftTags}
+									onClick={() => addDraftTags()}
 									aria-label={t('new_tags')}
 								>
 									<Plus className="h-4 w-4" />
@@ -582,6 +713,7 @@ interface NewHoroscopeProps {
 	/** Return to main horoscope view (sidebar **Horoskop**). */
 	onBack?: () => void;
 	workspaceDefaults: WorkspaceDefaultsState;
+	workspaceTags: WorkspaceTagDefinition[];
 	existingChartIds: ReadonlySet<string>;
 	/** Persist + navigate home; chart is appended to workspace context tabs. */
 	onCreated?: (chart: AppChart) => void | Promise<void>;
@@ -597,6 +729,7 @@ export function NewHoroscope({
 	pageWidth = 'standard',
 	onBack,
 	workspaceDefaults,
+	workspaceTags,
 	existingChartIds,
 	onCreated,
 	initialValues,
@@ -617,9 +750,12 @@ export function NewHoroscope({
 		() => initialValues?.location ?? workspaceDefaults.locationName ?? ''
 	);
 	const [tags, setTags] = useState<string[]>(() => initialValues?.tags ?? []);
-	const [tagColors, setTagColors] = useState<Record<string, string>>(
-		() => initialValues?.tagColors ?? {}
-	);
+	const [tagColors, setTagColors] = useState<Record<string, string>>(() => {
+		const catalogColors = Object.fromEntries(
+			workspaceTags.flatMap((tag) => (tag.color ? [[tag.name, tag.color]] : []))
+		);
+		return { ...(initialValues?.tagColors ?? {}), ...catalogColors };
+	});
 	const [tagSheetOpen, setTagSheetOpen] = useState(false);
 	const [selectedDateTime, setSelectedDateTime] = useState<Date>(initialSelectedDateTime);
 	const [timeSystem, setTimeSystem] = useState<NewHoroscopeTimeSystem>(initialTimeSystem);
@@ -694,11 +830,12 @@ export function NewHoroscope({
 
 	const applyTags = (nextTags: string[]) => {
 		const uniqueTags = mergeTags([], nextTags);
+		const workspaceTagColors = new Map(workspaceTags.map((tag) => [tag.name, tag.color]));
 		setTags(uniqueTags);
 		setTagColors((prev) => {
 			const next: Record<string, string> = {};
 			uniqueTags.forEach((tag, index) => {
-				next[tag] = prev[tag] ?? tagDefaultColor(index);
+				next[tag] = workspaceTagColors.get(tag) ?? prev[tag] ?? tagDefaultColor(index);
 			});
 			return next;
 		});
@@ -1271,6 +1408,7 @@ export function NewHoroscope({
 						<TagInput
 							tags={tags}
 							tagColors={tagColors}
+							suggestions={workspaceTags}
 							onChange={applyTags}
 							onOpenAdvanced={() => setTagSheetOpen(true)}
 							advancedLabel={t('new_tags')}
@@ -1333,6 +1471,7 @@ export function NewHoroscope({
 					onOpenChange={setTagSheetOpen}
 					tags={tags}
 					tagColors={tagColors}
+					suggestions={workspaceTags}
 					onChange={applyTags}
 					onRename={applyTagRename}
 					onColorChange={applyTagColor}

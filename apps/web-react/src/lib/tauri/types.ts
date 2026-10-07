@@ -73,10 +73,16 @@ export type ChartDefinitionDto =
 			parameters?: unknown;
 	  };
 
+export interface WorkspaceTagDefinition {
+	name: string;
+	color?: string | null;
+}
+
 export interface WorkspaceInfo {
 	path: string;
 	owner: string;
 	active_model: string | null;
+	tag_catalog: WorkspaceTagDefinition[];
 	charts: WorkspaceChartSummary[];
 	analyses: AnalysisDto[];
 }
@@ -121,6 +127,7 @@ export interface ModelOverrideEntryDto {
 	id: string;
 	glyph?: string | null;
 	angle?: number | null;
+	harmonic?: number | null;
 	default_orb?: number | null;
 	only_for?: string[] | null;
 	i18n?: Record<string, string> | null;
@@ -153,10 +160,12 @@ export interface BodyDefinitionDto {
 }
 
 export interface AspectDefinitionDto {
-	id: string;
-	enabled: boolean;
+  id: string;
+  type: 'major' | 'minor';
+  enabled: boolean;
 	glyph: string;
 	angle: number;
+	harmonic: number;
 	default_orb: number;
 	i18n: Record<string, string>;
 	color?: string | null;
@@ -169,6 +178,7 @@ export interface AspectDefinitionDto {
 }
 
 export interface SignDefinitionDto {
+	id: string;
 	name: string;
 	glyph: string;
 	abbreviation: string;
@@ -273,6 +283,25 @@ export interface CurrentModelReport {
 	diagnostics: BackendDiagnostic[];
 }
 
+export interface DomainDefinitionDto {
+	id: string;
+	translation_key: string;
+	parent_id?: string | null;
+	generated_variant?: { prefix: string; source: string } | null;
+}
+
+export interface HouseSystemDefinitionDto {
+	id: string;
+	computation_supported: boolean;
+}
+
+export interface DomainCatalogDto {
+	model: AstroModelDto;
+	house_systems: HouseSystemDefinitionDto[];
+	shapes: DomainDefinitionDto[];
+	configurations: DomainDefinitionDto[];
+}
+
 export interface ChartDetails {
 	id: string;
 	subject: {
@@ -298,15 +327,15 @@ export interface ChartDetails {
 		model: string | null;
 		model_overrides?: ModelOverridesDto | null;
 		override_ephemeris: string | null;
-		observable_objects?: string[];
+		observable_objects?: string[] | null;
 		aspect_orbs?: Record<string, number>;
-		selected_aspects?: string[];
+		selected_aspects?: string[] | null;
 		ayanamsa?: string | null;
 		time_system?: string | null;
 	};
 	tags: string[];
 	tag_colors?: Record<string, string>;
-	roden_rating?: string;
+	roden_rating?: string | null;
 }
 
 export interface MoonDetails {
@@ -349,6 +378,9 @@ export interface ComputeChartResult {
 export interface TransitSeriesEntry {
 	datetime: string;
 	transit_positions?: Record<string, unknown>;
+	/** Daily motion (degrees/day) per transiting body at this step — Rust-native route only;
+	 *  absent on the Python-sidecar fallback route. */
+	motion?: Record<string, { speed: number; retrograde: boolean }>;
 	aspects?: Array<Record<string, unknown>>;
 }
 
@@ -387,6 +419,19 @@ export interface TransitSeriesRequest extends Record<string, unknown> {
 	transitedObjects: string[];
 	aspectTypes: string[];
 	presetId?: string | null;
+	settingsOverrides?: ComputeSettingsOverrides | null;
+}
+
+/** `compute_transit_series_from_data` counterpart to `TransitSeriesRequest` — an in-memory chart
+ *  payload instead of a workspace/chart id, for when no workspace is open. Rust-native only. */
+export interface TransitSeriesFromDataRequest extends Record<string, unknown> {
+	chartJson: Record<string, unknown>;
+	startDatetime: string;
+	endDatetime: string;
+	timeStepSeconds: number;
+	transitingObjects: string[];
+	transitedObjects: string[];
+	aspectTypes: string[];
 	settingsOverrides?: ComputeSettingsOverrides | null;
 }
 

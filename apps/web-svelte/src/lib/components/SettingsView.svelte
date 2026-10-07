@@ -53,6 +53,7 @@
   } from '$lib/tauri/workspace';
   import type { ResolvedLocation } from '$lib/tauri/types';
   import LocateFixed from '@lucide/svelte/icons/locate-fixed';
+  import { catalogHouseSystems } from '$lib/astrology/domainCatalog';
 
   let {
     section
@@ -61,17 +62,6 @@
   } = $props();
 
   let settingsChanged = $state(false);
-  const HOUSE_SYSTEMS = [
-    'Placidus',
-    'Whole Sign',
-    'Campanus',
-    'Koch',
-    'Equal',
-    'Regiomontanus',
-    'Vehlow',
-    'Porphyry',
-    'Alcabitius'
-  ] as const;
   let elementColors = $state<Record<ElementColorKey, string>>({
     'element-fire': '#5a5a64',
     'element-earth': '#4a3f35',
@@ -511,7 +501,7 @@
             <Select.Trigger class="w-full h-9 px-3">{houseSystem}</Select.Trigger>
             <Select.Content>
               <Select.Group>
-                {#each HOUSE_SYSTEMS as system}
+                {#each catalogHouseSystems() as system}
                   <Select.Item value={system} label={system}>{system}</Select.Item>
                 {/each}
               </Select.Group>
@@ -580,7 +570,7 @@
                       void persistAspectSettings(next);
                     }}
                   />
-                  <span class="text-sm">{t(aspect.labelKey, {}, aspect.labelKey)}</span>
+                  <span class="text-sm">{t(aspect.labelKey, {}, aspect.fallbackLabel)}</span>
                 </label>
                 <div class="flex items-center gap-2">
                   <input

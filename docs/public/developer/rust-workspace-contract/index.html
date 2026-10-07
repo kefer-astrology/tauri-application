@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rust workspace contract | Kefer Astrology</title>
-    <meta name="description" content="The Kefer Astrology manual, developer reference, and guided product tour." />
+    <meta name="description" content="Current workspace lifecycle, loading paths, settings, and catalog behavior." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
     <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
@@ -32,7 +32,7 @@
     <header class="page-header">
       <p class="eyebrow">developer</p>
       <h1>Rust workspace contract</h1>
-      
+      <p class="lede">Current workspace lifecycle, loading paths, settings, and catalog behavior.</p>
       
         <div class="doc-meta" aria-label="Document classification">
           <span>Contract</span>
@@ -42,49 +42,65 @@
       
     </header>
     <div class="prose">
-      <p>This page defines the current Rust-side implementation direction for the desktop app.</p>
-<h2 id="scope">Scope</h2>
-<p>Rust owns local workspace functionality and the no-sidecar execution path.</p>
-<p>Rust does not own persisted storage of computed positions, aspects, or transit series.</p>
-<h2 id="rules">Rules</h2>
-<ul>
-<li>Keep workspace persistence focused on YAML manifests and chart files.</li>
-<li>When the optional Python sidecar source tree is present, keep Rust workspace payloads compatible with <code>backend-python/module/models.py</code> and <code>backend-python/module/workspace.py</code>.</li>
-<li>The desktop app must run without the Python sidecar.</li>
-<li>The app should check whether the Python backend is available at startup and use that availability state as the general runtime decision source.</li>
-<li>Do not repeatedly probe for Python sidecar existence in every feature flow when startup availability state can be reused.</li>
-<li>If Python is unavailable, Rust fallback behavior must remain functional for supported features.</li>
-<li>CI and desktop packaging must not be blocked by sidecar build failures while the Rust/no-sidecar path is the baseline.</li>
-<li><code>backend-python/</code> may be omitted from some packaging contexts as long as the resulting app still supports the documented Rust fallback flows.</li>
-<li>Do not reintroduce DuckDB- or Parquet-based persistence on the Rust side unless a new <code>/developer/</code> spec explicitly changes this rule.</li>
-<li>Keep backend provenance visible to callers; do not allow silent backend changes to be invisible in compute results.</li>
-</ul>
-<h2 id="practical-implications">Practical implications</h2>
-<ul>
-<li><code>init_storage</code> is a compatibility command only.</li>
-<li>Storage query commands may remain compatibility shims that return empty results.</li>
-<li>Rust compute commands should continue to support local in-memory results for the no-sidecar path.</li>
-<li>Workspace and chart file behavior should stay aligned with the Python workspace/model layer.</li>
-<li>Native YAML chart import should work through Rust without requiring the Python backend.</li>
-<li>StarFisher/SFS import remains in scope, but should stay explicitly staged until a Python-backed parser path is wired in.</li>
-<li>Current implementation may use Swiss-backed paths locally, but the architecture should evolve toward a backend-neutral astronomy interface.</li>
-<li><code>jpl</code> / SPICE is the preferred long-term astronomy direction and should be added behind that interface rather than as a one-off special case.</li>
-<li>Rust-side contracts should prefer backend-neutral result shapes even when current implementation details differ underneath.</li>
-<li>Backend selection should follow this general rule:
-<ul>
-<li>app starts</li>
-<li>app checks Python backend availability once</li>
-<li>if Python is available, Python-backed flows may be used</li>
-<li>if Python is unavailable, flows fall back to Rust where supported</li>
-</ul>
-</li>
-</ul>
-<h2 id="dependency-rule">Dependency rule</h2>
-<ul>
-<li>Remove Rust dependencies that are no longer used.</li>
-<li>Prefer deleting unused helper modules when removing a dependency.</li>
-<li>When changing architecture direction, update the <code>/developer/</code> spec in the same change set.</li>
-</ul>
+      <h2 id="lifecycle-and-loading-paths">Lifecycle and loading paths</h2>
+<p><code>create_workspace</code> creates the directory plus <code>charts/</code>, <code>transits/</code>, and an
+empty <code>workspace.yaml</code>; it refuses an existing manifest. <code>save_workspace</code>
+writes supplied chart JSON as <code>charts/&lt;sanitized-id&gt;.yml</code>, preserves an
+existing manifest&rsquo;s other represented fields, and updates its chart references
+and optional defaults. <code>delete_workspace</code> recursively removes the supplied
+directory. These commands currently perform filesystem work directly.</p>
+<p><code>load_workspace</code> is the shell&rsquo;s tolerant summary path: it requires a parseable
+manifest, then skips bad chart/analysis references after logging. It returns
+only successfully loaded summaries, not diagnostics. <code>validate_workspace</code>
+uses <code>load_workspace_aggregate</code>: it loads subjects, charts, presets, analyses,
+transit analyses, layouts, and annotations independently and returns structured
+diagnostics for bad references while retaining other items. A missing or
+malformed manifest is fatal in either path.</p>
+<p>References must be relative. The loader rejects absolute paths and checks the
+canonical target remains beneath the canonical workspace root; missing targets
+are reported as load failures. Chart-by-ID lookup also skips malformed chart
+references, so an operation reports the requested chart as absent if no valid
+matching chart can be loaded.</p>
+<h2 id="manifest-charts-and-derived-data">Manifest, charts, and derived data</h2>
+<p><code>workspace.yaml</code> indexes workspace identity, active school/model, model and
+school definitions, defaults, presentation/tag data, and references. A chart
+file holds its subject, chart configuration, tags, colors, and Rodden rating.
+Transit setup files persist transit form intent. Computed positions, motion,
+houses, aspects, shapes/configurations, lunar details, and transit results are
+derived response data and are not written by the Rust workspace layer.</p>
+<p>Manifest and referenced data deserialize into <code>workspace::models</code>; validation
+emits diagnostics with code, severity, message, and optional path. Validation
+does not make ephemeris availability true: provider/kernel availability remains
+a computation-time concern.</p>
+<h2 id="settings-and-model-resolution">Settings and model resolution</h2>
+<p>For a workspace calculation, <code>current_model_report_with_layers</code> applies sparse
+settings in this implemented order:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>application baseline &lt; resolved model &lt; workspace &lt; preset &lt; chart &lt; operation
+</span></span></code></pre></div><p>The resolver returns usable settings and <code>EffectiveSettingsSources</code>, including
+per-aspect-orb provenance. Model overrides are merged at workspace, preset,
+chart, then operation scope before effective settings are calculated. Not every
+field exists at every layer; only fields represented by the Rust types can
+participate. In particular, chart <code>zodiac_type</code> is a concrete <code>ChartConfig</code>
+value and is applied whenever a chart config is present. Standalone calculation
+uses the same resolver without manifest/preset layers.</p>
+<p>An optional vector in a preset/chart/operation layer replaces the inherited
+body/aspect selection; <code>[]</code> consequently means select none there. Workspace
+defaults have legacy special handling for bodies: an empty <code>default_bodies</code>
+does not replace the model selection, while non-empty <code>manifest.bodies</code> does.
+Use the source report rather than inferring provenance from a YAML field.</p>
+<h2 id="catalog-propagation">Catalog propagation</h2>
+<p><code>get_builtin_domain_catalog</code> is called before both frontend shells mount.
+Their workspace-open paths call <code>get_current_model_report</code> and
+<code>get_domain_catalog</code> without a chart ID, replacing the in-memory catalog. The
+Rust command can resolve a chart-specific catalog when called with <code>chart_id</code>,
+but neither shell currently calls it on chart selection. A selected chart&rsquo;s
+calculation still resolves its own model; UI catalog propagation is therefore
+incomplete for chart-specific models.</p>
+<h2 id="optional-python-and-compatibility-storage">Optional Python and compatibility storage</h2>
+<p>The Python sidecar is optional. Auto routing uses it when available and uses
+Rust for supported work when absent; forced/required Python paths fail clearly.
+<code>store_positions</code> and <code>store_relation</code> are compatibility no-ops, not a result
+cache or persistence API.</p>
 
     </div>
   </article>

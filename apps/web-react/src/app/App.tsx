@@ -14,6 +14,8 @@ import {
 } from './components/settings-secondary-sidebar';
 import { TransitsSecondarySidebar, TransitSection } from './components/transits-secondary-sidebar';
 import { TransitsContent } from './components/transits-content';
+import { TransitedObjectsNav } from './components/transited-objects-nav';
+import { TransitsResultsDashboard } from './components/transits-results-dashboard';
 import { Aspectarium } from './components/aspectarium';
 import { HoroscopeDashboard } from './components/horoscope-dashboard';
 import { InformationView } from './components/information-view';
@@ -38,6 +40,7 @@ import {
 	type WorkspaceDefaultsState
 } from '@/lib/tauri/chartPayload';
 import { WorkspaceChartsProvider, type WorkspaceChartsValue } from './providers/workspace-charts';
+import { TransitsWorkspaceProvider, useTransitsWorkspace } from './providers/transits-workspace';
 import {
 	computeChart,
 	computeChartFromData,
@@ -45,9 +48,14 @@ import {
 	openFolderDialog,
 	openWorkspaceFolder,
 	saveWorkspace,
-	saveWorkspaceDefaults
+	saveWorkspaceDefaults,
+	saveWorkspaceTags
 } from '@/lib/tauri/workspace';
-import type { CurrentModelReport, WorkspaceDefaultsDto } from '@/lib/tauri/types';
+import type {
+	CurrentModelReport,
+	WorkspaceDefaultsDto,
+	WorkspaceTagDefinition
+} from '@/lib/tauri/types';
 import { readStoredAppShellIconSet, type AppShellIconSetId } from '@/lib/app-shell';
 import {
 	persistElementColors,
@@ -74,6 +82,46 @@ import type { TransitOverlay } from '@/lib/astrology/transits';
 import { WindowTitlebar } from './components/window-titlebar';
 import { HoroscopeContextTabs } from './components/horoscope-context-tabs';
 import { DetailSidePanel } from './components/detail-side-panel';
+
+function mergeWorkspaceTagCatalog(
+	catalog: WorkspaceTagDefinition[],
+	charts: AppChart[]
+): WorkspaceTagDefinition[] {
+	const merged = new Map<string, WorkspaceTagDefinition>();
+	for (const tag of catalog) {
+		const name = tag.name.trim();
+		if (name) merged.set(name, { name, color: tag.color ?? undefined });
+	}
+	for (const chart of charts) {
+		for (const name of chart.tags ?? []) {
+			const normalized = name.trim();
+			if (!normalized || merged.has(normalized)) continue;
+			merged.set(normalized, {
+				name: normalized,
+				color: chart.tagColors?.[normalized]
+			});
+		}
+	}
+	return [...merged.values()];
+}
+
+function applyWorkspaceTagColors(
+	charts: AppChart[],
+	catalog: WorkspaceTagDefinition[]
+): AppChart[] {
+	const colors = new Map(
+		catalog.flatMap((tag) => (tag.color ? ([[tag.name, tag.color]] as const) : []))
+	);
+	return charts.map((chart) => ({
+		...chart,
+		tagColors: Object.fromEntries(
+			(chart.tags ?? []).flatMap((tag) => {
+				const color = colors.get(tag) ?? chart.tagColors?.[tag];
+				return color ? [[tag, color]] : [];
+			})
+		)
+	}));
+}
 
 const CHART_CONTEXT_VIEWS = new Set([
 	'horoskop',
@@ -218,6 +266,51 @@ function formatChartDateTimeUtc(value: Date): string {
 	return value.toISOString().slice(0, 19) + 'Z';
 }
 
+/** Secondary-sidebar slot for Transits/Dynamic transits — the setup tab list until a series is
+ *  computed, then the transited-objects nav for the results dashboard (`TransitsWorkspaceProvider`
+ *  owns which). */
+function TransitsSecondarySidebarSlot({
+	theme,
+	dynamic,
+	activeSection,
+	onSectionChange
+}: {
+	theme: Theme;
+	dynamic: boolean;
+	activeSection: TransitSection;
+	onSectionChange: (section: TransitSection) => void;
+}) {
+	const { mode } = useTransitsWorkspace();
+	if (mode === 'results') {
+		return <TransitedObjectsNav theme={theme} dynamic={dynamic} />;
+	}
+	return (
+		<TransitsSecondarySidebar
+			activeSection={activeSection}
+			onSectionChange={onSectionChange}
+			theme={theme}
+			dynamic={dynamic}
+		/>
+	);
+}
+
+/** Main-content slot counterpart to `TransitsSecondarySidebarSlot` — same `mode` switch. */
+function TransitsMainContentSlot({
+	theme,
+	glyphSet,
+	section
+}: {
+	theme: Theme;
+	glyphSet: AstrologyGlyphSetId;
+	section: TransitSection;
+}) {
+	const { mode } = useTransitsWorkspace();
+	if (mode === 'results') {
+		return <TransitsResultsDashboard theme={theme} glyphSet={glyphSet} />;
+	}
+	return <TransitsContent section={section} theme={theme} glyphSet={glyphSet} />;
+}
+
 export default function App() {
 	const { t } = useTranslation();
 	const [theme, setTheme] = useState<Theme>('noon');
@@ -267,6 +360,7 @@ export default function App() {
 	const [workspaceDefaults, setWorkspaceDefaults] = useState<WorkspaceDefaultsState>(() => ({
 		...DEFAULT_WORKSPACE_DEFAULTS
 	}));
+	const [workspaceTags, setWorkspaceTags] = useState<WorkspaceTagDefinition[]>([]);
 	const [currentModelReport, setCurrentModelReport] = useState<CurrentModelReport | null>(null);
 	const computingChartIdsRef = useRef<Set<string>>(new Set());
 	const bootstrapComputeAttemptedRef = useRef(false);
@@ -437,8 +531,30 @@ export default function App() {
 		[workspaceDefaults, workspacePath, charts, applyComputedChartResult]
 	);
 
+	const updateWorkspaceTagsForCharts = useCallback(
+		async (taggedCharts: AppChart[], targetWorkspacePath: string | null) => {
+			const nextCatalog = mergeWorkspaceTagCatalog(workspaceTags, taggedCharts);
+			const catalogByName = new Map(nextCatalog.map((tag) => [tag.name, tag]));
+			for (const chart of taggedCharts) {
+				for (const name of chart.tags ?? []) {
+					const color = chart.tagColors?.[name];
+					if (color) catalogByName.set(name, { name, color });
+				}
+			}
+			const updatedCatalog = [...catalogByName.values()];
+			setWorkspaceTags(updatedCatalog);
+			setCharts((current) => applyWorkspaceTagColors(current, updatedCatalog));
+			if (targetWorkspacePath) {
+				const saved = await saveWorkspaceTags(targetWorkspacePath, updatedCatalog);
+				setWorkspaceTags(saved);
+				setCharts((current) => applyWorkspaceTagColors(current, saved));
+			}
+		},
+		[workspaceTags]
+	);
+
 	const handleChartCreated = async (chart: AppChart) => {
-		let persistedWorkspacePath: string | null = workspacePath;
+		const persistedWorkspacePath: string | null = workspacePath;
 		if (workspacePath) {
 			try {
 				await invoke<string>('create_chart', {
@@ -453,6 +569,11 @@ export default function App() {
 				});
 				return;
 			}
+		}
+		try {
+			await updateWorkspaceTagsForCharts([chart], persistedWorkspacePath);
+		} catch (error) {
+			console.error('Failed to persist workspace tags:', error);
 		}
 		addChart(chart);
 		setActiveView('horoskop');
@@ -523,6 +644,11 @@ export default function App() {
 				return;
 			}
 		}
+		try {
+			await updateWorkspaceTagsForCharts([chart], workspacePath);
+		} catch (error) {
+			console.error('Failed to persist workspace tags:', error);
+		}
 		setCharts((prev) => prev.map((c) => (c.id === chart.id ? { ...c, ...chart } : c)));
 		setEditingChart(null);
 		void computeChartInBackground(chart, workspacePath);
@@ -547,7 +673,11 @@ export default function App() {
 		try {
 			const folder = await openFolderDialog();
 			if (!folder) return;
-			const { path, charts: loaded } = await openWorkspaceFolder(
+			const {
+				path,
+				charts: loaded,
+				tagCatalog
+			} = await openWorkspaceFolder(
 				folder,
 				(dto) => {
 					setWorkspaceDefaults((w) => mergeWorkspaceDefaults(w, dto));
@@ -562,8 +692,10 @@ export default function App() {
 					}
 				}
 			);
+			const mergedTagCatalog = mergeWorkspaceTagCatalog(tagCatalog, loaded);
+			setWorkspaceTags(mergedTagCatalog);
 			setWorkspacePath(path);
-			replaceChartsFromWorkspace(loaded);
+			replaceChartsFromWorkspace(applyWorkspaceTagColors(loaded, mergedTagCatalog));
 			setActiveView('horoskop');
 			toast.success(t('toast_workspace_loaded'), { description: path });
 		} catch (e) {
@@ -591,6 +723,9 @@ export default function App() {
 				.filter((chart) => chart.entityKind !== 'analysis')
 				.map((chart) => chartDataToComputePayload(chart, workspaceDefaults));
 			await saveWorkspace(path, 'User', payloads, workspaceDefaults);
+			const nextTagCatalog = mergeWorkspaceTagCatalog(workspaceTags, charts);
+			const savedTagCatalog = await saveWorkspaceTags(path, nextTagCatalog);
+			setWorkspaceTags(savedTagCatalog);
 			const pendingAnalyses = charts.filter(
 				(chart) => chart.entityKind === 'analysis' && !chart.entityPersisted
 			);
@@ -617,7 +752,7 @@ export default function App() {
 				description: e instanceof Error ? e.message : String(e)
 			});
 		}
-	}, [charts, workspacePath, workspaceDefaults, t]);
+	}, [charts, workspacePath, workspaceDefaults, workspaceTags, t]);
 
 	// Reset transit section when changing views
 	const handleMenuItemClick = (view: string) => {
@@ -666,8 +801,12 @@ export default function App() {
 	return (
 		<>
 			<WorkspaceChartsProvider value={workspaceChartsValue}>
-				<div className="flex h-screen flex-col overflow-hidden" style={currentThemeStyle}>
-					<WindowTitlebar
+				<TransitsWorkspaceProvider
+					workspacePath={workspacePath}
+					workspaceDefaults={workspaceDefaults}
+				>
+					<div className="flex h-screen flex-col overflow-hidden" style={currentThemeStyle}>
+						<WindowTitlebar
 						isSidebarExpanded={isSidebarExpanded}
 						showSecondarySidebar={
 							activeView === 'otevrit' ||
@@ -690,7 +829,7 @@ export default function App() {
 
 						{/* Secondary Sidebar for Transits and Dynamic Transits */}
 						{(activeView === 'tranzity' || activeView === 'dynamika') && (
-							<TransitsSecondarySidebar
+							<TransitsSecondarySidebarSlot
 								activeSection={activeTransitSection}
 								onSectionChange={setActiveTransitSection}
 								theme={theme}
@@ -754,6 +893,7 @@ export default function App() {
 										theme={theme}
 										pageWidth={isSidebarExpanded ? 'standard' : 'relaxed'}
 										workspaceDefaults={workspaceDefaults}
+										workspaceTags={workspaceTags}
 										existingChartIds={new Set(charts.map((c) => c.id))}
 										onCreated={handleChartCreated}
 										onBack={() => setActiveView('horoskop')}
@@ -770,12 +910,10 @@ export default function App() {
 								) : activeView === 'synastrie' ? (
 									<SynastryView theme={theme} onCreated={handleSynastryCreated} />
 								) : activeView === 'tranzity' || activeView === 'dynamika' ? (
-									<TransitsContent
+									<TransitsMainContentSlot
 										section={activeTransitSection}
 										theme={theme}
 										glyphSet={astrologyGlyphSet}
-										workspacePath={workspacePath}
-										workspaceDefaults={workspaceDefaults}
 									/>
 								) : activeView === 'nastaveni' ? (
 									<SettingsView
@@ -847,6 +985,7 @@ export default function App() {
 								presentation="panel"
 								theme={theme}
 								workspaceDefaults={workspaceDefaults}
+								workspaceTags={workspaceTags}
 								existingChartIds={new Set(charts.map((chart) => chart.id))}
 								initialValues={editingChart}
 								onSaved={handleChartSaved}
@@ -855,6 +994,7 @@ export default function App() {
 						)}
 					</DetailSidePanel>
 				</div>
+				</TransitsWorkspaceProvider>
 			</WorkspaceChartsProvider>
 			<Toaster theme={shadcnDark ? 'dark' : 'light'} />
 			<GuidedTour />

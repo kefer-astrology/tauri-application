@@ -7,10 +7,15 @@ import type {
 	ResolvedLocation,
 	TransitSetup,
 	TransitSeriesRequest,
+	TransitSeriesFromDataRequest,
 	TransitSeriesResult,
 	WorkspaceDefaultsDto,
-	WorkspaceInfo
+	WorkspaceInfo,
+	WorkspaceTagDefinition
 } from './types';
+import { setDomainCatalog } from '@/lib/astrology/domainCatalog';
+import { setAspectDefinitions } from '@/lib/astrology/aspects';
+import { setObservableObjectCatalog } from '@/lib/astrology/observableObjects';
 import {
 	analysisToAppChart,
 	aspectLineTierStyleToDto,
@@ -112,6 +117,13 @@ export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInf
 	return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
 }
 
+export async function saveWorkspaceTags(
+	workspacePath: string,
+	tags: WorkspaceTagDefinition[]
+): Promise<WorkspaceTagDefinition[]> {
+	return invoke<WorkspaceTagDefinition[]>('save_workspace_tags', { workspacePath, tags });
+}
+
 export async function initStorage(workspacePath: string): Promise<string> {
 	return invoke<string>('init_storage', { workspacePath });
 }
@@ -124,7 +136,14 @@ export async function getCurrentModelReport(
 	workspacePath: string,
 	chartId?: string | null
 ): Promise<CurrentModelReport> {
-	return invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId });
+	const [report, catalog] = await Promise.all([
+		invoke<CurrentModelReport>('get_current_model_report', { workspacePath, chartId }),
+		invoke<import('./types').DomainCatalogDto>('get_domain_catalog', { workspacePath, chartId })
+	]);
+	setDomainCatalog(catalog);
+	setAspectDefinitions(catalog.model.aspect_definitions, catalog.model.settings?.default_aspects);
+	setObservableObjectCatalog(catalog);
+	return report;
 }
 
 export async function getChartDetails(
@@ -188,6 +207,18 @@ export function computeTransitSeries(params: TransitSeriesRequest): Promise<Tran
 	return invoke<TransitSeriesResult>('compute_transit_series', {
 		...params,
 		presetId: params.presetId ?? null,
+		settingsOverrides: params.settingsOverrides ?? null
+	});
+}
+
+/** `computeTransitSeries` counterpart for when no workspace is open — the chart is passed
+ *  in-memory, same as `computeChartFromData`. */
+export function computeTransitSeriesFromData(
+	params: TransitSeriesFromDataRequest
+): Promise<TransitSeriesResult> {
+	if (!isTauriRuntime()) return Promise.resolve({ results: [] });
+	return invoke<TransitSeriesResult>('compute_transit_series_from_data', {
+		...params,
 		settingsOverrides: params.settingsOverrides ?? null
 	});
 }
@@ -300,7 +331,7 @@ export async function openWorkspaceFolder(
 	folderPath: string,
 	onDefaults?: (d: WorkspaceDefaultsDto) => void,
 	onModelReport?: (r: CurrentModelReport) => void
-): Promise<{ path: string; charts: AppChart[] }> {
+): Promise<{ path: string; charts: AppChart[]; tagCatalog: WorkspaceTagDefinition[] }> {
 	const workspace = await loadWorkspace(folderPath);
 
 	try {
@@ -340,5 +371,5 @@ export async function openWorkspaceFolder(
 		}
 	}
 
-	return { path: workspace.path, charts };
+	return { path: workspace.path, charts, tagCatalog: workspace.tag_catalog };
 }

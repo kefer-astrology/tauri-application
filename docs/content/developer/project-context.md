@@ -60,16 +60,38 @@ unless the task explicitly advances the implementation and updates both.
 
 ## Document roles
 
-Developer pages declare three front-matter fields:
+Developer pages declare three front-matter fields. The values below are the
+complete set currently used under `docs/content/developer/`:
 
 | Field | Meaning |
 | --- | --- |
-| `doc_kind` | Contract, architecture, implementation reference, guide/policy, roadmap, or archive |
-| `status` | Current, evolving, active, proposed, or historical |
-| `authority` | Normative or informative/non-normative |
+| `doc_kind` | `index` for navigation; `contract` for behavior consumers rely on; `architecture` for boundaries and rationale; `implementation-reference` for current code structure; `guide` for contributor workflow; `policy` for repository-wide rules; `roadmap` for proposed work; `archive` for historical context |
+| `status` | `current`, `evolving`, `active`, `proposed`, or `historical` |
+| `authority` | `normative` means the page is binding; `informative` describes current behavior or implementation; `non-normative` is context, proposal, roadmap, or history and must not override a contract |
 
-A current normative contract wins over implementation commentary, roadmap
-language, examples, and historical notes.
+A page may be informative while still being current, and a policy page may be
+normative without being a serialized application contract. `status` describes
+the page's lifecycle; `authority` describes how conflicts are resolved.
+
+A current normative contract or policy wins over implementation commentary,
+roadmap language, examples, and historical notes. The Developer Manual index is
+navigation metadata, not an authority source.
+
+## Architecture documentation responsibility matrix
+
+| Page | Owns | Does not repeat |
+| --- | --- | --- |
+| [Architecture](../architecture/) | Current system boundaries, runtime flows, implementation debt | YAML fields or source map |
+| [Domain model](../domain-model/) | Semantic concepts and runtime catalog/presentation ownership | Workspace lifecycle |
+| [Rust code structure](../rust-code-structure/) | Current module map and mixed command responsibilities | Target-layer promises |
+| [Rust workspace contract](../rust-workspace-contract/) | Lifecycle, loaders, invariants, resolution, catalog propagation | User-facing option inventory |
+| [Backend structure](../backend-structure/) | Persistence representations, provenance, backend mechanisms | Command-by-command source map |
+| [Configuration reference](../configuration-reference/) | Implemented user-visible settings, values, and scope semantics | Catalog architecture |
+| [Testing strategy](../testing-strategy/) | Existing test layers, commands, fixtures, and named gaps | Architecture design |
+| This guide | Documentation taxonomy, authority, contribution orientation | Runtime behavior |
+
+When an architectural behavior changes, update its owning page and replace any
+contradictory statement elsewhere with a link rather than duplicating it.
 
 ## Usable contract checklist
 

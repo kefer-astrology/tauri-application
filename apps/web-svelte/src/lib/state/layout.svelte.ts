@@ -10,6 +10,7 @@ import {
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
 import type { ChartDefinitionDto, CurrentModelReport, ModelOverridesDto } from '$lib/tauri/types';
+import { DOMAIN_CATALOG } from '$lib/astrology/domainCatalog';
 
 export interface MoonDetailsDto {
   elongation_deg: number;
@@ -86,8 +87,8 @@ export interface WorkspaceDefaultsState {
 }
 
 const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
-  houseSystem: 'Placidus',
-  zodiacType: 'Tropical',
+  houseSystem: DOMAIN_CATALOG?.model.settings?.default_house_system ?? 'Placidus',
+  zodiacType: DOMAIN_CATALOG?.model.zodiac_type ?? 'Tropical',
   timezone: 'Europe/Prague',
   locationName: 'Prague',
   locationLatitude: 50.0875,
@@ -96,7 +97,7 @@ const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
   positionMode: 'apparent',
   defaultBodies: [...DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS],
   defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
-  defaultAspectOrbs: { ...DEFAULT_ASPECT_ORBS },
+  defaultAspectOrbs: DEFAULT_ASPECT_ORBS,
   defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
   aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }
 };
@@ -225,8 +226,8 @@ export function addContext(name: string) {
       dateTime: '',
       location: '',
       tags: [],
-      houseSystem: 'Placidus',
-      zodiacType: 'Tropical',
+      houseSystem: layout.workspaceDefaults.houseSystem,
+      zodiacType: layout.workspaceDefaults.zodiacType,
     };
     layout.contexts = [...layout.contexts, newChart];
   }

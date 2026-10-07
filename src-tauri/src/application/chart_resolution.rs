@@ -1,4 +1,8 @@
-//! Workspace and chart use cases shared by the command adapters.
+//! Chart-input validation and resolution shared by command adapters.
+//!
+//! This module turns transport/persisted chart input into `ResolvedChart` values
+//! for application computation. Workspace YAML representation and I/O remain in
+//! `crate::workspace`.
 
 use std::path::Path;
 
@@ -49,6 +53,49 @@ pub fn validate_chart_payload(
         .map_err(|error| format!("Invalid chart payload: {error}"))?;
     validate_chart_instance(&parsed)?;
     Ok(parsed)
+}
+
+/// Resolve a standalone chart and operation overrides into the input expected by
+/// Rust calculation use cases. The original JSON remains a transport payload;
+/// callers receive the validated, typed chart instead.
+pub fn resolve_standalone_chart(
+    chart_json: &serde_json::Value,
+    operation: Option<&crate::workspace::settings::SettingsLayer>,
+) -> Result<crate::application::computation::ResolvedChart, String> {
+    let chart = validate_chart_payload(chart_json)?;
+    let report = crate::workspace::settings::standalone_model_report_with_operation(
+        &chart.config,
+        operation,
+    );
+    Ok(crate::application::computation::ResolvedChart::from_report(
+        chart, report,
+    ))
+}
+
+/// Load a workspace chart, optional preset, and operation overrides through one
+/// shared path before a Rust use case computes it.
+pub fn resolve_workspace_chart(
+    workspace_path: &str,
+    chart_id: &str,
+    preset_id: Option<&str>,
+    operation: Option<&crate::workspace::settings::SettingsLayer>,
+) -> Result<crate::application::computation::ResolvedChart, String> {
+    let workspace_dir = Path::new(workspace_path);
+    let manifest = crate::workspace::load_workspace_manifest(workspace_dir)?;
+    let chart_ref =
+        crate::workspace::loader::find_chart_ref_by_id(workspace_dir, &manifest, chart_id)?
+            .ok_or_else(|| format!("Chart {chart_id} not found"))?;
+    let chart = crate::workspace::loader::load_chart(workspace_dir, &chart_ref)?;
+    let preset = resolve_settings_preset(workspace_dir, &manifest, preset_id)?;
+    let report = crate::workspace::settings::current_model_report_with_layers(
+        &manifest,
+        preset.as_ref(),
+        Some(&chart.config),
+        operation,
+    );
+    Ok(crate::application::computation::ResolvedChart::from_report(
+        chart, report,
+    ))
 }
 
 pub fn validate_chart_instance(

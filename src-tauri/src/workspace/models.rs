@@ -622,6 +622,13 @@ pub struct WorkspacePresentation {
     pub aspect_line_tier_style: Option<AspectLineTierStyle>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct WorkspaceTagDefinition {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkspaceManifest {
     #[serde(default = "default_workspace_schema_version")]
@@ -644,6 +651,8 @@ pub struct WorkspaceManifest {
     pub default: WorkspaceDefaults,
     #[serde(default)]
     pub presentation: WorkspacePresentation,
+    #[serde(default)]
+    pub tag_catalog: Vec<WorkspaceTagDefinition>,
     #[serde(default)]
     pub chart_presets: Vec<String>, // File paths
     #[serde(default)]
@@ -677,6 +686,7 @@ pub struct WorkspaceInfo {
     pub path: String,
     pub owner: String,
     pub active_model: Option<String>,
+    pub tag_catalog: Vec<WorkspaceTagDefinition>,
     pub charts: Vec<ChartSummary>,
     pub analyses: Vec<AnalysisInstance>,
 }
@@ -712,12 +722,17 @@ pub struct BodyDefinition {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AspectDefinition {
     pub id: String,
+    #[serde(rename = "type", default = "default_aspect_type")]
+    pub aspect_type: String,
     #[serde(default = "default_true")]
     pub enabled: bool,
     /// Legacy presentation metadata retained for YAML compatibility.
     pub glyph: String,
     #[serde(default)]
     pub angle: f64,
+    /// Harmonic series number associated with the exact aspect angle.
+    #[serde(default = "default_harmonic")]
+    pub harmonic: u32,
     #[serde(default)]
     pub default_orb: f64,
     #[serde(default)]
@@ -740,6 +755,8 @@ pub struct AspectDefinition {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sign {
+    #[serde(default)]
+    pub id: String,
     pub name: String,
     pub glyph: String,
     pub abbreviation: String,
@@ -799,6 +816,38 @@ pub struct AstroModel {
     pub ayanamsa: Option<Ayanamsa>,
 }
 
+/// Runtime domain catalog shared by all frontends. Presentation concerns such as
+/// colors and glyph-file choices intentionally do not belong here.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DomainCatalog {
+    pub model: AstroModel,
+    pub house_systems: Vec<HouseSystemDefinition>,
+    pub shapes: Vec<DomainDefinition>,
+    pub configurations: Vec<DomainDefinition>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HouseSystemDefinition {
+    pub id: String,
+    pub computation_supported: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DomainDefinition {
+    pub id: String,
+    pub translation_key: String,
+    #[serde(default)]
+    pub parent_id: Option<String>,
+    #[serde(default)]
+    pub generated_variant: Option<GeneratedVariantRule>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneratedVariantRule {
+    pub prefix: String,
+    pub source: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OverrideEntry {
     pub id: String,
@@ -806,6 +855,8 @@ pub struct OverrideEntry {
     pub glyph: Option<String>,
     #[serde(default)]
     pub angle: Option<f64>,
+    #[serde(default)]
+    pub harmonic: Option<u32>,
     #[serde(default)]
     pub default_orb: Option<f64>,
     #[serde(default)]
@@ -860,6 +911,14 @@ fn default_degrees_in_circle() -> f64 {
 
 fn default_true() -> bool {
     true
+}
+
+fn default_harmonic() -> u32 {
+    1
+}
+
+fn default_aspect_type() -> String {
+    "minor".to_string()
 }
 
 fn default_model_version() -> u32 {

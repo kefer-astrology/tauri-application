@@ -1,5 +1,6 @@
 import { OBSERVABLE_OBJECTS } from './observableObjects';
 import { ASPECT_ROWS } from './aspects';
+import { catalogSigns } from './domainCatalog';
 
 const ASSET_BASE_URL = import.meta.env.BASE_URL;
 
@@ -11,8 +12,6 @@ export const GLYPH_SET_KEY = 'glyph_set';
  * Every id `OBSERVABLE_OBJECTS` can surface is file-backed under `planets/` — derived
  * from the registry itself so this can't drift out of sync the way a hand-typed list did.
  */
-const fileBackedIds = new Set(OBSERVABLE_OBJECTS.map((item) => item.id));
-
 const aspectIdSet = new Set<string>(ASPECT_ROWS.map((row) => row.id));
 
 /** Fixed stars (`star_*`, no per-star art yet) share one generic placeholder asset. */
@@ -21,28 +20,13 @@ function planetAssetId(normalizedId: string): string {
 }
 
 /** Zodiac wheel order starting at 0° Aries (sign index 0). */
-export const ZODIAC_IDS = [
-	'aries',
-	'taurus',
-	'gemini',
-	'cancer',
-	'leo',
-	'virgo',
-	'libra',
-	'scorpio',
-	'sagittarius',
-	'capricorn',
-	'aquarius',
-	'pisces'
-] as const;
+export const zodiacIds = () => catalogSigns().map((sign) => sign.id);
 
-const zodiacIdSet = new Set<string>(ZODIAC_IDS);
-
-export type ZodiacId = (typeof ZODIAC_IDS)[number];
+export type ZodiacId = string;
 
 export function signIndexToZodiacId(signIndex: number): ZodiacId {
 	const i = ((Math.floor(signIndex) % 12) + 12) % 12;
-	return ZODIAC_IDS[i]!;
+	return zodiacIds()[i] ?? '';
 }
 
 const glyphAliasMap: Record<string, string> = {
@@ -96,7 +80,7 @@ export function getAstrologyGlyphSrc(
 	id: string
 ): string | null {
 	const normalizedId = normalizeGlyphId(id);
-	if (!fileBackedIds.has(normalizedId)) return null;
+	if (!OBSERVABLE_OBJECTS.some((item) => item.id === normalizedId)) return null;
 	return assetUrl(`glyphs/${setId}/planets/${planetAssetId(normalizedId)}.svg`);
 }
 
@@ -120,6 +104,6 @@ export function getZodiacGlyphSrc(
 		.trim()
 		.toLowerCase()
 		.replace(/\s+/g, '_');
-	if (!zodiacIdSet.has(normalized)) return null;
+	if (!zodiacIds().includes(normalized)) return null;
 	return assetUrl(`glyphs/${setId}/zodiac/${normalized}.svg`);
 }

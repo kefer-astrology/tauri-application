@@ -33,10 +33,16 @@ export interface AnalysisDto {
   tags: string[];
 }
 
+export interface WorkspaceTagDefinition {
+  name: string;
+  color?: string | null;
+}
+
 export interface WorkspaceInfo {
   path: string;
   owner: string;
   active_model: string | null;
+  tag_catalog: WorkspaceTagDefinition[];
   charts: WorkspaceChartSummary[];
   analyses: AnalysisDto[];
 }
@@ -80,6 +86,7 @@ export interface ModelOverrideEntryDto {
   id: string;
   glyph?: string | null;
   angle?: number | null;
+  harmonic?: number | null;
   default_orb?: number | null;
   only_for?: string[] | null;
   i18n?: Record<string, string> | null;
@@ -113,9 +120,11 @@ export interface BodyDefinitionDto {
 
 export interface AspectDefinitionDto {
   id: string;
+  type: 'major' | 'minor';
   enabled: boolean;
   glyph: string;
   angle: number;
+  harmonic: number;
   default_orb: number;
   i18n: Record<string, string>;
   color?: string | null;
@@ -128,6 +137,7 @@ export interface AspectDefinitionDto {
 }
 
 export interface SignDefinitionDto {
+  id: string;
   name: string;
   glyph: string;
   abbreviation: string;
@@ -227,6 +237,25 @@ export interface CurrentModelReport {
   model_overrides?: ModelOverridesDto | null;
   warnings: string[];
   diagnostics: BackendDiagnostic[];
+}
+
+export interface DomainDefinitionDto {
+  id: string;
+  translation_key: string;
+  parent_id?: string | null;
+  generated_variant?: { prefix: string; source: string } | null;
+}
+
+export interface HouseSystemDefinitionDto {
+  id: string;
+  computation_supported: boolean;
+}
+
+export interface DomainCatalogDto {
+  model: AstroModelDto;
+  house_systems: HouseSystemDefinitionDto[];
+  shapes: DomainDefinitionDto[];
+  configurations: DomainDefinitionDto[];
 }
 
 export interface ChartDetails {

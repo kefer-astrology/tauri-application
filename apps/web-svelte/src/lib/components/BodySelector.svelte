@@ -1,6 +1,7 @@
 <!-- Body Selector Component - Grid of checkboxes with astrological bodies organized by categories -->
 <script lang="ts">
   import { getGlyphContent } from '$lib/stores/glyphs.svelte';
+  import { t } from '$lib/i18n/index.svelte';
   import { Button } from '$lib/components/ui/button/index.js';
   import { Checkbox } from '$lib/components/ui/checkbox/index.js';
   import {
@@ -27,14 +28,19 @@
     'angles',
     'lunar_nodes',
     'calculated_points',
-    'asteroids'
+    'asteroids',
+    'sensitive_points',
+    'geocentric_nodes',
+    'trans_neptunian',
+    'fixed_stars',
+    'hypothetical'
   ];
 
-  const bodyCategories = categoryOrder.map((category) => ({
+  const bodyCategories = $derived(categoryOrder.map((category) => ({
     id: category,
-    name: OBSERVABLE_OBJECT_CATEGORY_LABELS[category],
+    name: t(`observable_category_${category}`, {}, OBSERVABLE_OBJECT_CATEGORY_LABELS[category]),
     bodies: OBSERVABLE_OBJECTS.filter((body) => body.category === category)
-  }));
+  })));
   
   // Category expanded state
   let categoryExpanded = $state<Record<string, boolean>>({

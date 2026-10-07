@@ -140,7 +140,7 @@ pub fn select_chart_file() -> Result<Option<String>, String> {
             .args([
                 "-NoProfile",
                 "-Command",
-                "Add-Type -AssemblyName System.Windows.Forms; $dialog = New-Object System.Windows.Forms.OpenFileDialog; $dialog.Title = 'Import Horoscope'; $dialog.Filter = 'Horoscope files (*.sfs;*.yml;*.yaml)|*.sfs;*.yml;*.yaml'; if ($dialog.ShowDialog() -eq 'OK') { $dialog.FileName }",
+                "Add-Type -AssemblyName System.Windows.Forms; $dialog = New-Object System.Windows.Forms.OpenFileDialog; $dialog.Title = 'Import Horoscope'; $dialog.Filter = 'Horoscope files (*.sfs;*.hor;*.yml;*.yaml)|*.sfs;*.hor;*.yml;*.yaml'; if ($dialog.ShowDialog() -eq 'OK') { $dialog.FileName }",
             ])
             .output();
 
@@ -188,7 +188,7 @@ except Exception:
     pass
 path = filedialog.askopenfilename(
     title='Import Horoscope',
-    filetypes=[('Horoscope files', '*.sfs *.yml *.yaml')]
+    filetypes=[('Horoscope files', '*.sfs *.hor *.yml *.yaml *.SFcht *.cht *.chm *.se1 *.ald *.cst')]
 )
 print(path or '', end='')
 "#;
@@ -210,7 +210,7 @@ print(path or '', end='')
                 vec![
                     "--file-selection",
                     "--title=Import Horoscope",
-                    "--file-filter=Horoscope files | *.sfs *.yml *.yaml",
+                    "--file-filter=Horoscope files | *.sfs *.hor *.yml *.yaml *.SFcht *.cht *.chm *.se1 *.ald *.cst",
                 ],
             ),
             (
@@ -218,7 +218,7 @@ print(path or '', end='')
                 vec![
                     "--getopenfilename",
                     ".",
-                    "*.sfs *.yml *.yaml|Horoscope files",
+                    "*.sfs *.hor *.yml *.yaml *.SFcht *.cht *.chm *.se1 *.ald *.cst|Horoscope files",
                     "--title",
                     "Import Horoscope",
                 ],
@@ -228,7 +228,7 @@ print(path or '', end='')
                 vec![
                     "--file",
                     "--title=Import Horoscope",
-                    "--file-filter=Horoscope files | *.sfs *.yml *.yaml",
+                    "--file-filter=Horoscope files | *.sfs *.hor *.yml *.yaml *.SFcht *.cht *.chm *.se1 *.ald *.cst",
                 ],
             ),
         ];

@@ -112,6 +112,10 @@ presentation:                           # UI input only; never computation input
   element_colors: { fire: '#c24d3d', earth: '#6d7d3d', air: '#ca9b42', water: '#3979a8' }
   aspect_colors: { conjunction: '#555555', square: '#d04444' }
 
+tag_catalog:                           # workspace-wide tag names and optional shared colors
+  - { name: client, color: '#3b82f6' }
+  - { name: research, color: '#8b5cf6' }
+
 subjects:
   - subjects/clients/alice.yml
 charts:
@@ -133,6 +137,13 @@ bodies: []                              # legacy external catalog references
 The unreleased schema has one canonical representation: visual settings belong
 under `presentation`; calculation settings belong under `default` or a model,
 preset, chart, or operation layer.
+
+`tag_catalog` is the workspace-wide registry used for tag completion and shared
+colors. Names must be non-empty and unique after surrounding whitespace is
+removed. A color, when present, must use `#RGB` or `#RRGGBB`. Charts and analyses
+continue to store their assigned tag names in their own `tags` arrays. Existing
+chart-level `tag_colors` remain supported as a legacy fallback, while catalog
+colors take precedence in the UI.
 
 ## Subject versus chart
 

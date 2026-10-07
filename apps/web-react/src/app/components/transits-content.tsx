@@ -1,14 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { cs, enUS, es, fr } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
-import {
-	computeChartFromData,
-	computeCrossAspectsFromData,
-	computeTransitSeries,
-	loadTransitSetup,
-	saveTransitSetup
-} from '@/lib/tauri/workspace';
-import type { TransitSeriesEntry, TransitSetup } from '@/lib/tauri/types';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Checkbox } from './ui/checkbox';
@@ -23,84 +15,25 @@ import { TimeRollerPicker } from './time-roller-picker';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
+import { useTransitsWorkspace, type TimeStepUnit } from '../providers/transits-workspace';
 import type { TransitSection } from './transits-secondary-sidebar';
 import { AspectSelector } from './aspect-selector';
 import { BodySelector } from './body-selector';
-import { ASPECT_ROWS } from '@/lib/astrology/aspects';
 import type { Theme } from './astrology-sidebar';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import {
-	chartDataToComputePayload,
-	normalizeComputedChartPayload,
-	type AppChart,
-	type WorkspaceDefaultsState
-} from '@/lib/tauri/chartPayload';
-import { normalizeLongitude } from '@/lib/astrology/transits';
 
 interface TransitsContentProps {
 	section: TransitSection;
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
-	workspacePath: string | null;
-	workspaceDefaults: WorkspaceDefaultsState;
 }
 
 type DropdownOption = { id: string; label: string };
 
-const DEFAULT_TRANSIT_BODY_IDS = [
-	'sun',
-	'moon',
-	'mercury',
-	'venus',
-	'mars',
-	'jupiter',
-	'saturn',
-	'uranus',
-	'neptune',
-	'pluto'
-];
-
-const DEFAULT_TRANSIT_ASPECT_IDS = ASPECT_ROWS.filter((row) => row.type === 'major').map(
-	(row) => row.id
-);
-
-function formatDateInput(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, '0');
-	const day = String(date.getDate()).padStart(2, '0');
-	return `${year}-${month}-${day}`;
-}
-
-function parseLocalDateTime(dateValue: string, timeValue: string, fallback: Date): Date {
-	const parsed = new Date(`${dateValue}T${timeValue || '00:00'}:00`);
-	return Number.isNaN(parsed.getTime()) ? fallback : parsed;
-}
-
-function formatTimeInput(date: Date): string {
-	const hours = String(date.getHours()).padStart(2, '0');
-	const minutes = String(date.getMinutes()).padStart(2, '0');
-	return `${hours}:${minutes}`;
-}
-
-function positionsForIds(
-	positions: Record<string, unknown>,
-	ids: readonly string[]
-): Record<string, number> {
-	const result: Record<string, number> = {};
-	for (const id of new Set(ids)) {
-		const longitude = normalizeLongitude(positions[id]);
-		if (longitude !== null) result[id] = longitude;
-	}
-	return result;
-}
-
-export function TransitsContent({
-	section,
-	theme,
-	glyphSet,
-	workspacePath,
-	workspaceDefaults
-}: TransitsContentProps) {
+/** The setup screen for a transit/dynamic-transit computation — shown until a series has been
+ *  computed, at which point the results dashboard takes over both this area and the secondary
+ *  sidebar (see `TransitsWorkspaceProvider`'s `mode`). */
+export function TransitsContent({ section, theme, glyphSet }: TransitsContentProps) {
 	const { t, i18n } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
 	const dateFnsLocale = useMemo(() => {
@@ -110,243 +43,35 @@ export function TransitsContent({
 		if (base === 'es') return es;
 		return enUS;
 	}, [i18n.language]);
+	const { charts } = useWorkspaceCharts();
 	const {
-		charts,
-		selectedChartId,
-		setCharts,
-		setSelectedChartId,
-		setTransitOverlay,
-		clearTransitOverlay
-	} = useWorkspaceCharts();
-
-	const [selectedTypeId, setSelectedTypeId] = useState('transit');
-	const [periodModeId, setPeriodModeId] = useState('current');
-	const [checkboxes, setCheckboxes] = useState({
-		houseTransitions: false,
-		signTransitions: false,
-		transitLimits: false,
-		precessionCorrection: false
-	});
-	const now = useMemo(() => new Date(), []);
-	const tomorrow = useMemo(() => {
-		const date = new Date(now);
-		date.setDate(date.getDate() + 1);
-		return date;
-	}, [now]);
-	const [sourceChartId, setSourceChartId] = useState('');
-	const [fromDateTime, setFromDateTime] = useState<Date>(() => now);
-	const [toDateTime, setToDateTime] = useState<Date>(() => tomorrow);
-	const [transitingBodies, setTransitingBodies] = useState<string[]>(DEFAULT_TRANSIT_BODY_IDS);
-	const [transitedBodies, setTransitedBodies] = useState<string[]>(DEFAULT_TRANSIT_BODY_IDS);
-	const [selectedAspects, setSelectedAspects] = useState<string[]>(DEFAULT_TRANSIT_ASPECT_IDS);
-	const [transitLoading, setTransitLoading] = useState(false);
-	const [transitError, setTransitError] = useState<string | null>(null);
-	const [transitSeries, setTransitSeries] = useState<TransitSeriesEntry[]>([]);
-
-	const effectiveSourceChartId = sourceChartId || selectedChartId || charts[0]?.id || '';
-
-	useEffect(() => {
-		if (sourceChartId || charts.length === 0) return;
-		setSourceChartId(selectedChartId ?? charts[0].id);
-	}, [charts, selectedChartId, sourceChartId]);
-
-	useEffect(() => {
-		let cancelled = false;
-		setTransitSeries([]);
-		setTransitError(null);
-		clearTransitOverlay();
-
-		if (!workspacePath || !effectiveSourceChartId) {
-			return () => {
-				cancelled = true;
-			};
-		}
-
-		void loadTransitSetup(workspacePath, effectiveSourceChartId)
-			.then((setup) => {
-				if (cancelled || !setup) return;
-				setSelectedTypeId(setup.transit_type);
-				setPeriodModeId(setup.period_mode);
-				setFromDateTime((prev) => parseLocalDateTime(setup.from_date, setup.from_time, prev));
-				setToDateTime((prev) => parseLocalDateTime(setup.to_date, setup.to_time, prev));
-				setTransitingBodies(setup.transiting_bodies);
-				setTransitedBodies(setup.transited_bodies);
-				setSelectedAspects(setup.aspect_types);
-				setCheckboxes({
-					houseTransitions: setup.house_transitions,
-					signTransitions: setup.sign_transitions,
-					transitLimits: setup.transit_limits,
-					precessionCorrection: setup.precession_correction
-				});
-			})
-			.catch((err) => {
-				if (cancelled) return;
-				console.error('Failed to load transit setup:', err);
-				setTransitError(err instanceof Error ? err.message : 'Failed to load transit setup.');
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [clearTransitOverlay, effectiveSourceChartId, workspacePath]);
-
-	const transitResultsCountLabel = useMemo(
-		() => t('transit_results_count').replace('{count}', String(transitSeries.length)),
-		[t, transitSeries.length]
-	);
-
-	const ensureChartComputed = async (
-		chart: AppChart
-	): Promise<NonNullable<AppChart['computed']>> => {
-		if (Object.keys(chart.computed?.positions ?? {}).length > 0) {
-			return chart.computed!;
-		}
-		const result = await computeChartFromData(chartDataToComputePayload(chart, workspaceDefaults));
-		const computed = normalizeComputedChartPayload(result);
-		setCharts((prev) =>
-			prev.map((existing) => (existing.id === chart.id ? { ...existing, computed } : existing))
-		);
-		return computed;
-	};
-
-	const handleComputeTransits = async () => {
-		if (!effectiveSourceChartId) {
-			setTransitError('No chart selected for transit computation.');
-			return;
-		}
-		const sourceChart = charts.find((chart) => chart.id === effectiveSourceChartId);
-		if (!sourceChart) {
-			setTransitError('Selected chart was not found.');
-			return;
-		}
-		if (selectedAspects.length === 0) {
-			setTransitError('Select at least one aspect for transit computation.');
-			return;
-		}
-
-		const range: { startDatetime: string; endDatetime: string } =
-			periodModeId === 'current'
-				? (() => {
-						const instant = new Date().toISOString();
-						return { startDatetime: instant, endDatetime: instant };
-					})()
-				: {
-						startDatetime: fromDateTime.toISOString(),
-						endDatetime: toDateTime.toISOString()
-					};
-
-		setTransitLoading(true);
-		setTransitError(null);
-		setTransitSeries([]);
-
-		try {
-			if (workspacePath) {
-				const setup: TransitSetup = {
-					version: 1,
-					source_chart_id: effectiveSourceChartId,
-					transit_type: selectedTypeId,
-					period_mode: periodModeId,
-					from_date: formatDateInput(fromDateTime),
-					from_time: formatTimeInput(fromDateTime),
-					to_date: formatDateInput(toDateTime),
-					to_time: formatTimeInput(toDateTime),
-					time_step_seconds: 3600,
-					transiting_bodies: transitingBodies,
-					transited_bodies: transitedBodies,
-					aspect_types: selectedAspects,
-					aspect_orbs: sourceChart.aspectOrbs ?? {},
-					model: sourceChart.model ?? null,
-					model_overrides: sourceChart.modelOverrides ?? null,
-					house_transitions: checkboxes.houseTransitions,
-					sign_transitions: checkboxes.signTransitions,
-					exact_hits: false,
-					station_events: false,
-					transit_limits: checkboxes.transitLimits,
-					precession_correction: checkboxes.precessionCorrection
-				};
-				await saveTransitSetup(workspacePath, setup);
-			}
-
-			const radixComputed = await ensureChartComputed(sourceChart);
-			const transitDateTime = range.endDatetime;
-			const transitChart: AppChart = {
-				...sourceChart,
-				id: `${sourceChart.id}__transit__${transitDateTime.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
-				name: `${sourceChart.name} ${t('transits_general_transit_transit')}`,
-				chartType: 'EVENT',
-				dateTime: transitDateTime,
-				observableObjects:
-					transitingBodies.length > 0 ? transitingBodies : DEFAULT_TRANSIT_BODY_IDS,
-				tags: [...(sourceChart.tags ?? []), 'transit']
-			};
-			const transitResult = await computeChartFromData(
-				chartDataToComputePayload(transitChart, workspaceDefaults)
-			);
-			const transitComputed = normalizeComputedChartPayload(transitResult);
-			const computedTransitChart = { ...transitChart, computed: transitComputed };
-			const effectiveTransitedBodies =
-				transitedBodies.length > 0
-					? transitedBodies
-					: (sourceChart.observableObjects ?? workspaceDefaults.defaultBodies);
-			const crossAspects = await computeCrossAspectsFromData(
-				chartDataToComputePayload(sourceChart, workspaceDefaults),
-				positionsForIds(transitComputed.positions ?? {}, transitingBodies),
-				positionsForIds(radixComputed.positions ?? {}, effectiveTransitedBodies),
-				selectedAspects
-			);
-			const overlay = {
-				sourceChartId: sourceChart.id,
-				sourceChartName: sourceChart.name,
-				dateTime: transitDateTime,
-				transitChart: computedTransitChart,
-				transitingBodies,
-				transitedBodies: effectiveTransitedBodies,
-				aspectTypes: selectedAspects,
-				aspects: crossAspects
-			};
-			setTransitOverlay(overlay);
-			setSelectedChartId(sourceChart.id);
-
-			const singleEntry: TransitSeriesEntry = {
-				datetime: transitDateTime,
-				transit_positions: transitComputed.positions,
-				aspects: crossAspects
-			};
-
-			if (!workspacePath) {
-				setTransitSeries([singleEntry]);
-				return;
-			}
-
-			try {
-				const result = await computeTransitSeries({
-					workspacePath,
-					chartId: effectiveSourceChartId,
-					startDatetime: range.startDatetime,
-					endDatetime: range.endDatetime,
-					timeStepSeconds: 3600,
-					transitingObjects: transitingBodies,
-					transitedObjects: effectiveTransitedBodies,
-					aspectTypes: selectedAspects
-				});
-
-				setTransitSeries(result.results ?? [singleEntry]);
-			} catch (seriesErr) {
-				console.error('Failed to compute transit series:', seriesErr);
-				setTransitSeries([singleEntry]);
-				setTransitError(
-					seriesErr instanceof Error
-						? seriesErr.message
-						: 'Transit series failed; showing the end timestamp overlay.'
-				);
-			}
-		} catch (err) {
-			console.error('Failed to compute transits:', err);
-			setTransitError(err instanceof Error ? err.message : 'Transit computation failed.');
-		} finally {
-			setTransitLoading(false);
-		}
-	};
+		selectedTypeId,
+		setSelectedTypeId,
+		periodModeId,
+		setPeriodModeId,
+		checkboxes,
+		setCheckboxes,
+		effectiveSourceChartId,
+		setSourceChartId,
+		fromDateTime,
+		setFromDateTime,
+		toDateTime,
+		setToDateTime,
+		transitingBodies,
+		setTransitingBodies,
+		transitedBodies,
+		setTransitedBodies,
+		selectedAspects,
+		setSelectedAspects,
+		timeStepValue,
+		setTimeStepValue,
+		timeStepUnit,
+		setTimeStepUnit,
+		estimatedSampleCount,
+		transitLoading,
+		transitError,
+		handleComputeTransits
+	} = useTransitsWorkspace();
 
 	const typeOptions = useMemo<DropdownOption[]>(
 		() => [
@@ -616,7 +341,64 @@ export function TransitsContent({
 										</div>
 									</div>
 								</div>
+
+								<div>
+									<Label className={cn('mb-2 block', ft.label)}>
+										{t('transits_label_granularity', { defaultValue: 'Granularity' })}
+									</Label>
+									<div className="flex items-center gap-3">
+										<Input
+											type="number"
+											min={1}
+											step={1}
+											value={timeStepValue}
+											onChange={(event) => {
+												const next = Number.parseInt(event.target.value, 10);
+												setTimeStepValue(Number.isFinite(next) && next > 0 ? next : 1);
+											}}
+											className={cn(ft.input, 'h-10 w-24 py-2 text-sm shadow-inner')}
+										/>
+										<Select
+											value={timeStepUnit}
+											onValueChange={(value) => setTimeStepUnit(value as TimeStepUnit)}
+										>
+											<SelectTrigger className={cn(ft.selectTrigger, 'w-40 shadow-inner')}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												<SelectItem value="seconds" className={ft.selectItem}>
+													{t('transits_granularity_seconds', { defaultValue: 'Seconds' })}
+												</SelectItem>
+												<SelectItem value="minutes" className={ft.selectItem}>
+													{t('transits_granularity_minutes', { defaultValue: 'Minutes' })}
+												</SelectItem>
+												<SelectItem value="hours" className={ft.selectItem}>
+													{t('transits_granularity_hours', { defaultValue: 'Hours' })}
+												</SelectItem>
+												<SelectItem value="days" className={ft.selectItem}>
+													{t('transits_granularity_days', { defaultValue: 'Days' })}
+												</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+									<p className={cn('mt-2 text-xs', ft.muted)}>
+										{t('transits_granularity_estimate', {
+											count: estimatedSampleCount,
+											defaultValue: `~${estimatedSampleCount} samples over the selected period`
+										})}
+									</p>
+									{estimatedSampleCount > 20000 && (
+										<p className="text-destructive mt-1 text-xs">
+											{t('transits_granularity_warning', {
+												defaultValue:
+													'That many samples may take a while to compute and render. Consider a coarser step.'
+											})}
+										</p>
+									)}
+								</div>
 							</ModeSwitcherDetails>
+
+							{transitError && <div className="text-destructive text-xs">{transitError}</div>}
 
 							<div className="pt-6">
 								<Button
@@ -626,13 +408,18 @@ export function TransitsContent({
 									onClick={() => void handleComputeTransits()}
 									disabled={transitLoading}
 								>
-									{t('calculate')}
+									{transitLoading ? t('transit_loading') : t('calculate')}
 								</Button>
 							</div>
 						</CardContent>
 					</Card>
 				);
 
+			// "Transiting Bodies" (tranzitující = active/moving) edits `transitingBodies` — the side
+			// swept across the whole period; "Transited Bodies" (tranzitovaná = passive/fixed) edits
+			// `transitedBodies` — the fixed anchor(s), held at the source chart's own moment and
+			// shown in the results sidebar once computed. Conventional meaning, grammatically
+			// correct in both languages — see the note in transits-workspace.tsx.
 			case 'transiting-bodies':
 				return (
 					<BodySelector
@@ -669,68 +456,9 @@ export function TransitsContent({
 		}
 	};
 
-	const hasTransitFeedback = transitLoading || transitError || transitSeries.length > 0;
-
 	return (
 		<AppMainContentRoot>
-			<AppMainContentContainer width="wide">
-				{renderContent()}
-				{hasTransitFeedback && (
-					<Card variant="ghost" className="w-full rounded-xl">
-						<CardContent className="p-6 md:p-8">
-							{transitLoading && (
-								<div className={cn('text-xs', ft.muted)}>{t('transit_loading')}</div>
-							)}
-							{transitError && <div className="text-destructive text-xs">{transitError}</div>}
-							{transitSeries.length > 0 && (
-								<div>
-									<div className={cn('mb-2 text-xs font-medium', ft.muted)}>
-										{transitResultsCountLabel}
-									</div>
-									<div className="max-h-64 overflow-auto rounded-md border">
-										<table className="w-full border-collapse text-xs">
-											<thead className="bg-background sticky top-0 border-b">
-												<tr>
-													<th className={cn('p-2 text-left font-semibold', ft.bodyText)}>
-														{t('column_time')}
-													</th>
-													<th className={cn('p-2 text-left font-semibold', ft.bodyText)}>
-														{t('column_bodies')}
-													</th>
-													<th className={cn('p-2 text-left font-semibold', ft.bodyText)}>
-														{t('aspects')}
-													</th>
-												</tr>
-											</thead>
-											<tbody>
-												{transitSeries.slice(0, 50).map((entry) => (
-													<tr
-														key={entry.datetime}
-														className="hover:bg-accent/50 border-b transition-colors"
-													>
-														<td className={cn('p-2', ft.bodyText)}>{entry.datetime}</td>
-														<td className={cn('p-2', ft.bodyText)}>
-															{Object.keys(entry.transit_positions ?? {}).length}
-														</td>
-														<td className={cn('p-2', ft.bodyText)}>
-															{(entry.aspects ?? []).length}
-														</td>
-													</tr>
-												))}
-											</tbody>
-										</table>
-									</div>
-									{transitSeries.length > 50 && (
-										<div className={cn('mt-2 text-xs', ft.muted)}>
-											{t('transit_showing_first_50')}
-										</div>
-									)}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				)}
-			</AppMainContentContainer>
+			<AppMainContentContainer width="wide">{renderContent()}</AppMainContentContainer>
 		</AppMainContentRoot>
 	);
 }

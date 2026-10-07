@@ -60,6 +60,7 @@ import {
 	type ChartSearchMetadata,
 	type SearchPlanetId
 } from '@/lib/astrology/chartSearch';
+import { DOMAIN_CATALOG } from '@/lib/astrology/domainCatalog';
 import { importChartFile, openChartFileDialog } from '@/lib/tauri/workspace';
 
 type OpenMode = 'my_radixes' | 'database';
@@ -142,80 +143,19 @@ const PLANET_LABEL_KEYS: Record<SearchPlanetId, string> = {
 	pluto: 'planet_pluto'
 };
 
-const ZODIAC_KEYS = [
-	'open_sign_aries',
-	'open_sign_taurus',
-	'open_sign_gemini',
-	'open_sign_cancer',
-	'open_sign_leo',
-	'open_sign_virgo',
-	'open_sign_libra',
-	'open_sign_scorpio',
-	'open_sign_sagittarius',
-	'open_sign_capricorn',
-	'open_sign_aquarius',
-	'open_sign_pisces'
-] as const;
+const ZODIAC_KEYS = (DOMAIN_CATALOG?.model.signs ?? []).map((sign) => `open_sign_${sign.id}`);
 
-const SHAPE_OPTIONS: Array<{ id: string; labelKey: string; indent?: number; group?: boolean }> = [
-	{ id: 'bundle', labelKey: 'open_shape_bundle' },
-	{ id: 'bowl', labelKey: 'open_shape_bowl' },
-	{ id: 'bowl_east', labelKey: 'open_shape_bowl_east', indent: 1 },
-	{ id: 'bowl_west', labelKey: 'open_shape_bowl_west', indent: 1 },
-	{ id: 'bowl_day', labelKey: 'open_shape_bowl_day', indent: 1 },
-	{ id: 'bowl_night', labelKey: 'open_shape_bowl_night', indent: 1 },
-	{ id: 'bowl_leader', labelKey: 'open_shape_leading_planet', indent: 1, group: true },
-	...SEARCH_PLANET_IDS.map((planet) => ({
-		id: `bowl_leader_${planet}`,
-		labelKey: PLANET_LABEL_KEYS[planet],
-		indent: 2
-	})),
-	{ id: 'bucket', labelKey: 'open_shape_bucket' },
-	...(['moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'] as SearchPlanetId[]).map(
-		(planet) => ({
-			id: `bucket_${planet}`,
-			labelKey: `open_shape_bucket_${planet}`,
-			indent: 1
-		})
-	),
-	{ id: 'seesaw', labelKey: 'open_shape_seesaw' },
-	{ id: 'locomotive', labelKey: 'open_shape_locomotive' },
-	{ id: 'locomotive_leader', labelKey: 'open_shape_leading_planet', indent: 1, group: true },
-	...SEARCH_PLANET_IDS.map((planet) => ({
-		id: `locomotive_leader_${planet}`,
-		labelKey: PLANET_LABEL_KEYS[planet],
-		indent: 2
-	})),
-	{ id: 'splash', labelKey: 'open_shape_splash' },
-	{ id: 'shifted_center', labelKey: 'open_shape_shifted_center' },
-	{ id: 'stellium', labelKey: 'info_stellium' }
-];
-
-const CONFIGURATION_OPTIONS: Array<{ id: string; labelKey: string; indent?: number }> = [
-	{ id: 't_square', labelKey: 'open_configuration_t_square' },
-	{ id: 't_square_cardinal', labelKey: 'open_modality_cardinal', indent: 1 },
-	{ id: 't_square_fixed', labelKey: 'open_modality_fixed', indent: 1 },
-	{ id: 't_square_mutable', labelKey: 'open_modality_mutable', indent: 1 },
-	{ id: 'grand_cross', labelKey: 'open_configuration_grand_cross' },
-	{ id: 'grand_cross_cardinal', labelKey: 'open_modality_cardinal', indent: 1 },
-	{ id: 'grand_cross_fixed', labelKey: 'open_modality_fixed', indent: 1 },
-	{ id: 'grand_cross_mutable', labelKey: 'open_modality_mutable', indent: 1 },
-	{ id: 'grand_trine', labelKey: 'open_configuration_grand_trine' },
-	{ id: 'grand_trine_fire', labelKey: 'open_element_fire', indent: 1 },
-	{ id: 'grand_trine_earth', labelKey: 'open_element_earth', indent: 1 },
-	{ id: 'grand_trine_air', labelKey: 'open_element_air', indent: 1 },
-	{ id: 'grand_trine_water', labelKey: 'open_element_water', indent: 1 },
-	{ id: 'hexagram', labelKey: 'open_configuration_hexagram' },
-	{ id: 'mystic_rectangle', labelKey: 'open_configuration_mystic_rectangle' },
-	{ id: 'pentagram', labelKey: 'open_configuration_pentagram' },
-	{ id: 'double_quincunx', labelKey: 'open_configuration_double_quincunx' },
-	{ id: 'kite', labelKey: 'open_configuration_kite' },
-	{ id: 'kite_fire', labelKey: 'open_configuration_kite_fire', indent: 1 },
-	{ id: 'kite_earth', labelKey: 'open_configuration_kite_earth', indent: 1 },
-	{ id: 'kite_air', labelKey: 'open_configuration_kite_air', indent: 1 },
-	{ id: 'kite_water', labelKey: 'open_configuration_kite_water', indent: 1 },
-	{ id: 'double_biquintile', labelKey: 'open_configuration_double_biquintile' }
-];
+const shapeOptions = () => (DOMAIN_CATALOG?.shapes ?? []).map((definition) => ({
+	id: definition.id,
+	labelKey: definition.translation_key,
+	indent: definition.parent_id ? 1 : undefined,
+	group: definition.id === 'bowl_leader' || definition.id === 'locomotive_leader'
+}));
+const configurationOptions = () => (DOMAIN_CATALOG?.configurations ?? []).map((definition) => ({
+	id: definition.id,
+	labelKey: definition.translation_key,
+	indent: definition.parent_id ? 1 : undefined
+}));
 
 const emptyPlanetFilter = (): PlanetFilter => ({
 	sign: 'any',
@@ -1193,7 +1133,7 @@ export function OpenWorkspaceView({
 										{t('open_filter_chart_shape')}
 									</AccordionTrigger>
 									<AccordionContent className="space-y-2 px-4 sm:px-6">
-										{SHAPE_OPTIONS.map((option) =>
+										{shapeOptions().map((option) =>
 											option.group ? (
 												<p
 													key={option.id}
@@ -1230,7 +1170,7 @@ export function OpenWorkspaceView({
 										{t('info_planetary_configuration')}
 									</AccordionTrigger>
 									<AccordionContent className="space-y-2 px-4 sm:px-6">
-										{CONFIGURATION_OPTIONS.map((option) => (
+								{configurationOptions().map((option) => (
 											<div
 												key={option.id}
 												className="flex items-center gap-2"

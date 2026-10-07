@@ -1,4 +1,4 @@
-/// Astronomy backend using the `anise` crate (MPL-2.0) with SPICE BSP ephemeris files.
+/// JPL position provider using the `anise` crate (MPL-2.0) with SPICE BSP ephemeris files.
 ///
 /// Loads all available BSP files (bundled de440s.bsp + any user-downloaded files) via
 /// `EphemerisManager` into a chained `Almanac`. Standard DE planetary kernels provide the
@@ -28,14 +28,14 @@ use crate::domain::houses::{
     mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, true_apogee_tropical_deg,
     true_node_tropical_deg, vertex_lon, whole_sign_cusps,
 };
-use crate::infrastructure::astronomy::{
-    AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion,
-};
 use crate::infrastructure::ephemeris::{
     load_almanac_from_paths, small_body_kernels_for_bsp_paths, EphemerisManager, ASTRAEA_J2000,
     CERES_J2000, EGERIA_J2000, EUNOMIA_J2000, FLORA_J2000, FORTUNA_J2000, HEBE_J2000, HYGIEA_J2000,
     IRENE_J2000, IRIS_J2000, JUNO_J2000, MASSALIA_J2000, MELPOMENE_J2000, METIS_J2000,
     PALLAS_J2000, PARTHENOPE_J2000, PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
+};
+use crate::infrastructure::position_provider::{
+    AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem, PositionMode};
 
@@ -1061,7 +1061,7 @@ mod tests {
     #[test]
     #[ignore = "diagnostic comparison; requires de440s.bsp + Swiss Ephemeris"]
     fn compare_jpl_vs_swisseph_2026_04_22_1500_utc() {
-        use crate::infrastructure::astronomy::{AstronomyBackend, SwissAstronomyBackend};
+        use crate::infrastructure::position_provider::{AstronomyBackend, SwissAstronomyBackend};
 
         let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
 

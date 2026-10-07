@@ -78,6 +78,11 @@ calculation payloads.</li>
 workspace defaults during payload construction.</li>
 <li>Real chart and transit views consume Tauri calculation results. Static docs
 mode may demonstrate interface structure but must not fabricate backend data.</li>
+<li><code>main.tsx</code> loads the built-in Rust domain catalog before mounting React;
+<code>tauri/workspace.ts</code> refreshes it for the effective workspace/chart model.</li>
+<li><code>astrology/domainCatalog.ts</code> and <code>observableObjects.ts</code> project catalog IDs
+into UI state. Translation keys, glyph assets, colors, and visual grouping
+remain React presentation concerns.</li>
 </ul>
 <h2 id="react-specific-conventions">React-specific conventions</h2>
 <ul>

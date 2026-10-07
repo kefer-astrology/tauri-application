@@ -57,6 +57,8 @@ The manifest can therefore point into any depth of subfolder:</p>
 </span></span><span style="display:flex;"><span>├── charts/
 </span></span><span style="display:flex;"><span>│   ├── clients/alice/natal.yml
 </span></span><span style="display:flex;"><span>│   └── research/elections/2028.yml
+</span></span><span style="display:flex;"><span>├── analyses/
+</span></span><span style="display:flex;"><span>│   └── clients/alice-bob-synastry.yml
 </span></span><span style="display:flex;"><span>├── presets/charts/research.yml
 </span></span><span style="display:flex;"><span>├── transits/
 </span></span><span style="display:flex;"><span>│   └── clients/alice/natal.yml
@@ -90,6 +92,7 @@ The manifest can therefore point into any depth of subfolder:</p>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">zodiac_type</span>: <span style="color:#ae81ff">Tropical</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">settings</span>:
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_house_system</span>: <span style="color:#ae81ff">Whole Sign</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">position_mode</span>: <span style="color:#ae81ff">apparent</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_aspects</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">default_transit_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn]</span>
@@ -117,6 +120,7 @@ The manifest can therefore point into any depth of subfolder:</p>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">default</span>:                                <span style="color:#75715e"># calculation defaults only</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">ephemeris_engine</span>: <span style="color:#ae81ff">swisseph</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">position_mode</span>: <span style="color:#ae81ff">apparent</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_house_system</span>: <span style="color:#ae81ff">Whole Sign</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_bodies</span>: [<span style="color:#ae81ff">sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">default_aspects</span>: [<span style="color:#ae81ff">conjunction, opposition, trine, square, sextile]</span>
@@ -135,10 +139,16 @@ The manifest can therefore point into any depth of subfolder:</p>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">element_colors</span>: { <span style="color:#f92672">fire</span>: <span style="color:#e6db74">&#39;#c24d3d&#39;</span><span style="color:#f92672">, earth</span>: <span style="color:#e6db74">&#39;#6d7d3d&#39;</span><span style="color:#f92672">, air</span>: <span style="color:#e6db74">&#39;#ca9b42&#39;</span><span style="color:#f92672">, water</span>: <span style="color:#e6db74">&#39;#3979a8&#39;</span> }
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">aspect_colors</span>: { <span style="color:#f92672">conjunction</span>: <span style="color:#e6db74">&#39;#555555&#39;</span><span style="color:#f92672">, square</span>: <span style="color:#e6db74">&#39;#d04444&#39;</span> }
 </span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">tag_catalog</span>:                           <span style="color:#75715e"># workspace-wide tag names and optional shared colors</span>
+</span></span><span style="display:flex;"><span>  - { <span style="color:#f92672">name</span>: <span style="color:#f92672">client, color</span>: <span style="color:#e6db74">&#39;#3b82f6&#39;</span> }
+</span></span><span style="display:flex;"><span>  - { <span style="color:#f92672">name</span>: <span style="color:#f92672">research, color</span>: <span style="color:#e6db74">&#39;#8b5cf6&#39;</span> }
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">subjects</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">subjects/clients/alice.yml</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">charts</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">charts/clients/alice/natal.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">analyses</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">analyses/clients/alice-bob-synastry.yml</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">chart_presets</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">presets/charts/research.yml</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">transit_analyses</span>:
@@ -149,14 +159,21 @@ The manifest can therefore point into any depth of subfolder:</p>
 </span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">notes/research-method.md</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">aspects</span>: []                             <span style="color:#75715e"># legacy external catalog references</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">bodies</span>: []                              <span style="color:#75715e"># legacy external catalog references</span>
-</span></span></code></pre></div><p>For compatibility, older visual fields under <code>default</code> and visual metadata in
-model definitions are still readable. New files should use <code>presentation</code>.</p>
+</span></span></code></pre></div><p>The unreleased schema has one canonical representation: visual settings belong
+under <code>presentation</code>; calculation settings belong under <code>default</code> or a model,
+preset, chart, or operation layer.</p>
+<p><code>tag_catalog</code> is the workspace-wide registry used for tag completion and shared
+colors. Names must be non-empty and unique after surrounding whitespace is
+removed. A color, when present, must use <code>#RGB</code> or <code>#RRGGBB</code>. Charts and analyses
+continue to store their assigned tag names in their own <code>tags</code> arrays. Existing
+chart-level <code>tag_colors</code> remain supported as a legacy fallback, while catalog
+colors take precedence in the UI.</p>
 <h2 id="subject-versus-chart">Subject versus chart</h2>
 <p>A <strong>subject</strong> is source evidence: who or what happened, when, and where. A
 <strong>chart</strong> is one astrological interpretation of that evidence. Multiple charts
 can therefore represent one subject with different models, house systems, or
-research assumptions. Current chart files embed their subject for compatibility;
-the separate <code>subjects</code> collection is the reusable normalized form.</p>
+research assumptions. A chart embeds its subject snapshot; the separate
+<code>subjects</code> collection is the reusable normalized form.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># subjects/clients/alice.yml</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">id</span>: <span style="color:#ae81ff">alice</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Alice Example</span>
@@ -168,7 +185,7 @@ the separate <code>subjects</code> collection is the reusable normalized form.</
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">timezone</span>: <span style="color:#ae81ff">Europe/Prague</span>
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># charts/clients/alice/natal.yml</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">id</span>: <span style="color:#ae81ff">alice-natal-traditional</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">subject</span>:                              <span style="color:#75715e"># embedded compatibility representation</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">subject</span>:                              <span style="color:#75715e"># calculation-time subject snapshot</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">id</span>: <span style="color:#ae81ff">alice</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Alice Example</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">event_time</span>: <span style="color:#e6db74">&#39;1990-04-12T08:15:00Z&#39;</span>
@@ -178,7 +195,9 @@ the separate <code>subjects</code> collection is the reusable normalized form.</
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">longitude</span>: <span style="color:#ae81ff">14.4214</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">timezone</span>: <span style="color:#ae81ff">Europe/Prague</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">config</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">mode</span>: <span style="color:#ae81ff">NATAL</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">definition</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">base</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">purpose</span>: <span style="color:#ae81ff">natal</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">model</span>: <span style="color:#ae81ff">traditional-primary</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">house_system</span>: <span style="color:#ae81ff">Whole Sign</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">zodiac_type</span>: <span style="color:#ae81ff">Tropical</span>
@@ -191,11 +210,50 @@ the separate <code>subjects</code> collection is the reusable normalized form.</
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">aspects</span>:
 </span></span><span style="display:flex;"><span>      - { <span style="color:#f92672">id</span>: <span style="color:#f92672">square, angle</span>: <span style="color:#f92672">90.0, default_orb</span>: <span style="color:#f92672">4.0, valid_contexts</span>: [<span style="color:#ae81ff">chart] }</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">override_orbs</span>: {}
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">included_points</span>: []
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">display_style</span>: <span style="color:#e6db74">&#39;&#39;</span>                  <span style="color:#75715e"># legacy visual keys; prefer presentation</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">color_theme</span>: <span style="color:#e6db74">&#39;&#39;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">tags</span>: [<span style="color:#ae81ff">client]</span>
-</span></span></code></pre></div><h2 id="complete-calculation-definition">Complete calculation definition</h2>
+</span></span></code></pre></div><p><code>config.definition</code> is required; <code>mode</code> and overloaded synastry chart types are
+not accepted. For a derived chart it records the method and
+chart graph explicitly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">config</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">definition</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">derived</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">method</span>: <span style="color:#ae81ff">composite</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">inputs</span>: [<span style="color:#ae81ff">alice-natal, bob-natal]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">parameters</span>: {}
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">zodiac_type</span>: <span style="color:#ae81ff">Tropical</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">aspect_orbs</span>: {}
+</span></span></code></pre></div><h2 id="analyses-and-views">Analyses and views</h2>
+<p>Comparisons are persisted independently from charts. A progressed synastry is
+represented by one stable analysis method plus derivations on its inputs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># analyses/clients/alice-bob-progressed.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">id</span>: <span style="color:#ae81ff">alice-bob-progressed</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Alice and Bob — progressed</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">method</span>: <span style="color:#ae81ff">synastry</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">inputs</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">role</span>: <span style="color:#ae81ff">person_a</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">chart_id</span>: <span style="color:#ae81ff">alice-natal</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">derivations</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">method</span>: <span style="color:#ae81ff">progression</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">parameters</span>: { <span style="color:#f92672">target_date</span>: <span style="color:#e6db74">&#39;2026-09-25T00:00:00Z&#39;</span> }
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">role</span>: <span style="color:#ae81ff">person_b</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">chart_id</span>: <span style="color:#ae81ff">bob-natal</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">derivations</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">method</span>: <span style="color:#ae81ff">progression</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">parameters</span>: { <span style="color:#f92672">target_date</span>: <span style="color:#e6db74">&#39;2026-09-25T00:00:00Z&#39;</span> }
+</span></span><span style="display:flex;"><span><span style="color:#f92672">parameters</span>: {}
+</span></span><span style="display:flex;"><span><span style="color:#f92672">tags</span>: []
+</span></span></code></pre></div><p>Manual comparison entries use <code>inline_subject</code> instead of <code>chart_id</code>; exactly
+one must be present for each input. A layout references chart and/or analysis
+IDs and selects only a presentation shape:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">alice-bob-biwheel</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">layout_style</span>: <span style="color:#ae81ff">biwheel</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">chart_instances</span>: []
+</span></span><span style="display:flex;"><span><span style="color:#f92672">analyses</span>: [<span style="color:#ae81ff">alice-bob-progressed]</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">modules</span>: []
+</span></span></code></pre></div><p>Canonical layout values are <code>single</code>, <code>biwheel</code>, <code>triwheel</code>, <code>grid</code>, and
+<code>timeline</code>.</p>
+<h2 id="complete-calculation-definition">Complete calculation definition</h2>
 <p>A body definition supports <code>id</code>, <code>enabled</code>, <code>formula</code>, <code>element</code>, <code>avg_speed</code>,
 <code>max_orb</code>, <code>object_type</code>, <code>computation_map</code>, <code>requires_location</code>, and
 <code>requires_house_system</code>. <code>glyph</code> and <code>i18n</code> remain legacy presentation metadata.</p>

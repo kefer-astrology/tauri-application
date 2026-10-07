@@ -3,9 +3,6 @@ use crate::application::compute_router::{
     normalize_chart_response, select_chart_compute_route, selected_compute_backend, ComputeBackend,
     ComputeRoute,
 };
-use crate::application::workspace::resolve_settings_preset;
-use crate::workspace::load_workspace_manifest;
-use crate::workspace::loader::{find_chart_ref_by_id, load_chart};
 use std::collections::HashMap;
 use std::path::Path;
 use tauri::{AppHandle, State};
@@ -18,7 +15,7 @@ pub async fn compute_chart_from_data(
     chart_json: serde_json::Value,
     settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
-    crate::application::workspace::validate_chart_payload(&chart_json)?;
+    crate::application::chart_resolution::validate_chart_payload(&chart_json)?;
     let backend = selected_compute_backend();
     let fallback_to_python = crate::application::compute_router::python_fallback_enabled();
     let force_python = chart_json_requires_python_precision(&chart_json);
@@ -61,14 +58,11 @@ fn compute_chart_from_data_rust(
     chart_json: serde_json::Value,
     settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
-    let chart: crate::workspace::models::ChartInstance =
-        serde_json::from_value(chart_json).map_err(|e| format!("Invalid chart payload: {}", e))?;
-    let report = crate::workspace::settings::standalone_model_report_with_operation(
-        &chart.config,
-        settings_overrides,
-    );
     let request = crate::application::computation::ChartComputeRequest::for_resolved_chart(
-        crate::application::computation::ResolvedChart::from_report(chart, report),
+        crate::application::chart_resolution::resolve_standalone_chart(
+            &chart_json,
+            settings_overrides,
+        )?,
     );
     let calculation = crate::application::computation::compute_chart(request)?;
     chart_calculation_to_map(calculation)
@@ -86,7 +80,7 @@ pub async fn compute_cross_aspects_from_data(
     aspect_types: Vec<String>,
     settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
 ) -> Result<Vec<crate::domain::astrology::ComputedAspect>, String> {
-    crate::application::workspace::validate_chart_payload(&chart_json)?;
+    crate::application::chart_resolution::validate_chart_payload(&chart_json)?;
     let chart: crate::workspace::models::ChartInstance =
         serde_json::from_value(chart_json).map_err(|e| format!("Invalid chart payload: {}", e))?;
     let report = crate::workspace::settings::standalone_model_report_with_operation(
@@ -191,20 +185,13 @@ fn compute_chart_rust(
     preset_id: Option<&str>,
     settings_overrides: Option<&crate::workspace::settings::SettingsLayer>,
 ) -> Result<HashMap<String, serde_json::Value>, String> {
-    let base = Path::new(workspace_path);
-    let manifest = load_workspace_manifest(base)?;
-    let chart_rel = find_chart_ref_by_id(base, &manifest, chart_id)?
-        .ok_or_else(|| format!("Chart {} not found", chart_id))?;
-    let chart = load_chart(base, &chart_rel)?;
-    let preset = resolve_settings_preset(base, &manifest, preset_id)?;
-    let report = crate::workspace::settings::current_model_report_with_layers(
-        &manifest,
-        preset.as_ref(),
-        Some(&chart.config),
-        settings_overrides,
-    );
     let request = crate::application::computation::ChartComputeRequest::for_resolved_chart(
-        crate::application::computation::ResolvedChart::from_report(chart, report),
+        crate::application::chart_resolution::resolve_workspace_chart(
+            workspace_path,
+            chart_id,
+            preset_id,
+            settings_overrides,
+        )?,
     );
     let calculation = crate::application::computation::compute_chart(request)?;
     chart_calculation_to_map(calculation)
@@ -265,7 +252,7 @@ fn chart_calculation_to_map(
 fn compute_radix_axes(
     chart: &crate::workspace::models::ChartInstance,
 ) -> Result<RadixAxes, String> {
-    let backend = crate::infrastructure::astronomy::backend_for_chart(chart);
+    let backend = crate::infrastructure::position_provider::backend_for_chart(chart);
     let computed = backend.compute_chart_data(chart, Some(&vec!["asc".into(), "mc".into()]))?;
     Ok(RadixAxes {
         asc: computed.axes.asc,
@@ -280,7 +267,7 @@ fn compute_house_cusps(
     chart: &crate::workspace::models::ChartInstance,
     _axes: &RadixAxes,
 ) -> Vec<f64> {
-    crate::infrastructure::astronomy::backend_for_chart(chart)
+    crate::infrastructure::position_provider::backend_for_chart(chart)
         .compute_chart_data(chart, None)
         .map(|computed| computed.house_cusps)
         .unwrap_or_default()
@@ -290,6 +277,8 @@ fn compute_house_cusps(
 mod tests {
     use super::*;
     use crate::test_support::{sample_chart_payload, sample_workspace_path};
+    use crate::workspace::load_workspace_manifest;
+    use crate::workspace::loader::{find_chart_ref_by_id, load_chart};
     use serde_json::Value;
 
     #[test]
@@ -313,7 +302,7 @@ mod tests {
         assert_eq!(
             result.get("backend_used"),
             Some(&serde_json::json!(
-                crate::infrastructure::astronomy::backend_for_chart(&chart).backend_id()
+                crate::infrastructure::position_provider::backend_for_chart(&chart).backend_id()
             ))
         );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
@@ -323,7 +312,8 @@ mod tests {
             .get("warnings")
             .and_then(Value::as_array)
             .expect("warnings should be an array");
-        if crate::infrastructure::astronomy::backend_for_chart(&chart).backend_id() == "jpl" {
+        if crate::infrastructure::position_provider::backend_for_chart(&chart).backend_id() == "jpl"
+        {
             assert!(
                 !warnings.iter().any(|warning| {
                     warning.as_str()

@@ -87,6 +87,9 @@ presentation:
   language: en
   glyph_set: classic
   aspect_colors: { square: '#cc3333' }
+tag_catalog:
+  - name: compatibility
+    color: '#336699'
 chart_presets: []
 subjects: []
 charts:
