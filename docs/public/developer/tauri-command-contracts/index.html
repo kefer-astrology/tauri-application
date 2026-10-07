@@ -133,14 +133,22 @@ school/model/definition overrides, and requested event families.</li>
 <li>Returns the chart id.</li>
 <li>Returns an error if the chart id already exists.</li>
 </ul>
+<h3 id="create_analysisworkspace_path-analysis---resultstring-string"><code>create_analysis(workspace_path, analysis) -&gt; Result&lt;String, String&gt;</code></h3>
+<ul>
+<li>Persists a relationship/comparison separately from its input charts.</li>
+<li>Requires schema version 1, an id, a name, and at least two inputs.</li>
+<li>Each input must contain exactly one saved <code>chart_id</code> or one <code>inline_subject</code>.</li>
+<li>Writes an analysis YAML file, registers it in <code>workspace.yaml:analyses</code>, and returns its id.</li>
+<li>Compound labels such as progressed synastry are represented as input derivations, not as new analysis methods.</li>
+</ul>
 <h3 id="import_chartworkspace_path-source_path---resultstring-string"><code>import_chart(workspace_path, source_path) -&gt; Result&lt;String, String&gt;</code></h3>
 <ul>
 <li>Imports an external chart file into the active workspace.</li>
-<li>Native YAML (<code>.yml</code>, <code>.yaml</code>) is supported in the current Rust path.</li>
+<li>Native YAML (<code>.yml</code>, <code>.yaml</code>) and StarFisher EventData (<code>.sfs</code>) are supported in the Rust path.</li>
+<li>SFS import accepts UTF-8 and BOM-marked UTF-16, converts event metadata to a native base-event chart, and selects JPL/apparent recomputation without persisting source positions.</li>
 <li>On success, writes the imported chart into <code>charts/</code> and registers it in <code>workspace.yaml</code>.</li>
 <li>Returns the imported chart id.</li>
-<li>Returns an error for duplicate chart ids.</li>
-<li>Returns an explicit error for <code>.sfs</code> because the Python-backed StarFisher import path is not wired yet.</li>
+<li>Returns an error for duplicate chart ids or malformed source events.</li>
 </ul>
 <h3 id="update_chartworkspace_path-chart_id-chart---resultstring-string"><code>update_chart(workspace_path, chart_id, chart) -&gt; Result&lt;String, String&gt;</code></h3>
 <ul>
@@ -158,7 +166,7 @@ school/model/definition overrides, and requested event families.</li>
 <h3 id="load_workspaceworkspace_path---resultworkspaceinfo-string"><code>load_workspace(workspace_path) -&gt; Result&lt;WorkspaceInfo, String&gt;</code></h3>
 <ul>
 <li>Requires a readable <code>workspace.yaml</code>.</li>
-<li>Loads all registered charts and returns chart summaries.</li>
+<li>Returns registered charts and analyses as separate collections.</li>
 <li>Does not compute chart positions.</li>
 </ul>
 <h3 id="validate_workspaceworkspace_path---resultworkspacevalidationreport-string"><code>validate_workspace(workspace_path) -&gt; Result&lt;WorkspaceValidationReport, String&gt;</code></h3>
@@ -209,11 +217,10 @@ chart-level invariants.</li>
 <h3 id="get_chart_detailsworkspace_path-chart_id---resultvalue-string"><code>get_chart_details(workspace_path, chart_id) -&gt; Result&lt;Value, String&gt;</code></h3>
 <ul>
 <li>Returns the full chart payload needed by the React and Svelte editor surfaces.</li>
-<li><code>config</code> includes <code>mode</code>, <code>house_system</code>, <code>zodiac_type</code>, <code>engine</code>, <code>model</code>,
+<li><code>config</code> includes required <code>definition</code>, <code>house_system</code>, <code>zodiac_type</code>, <code>engine</code>, <code>position_mode</code>, <code>model</code>,
 <code>model_overrides</code>, <code>override_ephemeris</code>, <code>observable_objects</code>,
-<code>included_points</code>, <code>aspect_orbs</code>, <code>selected_aspects</code>, <code>ayanamsa</code>,
-<code>time_system</code>, and legacy visual keys. Both frontends retain these fields
-during load/save round-trips.</li>
+<code>aspect_orbs</code>, <code>selected_aspects</code>, <code>ayanamsa</code>, and <code>time_system</code>. Both
+frontends retain these fields during load/save round-trips.</li>
 <li>Also returns top-level <code>tags</code>, <code>tag_colors</code>, and <code>roden_rating</code>.</li>
 <li>Returns an error when the chart id is not found.</li>
 </ul>
@@ -232,6 +239,11 @@ during load/save round-trips.</li>
 <li><code>warnings</code></li>
 <li><code>ephemeris_source</code> when known</li>
 </ul>
+<p>All returned longitudes are normalized to <code>[0, 360)</code>. On the Rust JPL path,
+<code>positions</code> and <code>motion</code> use the selected apparent/geometric mean-tropical coordinate pipeline
+defined by the <a href="../astronomy-coordinate-contract/">Astronomy coordinate contract</a>.
+This is a semantic contract rather than an additional response field; changing
+it requires an explicit version/provenance decision.</p>
 <h3 id="compute_chart_from_datachart_json-settings_overrides---resultmapstring-value-string"><code>compute_chart_from_data(chart_json, settings_overrides?) -&gt; Result&lt;Map&lt;String, Value&gt;, String&gt;</code></h3>
 <ul>
 <li>Computes positions and aspects from an in-memory chart payload.</li>
@@ -239,14 +251,11 @@ during load/save round-trips.</li>
 <li>Returns an object with <code>positions</code>, <code>motion</code>, <code>aspects</code>, <code>axes</code>, <code>house_cusps</code>, <code>shapes</code>, <code>configurations</code>, <code>moon_details</code>, <code>chart_id</code>, and backend provenance fields when available.</li>
 <li>Rust standalone computation resolves built-in model defaults and chart
 overrides through the same settings service used by workspace charts.</li>
-<li>Resolved house system, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
+<li>Resolved house system, position mode, bodies, aspects, orbs, engine, zodiac, ayanamsa, and
 time system are materialized only on the in-memory computation copy.</li>
-<li>Legacy <code>included_points</code> is accepted as a chart-level body selection and
-produces a deprecation warning; new payloads should use
-<code>observable_objects</code>.</li>
 <li><code>settings_overrides</code> is an optional operation layer with <code>houseSystem</code>,
-<code>bodies</code>, <code>aspects</code>, <code>aspectOrbs</code>, <code>engine</code>, <code>zodiacType</code>, <code>ayanamsa</code>, and
-<code>timeSystem</code>.</li>
+<code>bodies</code>, <code>aspects</code>, <code>aspectOrbs</code>, <code>engine</code>, <code>positionMode</code>, <code>zodiacType</code>,
+<code>ayanamsa</code>, and <code>timeSystem</code>.</li>
 <li>Uses Python or Rust depending on backend selection and availability.</li>
 </ul>
 <p>Acceptance criteria:</p>
@@ -254,7 +263,7 @@ produces a deprecation warning; new payloads should use
 <li>A valid chart payload returns <code>positions</code>, <code>aspects</code>, and <code>chart_id</code>.</li>
 <li>Rust-supported radix output should also include <code>axes</code> and <code>house_cusps</code>.</li>
 <li>Rust-supported radix output should include <code>motion</code> when the selected backend can derive it.</li>
-<li>Rust-supported radix output should also include <code>shapes</code> (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and <code>configurations</code> (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed <code>house_cusps</code>, and the computed <code>aspects</code>. See <code>detect_chart_shapes</code>/<code>detect_chart_configurations</code> in <code>astrology.rs</code>.</li>
+<li>Rust-supported radix output should also include <code>shapes</code> (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and <code>configurations</code> (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed <code>house_cusps</code>, and the computed <code>aspects</code>. See <code>detect_chart_shapes</code>/<code>detect_chart_configurations</code> in <code>domain/astrology.rs</code>.</li>
 <li>When <code>positions.sun</code> and <code>positions.moon</code> exist, <code>moon_details</code> should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See <a href="../lunar-phase/">lunar-phase</a>.</li>
 <li>When fallback occurs, the response should expose that fact instead of failing silently.</li>
 </ul>
@@ -323,8 +332,11 @@ routing described for <code>compute_chart</code>.</li>
 </ul>
 <h3 id="get_available_bodies---vecstring"><code>get_available_bodies() -&gt; Vec&lt;String&gt;</code></h3>
 <ul>
-<li>Returns the currently queryable body ids inferred from available BSP files.</li>
-<li>This reflects file availability, not a guarantee that every body has a dedicated SPK segment in the loaded kernels.</li>
+<li>Returns body ids from resolved static kernels plus accepted manifest-defined
+small-body SPKs.</li>
+<li>A manifest-defined body is returned only after schema, checksum, validation
+thresholds, and an in-range ANISE state probe pass. Traditional static catalog
+kernels continue to use their declared filename/body mapping.</li>
 </ul>
 <h2 id="storage-commands">Storage commands</h2>
 <p>Current Rust storage behavior is workspace-only.</p>

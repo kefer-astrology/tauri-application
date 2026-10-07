@@ -87,7 +87,8 @@ behavior changes.</li>
 <p>When a current contract and a roadmap differ, preserve the current contract
 unless the task explicitly advances the implementation and updates both.</p>
 <h2 id="document-roles">Document roles</h2>
-<p>Developer pages declare three front-matter fields:</p>
+<p>Developer pages declare three front-matter fields. The values below are the
+complete set currently used under <code>docs/content/developer/</code>:</p>
 <table>
 	<thead>
 			<tr>
@@ -98,20 +99,78 @@ unless the task explicitly advances the implementation and updates both.</p>
 	<tbody>
 			<tr>
 					<td><code>doc_kind</code></td>
-					<td>Contract, architecture, implementation reference, guide/policy, roadmap, or archive</td>
+					<td><code>index</code> for navigation; <code>contract</code> for behavior consumers rely on; <code>architecture</code> for boundaries and rationale; <code>implementation-reference</code> for current code structure; <code>guide</code> for contributor workflow; <code>policy</code> for repository-wide rules; <code>roadmap</code> for proposed work; <code>archive</code> for historical context</td>
 			</tr>
 			<tr>
 					<td><code>status</code></td>
-					<td>Current, evolving, active, proposed, or historical</td>
+					<td><code>current</code>, <code>evolving</code>, <code>active</code>, <code>proposed</code>, or <code>historical</code></td>
 			</tr>
 			<tr>
 					<td><code>authority</code></td>
-					<td>Normative or informative/non-normative</td>
+					<td><code>normative</code> means the page is binding; <code>informative</code> describes current behavior or implementation; <code>non-normative</code> is context, proposal, roadmap, or history and must not override a contract</td>
 			</tr>
 	</tbody>
 </table>
-<p>A current normative contract wins over implementation commentary, roadmap
-language, examples, and historical notes.</p>
+<p>A page may be informative while still being current, and a policy page may be
+normative without being a serialized application contract. <code>status</code> describes
+the page&rsquo;s lifecycle; <code>authority</code> describes how conflicts are resolved.</p>
+<p>A current normative contract or policy wins over implementation commentary,
+roadmap language, examples, and historical notes. The Developer Manual index is
+navigation metadata, not an authority source.</p>
+<h2 id="architecture-documentation-responsibility-matrix">Architecture documentation responsibility matrix</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Page</th>
+					<th>Owns</th>
+					<th>Does not repeat</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><a href="../architecture/">Architecture</a></td>
+					<td>Current system boundaries, runtime flows, implementation debt</td>
+					<td>YAML fields or source map</td>
+			</tr>
+			<tr>
+					<td><a href="../domain-model/">Domain model</a></td>
+					<td>Semantic concepts and runtime catalog/presentation ownership</td>
+					<td>Workspace lifecycle</td>
+			</tr>
+			<tr>
+					<td><a href="../rust-code-structure/">Rust code structure</a></td>
+					<td>Current module map and mixed command responsibilities</td>
+					<td>Target-layer promises</td>
+			</tr>
+			<tr>
+					<td><a href="../rust-workspace-contract/">Rust workspace contract</a></td>
+					<td>Lifecycle, loaders, invariants, resolution, catalog propagation</td>
+					<td>User-facing option inventory</td>
+			</tr>
+			<tr>
+					<td><a href="../backend-structure/">Backend structure</a></td>
+					<td>Persistence representations, provenance, backend mechanisms</td>
+					<td>Command-by-command source map</td>
+			</tr>
+			<tr>
+					<td><a href="../configuration-reference/">Configuration reference</a></td>
+					<td>Implemented user-visible settings, values, and scope semantics</td>
+					<td>Catalog architecture</td>
+			</tr>
+			<tr>
+					<td><a href="../testing-strategy/">Testing strategy</a></td>
+					<td>Existing test layers, commands, fixtures, and named gaps</td>
+					<td>Architecture design</td>
+			</tr>
+			<tr>
+					<td>This guide</td>
+					<td>Documentation taxonomy, authority, contribution orientation</td>
+					<td>Runtime behavior</td>
+			</tr>
+	</tbody>
+</table>
+<p>When an architectural behavior changes, update its owning page and replace any
+contradictory statement elsewhere with a link rather than duplicating it.</p>
 <h2 id="usable-contract-checklist">Usable contract checklist</h2>
 <p>A task-specific contract should define:</p>
 <ul>

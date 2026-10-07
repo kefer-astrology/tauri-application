@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configuration reference | Kefer Astrology</title>
+    <meta name="description" content="Implemented calculation settings, scopes, and presentation boundary." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/developer/configuration-reference/" aria-current="page">English</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Configuration reference</h1>
+      <p class="lede">Implemented calculation settings, scopes, and presentation boundary.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Contract</span>
+          <span>Current</span>
+          <span>Normative</span>
+        </div>
+      
+    </header>
+    <div class="prose">
+      <p>This reference describes Rust&rsquo;s current serialized/configuration types. The
+source of exact enum spelling is <code>src-tauri/src/workspace/models.rs</code>; callers
+should not treat frontend labels as identifiers.</p>
+<h2 id="resolution">Resolution</h2>
+<p>Calculation settings are merged as follows where a field is represented:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>application baseline &lt; model &lt; workspace &lt; preset &lt; chart &lt; operation
+</span></span></code></pre></div><p>The output includes <code>EffectiveSettingsSources</code>. An omitted optional field
+inherits; a provided preset/chart/operation body or aspect array, including an
+empty array, replaces the inherited selection. See <a href="../rust-workspace-contract/">Rust workspace
+contract</a> for legacy workspace-body behavior and
+the chart <code>zodiac_type</code> caveat.</p>
+<p>Current calculation fields include house system, selected bodies/aspects and
+per-aspect orbs, engine, position mode, zodiac type, ayanamsa, and time system.
+Models also carry defaults and computational constants. Workspace defaults add
+location and presentation-adjacent defaults. Provider availability is separate
+from a valid model/catalog entry.</p>
+<h2 id="serialized-enum-families">Serialized enum families</h2>
+<ul>
+<li>House systems: <code>Placidus</code>, <code>Whole Sign</code>, <code>Campanus</code>, <code>Koch</code>, <code>Equal</code>,
+<code>Regiomontanus</code>, <code>Vehlow</code>, <code>Porphyry</code>, <code>Alcabitius</code>.</li>
+<li>Engines: <code>jpl</code>, <code>swisseph</code>, <code>jyotish</code>, <code>custom</code>; position modes:
+<code>apparent</code>, <code>geometric</code>.</li>
+<li>Zodiac types: <code>Tropical</code>, <code>Sidereal</code>; ayanamsas: <code>Lahiri</code>, <code>Raman</code>,
+<code>Krishnamurti</code>, <code>FaganBradley</code>, <code>DeLuce</code>, <code>UserDefined</code>.</li>
+<li>Time systems: <code>gregorian</code>, <code>julian_day</code>, <code>julian_calendar</code>,
+<code>unix_timestamp</code>, <code>ordinal_date</code>, <code>iso_week_date</code>, <code>compact_date</code>.</li>
+</ul>
+<p>Stable body/aspect/sign IDs are supplied by the resolved Rust <code>DomainCatalog</code>,
+not by this prose list. Model definitions may still carry legacy glyph, i18n,
+and aspect-color fields. Frontends own final labels, translations, assets,
+color choices, grouping, and interaction behavior.</p>
+<h2 id="persisted-non-calculation-configuration">Persisted non-calculation configuration</h2>
+<p>Workspace presentation stores optional theme/language/glyph/color and
+aspect-line choices; charts store tags, tag colors, and Rodden rating. Transit
+setup stores a version, source chart, interval/step, selections, optional
+school/model/overrides, and event flags. These fields do not persist computed
+results. For field examples see <a href="../workspace-yaml/">Workspace YAML contract</a>.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,96 +1,105 @@
 ---
 title: 'Rust code structure'
-description: 'Current Rust module map and responsibility boundaries.'
+description: 'Current Rust module map and actual responsibility boundaries.'
 weight: 43
 doc_kind: implementation-reference
 status: current
 authority: informative
 ---
 
-This page maps the Rust code that exists today. It is an implementation
-reference, not a migration log or a target tree. The architectural rules and
-the persistence/configuration rationale live in [Backend structure](../backend-structure/).
-
-## Module map
+This is a source map, not a target architecture.
 
 ```text
 src-tauri/src/
-├── lib.rs                         # Tauri setup, managed state, command registration
-├── commands/                      # thin invoke adapters and DTO/error mapping
-│   ├── workspace.rs               # workspace lifecycle, defaults, catalog/report commands
-│   ├── charts.rs                  # chart CRUD and imports
-│   ├── calculation.rs             # radix/cross-aspect compute commands
-│   ├── transits.rs                # transit persistence and compute commands
-│   ├── location.rs                # location/timezone commands
-│   ├── dialogs.rs                 # native dialog commands
-│   ├── ephemeris.rs               # ephemeris status/download commands
-│   ├── analyses.rs                # analysis commands
-│   └── storage.rs                 # legacy compatibility commands
-├── application/                   # use cases and orchestration
-│   ├── computation.rs             # resolved chart computation
-│   ├── transit.rs                 # transit-series orchestration
-│   ├── compute_router.rs          # backend selection, fallback, provenance
-│   ├── workspace.rs               # chart/workspace helpers and validation flow
-│   └── location.rs                # location search use case
-├── domain/                        # backend-neutral calculations
-│   ├── astrology.rs               # body selection, aspects, shapes, configurations
-│   └── houses.rs                  # houses, angles, and analytic lunar-node math
-├── workspace/                     # persisted models and workspace services
-│   ├── models.rs                  # YAML/DTO model definitions, catalog types
-│   ├── model_catalog.rs           # built-in model data construction
-│   ├── settings.rs                # model selection, layered settings, provenance
-│   ├── validation.rs              # invariants and serializable diagnostics
-│   ├── loader.rs                  # manifest/reference loading
-│   └── writer.rs                  # workspace/chart/transit YAML writes
-└── infrastructure/                # external mechanisms
-    ├── astronomy/                 # provider trait and JPL/Swiss adapters
-    ├── ephemeris.rs               # BSP resources, cache, and Almanac setup
-    ├── python_sidecar.rs           # optional process lifecycle and HTTP client
-    ├── geocoding.rs                # Nominatim and timezone lookup
-    └── dialogs.rs                  # platform folder-picker integration
+├── application/
+│   ├── chart_resolution.rs validate/resolve persisted or in-memory chart input
+│   ├── computation.rs     resolved Rust chart computation
+│   ├── compute_router.rs  backend selection/fallback and response annotation
+│   ├── location.rs        location use case
+│   └── transit.rs         typed Rust transit-series computation
+├── commands/              Tauri entry points; mixed adapters/orchestration
+│   ├── analyses.rs        analysis persistence
+│   ├── calculation.rs     radix/cross-aspect routing, loading, sidecar calls
+│   ├── charts.rs          chart CRUD and imports
+│   ├── default.rs         legacy generic file commands
+│   ├── dialogs.rs         native dialog commands
+│   ├── ephemeris.rs       ephemeris catalog/download commands
+│   ├── location.rs        location/timezone commands
+│   ├── storage.rs         legacy computed-data compatibility commands
+│   ├── transits.rs        transit setup persistence and series routing
+│   └── workspace.rs       create/save/delete/load, defaults, reports/catalogs
+├── domain/                astrology relationships, shapes/configurations, houses
+├── infrastructure/
+│   ├── dialogs.rs         platform dialog integration
+│   ├── ephemeris.rs       kernel catalog, cache, downloads, Almanac construction
+│   ├── geocoding.rs       external location/timezone lookup
+│   ├── jpl_backend.rs     JPL/ANISE BSP position provider
+│   ├── position_provider.rs provider trait, result types, and selection
+│   ├── python_sidecar.rs  optional Python process and HTTP client
+│   └── swisseph.rs        optional Swiss Ephemeris compatibility adapter
+├── storage/               compatibility DTOs for legacy commands
+├── workspace/
+│   ├── loader.rs          manifest/reference loading and safe paths
+│   ├── model_catalog.rs   built-in model construction
+│   ├── models.rs          serde DTOs/persisted types and DomainCatalog DTO
+│   ├── morinus.rs         Morinus import
+│   ├── settings.rs        model selection, layers, source provenance
+│   ├── sfs.rs             StarFisher EventData import
+│   ├── solar_fire.rs      Solar Fire import classification
+│   ├── validation.rs      diagnostics and aggregate validation
+│   └── writer.rs          YAML writers
+├── event_time.rs          canonical timestamp parsing
+├── lib.rs                 library root, Tauri state, command registration
+├── lunar_phase.rs         derived lunar-detail calculation
+├── main.rs                desktop executable and Linux/AppImage startup workaround
+└── test_support.rs        test-only fixtures and temporary workspace helpers
 ```
 
-## Responsibility boundaries
+## Boundaries as implemented
 
-- `commands` owns transport concerns only. It should not contain YAML formats,
-  catalog construction, astrology rules, provider policy, or process lifecycle.
-- `application` loads the inputs for a use case, resolves settings, selects a
-  provider, and returns typed results with warnings and provenance.
-- `domain` contains pure calculation semantics. It must not depend on Tauri,
-  YAML, HTTP, or a concrete provider.
-- `workspace` owns the serializable workspace aggregate, built-in catalog data,
-  validation, persistence adapters, and effective-settings resolution. The
-  runtime catalog is assembled in `workspace::domain_catalog_for_model` from
-  the resolved model.
-- `infrastructure` implements external access behind application/provider
-  boundaries.
+`workspace::domain_catalog_for_model` projects a resolved `AstroModel` into
+the frontend `DomainCatalog`; `builtin_domain_catalog` is its no-workspace
+counterpart. `settings::current_model_report_with_layers` merges catalog
+overrides and settings and records source provenance. `loader` provides both
+tolerant helpers used by commands and the diagnostics-aware aggregate loader.
 
-## Runtime catalog path
+`application::chart_resolution` validates command/in-memory chart input and
+assembles a `ResolvedChart` from persisted workspace data, optional presets,
+and operation overrides. It is deliberately separate from `workspace/`, which
+owns the persistence representation and YAML services.
 
-`workspace::builtin_domain_catalog` supplies the no-workspace catalog.
-`commands::workspace::get_domain_catalog` resolves the workspace/model through
-`current_model_report`, then calls `domain_catalog_for_model`. The returned
-`DomainCatalog` includes the model, supported house systems, shapes, and
-configurations. `get_builtin_domain_catalog` and `get_domain_catalog` are the
-Rust commands consumed by both frontends.
+`application::computation` and `application::transit` are reusable Rust
+calculation cores. They receive resolved charts/settings and return typed
+results. `compute_router` centralizes route selection/fallback helpers, but
+commands still execute much of that policy and sidecar communication.
 
-## Workspace and settings path
+`domain` groups the application's astrology rules, but it is not yet an
+independently portable pure-core crate: its functions currently use workspace
+model types. `infrastructure::position_provider` is the shared provider
+boundary. JPL supplies astronomical state vectors, while the feature-gated
+Swiss Ephemeris adapter also supplies astrology-oriented operations such as
+house systems and sidereal settings. `swisseph.rs` is feature-gated and is not
+compiled in the default build; this checkout also lacks the vendored C source
+required to enable that feature.
 
-`loader::load_workspace_manifest` reads `workspace.yaml`; the aggregate loader
-loads referenced entities and retains structured diagnostics. `settings` applies
-the precedence `application < model < workspace < preset < chart < operation`
-and records a source for resolved values. `validation` checks model references,
-catalog IDs, settings, paths, and subject/chart invariants.
+The command modules are not uniformly thin. In particular:
 
-## Testing boundary
+- `commands::workspace` directly creates/deletes directories, serializes YAML,
+  loads manifests/references, and builds catalog/report command responses.
+- `commands::calculation` and the compute portion of `commands::transits` use
+  `application::chart_resolution` for manifest/chart/preset/settings assembly, but
+  still choose routes and post Python requests.
+- `commands::transits` directly reads/writes transit setup YAML.
 
-- Domain and application tests should run without Tauri state.
-- Workspace tests cover YAML loading/writing, catalog validity, resolution, and
-  diagnostics.
-- Infrastructure tests cover providers, ephemerides, HTTP, and processes.
-- Command tests cover DTO conversion, registration, and error mapping.
-- Cross-language behavior belongs in parity/integration fixtures.
+`commands::storage` deliberately exposes compatibility no-ops for computed
+data; it is not a storage subsystem.
 
-See [Testing strategy](../testing-strategy/) for the repository-wide test
-matrix, and [Rust workspace contract](../rust-workspace-contract/) for the
-observable lifecycle and schema rules.
+## Refactoring status
+
+Moving command orchestration into application services is intended work, not a
+completed migration. New code should reuse existing application and workspace
+helpers where practical, but documentation must retain the mixed-boundary
+description until the commands are actually reduced to adapters.
+
+For runtime behavior see [Architecture](../architecture/); for workspace
+contracts see [Rust workspace contract](../rust-workspace-contract/).

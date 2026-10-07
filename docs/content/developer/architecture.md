@@ -1,193 +1,106 @@
 ---
 title: 'Architecture'
-description: 'Cross-layer boundaries for the desktop app, shared astrology semantics, and computation providers.'
+description: 'Current system boundaries, runtime flows, and known boundary debt.'
 weight: 40
 doc_kind: architecture
 status: current
 authority: informative
 ---
 
-Kefer Astrology separates portable astrological meaning from desktop transport,
-external mechanisms, and frontend rendering.
+This page describes the implementation in this checkout. Statements under
+**Intended direction** are not current guarantees.
 
-## System at a glance
-
-```text
-React / Svelte
-      │ startup/effective domain catalog + backend-neutral requests/results
-      ▼
-Tauri commands
-      │ thin transport adapters
-      ▼
-Application services ───────> workspace/settings resolution
-      │
-      ├── resolved runtime domain catalog
-      ├── shared astrology semantics
-      │
-      └── astronomy provider port
-                ├── Rust JPL/SPICE
-                ├── Swiss compatibility path
-                └── optional Python sidecar
-
-Infrastructure: workspace YAML, ephemerides, geocoding, dialogs, sidecar process
-```
-
-The [Domain model](../domain-model/) defines schools, models, charts, providers,
-the runtime domain catalog, and extension points. The [Shared astrology core](../shared-core/) describes the
-planned cross-language contract boundary.
-
-## Layer responsibilities
-
-### Frontends
-
-- Edit workspace, chart, and operation intent.
-- Invoke Tauri through typed bridge modules.
-- Load the built-in Rust domain catalog before mounting, then refresh the
-  effective catalog when a workspace or chart context changes.
-- Render calculation results and provenance.
-- Own translations, glyphs, colors, visual grouping, and device-local
-  interaction state.
-- Never reimplement astrological calculations or infer provider behavior.
-
-React and Svelte share the [Frontend workflow baseline](../frontend-workflow-baseline/)
-and [UI conventions](../ui-conventions/). Their framework-specific structures
-are documented separately in the [React](../frontend-react/) and
-[Svelte](../frontend-svelte/) references.
-
-### Commands
-
-- Deserialize frontend DTOs and obtain managed Tauri state.
-- Call one application use case.
-- Serialize success or map failure into the command contract.
-
-Commands should not own filesystem formats, HTTP clients, platform processes,
-astrology rules, or provider-routing policy. See the [Rust code structure](../rust-code-structure/)
-for the current module map and the few intentional compatibility boundaries.
-
-### Application services
-
-- Load the inputs required by a use case.
-- Resolve model, workspace, preset, chart, and operation settings.
-- Select and invoke computation providers.
-- Apply fallback policy without losing the resolved request.
-- Return typed results, diagnostics, and provenance.
-- Resolve the model before exposing the effective runtime domain catalog.
-
-### Domain and shared core
-
-- Define valid subjects, charts, schools, models, aspects, and calculation intent.
-- Own backend-neutral astrological rules and invariants.
-- Remain independent of Tauri, YAML, HTTP, frontend frameworks, and a particular ephemeris API.
-
-### Infrastructure
-
-- Read and write workspace YAML.
-- Access ephemerides and provider libraries.
-- Resolve locations through external services.
-- Open native dialogs.
-- Start and communicate with the optional Python process.
-
-Infrastructure implements ports required by application services; it does not
-choose astrological meaning.
-
-## Persistence boundary
-
-Workspace YAML is the portable source of truth for subjects, chart intent,
-schools/models, layered defaults, presentation, and persisted transit intent.
-Exact formats and precedence live only in the
-[Workspace YAML contract](../workspace-yaml/).
-
-Positions, houses, aspects, configurations, lunar details, and transit series
-are derived results. They are recomputed unless a future storage contract
-explicitly defines cache or persistence behavior.
-
-## Computation boundary
-
-The frontend sees one command contract regardless of provider. A calculation
-request resolves into:
-
-- subject time and location
-- selected school and model
-- effective settings and their sources
-- provider/engine selection
-- optional operation-level overrides
-
-The result exposes backend-neutral fields plus additive provider data,
-diagnostics, and provenance. Exact command inputs and outputs live in the
-[Tauri command contracts](../tauri-command-contracts/); radix and transit result
-requirements live in their feature contracts. The numerical meaning of JPL
-longitudes is fixed by the
-[Astronomy coordinate contract](../astronomy-coordinate-contract/).
-
-The JPL coordinate pipeline is intentionally split at a frame boundary:
+## Runtime boundaries
 
 ```text
-SPK state in J2000/ICRS
-  → ANISE Earth mean-of-date rotation (IAU 2006)
-  → mean-obliquity projection into the ecliptic of date
-  → normalized tropical longitude
+React or Svelte
+  ├─ presentation, local interaction state, typed Tauri bridges
+  └─ invokes Tauri commands
+          │
+Tauri commands (mixed transport and orchestration today)
+  ├─ workspace YAML/loading/writing and model-report/catalog commands
+  ├─ backend routing and Python-sidecar calls
+  └─ application computation/transit use cases where available
+          │
+Rust workspace + domain + infrastructure
+  ├─ persisted workspace models, validation, settings, domain catalog
+  ├─ astrology and house rules
+  └─ astronomy, ephemerides, dialogs, geocoding, optional sidecar process
 ```
 
-Precession is a three-dimensional frame rotation owned by the astronomy
-provider. It is not a scalar correction applied after extracting longitude.
-Horizons is likewise an ephemeris-build input: sampled vectors are converted to
-ANISE-supported Type 13 SPKs, independently validated, checksummed, and then
-consumed offline through the same provider boundary. It is not a per-chart
-online position service.
+Rust is the runtime authority for semantic catalog IDs, model definitions,
+settings resolution, validation, calculation, and provider provenance.
+Frontends own final presentation: translations, dedicated glyph files, colors,
+visual grouping, accessibility/UI state, and fallbacks for unknown catalog IDs.
 
-## Runtime flows
+The serialized Rust model still includes legacy presentation-adjacent fields
+such as glyphs, localized names, and aspect colors. They are compatibility data
+returned with the catalog, not a transfer of final presentation ownership to
+Rust. A frontend may use them as fallbacks.
 
-### Chart calculation
+## Actual flows
 
-```text
-Frontend → Tauri command → resolve chart/model/settings
-         → select provider → compute astronomy → apply astrology rules
-         → normalize typed result/provenance → frontend
-```
+### Bootstrap and catalog lifecycle
 
-### Transit calculation
+Both `apps/web-react/src/main.tsx` and `apps/web-svelte/src/main.ts` request
+`get_builtin_domain_catalog` before importing/mounting the application. On
+workspace open, both `openWorkspaceFolder` implementations call
+`getCurrentModelReport`; that bridge requests `get_current_model_report` and
+`get_domain_catalog` together and replaces the in-memory catalog.
 
-```text
-Frontend → Tauri command → load source chart and transit intent
-         → resolve settings → compute interval through selected provider
-         → detect model-defined relations → frontend
-```
+`get_domain_catalog(workspace_path, chart_id)` can resolve a chart-specific
+model when its caller supplies `chart_id`. However, the current workspace-open
+flow supplies no chart ID, and selection handlers do not call the bridge.
+Selecting a different chart therefore does **not** currently refresh the
+catalog. Computing a chart does resolve that chart's settings/model in Rust,
+so the displayed catalog and compute model can diverge for chart-specific
+models. This is an implementation gap, not a frontend contract.
 
-### Workspace update
+### Workspace loading
 
-```text
-Frontend → Tauri command → application use case
-         → validate typed aggregate → workspace YAML repository
-```
+`load_workspace` is the tolerant summary path used by the shells. It parses a
+manifest, skips unreadable/malformed chart and analysis references after
+logging, and returns summaries of the items it could load. It does not return
+diagnostics. `validate_workspace` instead uses `load_workspace_aggregate`,
+which attempts every referenced kind and returns structured diagnostics while
+retaining successfully loaded items. A missing or malformed `workspace.yaml`
+is fatal for both paths. Reference resolution rejects absolute paths and paths
+which canonicalize outside the workspace root.
 
-## Architectural rules
+### Calculation and persistence
 
-1. Schools and models are extensible data, not frontend or provider enums.
-2. Astrology semantics do not belong to an astronomy adapter.
-3. Frontend contracts remain stable when the selected provider changes.
-4. Rust-supported flows remain usable without the Python sidecar.
-5. Provider selection and fallback are visible through provenance.
-6. One settings resolver determines effective calculation behavior.
-7. The Rust domain catalog owns runtime semantic IDs; frontends own their
-   presentation of those IDs.
-8. Presentation cannot affect astronomical or astrological computation.
-9. Shared behavior is verified through versioned fixtures and parity tests.
-10. Coordinate-frame transformations happen before reducing a state vector to
-   longitude or latitude.
-11. Remote ephemeris services generate or source local artifacts; ordinary chart
-    computation is deterministic and offline.
+Chart and transit commands load manifests/charts, resolve settings, select a
+route, and then invoke Rust application computation or the optional Python
+sidecar. Results are returned to the frontend and retained there in memory;
+Rust does not persist computed positions, houses, aspects, configurations,
+lunar details, or transit-series results. Transit *setup* is persisted. The
+legacy computed-data storage commands are explicit no-ops.
 
-## Current implementation
+In `auto` mode, a reachable Python sidecar is preferred; otherwise supported
+work uses Rust. A forced Python route fails if it is unavailable. Some chart
+forms (Jyotish/custom or an override ephemeris) require Python and cannot use
+the Rust fallback. Route/fallback data is included in computation results.
 
-- Typed Rust radix and transit application services are active.
-- Workspace models, loading, validation, and settings resolution have dedicated modules.
-- The runtime domain catalog is built in Rust and loaded by both frontends at
-  startup and after workspace/chart model resolution.
-- Rust and Python share initial time, settings, and workspace fixtures.
-- Computed-data storage commands remain compatibility shims rather than a
-  persistence layer.
+## Current responsibility split
 
-Use [Backend structure](../backend-structure/) for persistence, representations,
-configuration resolution, and provenance; [Rust code structure](../rust-code-structure/)
-for the current module map; and [Development roadmap](../development-driver/)
-for unfinished work.
+- `workspace` owns YAML representations, loading/writing, validation, model
+  selection, effective settings, and construction of `DomainCatalog`.
+- `domain` owns astrology/house algorithms; `infrastructure` owns providers,
+  ephemerides, HTTP/process, geocoding, and native dialogs.
+- `application::computation` and `application::transit` own typed Rust compute
+  use cases; `application::chart_resolution` assembles resolved computation inputs;
+  `application::compute_router` owns reusable route policy.
+- `commands::workspace`, `commands::calculation`, and `commands::transits`
+  are mixed transport/use-case modules. Workspace and transit-setup commands
+  directly perform YAML/filesystem work; calculation/transit commands still
+  route backends and call the sidecar. Do not describe them as thin adapters.
+
+## Intended direction and debt
+
+The intended boundary is commands as thin transport adapters over application
+use cases, with filesystem/provider orchestration moved behind those use cases.
+Only the typed computation and transit cores are substantially there today.
+Chart-selection catalog refresh and automated React/Svelte parity coverage are
+also incomplete. See [Rust code structure](../rust-code-structure/) for the
+module map, [Rust workspace contract](../rust-workspace-contract/) for the
+observable lifecycle, and [Testing strategy](../testing-strategy/) for gaps.

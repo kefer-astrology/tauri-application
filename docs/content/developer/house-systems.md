@@ -60,12 +60,12 @@ Frontend settings expose the same list in:
 
 Swiss Ephemeris maps the accepted list through:
 
-- `src-tauri/src/infrastructure/astronomy/swisseph.rs`
+- `src-tauri/src/infrastructure/swisseph.rs` (feature-gated)
 
 Rust JPL house support lives in:
 
 - `src-tauri/src/domain/houses.rs`
-- `src-tauri/src/infrastructure/astronomy/jpl_backend.rs`
+- `src-tauri/src/infrastructure/jpl_backend.rs`
 
 The current Rust JPL implementation computes axes for all supported chart types, then:
 

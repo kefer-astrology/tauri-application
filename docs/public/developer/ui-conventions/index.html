@@ -69,8 +69,8 @@ source of truth.</p>
 <li>In Svelte, start with <code>apps/web-svelte/src/lib/components/ui/</code>.</li>
 <li>Treat those as the default styling surface for forms, overlays, panels, selectors, and interactive controls.</li>
 <li>When visuals need tuning, prefer variants, theme tokens, spacing, and composition over isolated per-component CSS forks.</li>
-<li>Feature-level UI should not introduce raw native controls (<code>&lt;button&gt;</code>, <code>&lt;select&gt;</code>, checkbox <code>&lt;input&gt;</code>) when a shared primitive exists.</li>
-<li>If a required primitive is missing, add it to that frontend&rsquo;s shared <code>ui/</code> layer first, then consume it from feature components.</li>
+<li>Feature-level UI should not introduce raw native controls (<code>&lt;button&gt;</code>, <code>&lt;select&gt;</code>, checkbox <code>&lt;input&gt;</code>, or a hand-rolled wrapper around a text <code>&lt;input&gt;</code> such as a search box, tag field, or icon-prefixed field) when a shared primitive exists.</li>
+<li>If a required primitive is missing, add it to that frontend&rsquo;s shared <code>ui/</code> layer first, then consume it from feature components. This includes compound fields (icon + input, input + trailing button/clear action) — wrap the shared <code>Input</code> rather than reinventing the border/background/focus styling on a bare <code>&lt;input&gt;</code>.</li>
 </ul>
 <h2 id="shared-primitive-baseline">Shared primitive baseline</h2>
 <p>Both frontend workspaces should keep these shared primitive families available before feature work adds custom controls:</p>
@@ -84,11 +84,20 @@ exists. Framework-specific implementation status belongs in the
 <a href="../frontend-react/">React</a> and <a href="../frontend-svelte/">Svelte</a> references;
 unfinished alignment work belongs in the
 <a href="../development-driver/">Development roadmap</a>.</p>
+<h2 id="focus-and-selected-state">Focus and selected state</h2>
+<ul>
+<li>The focused/selected &ldquo;glow&rdquo; (tinted border + soft outer ring) is owned entirely by the shared primitives (<code>ui/input.tsx</code>, <code>ui/select.tsx</code>, <code>ui/checkbox.tsx</code>, and any future primitive with a value state) — never redefine it in a feature component or in <code>form-field-theme.ts</code>.</li>
+<li>These primitives gate the ring on plain <code>:focus</code>, not <code>:focus-visible</code>. This is a deliberate choice, not an oversight: browsers only match <code>:focus-visible</code> on a <code>&lt;button&gt;</code>-based control (Select trigger, Checkbox) via keyboard, never on an ordinary mouse click, which made those controls look inert or &ldquo;flatter&rdquo; than text inputs (which always match <code>:focus-visible</code>). Using <code>:focus</code> keeps the same glow consistent across every input modality and every control type. Don&rsquo;t revert this to <code>:focus-visible</code> to &ldquo;match standard practice&rdquo; — it was tried and produced the inconsistency this rule exists to prevent.</li>
+<li>A compound field (icon + input, input + trailing button, tag input, date/time picker) that wraps the shared <code>Input</code> in its own bordered container must reuse the same tokens on the wrapper via <code>focus-within:</code>, e.g. <code>focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]</code>. Do not invent a different width, color, or opacity for these wrappers — see <code>date-picker-input.tsx</code> / <code>time-roller-picker.tsx</code> for the reference pattern. The inner <code>Input</code> then suppresses its own ring with <code>focus:ring-0</code> so only the wrapper glows.</li>
+<li><code>form-field-theme.ts</code> may style borders, backgrounds, radii, and shadows, but must not add its own <code>focus:</code>/<code>focus-visible:</code> ring or border-color rules — those compete with the primitive&rsquo;s own focus classes and silently win or lose depending on control type, which is exactly how this inconsistency happened previously.</li>
+<li>The Svelte frontend&rsquo;s primitives currently still gate on <code>focus-visible:</code> only (it never accumulated the competing-override problem React did). If Svelte&rsquo;s controls are audited for the same &ldquo;flat on click&rdquo; issue, apply the same <code>:focus</code> change there for parity.</li>
+</ul>
 <h2 id="interior-surfaces">Interior surfaces</h2>
 <ul>
 <li>Avoid stacking borders on most nested blocks inside a screen; it tends to create awkward visual margins and padding relationships across the whole layout.</li>
 <li>Prefer a single outer surface for a major region, then use spacing, softer background layers, typography, and occasional separators to organize content inside it.</li>
 <li>Use inner borders sparingly for true boundaries or strong interactive affordances, not as the default way to separate every subsection.</li>
+<li>Focus/selected indication is a <code>box-shadow</code> ring that extends a few pixels past a control&rsquo;s border. Any ancestor with <code>overflow-hidden</code> and no padding buffer will clip that ring wherever a control sits flush against its edge — this bit <code>AccordionContent</code> (needed <code>overflow-hidden</code> for its collapse animation, had zero padding). Settings is built almost entirely out of accordions, so treat this as a recurring hazard, not a one-off: any <code>overflow-hidden</code> container that can host a bordered/ring-bearing child needs a small (<code>p-1</code>) padding buffer.</li>
 <li>Current React baseline follows this in <code>Aspectarium</code> and <code>Settings</code>: one primary card/sheet surface, soft interior backgrounds, and <code>Separator</code> for semantic section breaks.</li>
 <li><code>OpenWorkspaceView</code> and <code>InformationView</code> should use shared <code>Button</code>/<code>Badge</code> primitives for interactive chips, toggles, and list actions instead of ad-hoc raw button styling.</li>
 </ul>
@@ -148,6 +157,7 @@ unfinished alignment work belongs in the
 </ul>
 </li>
 <li>Keep these semantic tokens defined in <code>themePaletteVars()</code> and consume them in feature components rather than hardcoding <code>blue-*</code>/<code>gray-*</code>/hex values in view files.</li>
+<li><code>--ring</code> (the shadcn/Tailwind focus-ring color token) is deliberately mapped to <code>palette.accent</code> in <code>themePaletteVars()</code>, the same value as <code>--theme-accent</code>. This keeps the shared primitives&rsquo; <code>ring-ring/50</code> focus glow on-theme without any per-component override — don&rsquo;t redefine <code>--ring</code> separately from <code>--theme-accent</code>, and don&rsquo;t reintroduce a component-level <code>ring-[var(--theme-accent)]</code> override thinking <code>--ring</code> is an unrelated generic default.</li>
 <li>Hover policy: use <code>--token-hover-subtle</code> for lightweight affordances and <code>--token-hover-strong</code> for primary navigation and dense selectable rows where higher contrast feedback is needed.</li>
 </ul>
 <h2 id="internationalization-i18n">Internationalization (i18n)</h2>
@@ -188,6 +198,7 @@ unfinished alignment work belongs in the
 <h2 id="form-fields-shared-theme-helper">Form fields (shared theme helper)</h2>
 <p><strong><code>src/app/components/form-field-theme.ts</code></strong> exports <code>getAppFormFieldTheme(theme)</code> — labels, inputs, selects, date-picker surfaces, advanced panel, switches, and footer actions using shared <code>--theme-*</code> and <code>--token-*</code> variables.</p>
 <p><strong>Create new chart</strong> (<code>new-horoscope.tsx</code>) and <strong>Settings</strong> both use this helper on top of shadcn <strong><code>Card</code></strong>, <strong><code>Input</code></strong>, <strong><code>Label</code></strong>, <strong><code>Select</code></strong>, <strong><code>Switch</code></strong>, and <strong><code>Button</code></strong> primitives.</p>
+<p>Focus/selected-state classes are explicitly out of scope for this helper — see <a href="/developer/ui-conventions/#focus-and-selected-state">Focus and selected state</a>.</p>
 <h2 id="related-docs">Related docs</h2>
 <ul>
 <li><strong><a href="../frontend-react/">frontend-react</a></strong> — Commands, folder layout, Tauri bridge, glyphs.</li>

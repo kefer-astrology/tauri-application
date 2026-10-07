@@ -1,6 +1,6 @@
 ---
 title: 'Testing strategy'
-description: 'Canonical test levels, contract traceability, shared fixtures, and Rust/Python/frontend parity.'
+description: 'Canonical test levels, contract traceability, shared fixtures, and frontend/backend parity.'
 weight: 26
 doc_kind: policy
 status: current
@@ -15,14 +15,14 @@ substitute for that traceability.
 
 | Level | Verifies | Typical owner |
 | --- | --- | --- |
-| Domain unit | Pure astrology, time, validation, and resolution rules | Shared core, Rust, or Python |
-| Contract fixture | The same versioned input has the required output | `contracts/` plus every implementation |
+| Domain unit | Pure astrology, time, validation, and resolution rules | Rust; optional Python peer |
+| Contract fixture | The same versioned input has the required output | `contracts/` plus each implementation that is provisioned |
 | Provider | Astronomy-provider correctness, capabilities, and failures | Rust/Python provider adapter |
 | Command integration | Tauri request, routing, serialization, and errors | Rust command/application layer |
 | Frontend bridge | Payload construction and result normalization | React and Svelte Tauri bridges |
 | Component | Interaction and rendering states | Owning frontend |
 | Workflow | A user-visible flow across UI and backend | Desktop/browser integration suite |
-| Cross-language parity | Rust and Python preserve shared semantics | Shared fixture runner |
+| Cross-language parity | Rust and an optional Python peer preserve shared semantics | Shared fixture runner when both implementations are provisioned |
 | Smoke/build | Supported app configuration starts and builds | Root scripts and CI |
 
 Type checking and compilation are necessary checks, but they are not behavioral
@@ -56,21 +56,23 @@ and traceability, not the physical test files.
 | --- | --- | --- | --- |
 | TIME-001 | Offset-aware input preserves the represented instant | Contract parity | `contracts/event-time.json`; Rust `event_time` test; Python contract-parity tests |
 | MODEL-001 | A school selects its default model | Domain/contract | Rust workspace settings tests; workspace fixture |
-| MODEL-002 | Settings resolve fallback → model → workspace → preset → chart → operation | Contract parity | `contracts/settings-resolution.json`; Rust and Python fixture tests |
-| MODEL-003 | Model definitions and overrides affect aspect calculation | Domain | Rust astrology/settings tests; Python parity coverage must be kept aligned |
-| WORKSPACE-001 | A complete workspace round-trips without losing portable fields | Integration/parity | Rust workspace command tests; Python workspace interoperability test |
-| WORKSPACE-002 | Referenced paths cannot escape the workspace root | Integration/security | Rust loader coverage; record a gap if no direct case exists |
-| COMPUTE-001 | A radix result exposes the required backend-neutral fields | Command contract | Rust command tests; Python contract-parity tests |
-| TRANSIT-001 | Transit ranges reject invalid order and non-positive step | Command contract | Rust command tests; Python parity coverage required for supported routing |
+| MODEL-002 | Settings resolve fallback → model → workspace → preset → chart → operation | Contract fixture | `contracts/settings-resolution.json`; Rust fixture test; optional Python parity when provisioned |
+| MODEL-003 | Model definitions and overrides affect aspect calculation | Domain | Rust astrology/settings tests; optional Python parity when provisioned |
+| WORKSPACE-001 | A complete workspace round-trips without losing portable fields | Integration | Rust workspace command tests and shared workspace fixture; optional Python interoperability when provisioned |
+| WORKSPACE-002 | Referenced paths cannot escape the workspace root | Integration/security | Rust loader enforces this; **GAP-WORKSPACE-002:** add direct absolute-path and traversal test cases |
+| CATALOG-001 | Built-in and effective runtime catalogs cover model entries and emitted shapes/configurations | Domain/bridge | Rust catalog tests; frontend type/build coverage; **GAP-CATALOG-001:** automated React/Svelte refresh and fallback behavior |
+| COMPUTE-001 | A radix result exposes the required backend-neutral fields | Command contract | Rust command/application tests; optional Python contract parity when provisioned |
+| TRANSIT-001 | Transit ranges reject invalid order and non-positive step | Command contract | Rust transit command tests; optional Python parity when provisioned |
 | ROUTE-001 | Auto routing uses Rust when Python is unavailable | Integration | Rust route-selection tests |
 | ROUTE-002 | Forced Python fails clearly when unavailable | Integration | Rust route-selection tests |
-| PROVIDER-001 | Provider numerical output matches a named reference within tolerance | Provider | Rust/Python JPL reference tests, dependent on fixture availability |
-| FRONTEND-001 | Both bridges serialize the same chart calculation intent | Frontend bridge/parity | Partial inline coverage; dedicated runner is a current gap |
-| FRONTEND-002 | Both shells open the same workspace and apply the same effective defaults | Workflow/parity | Manual/structural coverage; automated workflow coverage is a current gap |
+| PROVIDER-001 | Provider numerical output matches a named reference within tolerance | Provider | Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources |
+| FRONTEND-001 | Both bridges serialize the same chart calculation intent | Frontend bridge/parity | Type/build coverage; **GAP-FRONTEND-001:** dedicated bridge test runner |
+| FRONTEND-002 | Both shells open the same workspace and apply the same effective defaults | Workflow/parity | Manual/structural coverage; **GAP-FRONTEND-002:** automated workflow coverage |
 | STATIC-001 | Static documentation mode renders the normal shell without native services | Smoke/workflow | Build coverage; automated behavior coverage is a current gap |
 
-When a gap is filled, replace the gap text with the test file and test name. Do
-not remove the row.
+When a gap is filled, replace the gap ID and description with the test file and
+test name. Do not remove the row; the matrix is also an inventory of deliberate
+automation debt.
 
 ## Shared fixtures
 
@@ -79,6 +81,7 @@ Use `contracts/` for inputs that must be understood outside one implementation:
 - valid and invalid schemas
 - settings precedence
 - model and school selection
+- runtime domain-catalog loading and model-specific catalog projections
 - datetime normalization
 - workspace interoperability
 - canonical aspect cases
@@ -112,11 +115,16 @@ unexplained number inside an individual test.
 ## Frontend parity
 
 React and Svelte do not need identical component tests. They do need shared
-contract cases for their Tauri payload builders and the same workflow outcomes.
+contract cases for their Tauri payload builders, runtime catalog refresh, and
+the same workflow outcomes.
 At minimum, test:
 
 - workspace and chart settings produce equivalent command payloads
 - selected bodies, aspects, orbs, time, and location reach the backend
+- built-in catalog loads before mount and effective catalog refreshes after a
+  workspace/chart model changes
+- new catalog IDs remain usable through label, glyph, color, and grouping
+  fallbacks when dedicated presentation assets are absent
 - backend diagnostics and unavailable-provider states are visible
 - empty, loading, error, and static-mode states do not fabricate results
 
@@ -135,12 +143,16 @@ npm run check:svelte
 npm run docs:build
 ```
 
-For the Python sidecar currently present in this checkout:
+If the optional Python sidecar source is present in the checkout:
 
 ```bash
 cd backend-python
 python -m unittest discover .
 ```
+
+This checkout does not contain `backend-python/`; the Rust/no-sidecar path is
+therefore the locally verifiable backend baseline. Do not report missing Python
+tests as passing parity coverage.
 
 Provider tests that require BSP files or optional dependencies may skip. CI and
 local output must make those skips visible so a skipped provider suite is not

@@ -12,9 +12,10 @@ after a workspace is selected. Both commands return the same `DomainCatalog` con
 the resolved model (bodies, aspects, and signs), supported house systems, and the
 shape/configuration definitions plus generated-variant rules.
 
-React and Svelte load the catalog before importing/mounting the application. Workspace
-model resolution refreshes the same runtime catalog, so model-specific definitions do
-not get frozen at module initialization.
+React and Svelte load the catalog before importing/mounting the application and refresh
+it during their workspace-open flow. The command can resolve a chart-specific catalog,
+but current chart-selection handlers do not invoke that refresh; see the canonical
+workspace contract for this known gap.
 
 Translation keys, glyphs, colors, grouping, and other visual behavior remain frontend
 presentation metadata. Translation strings continue to be generated from

@@ -39,7 +39,7 @@ infrastructure/ephemeris.rs
     └── *.bsp.json discovery          → checksummed and probe-tested small-body SPKs
 ```
 
-`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then chains them with `load_almanac_from_paths()` in `infrastructure/astronomy/jpl_backend.rs` on each compute call.
+`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then chains them with `load_almanac_from_paths()` in `infrastructure/jpl_backend.rs` on each compute call.
 
 A global `OnceLock<PathBuf>` stores the cache directory. It is initialised once during Tauri app setup from `app.path().app_data_dir()`:
 
@@ -100,7 +100,7 @@ To get asteroid positions, a **separate dedicated asteroid SPK kernel** is requi
 | `codes_300ast_20100725.bsp` (59 MB)                | 300 asteroids, Baer 2010 solution | one download covers most                 |
 | JPL Horizons file API                              | arbitrary supported small bodies | generates a bounded SPK artifact; never queried from the chart compute path |
 
-Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `infrastructure/astronomy/jpl_backend.rs` (small-body table). The backend calls `almanac.transform(...)` per body so translation and the Earth mean-of-date rotation happen together; if no SPK segment exists for that epoch, the chart still succeeds and a per-body `{id}_unavailable` warning is recorded.
+Asteroid **Kefer IDs** and matching NAIF `2000xxx` frames are wired in `infrastructure/jpl_backend.rs` (small-body table). The backend calls `almanac.transform(...)` per body so translation and the Earth mean-of-date rotation happen together; if no SPK segment exists for that epoch, the chart still succeeds and a per-body `{id}_unavailable` warning is recorded.
 
 All 20 named bodies in the table below (Ceres through Massalia) are also registered in the built-in `BodyDefinition` catalog (`workspace/model_catalog.rs`, mirrored in `backend-python/module/model_catalog.py`), so they are selectable objects, not just resolvable NAIF frames. `astraea` through `massalia` are marked JPL-only in `computation_map` — Swiss Ephemeris support would need asteroid `.se1` files this project does not bundle — and use a circled-digit glyph matching their minor-planet number, since none of them has a dedicated astrological symbol in wide use. A `codes_300ast_minor_planets_resolve_from_bundled_kernels` test in `jpl_backend.rs` confirms all 16 actually resolve from the bundled kernels, not just that the catalog entry exists.
 

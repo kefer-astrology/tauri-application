@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Architecture | Kefer Astrology</title>
-    <meta name="description" content="Cross-layer boundaries for the desktop app, shared astrology semantics, and computation providers." />
+    <meta name="description" content="Current system boundaries, runtime flows, and known boundary debt." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
     <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
@@ -32,7 +32,7 @@
     <header class="page-header">
       <p class="eyebrow">developer</p>
       <h1>Architecture</h1>
-      <p class="lede">Cross-layer boundaries for the desktop app, shared astrology semantics, and computation providers.</p>
+      <p class="lede">Current system boundaries, runtime flows, and known boundary debt.</p>
       
         <div class="doc-meta" aria-label="Document classification">
           <span>Architecture</span>
@@ -42,132 +42,86 @@
       
     </header>
     <div class="prose">
-      <p>Kefer Astrology separates portable astrological meaning from desktop transport,
-external mechanisms, and frontend rendering.</p>
-<h2 id="system-at-a-glance">System at a glance</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>React / Svelte
-</span></span><span style="display:flex;"><span>      │ backend-neutral requests and results
-</span></span><span style="display:flex;"><span>      ▼
-</span></span><span style="display:flex;"><span>Tauri commands
-</span></span><span style="display:flex;"><span>      │ thin transport adapters (target)
-</span></span><span style="display:flex;"><span>      ▼
-</span></span><span style="display:flex;"><span>Application services ───────&gt; workspace/settings resolution
-</span></span><span style="display:flex;"><span>      │
-</span></span><span style="display:flex;"><span>      ├── shared astrology semantics
-</span></span><span style="display:flex;"><span>      │
-</span></span><span style="display:flex;"><span>      └── astronomy provider port
-</span></span><span style="display:flex;"><span>                ├── Rust JPL/SPICE
-</span></span><span style="display:flex;"><span>                ├── Swiss compatibility path
-</span></span><span style="display:flex;"><span>                └── optional Python sidecar
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>Infrastructure: workspace YAML, ephemerides, geocoding, dialogs, sidecar process
-</span></span></code></pre></div><p>The <a href="../domain-model/">Domain model</a> defines schools, models, charts, providers,
-and extension points. The <a href="../shared-core/">Shared astrology core</a> describes the
-planned cross-language contract boundary.</p>
-<h2 id="layer-responsibilities">Layer responsibilities</h2>
-<h3 id="frontends">Frontends</h3>
+      <p>This page describes the implementation in this checkout. Statements under
+<strong>Intended direction</strong> are not current guarantees.</p>
+<h2 id="runtime-boundaries">Runtime boundaries</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>React or Svelte
+</span></span><span style="display:flex;"><span>  ├─ presentation, local interaction state, typed Tauri bridges
+</span></span><span style="display:flex;"><span>  └─ invokes Tauri commands
+</span></span><span style="display:flex;"><span>          │
+</span></span><span style="display:flex;"><span>Tauri commands (mixed transport and orchestration today)
+</span></span><span style="display:flex;"><span>  ├─ workspace YAML/loading/writing and model-report/catalog commands
+</span></span><span style="display:flex;"><span>  ├─ backend routing and Python-sidecar calls
+</span></span><span style="display:flex;"><span>  └─ application computation/transit use cases where available
+</span></span><span style="display:flex;"><span>          │
+</span></span><span style="display:flex;"><span>Rust workspace + domain + infrastructure
+</span></span><span style="display:flex;"><span>  ├─ persisted workspace models, validation, settings, domain catalog
+</span></span><span style="display:flex;"><span>  ├─ astrology and house rules
+</span></span><span style="display:flex;"><span>  └─ astronomy, ephemerides, dialogs, geocoding, optional sidecar process
+</span></span></code></pre></div><p>Rust is the runtime authority for semantic catalog IDs, model definitions,
+settings resolution, validation, calculation, and provider provenance.
+Frontends own final presentation: translations, dedicated glyph files, colors,
+visual grouping, accessibility/UI state, and fallbacks for unknown catalog IDs.</p>
+<p>The serialized Rust model still includes legacy presentation-adjacent fields
+such as glyphs, localized names, and aspect colors. They are compatibility data
+returned with the catalog, not a transfer of final presentation ownership to
+Rust. A frontend may use them as fallbacks.</p>
+<h2 id="actual-flows">Actual flows</h2>
+<h3 id="bootstrap-and-catalog-lifecycle">Bootstrap and catalog lifecycle</h3>
+<p>Both <code>apps/web-react/src/main.tsx</code> and <code>apps/web-svelte/src/main.ts</code> request
+<code>get_builtin_domain_catalog</code> before importing/mounting the application. On
+workspace open, both <code>openWorkspaceFolder</code> implementations call
+<code>getCurrentModelReport</code>; that bridge requests <code>get_current_model_report</code> and
+<code>get_domain_catalog</code> together and replaces the in-memory catalog.</p>
+<p><code>get_domain_catalog(workspace_path, chart_id)</code> can resolve a chart-specific
+model when its caller supplies <code>chart_id</code>. However, the current workspace-open
+flow supplies no chart ID, and selection handlers do not call the bridge.
+Selecting a different chart therefore does <strong>not</strong> currently refresh the
+catalog. Computing a chart does resolve that chart&rsquo;s settings/model in Rust,
+so the displayed catalog and compute model can diverge for chart-specific
+models. This is an implementation gap, not a frontend contract.</p>
+<h3 id="workspace-loading">Workspace loading</h3>
+<p><code>load_workspace</code> is the tolerant summary path used by the shells. It parses a
+manifest, skips unreadable/malformed chart and analysis references after
+logging, and returns summaries of the items it could load. It does not return
+diagnostics. <code>validate_workspace</code> instead uses <code>load_workspace_aggregate</code>,
+which attempts every referenced kind and returns structured diagnostics while
+retaining successfully loaded items. A missing or malformed <code>workspace.yaml</code>
+is fatal for both paths. Reference resolution rejects absolute paths and paths
+which canonicalize outside the workspace root.</p>
+<h3 id="calculation-and-persistence">Calculation and persistence</h3>
+<p>Chart and transit commands load manifests/charts, resolve settings, select a
+route, and then invoke Rust application computation or the optional Python
+sidecar. Results are returned to the frontend and retained there in memory;
+Rust does not persist computed positions, houses, aspects, configurations,
+lunar details, or transit-series results. Transit <em>setup</em> is persisted. The
+legacy computed-data storage commands are explicit no-ops.</p>
+<p>In <code>auto</code> mode, a reachable Python sidecar is preferred; otherwise supported
+work uses Rust. A forced Python route fails if it is unavailable. Some chart
+forms (Jyotish/custom or an override ephemeris) require Python and cannot use
+the Rust fallback. Route/fallback data is included in computation results.</p>
+<h2 id="current-responsibility-split">Current responsibility split</h2>
 <ul>
-<li>Edit workspace, chart, and operation intent.</li>
-<li>Invoke Tauri through typed bridge modules.</li>
-<li>Render calculation results and provenance.</li>
-<li>Own presentation and device-local interaction state.</li>
-<li>Never reimplement astrological calculations or infer provider behavior.</li>
+<li><code>workspace</code> owns YAML representations, loading/writing, validation, model
+selection, effective settings, and construction of <code>DomainCatalog</code>.</li>
+<li><code>domain</code> owns astrology/house algorithms; <code>infrastructure</code> owns providers,
+ephemerides, HTTP/process, geocoding, and native dialogs.</li>
+<li><code>application::computation</code> and <code>application::transit</code> own typed Rust compute
+use cases; <code>application::chart_resolution</code> assembles resolved computation inputs;
+<code>application::compute_router</code> owns reusable route policy.</li>
+<li><code>commands::workspace</code>, <code>commands::calculation</code>, and <code>commands::transits</code>
+are mixed transport/use-case modules. Workspace and transit-setup commands
+directly perform YAML/filesystem work; calculation/transit commands still
+route backends and call the sidecar. Do not describe them as thin adapters.</li>
 </ul>
-<p>React and Svelte share the <a href="../frontend-workflow-baseline/">Frontend workflow baseline</a>
-and <a href="../ui-conventions/">UI conventions</a>. Their framework-specific structures
-are documented separately in the <a href="../frontend-react/">React</a> and
-<a href="../frontend-svelte/">Svelte</a> references.</p>
-<h3 id="commands">Commands</h3>
-<ul>
-<li>Deserialize frontend DTOs and obtain managed Tauri state.</li>
-<li>Call one application use case.</li>
-<li>Serialize success or map failure into the command contract.</li>
-</ul>
-<p>Commands should not own filesystem formats, HTTP clients, platform processes,
-astrology rules, or provider-routing policy. The current code has not completed
-this extraction; see the <a href="../rust-code-structure/">Rust code structure audit</a>.</p>
-<h3 id="application-services">Application services</h3>
-<ul>
-<li>Load the inputs required by a use case.</li>
-<li>Resolve model, workspace, preset, chart, and operation settings.</li>
-<li>Select and invoke computation providers.</li>
-<li>Apply fallback policy without losing the resolved request.</li>
-<li>Return typed results, diagnostics, and provenance.</li>
-</ul>
-<h3 id="domain-and-shared-core">Domain and shared core</h3>
-<ul>
-<li>Define valid subjects, charts, schools, models, aspects, and calculation intent.</li>
-<li>Own backend-neutral astrological rules and invariants.</li>
-<li>Remain independent of Tauri, YAML, HTTP, frontend frameworks, and a particular ephemeris API.</li>
-</ul>
-<h3 id="infrastructure">Infrastructure</h3>
-<ul>
-<li>Read and write workspace YAML.</li>
-<li>Access ephemerides and provider libraries.</li>
-<li>Resolve locations through external services.</li>
-<li>Open native dialogs.</li>
-<li>Start and communicate with the optional Python process.</li>
-</ul>
-<p>Infrastructure implements ports required by application services; it does not
-choose astrological meaning.</p>
-<h2 id="persistence-boundary">Persistence boundary</h2>
-<p>Workspace YAML is the portable source of truth for subjects, chart intent,
-schools/models, layered defaults, presentation, and persisted transit intent.
-Exact formats and precedence live only in the
-<a href="../workspace-yaml/">Workspace YAML contract</a>.</p>
-<p>Positions, houses, aspects, configurations, lunar details, and transit series
-are derived results. They are recomputed unless a future storage contract
-explicitly defines cache or persistence behavior.</p>
-<h2 id="computation-boundary">Computation boundary</h2>
-<p>The frontend sees one command contract regardless of provider. A calculation
-request resolves into:</p>
-<ul>
-<li>subject time and location</li>
-<li>selected school and model</li>
-<li>effective settings and their sources</li>
-<li>provider/engine selection</li>
-<li>optional operation-level overrides</li>
-</ul>
-<p>The result exposes backend-neutral fields plus additive provider data,
-diagnostics, and provenance. Exact command inputs and outputs live in the
-<a href="../tauri-command-contracts/">Tauri command contracts</a>; radix and transit result
-requirements live in their feature contracts.</p>
-<h2 id="runtime-flows">Runtime flows</h2>
-<h3 id="chart-calculation">Chart calculation</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Frontend → Tauri command → resolve chart/model/settings
-</span></span><span style="display:flex;"><span>         → select provider → compute astronomy → apply astrology rules
-</span></span><span style="display:flex;"><span>         → normalize typed result/provenance → frontend
-</span></span></code></pre></div><h3 id="transit-calculation">Transit calculation</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Frontend → Tauri command → load source chart and transit intent
-</span></span><span style="display:flex;"><span>         → resolve settings → compute interval through selected provider
-</span></span><span style="display:flex;"><span>         → detect model-defined relations → frontend
-</span></span></code></pre></div><h3 id="workspace-update">Workspace update</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Frontend → Tauri command → application use case
-</span></span><span style="display:flex;"><span>         → validate typed aggregate → workspace YAML repository
-</span></span></code></pre></div><h2 id="architectural-rules">Architectural rules</h2>
-<ol>
-<li>Schools and models are extensible data, not frontend or provider enums.</li>
-<li>Astrology semantics do not belong to an astronomy adapter.</li>
-<li>Frontend contracts remain stable when the selected provider changes.</li>
-<li>Rust-supported flows remain usable without the Python sidecar.</li>
-<li>Provider selection and fallback are visible through provenance.</li>
-<li>One settings resolver determines effective calculation behavior.</li>
-<li>Presentation cannot affect astronomical or astrological computation.</li>
-<li>Shared behavior is verified through versioned fixtures and parity tests.</li>
-</ol>
-<h2 id="current-implementation">Current implementation</h2>
-<ul>
-<li>Typed Rust radix and transit application services are active.</li>
-<li>Workspace models, loading, validation, and settings resolution have dedicated modules.</li>
-<li>Rust and Python share initial time, settings, and workspace fixtures.</li>
-<li>The primary command module still owns several application and infrastructure
-responsibilities that are targeted for extraction.</li>
-<li>Computed-data storage commands remain compatibility shims rather than a
-persistence layer.</li>
-</ul>
-<p>Use <a href="../backend-structure/">Backend structure</a> for the target source boundaries,
-<a href="../rust-code-structure/">Rust code structure audit</a> for the current mismatch,
-and <a href="../development-driver/">Development roadmap</a> for unfinished work.</p>
+<h2 id="intended-direction-and-debt">Intended direction and debt</h2>
+<p>The intended boundary is commands as thin transport adapters over application
+use cases, with filesystem/provider orchestration moved behind those use cases.
+Only the typed computation and transit cores are substantially there today.
+Chart-selection catalog refresh and automated React/Svelte parity coverage are
+also incomplete. See <a href="../rust-code-structure/">Rust code structure</a> for the
+module map, <a href="../rust-workspace-contract/">Rust workspace contract</a> for the
+observable lifecycle, and <a href="../testing-strategy/">Testing strategy</a> for gaps.</p>
 
     </div>
   </article>

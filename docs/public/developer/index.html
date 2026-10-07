@@ -50,9 +50,11 @@ application from a user&rsquo;s point of view.</p>
 <li><strong>Contract</strong> — normative behavior that implementations and consumers may rely on.</li>
 <li><strong>Architecture</strong> — system boundaries, ownership, and design rationale.</li>
 <li><strong>Implementation reference</strong> — where and how current code realizes a contract.</li>
-<li><strong>Guide or policy</strong> — how contributors work in this repository.</li>
+<li><strong>Guide</strong> — how contributors work in this repository.</li>
+<li><strong>Policy</strong> — repository-wide rules that govern changes or presentation.</li>
 <li><strong>Roadmap</strong> — desired work that is not yet a current contract.</li>
 <li><strong>Archive</strong> — historical context only.</li>
+<li><strong>Index</strong> — navigation and page discovery; it is not a behavioral authority.</li>
 </ul>
 <p>When pages disagree, follow a current normative contract. Do not infer current
 behavior from a roadmap or archive page.</p>
@@ -65,20 +67,24 @@ document roles, contract workflow, and definition of done.</li>
 <h2 id="architecture">Architecture</h2>
 <ul>
 <li><strong><a href="/developer/architecture/">System architecture</a></strong> — cross-layer runtime overview.</li>
-<li><strong><a href="/developer/domain-model/">Domain model and extensibility</a></strong> — schools, models,
-calculations, providers, and extension points.</li>
+<li><strong><a href="/developer/domain-model/">Domain model and extensibility</a></strong> — canonical concepts,
+the Rust-owned runtime domain catalog, calculations, providers, and extension points.</li>
 <li><strong><a href="/developer/shared-core/">Shared astrology core</a></strong> — the planned boundary shared by
 Rust and the separately extractable Python sidecar.</li>
-<li><strong><a href="/developer/backend-structure/">Backend structure</a></strong> — current and target Rust implementation boundaries.</li>
-<li><strong><a href="/developer/rust-code-structure/">Rust code structure audit</a></strong> — how closely the current command and service modules match those boundaries.</li>
+<li><strong><a href="/developer/backend-structure/">Backend structure</a></strong> — current persistence, provenance, and backend mechanisms.</li>
+<li><strong><a href="/developer/rust-code-structure/">Rust code structure</a></strong> — current Rust module and
+responsibility map.</li>
 </ul>
 <h2 id="contracts">Contracts</h2>
 <ul>
+<li><strong><a href="/developer/configuration-reference/">Configuration reference</a></strong> — implemented calculation
+settings, serialized values, and presentation boundary.</li>
 <li><strong><a href="/developer/workspace-yaml/">Workspace YAML contract</a></strong> — complete project tree,
 schools/models, settings inheritance, chart overrides, presentation, and
 persisted transit intent.</li>
 <li><strong><a href="/developer/tauri-command-contracts/">Tauri command contracts</a></strong> — frontend-facing native commands.</li>
-<li><strong><a href="/developer/rust-workspace-contract/">Rust workspace contract</a></strong> — persistence and no-sidecar rules.</li>
+<li><strong><a href="/developer/rust-workspace-contract/">Rust workspace contract</a></strong> — workspace lifecycle,
+manifest/chart boundaries, catalog loading, and no-sidecar rules.</li>
 <li><strong><a href="/developer/frontend-workflow-baseline/">Frontend workflow baseline</a></strong> — workflows both frontends are measured against.</li>
 <li><strong><a href="/developer/chart-datetime-contract/">Chart datetime contract</a></strong> — canonical timestamps.</li>
 <li><strong><a href="/developer/transit-series-contract/">Transit series contract</a></strong> — transit computation payload and result.</li>

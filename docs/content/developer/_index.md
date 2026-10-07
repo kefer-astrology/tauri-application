@@ -16,9 +16,11 @@ Developer pages have distinct roles:
 - **Contract** — normative behavior that implementations and consumers may rely on.
 - **Architecture** — system boundaries, ownership, and design rationale.
 - **Implementation reference** — where and how current code realizes a contract.
-- **Guide or policy** — how contributors work in this repository.
+- **Guide** — how contributors work in this repository.
+- **Policy** — repository-wide rules that govern changes or presentation.
 - **Roadmap** — desired work that is not yet a current contract.
 - **Archive** — historical context only.
+- **Index** — navigation and page discovery; it is not a behavioral authority.
 
 When pages disagree, follow a current normative contract. Do not infer current
 behavior from a roadmap or archive page.
@@ -36,14 +38,14 @@ behavior from a roadmap or archive page.
   the Rust-owned runtime domain catalog, calculations, providers, and extension points.
 - **[Shared astrology core](./shared-core/)** — the planned boundary shared by
   Rust and the separately extractable Python sidecar.
-- **[Backend structure](./backend-structure/)** — current and target Rust implementation boundaries.
+- **[Backend structure](./backend-structure/)** — current persistence, provenance, and backend mechanisms.
 - **[Rust code structure](./rust-code-structure/)** — current Rust module and
   responsibility map.
 
 ## Contracts
 
-- **[Configuration reference](./configuration-reference/)** — all calculation,
-  chart, analysis, object, aspect, symbol, and presentation options.
+- **[Configuration reference](./configuration-reference/)** — implemented calculation
+  settings, serialized values, and presentation boundary.
 - **[Workspace YAML contract](./workspace-yaml/)** — complete project tree,
   schools/models, settings inheritance, chart overrides, presentation, and
   persisted transit intent.

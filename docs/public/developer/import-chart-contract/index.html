@@ -59,18 +59,18 @@
 <h3 id="implemented-now">Implemented now</h3>
 <ul>
 <li>native chart YAML: <code>.yml</code>, <code>.yaml</code></li>
+<li>StarFisher EventData: <code>.sfs</code></li>
+<li>Morinus saved horoscope: <code>.hor</code></li>
 </ul>
-<h3 id="staged-not-implemented-in-rust-yet">Staged, not implemented in Rust yet</h3>
-<ul>
-<li>StarFisher / SFS: <code>.sfs</code></li>
-</ul>
-<p>SFS remains in scope, but should use the Python-backed path once that parser flow is wired into the desktop app.</p>
-<p>The frontend and Tauri command contract should remain backend-neutral even if a specific parser path is currently implemented in Python first.</p>
+<p>Morinus <code>.hor</code> files are scalar Python pickle streams. The importer accepts
+the protocol variants emitted by the application, extracts the persisted chart
+facts, and recalculates positions through the native chart-compute route.</p>
+<p>SFS import accepts UTF-8 and BOM-marked UTF-16LE/UTF-16BE EventData scripts. It converts the persisted event facts—caption, local date and GMT/DST offset, coordinates, location, timezone, and keywords—into a native chart. StarFisher settings scripts are not event files and are rejected when required EventData fields are absent.</p>
 <h2 id="required-behavior">Required behavior</h2>
 <ul>
 <li>The command loads the target workspace manifest first.</li>
 <li>The command validates the external file against the Rust/Python chart model shape.</li>
-<li>On successful YAML import, the chart is written into the workspace <code>charts/</code> directory as native YAML.</li>
+<li>On successful YAML or SFS import, the chart is written into the workspace <code>charts/</code> directory as native YAML.</li>
 <li>The imported chart is registered in <code>workspace.yaml</code>.</li>
 <li>The imported chart id is the source of truth for the destination filename and manifest entry.</li>
 </ul>
@@ -83,14 +83,14 @@
 </ul>
 <h2 id="current-implementation-rule">Current implementation rule</h2>
 <ul>
-<li>Native YAML import must work without the Python backend.</li>
-<li>SFS import should not pretend to work through Rust-only heuristics.</li>
-<li>Until the Python-backed SFS path exists, <code>.sfs</code> import should fail explicitly and clearly.</li>
-<li>Import responses and error handling should not imply that Python is the architectural owner of chart ingestion in the long term.</li>
+<li>Native YAML and SFS import work without the Python backend.</li>
+<li>SFS files are source-event records, not trusted computed-state snapshots.</li>
+<li>Imported SFS charts explicitly select the JPL engine and apparent positions. No planetary positions, aspects, axes, or houses are copied into workspace YAML; the normal chart compute route recalculates them from the imported UTC event and location.</li>
+<li><code>GMT±H:MM DST</code> is interpreted as the stated standard offset plus one daylight-saving hour, and the effective offset is retained alongside the IANA zone.</li>
 </ul>
 <h2 id="acceptance-checks">Acceptance checks</h2>
 <ul>
-<li>Importing a valid external YAML chart adds it to the current workspace.</li>
+<li>Importing a valid external YAML or StarFisher EventData chart adds it to the current workspace.</li>
 <li>Imported charts appear in <code>load_workspace</code>.</li>
 <li>Duplicate imports by chart id are rejected.</li>
 <li>Unsupported formats are rejected with a useful error.</li>
