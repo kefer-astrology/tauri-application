@@ -9,6 +9,26 @@
 ///   - House cusps: computed in houses.rs
 ///   - Chiron/custom small bodies: validated Horizons vectors converted to Type 13 SPKs
 ///     are discovered from adjacent manifests and evaluated through the same frame pipeline
+///
+/// ## Time and output contract
+///
+/// Input chart times are UTC timestamps (including their fractional second).  `hifitime`
+/// converts that UTC instant through TT to the ET/TDB-compatible epoch ANISE uses to evaluate
+/// SPK Chebyshev records; the backend never creates a sampled position table.  TT is used for mean ecliptic
+/// orientation and lunar element formulae.  For pre-UTC historical civil dates the caller
+/// must first supply a UTC-equivalent instant using its selected calendar and Delta-T model;
+/// that civil-time policy deliberately is not hidden in this trajectory provider.
+///
+/// The application currently has no bundled Earth-orientation-parameter (EOP) table, so
+/// sidereal time uses UTC as an explicitly labelled UT1 approximation.  It is suitable for
+/// the existing chart convention, but is not a substitute for UT1 when sub-arcsecond angles
+/// are required.  A future EOP provider must supply UT1 rather than changing this fallback.
+///
+/// `PositionMode::Geometric` returns the instantaneous Earth-relative mean-of-date vector.
+/// `PositionMode::Apparent` asks ANISE for converged light-time plus stellar-aberration
+/// corrections (`CN_S`) before that same frame projection.  Neither mode is topocentric:
+/// altitude/azimuth is an observer-direction convenience derived from the geocentric vector,
+/// not a parallax-corrected apparent place.
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock, RwLock};
@@ -353,15 +373,22 @@ impl AstronomyBackend for JplAstronomyBackend {
             .event_time
             .ok_or_else(|| "Chart has no subject.event_time".to_string())?;
 
+        // Keep the fractional UTC second all the way to ANISE.  ANISE evaluates the BSP at
+        // its TDB-compatible epoch internally; SPK coverage failures are returned below as
+        // explicit per-body `_unavailable` warnings rather than extrapolated.
         let unix_secs =
             event_time.timestamp() as f64 + event_time.timestamp_subsec_nanos() as f64 * 1e-9;
-        let jd_ut = julian_day_from_unix(unix_secs);
-        let obliquity = mean_obliquity_deg(jd_ut);
+        let epoch = Epoch::from_unix_seconds(unix_secs);
+        // GMST formally requires UT1.  No EOP/ΔUT1 data set is bundled yet, so retain the
+        // historic UTC approximation but make it visible in the result contract below.
+        let jd_utc_as_ut1 = julian_day_from_unix(unix_secs);
+        let jd_tt = epoch.to_jde_tt_days();
+        let obliquity = mean_obliquity_deg(jd_tt);
         // Needed up front (not just for axes/houses below) so the classical-planet loop can
         // attach topocentric altitude/azimuth alongside each body's longitude.
         let lat = chart.subject.location.latitude;
         let lon = chart.subject.location.longitude;
-        let lst_deg = local_sidereal_time_deg(jd_ut, lon);
+        let lst_deg = local_sidereal_time_deg(jd_utc_as_ut1, lon);
         let ab_corr = aberration_for_position_mode(chart.config.position_mode);
 
         let wanted = |id: &str| {
@@ -377,6 +404,7 @@ impl AstronomyBackend for JplAstronomyBackend {
         let mut altitude: HashMap<String, f64> = HashMap::new();
         let mut azimuth: HashMap<String, f64> = HashMap::new();
         let mut warnings: Vec<String> = Vec::new();
+        warnings.push("ut1_approximated_from_utc: no EOP/ΔUT1 data loaded; sidereal quantities are approximate".to_string());
 
         // ── Standard planetary positions ─────────────────────────────────
         // Equatorial (RA/Dec) and topocentric (alt/az) coordinates are only attached for
@@ -441,8 +469,9 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         // ── Lunar nodes ───────────────────────────────────────────────────
-        let mean_node = mean_node_lon(jd_ut);
-        let mean_motion = mean_node_motion(jd_ut);
+        // These secular lunar expressions are TT quantities, unlike sidereal time above.
+        let mean_node = mean_node_lon(jd_tt);
+        let mean_motion = mean_node_motion(jd_tt);
         if wanted("north_node") || wanted("mean_node") {
             let key = if wanted("north_node") {
                 "north_node"
@@ -514,8 +543,8 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         // ── Axes and house cusps ──────────────────────────────────────────
-        let (asc, mc, desc, ic) =
-            compute_axes(jd_ut, lat, lon).map_err(|e| format!("Failed to compute axes: {e}"))?;
+        let (asc, mc, desc, ic) = compute_axes(jd_utc_as_ut1, lat, lon)
+            .map_err(|e| format!("Failed to compute axes: {e}"))?;
 
         let axes = AstronomyAxes { asc, desc, mc, ic };
         for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
@@ -587,8 +616,8 @@ impl AstronomyBackend for JplAstronomyBackend {
 
         let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
             Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
-            Some(HouseSystem::Placidus) => placidus_cusps(jd_ut, lat, lon, asc, mc),
-            Some(HouseSystem::Campanus) => campanus_cusps(jd_ut, lat, lon, asc, mc),
+            Some(HouseSystem::Placidus) => placidus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
+            Some(HouseSystem::Campanus) => campanus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
             Some(other) => {
                 let name = format!("{other:?}").to_lowercase();
                 (
@@ -940,10 +969,94 @@ mod tests {
     }
 
     fn dev_bsp_path(filename: &str) -> Option<PathBuf> {
-        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()?
-            .join(format!("backend-python/source/{filename}"));
-        root.exists().then_some(root)
+        // Keep unit tests runnable from a clean checkout.  Development used to look only
+        // for a removed Python-sidecar copy of the kernel, although the Rust application
+        // ships the resources it needs beside this crate.
+        let resource = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join(filename);
+        resource.exists().then_some(resource)
+    }
+
+    /// Repeatable direct-SPK benchmark.  This intentionally measures the public chart path,
+    /// including apparent-place corrections and finite-difference motion, rather than only a
+    /// raw segment lookup.  Run with:
+    /// `cargo test --release jpl_direct_path_benchmark -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "diagnostic benchmark; run manually on the target machine"]
+    fn jpl_direct_path_benchmark() {
+        use std::hint::black_box;
+        use std::time::Instant;
+
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        let backend = JplAstronomyBackend::new(paths);
+        let chart = j2000_chart("");
+        let one = vec!["mercury".to_string()];
+        let all: Vec<String> = body_frames()
+            .iter()
+            .map(|(id, _)| (*id).to_string())
+            .chain(
+                asteroid_body_frames()
+                    .iter()
+                    .map(|(id, _)| (*id).to_string()),
+            )
+            .chain(std::iter::once("chiron".to_string()))
+            .collect();
+
+        // Cold means no in-process Almanac; OS page cache is intentionally not controlled.
+        almanac_cache().write().expect("cache lock").clear();
+        let cold_start = Instant::now();
+        black_box(
+            backend
+                .compute_chart_data(&chart, Some(&one))
+                .expect("cold direct computation"),
+        );
+        let cold = cold_start.elapsed();
+
+        const ITERATIONS: u32 = 10;
+        let warm_one_start = Instant::now();
+        for _ in 0..ITERATIONS {
+            black_box(
+                backend
+                    .compute_chart_data(&chart, Some(&one))
+                    .expect("warm single-body computation"),
+            );
+        }
+        let warm_one = warm_one_start.elapsed() / ITERATIONS;
+
+        let warm_all_start = Instant::now();
+        for _ in 0..ITERATIONS {
+            black_box(
+                backend
+                    .compute_chart_data(&chart, Some(&all))
+                    .expect("warm all-body computation"),
+            );
+        }
+        let warm_all = warm_all_start.elapsed() / ITERATIONS;
+
+        // Chart rendering samples a dense time range.  The requested body has motion, so this
+        // also represents the three direct evaluations made for a displayed moving body.
+        let dense_start = Instant::now();
+        let mut dense_chart = chart.clone();
+        const DENSE_SAMPLES: i64 = 8;
+        for day in 0..DENSE_SAMPLES {
+            dense_chart.subject.event_time = chart
+                .subject
+                .event_time
+                .map(|time| time + chrono::Duration::days(day));
+            black_box(
+                backend
+                    .compute_chart_data(&dense_chart, Some(&one))
+                    .expect("dense direct computation"),
+            );
+        }
+        let dense = dense_start.elapsed();
+
+        println!(
+            "direct JPL benchmark: cold={cold:?}, warm_one={warm_one:?}, warm_all={warm_all:?}, dense_{DENSE_SAMPLES}={dense:?} ({:.1} samples/s)",
+            DENSE_SAMPLES as f64 / dense.as_secs_f64()
+        );
     }
 
     /// Validate positions at J2000.0 against known Horizons values.
