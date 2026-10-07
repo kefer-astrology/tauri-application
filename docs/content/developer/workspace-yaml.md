@@ -179,10 +179,11 @@ settings (it only re-applies the preset on an actual change), so resaving
 unrelated settings — which resend the whole `WorkspaceDefaults` snapshot —
 never clobbers per-aspect customizations made after the tradition was picked.
 This is a first iteration: it only drives aspect selection/orbs/angle
-inclusion. Object selection and each tradition's native orb *model*
-(whole-sign tolerance, planetary moieties, harmonic-scaled orbs,
-midpoint/dial orbs, Jyotish directional drishti) are approximated with the
-existing per-aspect-orb engine, not truly implemented, and are future work.
+inclusion. See [Domain model and extensibility](../domain-model/#astrological-traditions-škola-and-the-two-different-things-called-school)
+for the full seven-axis decomposition (zodiac, houses, objects, relationships,
+planetary condition, derived charts/timing, interpretation) a tradition could
+eventually drive, which of those axes exist today, and how `BaseChartPurpose`
+(natal/horary/electional/…) is a separate, tradition-independent axis.
 
 `tag_catalog` is the workspace-wide registry used for tag completion and shared
 colors. Names must be non-empty and unique after surrounding whitespace is
