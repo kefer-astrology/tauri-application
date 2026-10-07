@@ -38,6 +38,7 @@ use anise::constants::frames::{
     NEPTUNE_BARYCENTER_J2000, PLUTO_BARYCENTER_J2000, SATURN_BARYCENTER_J2000, SUN_J2000,
     URANUS_BARYCENTER_J2000, VENUS_J2000,
 };
+use anise::math::cartesian::CartesianState;
 use anise::prelude::*;
 use hifitime::Epoch;
 
@@ -142,7 +143,22 @@ fn almanac_cache() -> &'static RwLock<AlmanacCache> {
 fn almanac_cache_key(paths: &[PathBuf]) -> String {
     paths
         .iter()
-        .map(|path| path.to_string_lossy().into_owned())
+        // A path alone is insufficient: an ephemeris download can atomically replace an
+        // existing filename while this process is alive.
+        .map(|path| {
+            let fingerprint = std::fs::metadata(path)
+                .ok()
+                .and_then(|meta| meta.modified().ok().map(|modified| (meta.len(), modified)))
+                .and_then(|(len, modified)| {
+                    modified
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .ok()
+                        .map(|d| (len, d.as_nanos()))
+                })
+                .map(|(len, modified)| format!("{len}:{modified}"))
+                .unwrap_or_else(|| "missing".to_string());
+            format!("{}:{fingerprint}", path.to_string_lossy())
+        })
         .collect::<Vec<_>>()
         .join("|")
 }
@@ -154,43 +170,33 @@ fn aberration_for_position_mode(mode: Option<PositionMode>) -> Option<Aberration
     }
 }
 
-fn sample_tropical_longitude(
+fn sample_state(
     almanac: &Almanac,
     frame: Frame,
     unix_secs: f64,
     ab_corr: Option<Aberration>,
-) -> Result<f64, String> {
+) -> Result<CartesianState, String> {
     let epoch = Epoch::from_unix_seconds(unix_secs);
-    let obliquity = mean_obliquity_deg(epoch.to_jde_tt_days());
-    let state = almanac
+    almanac
         .transform(frame, EARTH_MOD_FRAME, epoch, ab_corr)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())
+}
+
+fn longitude_from_state(state: &CartesianState, jd_tt: f64) -> f64 {
+    let obliquity = mean_obliquity_deg(jd_tt);
     let (lon, _lat) = equatorial_to_ecliptic(
         state.radius_km.x,
         state.radius_km.y,
         state.radius_km.z,
         obliquity,
     );
-    Ok(lon)
+    lon
 }
 
 /// Right ascension and declination (degrees) from the same equatorial mean-of-date state
 /// vector `sample_tropical_longitude` rotates into ecliptic coordinates.
-fn sample_equatorial(
-    almanac: &Almanac,
-    frame: Frame,
-    unix_secs: f64,
-    ab_corr: Option<Aberration>,
-) -> Result<(f64, f64), String> {
-    let epoch = Epoch::from_unix_seconds(unix_secs);
-    let state = almanac
-        .transform(frame, EARTH_MOD_FRAME, epoch, ab_corr)
-        .map_err(|e| e.to_string())?;
-    Ok(equatorial_ra_dec_deg(
-        state.radius_km.x,
-        state.radius_km.y,
-        state.radius_km.z,
-    ))
+fn equatorial_from_state(state: &CartesianState) -> (f64, f64) {
+    equatorial_ra_dec_deg(state.radius_km.x, state.radius_km.y, state.radius_km.z)
 }
 
 fn angular_delta_deg(from: f64, to: f64) -> f64 {
@@ -203,23 +209,34 @@ fn angular_delta_deg(from: f64, to: f64) -> f64 {
     delta
 }
 
-fn sample_motion(
-    almanac: &Almanac,
-    frame: Frame,
-    unix_secs: f64,
-    ab_corr: Option<Aberration>,
-) -> Result<AstronomyMotion, String> {
-    const SAMPLE_STEP_SECONDS: f64 = 3600.0;
-    let before =
-        sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS, ab_corr)?;
-    let after =
-        sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS, ab_corr)?;
-    let delta = angular_delta_deg(before, after);
-    let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
+fn motion_from_state(state: &CartesianState, jd_tt: f64) -> Result<AstronomyMotion, String> {
+    let eps = mean_obliquity_deg(jd_tt).to_radians();
+    let x = state.radius_km.x;
+    let y = state.radius_km.y * eps.cos() + state.radius_km.z * eps.sin();
+    let vx = state.velocity_km_s.x;
+    let vy = state.velocity_km_s.y * eps.cos() + state.velocity_km_s.z * eps.sin();
+    let denominator = x * x + y * y;
+    if denominator <= f64::MIN_POSITIVE {
+        return Err("motion_unavailable: ecliptic longitude singularity".to_string());
+    }
+    let speed = ((x * vy - y * vx) / denominator).to_degrees() * 86_400.0;
     Ok(AstronomyMotion {
         speed,
         retrograde: speed < 0.0,
     })
+}
+
+fn sample_tropical_longitude(
+    almanac: &Almanac,
+    frame: Frame,
+    unix_secs: f64,
+    ab_corr: Option<Aberration>,
+) -> Result<f64, String> {
+    let state = sample_state(almanac, frame, unix_secs, ab_corr)?;
+    Ok(longitude_from_state(
+        &state,
+        Epoch::from_unix_seconds(unix_secs).to_jde_tt_days(),
+    ))
 }
 
 fn true_node_tropical_at_unix(
@@ -414,19 +431,19 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, frame, unix_secs, ab_corr) {
-                Ok(longitude) => {
+            match sample_state(&almanac, frame, unix_secs, ab_corr) {
+                Ok(state) => {
+                    let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs, ab_corr) {
+                    if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
                         motion.insert(id.to_string(), body_motion);
                     }
-                    if let Ok((ra, dec)) = sample_equatorial(&almanac, frame, unix_secs, ab_corr) {
-                        right_ascension.insert(id.to_string(), ra);
-                        declination.insert(id.to_string(), dec);
-                        let (alt, az) = equatorial_to_horizontal_deg(ra, dec, lst_deg, lat);
-                        altitude.insert(id.to_string(), alt);
-                        azimuth.insert(id.to_string(), az);
-                    }
+                    let (ra, dec) = equatorial_from_state(&state);
+                    right_ascension.insert(id.to_string(), ra);
+                    declination.insert(id.to_string(), dec);
+                    let (alt, az) = equatorial_to_horizontal_deg(ra, dec, lst_deg, lat);
+                    altitude.insert(id.to_string(), alt);
+                    azimuth.insert(id.to_string(), az);
                 }
                 Err(e) => {
                     warnings.push(format!("{id}_unavailable: {e}"));
@@ -442,8 +459,10 @@ impl AstronomyBackend for JplAstronomyBackend {
             match sample_tropical_longitude(&almanac, frame, unix_secs, ab_corr) {
                 Ok(longitude) => {
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs, ab_corr) {
-                        motion.insert(id.to_string(), body_motion);
+                    if let Ok(state) = sample_state(&almanac, frame, unix_secs, ab_corr) {
+                        if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
+                            motion.insert(id.to_string(), body_motion);
+                        }
                     }
                 }
                 Err(e) => {
@@ -460,8 +479,10 @@ impl AstronomyBackend for JplAstronomyBackend {
             match sample_tropical_longitude(&almanac, *frame, unix_secs, ab_corr) {
                 Ok(longitude) => {
                     positions.insert(id.clone(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, *frame, unix_secs, ab_corr) {
-                        motion.insert(id.clone(), body_motion);
+                    if let Ok(state) = sample_state(&almanac, *frame, unix_secs, ab_corr) {
+                        if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
+                            motion.insert(id.clone(), body_motion);
+                        }
                     }
                 }
                 Err(error) => warnings.push(format!("{id}_unavailable: {error}")),
@@ -494,9 +515,11 @@ impl AstronomyBackend for JplAstronomyBackend {
         let want_true_nn = wanted("true_north_node") || wanted("true_node");
         let want_true_sn = wanted("true_south_node");
         if want_true_nn || want_true_sn {
-            match true_node_tropical_at_unix(&almanac, unix_secs, ab_corr) {
+            // Osculating orbital elements are defined from the instantaneous geometric
+            // Earth–Moon state, not a retarded/apparent line of sight.
+            match true_node_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_nn) => {
-                    let true_motion = true_node_motion(&almanac, unix_secs, ab_corr).ok();
+                    let true_motion = true_node_motion(&almanac, unix_secs, Aberration::NONE).ok();
                     if want_true_nn {
                         positions.insert("true_north_node".to_string(), true_nn);
                         if wanted("true_node") {
@@ -524,10 +547,12 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         if wanted("true_lilith") {
-            match true_apogee_tropical_at_unix(&almanac, unix_secs, ab_corr) {
+            match true_apogee_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_apogee) => {
                     positions.insert("true_lilith".to_string(), true_apogee);
-                    if let Ok(apogee_motion) = true_apogee_motion(&almanac, unix_secs, ab_corr) {
+                    if let Ok(apogee_motion) =
+                        true_apogee_motion(&almanac, unix_secs, Aberration::NONE)
+                    {
                         motion.insert("true_lilith".to_string(), apogee_motion);
                     }
                 }
@@ -1015,25 +1040,36 @@ mod tests {
         let cold = cold_start.elapsed();
 
         const ITERATIONS: u32 = 10;
-        let warm_one_start = Instant::now();
+        let mut warm_one_samples = Vec::with_capacity(ITERATIONS as usize);
         for _ in 0..ITERATIONS {
+            let start = Instant::now();
             black_box(
                 backend
                     .compute_chart_data(&chart, Some(&one))
                     .expect("warm single-body computation"),
             );
+            warm_one_samples.push(start.elapsed());
         }
-        let warm_one = warm_one_start.elapsed() / ITERATIONS;
 
-        let warm_all_start = Instant::now();
+        let mut warm_all_samples = Vec::with_capacity(ITERATIONS as usize);
         for _ in 0..ITERATIONS {
-            black_box(
-                backend
-                    .compute_chart_data(&chart, Some(&all))
-                    .expect("warm all-body computation"),
+            let start = Instant::now();
+            let data = backend
+                .compute_chart_data(&chart, Some(&all))
+                .expect("warm all-body computation");
+            let unavailable: Vec<&str> = all
+                .iter()
+                .filter(|id| !data.positions.contains_key(id.as_str()))
+                .map(String::as_str)
+                .collect();
+            assert!(
+                unavailable.is_empty(),
+                "benchmark request contained unavailable bodies: {unavailable:?}; warnings: {:?}",
+                data.warnings
             );
+            black_box(data);
+            warm_all_samples.push(start.elapsed());
         }
-        let warm_all = warm_all_start.elapsed() / ITERATIONS;
 
         // Chart rendering samples a dense time range.  The requested body has motion, so this
         // also represents the three direct evaluations made for a displayed moving body.
@@ -1053,8 +1089,15 @@ mod tests {
         }
         let dense = dense_start.elapsed();
 
+        warm_one_samples.sort_unstable();
+        warm_all_samples.sort_unstable();
+        let p95 = |samples: &[std::time::Duration]| {
+            samples[(samples.len() * 95 / 100).min(samples.len() - 1)]
+        };
         println!(
-            "direct JPL benchmark: cold={cold:?}, warm_one={warm_one:?}, warm_all={warm_all:?}, dense_{DENSE_SAMPLES}={dense:?} ({:.1} samples/s)",
+            "direct JPL benchmark: cold={cold:?}, warm_one p50={:?} p95={:?}, warm_all p50={:?} p95={:?}, dense_{DENSE_SAMPLES}={dense:?} ({:.1} samples/s)",
+            warm_one_samples[warm_one_samples.len() / 2], p95(&warm_one_samples),
+            warm_all_samples[warm_all_samples.len() / 2], p95(&warm_all_samples),
             DENSE_SAMPLES as f64 / dense.as_secs_f64()
         );
     }
