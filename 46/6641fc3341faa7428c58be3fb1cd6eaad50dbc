@@ -1,0 +1,386 @@
+.github/workflows/docs-pages.yml
+  s_181f4cfdfe7db5::t_f27c34f7224208 34
+docs/public/app-shell/logo-full-modern.svg
+  s_f5cc6030dbe8d9::t_6193cf46b20e13 1-6
+docs/public/app-shell/icon.svg
+  s_181f4cfdfe7db5::t_b5602291471266 1-6
+docs/public/app-shell/icons/default/aspects.svg
+  s_181f4cfdfe7db5::t_0a71a9b0bc5c24 1-3
+docs/public/app-shell/icons/default/dynamics.svg
+  s_181f4cfdfe7db5::t_baf5c1cbea79a8 1-4
+docs/public/app-shell/icons/default/export.svg
+  s_181f4cfdfe7db5::t_d93da459e0c96c 1-4
+docs/public/app-shell/icons/default/favorite.svg
+  s_181f4cfdfe7db5::t_65140b0cfe4d3d 1-4
+docs/public/app-shell/icons/default/horoscope.svg
+  s_181f4cfdfe7db5::t_97381a3989ad15 1-3
+docs/public/app-shell/icons/default/information.svg
+  s_181f4cfdfe7db5::t_481a3fc0915edf 1-5
+docs/public/app-shell/icons/default/menu.svg
+  s_181f4cfdfe7db5::t_7c4d84eaae1559 1
+docs/public/app-shell/icons/default/new.svg
+  s_181f4cfdfe7db5::t_ac2769a37135c5 1-4
+docs/public/app-shell/icons/default/open.svg
+  s_181f4cfdfe7db5::t_f0dd2f166f377a 1-3
+docs/public/app-shell/icons/default/revolution.svg
+  s_181f4cfdfe7db5::t_5e0876de53dcc1 1-4
+docs/public/app-shell/icons/default/save.svg
+  s_181f4cfdfe7db5::t_5315451412397f 1-4
+docs/public/app-shell/icons/default/settings.svg
+  s_181f4cfdfe7db5::t_0991fb53ac13d8 1-4
+docs/public/app-shell/icons/default/synastry.svg
+  s_181f4cfdfe7db5::t_31501afd96fc97 1-6
+docs/public/app-shell/icons/default/theme-midnight.svg
+  s_181f4cfdfe7db5::t_6bbc446d659aa7 1
+docs/public/app-shell/icons/default/theme-noon.svg
+  s_181f4cfdfe7db5::t_8dd26e75045026 1-10
+docs/public/app-shell/icons/default/theme-sunrise.svg
+  s_181f4cfdfe7db5::t_732dda76310be9 1
+docs/public/app-shell/icons/default/theme-twilight.svg
+  s_181f4cfdfe7db5::t_7fc51ccb146b08 1
+docs/public/app-shell/icons/default/transits.svg
+  s_181f4cfdfe7db5::t_b61bfb080e8876 1-4
+docs/public/app-shell/logo-full-default.svg
+  s_181f4cfdfe7db5::t_49dff02c011b3e 1-28
+docs/public/app-shell/logo-mark-default.svg
+  s_181f4cfdfe7db5::t_25c816f5e13bf1 1-2
+docs/public/app-shell/logo-mark-modern.svg
+  s_181f4cfdfe7db5::t_872f65ed4675b7 1-3
+docs/public/apps/web-react/app-shell/icon.svg
+  s_181f4cfdfe7db5::t_7b84677ee63f1a 1-6
+docs/public/apps/web-react/app-shell/icons/default/aspects.svg
+  s_181f4cfdfe7db5::t_fe3e7a7bc13523 1-3
+docs/public/apps/web-react/app-shell/icons/default/dynamics.svg
+  s_181f4cfdfe7db5::t_325971eb273610 1-4
+docs/public/apps/web-react/app-shell/icons/default/export.svg
+  s_181f4cfdfe7db5::t_dd291ce475fd4b 1-4
+docs/public/apps/web-react/app-shell/icons/default/favorite.svg
+  s_181f4cfdfe7db5::t_ecf0043fd2ceec 1-4
+docs/public/apps/web-react/app-shell/icons/default/horoscope.svg
+  s_181f4cfdfe7db5::t_86970212c7f0c7 1-3
+docs/public/apps/web-react/app-shell/icons/default/information.svg
+  s_181f4cfdfe7db5::t_aa2b0634a5e4d5 1-5
+docs/public/apps/web-react/app-shell/icons/default/menu.svg
+  s_181f4cfdfe7db5::t_b9361186c6d6ca 1
+docs/public/apps/web-react/app-shell/icons/default/new.svg
+  s_181f4cfdfe7db5::t_71f5a46589a992 1-4
+docs/public/apps/web-react/app-shell/icons/default/open.svg
+  s_181f4cfdfe7db5::t_b3cdea6a855a08 1-3
+docs/public/apps/web-react/app-shell/icons/default/revolution.svg
+  s_181f4cfdfe7db5::t_093b6cbecb04e7 1-4
+docs/public/apps/web-react/app-shell/icons/default/save.svg
+  s_181f4cfdfe7db5::t_e6a617bdde5723 1-4
+docs/public/apps/web-react/app-shell/icons/default/settings.svg
+  s_181f4cfdfe7db5::t_a796cc19e2f97c 1-4
+docs/public/apps/web-react/app-shell/icons/default/synastry.svg
+  s_181f4cfdfe7db5::t_079c1166a4a577 1-6
+docs/public/apps/web-react/app-shell/icons/default/theme-midnight.svg
+  s_181f4cfdfe7db5::t_efd095e241ebb7 1
+docs/public/apps/web-react/app-shell/icons/default/theme-noon.svg
+  s_181f4cfdfe7db5::t_3bd286232d1ff7 1-10
+docs/public/apps/web-react/app-shell/icons/default/theme-sunrise.svg
+  s_181f4cfdfe7db5::t_4808fcc3dace16 1
+docs/public/apps/web-react/app-shell/icons/default/theme-twilight.svg
+  s_181f4cfdfe7db5::t_5aa35427360675 1
+docs/public/apps/web-react/app-shell/icons/default/transits.svg
+  s_181f4cfdfe7db5::t_b94b8e6642f0d2 1-4
+docs/public/apps/web-react/app-shell/logo-full-default.svg
+  s_181f4cfdfe7db5::t_8e89fee9d72d07 1-28
+docs/public/apps/web-react/app-shell/logo-full-modern.svg
+  s_181f4cfdfe7db5::t_8194e452b908b6 1-6
+docs/public/apps/web-react/app-shell/logo-mark-default.svg
+  s_181f4cfdfe7db5::t_640c75262c187a 1-2
+docs/public/apps/web-react/app-shell/logo-mark-modern.svg
+  s_181f4cfdfe7db5::t_640379b319ef7a 1-3
+docs/public/apps/web-react/assets/App-_f1gg2pz.js
+  s_181f4cfdfe7db5::t_ef0250e603d4ab 1
+docs/public/apps/web-react/assets/index-Ci9m6sya.js
+  s_181f4cfdfe7db5::t_59fe3c06a9ed66 1-2
+docs/public/apps/web-react/assets/index-DGvadqa1.css
+  s_181f4cfdfe7db5::t_0ed5976bbb57b3 1-2
+docs/public/apps/web-react/assets/radix-vendor-fNdhjdrX.js
+  s_181f4cfdfe7db5::t_f6613d6c6b1653 1-45
+docs/public/apps/web-react/assets/ui-vendor-DqJZJyBc.js
+  s_181f4cfdfe7db5::t_14ac6c38ae91c0 1
+docs/public/apps/web-react/assets/vendor-0i09_SzN.js
+  s_181f4cfdfe7db5::t_0168a35b3917ae 1
+docs/public/apps/web-react/assets/vendor-d1uD1y75.js
+  s_181f4cfdfe7db5::t_a99236ac8e5542 1-4
+docs/public/apps/web-react/astrology-symbols/README.md
+  s_181f4cfdfe7db5::t_abe9eb4f37186a 1-67
+docs/public/apps/web-react/astrology-symbols/catalog.json
+  s_181f4cfdfe7db5::t_5e5c305fc42548 1-38
+docs/public/apps/web-react/astrology-symbols/charubel.cs.json
+  s_181f4cfdfe7db5::t_88d7621431bf4d 1-362
+docs/public/apps/web-react/astrology-symbols/charubel.es.json
+  s_181f4cfdfe7db5::t_bd864720a0673a 1-362
+docs/public/apps/web-react/astrology-symbols/charubel.fr.json
+  s_181f4cfdfe7db5::t_646370436461b9 1-362
+docs/public/apps/web-react/astrology-symbols/charubel.json
+  s_181f4cfdfe7db5::t_b8fdea0bfe48fa 1-362
+docs/public/apps/web-react/astrology-symbols/kefer.json
+  s_181f4cfdfe7db5::t_b7f3813225233c 1-362
+docs/public/apps/web-react/astrology-symbols/sabian.cs.json
+  s_181f4cfdfe7db5::t_c39feefe1ce455 1-362
+docs/public/apps/web-react/astrology-symbols/sabian.json
+  s_181f4cfdfe7db5::t_f99a4f926eb0aa 1-362
+docs/public/apps/web-react/astrology-symbols/sepharial.cs.json
+  s_181f4cfdfe7db5::t_53c16ce7105d6f 1-362
+docs/public/apps/web-react/astrology-symbols/sepharial.es.json
+  s_181f4cfdfe7db5::t_9c79b8652cc0a4 1-362
+docs/public/apps/web-react/astrology-symbols/sepharial.fr.json
+  s_181f4cfdfe7db5::t_644ef9ba0028d2 1-362
+docs/public/apps/web-react/astrology-symbols/sepharial.json
+  s_181f4cfdfe7db5::t_a49c67ba961c36 1-362
+docs/public/apps/web-react/index.html
+  s_181f4cfdfe7db5::t_b00e43645a457e 14-15,19
+docs/public/apps/web-svelte/app-shell/icon.svg
+  s_181f4cfdfe7db5::t_ebabfebb946429 1-6
+docs/public/apps/web-svelte/app-shell/icons/default/aspects.svg
+  s_181f4cfdfe7db5::t_9fd1ad9169e274 1-3
+docs/public/apps/web-svelte/app-shell/icons/default/dynamics.svg
+  s_181f4cfdfe7db5::t_7d2b06cd03bee4 1-4
+docs/public/apps/web-svelte/app-shell/icons/default/export.svg
+  s_181f4cfdfe7db5::t_c44a1d198f75a6 1-4
+docs/public/apps/web-svelte/app-shell/icons/default/favorite.svg
+  s_181f4cfdfe7db5::t_670698318deb2f 1-4
+docs/public/apps/web-svelte/app-shell/icons/default/horoscope.svg
+  s_181f4cfdfe7db5::t_76c26a6d23de50 1-3
+docs/public/apps/web-svelte/app-shell/icons/default/information.svg
+  s_181f4cfdfe7db5::t_6c8e3b0a36473b 1-5
+docs/public/apps/web-svelte/app-shell/icons/default/menu.svg
+  s_181f4cfdfe7db5::t_0241693e6acb65 1
+docs/public/apps/web-svelte/app-shell/icons/default/new.svg
+  s_181f4cfdfe7db5::t_ca7986343529ff 1-4
+docs/public/apps/web-svelte/app-shell/icons/default/open.svg
+  s_181f4cfdfe7db5::t_208212b42d1c4e 1-3
+docs/public/apps/web-svelte/app-shell/icons/default/revolution.svg
+  s_181f4cfdfe7db5::t_f92db86e8cd958 1-4
+docs/public/apps/web-svelte/app-shell/icons/default/save.svg
+  s_181f4cfdfe7db5::t_863b16ac2f7246 1-4
+docs/public/apps/web-svelte/app-shell/icons/default/settings.svg
+  s_181f4cfdfe7db5::t_517e8250f6a4b3 1-4
+docs/public/apps/web-svelte/app-shell/icons/default/synastry.svg
+  s_181f4cfdfe7db5::t_442c5bff51199a 1-6
+docs/public/apps/web-svelte/app-shell/icons/default/theme-midnight.svg
+  s_181f4cfdfe7db5::t_73206e8e4431b9 1
+docs/public/apps/web-svelte/app-shell/icons/default/theme-noon.svg
+  s_181f4cfdfe7db5::t_642bc48ba1dbdb 1-10
+docs/public/apps/web-svelte/app-shell/icons/default/theme-sunrise.svg
+  s_181f4cfdfe7db5::t_80e44a6ed706f8 1
+docs/public/apps/web-svelte/app-shell/icons/default/theme-twilight.svg
+  s_181f4cfdfe7db5::t_04554e6182a259 1
+docs/public/apps/web-svelte/app-shell/icons/default/transits.svg
+  s_181f4cfdfe7db5::t_9f7c7d349d6111 1-4
+docs/public/apps/web-svelte/app-shell/logo-full-default.svg
+  s_181f4cfdfe7db5::t_88373cb11670d6 1-28
+docs/public/apps/web-svelte/app-shell/logo-full-modern.svg
+  s_181f4cfdfe7db5::t_0e5a4b8f0eb7d2 1-6
+docs/public/apps/web-svelte/app-shell/logo-mark-default.svg
+  s_181f4cfdfe7db5::t_5e1427939f3bac 1-2
+docs/public/apps/web-svelte/app-shell/logo-mark-modern.svg
+  s_181f4cfdfe7db5::t_d78afc2fa47f03 1-3
+docs/public/apps/web-svelte/assets/App-BBObqZ0U.css
+  s_181f4cfdfe7db5::t_b4c7233a91ce30 1
+docs/public/apps/web-svelte/assets/App-sykOZedL.js
+  s_181f4cfdfe7db5::t_bed90dff5d06bb 1
+docs/public/apps/web-svelte/assets/index-B7Ln7aKn.css
+  s_181f4cfdfe7db5::t_57fd3b07b533e3 1-2
+docs/public/apps/web-svelte/assets/index-C8_1y4fD.js
+  s_181f4cfdfe7db5::t_24323a5324ecae 1-2
+docs/public/apps/web-svelte/assets/vendor-0Bx5gyxW.js
+  s_181f4cfdfe7db5::t_56e002300c95ca 1
+docs/public/apps/web-svelte/astrology-symbols/README.md
+  s_181f4cfdfe7db5::t_f2a8206a118584 1-67
+docs/public/apps/web-svelte/astrology-symbols/catalog.json
+  s_181f4cfdfe7db5::t_ddd49d4a8262fe 1-38
+docs/public/apps/web-svelte/astrology-symbols/charubel.cs.json
+  s_181f4cfdfe7db5::t_9961e60b1247d0 1-362
+docs/public/apps/web-svelte/astrology-symbols/charubel.es.json
+  s_181f4cfdfe7db5::t_1c42c87a40046a 1-362
+docs/public/apps/web-svelte/astrology-symbols/charubel.fr.json
+  s_181f4cfdfe7db5::t_ad5d9f9759e2ae 1-362
+docs/public/apps/web-svelte/astrology-symbols/charubel.json
+  s_181f4cfdfe7db5::t_7a9a2067f81e72 1-362
+docs/public/apps/web-svelte/astrology-symbols/kefer.json
+  s_181f4cfdfe7db5::t_7e66aa596cbdb9 1-362
+docs/public/apps/web-svelte/astrology-symbols/sabian.cs.json
+  s_181f4cfdfe7db5::t_314735f0e1c053 1-362
+docs/public/apps/web-svelte/astrology-symbols/sabian.json
+  s_181f4cfdfe7db5::t_d93a38ab6a351b 1-362
+docs/public/apps/web-svelte/astrology-symbols/sepharial.cs.json
+  s_181f4cfdfe7db5::t_3acbec5a8aa920 1-362
+docs/public/apps/web-svelte/astrology-symbols/sepharial.es.json
+  s_181f4cfdfe7db5::t_d3691c4fa2d485 1-362
+docs/public/apps/web-svelte/astrology-symbols/sepharial.fr.json
+  s_181f4cfdfe7db5::t_1169b351305bd0 1-362
+docs/public/apps/web-svelte/astrology-symbols/sepharial.json
+  s_181f4cfdfe7db5::t_57ab15ebb73763 1-362
+docs/public/apps/web-svelte/index.html
+  s_181f4cfdfe7db5::t_ff33e2239dd600 8,10-11
+docs/public/astrology-symbols/README.md
+  s_181f4cfdfe7db5::t_57e0dab8c9d303 1-67
+docs/public/astrology-symbols/catalog.json
+  s_181f4cfdfe7db5::t_73c87a110d22b4 1-38
+docs/public/astrology-symbols/charubel.cs.json
+  s_181f4cfdfe7db5::t_0a330463530ec0 1-362
+docs/public/astrology-symbols/charubel.es.json
+  s_181f4cfdfe7db5::t_04e82b1ad6e9ff 1-362
+docs/public/astrology-symbols/charubel.fr.json
+  s_181f4cfdfe7db5::t_d6ea197ab800e0 1-362
+docs/public/astrology-symbols/charubel.json
+  s_181f4cfdfe7db5::t_495ecbdb66aea8 1-362
+docs/public/astrology-symbols/kefer.json
+  s_181f4cfdfe7db5::t_66e293c8d7940d 1-362
+docs/public/astrology-symbols/sabian.cs.json
+  s_181f4cfdfe7db5::t_09e171049cc264 1-362
+docs/public/astrology-symbols/sabian.json
+  s_181f4cfdfe7db5::t_ee16d83abc3741 1-362
+docs/public/astrology-symbols/sepharial.cs.json
+  s_181f4cfdfe7db5::t_746296c4578d42 1-362
+docs/public/astrology-symbols/sepharial.es.json
+  s_181f4cfdfe7db5::t_7d2cc40c2c8e64 1-362
+docs/public/astrology-symbols/sepharial.fr.json
+  s_181f4cfdfe7db5::t_ae609d5f17e16d 1-362
+docs/public/astrology-symbols/sepharial.json
+  s_181f4cfdfe7db5::t_1956838bbe2426 1-362
+docs/public/cs/guides/index.html
+  s_181f4cfdfe7db5::t_c24cfadacc0112 10,42
+docs/public/cs/guides/preview-react/index.html
+  s_181f4cfdfe7db5::t_711f7d8f5eac5f 10,42
+docs/public/cs/guides/preview-svelte/index.html
+  s_181f4cfdfe7db5::t_f3a8314623bec7 10,42
+docs/public/cs/guides/quickstart/index.html
+  s_181f4cfdfe7db5::t_c3cf7e4f15d0d2 10,42
+docs/public/cs/guides/radix-features/index.html
+  s_181f4cfdfe7db5::t_715d46deabfb3f 10,42
+docs/public/cs/guides/settings/index.html
+  s_181f4cfdfe7db5::t_35d11bfd1c3232 10,42
+docs/public/cs/guides/transit-computation/index.html
+  s_181f4cfdfe7db5::t_1d8b695c73879a 10,42
+docs/public/cs/index.html
+  s_181f4cfdfe7db5::t_511624584ee956 11,43
+docs/public/cs/manual/charts-and-workspaces/index.html
+  s_181f4cfdfe7db5::t_1d8ecedf35a7fb 10,42
+docs/public/cs/manual/getting-started/index.html
+  s_181f4cfdfe7db5::t_c81fc2069325c5 10,42
+docs/public/cs/manual/settings-and-appearance/index.html
+  s_181f4cfdfe7db5::t_b45eafdc0735a4 10,42,47-51
+docs/public/cs/manual/transits-and-time/index.html
+  s_181f4cfdfe7db5::t_9da7aa11ff5570 10,42
+docs/public/developer/continuation-guide/index.html
+  s_181f4cfdfe7db5::t_42093ae8b081e8 1-8
+docs/public/developer/frontend-gap-implementation-plan/index.html
+  s_181f4cfdfe7db5::t_dc27f733971a43 1-8
+docs/public/developer/house-systems/index.html
+  s_181f4cfdfe7db5::t_50512a579a8b7c 199
+docs/public/developer/specs-workflow/index.html
+  s_181f4cfdfe7db5::t_11bdff10513c3c 1-8
+docs/public/es/guides/index.html
+  s_181f4cfdfe7db5::t_07c5f8087be81e 10,42
+docs/public/es/guides/preview-react/index.html
+  s_181f4cfdfe7db5::t_0620dc8bc851a1 10,42
+docs/public/es/guides/preview-svelte/index.html
+  s_181f4cfdfe7db5::t_b9227eb44867c1 10,42
+docs/public/es/guides/quickstart/index.html
+  s_181f4cfdfe7db5::t_f9f38261bac0c7 10,42
+docs/public/es/guides/radix-features/index.html
+  s_181f4cfdfe7db5::t_ff5324f0bd52e1 10,42
+docs/public/es/guides/settings/index.html
+  s_181f4cfdfe7db5::t_f3e0d5a47dc289 10,42
+docs/public/es/guides/transit-computation/index.html
+  s_181f4cfdfe7db5::t_e6903d9515603f 10,42
+docs/public/es/index.html
+  s_181f4cfdfe7db5::t_7f05aa4d3b7063 11,43
+docs/public/es/manual/chart-views/index.html
+  s_181f4cfdfe7db5::t_d6cfdcb84abf75 10,42
+docs/public/es/manual/charts-and-workspaces/index.html
+  s_181f4cfdfe7db5::t_bd11c95bc3223e 10,42
+docs/public/es/manual/getting-started/index.html
+  s_181f4cfdfe7db5::t_40e897047e28d4 10,42
+docs/public/es/manual/index.html
+  s_181f4cfdfe7db5::t_3b456d4ed0ced4 10,42
+docs/public/es/manual/settings-and-appearance/index.html
+  s_181f4cfdfe7db5::t_636d8179c122ad 10,42,47-51
+docs/public/es/manual/transits-and-time/index.html
+  s_181f4cfdfe7db5::t_4e4be53feb59f1 10,42
+docs/public/fr/guides/index.html
+  s_181f4cfdfe7db5::t_29d283ec6af873 10,42
+docs/public/fr/guides/preview-react/index.html
+  s_181f4cfdfe7db5::t_10081a75803185 10,42
+docs/public/fr/guides/preview-svelte/index.html
+  s_181f4cfdfe7db5::t_f65cb28b388508 10,42
+docs/public/fr/guides/quickstart/index.html
+  s_181f4cfdfe7db5::t_003b9f8c74195e 10,42
+docs/public/fr/guides/radix-features/index.html
+  s_181f4cfdfe7db5::t_e349d9ec8249f4 10,42
+docs/public/fr/guides/settings/index.html
+  s_181f4cfdfe7db5::t_c8b9c8dda1289a 10,42
+docs/public/fr/guides/transit-computation/index.html
+  s_181f4cfdfe7db5::t_5bb96a5ed41d26 10,42
+docs/public/fr/index.html
+  s_181f4cfdfe7db5::t_50dd6749cc0f09 11,43
+docs/public/fr/manual/chart-views/index.html
+  s_181f4cfdfe7db5::t_51c36ecfa75bc6 10,42
+docs/public/fr/manual/charts-and-workspaces/index.html
+  s_181f4cfdfe7db5::t_404e9a31bd37e5 10,42
+docs/public/fr/manual/getting-started/index.html
+  s_181f4cfdfe7db5::t_e55d8ef3ee1361 10,42
+docs/public/fr/manual/index.html
+  s_181f4cfdfe7db5::t_9de35ba3e1db5f 10,42
+docs/public/fr/manual/settings-and-appearance/index.html
+  s_181f4cfdfe7db5::t_eeeb5839a57aa2 10,42,47-51
+docs/public/fr/manual/transits-and-time/index.html
+  s_181f4cfdfe7db5::t_498a47ff9cd5d1 10,42
+docs/public/guides/preview-react/index.html
+  s_181f4cfdfe7db5::t_6ba8503ad32e9e 10,42
+docs/public/guides/preview-svelte/index.html
+  s_181f4cfdfe7db5::t_af25f38ab7e0e7 10,42
+docs/public/guides/radix-features/index.html
+  s_181f4cfdfe7db5::t_c8e8b6373e6901 10,42
+docs/public/guides/settings/index.html
+  s_181f4cfdfe7db5::t_25cbb4650a63e2 10,42
+docs/public/guides/transit-computation/index.html
+  s_181f4cfdfe7db5::t_c6bb8c25df4ca5 10,42
+docs/public/manual/chart-views/index.html
+  s_181f4cfdfe7db5::t_ded723bac4e3e1 10,42
+docs/public/manual/charts-and-workspaces/index.html
+  s_181f4cfdfe7db5::t_0c510b3e63423c 10,42
+docs/public/manual/getting-started/index.html
+  s_181f4cfdfe7db5::t_33826ccd3be6ec 10,42
+docs/public/manual/index.html
+  s_181f4cfdfe7db5::t_dc28f13ff43d4a 10,42
+docs/public/manual/settings-and-appearance/index.html
+  s_181f4cfdfe7db5::t_6a78e63273a824 10,42,48-52,57-60
+docs/public/manual/transits-and-time/index.html
+  s_181f4cfdfe7db5::t_86821e6ed3d6b0 10,42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "466641fc3341faa7428c58be3fb1cd6eaad50dbc",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_181f4cfdfe7db5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1152e-d8ab-72e3-9ad4-959d33612070",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_f5cc6030dbe8d9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57c71ce8-174d-4e65-ab83-c647431d0f54",
+        "model": "claude-opus-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
