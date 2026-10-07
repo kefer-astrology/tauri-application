@@ -7,7 +7,7 @@
     <meta name="description" content="Adjust language, visual identity, objects, aspects, and workspace defaults." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
-    <link rel="stylesheet" href="/css/site.min.3807dba9928968192a06952b7bf4b91e2c520888956e1e98bd3753a67561e3c7.css" integrity="sha256-OAfbqZKJaBkqBpUre/S5HixSCIiVbh6YvTdTpnVh48c=" />
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
   </head>
   <body>
     <div class="shell">
@@ -39,18 +39,25 @@
       <p class="eyebrow">manual</p>
       <h1>Settings and appearance</h1>
       <p class="lede">Adjust language, visual identity, objects, aspects, and workspace defaults.</p>
+      
     </header>
     <div class="prose">
       <p>Open <strong>Settings</strong> from the bottom of the primary sidebar. Its secondary navigation divides the available preferences into focused sections.</p>
 <p>Appearance settings include the four application themes, app-shell icon family, astrology glyph family, element colors, and theme palettes. The compact theme control at the bottom of the primary sidebar provides quick access to the four themes.</p>
 <p>Calculation settings include the default location and timezone, school/model,
-house system, computation engine, observable bodies, aspects, angles, orbs, and
-valid calculation contexts. They may change computed results.</p>
+house system, computation engine, apparent/geometric planet positions,
+observable bodies, aspects, angles, orbs, and valid calculation contexts. Use
+<strong>Apparent</strong> for ordinary astrology; choose <strong>Geometric / true</strong> only when the
+uncorrected instantaneous vector is intentional. These settings may change
+computed results.</p>
 <p>Colors, glyph choices, theme, language, and aspect-line styling are presentation
 settings. They may travel with a workspace, but they do not change computation.
 Workspace defaults affect new work and may cause existing results to be
 refreshed only when a calculation setting changes.</p>
-<p>Language resources are shared by both frontend implementations. Changing the application language changes interface labels; it does not change the stored astronomical values.</p>
+<p>Language resources are shared by both frontend implementations. Changing the application language changes interface labels; it does not change the stored astronomical values. Language and default location live together in one section; language is a picklist of each language&rsquo;s own name.</p>
+<p>The observable-objects picker&rsquo;s fixed-star list includes a quick filter for northern- or southern-sky stars, based on each star&rsquo;s ecliptic latitude. Fixed stars remain for discoverability only until a backend computes them.</p>
+<p>The app-layout section includes a monochromatic (grayscale) view toggle, applied on top of the active theme and palette without changing their stored colors. Degree symbol sets (Sepharial, Charubel) follow the application language, falling back to English where a translation is not yet available.</p>
+<p>The settings sidebar also links to a short biography of Jan Kefer and, at the bottom, a way to support the project.</p>
 
     </div>
   </article>
