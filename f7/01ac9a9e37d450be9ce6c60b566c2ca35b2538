@@ -1,0 +1,32 @@
+src-tauri/src/infrastructure/jpl_backend.rs
+  s_a9ffa81a7a7e40::t_90c48883e9b166 1090-1092,1097,1111-1116,1119-1122,1174,1179-1180
+  s_a9ffa81a7a7e40::t_add12137210474 196-199,201-205,227-236,478-480,482-483,497-499,501-502
+  s_a9ffa81a7a7e40::t_a9fc03fc40e3ab 1093
+  s_a9ffa81a7a7e40::t_64ea0e0ed1b0d9 200,1025-1026,1031-1037,1041-1043,1046-1049
+  s_a9ffa81a7a7e40::t_0e682c31333dfe 1023-1024,1027-1030,1038-1040,1044-1045,1050-1064
+  s_a9ffa81a7a7e40::t_4f496c71e9b0e7 1094-1096,1098-1099
+  s_a9ffa81a7a7e40::t_41a4c2349ec205 1117-1118
+src-tauri/src/lib.rs
+  s_a9ffa81a7a7e40::t_321454fd151f52 18-20,82
+src-tauri/src/commands/ephemeris.rs
+  s_a9ffa81a7a7e40::t_1f7a39b6b2af22 25-34
+src-tauri/src/infrastructure/ephemeris.rs
+  s_a9ffa81a7a7e40::t_5c8d76f85ed6f4 18,469-497
+  s_a9ffa81a7a7e40::t_c099cfadd411d0 498
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f701ac9a9e37d450be9ce6c60b566c2ca35b2538",
+  "prompts": {},
+  "sessions": {
+    "s_a9ffa81a7a7e40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a117e1-ebaf-7601-9b9f-3f2e6c32b266",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
