@@ -1,0 +1,66 @@
+src-tauri/src/commands/workspace.rs
+  s_6702ba0b39b81d::t_0dbb42e397fe3f 849
+src-tauri/src/application/computation.rs
+  s_6702ba0b39b81d::t_fabe0a4e082929 101,107
+src-tauri/src/workspace/models.rs
+  s_6702ba0b39b81d::t_67e8cc439e06f8 917-918
+  s_6702ba0b39b81d::t_3168e0061535d2 104,126-140
+  s_6702ba0b39b81d::t_2d840b77d0b1b3 189,204-218
+  s_6702ba0b39b81d::t_c3ded4bc4700aa 788-792
+  s_6702ba0b39b81d::t_1558308f87972e 141-142
+  s_6702ba0b39b81d::t_be9b345671602f 219-220
+src-tauri/src/domain/astrology.rs
+  s_6702ba0b39b81d::t_26a43b472bb0b2 98-105,110-130,136,157-162,186,225-233,237,269-274,279-290,292,295-296
+  s_6702ba0b39b81d::t_8f237af8bd3f40 1050,1067-1068
+  s_6702ba0b39b81d::t_7011e07394c732 788,793-799,803-809
+  s_6702ba0b39b81d::t_923a05f77ecdd5 11-13
+  s_6702ba0b39b81d::t_27ba066b74f364 928,936,946,959,964-1016,1022-1049,1051-1066,1069-1072
+  s_6702ba0b39b81d::t_b5f8d509ed66db 891,902
+  s_6702ba0b39b81d::t_dc03c8e2dfe56e 845,860-866
+  s_6702ba0b39b81d::t_8025e1e2d2970e 106-109,205-206,1017-1021
+  s_6702ba0b39b81d::t_615ec5febaf880 1073
+src-tauri/src/commands/charts.rs
+  s_6702ba0b39b81d::t_4215de5133ae94 77
+  s_6702ba0b39b81d::t_15f83e02fa2342 33-34
+  s_6702ba0b39b81d::t_8025e1e2d2970e 396-398
+  s_6702ba0b39b81d::t_bd3cf39931e90a 370-395,399-411
+  s_6702ba0b39b81d::t_ffba8076675b90 2-3
+  s_6702ba0b39b81d::t_cef2ad76e4c466 97,103-106
+  s_6702ba0b39b81d::t_a2cb295a4d9664 369
+apps/web-react/src/lib/tauri/types.ts
+  s_6702ba0b39b81d::t_ee867e6cd20ab4 126-144,158,176,198
+src-tauri/src/workspace/settings.rs
+  s_6702ba0b39b81d::t_f9c0ea9def5569 950
+  s_6702ba0b39b81d::t_4bf6d471602d50 849
+  s_6702ba0b39b81d::t_f1fd60b007a1d2 390-392
+src-tauri/src/application/transit.rs
+  s_6702ba0b39b81d::t_b20c7444256c6c 91
+  s_6702ba0b39b81d::t_67e76d156dca2a 115,122
+src-tauri/src/workspace/model_catalog.rs
+  s_6702ba0b39b81d::t_e2678f8e15beaa 600
+src-tauri/src/commands/calculation.rs
+  s_6702ba0b39b81d::t_dd534dfdaa6056 90,97
+apps/web-svelte/src/lib/tauri/types.ts
+  s_6702ba0b39b81d::t_29847ea10a1e1e 85-103,117,135,157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0cc96195b8ba2be0af7a444d0b850364fba10b5d",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_6702ba0b39b81d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42aff9d4-ac5d-4d2f-a954-9e515e6fa90d",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
