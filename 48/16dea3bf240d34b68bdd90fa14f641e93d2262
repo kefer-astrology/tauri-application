@@ -1,0 +1,57 @@
+src-tauri/src/infrastructure/swisseph.rs
+  s_181f4cfdfe7db5::t_914bab65176f07 9
+src-tauri/src/domain/houses.rs
+  s_181f4cfdfe7db5::t_6ffe9ab6190a9e 8
+src-tauri/src/application/chart_resolution.rs
+  s_181f4cfdfe7db5::t_17c7f13a96dd3c 1-5,58-100
+src-tauri/src/infrastructure/jpl_backend.rs
+  s_181f4cfdfe7db5::t_4e6a64b5360409 37-38
+  s_181f4cfdfe7db5::t_6ffe9ab6190a9e 1064
+  s_181f4cfdfe7db5::t_4d6ba163479b5e 1,39
+src-tauri/src/infrastructure/position_provider.rs
+  s_181f4cfdfe7db5::t_32183b87062fdd 1-6,12-13,34-35,71,100,116,128,130,154,157
+  s_181f4cfdfe7db5::t_4e6a64b5360409 79-80,168-173
+src-tauri/src/application/transit.rs
+  s_181f4cfdfe7db5::t_6ffe9ab6190a9e 9
+src-tauri/src/application/mod.rs
+  s_181f4cfdfe7db5::t_17c7f13a96dd3c 6
+src-tauri/src/infrastructure/mod.rs
+  s_181f4cfdfe7db5::t_32183b87062fdd 4-5,7-8
+src-tauri/src/commands/calculation.rs
+  s_181f4cfdfe7db5::t_17c7f13a96dd3c 18,62-65,83,189
+  s_181f4cfdfe7db5::t_6ffe9ab6190a9e 255,270,305
+  s_181f4cfdfe7db5::t_5536093a029953 280-281
+  s_181f4cfdfe7db5::t_540bec420f96f4 190-194
+  s_181f4cfdfe7db5::t_4e6a64b5360409 315-316
+src-tauri/src/commands/transits.rs
+  s_181f4cfdfe7db5::t_540bec420f96f4 213-217,254-256
+  s_181f4cfdfe7db5::t_17c7f13a96dd3c 212,253
+  s_181f4cfdfe7db5::t_6ffe9ab6190a9e 431
+src-tauri/src/commands/charts.rs
+  s_181f4cfdfe7db5::t_17c7f13a96dd3c 1
+src-tauri/src/application/computation.rs
+  s_181f4cfdfe7db5::t_6ffe9ab6190a9e 8,154
+src-tauri/src/commands/workspace.rs
+  s_181f4cfdfe7db5::t_17c7f13a96dd3c 1,60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4816dea3bf240d34b68bdd90fa14f641e93d2262",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_181f4cfdfe7db5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1152e-d8ab-72e3-9ad4-959d33612070",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
