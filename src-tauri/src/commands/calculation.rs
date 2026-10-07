@@ -87,12 +87,14 @@ pub async fn compute_cross_aspects_from_data(
         &chart.config,
         settings_overrides.as_ref(),
     );
+    let object_types = crate::domain::astrology::object_type_map(&report.model.body_definitions);
     Ok(crate::domain::astrology::compute_cross_aspects(
         &transiting_positions,
         &transited_positions,
         &report.model.aspect_definitions,
         &report.effective_settings.aspect_orbs,
         &aspect_types,
+        &object_types,
     ))
 }
 

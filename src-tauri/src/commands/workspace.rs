@@ -846,6 +846,7 @@ mod tests {
                 enabled: Some(false),
                 valid_contexts: None,
                 interpretation_weight: None,
+                object_type_rule: None,
             }],
             aspects: Vec::new(),
             override_orbs: HashMap::new(),

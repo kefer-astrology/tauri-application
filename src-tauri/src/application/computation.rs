@@ -98,11 +98,13 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         selected_bodies,
         &resolved.warnings,
     )?;
+    let object_types = crate::domain::astrology::object_type_map(&resolved.model.body_definitions);
     let aspects = crate::domain::astrology::compute_chart_aspects(
         &computed.positions,
         &resolved.model.aspect_definitions,
         &resolved.settings.aspect_orbs,
         Some(selected_aspects),
+        &object_types,
     );
     let moon_details = crate::lunar_phase::from_position_map(&computed.positions);
     let shapes =

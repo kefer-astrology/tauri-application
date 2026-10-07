@@ -101,7 +101,7 @@ pub struct AnalysisInstance {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum HouseSystem {
     #[serde(rename = "Placidus")]
     Placidus,
@@ -121,6 +121,23 @@ pub enum HouseSystem {
     Porphyry,
     #[serde(rename = "Alcabitius")]
     Alcabitius,
+}
+
+impl HouseSystem {
+    /// Human-readable label matching the serde wire representation.
+    pub fn label(&self) -> &'static str {
+        match self {
+            HouseSystem::Placidus => "Placidus",
+            HouseSystem::WholeSign => "Whole Sign",
+            HouseSystem::Campanus => "Campanus",
+            HouseSystem::Koch => "Koch",
+            HouseSystem::Equal => "Equal",
+            HouseSystem::Regiomontanus => "Regiomontanus",
+            HouseSystem::Vehlow => "Vehlow",
+            HouseSystem::Porphyry => "Porphyry",
+            HouseSystem::Alcabitius => "Alcabitius",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,7 +186,7 @@ pub enum Ayanamsa {
     UserDefined,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ObjectType {
     Planet,
@@ -182,6 +199,23 @@ pub enum ObjectType {
     #[serde(rename = "lunar_node")]
     LunarNode,
     Part,
+}
+
+/// Restricts which object categories an aspect definition may form between.
+///
+/// Mirrors how most astrology engines scope aspect sets (e.g. limiting fixed
+/// stars to conjunction-only, or hard aspects to angles) without hand-listing
+/// individual object ids: the rule is expressed over `ObjectType` categories
+/// and evaluated per candidate pair at aspect-detection time. A `None` object
+/// known only by an id with no catalog `object_type` never satisfies
+/// `OnlyBetween` and is never matched by `Exclude`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode", rename_all = "snake_case")]
+pub enum ObjectTypeRule {
+    /// The aspect never forms when either side belongs to one of these categories.
+    Exclude { types: Vec<ObjectType> },
+    /// The aspect only forms when both sides belong to one of these categories.
+    OnlyBetween { types: Vec<ObjectType> },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -751,6 +785,11 @@ pub struct AspectDefinition {
     pub valid_contexts: Option<Vec<AspectContext>>,
     #[serde(default)]
     pub interpretation_weight: Option<f64>,
+    /// Restricts which object categories this aspect may form between. `None`
+    /// means unrestricted (every pair of selected objects is eligible), which
+    /// matches prior behavior for existing catalogs.
+    #[serde(default)]
+    pub object_type_rule: Option<ObjectTypeRule>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -875,6 +914,8 @@ pub struct OverrideEntry {
     pub valid_contexts: Option<Vec<AspectContext>>,
     #[serde(default)]
     pub interpretation_weight: Option<f64>,
+    #[serde(default)]
+    pub object_type_rule: Option<ObjectTypeRule>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]

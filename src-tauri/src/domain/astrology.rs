@@ -8,7 +8,9 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::workspace::models::{AspectContext, AspectDefinition, BodyDefinition};
+use crate::workspace::models::{
+    AspectContext, AspectDefinition, BodyDefinition, ObjectType, ObjectTypeRule,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BodySelection {
@@ -93,11 +95,45 @@ fn is_structurally_locked_pair(from: &str, to: &str) -> bool {
         .any(|(a, b)| (from == *a && to == *b) || (from == *b && to == *a))
 }
 
+/// Build an id -> category lookup from a model's body catalog, for restricting
+/// which object pairs an aspect definition may apply to via `AspectDefinition
+/// ::object_type_rule`. Bodies without a declared `object_type` are omitted;
+/// a missing entry is treated as "unknown category" by `pair_allowed`, not as
+/// unrestricted.
+pub fn object_type_map(body_definitions: &[BodyDefinition]) -> HashMap<String, ObjectType> {
+    body_definitions
+        .iter()
+        .filter_map(|body| {
+            body.object_type
+                .map(|object_type| (body.id.clone(), object_type))
+        })
+        .collect()
+}
+
+fn pair_allowed(
+    rule: Option<&ObjectTypeRule>,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+) -> bool {
+    match rule {
+        None => true,
+        Some(ObjectTypeRule::Exclude { types }) => {
+            !from_type.is_some_and(|value| types.contains(value))
+                && !to_type.is_some_and(|value| types.contains(value))
+        }
+        Some(ObjectTypeRule::OnlyBetween { types }) => {
+            from_type.is_some_and(|value| types.contains(value))
+                && to_type.is_some_and(|value| types.contains(value))
+        }
+    }
+}
+
 pub fn compute_chart_aspects(
     positions: &HashMap<String, f64>,
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
     aspect_types: Option<&[String]>,
+    object_types: &HashMap<String, ObjectType>,
 ) -> Vec<ComputedAspect> {
     let specs = selected_aspects(
         aspect_definitions,
@@ -118,8 +154,12 @@ pub fn compute_chart_aspects(
                 *positions.get(*from).unwrap_or(&0.0),
                 *positions.get(*to).unwrap_or(&0.0),
             );
-            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(angle, &specs)
-            {
+            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(
+                angle,
+                &specs,
+                object_types.get(*from),
+                object_types.get(*to),
+            ) {
                 aspects.push(ComputedAspect {
                     from: (*from).clone(),
                     to: (*to).clone(),
@@ -143,6 +183,7 @@ pub fn compute_cross_aspects(
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
     aspect_types: &[String],
+    object_types: &HashMap<String, ObjectType>,
 ) -> Vec<ComputedAspect> {
     let specs = selected_aspects(
         aspect_definitions,
@@ -161,7 +202,8 @@ pub fn compute_cross_aspects(
         for to in &transited_ids {
             let to_lon = *transited_positions.get(*to).unwrap_or(&0.0);
             let angle = shortest_arc_deg(from_lon, to_lon);
-            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(angle, &specs)
+            if let Some((aspect_type, exact_angle, orb, allowed_orb)) =
+                detect_aspect(angle, &specs, object_types.get(from), object_types.get(*to))
             {
                 aspects.push(ComputedAspect {
                     from: from.clone(),
@@ -180,12 +222,19 @@ pub fn compute_cross_aspects(
     aspects
 }
 
-fn selected_aspects(
-    aspect_definitions: &[AspectDefinition],
+struct AspectSpec<'a> {
+    id: String,
+    exact_angle: f64,
+    allowed_orb: f64,
+    object_type_rule: Option<&'a ObjectTypeRule>,
+}
+
+fn selected_aspects<'a>(
+    aspect_definitions: &'a [AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
     selected_types: Option<&[String]>,
     context: AspectContext,
-) -> Vec<(String, f64, f64)> {
+) -> Vec<AspectSpec<'a>> {
     let selected: Option<HashSet<String>> = selected_types.map(|types| {
         types
             .iter()
@@ -217,21 +266,34 @@ fn selected_aspects(
                 .copied()
                 .unwrap_or(definition.default_orb)
                 .max(0.0);
-            Some((id, definition.angle, orb))
+            Some(AspectSpec {
+                id,
+                exact_angle: definition.angle,
+                allowed_orb: orb,
+                object_type_rule: definition.object_type_rule.as_ref(),
+            })
         })
         .collect()
 }
 
-fn detect_aspect(angle: f64, specs: &[(String, f64, f64)]) -> Option<(String, f64, f64, f64)> {
-    for (id, exact_angle, allowed_orb) in specs {
-        let normalized_exact = if *exact_angle > 180.0 {
-            360.0 - *exact_angle
+fn detect_aspect(
+    angle: f64,
+    specs: &[AspectSpec],
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+) -> Option<(String, f64, f64, f64)> {
+    for spec in specs {
+        if !pair_allowed(spec.object_type_rule, from_type, to_type) {
+            continue;
+        }
+        let normalized_exact = if spec.exact_angle > 180.0 {
+            360.0 - spec.exact_angle
         } else {
-            *exact_angle
+            spec.exact_angle
         };
         let orb = (angle - normalized_exact).abs();
-        if orb <= *allowed_orb {
-            return Some((id.clone(), *exact_angle, orb, *allowed_orb));
+        if orb <= spec.allowed_orb {
+            return Some((spec.id.clone(), spec.exact_angle, orb, spec.allowed_orb));
         }
     }
     None
@@ -723,17 +785,28 @@ mod tests {
             show_label: None,
             valid_contexts: None,
             interpretation_weight: None,
+            object_type_rule: None,
         }];
         let positions = HashMap::from([("moon".to_string(), 30.75), ("sun".to_string(), 0.0)]);
         let selected = vec!["semisextile".to_string()];
 
-        let without_override =
-            compute_chart_aspects(&positions, &definitions, &HashMap::new(), Some(&selected));
+        let without_override = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &HashMap::new(),
+        );
         assert!(without_override.is_empty());
 
         let effective_orbs = HashMap::from([("semisextile".to_string(), 1.0)]);
-        let with_override =
-            compute_chart_aspects(&positions, &definitions, &effective_orbs, Some(&selected));
+        let with_override = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &effective_orbs,
+            Some(&selected),
+            &HashMap::new(),
+        );
 
         assert_eq!(
             with_override,
@@ -769,6 +842,7 @@ mod tests {
             show_label: None,
             valid_contexts: None,
             interpretation_weight: None,
+            object_type_rule: None,
         }];
         let positions = HashMap::from([
             ("asc".to_string(), 10.0),
@@ -783,8 +857,13 @@ mod tests {
         ]);
         let selected = vec!["opposition".to_string()];
 
-        let aspects =
-            compute_chart_aspects(&positions, &definitions, &HashMap::new(), Some(&selected));
+        let aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &HashMap::new(),
+        );
 
         assert_eq!(aspects.len(), 1);
         assert_eq!(aspects[0].from, "moon");
@@ -809,6 +888,7 @@ mod tests {
             show_label: None,
             valid_contexts: None,
             interpretation_weight: None,
+            object_type_rule: None,
         }];
         let transiting = HashMap::from([("mars".to_string(), 90.0)]);
         let transited = HashMap::from([("sun".to_string(), 0.0)]);
@@ -819,6 +899,7 @@ mod tests {
             &definitions,
             &HashMap::new(),
             &["square".to_string()],
+            &HashMap::new(),
         );
 
         assert_eq!(aspects[0].from, "mars");
@@ -844,6 +925,7 @@ mod tests {
             show_label: None,
             valid_contexts: Some(vec![AspectContext::Transit]),
             interpretation_weight: None,
+            object_type_rule: None,
         };
 
         assert!(compute_chart_aspects(
@@ -851,6 +933,7 @@ mod tests {
             std::slice::from_ref(&definition),
             &HashMap::new(),
             None,
+            &HashMap::new(),
         )
         .is_empty());
         assert_eq!(
@@ -860,6 +943,7 @@ mod tests {
                 std::slice::from_ref(&definition),
                 &HashMap::new(),
                 &["square".to_string()],
+                &HashMap::new(),
             )
             .len(),
             1
@@ -872,8 +956,119 @@ mod tests {
             &[definition],
             &HashMap::new(),
             &["square".to_string()],
+            &HashMap::new(),
         )
         .is_empty());
+    }
+
+    #[test]
+    fn object_type_rule_excludes_configured_categories() {
+        let mut definitions = vec![AspectDefinition {
+            id: "quincunx".to_string(),
+            aspect_type: "minor".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle: 150.0,
+            harmonic: 12,
+            default_orb: 2.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+            interpretation_weight: None,
+            object_type_rule: Some(ObjectTypeRule::Exclude {
+                types: vec![ObjectType::Angle],
+            }),
+        }];
+        let positions = HashMap::from([
+            ("asc".to_string(), 0.0),
+            ("venus".to_string(), 150.0),
+            ("mars".to_string(), 300.0),
+        ]);
+        let object_types = HashMap::from([
+            ("asc".to_string(), ObjectType::Angle),
+            ("venus".to_string(), ObjectType::Planet),
+            ("mars".to_string(), ObjectType::Planet),
+        ]);
+        let selected = vec!["quincunx".to_string()];
+
+        let aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+        );
+
+        assert_eq!(aspects.len(), 1, "aspects: {aspects:?}");
+        assert_eq!(aspects[0].from, "mars");
+        assert_eq!(aspects[0].to, "venus");
+
+        definitions[0].object_type_rule = None;
+        let aspects_without_rule = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+        );
+        assert_eq!(
+            aspects_without_rule.len(),
+            2,
+            "aspects: {aspects_without_rule:?}"
+        );
+    }
+
+    #[test]
+    fn object_type_rule_only_between_restricts_to_listed_categories() {
+        let definitions = vec![AspectDefinition {
+            id: "square".to_string(),
+            aspect_type: "major".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle: 90.0,
+            harmonic: 4,
+            default_orb: 1.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+            interpretation_weight: None,
+            object_type_rule: Some(ObjectTypeRule::OnlyBetween {
+                types: vec![ObjectType::Angle, ObjectType::Planet],
+            }),
+        }];
+        let positions = HashMap::from([
+            ("asc".to_string(), 0.0),
+            ("pallas".to_string(), 90.0),
+            ("mars".to_string(), 90.0),
+        ]);
+        let object_types = HashMap::from([
+            ("asc".to_string(), ObjectType::Angle),
+            ("pallas".to_string(), ObjectType::Asteroid),
+            ("mars".to_string(), ObjectType::Planet),
+        ]);
+        let selected = vec!["square".to_string()];
+
+        let aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+        );
+
+        // asc-pallas is also exactly square, but pallas (Asteroid) is not in
+        // the OnlyBetween allow-list, so only asc-mars (Angle-Planet) matches.
+        assert_eq!(aspects.len(), 1, "aspects: {aspects:?}");
+        assert_eq!(aspects[0].from, "asc");
+        assert_eq!(aspects[0].to, "mars");
     }
 
     #[test]

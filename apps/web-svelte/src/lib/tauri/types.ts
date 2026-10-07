@@ -82,6 +82,25 @@ export interface WorkspaceDefaultsDto {
   aspect_line_tier_style?: AspectLineTierStyleDto | null;
 }
 
+/** Mirrors the Rust `ObjectType` enum (src-tauri/src/workspace/models.rs). */
+export type ObjectTypeId =
+  | 'planet'
+  | 'asteroid'
+  | 'angle'
+  | 'house_cusp'
+  | 'calculated_point'
+  | 'lunar_node'
+  | 'part';
+
+/**
+ * Restricts which object categories an aspect may form between. Mirrors the
+ * Rust `ObjectTypeRule` enum: `exclude` drops a pair if either side belongs
+ * to `types`; `only_between` requires both sides to belong to `types`.
+ */
+export type ObjectTypeRuleDto =
+  | { mode: 'exclude'; types: ObjectTypeId[] }
+  | { mode: 'only_between'; types: ObjectTypeId[] };
+
 export interface ModelOverrideEntryDto {
   id: string;
   glyph?: string | null;
@@ -95,6 +114,7 @@ export interface ModelOverrideEntryDto {
   computed?: boolean | null;
   valid_contexts?: Array<'chart' | 'transit' | 'direction'> | null;
   interpretation_weight?: number | null;
+  object_type_rule?: ObjectTypeRuleDto | null;
 }
 
 export interface ModelOverridesDto {
@@ -112,7 +132,7 @@ export interface BodyDefinitionDto {
   avg_speed: number;
   max_orb: number;
   i18n: Record<string, string>;
-  object_type?: string | null;
+  object_type?: ObjectTypeId | null;
   computation_map: Record<string, string | null>;
   requires_location: boolean;
   requires_house_system: boolean;
@@ -134,6 +154,7 @@ export interface AspectDefinitionDto {
   show_label?: boolean | null;
   valid_contexts?: string[] | null;
   interpretation_weight?: number | null;
+  object_type_rule?: ObjectTypeRuleDto | null;
 }
 
 export interface SignDefinitionDto {

@@ -597,6 +597,7 @@ fn aspect_definition(
         show_label: None,
         valid_contexts: None,
         interpretation_weight: None,
+        object_type_rule: None,
     }
 }
 

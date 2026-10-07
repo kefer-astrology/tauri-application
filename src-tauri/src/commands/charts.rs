@@ -1,5 +1,6 @@
 use crate::application::chart_resolution::{
-    extract_chart_id, upsert_chart_id, validate_chart_instance, validate_chart_payload,
+    enforce_single_project_house_system, extract_chart_id, upsert_chart_id,
+    validate_chart_instance, validate_chart_payload,
 };
 use crate::workspace::loader::find_chart_ref_by_id;
 use crate::workspace::writer::{
@@ -29,7 +30,8 @@ pub async fn create_chart(
     }
 
     upsert_chart_id(&mut chart, &chart_id)?;
-    validate_chart_payload(&chart)?;
+    let parsed = validate_chart_payload(&chart)?;
+    enforce_single_project_house_system(&mut manifest, &parsed)?;
     let rel = chart_relative_path(&chart_id);
     write_chart_yaml(base, &rel, &chart)?;
 
@@ -72,6 +74,7 @@ pub async fn import_chart(workspace_path: String, source_path: String) -> Result
     if find_chart_ref_by_id(base, &manifest, &chart_id)?.is_some() {
         return Err(format!("Chart {} already exists", chart_id));
     }
+    enforce_single_project_house_system(&mut manifest, &chart)?;
 
     let rel = chart_relative_path(&chart_id);
     let chart_json = serde_json::to_value(&chart)
@@ -91,13 +94,16 @@ pub async fn update_chart(
     mut chart: serde_json::Value,
 ) -> Result<String, String> {
     let base = Path::new(&workspace_path);
-    let manifest = load_workspace_manifest(base)?;
+    let mut manifest = load_workspace_manifest(base)?;
 
     let rel = find_chart_ref_by_id(base, &manifest, &chart_id)?
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
 
     upsert_chart_id(&mut chart, &chart_id)?;
-    validate_chart_payload(&chart)?;
+    let parsed = validate_chart_payload(&chart)?;
+    if enforce_single_project_house_system(&mut manifest, &parsed)? {
+        write_workspace_manifest(base, &manifest)?;
+    }
     write_chart_yaml(base, &rel, &chart)?;
     Ok(chart_id)
 }
@@ -358,6 +364,49 @@ mod tests {
             details.pointer("/subject/location/name"),
             Some(&serde_json::json!("Brno, CZ"))
         );
+    }
+
+    #[test]
+    fn create_chart_locks_in_project_house_system_and_rejects_conflicts() {
+        let temp = TestWorkspaceDir::new("chart-house-system-lock");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        tauri::async_runtime::block_on(create_chart(
+            workspace_path_str.clone(),
+            sample_chart_payload("First Chart"),
+        ))
+        .expect("first chart should be created");
+
+        let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
+        assert!(matches!(
+            manifest.default.default_house_system,
+            Some(crate::workspace::models::HouseSystem::Placidus)
+        ));
+
+        let mut conflicting = sample_chart_payload("Second Chart");
+        conflicting["config"]["house_system"] = serde_json::json!("Whole Sign");
+
+        let error =
+            tauri::async_runtime::block_on(create_chart(workspace_path_str.clone(), conflicting))
+                .expect_err("a different house system should be rejected");
+        assert!(
+            error.contains("Placidus") && error.contains("Whole Sign"),
+            "unexpected error message: {error}"
+        );
+
+        // Same house system as the project is still fine.
+        tauri::async_runtime::block_on(create_chart(
+            workspace_path_str,
+            sample_chart_payload("Third Chart"),
+        ))
+        .expect("a chart matching the project's house system should be created");
     }
 
     #[test]

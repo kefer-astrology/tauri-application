@@ -387,6 +387,9 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
             if let Some(weight) = override_entry.interpretation_weight {
                 aspect.interpretation_weight = Some(weight);
             }
+            if let Some(object_type_rule) = &override_entry.object_type_rule {
+                aspect.object_type_rule = Some(object_type_rule.clone());
+            }
         }
     }
 
@@ -843,6 +846,7 @@ mod tests {
                 enabled: None,
                 valid_contexts: None,
                 interpretation_weight: None,
+                object_type_rule: None,
             }],
             override_orbs: HashMap::new(),
         });
@@ -943,6 +947,7 @@ mod tests {
                 enabled: Some(false),
                 valid_contexts: Some(vec![AspectContext::Transit]),
                 interpretation_weight: Some(0.5),
+                object_type_rule: None,
             }],
             override_orbs: HashMap::new(),
         });

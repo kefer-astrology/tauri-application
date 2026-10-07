@@ -88,6 +88,7 @@ pub fn compute_transit_series(
         &resolved.settings.default_bodies,
         Some(&request.transiting_objects),
     );
+    let object_types = crate::domain::astrology::object_type_map(&resolved.model.body_definitions);
     let mut current = request.start;
     let step = Duration::seconds(request.time_step_seconds);
     let mut step_count = 0_i64;
@@ -111,12 +112,14 @@ pub fn compute_transit_series(
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
             &request.aspect_types,
+            &object_types,
         );
         aspects.extend(crate::domain::astrology::compute_chart_aspects(
             &transit.positions,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
             Some(&request.aspect_types),
+            &object_types,
         ));
         results.push(TransitSeriesStep {
             datetime: current.to_rfc3339(),
