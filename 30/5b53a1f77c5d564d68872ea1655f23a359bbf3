@@ -1,0 +1,182 @@
+src-tauri/src/workspace/models.rs
+  s_6702ba0b39b81d::t_33fb084074a997 699-707
+  s_6702ba0b39b81d::t_91f50428b6628b 868-874,877-885
+  s_6702ba0b39b81d::t_19e40757751409 1011-1012
+  s_6702ba0b39b81d::t_8ce137394c5030 296-346
+  s_6702ba0b39b81d::t_b61d19358e45d1 684-698
+  s_6702ba0b39b81d::t_506e68cbeb560b 886
+src-tauri/src/workspace/model_catalog.rs
+  s_6702ba0b39b81d::t_a694ccf9759114 541-546,550-551,554,556-558,560-561,564-568,571
+  s_6702ba0b39b81d::t_ab54c4c544e90b 607
+apps/web-react/src/locales/cs.json
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+src-tauri/src/domain/astrology.rs
+  s_6702ba0b39b81d::t_6bddda475cb164 804,862,909,947
+  s_6702ba0b39b81d::t_a70ad25771d632 13
+  s_6702ba0b39b81d::t_bfbff06bb0af8d 1004
+  s_6702ba0b39b81d::t_a036b42069da3e 1066
+  s_6702ba0b39b81d::t_31d4284e96e712 283,299-303,310-311
+  s_6702ba0b39b81d::t_e6c9738944fc7a 1096-1152
+  s_6702ba0b39b81d::t_e02c48df066e0e 231-238
+  s_6702ba0b39b81d::t_b58ebf8970fa15 1095
+src-tauri/src/workspace/tradition.rs
+  s_6702ba0b39b81d::t_4cba1a8e5fe052 156-159
+  s_6702ba0b39b81d::t_b6f6aa39a01467 1-155,160-199
+apps/web-svelte/src/lib/astrology/aspects.ts
+  s_6702ba0b39b81d::t_732f7593196bc3 1,15-55,74-76
+src-tauri/src/workspace/validation.rs
+  s_6702ba0b39b81d::t_ebcd09afc24d18 225-237
+apps/web-svelte/src/lib/state/layout.svelte.ts
+  s_6702ba0b39b81d::t_ade43560e93740 97-98
+  s_6702ba0b39b81d::t_0462d82d767711 115-117
+  s_6702ba0b39b81d::t_4e97ea68e67811 118
+  s_6702ba0b39b81d::t_a5f1a5080ae3d9 211
+  s_6702ba0b39b81d::t_a554d9518d85f0 12-17
+  s_6702ba0b39b81d::t_955a5d3b9e33fa 199-210
+  s_6702ba0b39b81d::t_781a73ca706138 91-96
+apps/web-react/src/app/App.tsx
+  s_6702ba0b39b81d::t_24a732a5a19a6f 209-217
+  s_6702ba0b39b81d::t_c573a5c9fd1cd4 185
+  s_6702ba0b39b81d::t_5ea489219f2919 218-219
+  s_6702ba0b39b81d::t_aa8237ffc00d1e 173-184
+src-tauri/src/workspace/mod.rs
+  s_6702ba0b39b81d::t_96096309e580f1 8
+apps/web-svelte/src/lib/i18n/cs.json
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+apps/web-react/src/lib/astrology/aspects.ts
+  s_6702ba0b39b81d::t_8a5ea2ef35f4fa 1,15-55
+  s_6702ba0b39b81d::t_91fbce6e78f9ac 74-76
+docs/content/developer/workspace-yaml.md
+  s_6702ba0b39b81d::t_c30a03c731af37 101-105
+  s_6702ba0b39b81d::t_1d9b6f5821f05a 367-372
+  s_6702ba0b39b81d::t_ba2433c3668328 146-186
+apps/web-svelte/src/lib/i18n/es.json
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+translations.csv
+  s_6702ba0b39b81d::t_4f407990d51037 748
+  s_6702ba0b39b81d::t_43ae042a5b0f0f 734-738
+  s_6702ba0b39b81d::t_9656246a6dd0ad 739-747
+apps/web-svelte/src/lib/components/SettingsView.svelte
+  s_6702ba0b39b81d::t_b967ea8f890a96 188-220,224,226
+  s_6702ba0b39b81d::t_1bd4e475db151c 640,642-658,662-663,665-669,671-739,741
+  s_6702ba0b39b81d::t_61d268858b4d6b 251-259
+  s_6702ba0b39b81d::t_5649b62cfed6e9 272,422
+  s_6702ba0b39b81d::t_1bca1ecdd79d6c 86-88
+  s_6702ba0b39b81d::t_98d521db32f662 48-54
+  s_6702ba0b39b81d::t_3f837178b1087f 603-637
+  s_6702ba0b39b81d::t_6a9d32e3f10cf0 320,336-352,357
+  s_6702ba0b39b81d::t_350e7f38de7ced 267,417
+  s_6702ba0b39b81d::t_a6e862f9758b17 37,41-42,44
+  s_6702ba0b39b81d::t_bdb0ae137c71b3 45
+apps/web-react/src/lib/tauri/types.ts
+  s_6702ba0b39b81d::t_cae9e1c7454983 223
+  s_6702ba0b39b81d::t_043155d5015c09 126-129,133-147
+  s_6702ba0b39b81d::t_d97bfdd7dc929f 182
+  s_6702ba0b39b81d::t_005dd55211f470 123-125
+  s_6702ba0b39b81d::t_81e584c996681a 148
+src-tauri/src/workspace/settings.rs
+  s_6702ba0b39b81d::t_15438d2e032f1b 395-397
+  s_6702ba0b39b81d::t_071b8ba3296185 430-432
+  s_6702ba0b39b81d::t_6572cb880c7f1d 816-818
+  s_6702ba0b39b81d::t_eaef94841df158 246
+  s_6702ba0b39b81d::t_de602afa37d9c8 915,1017
+  s_6702ba0b39b81d::t_ffb6c58842e26f 14-16
+  s_6702ba0b39b81d::t_67d81ae2431b96 409-410,420-428,439,441-450,453-464
+  s_6702ba0b39b81d::t_a937e3e2955cdf 411-419,429,433-438,440,451-452
+  s_6702ba0b39b81d::t_6683406a03ab6d 1190-1256
+  s_6702ba0b39b81d::t_9a3159210ba317 819
+apps/web-react/src/locales/es.json
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+apps/web-react/src/app/components/settings-view.tsx
+  s_6702ba0b39b81d::t_bd054da95e29c6 61,65-73
+  s_6702ba0b39b81d::t_276d11b8b44db3 33-39
+  s_6702ba0b39b81d::t_6f8c490cdc8e76 75-109
+  s_6702ba0b39b81d::t_0b0ce738648942 490,508-526,530-533
+  s_6702ba0b39b81d::t_1839ffab900699 757-784
+  s_6702ba0b39b81d::t_0beca5ce8c996f 787,792-804,807,809-810,812-821,824,827-831,833-914,917
+  s_6702ba0b39b81d::t_38c8e506c3ea9e 283,407
+  s_6702ba0b39b81d::t_3ecd55ddd65266 268,270
+  s_6702ba0b39b81d::t_de59de699e10da 251-253
+  s_6702ba0b39b81d::t_6b5c3f052bb7c8 74
+apps/web-react/src/locales/fr.json
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+apps/web-react/src/lib/tauri/workspace.ts
+  s_6702ba0b39b81d::t_7af801d8fec01c 300-302
+  s_6702ba0b39b81d::t_32b336236afb15 327-329
+apps/web-react/src/locales/en.json
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+src-tauri/src/commands/workspace.rs
+  s_6702ba0b39b81d::t_21a10bd56cff4b 360
+  s_6702ba0b39b81d::t_9a3159210ba317 463
+  s_6702ba0b39b81d::t_4cba1a8e5fe052 494-496,1001-1003,1029-1032
+  s_6702ba0b39b81d::t_301ac300ef8d3b 497-499
+  s_6702ba0b39b81d::t_16a0fd98e5fab5 42-46
+  s_6702ba0b39b81d::t_cb1bf50d5af6fa 959-1000,1004-1028,1033-1036
+  s_6702ba0b39b81d::t_27522f7d9bd737 585-593
+  s_6702ba0b39b81d::t_1a0c931c3c5b00 899,1091-1174
+  s_6702ba0b39b81d::t_26ec41c55760a6 141-164
+  s_6702ba0b39b81d::t_5c4fde6ef288a3 37-41,47
+  s_6702ba0b39b81d::t_c26ddfe73ff3c6 594-614
+  s_6702ba0b39b81d::t_59c5c25323100d 1175-1217
+  s_6702ba0b39b81d::t_5d0a91219543cd 1058-1062,1067-1075
+  s_6702ba0b39b81d::t_17c305fb6e8a33 69-78,81-85
+  s_6702ba0b39b81d::t_fd1165ccd0658f 900-921,923-958
+  s_6702ba0b39b81d::t_22ebdcf009a305 460-462
+  s_6702ba0b39b81d::t_f95fe63b7207a1 1037-1057,1063-1066,1076-1090
+  s_6702ba0b39b81d::t_071b8ba3296185 922
+  s_6702ba0b39b81d::t_65847412d1d8cd 357-359
+  s_6702ba0b39b81d::t_de602afa37d9c8 1256
+  s_6702ba0b39b81d::t_487905b4a0f443 137-140
+apps/web-react/src/lib/tauri/chartPayload.ts
+  s_6702ba0b39b81d::t_6420c68cc0981f 280-282
+  s_6702ba0b39b81d::t_f6ed3a36926f80 256-261
+  s_6702ba0b39b81d::t_1196ce2180456f 262-263
+  s_6702ba0b39b81d::t_9d92598bfa894b 4
+  s_6702ba0b39b81d::t_f80f0f747ddb88 283
+apps/web-svelte/src/lib/i18n/en.json
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+apps/web-svelte/src/lib/i18n/fr.json
+  s_6702ba0b39b81d::t_f7ff1794a19476 736-746
+  s_6702ba0b39b81d::t_fd0c6b35138026 731-735
+apps/web-svelte/src/lib/tauri/types.ts
+  s_6702ba0b39b81d::t_7f16cea27218af 82-84
+  s_6702ba0b39b81d::t_01bdc0a0cfa885 141
+  s_6702ba0b39b81d::t_d61e6f74d74d8b 182
+  s_6702ba0b39b81d::t_ae837f0176209e 85-88,92-106
+  s_6702ba0b39b81d::t_abeed59334b6e3 107
+apps/web-svelte/src/lib/tauri/workspace.ts
+  s_6702ba0b39b81d::t_9eb8ddaca5f6b7 52
+  s_6702ba0b39b81d::t_3987e021df4868 81-83
+  s_6702ba0b39b81d::t_f9ff7ff7f9a11c 84
+  s_6702ba0b39b81d::t_2cb123b467bc64 49-51
+docs/public/developer/workspace-yaml/index.html
+  s_6702ba0b39b81d::t_4f4ba93f373e0b 128-132,170-207,348-353
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "305b53a1f77c5d564d68872ea1655f23a359bbf3",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_6702ba0b39b81d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "42aff9d4-ac5d-4d2f-a954-9e515e6fa90d",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
