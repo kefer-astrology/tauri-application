@@ -555,8 +555,32 @@ pub struct TransitSetup {
     pub exact_hits: bool,
     #[serde(default)]
     pub station_events: bool,
+    /// Whether the sampled `results` graph series is computed at all —
+    /// `#[serde(default = "default_true")]` so a setup saved before this
+    /// field existed still behaves exactly as before (the sampled series
+    /// was always computed unconditionally).
+    #[serde(default = "default_true")]
+    pub sampled_series: bool,
+    /// Persisted multi-body configuration searches (Grand Trine, T-square,
+    /// Grand Cross, Yod) — see `application::transit::ConfigurationSearchRequest`.
+    #[serde(default)]
+    pub configuration_requests: Vec<ConfigurationSearchSetup>,
     pub transit_limits: bool,
     pub precession_correction: bool,
+}
+
+/// Persisted form of one `application::transit::ConfigurationSearchRequest`
+/// — kept as its own serializable type here (rather than deriving
+/// `Serialize`/`Deserialize` on the application-layer type itself) for the
+/// same reason `TransitSetup` is a workspace-layer type distinct from
+/// `application::transit::TransitEventSearchRequest`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ConfigurationSearchSetup {
+    pub configuration_id: String,
+    #[serde(default)]
+    pub fixed_roles: Vec<String>,
+    #[serde(default)]
+    pub role_candidates: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

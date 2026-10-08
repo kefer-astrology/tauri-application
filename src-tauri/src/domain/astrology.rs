@@ -238,6 +238,71 @@ fn is_extended_object(object_type: Option<&ObjectType>) -> bool {
     object_type.is_some_and(|value| EXTENDED_ASPECT_OBJECT_TYPES.contains(value))
 }
 
+/// Enabled, context-valid, type-selected aspect ids and their exact angle for
+/// one specific body-type pair — "which aspects would even be considered for
+/// this pair," independent of any particular instantaneous separation (no
+/// orb is applied or returned). This is the same eligibility logic
+/// `compute_chart_aspects`/`compute_cross_aspects` use via `selected_aspects`
+/// + `pair_allowed` internally, exposed so exact-event-time discovery (which
+/// has no "current separation" to test an orb against) can determine exactly
+/// the same set of (aspect, exact_angle) combinations the sampled path would
+/// ever report for this pair, rather than re-deriving selection rules
+/// separately and risking the two silently drifting apart.
+pub fn eligible_aspects_for_pair(
+    aspect_definitions: &[AspectDefinition],
+    aspect_orbs: &HashMap<String, f64>,
+    aspect_types: Option<&[String]>,
+    context: AspectContext,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+) -> Vec<(String, f64)> {
+    selected_aspects(aspect_definitions, aspect_orbs, aspect_types, context)
+        .into_iter()
+        .filter(|spec| pair_allowed(spec.object_type_rule, from_type, to_type))
+        .map(|spec| (spec.id, spec.exact_angle))
+        .collect()
+}
+
+/// Like [`eligible_aspects_for_pair`], but for one already-known aspect id
+/// rather than a selection filter, additionally returning its resolved
+/// allowed orb for this specific pair (including the `extended_orb`
+/// substitution) — exactly the orb a live `detect_aspect` call would use for
+/// this pair. `None` if the aspect is disabled, invalid for `context`, or
+/// excluded for this pair by `object_type_rule`. Exposed for
+/// `application::configuration_search`'s edge-eligibility and orb-interval
+/// lookups, for the same "don't re-derive selection rules separately and
+/// risk drift" reason `eligible_aspects_for_pair` itself was added.
+pub fn eligible_aspect_angle_and_orb(
+    aspect_definitions: &[AspectDefinition],
+    aspect_orbs: &HashMap<String, f64>,
+    aspect_id: &str,
+    context: AspectContext,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+) -> Option<(f64, f64)> {
+    let spec = selected_aspects(aspect_definitions, aspect_orbs, None, context)
+        .into_iter()
+        .find(|spec| spec.id == aspect_id)?;
+    if !pair_allowed(spec.object_type_rule, from_type, to_type) {
+        return None;
+    }
+    let allowed_orb = if is_extended_object(from_type) || is_extended_object(to_type) {
+        spec.extended_orb.unwrap_or(spec.allowed_orb)
+    } else {
+        spec.allowed_orb
+    };
+    Some((spec.exact_angle, allowed_orb))
+}
+
+/// Whether `(from, to)` is excluded from moving-vs-moving aspect detection
+/// because their separation is fixed by definition (see
+/// `STRUCTURALLY_LOCKED_PAIRS`). Exposed so event-time discovery mirrors
+/// `compute_chart_aspects`'s own exclusion instead of silently omitting or
+/// re-deriving it.
+pub fn is_structurally_locked_aspect_pair(from: &str, to: &str) -> bool {
+    is_structurally_locked_pair(from, to)
+}
+
 fn selected_aspects<'a>(
     aspect_definitions: &'a [AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
