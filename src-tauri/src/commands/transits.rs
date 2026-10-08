@@ -433,8 +433,18 @@ mod tests {
         );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
         assert!(result.get("ephemeris_source").is_some());
-        let expected_warnings =
+        let mut expected_warnings =
             crate::workspace::current_model_report(&manifest, Some(&chart.config)).warnings;
+        // The Rust JPL backend always discloses its UT1-as-UTC sidereal-time
+        // approximation (no bundled EOP/ΔUT1 table); `extend_unique` folds the
+        // identical warning from the radix and every transit step into one
+        // entry. See the astronomy coordinate contract's time-pipeline section.
+        if result.get("backend_used") == Some(&serde_json::json!("jpl")) {
+            expected_warnings.push(
+                "ut1_approximated_from_utc: no EOP/ΔUT1 data loaded; sidereal quantities are approximate"
+                    .to_string(),
+            );
+        }
         assert_eq!(
             result.get("warnings"),
             Some(&serde_json::json!(expected_warnings))
@@ -529,5 +539,215 @@ mod tests {
         ))
         .expect("chart should be deleted");
         assert!(!workspace_path.join("transits/Transit_Source.yml").exists());
+    }
+
+    /// Nearest-rank p50/p95 over `samples`. With a small sample count the
+    /// p95 index collapses toward (or onto) the maximum — report `n`
+    /// alongside these numbers rather than presenting them as a
+    /// statistically robust percentile on their own.
+    fn percentiles(
+        mut samples: Vec<std::time::Duration>,
+    ) -> (std::time::Duration, std::time::Duration) {
+        samples.sort_unstable();
+        let p50 = samples[samples.len() / 2];
+        let p95 = samples[(samples.len() * 95 / 100).min(samples.len() - 1)];
+        (p50, p95)
+    }
+
+    /// Representative dense single-body series: 10,000 hourly epochs, one
+    /// transiting body against one natal point, through the full
+    /// `compute_transit_series_rust` application path (workspace load,
+    /// settings resolution, per-step position + cross-aspect detection) —
+    /// not just a raw position-evaluation loop. Verifies the requested body
+    /// actually resolves at every step rather than only timing the call.
+    /// Run with: `cargo test --release --lib dense_single_body_transit_series_benchmark -- --ignored --nocapture`
+    #[test]
+    #[ignore = "diagnostic benchmark; run manually on the target machine"]
+    fn dense_single_body_transit_series_benchmark() {
+        use std::time::Instant;
+
+        const EPOCHS: i64 = 10_000;
+        const STEP_SECONDS: i64 = 3600;
+        // 20, not 5: with n=5 the "p95" index collapses to the sample maximum,
+        // which is not a meaningful tail estimate (see ephemeris-validation.md).
+        const REPETITIONS: u32 = 20;
+
+        let workspace_path = sample_workspace_path();
+        let transiting_objects = vec!["mercury".to_string()];
+        let transited_objects = vec!["sun".to_string()];
+        let aspect_types = vec!["conjunction".to_string()];
+        let start_dt = crate::application::transit::parse_datetime_input("2024-01-01T00:00:00Z")
+            .expect("start should parse");
+        let end_dt = start_dt + chrono::Duration::seconds((EPOCHS - 1) * STEP_SECONDS);
+
+        // Warm-up: exclude workspace/manifest parsing and almanac construction
+        // from the timed samples below.
+        compute_transit_series_rust(
+            &workspace_path,
+            "Base Chart",
+            &start_dt.to_rfc3339(),
+            &end_dt.to_rfc3339(),
+            STEP_SECONDS,
+            &transiting_objects,
+            &transited_objects,
+            &aspect_types,
+            None,
+            None,
+        )
+        .expect("warm-up run should succeed");
+
+        let mut samples = Vec::with_capacity(REPETITIONS as usize);
+        for _ in 0..REPETITIONS {
+            let run_start = Instant::now();
+            let result = compute_transit_series_rust(
+                &workspace_path,
+                "Base Chart",
+                &start_dt.to_rfc3339(),
+                &end_dt.to_rfc3339(),
+                STEP_SECONDS,
+                &transiting_objects,
+                &transited_objects,
+                &aspect_types,
+                None,
+                None,
+            )
+            .expect("dense series should compute");
+            let elapsed = run_start.elapsed();
+
+            let results = result
+                .get("results")
+                .and_then(Value::as_array)
+                .expect("results should be an array");
+            assert_eq!(
+                results.len() as i64,
+                EPOCHS,
+                "expected every requested epoch"
+            );
+            assert!(
+                results.iter().all(|entry| entry
+                    .get("transit_positions")
+                    .and_then(Value::as_object)
+                    .is_some_and(|positions| positions.contains_key("mercury"))),
+                "every epoch must resolve the requested body, not just time the call"
+            );
+
+            samples.push(elapsed);
+        }
+
+        let (p50, p95) = percentiles(samples.clone());
+        let total: std::time::Duration = samples.iter().sum();
+        let throughput = EPOCHS as f64 * REPETITIONS as f64 / total.as_secs_f64();
+        println!(
+            "dense single-body transit series benchmark: epochs={EPOCHS}, step={STEP_SECONDS}s, \
+             repetitions={REPETITIONS}, p50={p50:?}, p95={p95:?}, throughput={throughput:.1} epochs/s"
+        );
+    }
+
+    /// Representative multi-body series: an explicit 1,000-epoch, daily-step
+    /// range with the full classical-planet transiting set (10 bodies) and
+    /// the full default aspect set against two natal points — through the
+    /// same application path as the single-body benchmark above, so the two
+    /// numbers are directly comparable (cost scaling with body count).
+    /// Run with: `cargo test --release --lib multi_body_transit_series_benchmark -- --ignored --nocapture`
+    #[test]
+    #[ignore = "diagnostic benchmark; run manually on the target machine"]
+    fn multi_body_transit_series_benchmark() {
+        use std::time::Instant;
+
+        const EPOCHS: i64 = 1_000;
+        const STEP_SECONDS: i64 = 86_400;
+        // See the single-body benchmark above for why this is 20, not 5.
+        const REPETITIONS: u32 = 20;
+
+        let workspace_path = sample_workspace_path();
+        let transiting_objects: Vec<String> = [
+            "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune",
+            "pluto",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+        let transited_objects = vec!["sun".to_string(), "moon".to_string()];
+        let aspect_types: Vec<String> = [
+            "conjunction",
+            "sextile",
+            "square",
+            "trine",
+            "opposition",
+            "quincunx",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+
+        let start_dt = crate::application::transit::parse_datetime_input("2024-01-01T00:00:00Z")
+            .expect("start should parse");
+        let end_dt = start_dt + chrono::Duration::seconds((EPOCHS - 1) * STEP_SECONDS);
+
+        compute_transit_series_rust(
+            &workspace_path,
+            "Base Chart",
+            &start_dt.to_rfc3339(),
+            &end_dt.to_rfc3339(),
+            STEP_SECONDS,
+            &transiting_objects,
+            &transited_objects,
+            &aspect_types,
+            None,
+            None,
+        )
+        .expect("warm-up run should succeed");
+
+        let mut samples = Vec::with_capacity(REPETITIONS as usize);
+        let mut last_results_len = 0usize;
+        for _ in 0..REPETITIONS {
+            let run_start = Instant::now();
+            let result = compute_transit_series_rust(
+                &workspace_path,
+                "Base Chart",
+                &start_dt.to_rfc3339(),
+                &end_dt.to_rfc3339(),
+                STEP_SECONDS,
+                &transiting_objects,
+                &transited_objects,
+                &aspect_types,
+                None,
+                None,
+            )
+            .expect("multi-body series should compute");
+            let elapsed = run_start.elapsed();
+
+            let results = result
+                .get("results")
+                .and_then(Value::as_array)
+                .expect("results should be an array");
+            assert_eq!(results.len() as i64, EPOCHS);
+            assert!(
+                results.iter().all(|entry| {
+                    entry
+                        .get("transit_positions")
+                        .and_then(Value::as_object)
+                        .is_some_and(|positions| {
+                            transiting_objects
+                                .iter()
+                                .all(|id| positions.contains_key(id))
+                        })
+                }),
+                "every epoch must resolve every requested body"
+            );
+            last_results_len = results.len();
+
+            samples.push(elapsed);
+        }
+
+        let (p50, p95) = percentiles(samples.clone());
+        let total: std::time::Duration = samples.iter().sum();
+        let throughput = EPOCHS as f64 * REPETITIONS as f64 / total.as_secs_f64();
+        println!(
+            "multi-body transit series benchmark: epochs={EPOCHS} (verified {last_results_len}), \
+             bodies={}, step={STEP_SECONDS}s, repetitions={REPETITIONS}, p50={p50:?}, p95={p95:?}, \
+             throughput={throughput:.1} epochs/s",
+            transiting_objects.len()
+        );
     }
 }

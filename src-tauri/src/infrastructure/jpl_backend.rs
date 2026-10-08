@@ -741,6 +741,89 @@ mod tests {
     }
 
     #[test]
+    fn jpl_backend_for_chart_falls_back_to_catalog_when_override_path_is_invalid() {
+        // A nonexistent or non-.bsp override path must not be a hard error: the
+        // documented contract is that `jpl_backend_for_chart` silently falls
+        // through to the normal EphemerisManager-resolved catalog in that case.
+        let chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        let backend = jpl_backend_for_chart(&chart).expect(
+            "an invalid override_ephemeris path should fall back to the catalog, not error",
+        );
+        let data = backend
+            .compute_chart_data(&chart, Some(&vec!["sun".to_string()]))
+            .expect("fallback catalog kernels should still compute");
+        assert!(data.positions.contains_key("sun"));
+    }
+
+    /// Copies `de440s.bsp` alone into a bare temp directory (no sibling
+    /// `pck11.pca`, no bundled asteroid/Chiron kernels) to exercise the
+    /// override path's auxiliary-kernel and partial-coverage semantics: the
+    /// planetary-orientation kernel must still resolve from the bundled
+    /// resource directory, and bodies absent from the lone override file must
+    /// be reported as per-body `_unavailable` warnings, never a hard error.
+    fn isolated_override_bsp_dir() -> std::path::PathBuf {
+        let source = dev_bsp_path("de440s.bsp").expect("bundled de440s.bsp required for this test");
+        let dir = std::env::temp_dir().join(format!(
+            "kefer-jpl-override-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&dir).expect("create isolated override dir");
+        std::fs::copy(&source, dir.join("de440s.bsp")).expect("copy de440s.bsp into isolated dir");
+        dir
+    }
+
+    #[test]
+    fn override_without_sibling_pck_still_loads_bundled_orientation_kernel() {
+        let dir = isolated_override_bsp_dir();
+        let override_path = dir.join("de440s.bsp");
+        assert!(
+            !dir.join("pck11.pca").exists(),
+            "test setup must not have a sibling pck11.pca"
+        );
+
+        let chart = j2000_chart(override_path.to_str().unwrap());
+        let backend = jpl_backend_for_chart(&chart).expect("override path should resolve");
+        let data = backend
+            .compute_chart_data(&chart, Some(&vec!["sun".to_string(), "moon".to_string()]))
+            .expect("compute should succeed using the bundled pck11.pca fallback");
+        assert!(data.positions.contains_key("sun"));
+        assert!(data.positions.contains_key("moon"));
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn override_to_single_kernel_reports_missing_bodies_as_warnings_not_errors() {
+        // The override file supplies only the ten planets + Moon — it does not
+        // "supply every requested object". Chiron (a separate bundled Type 13
+        // SPK) must degrade to a warning, not fail the whole chart.
+        let dir = isolated_override_bsp_dir();
+        let override_path = dir.join("de440s.bsp");
+        let chart = j2000_chart(override_path.to_str().unwrap());
+        let backend = jpl_backend_for_chart(&chart).expect("override path should resolve");
+        let requested = vec!["sun".to_string(), "chiron".to_string()];
+        let data = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .expect("a single-kernel override must not fail the whole chart");
+
+        assert!(data.positions.contains_key("sun"));
+        assert!(!data.positions.contains_key("chiron"));
+        assert!(
+            data.warnings
+                .iter()
+                .any(|warning| warning.starts_with("chiron_unavailable")),
+            "expected a chiron_unavailable warning, got: {:?}",
+            data.warnings
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
     fn earth_mod_transform_changes_more_than_scalar_longitude() {
         // A scalar longitude correction cannot change ecliptic latitude. A full
         // precession rotation generally does, which guards the frame boundary
@@ -1060,6 +1143,360 @@ mod tests {
                     "velocity mismatch for {frame:?} {aberration:?}: analytic={analytic}, fd={reference}");
             }
         }
+    }
+
+    /// Confirms the `retrograde` flag actually flips across a real station,
+    /// not just that `speed < 0.0` is internally consistent with itself. Uses
+    /// `application::event_search::find_stationary_point` to locate a real
+    /// Mercury station (same search exercised by its own dedicated tests),
+    /// then samples the full `compute_chart_data` output immediately before
+    /// and after through the public chart pipeline.
+    #[test]
+    fn retrograde_flag_flips_across_a_real_stationary_point() {
+        let payload = crate::test_support::sample_chart_payload("retrograde-flip-test");
+        let resolved =
+            crate::application::chart_resolution::resolve_standalone_chart(&payload, None)
+                .expect("sample chart should resolve");
+        let start = chrono::DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let end = start + chrono::Duration::days(45);
+        let station = crate::application::event_search::find_stationary_point(
+            &resolved.chart,
+            &resolved.model,
+            "mercury",
+            start,
+            end,
+            chrono::Duration::hours(6),
+        )
+        .expect("search should not error")
+        .expect("expected a Mercury station in this window");
+
+        let sample_at = |at: chrono::DateTime<chrono::Utc>| -> AstronomyMotion {
+            let mut chart = resolved.chart.clone();
+            chart.subject.event_time = Some(at);
+            let backend = jpl_backend_for_chart(&chart).expect("backend should resolve");
+            let data = backend
+                .compute_chart_data(&chart, Some(&vec!["mercury".to_string()]))
+                .expect("compute should succeed");
+            data.motion["mercury"].clone()
+        };
+
+        let before = sample_at(station - chrono::Duration::hours(6));
+        let after = sample_at(station + chrono::Duration::hours(6));
+        assert_ne!(
+            before.retrograde, after.retrograde,
+            "retrograde flag should flip across a real station: before={before:?}, after={after:?}"
+        );
+        assert_eq!(before.retrograde, before.speed < 0.0);
+        assert_eq!(after.retrograde, after.speed < 0.0);
+    }
+
+    /// A fast mover (Moon) genuinely crosses the 0°/360° tropical boundary
+    /// within any ~30-day window. Reuses `find_aspect_exact_time` against a
+    /// fixed target longitude of exactly 0° to locate the real crossing
+    /// (not a synthetic `normalize_deg` unit case), then confirms the
+    /// analytic motion speed stays physically continuous (no spurious
+    /// ~360°/day jump from an unwrapped subtraction) immediately either side
+    /// of the wrap.
+    #[test]
+    fn longitude_wraps_through_zero_degrees_without_a_motion_discontinuity() {
+        let payload = crate::test_support::sample_chart_payload("zero-crossing-test");
+        let resolved =
+            crate::application::chart_resolution::resolve_standalone_chart(&payload, None)
+                .expect("sample chart should resolve");
+        let start = chrono::DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let end = start + chrono::Duration::days(35);
+
+        let crossing = crate::application::event_search::find_aspect_exact_time(
+            &resolved.chart,
+            &resolved.model,
+            "moon",
+            0.0,
+            0.0,
+            start,
+            end,
+            chrono::Duration::hours(6),
+        )
+        .expect("search should not error")
+        .expect("the Moon should cross 0 degrees within 35 days");
+
+        let sample_lon_and_speed = |at: chrono::DateTime<chrono::Utc>| -> (f64, f64) {
+            let mut chart = resolved.chart.clone();
+            chart.subject.event_time = Some(at);
+            let backend = jpl_backend_for_chart(&chart).expect("backend should resolve");
+            let data = backend
+                .compute_chart_data(&chart, Some(&vec!["moon".to_string()]))
+                .expect("compute should succeed");
+            (data.positions["moon"], data.motion["moon"].speed)
+        };
+
+        let (lon_before, speed_before) =
+            sample_lon_and_speed(crossing - chrono::Duration::minutes(30));
+        let (lon_after, speed_after) =
+            sample_lon_and_speed(crossing + chrono::Duration::minutes(30));
+
+        // A genuine wrap: one side reads just under 360, the other just over 0.
+        assert!(
+            lon_before > 300.0 || lon_before < 60.0,
+            "expected a longitude near the 0/360 boundary, got {lon_before}"
+        );
+        assert!(
+            lon_after > 300.0 || lon_after < 60.0,
+            "expected a longitude near the 0/360 boundary, got {lon_after}"
+        );
+        assert!(
+            (lon_before - lon_after).abs() > 90.0,
+            "expected the raw longitude values to straddle the wrap: {lon_before} vs {lon_after}"
+        );
+        // The Moon's true speed is on the order of ~13 deg/day; an unwrapped
+        // subtraction across the 0/360 seam would instead read close to
+        // +/-360 deg/day. A tenfold margin cleanly separates the two.
+        assert!(speed_before.abs() < 20.0, "speed_before={speed_before}");
+        assert!(speed_after.abs() < 20.0, "speed_after={speed_after}");
+        assert!((speed_before - speed_after).abs() < 2.0, "speed should stay continuous across the wrap: before={speed_before}, after={speed_after}");
+    }
+
+    /// The bundled Chiron artifact is stored as two adjacent SPK segments
+    /// (see `ephemeris-validation.md`); samples the real boundary instant
+    /// (read from `spk_summaries`, not hardcoded) a few seconds either side
+    /// and confirms the longitude is continuous across that internal seam —
+    /// Chiron moves ~0.03 deg/day, so any multi-degree jump would indicate a
+    /// broken handoff between segments rather than normal motion.
+    #[test]
+    fn chiron_longitude_is_continuous_across_its_internal_spk_segment_boundary() {
+        use anise::naif::daf::NAIFSummaryRecord;
+
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        let almanac = load_almanac_from_paths(&paths).expect("bundled almanac");
+        let mut summaries = almanac
+            .spk_summaries(20_002_060)
+            .expect("bundled Chiron SPK should have segments");
+        summaries.sort_by(|a, b| a.start_epoch().partial_cmp(&b.start_epoch()).unwrap());
+        assert!(
+            summaries.len() >= 2,
+            "expected multiple segments to exercise a real internal boundary, found {}",
+            summaries.len()
+        );
+        let boundary_et = summaries[0].end_epoch().to_et_seconds();
+        assert!(
+            (summaries[1].start_epoch().to_et_seconds() - boundary_et).abs() < 1.0,
+            "expected the two segments to be contiguous, not a real gap"
+        );
+
+        let sample_lon = |et_seconds: f64| -> f64 {
+            let epoch = Epoch::from_et_seconds(et_seconds);
+            let state = almanac
+                .transform(
+                    Frame::from_ephem_j2000(20_002_060),
+                    EARTH_MOD_FRAME,
+                    epoch,
+                    None,
+                )
+                .expect("transform across the segment boundary should succeed");
+            longitude_from_state(&state, epoch.to_jde_tt_days())
+        };
+
+        let before = sample_lon(boundary_et - 5.0);
+        let after = sample_lon(boundary_et + 5.0);
+        let delta = angular_delta_deg(before, after).abs();
+        assert!(
+            delta < 0.01,
+            "expected a near-zero longitude jump across the segment seam (10s apart), got {delta} deg: before={before}, after={after}"
+        );
+    }
+
+    /// Internal-consistency sanity check (not an independent accuracy proof):
+    /// apparent (CN+S) and geometric positions for the same body/epoch must
+    /// differ by a nonzero but physically small amount. Mars near opposition
+    /// has a light-time of several minutes, which at its orbital speed is an
+    /// arcminute-scale apparent/geometric difference — real, but nowhere near
+    /// a degree.
+    #[test]
+    fn apparent_and_geometric_mars_positions_differ_by_a_small_physical_amount() {
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let almanac = load_almanac_from_paths(&[bsp]).expect("almanac should load");
+        let epoch = Epoch::from_gregorian_utc(2024, 4, 10, 12, 0, 0, 0);
+        let unix_secs = epoch.to_unix_seconds();
+        let jd_tt = epoch.to_jde_tt_days();
+
+        let geometric_state =
+            sample_state(&almanac, MARS_BARYCENTER_J2000, unix_secs, Aberration::NONE)
+                .expect("geometric state");
+        let apparent_state =
+            sample_state(&almanac, MARS_BARYCENTER_J2000, unix_secs, Aberration::CN_S)
+                .expect("apparent state");
+
+        let geometric_lon = longitude_from_state(&geometric_state, jd_tt);
+        let apparent_lon = longitude_from_state(&apparent_state, jd_tt);
+        let delta = angular_delta_deg(geometric_lon, apparent_lon).abs();
+
+        assert!(
+            delta > 1e-4,
+            "expected a nonzero light-time/aberration shift, got {delta} deg"
+        );
+        assert!(
+            delta < 1.0,
+            "expected a sub-degree light-time/aberration shift for Mars, got {delta} deg"
+        );
+    }
+
+    /// An out-of-coverage epoch must degrade to an explicit per-body
+    /// `_unavailable` warning, not a hard error and not any attempt to reach
+    /// a remote ephemeris. Year 3000 falls outside the bundled `de440s.bsp`'s
+    /// measured 1849-2150 coverage (see ephemeris-validation.md), and no
+    /// `de441` supplement is present in this checkout to extend it, so this
+    /// also exercises "missing kernel for this epoch" with only local files
+    /// on the path.
+    #[test]
+    fn out_of_coverage_epoch_produces_explicit_local_warnings_not_an_error() {
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let chart = j2000_chart(bsp.to_str().unwrap());
+        let mut far_future_chart = chart.clone();
+        far_future_chart.subject.event_time =
+            chrono::DateTime::parse_from_rfc3339("3000-01-01T00:00:00Z")
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc));
+        assert!(
+            far_future_chart.subject.event_time.is_some(),
+            "test fixture date should parse"
+        );
+
+        let backend = JplAstronomyBackend::new(vec![bsp]);
+        let requested = vec!["sun".to_string(), "moon".to_string()];
+        let data = backend
+            .compute_chart_data(&far_future_chart, Some(&requested))
+            .expect("an out-of-coverage epoch must not fail the whole chart");
+
+        assert!(
+            !data.positions.contains_key("sun"),
+            "sun should not resolve at an epoch outside loaded coverage"
+        );
+        assert!(
+            data.warnings
+                .iter()
+                .any(|warning| warning.starts_with("sun_unavailable")),
+            "expected an explicit sun_unavailable warning, got: {:?}",
+            data.warnings
+        );
+        assert!(
+            data.warnings
+                .iter()
+                .any(|warning| warning.starts_with("moon_unavailable")),
+            "expected an explicit moon_unavailable warning, got: {:?}",
+            data.warnings
+        );
+    }
+
+    /// An unknown/unsupported body id must also degrade to an explicit local
+    /// diagnostic through the full resolved-chart pipeline (not through the
+    /// bare backend, which only knows its own fixed frame tables), and must
+    /// not attempt any kind of lookup beyond the local body-definition
+    /// catalog.
+    #[test]
+    fn unsupported_body_id_produces_explicit_local_warning_through_resolved_chart() {
+        let payload = crate::test_support::sample_chart_payload("unsupported-body-test");
+        let resolved =
+            crate::application::chart_resolution::resolve_standalone_chart(&payload, None)
+                .expect("sample chart should resolve");
+        let result = crate::application::computation::compute_chart(
+            crate::application::computation::ChartComputeRequest {
+                resolved_chart: resolved,
+                body_ids: Some(vec!["not_a_real_body_id".to_string()]),
+                aspect_types: None,
+            },
+        )
+        .expect("an unsupported body id must not fail the whole chart");
+        assert!(
+            result
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("not_a_real_body_id")),
+            "expected a local diagnostic naming the unsupported body id, got: {:?}",
+            result.warnings
+        );
+    }
+
+    #[derive(serde::Deserialize)]
+    struct HorizonsVectorSample {
+        jd_tdb: f64,
+        x_km: f64,
+        y_km: f64,
+        z_km: f64,
+        vx_km_s: f64,
+        vy_km_s: f64,
+        vz_km_s: f64,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct HorizonsVectorFixture {
+        samples: Vec<HorizonsVectorSample>,
+    }
+
+    /// Independent external reference, fetched from the live JPL Horizons API
+    /// (see `tests/fixtures/horizons/mercury_2024_geocentric.json` for exact
+    /// request parameters and provenance) and saved for offline use. This
+    /// compares the raw J2000/ICRF geocentric state ANISE returns for Mercury
+    /// Barycenter — *before* this backend's own mean-of-date/ecliptic
+    /// rotation — against Horizons' own independently generated geometric
+    /// (VEC_CORR=NONE) state at 23 epochs across Jan-Feb 2024, the same
+    /// window `retrograde_flag_flips_across_a_real_stationary_point` and
+    /// `stationary_point_search_finds_a_real_mercury_station_and_independently_verifies_it`
+    /// search for a station in.
+    #[test]
+    fn mercury_2024_geocentric_state_matches_independent_horizons_fixture() {
+        let fixture_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/horizons/mercury_2024_geocentric.json");
+        let fixture: HorizonsVectorFixture = serde_json::from_str(
+            &std::fs::read_to_string(&fixture_path)
+                .unwrap_or_else(|e| panic!("cannot read {}: {e}", fixture_path.display())),
+        )
+        .expect("fixture should parse");
+        assert_eq!(
+            fixture.samples.len(),
+            23,
+            "expected the full fetched series"
+        );
+
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let almanac = load_almanac_from_paths(&[bsp]).expect("almanac should load");
+
+        let mut max_pos_error_km = 0.0_f64;
+        let mut max_vel_error_km_s = 0.0_f64;
+        for sample in &fixture.samples {
+            let epoch = Epoch::from_jde_tdb(sample.jd_tdb);
+            let state = almanac
+                .transform(MERCURY_J2000, EARTH_J2000, epoch, None)
+                .expect("geometric transform should succeed within de440s coverage");
+            let pos_error = ((state.radius_km.x - sample.x_km).powi(2)
+                + (state.radius_km.y - sample.y_km).powi(2)
+                + (state.radius_km.z - sample.z_km).powi(2))
+            .sqrt();
+            let vel_error = ((state.velocity_km_s.x - sample.vx_km_s).powi(2)
+                + (state.velocity_km_s.y - sample.vy_km_s).powi(2)
+                + (state.velocity_km_s.z - sample.vz_km_s).powi(2))
+            .sqrt();
+            max_pos_error_km = max_pos_error_km.max(pos_error);
+            max_vel_error_km_s = max_vel_error_km_s.max(vel_error);
+        }
+
+        // de440s is JPL's own compact/short re-fit of the DE440 solution;
+        // Horizons here reports DE441 (a related but separately fit
+        // solution). Observed maximum error across these 23 epochs was
+        // ~0.035 km in position and ~4.8e-8 km/s in velocity — these bounds
+        // keep generous margin above that, not tuned to just barely pass.
+        // See ephemeris-validation.md for the full reproducible record.
+        assert!(
+            max_pos_error_km < 1.0,
+            "max position error vs. independent Horizons fixture: {max_pos_error_km} km"
+        );
+        assert!(
+            max_vel_error_km_s < 1e-5,
+            "max velocity error vs. independent Horizons fixture: {max_vel_error_km_s} km/s"
+        );
     }
 
     /// Repeatable direct-SPK benchmark.  This intentionally measures the public chart path,

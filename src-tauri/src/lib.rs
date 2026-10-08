@@ -16,7 +16,8 @@ use commands::charts::{create_chart, delete_chart, get_chart_details, import_cha
 use commands::default::{read, write};
 use commands::dialogs::{open_chart_file_dialog, open_folder_dialog};
 use commands::ephemeris::{
-    download_ephemeris, get_available_bodies, get_loaded_spk_coverage, list_ephemeris_catalog,
+    download_ephemeris, get_available_bodies, get_loaded_spk_coverage, get_usable_coverage,
+    list_ephemeris_catalog,
 };
 use commands::location::{resolve_location, resolve_timezone, search_locations};
 use commands::storage::{
@@ -80,6 +81,7 @@ pub fn run() {
             download_ephemeris,
             get_available_bodies,
             get_loaded_spk_coverage,
+            get_usable_coverage,
             init_storage,
             store_positions,
             query_positions,

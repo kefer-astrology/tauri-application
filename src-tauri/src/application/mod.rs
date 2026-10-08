@@ -6,5 +6,6 @@
 pub mod chart_resolution;
 pub mod computation;
 pub mod compute_router;
+pub mod event_search;
 pub mod location;
 pub mod transit;

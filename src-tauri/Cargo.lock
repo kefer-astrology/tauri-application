@@ -105,6 +105,7 @@ dependencies = [
  "tauri-plugin-log",
  "tauri-plugin-opener",
  "tzf-rs",
+ "zerocopy",
 ]
 
 [[package]]
