@@ -1,0 +1,74 @@
+src-tauri/tests/sample-workspaces/tag-showcase/charts/company-founding.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-80
+src-tauri/tests/sample-workspaces/tag-showcase/transits/bob-natal.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-52
+src-tauri/tests/fixtures/tag-showcase/transits/alice-natal.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-52
+src-tauri/tests/sample-workspaces/tag-showcase/transits/company-founding.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-52
+src-tauri/tests/sample-workspaces/tag-showcase/README.md
+  s_42d4ef0bf34e6a::t_2092633919e32e 3-10,15
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-2,11-14,16-26
+src-tauri/tests/fixtures/tag-showcase/charts/alice-natal.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-31
+src-tauri/tests/fixtures/tag-showcase/README.md
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-2,15-16,18-28
+  s_42d4ef0bf34e6a::t_24ed75ecd61c4b 5-10,14,17
+  s_edee7eb0abc83d::t_1df5b833a19ed3 3-4,13
+  s_42d4ef0bf34e6a::t_a4a65ceeec5198 11-12
+src-tauri/tests/fixtures/tag-showcase/transits/bob-natal.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-52
+src-tauri/tests/fixtures/tag-showcase/workspace.yaml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-132
+src-tauri/tests/fixtures/tag-showcase/charts/company-founding.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-80
+src-tauri/tests/sample-workspaces/tag-showcase/charts/product-launch-election.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-31
+src-tauri/tests/sample-workspaces/tag-showcase/transits/alice-natal.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-52
+src-tauri/tests/fixtures/tag-showcase/charts/bob-natal.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-31
+src-tauri/tests/sample-workspaces/tag-showcase/charts/bob-natal.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-31
+src-tauri/tests/sample-workspaces/tag-showcase/charts/alice-natal.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-31
+src-tauri/tests/fixtures/tag-showcase/charts/product-launch-election.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-31
+src-tauri/tests/sample-workspaces/tag-showcase/charts/contract-horary.yml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-31
+src-tauri/tests/sample-workspaces/tag-showcase/workspace.yaml
+  s_42d4ef0bf34e6a::t_61a0f7cfc2fda2 1-132
+src-tauri/tests/fixtures/tag-showcase/transits/company-founding.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-52
+src-tauri/tests/fixtures/tag-showcase/charts/contract-horary.yml
+  s_edee7eb0abc83d::t_bda28e92ad2eb3 1-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fc32925256d329505d0e84044e5e92c9badbd2bc",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_42d4ef0bf34e6a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54b16683-9b35-40c6-a808-38fccab8c851",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": null
+    },
+    "s_edee7eb0abc83d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c4fa429a-5c98-453f-8500-b973fd635871",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
