@@ -1,0 +1,97 @@
+src-tauri/src/workspace/loader.rs
+  s_edee7eb0abc83d::t_6d5e218c53993b 671-673,675-676
+src-tauri/src/infrastructure/ephemeris.rs
+  s_edee7eb0abc83d::t_5b987c6a9a7a51 16
+  s_edee7eb0abc83d::t_85bb48706e3af5 502-507,509-526,543-547,550-554
+  s_edee7eb0abc83d::t_923f68f8977499 1319-1351
+  s_edee7eb0abc83d::t_3f712c8c3a7894 1421-1423,1425-1427
+  s_edee7eb0abc83d::t_c5370f702a1b95 607-644,646-659,661-666,668,679-688,716,725-727,731,738,745-747,749,770-780,786-793,798
+  s_edee7eb0abc83d::t_fffd1bbf8579ed 508
+  s_edee7eb0abc83d::t_2d020d1859d826 717-721,802-811,1459-1462,1466-1471,1533-1536,1581-1584,1613-1616,1635-1638
+  s_edee7eb0abc83d::t_bd1d3634855139 1312-1318,1352-1374,1450-1458,1463-1465,1472-1474,1480,1485-1507,1512-1521,1523-1532,1537-1554,1568,1575-1579,1604-1612,1617-1634,1639-1655,1787
+  s_edee7eb0abc83d::t_92525ebf792111 760-761,765,768-769
+  s_edee7eb0abc83d::t_7884178105b20f 755
+  s_edee7eb0abc83d::t_d5e7136549264c 1391
+  s_edee7eb0abc83d::t_a04b74b6869ce9 576-606
+  s_edee7eb0abc83d::t_c9cc1198dcadf8 17
+  s_edee7eb0abc83d::t_f6d8bab6af7be7 660
+  s_edee7eb0abc83d::t_6ca2885bd09d22 1375-1388,1390,1392-1420,1424,1428-1449
+  s_edee7eb0abc83d::t_ed0212e697d37f 781-785
+  s_edee7eb0abc83d::t_8bffadde99df5f 1508-1511,1522
+  s_edee7eb0abc83d::t_57f38f8254eef3 1656-1677,1687-1786
+  s_edee7eb0abc83d::t_e2ac2a92281d17 1678-1686
+  s_edee7eb0abc83d::t_b5752056ea4271 564
+  s_edee7eb0abc83d::t_b6f616599c2db6 723,728,734,737,739
+  s_edee7eb0abc83d::t_ffaaa233204b38 695-714
+  s_edee7eb0abc83d::t_bd3d11548d5fc1 1311
+  s_edee7eb0abc83d::t_faed0771f99d81 1389
+  s_edee7eb0abc83d::t_4190d3d272c099 1475-1479,1481-1484
+  s_edee7eb0abc83d::t_758ed02aa82e04 500-501,527-542,548-549,555-563,565-575,645,667,669-678,689-694,715,722,724,729-730,732-733,735-736,748,750-754,756-759,762-764,766-767,794,796-797,799-801,812,814-815
+  s_edee7eb0abc83d::t_a7ca905d0c053f 740-744
+  s_edee7eb0abc83d::t_061bba2c063cb2 795,813
+  s_edee7eb0abc83d::t_dd6c39c209dcd0 1555-1567,1569-1574,1580,1585-1603
+src-tauri/Cargo.toml
+  s_edee7eb0abc83d::t_03aa66206c2e78 35-41
+src-tauri/src/application/event_search.rs
+  s_edee7eb0abc83d::t_2d020d1859d826 227-229,251-254,270-271,325-326,361-372,388-405,413-415,449-457
+  s_edee7eb0abc83d::t_e249dc20ea400f 495-499
+  s_edee7eb0abc83d::t_92d8d6e6519b53 198-206
+  s_edee7eb0abc83d::t_7788d0896cfba9 407,416-422,431-437,439-440,442,446-448,458-464,474-479,484-487,489-494,500-510,512-572
+  s_edee7eb0abc83d::t_ade094e6437e18 408-412,443-445
+  s_edee7eb0abc83d::t_8957baa14f5cf2 511
+  s_edee7eb0abc83d::t_1ed245dc63f00f 223-225,230
+  s_edee7eb0abc83d::t_356563321b16d5 160
+  s_edee7eb0abc83d::t_256a390c149d2f 345-360,373-381
+  s_edee7eb0abc83d::t_a12d356e7678e1 1-159,161-197,207-222,226,231-250,255-269,272-324,327-344,382-387,406,573
+  s_edee7eb0abc83d::t_84599ef5d52584 423-430,438,441,465-473,480-483,488
+src-tauri/src/commands/ephemeris.rs
+  s_edee7eb0abc83d::t_f9f493b3055b28 35-52
+src-tauri/src/application/mod.rs
+  s_edee7eb0abc83d::t_65137c096b06b0 9
+src-tauri/src/application/compute_router.rs
+  s_edee7eb0abc83d::t_693c4a198bcdb0 261-326
+  s_edee7eb0abc83d::t_11d439666f39a7 105-110,118
+  s_edee7eb0abc83d::t_0cdb8c2c1e5b67 131-133,140
+src-tauri/src/infrastructure/jpl_backend.rs
+  s_edee7eb0abc83d::t_9ccb8aedaea29e 1347-1358,1363-1407,1410-1422
+  s_edee7eb0abc83d::t_07a12851fccb26 744-825
+  s_edee7eb0abc83d::t_2d020d1859d826 1236-1239,1272-1273,1293-1298,1326-1331,1338-1341,1458-1462
+  s_edee7eb0abc83d::t_681497bd7ddad7 1408-1409
+  s_edee7eb0abc83d::t_7fbdda74e45045 1493,1497
+  s_edee7eb0abc83d::t_c9284627376858 743,1423-1457,1463-1487,1492,1494-1496,1498-1501
+  s_edee7eb0abc83d::t_274509cddc5dad 1148-1235,1240-1271,1274-1292,1299-1325,1332-1337,1342-1346
+  s_edee7eb0abc83d::t_9bce10ab8eb335 1488-1491
+  s_edee7eb0abc83d::t_a7ca905d0c053f 1359-1362
+src-tauri/src/lib.rs
+  s_edee7eb0abc83d::t_74ce658c8975ce 84
+  s_edee7eb0abc83d::t_47be5404feffa5 19-20
+src-tauri/src/commands/transits.rs
+  s_edee7eb0abc83d::t_20bbc1bc5e399b 543,551-570,574-620,626-658,661-729,735-752
+  s_edee7eb0abc83d::t_8fe26c0f69362a 544-547
+  s_edee7eb0abc83d::t_4578891d929512 571-573,659-660
+  s_edee7eb0abc83d::t_2d020d1859d826 548-550,621-625,730-734
+  s_edee7eb0abc83d::t_5147878d19befa 436,438-447
+src-tauri/Cargo.lock
+  s_edee7eb0abc83d::t_bea67e51324808 108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cfdce05d02cf132f423e081d4a7ff9ad903298b3",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_edee7eb0abc83d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c4fa429a-5c98-453f-8500-b973fd635871",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
