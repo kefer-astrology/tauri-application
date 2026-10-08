@@ -26,6 +26,8 @@
 		"i18n:prune": "python scripts/prune-unused-translations.py",
 		"i18n:prune:dry": "python scripts/prune-unused-translations.py --dry-run",
 		"i18n:sync": "node scripts/csv-to-locales.mjs",
+		"fixtures:tag-showcase:check": "python scripts/sync-tag-showcase-fixture.py --check",
+		"fixtures:tag-showcase:sync": "python scripts/sync-tag-showcase-fixture.py",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
 		"tauri": "tauri",
