@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Vues du thème | Kefer Astrology</title>
@@ -43,13 +43,29 @@
     </header>
     <div class="prose">
       <h2 id="thème">Thème</h2>
-<p>Le tableau de bord Thème est la vue principale du thème. Il combine le thème sélectionné, sa roue, les onglets contextuels et les contrôles utilisés pour l’examiner ou le modifier.</p>
+<p>Le tableau de bord Thème est la vue principale du thème calculé. Sélectionnez
+un thème enregistré, puis utilisez sa roue, les détails des objets et les
+contrôles contextuels pour examiner positions, cuspides, axes et aspects calculés.
+Cliquer un objet ou aspect ouvre son détail, sans modifier le calcul.</p>
+<p>La roue peut afficher l’Ascendant ou 0° du Bélier sur le bord gauche. C’est une
+préférence d’affichage uniquement : elle ne change ni système de maisons ni valeur calculée.</p>
 <h2 id="aspects">Aspects</h2>
-<p>Les aspects comparent les objets observables sélectionnés dans une matrice. Sélectionnez une cellule d’aspect disponible pour en examiner les détails. Les cellules vides doivent être lues comme l’absence d’un aspect calculé, et non comme des données décoratives manquantes.</p>
+<p>L’Aspectarium compare les objets observables sélectionnés dans une matrice ou
+une liste. Ses filtres limitent les aspects calculés du thème. Une cellule ou
+ligne choisie affiche angle exact, orbe et état appliquant/séparant.</p>
+<p>Les cellules vides signifient qu’aucun aspect n’a été calculé avec les réglages
+et orbes du thème. L’Aspectarium peut afficher une superposition temporaire de
+transit, mais ne calcule pas lui-même la géométrie dans le navigateur.</p>
 <h2 id="informations">Informations</h2>
-<p>La vue Informations présente les détails calculés du thème sous une forme orientée rapport. Utilisez-la lorsque les positions exactes et les valeurs associées comptent plus que la roue.</p>
+<p>Informations est actuellement un prototype visuel d’un futur résumé calculé.
+Ses étiquettes, diagrammes et configurations d’exemple ne sont pas encore liés
+au résultat du thème sélectionné. Utilisez Thème et Aspectarium pour les données calculées.</p>
 <h2 id="révolution-et-synastrie">Révolution et synastrie</h2>
-<p>La révolution fournit un flux spécialisé de retour temporel. La synastrie compare deux personnes ou deux thèmes. Certaines parties de ces vues restent en cours de développement actif ; l’interface doit rendre explicites les calculs indisponibles plutôt que de présenter des résultats inventés.</p>
+<p><strong>Révolution</strong> offre actuellement des réglages pour retours solaire, lunaire et
+relatif, mais l’envoi du formulaire ne calcule ni n’enregistre encore un thème de retour.</p>
+<p><strong>Synastrie</strong> permet de choisir ou saisir deux participants et d’enregistrer
+une configuration d’analyse nommée. Cette configuration n’est pas encore un
+rapport de synastrie calculé ni une seconde source de géométrie des aspects.</p>
 
     </div>
   </article>

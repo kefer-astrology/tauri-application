@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="cs">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tranzity a čas | Kefer Astrology</title>
@@ -43,9 +43,40 @@
     </header>
     <div class="prose">
       <p>Otevřete <strong>Tranzity</strong> a porovnejte vybraný radix horoskop s pozicemi pro jiný okamžik. K výběru dostupné operace tranzitu použijte jeho vedlejší navigaci.</p>
-<p><strong>Dynamika</strong> využívá stejnou časově orientovanou část aplikace pro širší postupy pohybu a časových rozsahů. Ovládací prvky rozlišují jediný okamžik od vygenerované časové řady.</p>
-<p>Je-li navigace v čase dostupná, zvolte před krokem vzad nebo vpřed jednotku a množství. Jednotky respektující kalendář, jako jsou měsíce a roky, se uplatňují jako kalendářní změny, nikoli jako pevný počet sekund.</p>
-<p>Vybraný horoskop zůstává referenčním bodem, pokud rozhraní výslovně nezobrazuje dočasný náhled nebo překryv tranzitu.</p>
+<h2 id="výpočet-rozsahu-tranzitů">Výpočet rozsahu tranzitů</h2>
+<ol>
+<li>Jako typ zvolte <strong>Tranzit</strong>. Primární a sekundární direkce jsou viditelné
+jako budoucí práce, ale zatím je nelze vybrat.</li>
+<li>Vyberte zdrojový radix horoskopu. Výpočet tranzitů vyžaduje uložený horoskop.</li>
+<li>Pro jeden aktuální okamžik zvolte <strong>Aktuální</strong>, nebo pro období <strong>Vlastní</strong>
+a zadejte počáteční a koncové datum a čas.</li>
+<li>Vyberte pohybující se objekty, radixové cílové objekty a aspekty.</li>
+<li>Zvolte interval vzorkování grafu a stiskněte <strong>Vypočítat</strong>.</li>
+</ol>
+<p>Vzorkovaný výsledek je řada snímků v daném intervalu. Menší interval vytvoří
+hustší graf či tabulku, ale nezpřesní hledání přesných událostí. Výsledky lze
+zobrazit jako horoskop nebo tabulku; vybraný radix zůstává pevným referenčním bodem.</p>
+<h2 id="přesné-události-stanice-a-konfigurace">Přesné události, stanice a konfigurace</h2>
+<p>Tyto volitelné hledání jsou nezávislé na vzorkování grafu. Pokud potřebujete
+jen je, můžete vypnout <strong>Vzorkovaný výstup grafu</strong>.</p>
+<ul>
+<li><strong>Přesné události</strong> hledají okamžik přesnosti vybraného aspektu.</li>
+<li><strong>Stanice</strong> hledají body obratu přímého a retrográdního pohybu.</li>
+<li><strong>Víceobjektové konfigurace</strong> hledají interval, kdy velký trigon,
+T-kvadratura, Yod nebo velký kříž zůstává v orbu.</li>
+</ul>
+<p>Událost nebo konfiguraci lze otevřít jako horoskop v daném okamžiku. Varování
+nebo neúplný výsledek znamená, že období nemá použitelné pokrytí efemeridami
+nebo že omezené hledání nedokončilo práci; prázdný neúplný seznam není důkazem,
+že se žádná událost nestala.</p>
+<h2 id="současná-omezení">Současná omezení</h2>
+<p>Viditelné volby přechodů domů, přechodů znamení, limitů tranzitu a obecné
+precese jsou zatím vypnuté zástupné prvky. Pole časového pásma také nejsou v
+tomto zobrazení k dispozici. <strong>Dynamika</strong> sdílí časově orientovanou oblast,
+ale primární ani sekundární direkce zatím nezpřístupňuje.</p>
+<p>Je-li jinde v aplikaci dostupná navigace v čase, zvolte před krokem vzad nebo
+vpřed jednotku a množství. Kalendářní jednotky, jako měsíce a roky, se uplatňují
+jako změny kalendáře, nikoli jako pevný počet sekund.</p>
 
     </div>
   </article>

@@ -1,5 +1,5 @@
 ---
-title: 'SPICE backend'
+title: 'SPICE calculation backend'
 description: 'JPL/SPICE backend contract, implementation boundary, and current status.'
 weight: 41
 doc_kind: implementation-reference
@@ -86,34 +86,13 @@ in [Ephemeris manager](../ephemeris-manager/).
 
 ## Coordinate pipeline
 
-For planets, asteroids, the osculating lunar node, and true lunar apogee, the
-backend follows one pipeline:
-
-1. ANISE obtains the Earth-centred state from the loaded SPKs. In the default
-   `apparent` mode it applies converged reception light-time and stellar
-   aberration (`CN+S`); `geometric` mode disables both corrections.
-2. ANISE rotates the complete position/velocity state into Earth mean-of-date
-   (`EARTH_MOD_FRAME`, IAU 2006).
-3. Rust rotates that dated equatorial vector by IAU 2006 mean obliquity into the
-   mean ecliptic of date.
-4. Longitude is extracted and normalized to `[0, 360)`.
-
-This produces apparent mean-tropical longitude by default, or geometric
-mean-tropical longitude when selected. Nutation and a scalar "general
-precession in longitude" are not applied.
-The full frame rotation must precede longitude extraction because precession can
-also change the ecliptic latitude of an inclined vector. See the normative
-[Astronomy coordinate contract](../astronomy-coordinate-contract/).
-
-Longitude speed (`motion`) for these SPK-backed bodies is an analytic
-derivative of that same state vector — the ANISE-returned velocity plus the
-time-dependent mean-obliquity rotation rate — not a finite difference. Finite
-differences remain the production method only for the handful of points
-derived from osculating orbital elements rather than sampled directly from an
-SPK record (true lunar node, true south node, true Lilith), and are also used
-as an independent test-only cross-check of the analytic rate. See the
-[Motion contract](../astronomy-coordinate-contract/#motion-contract) for the
-exact rules and test name.
+The backend implements, but does not redefine, the
+[Astronomy coordinate contract](../astronomy-coordinate-contract/): it obtains
+an Earth-centred state from local SPKs, applies the selected correction, makes
+a three-dimensional dated-frame transformation, then projects to the mean
+ecliptic. The contract is the authoritative source for frames, corrections,
+motion, time, and topocentric limitations; this page owns the code boundary
+that realizes it.
 
 ## Horizons-generated kernels
 
@@ -128,7 +107,9 @@ in-range ANISE state before appending the kernel to the ordinary almanac. The
 bundled Chiron artifact uses this path because native Horizons SPKs currently use
 unsupported Type 21 segments. A successful DAF load alone is never treated as
 proof that a target is queryable. Per-chart Horizons calls remain outside this
-architecture.
+architecture. [Ephemerides and coverage](../ephemeris-manager/#manifest-defined-small-body-spks)
+owns the artifact schema, acceptance checks, and measured Chiron interpolation
+evidence.
 
 What still sits above or beside it:
 

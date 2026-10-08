@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Workspace YAML contract | Kefer Astrology</title>
@@ -352,6 +352,24 @@ ID, not a closed enum. It classifies a model and provides its default model.
 concept from <code>default.astrology_tradition</code> above — that one is a closed enum
 (&ldquo;Škola&rdquo; in the UI) whose job is seeding aspect settings for a well-known
 tradition, not selecting a named model.</p>
+<h2 id="loading-validation-and-runtime-catalog">Loading, validation, and runtime catalog</h2>
+<p><code>create_workspace</code> creates <code>charts/</code>, <code>transits/</code>, and an empty manifest, and
+refuses an existing manifest. <code>save_workspace</code> writes supplied charts as
+<code>charts/&lt;sanitized-id&gt;.yml</code>, preserves other represented manifest fields, and
+updates chart references and optional defaults. These commands currently do
+filesystem work directly.</p>
+<p><code>load_workspace</code> is intentionally tolerant: a parseable manifest is required,
+but unreadable chart or analysis references are skipped and only loaded
+summaries are returned. <code>validate_workspace</code> uses the aggregate loader instead:
+it attempts every referenced kind, retains valid items, and reports structured
+diagnostics for failures. Absolute references and paths escaping the workspace
+root are rejected; a missing or malformed manifest is fatal to both paths.</p>
+<p><code>get_builtin_domain_catalog</code> supplies the startup catalog. On workspace open,
+each frontend requests the resolved model report and catalog without a chart
+ID. A chart-specific catalog can be requested, but neither shell refreshes it
+when chart selection changes. A selected chart can therefore calculate with a
+different resolved model from the catalog currently displayed; this is a known
+frontend propagation gap, not a different resolution rule.</p>
 <h2 id="persisted-transit-intent">Persisted transit intent</h2>
 <p>Transit YAML stores everything needed to repeat the calculation, but never the
 computed positions/aspects:</p>
@@ -375,18 +393,19 @@ computed positions/aspects:</p>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">sign_transitions</span>: <span style="color:#66d9ef">true</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">exact_hits</span>: <span style="color:#66d9ef">true</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">station_events</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">sampled_series</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">configuration_requests</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">configuration_id</span>: <span style="color:#ae81ff">grand_trine</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">fixed_roles</span>: []
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">role_candidates</span>: {}
 </span></span><span style="display:flex;"><span><span style="color:#f92672">transit_limits</span>: <span style="color:#66d9ef">false</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">precession_correction</span>: <span style="color:#66d9ef">true</span>
-</span></span></code></pre></div><p>The source chart supplies subject coordinates and inherited settings. The
-transit file chooses the interval, sampling, moving and target bodies, aspects,
-orbs, and event families. <code>exact_hits</code> and <code>station_events</code> are implemented:
-when either is set, <code>compute_transit_series</code>/<code>compute_transit_series_from_data</code>
-additionally run a genuine adaptive event search (exact aspect-crossing times
-and/or stationary points) over the same interval and return it in a separate
-<code>event_search</code> response field, independent of <code>time_step_seconds</code> — which
-remains purely the sampled-series graph resolution and is never redefined as
-event-time precision. See <a href="../transit-series-contract/#exact-event-search-exacthits--stationevents">transit-series-contract</a>
-for the response shape, supported aspect geometry, and discovery limitations.</p>
+</span></span></code></pre></div><p>The source chart supplies inherited settings; the transit file supplies the
+interval, sampling, selected bodies/aspects, and requested event families.
+<code>sampled_series</code> defaults to true so existing saved setups keep their sampled
+output. Event and configuration behavior, response shape, supported patterns,
+and completeness rules are defined once in the
+<a href="../transit-series-contract/">Transit series contract</a>.</p>
 <h2 id="what-is-intentionally-not-persisted">What is intentionally not persisted</h2>
 <p>Computed longitudes, houses, detected aspects, configurations, and transit
 series are derived cache candidates, not workspace truth. Reopening a workspace

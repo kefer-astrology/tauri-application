@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Transit series contract | Kefer Astrology</title>
@@ -46,6 +46,9 @@
 <p>Use this contract before adding or changing transit-series UI in either frontend.</p>
 <h2 id="related-instant-transit-overlay">Related: instant transit overlay</h2>
 <p>This page covers only the persisted-workspace series path (<code>compute_transit_series</code>). React&rsquo;s Transits view also has a second, previously-undocumented path: an &ldquo;instant&rdquo; overlay for the current moment (or an arbitrary single datetime) that does not require a persisted source chart id. That path computes the transit chart&rsquo;s positions via <code>compute_chart_from_data</code>, then detects cross-chart aspects between those positions and the radix chart&rsquo;s positions via <code>compute_cross_aspects_from_data</code> (see <a href="../tauri-command-contracts/">tauri-command-contracts</a>) — the same Rust aspect-detection geometry <code>compute_transit_series</code> uses, not a client-side reimplementation. Both transit-aspect code paths therefore resolve through Rust; neither frontend duplicates the angle/orb geometry.</p>
+<p><code>compute_transit_series_from_data</code> is the corresponding in-memory caller path.
+It accepts the same sampling/event/configuration options but does not establish a
+second frontend workflow or Python event-search route.</p>
 <h2 id="command">Command</h2>
 <p>Both frontends call the same Tauri command:</p>
 <p><code>compute_transit_series</code></p>
@@ -55,36 +58,50 @@
 <li><code>chartId</code>: persisted source chart id from that workspace</li>
 <li><code>startDatetime</code>: canonical datetime string, preferably RFC3339</li>
 <li><code>endDatetime</code>: canonical datetime string, preferably RFC3339</li>
-<li><code>timeStepSeconds</code>: positive integer step size — this is the sampled-series
-graph resolution only; it has no effect on exact-event search (see below)
-and is never redefined as event-time precision</li>
 <li><code>transitingObjects</code>: object ids to compute for the moving chart</li>
 <li><code>transitedObjects</code>: object ids to compare against the persisted source chart</li>
 <li><code>aspectTypes</code>: aspect ids to include in cross-chart aspect detection</li>
 </ul>
 <p>Optional request fields:</p>
 <ul>
+<li><code>sampledSeries</code> (boolean, default <code>true</code>): whether the sampled <code>results</code>
+graph series is computed at all. A caller that only wants <code>exactHits</code>/
+<code>stationEvents</code>/a configuration search can set this to <code>false</code> and skip
+<code>timeStepSeconds</code> entirely — &ldquo;event discovery&rdquo; and &ldquo;graph sampling&rdquo; are
+independent concepts at this contract&rsquo;s boundary, not just internally.</li>
+<li><code>timeStepSeconds</code>: positive integer step size, <strong>required when
+<code>sampledSeries</code> is true</strong> (the default) and ignored when it is <code>false</code>.
+This is the sampled-series graph resolution only; it has no effect on any
+event or configuration search and is never redefined as event-time
+precision.</li>
 <li><code>exactHits</code> (boolean, default <code>false</code>): also run an exact-event search for
 the requested transiting/transited/aspect combination — see
 <a href="/developer/transit-series-contract/#exact-event-search-exacthits--stationevents">Exact event search</a> below</li>
 <li><code>stationEvents</code> (boolean, default <code>false</code>): also run a stationary-point
 search for each requested transiting body</li>
+<li><code>configurationRequests</code> (array, default <code>[]</code>): also run one or more
+multi-body configuration interval searches — see
+<a href="/developer/transit-series-contract/#multi-body-configuration-search-configurationrequests">Multi-body configuration search</a>
+below</li>
 </ul>
-<p>Both fields are optional specifically so a caller that predates them (neither
-frontend bridge sends them as of this writing) keeps working unchanged — a
-missing field deserializes as &ldquo;not requested,&rdquo; not as a command error.</p>
+<p>All four flags/fields are optional specifically so a caller that predates
+them (neither frontend bridge sends <code>configurationRequests</code>, and only React
+sends <code>exactHits</code>/<code>stationEvents</code>, as of this writing) keeps working
+unchanged — a missing field deserializes as &ldquo;not requested,&rdquo; not as a
+command error.</p>
 <p>Response fields:</p>
 <ul>
 <li><code>source_chart_id</code></li>
 <li><code>time_range.start</code></li>
 <li><code>time_range.end</code></li>
-<li><code>time_step</code></li>
-<li><code>results</code></li>
-<li><code>event_search</code> — always present, even when both <code>exactHits</code> and
-<code>stationEvents</code> are false (in which case it is the cheap, fixed shape
-<code>{ &quot;events&quot;: [], &quot;complete&quot;: true, &quot;warnings&quot;: [] }</code>); see below for its
-shape when either flag is set</li>
-<li>backend provenance fields when available, such as <code>backend_used</code>, <code>fallback_used</code>, <code>ephemeris_source</code>, and <code>warnings</code></li>
+<li><code>time_step</code> — the literal sentinel <code>&quot;n/a&quot;</code> when <code>sampledSeries</code> was <code>false</code>,
+never a rounded or assumed step</li>
+<li><code>results</code> — always <code>[]</code> when <code>sampledSeries</code> was <code>false</code></li>
+<li><code>event_search</code> — always present, even when <code>exactHits</code>, <code>stationEvents</code>,
+and <code>configurationRequests</code> are all false/empty (in which case it is the
+cheap, fixed shape <code>{ &quot;events&quot;: [], &quot;configuration_matches&quot;: [], &quot;complete&quot;: true, &quot;warnings&quot;: [] }</code>);
+see below for its shape otherwise</li>
+<li>backend provenance fields when available, such as <code>backend_used</code>, <code>fallback_used</code>, <code>ephemeris_source</code>, and <code>warnings</code> — populated from one cheap radix lookup even when <code>sampledSeries</code> is <code>false</code>, so the response shape is uniform either way</li>
 </ul>
 <p>Each <code>results</code> entry contains:</p>
 <ul>
@@ -101,26 +118,45 @@ through the Rust event-search module (<code>application::event_search</code> /
 <code>application::transit::compute_transit_events</code>) regardless of which backend
 (Rust or Python) computed the sampled series, since it only needs the
 resolved chart.</p>
-<p><code>event_search</code> shape:</p>
-<ul>
-<li><code>events</code>: a chronologically ordered array (ties broken arbitrarily within
-the same instant); each entry has:
+<p><code>event_search.events</code> shape — a chronologically ordered array (ties broken
+arbitrarily within the same instant); each entry has:</p>
 <ul>
 <li><code>datetime</code>: the exact root-found instant (RFC3339), never rounded to a
 graph sample</li>
-<li><code>kind</code>: <code>&quot;aspect_hit&quot;</code> (with <code>from</code>, <code>to</code>, <code>type</code>, <code>exact_angle</code>) or
-<code>&quot;station&quot;</code> (with <code>body</code>)</li>
+<li><code>kind</code>: <code>&quot;aspect_hit&quot;</code> (with <code>from</code>, <code>to</code>, <code>type</code>, <code>exact_angle</code>, <code>contact</code>,
+<code>confirmed</code>) or <code>&quot;station&quot;</code> (with <code>body</code>, <code>direction_change</code>, <code>confirmed</code>)
+<ul>
+<li><code>contact</code>: <code>&quot;crossing&quot;</code> (the angular offset genuinely passed through
+exact) or <code>&quot;tangential&quot;</code> (it grazed exact and receded without crossing —
+a heuristic, grid-resolution-dependent detection, not a proof of
+exhaustive discovery; see below)</li>
+<li><code>direction_change</code>: <code>&quot;direct_to_retrograde&quot;</code>, <code>&quot;retrograde_to_direct&quot;</code>,
+or <code>&quot;tangential_no_change&quot;</code> (speed grazed zero without actually
+switching direction — same heuristic as <code>contact: &quot;tangential&quot;</code>)</li>
+<li><code>confirmed</code>: independent of <code>contact</code>/<code>direction_change</code> — those
+describe the contact&rsquo;s <em>geometry</em>, <code>confirmed</code> describes detection
+<em>confidence</em>. Always <code>true</code> for <code>contact: &quot;crossing&quot;</code> and for a genuine
+direction change (sign-change-based, never ambiguous). For
+<code>contact: &quot;tangential&quot;</code>/<code>direction_change: &quot;tangential_no_change&quot;</code>,
+<code>false</code> means the refined residual did not actually converge within
+tolerance, or regressed relative to the coarse sample that first
+flagged the candidate (two nearby minima of different depth inside one
+coarse bracket can pull a local refinement toward the shallower one).
+An unconfirmed candidate is still returned, never silently dropped —
+this is how a caller tells a heuristic candidate apart from a verified
+event, rather than only seeing <code>&quot;tangential&quot;</code> either way.</li>
+</ul>
+</li>
 <li><code>motion</code>: per-body <code>{ speed, retrograde }</code> at that exact instant, freshly
 sampled there (never interpolated or reused from a nearby search probe)</li>
 </ul>
-</li>
-<li><code>complete</code>: <code>false</code> if any individual search exhausted its work-limit or
-failed outright (e.g. missing kernel coverage for the requested epoch) —
-a <code>false</code> value means the <code>events</code> array may be partial; it is never
-presented as if it were a complete empty result</li>
-<li><code>warnings</code>: one entry per failed or incomplete sub-search, naming which
-body/pair/aspect it was</li>
-</ul>
+<p><code>event_search.complete</code>/<code>warnings</code>: <code>complete: false</code> if any individual
+search (including any configuration search — see below) exhausted its
+work-limit or failed outright (e.g. missing kernel coverage for the
+requested epoch); <code>events</code>/<code>configuration_matches</code> may then be partial.
+<code>warnings</code> has one entry per failed or incomplete sub-search, naming which
+body/pair/aspect/configuration it was. Never presented as if it were a
+complete empty result.</p>
 <p>Supported aspect geometry — both run whenever <code>exactHits</code> is true, and
 neither silently substitutes for the other:</p>
 <ul>
@@ -134,21 +170,93 @@ appears in both lists</li>
 themselves (alphabetically ordered, structurally-locked pairs such as
 <code>north_node</code>/<code>south_node</code> excluded), mirroring <code>compute_chart_aspects</code></li>
 </ul>
-<p>Discovery is a coarse fixed-step scan (6-hour default step, independent of
-<code>timeStepSeconds</code>) followed by bisection, with a two-tier recursion budget
-to catch hidden and repeated crossings (retrograde loops, multiple events
-inside one coarse step) without unbounded cost. See
-<code>application/event_search.rs</code>&rsquo;s module documentation and
-<a href="../ephemeris-validation/#event-search-stationary-points-and-exact-aspect-times">ephemeris-validation</a>
-for the full discovery-completeness discussion, measured performance, and
-stated limitations (tangential/non-crossing contacts are not resolved as
-events).</p>
+<p>Event discovery is adaptive and independent of graph sampling. Its bounded
+search procedure, tangential-contact heuristic, measured behavior, and known
+limits belong to <a href="../ephemeris-validation/#event-search-stationary-points-and-exact-aspect-times">Validation and performance</a>,
+not this observable contract.</p>
+<h2 id="multi-body-configuration-search-configurationrequests">Multi-body configuration search (<code>configurationRequests</code>)</h2>
+<p>Each entry in <code>configurationRequests</code> is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;configurationId&#34;</span>: <span style="color:#e6db74">&#34;grand_trine&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;fixedRoles&#34;</span>: [],
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;roleCandidates&#34;</span>: {}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ul>
+<li><code>configurationId</code>: one of <code>grand_trine</code>, <code>t_square</code>, <code>yod</code>, <code>grand_cross</code>.
+<strong><code>yod</code> is a new contract-level name for the same geometry this
+codebase&rsquo;s existing single-instant classifier
+(<code>domain::astrology::detect_chart_configurations</code>) and workspace catalog
+already call <code>double_quincunx</code></strong> (two quincunxes plus one sextile) — the
+rename is contract-facing only; the underlying detection logic and
+catalog id are unchanged. An unrecognized id is reported as a warning
+(<code>configuration_unknown_id: ...</code>), not a command error.</li>
+<li><code>fixedRoles</code>: role names (from the pattern&rsquo;s own role list — e.g.
+<code>apex</code>/<code>pole_a</code>/<code>pole_b</code> for <code>t_square</code>) to evaluate against the resolved
+chart&rsquo;s own radix positions instead of resampling them, enabling
+&ldquo;configuration combining moving bodies and fixed radix targets.&rdquo;</li>
+<li><code>roleCandidates</code>: role name → allowed body ids. A role absent from this
+map defaults to the request&rsquo;s own <code>transitingObjects</code> (if not listed in
+<code>fixedRoles</code>) or <code>transitedObjects</code> (if it is).</li>
+</ul>
+<p>Unlike exact-aspect search, a configuration match is a <strong>time interval</strong>,
+not an instant: all constituent aspects merely need to stay within their
+own orb simultaneously, with no requirement that any of them become exact
+at the same moment (or at all) inside that interval. <code>event_search.configuration_matches</code>
+shape — each entry has:</p>
+<ul>
+<li><code>configuration_id</code></li>
+<li><code>participants</code>: <code>[{ role, body_id, is_fixed }]</code></li>
+<li><code>entry</code>/<code>exit</code>: RFC3339 instant, or <code>null</code> if the match was already open
+at the search&rsquo;s own start / still open at its own end</li>
+<li><code>entry_clipped</code>/<code>exit_clipped</code>: <code>null</code> when the corresponding boundary is
+a real found root; <code>&quot;period_start&quot;</code>/<code>&quot;period_end&quot;</code> when it&rsquo;s <code>null</code>
+because the requested period itself cut it off; <code>&quot;missing_coverage&quot;</code> when
+it&rsquo;s <code>null</code> because the underlying search failed for that edge (also
+reflected in <code>event_search.warnings</code>)</li>
+<li><code>constituent_aspects</code>: <code>[{ role_a, role_b, body_a, body_b, aspect_id, exact_angle, allowed_orb, deviation_deg }]</code>,
+evaluated at <code>best_fit</code>&rsquo;s instant when present, else <code>entry</code>, else <code>exit</code>,
+else the request&rsquo;s own period midpoint (the case where the whole
+requested window is inside the match and neither boundary is a real root)</li>
+<li><code>best_fit</code>: <code>{ datetime, max_normalized_deviation }</code> or <code>null</code>. A <strong>local</strong>
+refinement (coarse-grid seed, then a bounded local search around the best
+grid point) minimizing the worst-case normalized deviation
+(<code>|deviation_deg| / allowed_orb</code>) across constituent aspects — not a
+certified global minimum, and never &ldquo;simultaneous exactness&rdquo;: a best-fit
+instant need not have any constituent aspect at exactly 0 degrees.</li>
+</ul>
+<p>Deduplication respects each pattern&rsquo;s actual geometric symmetries (e.g. a
+Grand Trine&rsquo;s three roles are fully interchangeable; a T-square&rsquo;s two
+&ldquo;pole&rdquo; roles are interchangeable with each other but not with <code>apex</code>; a
+Grand Cross&rsquo;s two opposition-pole pairs are each independently flippable
+and swappable with each other) — two role-assignments that are the same
+physical configuration under one of these symmetries produce one match, not
+two, while two assignments that are genuinely different (e.g. a different
+<code>apex</code>) remain distinct matches.</p>
+<p><strong>Scope limitation, not a silent omission:</strong> five configuration ids this
+codebase&rsquo;s existing snapshot classifier already supports — <code>kite</code>,
+<code>mystic_rectangle</code>, <code>hexagram</code>, <code>pentagram</code>, <code>double_biquintile</code> — have no
+interval-search counterpart and cannot be requested via
+<code>configurationRequests</code>; they remain available only through the existing
+single-instant <code>shapes</code>/<code>configurations</code> chart-compute fields. <code>kite</code> and
+<code>hexagram</code> are built by extending an already-found Grand Trine rather than
+a fixed role topology, and <code>pentagram</code> needs a 5-way combinatorial search —
+none fit this feature&rsquo;s &ldquo;N fixed roles, M required pairwise aspects&rdquo; shape
+as cleanly as the four that are implemented.</p>
+<p>Combinatorial growth is bounded two ways, both reported as <code>complete: false</code>
+with a named warning rather than silently truncating: an explicit cap on
+how many role-assignment permutations one search may enumerate, and a
+separate cap on how many matches get a refined <code>best_fit</code> (a fast-moving
+candidate can recur in and out of a pattern&rsquo;s orb many times over a long
+requested period; every occurrence still gets a full result, only the
+refined best-fit instant is capped). See
+<a href="../ephemeris-validation/#multi-body-configuration-search">ephemeris-validation</a>
+for measured performance and the exact limits.</p>
 <h2 id="rules">Rules</h2>
 <ul>
 <li>Transit-series computation is a workspace workflow. It requires a persisted source chart id.</li>
 <li>Frontends must not compute transit series from local-only chart drafts.</li>
 <li><code>startDatetime</code> and <code>endDatetime</code> follow the chart datetime contract.</li>
-<li><code>timeStepSeconds</code> must be greater than <code>0</code>.</li>
+<li><code>timeStepSeconds</code> must be greater than <code>0</code>, and is required when <code>sampledSeries</code> is true (the default); omitting it when <code>sampledSeries</code> is <code>false</code> is not an error.</li>
 <li><code>endDatetime</code> must be greater than or equal to <code>startDatetime</code>.</li>
 <li>Selected transiting bodies, transited bodies, and aspect types must be passed in the command payload.</li>
 <li>Empty body lists may be allowed by the backend as &ldquo;use chart defaults&rdquo;, but frontend controls should send the user&rsquo;s explicit selection when the UI exposes one.</li>
@@ -169,7 +277,7 @@ events).</p>
 <p>Known follow-up work:</p>
 <ul>
 <li><del>share one canonical observable-object selector across both shells</del> — done: React&rsquo;s <code>transiting-bodies</code>/<code>transited-bodies</code> (Transits) and the &ldquo;Observable objects&rdquo; section (Settings) all render the same <code>body-selector.tsx</code> component, backed by the shared <code>OBSERVABLE_OBJECTS</code> catalog (<code>lib/astrology/observableObjects.ts</code>); Svelte&rsquo;s <code>BodySelector.svelte</code> reads the mirrored <code>lib/astrology/observableObjects.ts</code> catalog and is used inline in <code>App.svelte</code> for both the transiting- and transited-bodies pages. Aspectarium&rsquo;s own React selector reads the same catalog too, through its own lighter-weight <code>MultiSelectFilter</code> UI rather than <code>body-selector.tsx</code>.</li>
-<li><strong>Svelte has a working, but minimal, inline Transits flow — not a dedicated Transits view.</strong> <code>App.svelte</code> renders source-chart selection, the shared <code>BodySelector</code> for transiting/transited bodies, inline aspect-type checkboxes, a Calculate button that calls <code>computeTransitSeries</code>, and a capped results table (first 50 rows) — all inline in one large component rather than factored into dedicated components the way React&rsquo;s <code>transits-content.tsx</code>/<code>transits-workspace.tsx</code>/<code>transits-results-dashboard.tsx</code> are. Svelte does <strong>not</strong> have: transit-setup persistence (no <code>saveTransitSetup</code>/<code>loadTransitSetup</code> calls — every Svelte transit computation is ad hoc, nothing survives a reload), the <code>computeTransitSeriesFromData</code> in-memory variant, or any <code>exactHits</code>/<code>stationEvents</code> control — its <code>TransitSeriesRequest</code>/<code>TransitSeriesEntry</code>/<code>TransitSeriesResult</code> types (<code>lib/tauri/types.ts</code>) have no <code>exactHits</code>, <code>stationEvents</code>, <code>motion</code>, or <code>event_search</code> fields at all, so exact-event search is reachable only from React today. Acceptance criteria for closing this gap: factor Svelte&rsquo;s inline flow into dedicated components, add transit-setup persistence, and bring its typed bridge fields up to the current contract (<code>motion</code>, <code>exactHits</code>, <code>stationEvents</code>, <code>event_search</code>).</li>
+<li><strong>Svelte has a working, but minimal, inline Transits flow — not a dedicated Transits view.</strong> <code>App.svelte</code> renders source-chart selection, the shared <code>BodySelector</code> for transiting/transited bodies, inline aspect-type checkboxes, a Calculate button that calls <code>computeTransitSeries</code>, and a capped results table (first 50 rows) — all inline in one large component rather than factored into dedicated components the way React&rsquo;s <code>transits-content.tsx</code>/<code>transits-workspace.tsx</code>/<code>transits-results-dashboard.tsx</code> are. Svelte does <strong>not</strong> have: transit-setup persistence (no <code>saveTransitSetup</code>/<code>loadTransitSetup</code> calls — every Svelte transit computation is ad hoc, nothing survives a reload), the <code>computeTransitSeriesFromData</code> in-memory variant, or any <code>exactHits</code>/<code>stationEvents</code>/<code>configurationRequests</code>/<code>sampledSeries</code> control — its <code>TransitSeriesRequest</code>/<code>TransitSeriesEntry</code>/<code>TransitSeriesResult</code> types (<code>lib/tauri/types.ts</code>) have no <code>exactHits</code>, <code>stationEvents</code>, <code>configurationRequests</code>, <code>sampledSeries</code>, <code>motion</code>, or <code>event_search</code> fields at all, so exact-event search and multi-body configuration search are reachable only from React today. Acceptance criteria for closing this gap: factor Svelte&rsquo;s inline flow into dedicated components, add transit-setup persistence, and bring its typed bridge fields up to the current contract (<code>motion</code>, <code>exactHits</code>, <code>stationEvents</code>, <code>configurationRequests</code>, <code>sampledSeries</code>, <code>event_search</code>).</li>
 <li>share one canonical transit time-step model across both shells</li>
 <li>expose backend provenance in the transit results UI instead of only carrying it in the typed response</li>
 </ul>
@@ -181,8 +289,10 @@ events).</p>
 <li>Changing selected bodies or selected aspects changes the command payload.</li>
 <li>A missing workspace, missing source chart, invalid time range, or unavailable Tauri runtime surfaces as a clear error or disabled action.</li>
 <li>A valid command returns ordered entries with <code>datetime</code>, <code>transit_positions</code>, <code>motion</code>, and <code>aspects</code>, plus a top-level <code>event_search</code> field.</li>
-<li><code>event_search.complete</code> is <code>false</code>, with a matching entry in <code>event_search.warnings</code>, whenever any individual exact-event or station search fails or exhausts its work-limit — never presented as a successful empty result.</li>
-<li>Omitting <code>exactHits</code>/<code>stationEvents</code> entirely (as both current frontend bridges do) behaves identically to passing them as <code>false</code>.</li>
+<li><code>event_search.complete</code> is <code>false</code>, with a matching entry in <code>event_search.warnings</code>, whenever any individual exact-event, station, or configuration search fails or exhausts its work-limit — never presented as a successful empty result.</li>
+<li>Omitting <code>exactHits</code>/<code>stationEvents</code>/<code>configurationRequests</code>/<code>sampledSeries</code> entirely (as every current frontend bridge does for at least some of them) behaves identically to passing <code>false</code>/<code>false</code>/<code>[]</code>/<code>true</code> respectively.</li>
+<li>Setting <code>sampledSeries: false</code> returns <code>results: []</code> and <code>time_step: &quot;n/a&quot;</code> without requiring <code>timeStepSeconds</code>, while still populating backend provenance fields and <code>event_search</code>.</li>
+<li>A <code>configurationRequests</code> entry for <code>grand_trine</code>, <code>t_square</code>, <code>yod</code>, or <code>grand_cross</code> returns matches in <code>event_search.configuration_matches</code> with the documented shape; an unrecognized id surfaces as a warning, not a command error.</li>
 </ul>
 
     </div>

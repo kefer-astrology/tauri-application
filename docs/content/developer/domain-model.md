@@ -8,7 +8,7 @@ authority: informative
 ---
 
 Rust owns runtime astrology semantics. This page defines ownership, not YAML
-fields; see [Rust workspace contract](../rust-workspace-contract/) for lifecycle
+fields; see the [Workspace YAML contract](../workspace-yaml/) for lifecycle
 and [Configuration reference](../configuration-reference/) for user options.
 
 ## Semantic model

@@ -24,6 +24,13 @@ time/location, and transit intent. See the
 model glyph/color fields remain readable during migration but are not the new
 source of truth.
 
+The React wheel-orientation choice (`ascendant` or `aries`) is likewise
+presentation-only: it changes the longitude pinned to the left edge of the
+rendered radix, not house cusps, axes, positions, or aspects. It is currently
+stored under `wheel_orientation` in browser local storage, rather than in
+workspace presentation YAML. The user-facing behavior is documented in
+[Settings and appearance](../../manual/settings-and-appearance/#radix-wheel-orientation).
+
 ## UI View Modes
 
 - **Radix View**: circular chart, houses, aspects (derived).

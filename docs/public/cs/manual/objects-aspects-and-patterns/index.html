@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="cs">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Objekty, aspekty a obrazce horoskopu | Kefer Astrology</title>
+    <meta name="description" content="Vestavěné objekty a aspekty a tvary a konfigurace, které může Kefer zobrazit." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/cs/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/cs/manual/">Manuál</a>
+            <a href="/developer/">Manuál pro vývojáře</a>
+            <a href="/cs/guides/">Průvodci</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/manual/objects-aspects-and-patterns/" >English</a>
+            
+              <a href="/cs/manual/objects-aspects-and-patterns/" aria-current="page">Čeština</a>
+            
+              <a href="/es/manual/objects-aspects-and-patterns/" >Español</a>
+            
+              <a href="/fr/manual/objects-aspects-and-patterns/" >Français</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">manual</p>
+      <h1>Objekty, aspekty a obrazce horoskopu</h1>
+      <p class="lede">Vestavěné objekty a aspekty a tvary a konfigurace, které může Kefer zobrazit.</p>
+      
+    </header>
+    <div class="prose">
+      <p>Tento přehled uvádí vestavěný katalog. Volby v <strong>Nastavení</strong> jsou pro konkrétní
+pracovní prostor a výpočetní jádro konečnou autoritou: objekt může být
+definovaný, ale pro dané datum nedostupný, pokud jej nepokrývá místní jádro efemerid.</p>
+<h2 id="pozorovatelné-objekty">Pozorovatelné objekty</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Skupina</th>
+					<th>Vestavěné objekty</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Světla a planety</td>
+					<td>Slunce, Měsíc, Merkur, Venuše, Mars, Jupiter, Saturn, Uran, Neptun, Pluto</td>
+			</tr>
+			<tr>
+					<td>Osy</td>
+					<td>Ascendent, Medium Coeli, Descendent, Imum Coeli</td>
+			</tr>
+			<tr>
+					<td>Lunární uzly</td>
+					<td>Severní uzel, Jižní uzel, Pravý severní uzel, Pravý jižní uzel</td>
+			</tr>
+			<tr>
+					<td>Vypočtené body a loty</td>
+					<td>Lilith, Pravá Lilith, Vertex, Antivertex, Bod štěstí, Bod ducha</td>
+			</tr>
+			<tr>
+					<td>Asteroidy a kentauři</td>
+					<td>Chiron, Ceres, Pallas, Juno, Vesta, Astraea, Hebe, Iris, Flora, Metis, Hygiea, Parthenope, Victoria, Egeria, Irene, Eunomia, Psyche, Thetis, Melpomene, Fortuna, Massalia</td>
+			</tr>
+	</tbody>
+</table>
+<p>Trasa JPL vypočítá body pouze pro JPL a rozšířený soubor asteroidů, jsou-li
+nutná místní jádra k dispozici. Aplikace při výpočtu horoskopu efemeridy nikdy
+potichu nestahuje. Objekty vybírejte v části
+<a href="../settings-and-appearance/">Nastavení a vzhled</a>.</p>
+<h2 id="dostupné-aspekty">Dostupné aspekty</h2>
+<p>Všechny vestavěné aspekty lze v <strong>Nastavení</strong> zapnout, přiřadit jim orb a
+omezit je podle kategorie objektu. Výchozí sada obsahuje konjunkci, sextil,
+kvadraturu, trigon, kvinkunx a opozici.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Aspekt</th>
+					<th style="text-align: right">Přesný úhel</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Konjunkce</td>
+					<td style="text-align: right">0°</td>
+			</tr>
+			<tr>
+					<td>Semisextil</td>
+					<td style="text-align: right">30°</td>
+			</tr>
+			<tr>
+					<td>Undecim</td>
+					<td style="text-align: right">32,727…°</td>
+			</tr>
+			<tr>
+					<td>Decil</td>
+					<td style="text-align: right">36°</td>
+			</tr>
+			<tr>
+					<td>Novil</td>
+					<td style="text-align: right">40°</td>
+			</tr>
+			<tr>
+					<td>Oktile</td>
+					<td style="text-align: right">45°</td>
+			</tr>
+			<tr>
+					<td>Septil</td>
+					<td style="text-align: right">51,429…°</td>
+			</tr>
+			<tr>
+					<td>Sextil</td>
+					<td style="text-align: right">60°</td>
+			</tr>
+			<tr>
+					<td>Biundecim</td>
+					<td style="text-align: right">65,455…°</td>
+			</tr>
+			<tr>
+					<td>Kvintil</td>
+					<td style="text-align: right">72°</td>
+			</tr>
+			<tr>
+					<td>Binovil</td>
+					<td style="text-align: right">80°</td>
+			</tr>
+			<tr>
+					<td>Triundecim</td>
+					<td style="text-align: right">98,182…°</td>
+			</tr>
+			<tr>
+					<td>Kvadratura</td>
+					<td style="text-align: right">90°</td>
+			</tr>
+			<tr>
+					<td>Biseptil</td>
+					<td style="text-align: right">102,857…°</td>
+			</tr>
+			<tr>
+					<td>Tridecil</td>
+					<td style="text-align: right">108°</td>
+			</tr>
+			<tr>
+					<td>Trigon</td>
+					<td style="text-align: right">120°</td>
+			</tr>
+			<tr>
+					<td>Kvadriundecim</td>
+					<td style="text-align: right">130,909…°</td>
+			</tr>
+			<tr>
+					<td>Trioctile</td>
+					<td style="text-align: right">135°</td>
+			</tr>
+			<tr>
+					<td>Bikvintil</td>
+					<td style="text-align: right">144°</td>
+			</tr>
+			<tr>
+					<td>Kvinkunx</td>
+					<td style="text-align: right">150°</td>
+			</tr>
+			<tr>
+					<td>Triseptil</td>
+					<td style="text-align: right">154,286…°</td>
+			</tr>
+			<tr>
+					<td>Kvadrinovil</td>
+					<td style="text-align: right">160°</td>
+			</tr>
+			<tr>
+					<td>Kvinundecim</td>
+					<td style="text-align: right">163,636…°</td>
+			</tr>
+			<tr>
+					<td>Opozice</td>
+					<td style="text-align: right">180°</td>
+			</tr>
+	</tbody>
+</table>
+<p>Přesný úhel je pevný; orb je nastavitelná tolerance kolem něj. Aspekt se
+zobrazí jen tehdy, když jej povoluje zvolený model, aktivní seznam, pravidlo
+kategorií objektů a výsledný orb.</p>
+<h2 id="školy-a-nastavení-aspektů">Školy a nastavení aspektů</h2>
+<p>Výběr <strong>Škola</strong> v Reactu je předvolba astrologické tradice. Nahradí výchozí
+aktivní aspekty, jejich orby a zahrnutí os; jednotlivé aspekty pak můžete v
+Nastavení upravit. Zatím nemění objekty, systém domů, zodiak, ajanámšu,
+výpočetní jádro ani základní model.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Tradice</th>
+					<th>Aktivní aspekty a výchozí orb</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Helénistická</td>
+					<td>Konjunkce 10°, sextil 8°, kvadratura 9°, trigon 9°, opozice 10°</td>
+			</tr>
+			<tr>
+					<td>Středověká / renesanční tradiční</td>
+					<td>Konjunkce 8°, sextil 6°, kvadratura 7°, trigon 8°, opozice 8°</td>
+			</tr>
+			<tr>
+					<td>Moderní západní</td>
+					<td>Konjunkce 8°, sextil 5°, kvadratura 6°, trigon 6°, kvinkunx 2°, semisextil 1°, opozice 8°</td>
+			</tr>
+			<tr>
+					<td>Harmonická / vibrační</td>
+					<td>Všechny vestavěné aspekty; katalogový orb každého z nich (0,5°–8°)</td>
+			</tr>
+			<tr>
+					<td>Kosmobiologie</td>
+					<td>Konjunkce, oktile, kvadratura, trioctile, opozice — po 2°</td>
+			</tr>
+			<tr>
+					<td>Uranská / Hamburská</td>
+					<td>Konjunkce, oktile, kvadratura, trioctile, opozice — po 1,5°</td>
+			</tr>
+			<tr>
+					<td>Jyotish — Parāśari</td>
+					<td>Konjunkce 8°, sextil 5°, kvadratura 6°, trigon 6°, opozice 8°</td>
+			</tr>
+	</tbody>
+</table>
+<p>Ve formátu pracovního prostoru existuje druhý, samostatný pojem <strong>aktivní
+škola</strong>: pojmenovává uživatelsky definovanou školu a vybírá její výchozí model.
+Není omezen na těchto sedm tradic a automaticky neslučuje nastavení z <code>extends</code>.</p>
+<h2 id="tvary-a-konfigurace-horoskopu">Tvary a konfigurace horoskopu</h2>
+<p>Vypočtené obrazce může uvádět Aspektárium. Informace, včetně prototypu Spektrum,
+zatím nepoužívají vypočtený výsledek vybraného horoskopu. Obrazce popisují
+horoskop ve vypočteném okamžiku, nejde o další objekty ani volby výpočtu.</p>
+<p><strong>Distribuční tvary:</strong> Svazek, Mísa, Lokomotiva, Vědro, Houpačka, Rozstřik,
+Rozptyl, Posunutý střed a Stelium. Detekce používá deset klasických těles
+(Slunce až Pluto) a vyžaduje alespoň sedm z nich.</p>
+<p><strong>Aspektové konfigurace:</strong> T-kvadratura, Velký trigon, Velký kříž, Drak,
+Mystický obdélník, Dvojitý kvinkunx, Dvojitý bikvintil, Hexagram a Pentagram.
+Při tranzitech se pro geometrii dvou kvinkunxů a sextilu používá název <strong>Yod</strong>;
+ve snímku horoskopu se tatáž geometrie nazývá <strong>Dvojitý kvinkunx</strong>.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

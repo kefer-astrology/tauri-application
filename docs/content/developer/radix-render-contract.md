@@ -58,6 +58,7 @@ The frontend radix view should render from computed chart output, not from hardc
 - `configurations`: array of aspect-pattern ids (`t_square`, `t_square_<modality>`, `grand_trine`, `grand_trine_<element>`, `grand_cross`, `grand_cross_<modality>`, `kite`, `kite_<element>`, `mystic_rectangle`, `double_quincunx`, `double_biquintile`, `hexagram`, `pentagram`), derived from the same 10 bodies and the computed `aspects`.
 - Computed once in Rust (`detect_chart_shapes`/`detect_chart_configurations` in `domain/astrology.rs`) and shared by every compute route — including the Python route, which gets them injected from its own `positions`/`house_cusps`/`aspects` response fields — so frontends never need to re-derive them.
 - `shapes` requires at least 7 of the 10 classical bodies present in `positions`; otherwise it is empty. `configurations` has no such minimum — it simply finds no matching pattern among however many of the 10 are present.
+- This is a single-instant snapshot classifier (flat ids, no participant list, no time dimension), distinct from the time-aware `configuration_requests`/`event_search.configuration_matches` interval search on `compute_transit_series` — see [transit-series-contract](../transit-series-contract/#multi-body-configuration-search-configurationrequests). The two are independent implementations over the same four overlapping pattern names (`grand_trine`/`t_square`/`grand_cross`, plus `double_quincunx` here vs. `yod` there for the identical geometry); neither calls the other.
 
 ## Support rule
 

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Vistas de carta | Kefer Astrology</title>
@@ -43,13 +43,29 @@
     </header>
     <div class="prose">
       <h2 id="carta-natal">Carta natal</h2>
-<p>El panel de carta natal es la vista principal de la carta. Combina la carta seleccionada, su rueda, las pestañas de contexto y los controles utilizados para inspeccionarla o editarla.</p>
+<p>El panel de carta natal es la vista principal de la carta calculada. Seleccione
+una carta guardada y use su rueda, detalles de objetos y controles de contexto
+para inspeccionar posiciones, cúspides, ejes y aspectos calculados. Pulsar un
+objeto o aspecto abre su detalle disponible, pero no cambia el cálculo.</p>
+<p>La rueda puede mostrar el Ascendente o 0° de Aries en el borde izquierdo. Es
+solo una preferencia de presentación; no cambia el sistema de casas ni valores calculados.</p>
 <h2 id="aspectos">Aspectos</h2>
-<p>Los aspectos comparan los objetos observables seleccionados en una matriz. Seleccione una celda de aspecto disponible para inspeccionar sus detalles. Las celdas vacías deben interpretarse como la ausencia de un aspecto calculado, no como datos decorativos faltantes.</p>
+<p>El aspectario compara objetos observables seleccionados en una matriz o lista.
+Use los filtros de objetos y aspectos para limitar los aspectos calculados de la
+carta. Una celda o fila muestra ángulo exacto, orbe y estado aplicativo/separativo.</p>
+<p>Las celdas vacías significan que no se calculó un aspecto con los ajustes y
+orbes de la carta. El aspectario puede mostrar una superposición temporal de
+tránsito, pero no calcula la geometría de aspectos en el navegador.</p>
 <h2 id="información">Información</h2>
-<p>La vista de información presenta los detalles calculados de la carta en un formato orientado a informes. Úsela cuando las posiciones exactas y los valores relacionados importen más que la rueda.</p>
+<p>Información es actualmente un prototipo visual de un futuro resumen calculado.
+Sus etiquetas, diagramas y configuraciones de ejemplo aún no se vinculan al
+resultado de la carta seleccionada. Use Carta natal y Aspectos para datos calculados.</p>
 <h2 id="revolución-y-sinastría">Revolución y sinastría</h2>
-<p>La revolución ofrece un flujo de trabajo especializado de retorno temporal. La sinastría compara dos personas o cartas. Algunas partes de estas vistas siguen en desarrollo activo; la interfaz debe dejar explícitos los cálculos no disponibles en lugar de presentar resultados inventados.</p>
+<p><strong>Revolución</strong> ofrece actualmente controles para retornos solares, lunares y
+relativos, pero enviar el formulario aún no calcula ni guarda una carta de retorno.</p>
+<p><strong>Sinastría</strong> permite elegir o introducir dos participantes y guardar una
+configuración de análisis con nombre. Esa configuración aún no es un informe
+de sinastría calculado ni una segunda fuente de geometría de aspectos.</p>
 
     </div>
   </article>

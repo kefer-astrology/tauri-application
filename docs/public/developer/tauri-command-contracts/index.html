@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tauri command contracts | Kefer Astrology</title>
@@ -295,52 +295,16 @@ path. The chart layer overrides the preset layer.</li>
 normal backend selection, and fallback preserves the same layers.</li>
 </ul>
 <h3 id="compute_transit_series---resultvalue-string"><code>compute_transit_series(...) -&gt; Result&lt;Value, String&gt;</code></h3>
-<p>Inputs:</p>
-<ul>
-<li><code>workspace_path</code></li>
-<li><code>chart_id</code></li>
-<li><code>start_datetime</code></li>
-<li><code>end_datetime</code></li>
-<li><code>time_step_seconds</code></li>
-<li><code>transiting_objects</code></li>
-<li><code>transited_objects</code></li>
-<li><code>aspect_types</code></li>
-<li>optional <code>exact_hits</code> (boolean, default <code>false</code> when omitted)</li>
-<li>optional <code>station_events</code> (boolean, default <code>false</code> when omitted)</li>
-<li>optional <code>preset_id</code></li>
-<li>optional <code>settings_overrides</code></li>
-</ul>
-<p>Behavior:</p>
-<ul>
-<li><code>time_step_seconds</code> must be greater than <code>0</code>. It governs only the sampled
-<code>results</code> step; it has no effect on <code>exact_hits</code>/<code>station_events</code> and is
-never redefined as event-time precision.</li>
-<li><code>end_datetime</code> must be greater than or equal to <code>start_datetime</code>.</li>
-<li>Rust mode enforces a hard cap of <code>50_000</code> generated steps.</li>
-<li>Returns a response with <code>source_chart_id</code>, <code>time_range</code>, <code>time_step</code>, <code>results</code>, <code>event_search</code>, and backend provenance fields.</li>
-<li>Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.</li>
-<li>Preset and operation settings use the same precedence and temporary Rust-only
-routing described for <code>compute_chart</code>.</li>
-<li><code>exact_hits</code>/<code>station_events</code> always run the exact-event search locally
-through the Rust event-search module, independently of whether the sampled
-<code>results</code> were computed by Rust or Python — the Python sidecar has no event-
-search endpoint of its own. See
-<a href="../transit-series-contract/#exact-event-search-exacthits--stationevents">transit-series-contract</a>
-for the <code>event_search</code> response shape, supported aspect geometry (moving
-vs. fixed radix, moving vs. moving, or both), and discovery limitations.</li>
-<li><code>compute_transit_series_from_data</code> (the in-memory, no-persisted-workspace
-counterpart used by <code>compute_chart_from_data</code>-style callers) accepts and
-behaves identically for the same <code>exact_hits</code>/<code>station_events</code>/<code>event_search</code>
-fields; it has no separate Python route.</li>
-</ul>
-<p>Acceptance criteria:</p>
-<ul>
-<li>Invalid date order returns an error.</li>
-<li>Non-positive step returns an error.</li>
-<li>A valid range returns ordered results with <code>datetime</code>, <code>transit_positions</code>, <code>motion</code>, and <code>aspects</code>, plus a top-level <code>event_search</code> field.</li>
-<li>Omitting <code>exact_hits</code>/<code>station_events</code> behaves identically to passing <code>false</code>.</li>
-<li><code>event_search.complete</code> is <code>false</code>, with a corresponding <code>event_search.warnings</code> entry, whenever a sub-search fails (e.g. missing kernel coverage) or exhausts its work-limit — never a silently empty &ldquo;no events&rdquo; success.</li>
-</ul>
+<p>Transport names are <code>workspace_path</code>, <code>chart_id</code>, <code>start_datetime</code>,
+<code>end_datetime</code>, <code>transiting_objects</code>, <code>transited_objects</code>, <code>aspect_types</code>, and
+optional <code>time_step_seconds</code>, <code>sampled_series</code>, <code>exact_hits</code>, <code>station_events</code>,
+<code>configuration_requests</code>, <code>preset_id</code>, and <code>settings_overrides</code>. It returns
+the transit-series response and backend provenance. The authoritative request
+rules, defaults, response shape, completeness semantics, and supported
+configuration IDs are in the <a href="../transit-series-contract/">Transit series contract</a>.</p>
+<p>Rust caps a sampled response at 50,000 generated steps. Event and
+configuration searches run locally through Rust even when a Python sidecar
+produced sampled results; Python has no equivalent endpoint.</p>
 <h2 id="ephemeris-commands">Ephemeris commands</h2>
 <h3 id="list_ephemeris_catalog---vecephemerisinfo"><code>list_ephemeris_catalog() -&gt; Vec&lt;EphemerisInfo&gt;</code></h3>
 <ul>

@@ -5,6 +5,8 @@ weight: 40
 doc_kind: architecture
 status: current
 authority: informative
+aliases:
+  - /developer/backend-structure/
 ---
 
 This page describes the implementation in this checkout. Statements under
@@ -111,6 +113,22 @@ Route/fallback data is included in computation results.
   directly perform YAML/filesystem work; calculation/transit commands still
   route backends and call the sidecar. Do not describe them as thin adapters.
 
+### Persistence and result lifecycle
+
+`WorkspaceManifest` is the durable index; loaded charts and references are
+separate typed representations. `WorkspaceInfo` is a tolerant shell summary,
+whereas `LoadedWorkspace` retains diagnostics. YAML, settings resolution,
+validation, and runtime catalog construction belong to Rust. Computed
+positions, houses, aspects, configurations, lunar details, and transit series
+are response data held by the frontend, not a database-backed workspace cache;
+only transit setup is persisted. Result metadata exposes the selected backend,
+fallback state, ephemeris source when available, and warnings.
+
+The Python sidecar is optional infrastructure, not a second persistence or
+configuration authority. It may be chosen in auto mode, while Rust handles
+supported no-sidecar requests. The exact workspace lifecycle and precedence
+are defined by the [Workspace YAML contract](../workspace-yaml/).
+
 ## Intended direction and debt
 
 The intended boundary is commands as thin transport adapters over application
@@ -118,5 +136,5 @@ use cases, with filesystem/provider orchestration moved behind those use cases.
 Only the typed computation and transit cores are substantially there today.
 Chart-selection catalog refresh and automated React/Svelte parity coverage are
 also incomplete. See [Rust code structure](../rust-code-structure/) for the
-module map, [Rust workspace contract](../rust-workspace-contract/) for the
-observable lifecycle, and [Testing strategy](../testing-strategy/) for gaps.
+module map, [Workspace YAML contract](../workspace-yaml/) for the observable
+lifecycle, and [Testing strategy](../testing-strategy/) for gaps.

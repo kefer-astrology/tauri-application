@@ -25,3 +25,7 @@ Each scenario runs on the primary React interface in browser-safe demonstration 
 </nav>
 
 The scenarios use **Next** and **Back** controls inside the application frame. You can close an overlay at any time and continue exploring freely.
+
+For instructions that apply to the desktop application, return to the
+**[Manual](../manual/)**. Guides demonstrate an interface path; they do not
+define or duplicate application behavior.

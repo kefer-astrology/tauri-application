@@ -5,6 +5,8 @@ weight: 41
 doc_kind: contract
 status: current
 authority: normative
+aliases:
+  - /developer/rust-workspace-contract/
 ---
 
 This is the authoritative description of the portable workspace format. The
@@ -372,6 +374,28 @@ concept from `default.astrology_tradition` above — that one is a closed enum
 ("Škola" in the UI) whose job is seeding aspect settings for a well-known
 tradition, not selecting a named model.
 
+## Loading, validation, and runtime catalog
+
+`create_workspace` creates `charts/`, `transits/`, and an empty manifest, and
+refuses an existing manifest. `save_workspace` writes supplied charts as
+`charts/<sanitized-id>.yml`, preserves other represented manifest fields, and
+updates chart references and optional defaults. These commands currently do
+filesystem work directly.
+
+`load_workspace` is intentionally tolerant: a parseable manifest is required,
+but unreadable chart or analysis references are skipped and only loaded
+summaries are returned. `validate_workspace` uses the aggregate loader instead:
+it attempts every referenced kind, retains valid items, and reports structured
+diagnostics for failures. Absolute references and paths escaping the workspace
+root are rejected; a missing or malformed manifest is fatal to both paths.
+
+`get_builtin_domain_catalog` supplies the startup catalog. On workspace open,
+each frontend requests the resolved model report and catalog without a chart
+ID. A chart-specific catalog can be requested, but neither shell refreshes it
+when chart selection changes. A selected chart can therefore calculate with a
+different resolved model from the catalog currently displayed; this is a known
+frontend propagation gap, not a different resolution rule.
+
 ## Persisted transit intent
 
 Transit YAML stores everything needed to repeat the calculation, but never the
@@ -398,20 +422,21 @@ house_transitions: true
 sign_transitions: true
 exact_hits: true
 station_events: true
+sampled_series: true
+configuration_requests:
+  - configuration_id: grand_trine
+    fixed_roles: []
+    role_candidates: {}
 transit_limits: false
 precession_correction: true
 ```
 
-The source chart supplies subject coordinates and inherited settings. The
-transit file chooses the interval, sampling, moving and target bodies, aspects,
-orbs, and event families. `exact_hits` and `station_events` are implemented:
-when either is set, `compute_transit_series`/`compute_transit_series_from_data`
-additionally run a genuine adaptive event search (exact aspect-crossing times
-and/or stationary points) over the same interval and return it in a separate
-`event_search` response field, independent of `time_step_seconds` — which
-remains purely the sampled-series graph resolution and is never redefined as
-event-time precision. See [transit-series-contract](../transit-series-contract/#exact-event-search-exacthits--stationevents)
-for the response shape, supported aspect geometry, and discovery limitations.
+The source chart supplies inherited settings; the transit file supplies the
+interval, sampling, selected bodies/aspects, and requested event families.
+`sampled_series` defaults to true so existing saved setups keep their sampled
+output. Event and configuration behavior, response shape, supported patterns,
+and completeness rules are defined once in the
+[Transit series contract](../transit-series-contract/).
 
 ## What is intentionally not persisted
 

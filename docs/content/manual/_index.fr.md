@@ -14,6 +14,7 @@ Le Manuel décrit Kefer Astrology du point de vue de l’utilisateur. Vous n’a
 ## Examiner un thème
 
 - **[Vues du thème](./chart-views/)** — naviguer entre les vues Thème, Aspects, Informations, Révolution et Synastrie.
+- **[Objets, aspects et figures du thème](./objects-aspects-and-patterns/)** — consultez le catalogue intégré et les conditions de sa disponibilité.
 - **[Transits et temps](./transits-and-time/)** — inspecter un instant, naviguer dans le temps et travailler avec les vues de transits.
 
 ## Personnaliser l’application

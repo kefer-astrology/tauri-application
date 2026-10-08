@@ -1,5 +1,5 @@
 ---
-title: 'Ephemeris validation'
+title: 'Validation and performance'
 description: 'Reproducible numerical and performance checks for the Rust JPL/SPICE provider, and what they do not yet cover.'
 weight: 42
 doc_kind: implementation-reference
@@ -35,12 +35,13 @@ cargo test --release --lib multi_body_transit_series_benchmark -- --ignored --no
 cargo test --release --lib stationary_point_search_benchmark -- --ignored --nocapture
 cargo test --release --lib aspect_exact_time_search_benchmark -- --ignored --nocapture
 cargo test --release --lib compute_transit_events_benchmark -- --ignored --nocapture
+cargo test --release --lib configuration_search_benchmark -- --ignored --nocapture
 ```
 
-`cargo test --lib` without filters also runs everything above except the six
-`--ignored` benchmarks, which are intentionally excluded from that default run
-because they need a release build (and, for the first, bundled resources) to
-be meaningful rather than to measure debug-build overhead.
+`cargo test --lib` without filters also runs everything above except the
+seven `--ignored` benchmarks, which are intentionally excluded from that
+default run because they need a release build (and, for the first, bundled
+resources) to be meaningful rather than to measure debug-build overhead.
 
 ## What each test validates, and against what reference
 
@@ -107,10 +108,122 @@ for the contract and supported aspect geometry. The underlying
 tight) so it catches hidden/repeated crossings within one coarse step
 (retrograde loops, multiple events) without exponential cost — proven both
 against synthetic step functions with known root counts and against real
-Mercury retrograde-loop/station data. **Stated limitation:** discovery
-cannot resolve a tangential contact (a motion reversal that touches but does
-not cross the target value) as a crossing event; only genuine sign changes
-are found.
+Mercury retrograde-loop/station data.
+
+**Tangential contacts are now detected, by a separate mechanism, not
+`discover_roots` itself.** `find_tangential_contacts` is an independent
+linear scan (never interleaved with `discover_roots`, so the two never
+double-count the same instant) that flags a coarse grid point which is a
+local extremum of `|f|` below a small tolerance (`1e-3` deg/day for station
+speed, `1e-3` degrees for aspect offset) with all three sampled points
+sharing the same sign — i.e. a graze, not a crossing — then refines its
+time via a bounded golden-section search local to that one coarse window,
+and **checks the refinement rather than trusting it**: a candidate is only
+`confirmed: true` when the refined residual is finite, at or below
+tolerance, *and* no larger than the coarse sample that triggered the
+candidate in the first place. That last check exists because
+golden-section's own local-unimodality assumption can fail — two nearby
+minima of different depth inside one coarse bracket can pull the search
+toward the shallower one, which would otherwise look like a successful
+refinement despite being a worse answer than the coarse scan already had.
+An unconfirmed candidate is still returned (`confirmed: false`), never
+silently dropped. Wired into `compute_transit_events` as `station`'s
+`direction_change: "tangential_no_change"` / `confirmed` and `aspect_hit`'s
+`contact: "tangential"` / `confirmed` — two independent fields: `contact`/
+`direction_change` is the contact's *geometry*, `confirmed` is detection
+*confidence*, never conflated. **Stated limitation, explicit in the module
+doc comment:** a genuine tangential contact (where the derivative is also
+exactly zero at the graze instant) is measure-zero for real orbital motion;
+this detects a *near*-tangential local extremum resolvable at the chosen
+discovery step, not a formally proven exhaustive search — a coarser step
+can miss a narrow graze entirely, or conflate it with a separate nearby
+dip. The confirmation check closes a *different* gap (a refinement that
+converged to the wrong answer or didn't converge at all); it does not make
+detection itself exhaustive.
+
+**`confirmed: true` now requires an explicitly checked time-convergence
+bound, not an assumption that a fixed iteration count guarantees
+precision.** A first version of this correction claimed golden-section's
+bracket narrows to "under a microsecond for the default 6-hour discovery
+step" — **wrong by roughly three orders of magnitude**, caught on review,
+not by this project's own testing at the time. Two separate mistakes
+compounded: a units/exponent slip (`21600 * 0.618^40` is ~94
+*microseconds*, not nanoseconds), and conflating the discovery step with
+the bracket width golden-section actually receives — `find_tangential_contacts`
+passes its 3-point window's first-to-last sample, which spans **two**
+coarse steps, not one, so the real bracket for a 6-hour discovery step is
+12 hours wide, converging to ~189 microseconds, not ~94.
+
+The corrected, verified facts: each golden-section iteration narrows
+`[lo, hi]` by a factor of ~0.618 unconditionally (pure interpolation
+arithmetic, independent of `f`'s shape) — this part was always true — but
+the *absolute* achieved width depends on the caller-controlled initial
+bracket, which this project did not previously compute or expose. It now
+does: `TangentialContact::bracket_width_seconds` is the measured final
+width, and `confirmed` additionally requires it to be at or below an
+explicit, documented `TANGENTIAL_TIME_PRECISION_TOLERANCE_SECONDS` (1
+second — chosen because every supported body moves a physically negligible
+amount within one second, not because it matches any particular achieved
+width). Verified directly, not just derived:
+`golden_section_minimize_abs_bracket_width_matches_theory_at_several_coarse_steps`
+measures ~94.39µs for a direct 6-hour bracket and ~188.79µs for a direct
+12-hour bracket (matching the corrected arithmetic exactly);
+`golden_section_minimize_abs_leaves_a_wide_bracket_with_too_few_iterations`
+demonstrates a too-small iteration budget leaving a wide, unconverged
+bracket; `find_tangential_contacts_does_not_confirm_when_the_coarse_step_is_too_wide_to_converge_in_time`
+confirms the production code path actually enforces the tolerance (a
+10-year discovery step produces a comfortably-small residual but
+`confirmed: false`, because the resulting ~2.76-second bracket exceeds the
+1-second tolerance even after the full 40 iterations) —
+`find_tangential_contacts_refines_a_minimum_sitting_between_two_coarse_samples`
+separately asserts convergence to within 10 microseconds of an
+analytically known minimum for a realistic small discovery step.
+
+Four distinct things this correction keeps separate, since conflating them
+is exactly how the original error happened: **bracket width** (a pure
+numerical-convergence property, now computed and exposed, not assumed);
+**`DateTime<Utc>`'s own nanosecond storage resolution** (far finer than any
+realistic bracket width, and therefore never the binding constraint —
+supporting nanosecond-precision *storage* does not imply nanosecond-precision
+*results*, a distinction the original "under a microsecond" claim blurred);
+**minimizer correctness under the local-unimodality assumption** (a narrow,
+time-converged bracket can still sit on the wrong local extremum if `|f|`
+isn't unimodal within it — caught by the separate residual-regression
+check, not by bracket width); and **astronomical event-time accuracy**
+(bracket-width convergence is purely about this root-finder's own numerics
+converging to wherever the ephemeris function says the minimum is; it says
+nothing about that function's own physical accuracy — aberration modeling,
+the documented UT1-approximated-as-UTC sidereal-time caveat, etc.). Writing
+the tightened time-convergence test also caught a second, independent bug:
+its first version built the synthetic oracle from `DateTime::timestamp()`
+truncated to whole seconds, which gave the test function itself a
+one-second-wide *plateau* at the minimum rather than a true point minimum —
+any time in that plateau would have passed a loose assertion without
+proving anything. The production position functions this module calls were
+never affected (`jpl_backend`'s `compute_chart_data_impl` already uses full
+nanosecond resolution via `event_time.timestamp_subsec_nanos()`); this was
+a test-oracle precision gap, not a production one.
+
+**React UI distinguishes `confirmed: false` from a verified event.** The
+event-search list badges a tangential-kind event "tangential" regardless of
+confirmation status (the contact *geometry*), and separately badges it
+"unconfirmed" (amber, with an explanatory hint) only when `confirmed` is
+`false` — the two are independent, never conflated into one label. No other
+frontend code consumes individual `TransitEvent`s (confirmed by a repo-wide
+search): there is no summary count, export, or aggregate calculation that
+could silently treat an unconfirmed candidate as a verified one.
+
+**Orb-interval search** (`find_all_orb_intervals_against_fixed_point` /
+`find_all_orb_intervals_mutual`) finds the time *interval* during which an
+aspect stays within its allowed orb, by reusing `discover_roots` unmodified
+against a different function — `g(t) = allowed_orb - |offset(t)|` — rather
+than a new root-finder. `allowed_orb - |offset(t)|` is continuous wherever
+the position pipeline is (taking the absolute value heals `signed_offset`'s
+one wrap-boundary discontinuity into a cusp, not a jump), so no bespoke
+continuity guard is needed; see the function's own doc comment for the
+derivation. This is the primitive `application::configuration_search` (next
+section) uses to decide when a multi-body configuration's constituent
+aspects are all simultaneously satisfied.
 
 Every correctness test independently cross-checks its own result two ways:
 (1) the found instant's own speed/offset is confirmed near zero, and (2) a
@@ -124,6 +237,174 @@ function's own wrap boundary sits at 180° (opposition) — an early version of
 this search could mistake that discontinuity for a conjunction, which is now
 an explicit regression test
 (`aspect_exact_time_search_does_not_mistake_the_opposite_point_for_a_crossing`).
+
+## Multi-body configuration search
+
+`application::configuration_search` (`src-tauri/src/application/configuration_search.rs`)
+finds the time *interval* during which a role-assignment of bodies
+simultaneously satisfies a configuration pattern's required pairwise
+aspects (Grand Trine, T-square, Yod, Grand Cross — see
+`domain::configurations` for the four data-driven definitions and the
+`yod`/`double_quincunx` naming correspondence), wired to `compute_transit_series`
+via the persisted `configuration_requests` field. This is genuinely new
+engineering on top of the event-search primitives above, not a
+recombination of them into a different output shape:
+
+- **Per-edge orb intervals, memoized across role assignments.** Every
+  unique (body pair, aspect, fixed/moving) combination is searched once
+  and cached, regardless of how many candidate role-assignments share that
+  edge — the dominant cost driver for a request with many candidate bodies
+  per role.
+- **A request-scoped, bounded shared evaluation context**
+  (`application::evaluation_context::EvaluationContext`), threaded through
+  every exact-aspect, station, and configuration search `compute_transit_events`
+  performs in one call. It builds the position-provider backend exactly
+  once per request (previously rebuilt — including a directory scan and
+  per-path metadata/manifest reads — on *every single probe*, confirmed by
+  direct tracing) and caches each body's position/motion by `(body id,
+  exact epoch)`, so two edges whose independent `discover_roots` coarse
+  scans share the same `[start, end]`/`discovery_step` grid (they always do,
+  within one request) reuse a body's already-computed value instead of
+  recomputing it. Backend calls for a longitude-only or longitude+motion
+  probe also skip RA/Dec/Alt/Az and axes/house cusps
+  (`RequiredQuantities::LongitudeOnly`/`LongitudeAndMotion` vs. the
+  unchanged `Full` path every ordinary chart command still uses). Bounded at
+  2,000,000 entries, sized with a wide (>20x) margin above the 91,661-entry
+  true working set this benchmark measures below once eviction isn't
+  thrashing it (see "A methodology note" below for how an *initial, too-small*
+  bound was caught — not assumed correct — by measuring a 0.1% hit rate).
+  At the measured ~234-236 bytes/entry (`measures_real_per_entry_memory_cost`,
+  a real `/proc/self/status` RSS-delta measurement, not a hand estimate),
+  2,000,000 entries is a ~450-480 MB worst case the bound allows, not a
+  typical one — this benchmark's own real peak was 91,661 entries, about
+  21 MB. Never persistent across requests — a fresh `compute_transit_events`
+  call always starts from an empty cache, and concurrent requests each get
+  their own independent context/cache (verified by inspection: nothing in
+  `EvaluationContext` is shared global state; the only cross-request shared
+  state anywhere in this path is `jpl_backend::almanac_cache`, a
+  `RwLock`-guarded, read-mostly cache of the already-loaded ephemeris
+  itself, unaffected by this change).
+- **Eligibility pruning during enumeration**, not after: a role-assignment
+  branch is abandoned as soon as any of its already-assigned edges has no
+  eligible aspect for that specific body pair's object types, reusing
+  `domain::astrology::eligible_aspect_angle_and_orb` (the same orb/
+  object-type-rule resolution `detect_aspect` uses internally, added
+  specifically for this reuse).
+- **Symmetry-aware deduplication.** Each pattern's actual automorphism
+  group (not merely "these two roles are interchangeable" partitions,
+  which is insufficient for Grand Cross's dihedral group of order 8 — an
+  independent review of the initial design caught this specific gap before
+  implementation) canonicalizes equivalent role-assignments before they
+  become separate matches.
+- **Two independent, explicit combinatorial caps**, both reported as
+  `complete: false` with a named warning rather than silently truncated:
+  `MAX_CONFIGURATION_ROLE_ASSIGNMENTS` (5,000 — bounds role-assignment
+  *enumeration* itself, checked via the candidate-pool-size product before
+  any search runs) and `MAX_BEST_FIT_REFINEMENTS` (200 — bounds how many
+  matches get a refined best-fit instant; a fast-moving candidate can
+  recur in and out of a pattern's orb many times over a long requested
+  period, and every occurrence still gets a full entry/exit/
+  constituent-aspects result, just not all of them a refined best-fit).
+- **Grid-seeded best-fit**, not a bare local optimizer: the objective
+  (`max` over constituent aspects of normalized deviation) is not
+  generally unimodal across a multi-week match interval, since the
+  controlling (argmax) edge can switch partway through — a coarse grid is
+  sampled across the interval first, and only the cell around the best
+  grid point gets golden-section refinement.
+
+**Independent cross-checks, not just internal consistency:** a real
+Mars-Jupiter-Saturn Grand Trine interval was located empirically (around
+late October 2025 — found via independent pairwise orb-interval searches,
+not assumed) and is cross-checked two ways: (1) at an interior time, the
+*existing, untouched* single-instant classifier
+(`domain::astrology::detect_chart_configurations`) independently confirms
+`"grand_trine"` is present from its own from-scratch position/aspect
+computation; (2) a moment before the found `entry` confirms the classifier
+does *not* yet report it. (3) Re-running the same search at a 6x finer
+discovery step agrees with the original on match count and on every
+entry/exit boundary within an hour, demonstrating discovery-resolution
+independence for this validated case — the same property
+`event_search_request_has_no_sampling_resolution_parameter` demonstrates
+for `exact_hits`/`station_events`.
+
+**Known gap:** five configuration ids the existing snapshot classifier
+already supports (`kite`, `mystic_rectangle`, `hexagram`, `pentagram`,
+`double_biquintile`) have no interval-search implementation in this module
+— documented in the transit-series contract, not silently omitted.
+
+### Benchmark
+
+Representative end-to-end search: Grand Trine among 5 classical bodies
+(Mars/Jupiter/Saturn/Uranus/Neptune — C(5,3)=10 candidate trios after
+automorphism dedup) over a 3-year window, `n=10` full searches, **each
+repetition constructing its own fresh `EvaluationContext`** (never reused
+across repetitions — reusing one would measure an artificially warm cache
+rather than the real per-request cost a user actually experiences, since a
+real `compute_transit_events` call also builds exactly one context per
+request):
+
+```text
+configuration_search benchmark: pattern=grand_trine, candidates=5 (C(5,3)=10 trios),
+window=3y, matches_found=2, repetitions=10, p50=2.990350014s, p95=3.112765953s
+configuration_search benchmark (one fresh request's cache_stats): hits=613905, misses=91661,
+upgrades=0, entries=91661, approx_bytes=8799456
+```
+
+`repetitions=10`, each its own fresh `EvaluationContext` (see above). The
+percentile method is `samples.sort_unstable()` then index
+`floor(n * pct / 100)` (clamped to the last index): for `n=10` this makes
+`p50` the 6th-smallest sample (index 5, the upper-median of an even-sized
+set) and `p95` index `floor(10*95/100)=9` — the *last* index, i.e. for this
+sample size "p95" is mathematically identical to the plain sample maximum,
+not a distinct higher percentile (this floor-based formula only produces an
+index below the maximum once `n > 20`). Reported as "p95" only for
+consistency with this file's other benchmarks' output format.
+
+**Previously measured on this same benchmark, before the shared
+evaluation-context/minimal-path optimization below existed:**
+`p50=56.091243334s, p95=91.176219144s` — a **~19x** reduction in measured
+p50 (56.09s → 2.99s), and the match results are byte-identical between the
+two runs (same two matches, same entry/exit/best-fit instants to
+microsecond precision) — this is a performance change, not a behavior
+change. Root cause, confirmed by direct tracing (not estimated): every
+probe previously rebuilt the whole position-provider backend from scratch
+(a directory scan, per-path metadata stats, and small-body manifest file
+reads — real I/O, not just CPU), and separately computed RA/Dec/Alt/Az and
+axes/house cusps regardless of whether a longitude-only root-finder ever
+read them. `EvaluationContext` (see the bullet above) fixes both: one
+backend build per request, a `(body id, exact epoch)` cache shared across
+all ~20 independent `discover_roots` scans this workload performs (10
+unique body pairs × up to 2 aspect branches), and a minimal backend path
+that skips the unused quantities.
+
+**Reading `cache_stats()` precisely — accesses, misses, and the true
+working set are three different numbers, not one:** `hits + misses =
+705,566` total position *lookups* this search performs — an invariant of
+the search algorithm (which edges/epochs it probes), independent of cache
+size. `entries = misses = 91,661` (with `upgrades=0`) is the actual number
+of *distinct* `(body, epoch)` pairs ever computed — the true working set,
+confirmed by the fact that `entries` and `misses` land on exactly the same
+number with zero further growth once the cache is large enough not to
+evict. 613,905 of the 705,566 total lookups (87%) were therefore served
+from cache rather than re-evaluated — bodies like Mars, which appears in 4
+of the 10 edges, share their coarse-grid epochs across every edge that
+touches them.
+
+**A methodology note worth keeping, not hiding:** the cache's bound was
+initially set an order of magnitude too small (sized by analogy to an
+unrelated constant, not measured), and the very first run against this
+benchmark measured a 0.1% hit rate: `hits=666, misses=704,900,
+entries=20,000` (pinned at that old cap). Read naively, 704,900 misses
+looks like "the working set is ~700,000 entries" — it is not. Re-running
+with the corrected, much larger cap (so eviction never triggers) measured
+the *same* search's true working set at 91,661 distinct entries. The old
+cap was so far under that true working set that popular entries (bodies
+shared across several edges) were evicted and recomputed repeatedly before
+they could ever be reused — on average, each of the 91,661 distinct pairs
+was recomputed ≈7.7 times (704,900 / 91,661) under the broken cap. The
+`MAX_CACHE_ENTRIES` bound documented in `evaluation_context.rs` is sized
+with a wide margin above the corrected 91,661 measurement, not reverse-fit
+to the misleading 704,900 figure.
 
 ## Usable coverage: raw vs. chain-aware
 
@@ -440,19 +721,26 @@ either search measured in isolation.
 Every benchmark and test above was re-run inside a Linux network namespace
 with no interfaces brought up (`unshare --net --map-root-user`), confirmed to
 have no DNS/route (`curl` inside it fails immediately with "Could not resolve
-host," not a timeout). All **174** `cargo test --lib` tests and the
-`compute_transit_events_benchmark` release benchmark (the newest addition,
-covering the `exact_hits`/`station_events` orchestration layer) pass
-identically with and without that namespace — this is executed evidence, not
-an inference from reading the source. Source inspection independently
-confirms *why*: no `reqwest`/HTTP code exists anywhere in `jpl_backend.rs`,
-`application/computation.rs`, `application/transit.rs`, or
-`application/event_search.rs`, and `EphemerisManager::available_bsp_paths`
-only ever touches the local filesystem — but the claim here rests on the
-namespace run, not on that reading alone. The other five release benchmarks
-(`jpl_direct_path_benchmark` and the four listed earlier) were verified
-offline in the same way in an earlier pass of this audit and have not changed
-since; they were not re-run for this pass.
+host," not a timeout). All **209** `cargo test --lib` tests (up from 174 —
+this pass added tangential-contact/orb-interval/configuration-search tests)
+pass identically with and without that namespace — this is executed
+evidence, not an inference from reading the source. This includes
+`application::configuration_search`'s own (non-ignored) correctness tests,
+which exercise the identical `search_configuration`/`find_all_orb_intervals_*`
+code path the `configuration_search_benchmark` release benchmark times;
+the benchmark itself (an `--ignored` diagnostic, ~11 minutes for its full
+10-repetition run — see below) was not separately re-run inside the
+namespace for this pass. Source inspection independently confirms *why*
+offline execution holds generally: no `reqwest`/HTTP code exists anywhere in
+`jpl_backend.rs`,
+`application/computation.rs`, `application/transit.rs`,
+`application/event_search.rs`, or `application/configuration_search.rs`, and
+`EphemerisManager::available_bsp_paths` only ever touches the local
+filesystem — but the claim here rests on the namespace runs, not on that
+reading alone. The other six release benchmarks (`jpl_direct_path_benchmark`
+and the five listed earlier) were verified offline in the same way in an
+earlier pass of this audit and have not changed since; they were not
+re-run for this pass.
 
 Two dedicated tests make the "missing/out-of-coverage" requirement concrete
 rather than inferred: `out_of_coverage_epoch_produces_explicit_local_warnings_not_an_error`
@@ -524,15 +812,30 @@ documentation pass).
   used to describe is now closed for the `find_all_*`/`compute_transit_events`
   layer specifically — see the triple-crossing and repeated-wrap tests in
   `application::event_search`'s test module and the two-tier recursion budget
-  described above — but the discovery scan still cannot resolve a tangential
-  contact (touches but does not cross the target) as an event, and a request
+  described above. Tangential contacts (a motion reversal or aspect approach
+  that touches but does not cross the target) are now also detected, by the
+  separate `find_tangential_contacts` heuristic described above — but that
+  heuristic's own stated limitation still applies (grid-resolution-dependent,
+  not a proof of exhaustive discovery; see its module doc comment). A request
   that plans enough searches to divide the shared work-limit pool below its
-  floor (`MIN_PROBES_PER_SEARCH` in `application/transit.rs`) can still
-  report `complete: false` for an individual search that would otherwise have
-  converged, rather than guaranteeing every requested combination resolves.
-  `exact_hits`/`station_events` only run through the Rust path — the Python
-  sidecar has no event-search endpoint, so a Python-routed sampled series
-  still gets its event search from Rust, not from parity-checked Python code.
+  floor (`MIN_PROBES_PER_SEARCH` in `application/transit.rs`, or
+  `MIN_PROBES_PER_EDGE_SEARCH`/`MAX_CONFIGURATION_ROLE_ASSIGNMENTS`/
+  `MAX_BEST_FIT_REFINEMENTS` in `application/configuration_search.rs`) can
+  still report `complete: false` for an individual search that would
+  otherwise have converged, rather than guaranteeing every requested
+  combination resolves. `exact_hits`/`station_events`/`configuration_requests`
+  only run through the Rust path — the Python sidecar has no event-search or
+  configuration-search endpoint, so a Python-routed sampled series still gets
+  these from Rust, not from parity-checked Python code.
+- Multi-body configuration search (`configuration_requests`) implements
+  interval search for 4 of the existing snapshot classifier's 9 pattern ids
+  (`grand_trine`, `t_square`, `yod`, `grand_cross`); `kite`, `mystic_rectangle`,
+  `hexagram`, `pentagram`, and `double_biquintile` remain snapshot-only (no
+  interval search), a deliberate scope decision documented in the
+  transit-series contract, not a silent gap. Best-fit is a local refinement
+  from a coarse grid, explicitly not a certified global optimum, and is
+  itself capped per search (`MAX_BEST_FIT_REFINEMENTS`) separately from the
+  role-assignment enumeration cap.
 - `get_usable_coverage`'s chain discovery now reads loaded segment metadata
   directly (`ephemeris_path_to_root` on both the target and Earth sides) and
   is no longer limited to a fixed anchor-id list — but it still requires the

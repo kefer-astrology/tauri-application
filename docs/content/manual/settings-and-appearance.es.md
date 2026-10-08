@@ -1,19 +1,25 @@
 ---
 title: 'Ajustes y apariencia'
-description: 'Ajuste el idioma, la identidad visual, los objetos, los aspectos y los valores predeterminados del espacio de trabajo.'
+description: 'Valores predeterminados de cálculo y apariencia de la aplicación.'
 weight: 50
 ---
 
-Abra **Ajustes** en la parte inferior de la barra lateral principal. Su navegación secundaria divide las preferencias disponibles en secciones específicas.
+Abra **Ajustes** al final de la barra principal. Incluye idioma y ubicación, sistema de casas, objetos observados, aspectos, símbolos y diseño.
 
-Los ajustes de apariencia incluyen los cuatro temas de la aplicación, la familia de iconos del marco de la aplicación, la familia de glifos astrológicos, los colores de los elementos y las paletas de temas. El control compacto de temas en la parte inferior de la barra lateral principal proporciona acceso rápido a los cuatro temas.
+## Valores predeterminados de cálculo
 
-Los ajustes de cálculo incluyen la ubicación y la zona horaria predeterminadas, el sistema de casas, el motor de cálculo, las posiciones planetarias aparentes o geométricas, los cuerpos observables, los aspectos y los orbes. Usa **Aparentes** para el trabajo astrológico habitual; elige **Geométricas / verdaderas** solo cuando quieras el vector instantáneo sin corregir. Los valores predeterminados del espacio de trabajo pueden actualizar resultados existentes cuando cambia un ajuste de cálculo.
+Estos valores sirven a cartas nuevas y vistas sin elección propia; no modifican una carta guardada. La interfaz permite **Čeština**, **English**, **Français** y **Español**. Busque el lugar predeterminado o introduzca coordenadas; **Zona horaria** es el valor inicial de una carta nueva. El nombre del lugar es descriptivo: coordenadas y hora son las entradas de cálculo.
 
-Los recursos de idioma se comparten entre ambas implementaciones de frontend. Cambiar el idioma de la aplicación cambia las etiquetas de la interfaz; no cambia los valores astronómicos almacenados. El idioma y la ubicación predeterminada están ahora en una sola sección; el idioma se elige de una lista desplegable en la que cada idioma aparece con su propio nombre.
+**Sistema de casas** muestra sistemas que el backend Rust/JPL puede calcular y cambia las cúspides. **Aparente** usa posiciones aparentes y correcciones; **Geométrica / verdadera** usa el vector sin corregir. Esta pantalla no tiene selector de motor; vea [Efemérides y cobertura](../../developer/ephemeris-manager/).
 
-El selector de objetos observados incluye, para las estrellas fijas, un filtro rápido para el cielo norte o sur, basado en la latitud eclíptica de cada estrella. Las estrellas fijas siguen siendo solo informativas hasta que un backend las calcule.
+## Objetos y aspectos
 
-La sección de diseño de la aplicación incluye un interruptor de vista monocromática (escala de grises), aplicado sobre el tema y la paleta activos sin cambiar sus colores guardados. Los conjuntos de símbolos de grado (Sepharial, Charubel) siguen el idioma de la aplicación, recurriendo al inglés donde aún no exista traducción.
+Seleccione cuerpos y puntos para cartas nuevas. La lista está en [Objetos, aspectos y patrones de carta](../objects-aspects-and-patterns/#objetos-observables). La selección no instala datos ni garantiza cobertura. Las estrellas fijas se pueden filtrar por latitud eclíptica, pero el backend aún no las calcula.
 
-La barra lateral de ajustes también enlaza a una breve biografía de Jan Kefer y, al final, a una forma de apoyar el proyecto.
+**Escuela** sustituye aspectos activos, orbes y participación de ángulos, no casas, objetos ni motor. Consulte [Escuelas y ajustes de aspectos](../objects-aspects-and-patterns/#escuelas-y-ajustes-de-aspectos). Cada aspecto admite activación, color, orb de 0–30° por 0,5°, ángulos y orb extendido. Las líneas de aspecto del radix cambian solo el dibujo, no el cálculo.
+
+## Símbolos y diseño
+
+Elija glifos predeterminados/modernos, iconos predeterminados/alternativos, conjuntos de texto de grados disponibles, colores de elementos y ajustes en el gestor de glifos. La rueda minimalista tiene anillo zodiacal y 12 divisores; la técnica añade escala de 360°. **Borde izquierdo del radix** sitúa ASC o 0° de Aries a la izquierda sin cambiar casas, posiciones ni aspectos; es local al dispositivo.
+
+Elija **Sunrise**, **Noon**, **Twilight** o **Midnight**. La paleta ajusta paneles, lienzo, textos, acento y fondos; la vista monocromática solo desatura. **Guardar** confirma paleta y colores de elementos y **Cancelar** restaura los campos no guardados. Las preferencias visuales pueden no viajar a otro equipo.
