@@ -200,6 +200,12 @@ Acceptance criteria:
 - `KEFER_COMPUTE_BACKEND=Python`: Python only.
 - `KEFER_COMPUTE_BACKEND=Rust`: Rust only.
 - The contract should make backend provenance observable to callers.
+- Only a `jyotish`/`custom` engine is force-routed to Python regardless of
+  backend selection (no Rust implementation exists). A per-chart
+  `override_ephemeris` kernel does **not** force Python — the Rust JPL
+  backend implements it natively — see
+  [Architecture](../architecture/#calculation-and-persistence) for the fixed
+  router-policy gap this used to be.
 
 Recommended response metadata:
 
@@ -270,24 +276,41 @@ Inputs:
 - `transiting_objects`
 - `transited_objects`
 - `aspect_types`
+- optional `exact_hits` (boolean, default `false` when omitted)
+- optional `station_events` (boolean, default `false` when omitted)
 - optional `preset_id`
 - optional `settings_overrides`
 
 Behavior:
 
-- `time_step_seconds` must be greater than `0`.
+- `time_step_seconds` must be greater than `0`. It governs only the sampled
+  `results` step; it has no effect on `exact_hits`/`station_events` and is
+  never redefined as event-time precision.
 - `end_datetime` must be greater than or equal to `start_datetime`.
 - Rust mode enforces a hard cap of `50_000` generated steps.
-- Returns a response with `source_chart_id`, `time_range`, `time_step`, `results`, and backend provenance fields.
+- Returns a response with `source_chart_id`, `time_range`, `time_step`, `results`, `event_search`, and backend provenance fields.
 - Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.
 - Preset and operation settings use the same precedence and temporary Rust-only
   routing described for `compute_chart`.
+- `exact_hits`/`station_events` always run the exact-event search locally
+  through the Rust event-search module, independently of whether the sampled
+  `results` were computed by Rust or Python — the Python sidecar has no event-
+  search endpoint of its own. See
+  [transit-series-contract](../transit-series-contract/#exact-event-search-exacthits--stationevents)
+  for the `event_search` response shape, supported aspect geometry (moving
+  vs. fixed radix, moving vs. moving, or both), and discovery limitations.
+- `compute_transit_series_from_data` (the in-memory, no-persisted-workspace
+  counterpart used by `compute_chart_from_data`-style callers) accepts and
+  behaves identically for the same `exact_hits`/`station_events`/`event_search`
+  fields; it has no separate Python route.
 
 Acceptance criteria:
 
 - Invalid date order returns an error.
 - Non-positive step returns an error.
-- A valid range returns ordered results with `datetime`, `transit_positions`, and `aspects`.
+- A valid range returns ordered results with `datetime`, `transit_positions`, `motion`, and `aspects`, plus a top-level `event_search` field.
+- Omitting `exact_hits`/`station_events` behaves identically to passing `false`.
+- `event_search.complete` is `false`, with a corresponding `event_search.warnings` entry, whenever a sub-search fails (e.g. missing kernel coverage) or exhausts its work-limit — never a silently empty "no events" success.
 
 ## Ephemeris commands
 
@@ -309,6 +332,17 @@ Acceptance criteria:
 - A manifest-defined body is returned only after schema, checksum, validation
   thresholds, and an in-range ANISE state probe pass. Traditional static catalog
   kernels continue to use their declared filename/body mapping.
+
+### `get_loaded_spk_coverage() -> Result<Vec<LoadedSpkCoverage>, String>`
+
+- Returns raw per-target coverage intervals (`naif_target_id`, `start_et_seconds`,
+  `end_et_seconds`, `start_tdb`, `end_tdb`) read directly from the loaded SPK
+  segment summaries of the currently resolved BSP set.
+- Diagnostic only: a target appearing here is not a guarantee it can be
+  transformed from Earth at a given epoch — that also requires an unbroken
+  target-to-Earth center chain, and, for apparent output, chain coverage at the
+  retarded epoch too. See
+  [ephemeris-manager](../ephemeris-manager/#runtime-coverage-inspection).
 
 ## Storage commands
 

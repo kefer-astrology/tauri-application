@@ -74,6 +74,11 @@ What the Rust SPICE backend currently provides:
   IAU 2006 `EARTH_MOD_FRAME`
 - bundled `pck11.pca` planetary constants loaded before SPKs to supply ANISE's
   orientation graph offline
+- raw loaded-SPK target coverage inspection (`get_loaded_spk_coverage`), for
+  diagnostics only, and chain-aware, evaluator-verified Earth-relative
+  coverage (`get_usable_coverage`) — see
+  [ephemeris-manager](../ephemeris-manager/#runtime-coverage-inspection) for
+  the distinction and what each does and does not guarantee
 
 The PCA is ANISE's published v0.10 artifact, generated from NAIF/JPL `pck00011`
 and DE431 gravity constants. Its pinned checksum and load-order rules are recorded
@@ -99,6 +104,16 @@ precession in longitude" are not applied.
 The full frame rotation must precede longitude extraction because precession can
 also change the ecliptic latitude of an inclined vector. See the normative
 [Astronomy coordinate contract](../astronomy-coordinate-contract/).
+
+Longitude speed (`motion`) for these SPK-backed bodies is an analytic
+derivative of that same state vector — the ANISE-returned velocity plus the
+time-dependent mean-obliquity rotation rate — not a finite difference. Finite
+differences remain the production method only for the handful of points
+derived from osculating orbital elements rather than sampled directly from an
+SPK record (true lunar node, true south node, true Lilith), and are also used
+as an independent test-only cross-check of the analytic rate. See the
+[Motion contract](../astronomy-coordinate-contract/#motion-contract) for the
+exact rules and test name.
 
 ## Horizons-generated kernels
 
@@ -201,3 +216,9 @@ Use [ephemeris-manager](../ephemeris-manager/) when the question is:
 - how downloads work
 - how multi-file kernel selection works
 - why asteroid kernels are separate
+
+Use [Ephemeris validation](../ephemeris-validation/) when the question is:
+
+- how to reproduce a numerical or performance check locally
+- what a provider test actually measured, on what machine, against what reference
+- what validation gaps remain open

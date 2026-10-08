@@ -404,9 +404,14 @@ precession_correction: true
 
 The source chart supplies subject coordinates and inherited settings. The
 transit file chooses the interval, sampling, moving and target bodies, aspects,
-orbs, and event families. Exact-time refinement is represented by `exact_hits`;
-the current series engine still samples at `time_step_seconds` and may refine
-execution in a later compatible implementation.
+orbs, and event families. `exact_hits` and `station_events` are implemented:
+when either is set, `compute_transit_series`/`compute_transit_series_from_data`
+additionally run a genuine adaptive event search (exact aspect-crossing times
+and/or stationary points) over the same interval and return it in a separate
+`event_search` response field, independent of `time_step_seconds` — which
+remains purely the sampled-series graph resolution and is never redefined as
+event-time precision. See [transit-series-contract](../transit-series-contract/#exact-event-search-exacthits--stationevents)
+for the response shape, supported aspect geometry, and discovery limitations.
 
 ## What is intentionally not persisted
 

@@ -48,6 +48,7 @@
 </span></span><span style="display:flex;"><span>│   ├── chart_resolution.rs validate/resolve persisted or in-memory chart input
 </span></span><span style="display:flex;"><span>│   ├── computation.rs     resolved Rust chart computation
 </span></span><span style="display:flex;"><span>│   ├── compute_router.rs  backend selection/fallback and response annotation
+</span></span><span style="display:flex;"><span>│   ├── event_search.rs    stationary-point/exact-aspect-time root-finding; not yet command-exposed
 </span></span><span style="display:flex;"><span>│   ├── location.rs        location use case
 </span></span><span style="display:flex;"><span>│   └── transit.rs         typed Rust transit-series computation
 </span></span><span style="display:flex;"><span>├── commands/              Tauri entry points; mixed adapters/orchestration
@@ -64,7 +65,7 @@
 </span></span><span style="display:flex;"><span>├── domain/                astrology relationships, shapes/configurations, houses
 </span></span><span style="display:flex;"><span>├── infrastructure/
 </span></span><span style="display:flex;"><span>│   ├── dialogs.rs         platform dialog integration
-</span></span><span style="display:flex;"><span>│   ├── ephemeris.rs       kernel catalog, cache, downloads, Almanac construction
+</span></span><span style="display:flex;"><span>│   ├── ephemeris.rs       kernel catalog, cache, downloads, Almanac construction, chain-aware coverage
 </span></span><span style="display:flex;"><span>│   ├── geocoding.rs       external location/timezone lookup
 </span></span><span style="display:flex;"><span>│   ├── jpl_backend.rs     JPL/ANISE BSP position provider
 </span></span><span style="display:flex;"><span>│   ├── position_provider.rs provider trait, result types, and selection

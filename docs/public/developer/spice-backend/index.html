@@ -94,6 +94,11 @@ directly and to perform dynamic Earth frame transformations.</p>
 IAU 2006 <code>EARTH_MOD_FRAME</code></li>
 <li>bundled <code>pck11.pca</code> planetary constants loaded before SPKs to supply ANISE&rsquo;s
 orientation graph offline</li>
+<li>raw loaded-SPK target coverage inspection (<code>get_loaded_spk_coverage</code>), for
+diagnostics only, and chain-aware, evaluator-verified Earth-relative
+coverage (<code>get_usable_coverage</code>) — see
+<a href="../ephemeris-manager/#runtime-coverage-inspection">ephemeris-manager</a> for
+the distinction and what each does and does not guarantee</li>
 </ul>
 <p>The PCA is ANISE&rsquo;s published v0.10 artifact, generated from NAIF/JPL <code>pck00011</code>
 and DE431 gravity constants. Its pinned checksum and load-order rules are recorded
@@ -117,6 +122,15 @@ precession in longitude&rdquo; are not applied.
 The full frame rotation must precede longitude extraction because precession can
 also change the ecliptic latitude of an inclined vector. See the normative
 <a href="../astronomy-coordinate-contract/">Astronomy coordinate contract</a>.</p>
+<p>Longitude speed (<code>motion</code>) for these SPK-backed bodies is an analytic
+derivative of that same state vector — the ANISE-returned velocity plus the
+time-dependent mean-obliquity rotation rate — not a finite difference. Finite
+differences remain the production method only for the handful of points
+derived from osculating orbital elements rather than sampled directly from an
+SPK record (true lunar node, true south node, true Lilith), and are also used
+as an independent test-only cross-check of the analytic rate. See the
+<a href="../astronomy-coordinate-contract/#motion-contract">Motion contract</a> for the
+exact rules and test name.</p>
 <h2 id="horizons-generated-kernels">Horizons-generated kernels</h2>
 <p>Horizons is treated as an artifact generator, not an online calculator in the
 chart request path. <code>scripts/generate-horizons-type13.py</code> requests bounded
@@ -205,6 +219,12 @@ small bodies) still needs compatible local SPKs</li>
 <li>how downloads work</li>
 <li>how multi-file kernel selection works</li>
 <li>why asteroid kernels are separate</li>
+</ul>
+<p>Use <a href="../ephemeris-validation/">Ephemeris validation</a> when the question is:</p>
+<ul>
+<li>how to reproduce a numerical or performance check locally</li>
+<li>what a provider test actually measured, on what machine, against what reference</li>
+<li>what validation gaps remain open</li>
 </ul>
 
     </div>
