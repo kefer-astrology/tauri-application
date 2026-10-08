@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ephemeris manager | Kefer Astrology</title>
+    <title>Ephemerides and coverage | Kefer Astrology</title>
     <meta name="description" content="Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
@@ -31,7 +31,7 @@
   <article class="content">
     <header class="page-header">
       <p class="eyebrow">developer</p>
-      <h1>Ephemeris manager</h1>
+      <h1>Ephemerides and coverage</h1>
       <p class="lede">Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.</p>
       
         <div class="doc-meta" aria-label="Document classification">
@@ -79,7 +79,7 @@ keyed by joining every resolved path&rsquo;s <code>length:modified-time</code> f
 file on each compute call — it is a <strong>kernel-load</strong> cache, not a cache of
 computed positions; every body query still evaluates its SPK Chebyshev record
 fresh for the requested epoch (see the
-<a href="../astronomy-coordinate-contract/#shared-state-evaluation-and-caching">astronomy coordinate contract</a>
+<a href="/developer/ephemeris-manager/#almanac-reuse-and-cache-invalidation">this page</a>
 for that distinction).</p>
 <p>Limitations of fingerprint-based invalidation:</p>
 <ul>

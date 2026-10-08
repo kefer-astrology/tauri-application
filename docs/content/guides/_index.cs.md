@@ -25,3 +25,6 @@ Každý scénář běží v hlavním rozhraní React v demonstračním režimu b
 </nav>
 
 Scénáře využívají ovládací prvky **Další** a **Zpět** uvnitř rámce aplikace. Překryv můžete kdykoli zavřít a pokračovat ve volném prozkoumávání.
+
+Pro pokyny k desktopové aplikaci se vraťte do **[Manuálu](../manual/)**.
+Průvodci ukazují cestu rozhraním; nedefinují ani neopakují chování aplikace.

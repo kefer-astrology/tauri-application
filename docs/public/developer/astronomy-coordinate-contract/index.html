@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Astronomy coordinate contract | Kefer Astrology</title>
@@ -300,48 +300,6 @@ horizon will not match a refraction-corrected rise/set or visual altitude</li>
 </ul>
 <p>Treat altitude/azimuth as a geocentric-direction display convenience rather
 than an observational apparent-place result.</p>
-<h2 id="shared-state-evaluation-and-caching">Shared state evaluation and caching</h2>
-<p>Two different kinds of reuse exist in this pipeline and must not be conflated:</p>
-<ul>
-<li><strong>Kernel/file-load caching.</strong> <code>JplAstronomyBackend::build_almanac</code> caches a
-constructed <code>Almanac</code> (the loaded PCK + chained SPK files) keyed by each
-path&rsquo;s <code>length:modified-time</code> fingerprint (<code>almanac_cache_key</code> in
-<code>infrastructure/jpl_backend.rs</code>). This avoids re-parsing DAF/BSP and PCK
-binary files on every compute call for the same file set, and a file
-replacement (e.g. a completed download) invalidates the key automatically
-because its fingerprint changes.</li>
-<li><strong>No precomputed polynomial output cache exists.</strong> Every <code>sample_state</code> /
-<code>sample_tropical_longitude</code> call still evaluates the SPK Chebyshev
-polynomial fresh, through ANISE, for the exact requested epoch. There is no
-layer that precomputes or memoizes body positions/velocities across epochs
-or across chart requests. A claim that repeated queries at nearby times are
-cheaper than the first only because of caching would be incorrect — what is
-cached is kernel <em>loading</em>, not kernel <em>evaluation</em>.</li>
-</ul>
-<h2 id="type-21-compatibility-boundary">Type 21 compatibility boundary</h2>
-<p>ANISE 0.10.6 supplies the required IAU 2006 dynamic frame machinery but does not
-evaluate SPK Type 21 (Extended Modified Difference Array) segments. Current
-Horizons-generated Chiron SPKs use Type 21 and the extended target ID <code>20002060</code>.
-The application therefore does not install or advertise native Type 21 kernels.</p>
-<p>The implemented compatibility path requests geometric Horizons <code>VECTORS</code> in
-ICRF, generates a Sun-centred SPK Type 13 with NAIF <code>mkspk</code>, and validates
-held-out position and velocity samples. The resulting artifact is accepted only
-when its adjacent manifest passes all of these runtime checks:</p>
-<ul>
-<li>supported manifest schema and J2000/Type 13 representation</li>
-<li>declared interpolation errors within their acceptance thresholds</li>
-<li>matching SHA-256 checksum</li>
-<li>successful in-range ANISE position-and-velocity probe through <code>EARTH_MOD_FRAME</code></li>
-</ul>
-<p>The bundled Chiron artifact covers 1900-01-01 through 2100-01-01. Its source
-states use a four-day cadence and degree-7 Hermite interpolation; 2,300 held-out
-Horizons samples measured maximum errors of 0.0392 km in position and
-<code>6.39e-8</code> km/s in velocity.</p>
-<p>Native Type 21 support may replace this generated artifact only after ANISE gains
-a tested evaluator. The manifest/catalog and coordinate contracts do not change
-when that storage representation changes.</p>
-<p>Falling back to live Horizons vector queries in the compute path does not satisfy
-this contract.</p>
 
     </div>
   </article>

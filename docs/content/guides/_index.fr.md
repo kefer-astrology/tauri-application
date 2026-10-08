@@ -25,3 +25,7 @@ Chaque scénario s’exécute sur l’interface React principale en mode de dém
 </nav>
 
 Les scénarios utilisent les contrôles **Suivant** et **Précédent** à l’intérieur du cadre de l’application. Vous pouvez fermer une superposition à tout moment et continuer à explorer librement.
+
+Pour les instructions concernant l’application de bureau, revenez au
+**[Manuel](../manual/)**. Les guides montrent un parcours dans l’interface ;
+ils ne définissent ni ne dupliquent le comportement de l’application.

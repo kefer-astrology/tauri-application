@@ -1,19 +1,48 @@
 ---
 title: 'Nastavení a vzhled'
-description: 'Upravte jazyk, vizuální identitu, objekty, aspekty a výchozí hodnoty pracovního prostoru.'
+description: 'Výchozí hodnoty výpočtu a vzhled aplikace.'
 weight: 50
 ---
 
-Otevřete **Nastavení** ve spodní části hlavního postranního panelu. Jeho vedlejší navigace rozděluje dostupné předvolby do tematických sekcí.
+Otevřete **Nastavení** ve spodní části hlavního panelu. Vedlejší panel nabízí
+jazyk a lokalitu, systém domů, pozorované objekty, aspekty, symboly, rozvržení,
+životopis Jana Kefera a Manuál.
 
-Nastavení vzhledu zahrnují čtyři motivy aplikace, sadu ikon aplikačního rámce, sadu astrologických glyfů, barvy živlů a barevné palety motivů. Kompaktní ovládací prvek motivu ve spodní části hlavního postranního panelu poskytuje rychlý přístup ke čtyřem motivům.
+## Výchozí hodnoty výpočtu
 
-Nastavení výpočtu zahrnují výchozí lokaci a časové pásmo, systém domů, výpočetní jádro, zdánlivé nebo geometrické polohy planet, pozorovatelná tělesa, aspekty a orby. Pro běžnou astrologickou práci použijte **Zdánlivé**; **Geometrické / pravé** zvolte jen tehdy, když záměrně potřebujete nekorigovaný okamžitý vektor. Výchozí hodnoty pracovního prostoru ovlivňují novou práci a při změně relevantního nastavení mohou obnovit výsledky existujících horoskopů.
+Tyto hodnoty slouží novým horoskopům a pohledům bez vlastní volby; nemění
+uložený výsledek existujícího horoskopu. Rozhraní lze přepnout mezi **Čeština**,
+**English**, **Français** a **Español**. Výchozí místo lze vyhledat nebo zadat
+souřadnicemi; **Časové pásmo** je výchozí pro nový horoskop. Název místa je
+popisný, vstupem výpočtu jsou souřadnice a čas.
 
-Jazykové zdroje jsou sdíleny oběma implementacemi frontendu. Změna jazyka aplikace mění popisky rozhraní; nemění uložené astronomické hodnoty. Jazyk a výchozí lokace jsou nyní v jedné sekci; jazyk se vybírá z rozbalovacího seznamu, kde je každý jazyk uveden svým vlastním názvem.
+**Systém domů** ukazuje systémy, které backend Rust/JPL umí vypočítat, a mění
+hroty domů. **Zdánlivý** režim používá běžné zdánlivé polohy a korekce;
+**Geometrický / pravý** používá nekorigovaný geometrický vektor. Volba jádra v
+tomto Nastavení není; viz [Efemeridy a pokrytí](../../developer/ephemeris-manager/).
 
-Výběr pozorovaných objektů obsahuje u stálic rychlý filtr na severní nebo jižní oblohu, založený na ekliptikální šířce dané hvězdy. Stálice zůstávají zatím jen pro přehled — dokud je nepočítá žádný výpočetní backend.
+## Objekty a aspekty
 
-Sekce rozvržení aplikace obsahuje přepínač monochromatického (černobílého) zobrazení, který se aplikuje nad aktuálním motivem a paletou, aniž by měnil jejich uložené barvy. Sady symbolů stupňů (Sepharial, Charubel) se řídí jazykem aplikace a tam, kde překlad zatím chybí, se použije angličtina.
+Vyberte tělesa a body pro nové horoskopy. Úplný seznam je v [Objektech,
+aspektech a obrazcích horoskopu](../objects-aspects-and-patterns/#pozorované-objekty).
+Výběr neinstaluje data ani nezaručuje pokrytí. Stálice lze filtrovat podle
+ekliptikální šířky, ale backend je zatím nepočítá.
 
-Postranní panel nastavení dále odkazuje na stručný životopis Jana Kefera a úplně dole na možnost projekt podpořit.
+**Škola** nahradí povolené aspekty, jejich orby a účast os, ne systém domů,
+objekty ani jádro. Podrobnosti uvádějí [Školy a nastavení aspektů](../objects-aspects-and-patterns/#školy-a-nastavení-aspektů).
+Každý aspekt lze zapnout, obarvit, nastavit mu orb 0–30° po 0,5°, osy a
+rozšířený orb. Čáry aspektů radixu mění jen jejich kresbu, ne výpočet.
+
+## Symboly a rozvržení
+
+Zvolte výchozí/moderní astrologické glyfy, výchozí/alternativní ikony, dostupné
+textové sady stupňů, barvy živlů a úpravy ve správci glyfů. Minimalistické kolo
+má kruh znamení a 12 dělících čar; technické přidává stupnici 360°. **Levý okraj
+radixu** volí ASC nebo 0° Berana vlevo a nemění domy, polohy ani aspekty; jde o
+lokální předvolbu zařízení.
+
+Vyberte motiv **Sunrise**, **Noon**, **Twilight** nebo **Midnight**. Paleta
+upravuje barvy panelů, plátna, textů, akcentu a pozadí; monochromatické
+zobrazení je pouze odbarví. **Uložit** potvrzuje paletu a barvy živlů,
+**Zrušit** vrací neuložená pole. Vizuální předvolby se nemusí přenést na jiné
+zařízení.

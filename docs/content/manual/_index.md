@@ -14,6 +14,7 @@ The Manual describes Kefer Astrology from the user’s point of view. You do not
 ## Examine a chart
 
 - **[Chart views](./chart-views/)** — move between the horoscope, aspectarium, information, revolution, and synastry views.
+- **[Objects, aspects, and chart patterns](./objects-aspects-and-patterns/)** — see the built-in catalog and what its availability depends on.
 - **[Transits and time](./transits-and-time/)** — inspect a moment, navigate through time, and work with transit views.
 
 ## Personalize the application

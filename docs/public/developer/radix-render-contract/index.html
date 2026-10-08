@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Radix render contract | Kefer Astrology</title>
@@ -92,6 +92,7 @@ Any approximation or fallback belongs in response provenance/warnings.</li>
 <li><code>configurations</code>: array of aspect-pattern ids (<code>t_square</code>, <code>t_square_&lt;modality&gt;</code>, <code>grand_trine</code>, <code>grand_trine_&lt;element&gt;</code>, <code>grand_cross</code>, <code>grand_cross_&lt;modality&gt;</code>, <code>kite</code>, <code>kite_&lt;element&gt;</code>, <code>mystic_rectangle</code>, <code>double_quincunx</code>, <code>double_biquintile</code>, <code>hexagram</code>, <code>pentagram</code>), derived from the same 10 bodies and the computed <code>aspects</code>.</li>
 <li>Computed once in Rust (<code>detect_chart_shapes</code>/<code>detect_chart_configurations</code> in <code>domain/astrology.rs</code>) and shared by every compute route — including the Python route, which gets them injected from its own <code>positions</code>/<code>house_cusps</code>/<code>aspects</code> response fields — so frontends never need to re-derive them.</li>
 <li><code>shapes</code> requires at least 7 of the 10 classical bodies present in <code>positions</code>; otherwise it is empty. <code>configurations</code> has no such minimum — it simply finds no matching pattern among however many of the 10 are present.</li>
+<li>This is a single-instant snapshot classifier (flat ids, no participant list, no time dimension), distinct from the time-aware <code>configuration_requests</code>/<code>event_search.configuration_matches</code> interval search on <code>compute_transit_series</code> — see <a href="../transit-series-contract/#multi-body-configuration-search-configurationrequests">transit-series-contract</a>. The two are independent implementations over the same four overlapping pattern names (<code>grand_trine</code>/<code>t_square</code>/<code>grand_cross</code>, plus <code>double_quincunx</code> here vs. <code>yod</code> there for the identical geometry); neither calls the other.</li>
 </ul>
 <h2 id="support-rule">Support rule</h2>
 <p>House support must follow two rules:</p>

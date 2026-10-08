@@ -11,7 +11,7 @@ Kefer Astrology se otevírá v pracovním prostoru horoskopu. Hlavní postranní
 - **Nový, Otevřít, Uložit a Export** slouží ke správě práce uchovávané v pracovním prostoru.
 - **Horoskop** je hlavní řídicí panel horoskopu.
 - **Aspektárium** zobrazuje vztahy mezi vybranými objekty horoskopu.
-- **Informace** zobrazují podrobnosti horoskopu a vypočtené hodnoty.
+- **Informace** (včetně Spektra) jsou vizuální prototyp budoucího vypočteného přehledu; zatím nezobrazují skutečné hodnoty vybraného horoskopu.
 - **Tranzity a Dynamika** poskytují časová zobrazení.
 - **Revoluce a Synastrie** poskytují specializované postupy pro porovnávání.
 - **Nastavení** ovládá jazyk, vzhled, výchozí hodnoty výpočtů, objekty a aspekty.
@@ -20,7 +20,7 @@ Kefer Astrology se otevírá v pracovním prostoru horoskopu. Hlavní postranní
 
 1. Otevřete **Nový** a zadejte subjekt, datum, čas a lokaci.
 2. Vytvořte horoskop a vraťte se do zobrazení **Horoskop**.
-3. Pomocí **Informace** a **Aspektárium** prozkoumejte výsledek.
+3. Pomocí **Horoskop** a **Aspektárium** prozkoumejte vypočtený výsledek.
 4. Až budete chtít práci uchovat, uložte pracovní prostor.
 
 Sestavení pro prohlížeč použité v Řízené prohlídce slouží jako demonstrační prostředí. Nativní dialogová okna pro práci se soubory, ukládání dat a výpočty závislé na backendu vyžadují desktopovou aplikaci.

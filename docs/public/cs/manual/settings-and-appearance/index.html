@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="cs">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nastavení a vzhled | Kefer Astrology</title>
-    <meta name="description" content="Upravte jazyk, vizuální identitu, objekty, aspekty a výchozí hodnoty pracovního prostoru." />
+    <meta name="description" content="Výchozí hodnoty výpočtu a vzhled aplikace." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
     <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
@@ -38,17 +38,43 @@
     <header class="page-header">
       <p class="eyebrow">manual</p>
       <h1>Nastavení a vzhled</h1>
-      <p class="lede">Upravte jazyk, vizuální identitu, objekty, aspekty a výchozí hodnoty pracovního prostoru.</p>
+      <p class="lede">Výchozí hodnoty výpočtu a vzhled aplikace.</p>
       
     </header>
     <div class="prose">
-      <p>Otevřete <strong>Nastavení</strong> ve spodní části hlavního postranního panelu. Jeho vedlejší navigace rozděluje dostupné předvolby do tematických sekcí.</p>
-<p>Nastavení vzhledu zahrnují čtyři motivy aplikace, sadu ikon aplikačního rámce, sadu astrologických glyfů, barvy živlů a barevné palety motivů. Kompaktní ovládací prvek motivu ve spodní části hlavního postranního panelu poskytuje rychlý přístup ke čtyřem motivům.</p>
-<p>Nastavení výpočtu zahrnují výchozí lokaci a časové pásmo, systém domů, výpočetní jádro, zdánlivé nebo geometrické polohy planet, pozorovatelná tělesa, aspekty a orby. Pro běžnou astrologickou práci použijte <strong>Zdánlivé</strong>; <strong>Geometrické / pravé</strong> zvolte jen tehdy, když záměrně potřebujete nekorigovaný okamžitý vektor. Výchozí hodnoty pracovního prostoru ovlivňují novou práci a při změně relevantního nastavení mohou obnovit výsledky existujících horoskopů.</p>
-<p>Jazykové zdroje jsou sdíleny oběma implementacemi frontendu. Změna jazyka aplikace mění popisky rozhraní; nemění uložené astronomické hodnoty. Jazyk a výchozí lokace jsou nyní v jedné sekci; jazyk se vybírá z rozbalovacího seznamu, kde je každý jazyk uveden svým vlastním názvem.</p>
-<p>Výběr pozorovaných objektů obsahuje u stálic rychlý filtr na severní nebo jižní oblohu, založený na ekliptikální šířce dané hvězdy. Stálice zůstávají zatím jen pro přehled — dokud je nepočítá žádný výpočetní backend.</p>
-<p>Sekce rozvržení aplikace obsahuje přepínač monochromatického (černobílého) zobrazení, který se aplikuje nad aktuálním motivem a paletou, aniž by měnil jejich uložené barvy. Sady symbolů stupňů (Sepharial, Charubel) se řídí jazykem aplikace a tam, kde překlad zatím chybí, se použije angličtina.</p>
-<p>Postranní panel nastavení dále odkazuje na stručný životopis Jana Kefera a úplně dole na možnost projekt podpořit.</p>
+      <p>Otevřete <strong>Nastavení</strong> ve spodní části hlavního panelu. Vedlejší panel nabízí
+jazyk a lokalitu, systém domů, pozorované objekty, aspekty, symboly, rozvržení,
+životopis Jana Kefera a Manuál.</p>
+<h2 id="výchozí-hodnoty-výpočtu">Výchozí hodnoty výpočtu</h2>
+<p>Tyto hodnoty slouží novým horoskopům a pohledům bez vlastní volby; nemění
+uložený výsledek existujícího horoskopu. Rozhraní lze přepnout mezi <strong>Čeština</strong>,
+<strong>English</strong>, <strong>Français</strong> a <strong>Español</strong>. Výchozí místo lze vyhledat nebo zadat
+souřadnicemi; <strong>Časové pásmo</strong> je výchozí pro nový horoskop. Název místa je
+popisný, vstupem výpočtu jsou souřadnice a čas.</p>
+<p><strong>Systém domů</strong> ukazuje systémy, které backend Rust/JPL umí vypočítat, a mění
+hroty domů. <strong>Zdánlivý</strong> režim používá běžné zdánlivé polohy a korekce;
+<strong>Geometrický / pravý</strong> používá nekorigovaný geometrický vektor. Volba jádra v
+tomto Nastavení není; viz <a href="../../developer/ephemeris-manager/">Efemeridy a pokrytí</a>.</p>
+<h2 id="objekty-a-aspekty">Objekty a aspekty</h2>
+<p>Vyberte tělesa a body pro nové horoskopy. Úplný seznam je v <a href="../objects-aspects-and-patterns/#pozorovan%C3%A9-objekty">Objektech,
+aspektech a obrazcích horoskopu</a>.
+Výběr neinstaluje data ani nezaručuje pokrytí. Stálice lze filtrovat podle
+ekliptikální šířky, ale backend je zatím nepočítá.</p>
+<p><strong>Škola</strong> nahradí povolené aspekty, jejich orby a účast os, ne systém domů,
+objekty ani jádro. Podrobnosti uvádějí <a href="../objects-aspects-and-patterns/#%C5%A1koly-a-nastaven%C3%AD-aspekt%C5%AF">Školy a nastavení aspektů</a>.
+Každý aspekt lze zapnout, obarvit, nastavit mu orb 0–30° po 0,5°, osy a
+rozšířený orb. Čáry aspektů radixu mění jen jejich kresbu, ne výpočet.</p>
+<h2 id="symboly-a-rozvržení">Symboly a rozvržení</h2>
+<p>Zvolte výchozí/moderní astrologické glyfy, výchozí/alternativní ikony, dostupné
+textové sady stupňů, barvy živlů a úpravy ve správci glyfů. Minimalistické kolo
+má kruh znamení a 12 dělících čar; technické přidává stupnici 360°. <strong>Levý okraj
+radixu</strong> volí ASC nebo 0° Berana vlevo a nemění domy, polohy ani aspekty; jde o
+lokální předvolbu zařízení.</p>
+<p>Vyberte motiv <strong>Sunrise</strong>, <strong>Noon</strong>, <strong>Twilight</strong> nebo <strong>Midnight</strong>. Paleta
+upravuje barvy panelů, plátna, textů, akcentu a pozadí; monochromatické
+zobrazení je pouze odbarví. <strong>Uložit</strong> potvrzuje paletu a barvy živlů,
+<strong>Zrušit</strong> vrací neuložená pole. Vizuální předvolby se nemusí přenést na jiné
+zařízení.</p>
 
     </div>
   </article>

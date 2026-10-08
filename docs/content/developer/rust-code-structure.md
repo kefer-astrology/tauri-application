@@ -103,4 +103,4 @@ helpers where practical, but documentation must retain the mixed-boundary
 description until the commands are actually reduced to adapters.
 
 For runtime behavior see [Architecture](../architecture/); for workspace
-contracts see [Rust workspace contract](../rust-workspace-contract/).
+contracts see [Workspace YAML contract](../workspace-yaml/).

@@ -266,51 +266,17 @@ Acceptance criteria:
 
 ### `compute_transit_series(...) -> Result<Value, String>`
 
-Inputs:
+Transport names are `workspace_path`, `chart_id`, `start_datetime`,
+`end_datetime`, `transiting_objects`, `transited_objects`, `aspect_types`, and
+optional `time_step_seconds`, `sampled_series`, `exact_hits`, `station_events`,
+`configuration_requests`, `preset_id`, and `settings_overrides`. It returns
+the transit-series response and backend provenance. The authoritative request
+rules, defaults, response shape, completeness semantics, and supported
+configuration IDs are in the [Transit series contract](../transit-series-contract/).
 
-- `workspace_path`
-- `chart_id`
-- `start_datetime`
-- `end_datetime`
-- `time_step_seconds`
-- `transiting_objects`
-- `transited_objects`
-- `aspect_types`
-- optional `exact_hits` (boolean, default `false` when omitted)
-- optional `station_events` (boolean, default `false` when omitted)
-- optional `preset_id`
-- optional `settings_overrides`
-
-Behavior:
-
-- `time_step_seconds` must be greater than `0`. It governs only the sampled
-  `results` step; it has no effect on `exact_hits`/`station_events` and is
-  never redefined as event-time precision.
-- `end_datetime` must be greater than or equal to `start_datetime`.
-- Rust mode enforces a hard cap of `50_000` generated steps.
-- Returns a response with `source_chart_id`, `time_range`, `time_step`, `results`, `event_search`, and backend provenance fields.
-- Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.
-- Preset and operation settings use the same precedence and temporary Rust-only
-  routing described for `compute_chart`.
-- `exact_hits`/`station_events` always run the exact-event search locally
-  through the Rust event-search module, independently of whether the sampled
-  `results` were computed by Rust or Python — the Python sidecar has no event-
-  search endpoint of its own. See
-  [transit-series-contract](../transit-series-contract/#exact-event-search-exacthits--stationevents)
-  for the `event_search` response shape, supported aspect geometry (moving
-  vs. fixed radix, moving vs. moving, or both), and discovery limitations.
-- `compute_transit_series_from_data` (the in-memory, no-persisted-workspace
-  counterpart used by `compute_chart_from_data`-style callers) accepts and
-  behaves identically for the same `exact_hits`/`station_events`/`event_search`
-  fields; it has no separate Python route.
-
-Acceptance criteria:
-
-- Invalid date order returns an error.
-- Non-positive step returns an error.
-- A valid range returns ordered results with `datetime`, `transit_positions`, `motion`, and `aspects`, plus a top-level `event_search` field.
-- Omitting `exact_hits`/`station_events` behaves identically to passing `false`.
-- `event_search.complete` is `false`, with a corresponding `event_search.warnings` entry, whenever a sub-search fails (e.g. missing kernel coverage) or exhausts its work-limit — never a silently empty "no events" success.
+Rust caps a sampled response at 50,000 generated steps. Event and
+configuration searches run locally through Rust even when a Python sidecar
+produced sampled results; Python has no equivalent endpoint.
 
 ## Ephemeris commands
 

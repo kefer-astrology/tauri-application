@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="es">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=45637&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Ajustes y apariencia | Kefer Astrology</title>
-    <meta name="description" content="Ajuste el idioma, la identidad visual, los objetos, los aspectos y los valores predeterminados del espacio de trabajo." />
+    <meta name="description" content="Valores predeterminados de cálculo y apariencia de la aplicación." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
     <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
@@ -38,17 +38,20 @@
     <header class="page-header">
       <p class="eyebrow">manual</p>
       <h1>Ajustes y apariencia</h1>
-      <p class="lede">Ajuste el idioma, la identidad visual, los objetos, los aspectos y los valores predeterminados del espacio de trabajo.</p>
+      <p class="lede">Valores predeterminados de cálculo y apariencia de la aplicación.</p>
       
     </header>
     <div class="prose">
-      <p>Abra <strong>Ajustes</strong> en la parte inferior de la barra lateral principal. Su navegación secundaria divide las preferencias disponibles en secciones específicas.</p>
-<p>Los ajustes de apariencia incluyen los cuatro temas de la aplicación, la familia de iconos del marco de la aplicación, la familia de glifos astrológicos, los colores de los elementos y las paletas de temas. El control compacto de temas en la parte inferior de la barra lateral principal proporciona acceso rápido a los cuatro temas.</p>
-<p>Los ajustes de cálculo incluyen la ubicación y la zona horaria predeterminadas, el sistema de casas, el motor de cálculo, las posiciones planetarias aparentes o geométricas, los cuerpos observables, los aspectos y los orbes. Usa <strong>Aparentes</strong> para el trabajo astrológico habitual; elige <strong>Geométricas / verdaderas</strong> solo cuando quieras el vector instantáneo sin corregir. Los valores predeterminados del espacio de trabajo pueden actualizar resultados existentes cuando cambia un ajuste de cálculo.</p>
-<p>Los recursos de idioma se comparten entre ambas implementaciones de frontend. Cambiar el idioma de la aplicación cambia las etiquetas de la interfaz; no cambia los valores astronómicos almacenados. El idioma y la ubicación predeterminada están ahora en una sola sección; el idioma se elige de una lista desplegable en la que cada idioma aparece con su propio nombre.</p>
-<p>El selector de objetos observados incluye, para las estrellas fijas, un filtro rápido para el cielo norte o sur, basado en la latitud eclíptica de cada estrella. Las estrellas fijas siguen siendo solo informativas hasta que un backend las calcule.</p>
-<p>La sección de diseño de la aplicación incluye un interruptor de vista monocromática (escala de grises), aplicado sobre el tema y la paleta activos sin cambiar sus colores guardados. Los conjuntos de símbolos de grado (Sepharial, Charubel) siguen el idioma de la aplicación, recurriendo al inglés donde aún no exista traducción.</p>
-<p>La barra lateral de ajustes también enlaza a una breve biografía de Jan Kefer y, al final, a una forma de apoyar el proyecto.</p>
+      <p>Abra <strong>Ajustes</strong> al final de la barra principal. Incluye idioma y ubicación, sistema de casas, objetos observados, aspectos, símbolos y diseño.</p>
+<h2 id="valores-predeterminados-de-cálculo">Valores predeterminados de cálculo</h2>
+<p>Estos valores sirven a cartas nuevas y vistas sin elección propia; no modifican una carta guardada. La interfaz permite <strong>Čeština</strong>, <strong>English</strong>, <strong>Français</strong> y <strong>Español</strong>. Busque el lugar predeterminado o introduzca coordenadas; <strong>Zona horaria</strong> es el valor inicial de una carta nueva. El nombre del lugar es descriptivo: coordenadas y hora son las entradas de cálculo.</p>
+<p><strong>Sistema de casas</strong> muestra sistemas que el backend Rust/JPL puede calcular y cambia las cúspides. <strong>Aparente</strong> usa posiciones aparentes y correcciones; <strong>Geométrica / verdadera</strong> usa el vector sin corregir. Esta pantalla no tiene selector de motor; vea <a href="../../developer/ephemeris-manager/">Efemérides y cobertura</a>.</p>
+<h2 id="objetos-y-aspectos">Objetos y aspectos</h2>
+<p>Seleccione cuerpos y puntos para cartas nuevas. La lista está en <a href="../objects-aspects-and-patterns/#objetos-observables">Objetos, aspectos y patrones de carta</a>. La selección no instala datos ni garantiza cobertura. Las estrellas fijas se pueden filtrar por latitud eclíptica, pero el backend aún no las calcula.</p>
+<p><strong>Escuela</strong> sustituye aspectos activos, orbes y participación de ángulos, no casas, objetos ni motor. Consulte <a href="../objects-aspects-and-patterns/#escuelas-y-ajustes-de-aspectos">Escuelas y ajustes de aspectos</a>. Cada aspecto admite activación, color, orb de 0–30° por 0,5°, ángulos y orb extendido. Las líneas de aspecto del radix cambian solo el dibujo, no el cálculo.</p>
+<h2 id="símbolos-y-diseño">Símbolos y diseño</h2>
+<p>Elija glifos predeterminados/modernos, iconos predeterminados/alternativos, conjuntos de texto de grados disponibles, colores de elementos y ajustes en el gestor de glifos. La rueda minimalista tiene anillo zodiacal y 12 divisores; la técnica añade escala de 360°. <strong>Borde izquierdo del radix</strong> sitúa ASC o 0° de Aries a la izquierda sin cambiar casas, posiciones ni aspectos; es local al dispositivo.</p>
+<p>Elija <strong>Sunrise</strong>, <strong>Noon</strong>, <strong>Twilight</strong> o <strong>Midnight</strong>. La paleta ajusta paneles, lienzo, textos, acento y fondos; la vista monocromática solo desatura. <strong>Guardar</strong> confirma paleta y colores de elementos y <strong>Cancelar</strong> restaura los campos no guardados. Las preferencias visuales pueden no viajar a otro equipo.</p>
 
     </div>
   </article>

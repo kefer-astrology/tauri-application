@@ -1,5 +1,5 @@
 ---
-title: 'Ephemeris manager'
+title: 'Ephemerides and coverage'
 description: 'Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.'
 weight: 42
 doc_kind: implementation-reference
@@ -61,7 +61,7 @@ keyed by joining every resolved path's `length:modified-time` fingerprint
 file on each compute call — it is a **kernel-load** cache, not a cache of
 computed positions; every body query still evaluates its SPK Chebyshev record
 fresh for the requested epoch (see the
-[astronomy coordinate contract](../astronomy-coordinate-contract/#shared-state-evaluation-and-caching)
+[this page](#almanac-reuse-and-cache-invalidation)
 for that distinction).
 
 Limitations of fingerprint-based invalidation:
