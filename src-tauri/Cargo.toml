@@ -32,6 +32,13 @@ hifitime = "4"
 sha2 = "0.10"
 tzf-rs = { version = "2.1.2", default-features = false, features = ["bundled"] }
 
+[dev-dependencies]
+# Already pulled in transitively by `anise`; declared directly so test code
+# can build synthetic SPK byte buffers (summary-metadata only, no Chebyshev
+# data) to exercise chain-discovery/precedence scenarios real bundled or
+# downloadable kernels can't construct on demand.
+zerocopy = "0.8"
+
 [features]
 # Compile and link the Swiss Ephemeris C library (AGPL-3.0 / commercial).
 # Disable for a fully license-clean build that uses anise + bundled `de440s.bsp` only.
