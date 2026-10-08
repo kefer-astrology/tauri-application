@@ -15,6 +15,7 @@ src-tauri/src/
 │   ├── chart_resolution.rs validate/resolve persisted or in-memory chart input
 │   ├── computation.rs     resolved Rust chart computation
 │   ├── compute_router.rs  backend selection/fallback and response annotation
+│   ├── event_search.rs    stationary-point/exact-aspect-time root-finding; not yet command-exposed
 │   ├── location.rs        location use case
 │   └── transit.rs         typed Rust transit-series computation
 ├── commands/              Tauri entry points; mixed adapters/orchestration
@@ -31,7 +32,7 @@ src-tauri/src/
 ├── domain/                astrology relationships, shapes/configurations, houses
 ├── infrastructure/
 │   ├── dialogs.rs         platform dialog integration
-│   ├── ephemeris.rs       kernel catalog, cache, downloads, Almanac construction
+│   ├── ephemeris.rs       kernel catalog, cache, downloads, Almanac construction, chain-aware coverage
 │   ├── geocoding.rs       external location/timezone lookup
 │   ├── jpl_backend.rs     JPL/ANISE BSP position provider
 │   ├── position_provider.rs provider trait, result types, and selection

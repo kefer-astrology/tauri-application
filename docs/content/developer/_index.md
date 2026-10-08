@@ -44,6 +44,8 @@ behavior from a roadmap or archive page.
 
 ## Contracts
 
+- **[Astronomy coordinate contract](./astronomy-coordinate-contract/)** — normative
+  frame, origin, correction, motion, and ephemeris-artifact rules for computed longitudes.
 - **[Configuration reference](./configuration-reference/)** — implemented calculation
   settings, serialized values, and presentation boundary.
 - **[Workspace YAML contract](./workspace-yaml/)** — complete project tree,
@@ -60,7 +62,9 @@ behavior from a roadmap or archive page.
 
 ## Implementation reference
 
-- **[SPICE backend](./spice-backend/)**, **[ephemeris manager](./ephemeris-manager/)**, and **[Python package](./python-package/)** describe computation backends.
+- **[SPICE backend](./spice-backend/)**, **[ephemeris manager](./ephemeris-manager/)**,
+  **[ephemeris validation](./ephemeris-validation/)**, and **[Python package](./python-package/)**
+  describe computation backends and their reproducible checks.
 - **[House systems](./house-systems/)**, **[lunar phase](./lunar-phase/)**, and **[physical properties](./physical-properties/)** document domain calculations and data.
 - **[React frontend](./frontend-react/)** — the primary desktop interface.
 - **[Svelte frontend](./frontend-svelte/)** — the alternate implementation and parity surface.

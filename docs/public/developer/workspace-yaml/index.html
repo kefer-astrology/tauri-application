@@ -201,10 +201,11 @@ settings (it only re-applies the preset on an actual change), so resaving
 unrelated settings — which resend the whole <code>WorkspaceDefaults</code> snapshot —
 never clobbers per-aspect customizations made after the tradition was picked.
 This is a first iteration: it only drives aspect selection/orbs/angle
-inclusion. Object selection and each tradition&rsquo;s native orb <em>model</em>
-(whole-sign tolerance, planetary moieties, harmonic-scaled orbs,
-midpoint/dial orbs, Jyotish directional drishti) are approximated with the
-existing per-aspect-orb engine, not truly implemented, and are future work.</p>
+inclusion. See <a href="../domain-model/#astrological-traditions-%C5%A1kola-and-the-two-different-things-called-school">Domain model and extensibility</a>
+for the full seven-axis decomposition (zodiac, houses, objects, relationships,
+planetary condition, derived charts/timing, interpretation) a tradition could
+eventually drive, which of those axes exist today, and how <code>BaseChartPurpose</code>
+(natal/horary/electional/…) is a separate, tradition-independent axis.</p>
 <p><code>tag_catalog</code> is the workspace-wide registry used for tag completion and shared
 colors. Names must be non-empty and unique after surrounding whitespace is
 removed. A color, when present, must use <code>#RGB</code> or <code>#RRGGBB</code>. Charts and analyses
@@ -378,9 +379,14 @@ computed positions/aspects:</p>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">precession_correction</span>: <span style="color:#66d9ef">true</span>
 </span></span></code></pre></div><p>The source chart supplies subject coordinates and inherited settings. The
 transit file chooses the interval, sampling, moving and target bodies, aspects,
-orbs, and event families. Exact-time refinement is represented by <code>exact_hits</code>;
-the current series engine still samples at <code>time_step_seconds</code> and may refine
-execution in a later compatible implementation.</p>
+orbs, and event families. <code>exact_hits</code> and <code>station_events</code> are implemented:
+when either is set, <code>compute_transit_series</code>/<code>compute_transit_series_from_data</code>
+additionally run a genuine adaptive event search (exact aspect-crossing times
+and/or stationary points) over the same interval and return it in a separate
+<code>event_search</code> response field, independent of <code>time_step_seconds</code> — which
+remains purely the sampled-series graph resolution and is never redefined as
+event-time precision. See <a href="../transit-series-contract/#exact-event-search-exacthits--stationevents">transit-series-contract</a>
+for the response shape, supported aspect geometry, and discovery limitations.</p>
 <h2 id="what-is-intentionally-not-persisted">What is intentionally not persisted</h2>
 <p>Computed longitudes, houses, detected aspects, configurations, and transit
 series are derived cache candidates, not workspace truth. Reopening a workspace

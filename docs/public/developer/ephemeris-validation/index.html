@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ephemeris validation | Kefer Astrology</title>
+    <meta name="description" content="Reproducible numerical and performance checks for the Rust JPL/SPICE provider, and what they do not yet cover." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/developer/ephemeris-validation/" aria-current="page">English</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">developer</p>
+      <h1>Ephemeris validation</h1>
+      <p class="lede">Reproducible numerical and performance checks for the Rust JPL/SPICE provider, and what they do not yet cover.</p>
+      
+        <div class="doc-meta" aria-label="Document classification">
+          <span>Implementation reference</span>
+          <span>Current</span>
+          <span>Informative</span>
+        </div>
+      
+    </header>
+    <div class="prose">
+      <p>This page is the single authoritative home for performance and validation
+claims about the Rust JPL/SPICE provider (<code>infrastructure/jpl_backend.rs</code>).
+Other pages link here instead of repeating numbers; if you are looking for
+normative behavior rather than measurements, see the
+<a href="../astronomy-coordinate-contract/">Astronomy coordinate contract</a> and
+<a href="../spice-backend/">SPICE backend</a> instead.</p>
+<h2 id="reproducing-the-checks">Reproducing the checks</h2>
+<p>From <code>src-tauri/</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Correctness/parity tests (fast, run by default)</span>
+</span></span><span style="display:flex;"><span>cargo test --lib jpl_backend::
+</span></span><span style="display:flex;"><span>cargo test --lib infrastructure::ephemeris::
+</span></span><span style="display:flex;"><span>cargo test --lib application::event_search::
+</span></span><span style="display:flex;"><span>cargo test --lib application::compute_router::
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Horizons-gated test (needs de440s.bsp; present in the bundled resources dir)</span>
+</span></span><span style="display:flex;"><span>cargo test --lib j2000_positions_match_horizons -- --ignored --nocapture
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Diagnostic timing benchmarks (release build; run on the target machine, not CI)</span>
+</span></span><span style="display:flex;"><span>cargo test --release --lib jpl_direct_path_benchmark -- --ignored --nocapture
+</span></span><span style="display:flex;"><span>cargo test --release --lib dense_single_body_transit_series_benchmark -- --ignored --nocapture
+</span></span><span style="display:flex;"><span>cargo test --release --lib multi_body_transit_series_benchmark -- --ignored --nocapture
+</span></span><span style="display:flex;"><span>cargo test --release --lib stationary_point_search_benchmark -- --ignored --nocapture
+</span></span><span style="display:flex;"><span>cargo test --release --lib aspect_exact_time_search_benchmark -- --ignored --nocapture
+</span></span><span style="display:flex;"><span>cargo test --release --lib compute_transit_events_benchmark -- --ignored --nocapture
+</span></span></code></pre></div><p><code>cargo test --lib</code> without filters also runs everything above except the six
+<code>--ignored</code> benchmarks, which are intentionally excluded from that default run
+because they need a release build (and, for the first, bundled resources) to
+be meaningful rather than to measure debug-build overhead.</p>
+<h2 id="what-each-test-validates-and-against-what-reference">What each test validates, and against what reference</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Test</th>
+					<th>What it checks</th>
+					<th>Reference</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>apparent_is_default_and_geometric_disables_aberration</code></td>
+					<td><code>position_mode</code> maps to the correct ANISE <code>Aberration</code></td>
+					<td>Internal contract, no external reference</td>
+			</tr>
+			<tr>
+					<td><code>earth_mod_transform_changes_more_than_scalar_longitude</code></td>
+					<td>The MOD transform is a real 3D rotation, not a scalar offset</td>
+					<td>Internal invariant (latitude must change)</td>
+			</tr>
+			<tr>
+					<td><code>true_lilith_matches_horizons_osculating_elements_at_j2000</code></td>
+					<td>True apogee (true Lilith) formula</td>
+					<td>Horizons osculating elements for the Moon (body 301) at J2000.0: <code>EC</code>, <code>OM</code>, <code>W</code> → expected apogee longitude 252.8807°, tolerance 0.5°</td>
+			</tr>
+			<tr>
+					<td><code>vertex_and_parts_resolve_and_match_direct_computation</code></td>
+					<td>Vertex/antivertex/Parts of Fortune/Spirit wiring</td>
+					<td>Internal cross-check against the same formulas called directly</td>
+			</tr>
+			<tr>
+					<td><code>codes_300ast_minor_planets_resolve_from_bundled_kernels</code></td>
+					<td>All 16 non-classical <code>codes_300ast</code> bodies actually resolve from the bundled kernel</td>
+					<td>Catalog-entry presence, not independent numerical accuracy per body</td>
+			</tr>
+			<tr>
+					<td><code>bundled_chiron_type13_is_discovered_and_computed</code></td>
+					<td>Chiron manifest discovery and computation wiring</td>
+					<td>Internal — confirms no <code>chiron_*</code> warning and a longitude in range</td>
+			</tr>
+			<tr>
+					<td><code>bundled_chiron_type13_matches_held_out_horizons_state</code></td>
+					<td>Chiron Type 13 interpolation accuracy at a held-out epoch</td>
+					<td>An independent Horizons <code>VECTORS</code> sample not used as an interpolation knot; position error &lt; 1.0 km, velocity error &lt; 1e-5 km/s</td>
+			</tr>
+			<tr>
+					<td><code>longitude_velocity_matches_complete_pipeline_central_differences</code></td>
+					<td>Analytic motion formula vs. centred finite differences of the full pipeline</td>
+					<td>Internal — three step sizes (1 s, 10 s, 60 s) confirm the finite-difference estimate itself converges, then compares the analytic rate to it; see the <a href="../astronomy-coordinate-contract/#motion-contract">motion contract</a> for the tolerances (2e-3 deg/day geometric, 1e-2 deg/day apparent) and why they differ</td>
+			</tr>
+			<tr>
+					<td><code>compute_chart_data_attaches_equatorial_and_horizontal_coordinates</code></td>
+					<td>RA/Dec/alt/az wiring end-to-end through <code>compute_chart_data</code></td>
+					<td>Skyfield/JPL reference for Mercury, 2024-04-10 12:00 Europe/Prague: RA 20.960824°, Dec 11.554670°, alt 48.889981°, az 153.520290°, tolerance 0.05° each</td>
+			</tr>
+			<tr>
+					<td><code>mercury_2024_geocentric_state_matches_independent_horizons_fixture</code></td>
+					<td>Raw J2000/ICRF geocentric state for Mercury Barycenter, 23 epochs across Jan–Feb 2024</td>
+					<td>Independently fetched JPL Horizons <code>VECTORS</code> (<code>VEC_CORR=NONE</code>), saved at <code>tests/fixtures/horizons/mercury_2024_geocentric.json</code>; observed max error ~0.035 km position, ~4.8e-8 km/s velocity (asserted bound: &lt;1 km, &lt;1e-5 km/s)</td>
+			</tr>
+			<tr>
+					<td><code>retrograde_flag_flips_across_a_real_stationary_point</code></td>
+					<td>The <code>retrograde</code> output flag actually flips at a real Mercury station, not just <code>speed &lt; 0.0</code> self-consistency</td>
+					<td>Internal — locates the station via <code>application::event_search::find_stationary_point</code>, samples ±6h through the public chart pipeline</td>
+			</tr>
+			<tr>
+					<td><code>longitude_wraps_through_zero_degrees_without_a_motion_discontinuity</code></td>
+					<td>Longitude and analytic motion stay correct across a real 0°/360° crossing (the Moon)</td>
+					<td>Internal — locates the real crossing via <code>find_aspect_exact_time</code> (target longitude 0°), confirms no spurious ~360°/day jump</td>
+			</tr>
+			<tr>
+					<td><code>chiron_longitude_is_continuous_across_its_internal_spk_segment_boundary</code></td>
+					<td>Position continuity across Chiron&rsquo;s two internal Type 13 segments (seam read live from <code>spk_summaries</code>, not a hardcoded date)</td>
+					<td>Internal invariant — Chiron moves ~0.03°/day, so a multi-degree jump at the segment seam would indicate a broken handoff</td>
+			</tr>
+			<tr>
+					<td><code>apparent_and_geometric_mars_positions_differ_by_a_small_physical_amount</code></td>
+					<td><code>apparent</code> vs. <code>geometric</code> Mars longitude differ by a real, bounded amount</td>
+					<td>Internal sanity bound only (0 &lt; delta &lt; 1°), not an independent accuracy proof</td>
+			</tr>
+			<tr>
+					<td><code>out_of_coverage_epoch_produces_explicit_local_warnings_not_an_error</code></td>
+					<td>A chart dated outside loaded coverage (year 3000) produces explicit per-body <code>_unavailable</code> warnings, not an error and not any network attempt</td>
+					<td>Internal — see <a href="/developer/ephemeris-validation/#offline-execution-verified-not-just-read-from-source">offline execution</a></td>
+			</tr>
+			<tr>
+					<td><code>unsupported_body_id_produces_explicit_local_warning_through_resolved_chart</code></td>
+					<td>An unknown body id, through the full resolved-chart pipeline, produces an explicit local diagnostic naming it</td>
+					<td>Internal</td>
+			</tr>
+			<tr>
+					<td><code>j2000_positions_match_horizons</code> (ignored by default)</td>
+					<td>All ten classical bodies resolve and the Sun&rsquo;s longitude is sane</td>
+					<td>Loose sanity check (Sun longitude within 1° of ~280.4° at J2000.0), not a per-body Horizons table</td>
+			</tr>
+			<tr>
+					<td><code>compare_jpl_vs_swisseph_2026_04_22_1500_utc</code> (ignored, <code>swisseph</code> feature only)</td>
+					<td>JPL vs. Swiss Ephemeris longitude agreement</td>
+					<td>Prints a diff table; this checkout does not vendor the Swiss Ephemeris C source, so this test cannot run here and provides no result</td>
+			</tr>
+	</tbody>
+</table>
+<p><code>application::event_search</code> (stationary points and exact aspect times — see
+below) and <code>infrastructure::ephemeris::usable_coverage_tests</code> (chain-aware
+coverage — see <a href="../ephemeris-manager/#runtime-coverage-inspection">ephemeris-manager</a>)
+have their own test suites, described in their own sections rather than this
+table, since they validate algorithms rather than individual reference points.</p>
+<p>None of these tests exercise the asteroids beyond Chiron and the Moon against
+an independent per-body Horizons reference; <code>codes_300ast_minor_planets_resolve_from_bundled_kernels</code>
+only confirms resolution, not numerical accuracy, for the other 15 bodies.
+Mercury is the only body checked against an independently fetched Horizons
+vector fixture; the Sun, Moon, and remaining eight classical planets are not.</p>
+<h2 id="event-search-stationary-points-and-exact-aspect-times">Event search: stationary points and exact aspect times</h2>
+<p><code>application::event_search</code> (<code>src-tauri/src/application/event_search.rs</code>)
+implements an actual root-finder over the normal position pipeline — a coarse
+fixed-step scan for a sign change, then bisection — for two kinds of event,
+each with both a single-result and a complete-interval (&ldquo;find every root in
+this range, not just the first&rdquo;) variant:</p>
+<ul>
+<li><code>find_stationary_point</code> / <code>find_all_stationary_points</code>: the instant(s) a
+body&rsquo;s longitude speed changes sign (a station).</li>
+<li><code>find_aspect_exact_time</code> / <code>find_all_aspect_exact_times_against_fixed_point</code>:
+the instant(s) a transiting body forms an exact aspect angle with a fixed
+longitude (e.g. a natal point, or 0° to find a tropical-boundary crossing).</li>
+<li><code>find_all_mutual_aspect_exact_times</code>: the moving-vs-moving counterpart —
+both bodies sampled together, for e.g. New Moon (Sun-Moon conjunction)
+searches.</li>
+</ul>
+<p>The complete-interval variants are wired to the <code>compute_transit_series</code> /
+<code>compute_transit_series_from_data</code> Tauri commands via
+<code>application::transit::compute_transit_events</code>, gated by the persisted
+<code>exact_hits</code>/<code>station_events</code> request flags and returned in a separate
+<code>event_search</code> response field — independent of, and never rounded to,
+<code>time_step_seconds</code>/the sampled <code>results</code> series. See
+<a href="../transit-series-contract/#exact-event-search-exacthits--stationevents">transit-series-contract</a>
+for the contract and supported aspect geometry. The underlying
+<code>discover_roots</code> scan has a bounded, two-tier recursion budget
+(<code>confirmed_subdivision_budget</code> generous, <code>speculative_subdivision_budget</code>
+tight) so it catches hidden/repeated crossings within one coarse step
+(retrograde loops, multiple events) without exponential cost — proven both
+against synthetic step functions with known root counts and against real
+Mercury retrograde-loop/station data. <strong>Stated limitation:</strong> discovery
+cannot resolve a tangential contact (a motion reversal that touches but does
+not cross the target value) as a crossing event; only genuine sign changes
+are found.</p>
+<p>Every correctness test independently cross-checks its own result two ways:
+(1) the found instant&rsquo;s own speed/offset is confirmed near zero, and (2) a
+separate, cruder re-scan at a different fixed step is confirmed to still
+bracket the same sign change, rather than only trusting the bisection&rsquo;s
+internal convergence. Tests cover a real Mercury station (also independently
+corroborated by the Horizons fixture above, in the same window), a window
+with deliberately no station (Sun, 2 days), a real Sun–Moon conjunction (New
+Moon), and a regression case: with a 0°-aspect target, the signed-offset
+function&rsquo;s own wrap boundary sits at 180° (opposition) — an early version of
+this search could mistake that discontinuity for a conjunction, which is now
+an explicit regression test
+(<code>aspect_exact_time_search_does_not_mistake_the_opposite_point_for_a_crossing</code>).</p>
+<h2 id="usable-coverage-raw-vs-chain-aware">Usable coverage: raw vs. chain-aware</h2>
+<p>There are four genuinely different coverage questions in play here, and this
+page keeps them distinct rather than treating &ldquo;coverage&rdquo; as one concept:</p>
+<ol>
+<li><strong>Raw target segment coverage</strong> — the union of epochs a target&rsquo;s own
+loaded SPK segment(s) declare, with no regard for anything else. This is
+<code>loaded_spk_coverage</code> / <code>get_loaded_spk_coverage</code>.</li>
+<li><strong>Complete geometric target-to-Earth chain coverage</strong> — whether every link
+from the target up to Earth (through whatever centers the loaded data
+actually uses) resolves at a given epoch. This is
+<code>usable_earth_relative_coverage</code> / <code>get_usable_coverage</code> with
+<code>apparent: false</code>.</li>
+<li><strong>Apparent-query coverage requiring retarded epochs</strong> — the same chain
+question, but probed with <code>Aberration::CN_S</code> so a failure to converge the
+light-time iteration at the <em>retarded</em> epoch is also caught. This is
+<code>get_usable_coverage</code> with <code>apparent: true</code>.</li>
+<li><strong>Numerical validation coverage</strong> — the separate, much narrower claim of
+which specific target/epoch/quantity/correction combinations have been
+checked against an independent reference. See the per-test table above and
+&ldquo;What this page does not claim&rdquo; below; it is not implied by any of the
+first three.</li>
+</ol>
+<p><code>usable_earth_relative_coverage</code> is built directly on
+<code>Almanac::transform</code> and <code>Almanac::ephemeris_path_to_root</code> — not a
+reimplementation of SPICE precedence rules, and not a &ldquo;global intersection of
+unrelated segment intervals.&rdquo; An earlier version of this function discovered
+only the <em>target&rsquo;s</em> ascent chain and filled in the Earth side from a
+hardcoded anchor list (<code>[0, 10, 3, 399]</code>); that was replaced with discovery
+from loaded segment metadata on <em>both</em> sides (the target&rsquo;s own ascent and
+Earth&rsquo;s own ascent, each via <code>ephemeris_path_to_root</code>), because the
+hardcoded list was carrying weight the discovery step wasn&rsquo;t actually doing —
+see <code>discover_ascent_chain_ids</code> in <code>infrastructure/ephemeris.rs</code>.</p>
+<h3 id="structural-analysis-sampled-validation-and-unknown">Structural analysis, sampled validation, and <code>Unknown</code></h3>
+<p>A reported interval&rsquo;s <em>endpoints</em> come from real segment boundaries — that
+part is exact structural analysis, since a Chebyshev segment is valid-or-not
+strictly by its declared window. Whether <code>transform</code> succeeds <em>throughout</em>
+the interval rests on a single midpoint probe per sub-interval, not an
+exhaustive scan — a finite successful probe does not prove availability at
+every instant, particularly for apparent mode, where light-time convergence
+could in principle fail at an isolated problematic epoch even inside an
+otherwise-valid window. This is a deliberate, bounded form of <strong>sampled
+validation</strong> layered on top of <strong>structural interval analysis</strong>, not a claim
+of exhaustive proof.</p>
+<p>Chain discovery can itself fail to complete — a genuinely broken center link,
+or a chain deeper than ANISE&rsquo;s 8-node limit. When that happens for a target
+that does have its own loaded segment(s), the report&rsquo;s <code>determination</code> is
+<code>Unknown</code> (with a <code>reason</code>) rather than a confident <code>Determined</code> empty
+result: the boundary set may have missed a real internal transition, so the
+returned intervals are a <strong>conservative, possibly-too-coarse</strong> result, not a
+confirmed answer. <code>Determined</code> is reserved for: (a) chain discovery actually
+succeeding on both sides, or (b) the target or Earth having <strong>no</strong> loaded
+segment at all, which is itself conclusive rather than a discovery failure.
+Tests: <code>missing_center_link_reports_unknown_not_a_confident_unavailable</code>,
+<code>chain_deeper_than_evaluator_limit_reports_unknown</code>.</p>
+<h3 id="precedence-tested-beyond-same-center-overlaps-and-corrected">Precedence: tested beyond same-center overlaps, and corrected</h3>
+<p><code>infrastructure::ephemeris::usable_coverage_tests</code> (15 tests) covers complete
+chains, missing links, gaps, alternate chains, and overlap/precedence —
+including scenarios no bundled or realistically downloadable kernel can be
+made to exhibit on demand, built from a hand-crafted synthetic SPK (real
+summary <em>metadata</em> — target id, center id, start/end epoch — no Chebyshev
+coefficient data; see <code>synthetic_spk</code> in the test module):</p>
+<ul>
+<li>a <strong>complete chain</strong> with real kernels (Ceres through Sun→SSB→EMB→Earth,
+<code>de440s</code> + bundled <code>codes_300ast</code>)</li>
+<li>a <strong>missing link</strong> with real kernels (Ceres present in <code>codes_300ast</code>
+alone, no Sun/Earth/EMB kernel loaded — reports empty, <code>Determined</code>
+coverage, not an error)</li>
+<li>a target <strong>entirely absent</strong> from any loaded kernel (also empty,
+<code>Determined</code>, not an error — a distinct case from &ldquo;present but
+unreachable&rdquo;)</li>
+<li>a <strong>synthetic missing center link</strong> (target&rsquo;s own segment exists, but its
+center has no segment anywhere) → <code>Unknown</code></li>
+<li>a <strong>synthetic alternate chain</strong> (a target&rsquo;s center genuinely differs
+across two eras of its own lifetime, both resolving to Earth through
+different intermediates) → both intermediates discovered, <code>Determined</code></li>
+<li>a <strong>synthetic chain deeper than ANISE&rsquo;s evaluator supports</strong> (9 hops,
+mirroring <code>anise::ephemerides::paths</code>&rsquo;s own internal depth-limit test) →
+<code>Unknown</code></li>
+<li><strong>real-kernel overlapping/same-center precedence</strong>: the bundled
+<code>codes_300ast</code> plus a downloaded standalone <code>ceres_1900_2100.bsp</code> (see
+fixture provenance below) — load-order invariance when one segment is a
+strict superset of another</li>
+<li>a <strong>synthetic different-center overlap</strong>, specifically to test the claim
+below</li>
+<li>a <strong>contiguous multi-segment target</strong> (Chiron&rsquo;s two internal Type 13
+segments merging into one reported interval)</li>
+<li><strong>apparent vs. geometric</strong> coverage never being wider under light-time
+correction</li>
+<li>the gap/merge sweep itself (<code>merge_probed_intervals</code>), tested directly with
+synthetic boundaries for a genuine gap, full merge, and leading/trailing
+exclusion, independent of any real kernel or synthetic SPK</li>
+</ul>
+<p>A real two-file overlap/precedence scenario needed a kernel this application
+does not bundle: <code>tests/fixtures/ephemeris/ceres_1900_2100.bsp</code> is NAIF&rsquo;s own
+publicly archived standalone Ceres file (same one <code>download_ephemeris(&quot;ceres_spk&quot;, ...)</code>
+would fetch), pinned here with checksum and retrieval-date provenance in the
+adjacent <code>README.md</code> so these tests do not depend on network access.</p>
+<p><strong>A claim from an earlier pass of this audit was too general, and the
+correction is itself the more interesting result.</strong> That pass found that
+reversing the load order of <code>ceres_1900_2100.bsp</code> and <code>codes_300ast</code> changes
+neither the usable coverage window nor the returned state vector, and
+generalized this to &ldquo;last loaded wins cannot narrow usable coverage.&rdquo; That
+generalization does <strong>not</strong> hold for the evaluator&rsquo;s actual selected
+chains. <code>anise::almanac::Almanac::spk_summary_at_epoch</code> walks loaded files in
+reverse-load order and falls through to an earlier file only when the
+most-recent one has <strong>no entry at all</strong> for that id at that epoch. If the
+most-recent file <strong>does</strong> have an entry — for the same target, at an
+overlapping epoch, through a <strong>different, dead-end center</strong> — that entry
+wins outright, and chain resolution fails there even though the earlier file
+would have resolved that exact instant through its own center.
+<code>last_loaded_file_can_shadow_an_otherwise_valid_chain_with_a_dead_end</code> proves
+this directly with a synthetic two-file kernel: resolution succeeds
+immediately outside the overlap and fails inside it. No bundled or
+downloaded real kernel pair in this project has been observed to actually
+hit this case — <code>ceres_1900_2100.bsp</code> and <code>codes_300ast</code> happen to share the
+same fully valid chain wherever they overlap — but it is reachable in
+principle for a kernel set this project does not currently use, and the
+earlier blanket claim should not have been made without checking it. See
+<a href="../ephemeris-manager/#file-resolution">ephemeris-manager</a> for the corrected
+documentation.</p>
+<p><strong>Also discovered while building these tests — real stored BSP coverage
+differs from the catalog&rsquo;s documentation-facing date-range labels, for the
+<em>specific</em> targets and files checked (not generalized further):</strong>
+<code>de440s.bsp</code>&rsquo;s Sun/Earth/EMB segments are actually stored from
+<strong>1849-12-26 through 2150-01-21</strong> (not &ldquo;1900–2050&rdquo;), and <code>codes_300ast.bsp</code>&rsquo;s
+<strong>Ceres segment specifically</strong> is stored from <strong>1799-12-30 through
+2199-12-13</strong> (not &ldquo;1600–2200&rdquo;) — the other ~298 bodies in that same
+multi-body file were not individually checked and may have different
+windows. These numbers came directly from <code>almanac.spk_summaries</code> during test
+development, not from any prior documentation claim. See
+<a href="../ephemeris-manager/#bsp-catalog">ephemeris-manager</a> for the corrected
+framing of that table.</p>
+<h2 id="output-conventions">Output conventions</h2>
+<p>The benchmark prints one line:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>direct JPL benchmark: cold=…, position_only_N p50=… p95=…, warm_one p50=… p95=…, warm_all p50=… p95=…, dense_8=… (… samples/s)
+</span></span></code></pre></div><ul>
+<li><strong>cold</strong> — one call to <code>compute_chart_data</code> for a single body, with the
+in-process <code>Almanac</code> cache cleared first (OS page cache is <strong>not</strong>
+controlled, so this is not a true &ldquo;nothing cached anywhere&rdquo; measurement).</li>
+<li><strong>position_only_N</strong> — <code>N</code> raw <code>sample_state</code> + <code>motion_from_state</code> +
+<code>longitude_from_state</code> calls (no chart assembly, no warnings/axes/houses),
+over all classical, asteroid, and the bundled Chiron frames; the closest
+proxy this benchmark has to &ldquo;kernel evaluation only.&rdquo;</li>
+<li><strong>warm_one</strong> — <code>compute_chart_data</code> for a single body with the <code>Almanac</code>
+already cached.</li>
+<li><strong>warm_all</strong> — <code>compute_chart_data</code> requesting every classical, asteroid,
+and Chiron body in one call.</li>
+<li><strong>dense_8</strong> — 8 single-body computations at consecutive daily epochs (one
+simulated &ldquo;chart rendering samples a dense time range&rdquo; case), reported as
+samples/second.</li>
+<li>All <code>p50</code>/<code>p95</code> figures are computed over 10 iterations
+(<code>ITERATIONS = 10</code> in the test).</li>
+</ul>
+<p>The newer benchmarks below print their own one-line summary in the same
+<code>p50=… p95=…</code> spirit, plus whatever workload parameters (epoch count, step
+size, body count, window length) make the number meaningful on its own:</p>
+<ul>
+<li><strong>dense single-body transit series</strong> — <code>compute_transit_series_rust</code>
+(the same application path a <code>compute_transit_series</code> Tauri call uses),
+10,000 hourly epochs, one transiting body, 5 repetitions; reports
+<code>p50</code>/<code>p95</code> per full 10,000-epoch run and an aggregate epochs/second
+throughput. Verifies every epoch actually resolves the requested body
+before timing it.</li>
+<li><strong>multi-body transit series</strong> — same application path, an explicit
+1,000 daily epochs, the ten classical bodies transiting against two natal
+points, 5 repetitions; same reporting shape, directly comparable to the
+single-body number since both go through the identical code path.</li>
+<li><strong>stationary-point search</strong> — <code>find_stationary_point</code> for Mercury, Venus,
+and Mars across a 3-year window (long enough that every body is guaranteed
+at least one real station regardless of synodic phase), <code>p50</code>/<code>p95</code> over
+9 individual searches (3 bodies × 3 repetitions). Verifies every search
+actually finds and confirms a station.</li>
+<li><strong>aspect-exact-time search</strong> — <code>find_aspect_exact_time</code> for a Sun–Moon
+conjunction across 12 non-overlapping ~30-day windows spanning 2024,
+<code>p50</code>/<code>p95</code> over those 12 searches. Verifies a conjunction is actually
+found in nearly every window (New Moon&rsquo;s synodic period is slightly under
+30 days, so one 30-day slice can occasionally miss by a few hours at the
+boundary).</li>
+<li><strong><code>compute_transit_events</code> end-to-end</strong> — the full orchestration layer
+behind <code>exact_hits</code>/<code>station_events</code> (not the lower-level <code>find_all_*</code>
+functions directly): one transiting body (Mercury) against one fixed radix
+point (the natal Sun), one aspect type, both <code>exact_hits</code> and
+<code>station_events</code> on, over a full year, <code>p50</code>/<code>p95</code> over 10 repetitions.
+Verifies both a station and an aspect-hit are actually found before timing
+it, and that the search reports <code>complete: true</code> within the default
+work-limit.</li>
+</ul>
+<h2 id="performance-results">Performance results</h2>
+<p>Collected on this checkout at revision <code>f701ac9a9e37d450be9ce6c60b566c2ca35b2538</code>
+(branch <code>pre-release</code>), after the override-routing fix and the usable-coverage
+and event-search additions described elsewhere on this page. <strong>One machine</strong> —
+not a CI-controlled environment:</p>
+<ul>
+<li>Machine: AMD Ryzen 7 PRO 6850U (16 logical CPUs), Linux 6.12, 30 GiB RAM</li>
+<li>Build: <code>cargo test --release</code> (rustc/cargo 1.98.1)</li>
+</ul>
+<p><strong>On sample counts and percentiles:</strong> every <code>p50</code>/<code>p95</code> below is a
+nearest-rank statistic (<code>percentiles</code> in the test code) over the stated <code>n</code>.
+At small <code>n</code>, <code>p95</code>&rsquo;s index collapses toward — or exactly onto — the sample
+maximum; it is not a statistically robust tail estimate at n=3 or n=5.
+Benchmarks below now use <code>n=20</code>–<code>30</code> specifically so <code>p95</code> is a genuine
+19th/20th-of-20 (or similar) rank rather than just &ldquo;the biggest number we
+saw.&rdquo; Treat even these as order-of-magnitude, single-machine evidence, not a
+certified result — none of it has run on CI, on a second machine, or been
+diffed against a recorded pre-change baseline (none existed before this
+documentation pass).</p>
+<h3 id="chart-benchmark-jpl_direct_path_benchmark">Chart benchmark (<code>jpl_direct_path_benchmark</code>)</h3>
+<p><code>n=10</code> per number (<code>ITERATIONS</code> in the test) — small enough that <code>p95</code> here
+is close to the sample maximum too. Three consecutive runs; run-to-run noise
+is visible:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Run</th>
+					<th>cold</th>
+					<th>position_only_31 p50 / p95</th>
+					<th>warm_one p50 / p95</th>
+					<th>warm_all p50 / p95</th>
+					<th>dense_8</th>
+					<th>samples/s</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>1</td>
+					<td>92.4 ms</td>
+					<td>677 µs / 710 µs</td>
+					<td>27.5 µs / 47.0 µs</td>
+					<td>743 µs / 760 µs</td>
+					<td>226 µs</td>
+					<td>35 474</td>
+			</tr>
+			<tr>
+					<td>2</td>
+					<td>85.2 ms</td>
+					<td>637 µs / 689 µs</td>
+					<td>27.3 µs / 36.5 µs</td>
+					<td>664 µs / 712 µs</td>
+					<td>225 µs</td>
+					<td>35 606</td>
+			</tr>
+			<tr>
+					<td>3</td>
+					<td>96.1 ms</td>
+					<td>853 µs / 917 µs</td>
+					<td>34.3 µs / 69.6 µs</td>
+					<td>894 µs / 1000 µs</td>
+					<td>272 µs</td>
+					<td>29 417</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong><code>dense_8</code> remains a smoke-level timing check, not a representative
+dense-series benchmark</strong> — eight single-body samples at daily steps. The two
+transit-series benchmarks below replace the gap this previously left open.</p>
+<h3 id="dense-single-body-transit-series-10000-hourly-epochs-one-body">Dense single-body transit series (10,000 hourly epochs, one body)</h3>
+<p><code>n=20</code> full 10,000-epoch runs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>dense single-body transit series benchmark: epochs=10000, step=3600s, repetitions=20,
+</span></span><span style="display:flex;"><span>p50=1.526305919s, p95=1.930171454s, throughput=6367.0 epochs/s
+</span></span></code></pre></div><p>Through the full <code>compute_transit_series_rust</code> application path (workspace
+load, settings resolution, per-step position + cross-aspect detection), not a
+raw position-evaluation loop — see <a href="/developer/ephemeris-validation/#event-search-stationary-points-and-exact-aspect-times">the event search
+section</a> for why
+that path specifically was chosen.</p>
+<h3 id="multi-body-transit-series-1000-daily-epochs-10-classical-bodies">Multi-body transit series (1,000 daily epochs, 10 classical bodies)</h3>
+<p><code>n=20</code> full 1,000-epoch runs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>multi-body transit series benchmark: epochs=1000 (verified 1000), bodies=10, step=86400s,
+</span></span><span style="display:flex;"><span>repetitions=20, p50=417.612914ms, p95=539.224957ms, throughput=2398.1 epochs/s
+</span></span></code></pre></div><p>Same application path; throughput drops from ~6400 to ~2400 epochs/s with 10×
+the transiting bodies — sub-linear scaling, consistent with per-step fixed
+overhead (workspace/model lookups already resolved once, not per step)
+alongside the per-body SPK evaluation cost.</p>
+<h3 id="stationary-point-search-mercury-venus-mars-3-year-window">Stationary-point search (Mercury, Venus, Mars; 3-year window)</h3>
+<p><code>n=30</code> individual searches (10 repetitions × 3 bodies):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>stationary-point search benchmark: bodies=[&#34;mercury&#34;, &#34;venus&#34;, &#34;mars&#34;], window=3y, step=6h,
+</span></span><span style="display:flex;"><span>searches=30, p50=247.426255ms, p95=328.610391ms
+</span></span></code></pre></div><h3 id="aspect-exact-time-search-sunmoon-conjunction-24-monthly-windows-across-2024-2025">Aspect-exact-time search (Sun–Moon conjunction; 24 monthly windows across 2024-2025)</h3>
+<p><code>n=24</code> independent window searches:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>aspect-exact-time search benchmark: target=sun-moon conjunction, windows=24, step=6h,
+</span></span><span style="display:flex;"><span>p50=12.010103ms, p95=27.277372ms
+</span></span></code></pre></div><p>The aspect search is roughly 20x faster than the stationary-point search here
+because its coarse scan only needs to find the (reliably frequent, monthly)
+conjunction within each already-narrow ~30-day window, while the
+stationary-point search scans a full 3-year window per body to guarantee
+Venus/Mars — whose stations are 1.5–2 years apart — have one at all.</p>
+<h3 id="compute_transit_events-end-to-end-mercury-vs-natal-sun-1-year-window"><code>compute_transit_events</code> end-to-end (Mercury vs. natal Sun, 1-year window)</h3>
+<p>Collected in a later pass than the revision above, on the same machine, after
+wiring <code>exact_hits</code>/<code>station_events</code> through <code>compute_transit_series</code>. <code>n=10</code>
+full end-to-end calls (each call internally runs both a station search and an
+aspect-hit search):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>compute_transit_events benchmark: body=mercury, target=sun (radix), aspect=conjunction,
+</span></span><span style="display:flex;"><span>window=1y, exact_hits=true, station_events=true, events_found=8, repetitions=10,
+</span></span><span style="display:flex;"><span>p50=1.687235425s, p95=1.874918971s
+</span></span></code></pre></div><p>Noticeably slower than the lower-level <code>stationary-point search</code> /
+<code>aspect-exact-time search</code> numbers above for a comparable single-body,
+single-window case — expected, since this is the orchestration layer&rsquo;s
+<em>combined</em> cost (one station search plus one aspect-hit search per call, each
+independently running its own coarse scan over the full year) rather than
+either search measured in isolation.</p>
+<h2 id="offline-execution-verified-not-just-read-from-source">Offline execution: verified, not just read from source</h2>
+<p>Every benchmark and test above was re-run inside a Linux network namespace
+with no interfaces brought up (<code>unshare --net --map-root-user</code>), confirmed to
+have no DNS/route (<code>curl</code> inside it fails immediately with &ldquo;Could not resolve
+host,&rdquo; not a timeout). All <strong>174</strong> <code>cargo test --lib</code> tests and the
+<code>compute_transit_events_benchmark</code> release benchmark (the newest addition,
+covering the <code>exact_hits</code>/<code>station_events</code> orchestration layer) pass
+identically with and without that namespace — this is executed evidence, not
+an inference from reading the source. Source inspection independently
+confirms <em>why</em>: no <code>reqwest</code>/HTTP code exists anywhere in <code>jpl_backend.rs</code>,
+<code>application/computation.rs</code>, <code>application/transit.rs</code>, or
+<code>application/event_search.rs</code>, and <code>EphemerisManager::available_bsp_paths</code>
+only ever touches the local filesystem — but the claim here rests on the
+namespace run, not on that reading alone. The other five release benchmarks
+(<code>jpl_direct_path_benchmark</code> and the four listed earlier) were verified
+offline in the same way in an earlier pass of this audit and have not changed
+since; they were not re-run for this pass.</p>
+<p>Two dedicated tests make the &ldquo;missing/out-of-coverage&rdquo; requirement concrete
+rather than inferred: <code>out_of_coverage_epoch_produces_explicit_local_warnings_not_an_error</code>
+(a chart dated year 3000, outside this checkout&rsquo;s only bundled kernel&rsquo;s
+measured 1849–2150 range, with no <code>de441</code> supplement present) and
+<code>unsupported_body_id_produces_explicit_local_warning_through_resolved_chart</code>
+(an unknown body id through the full resolved-chart pipeline). Both produce
+an explicit, named <code>_unavailable</code>/diagnostic warning and a successful
+(non-error) result — never a network attempt, never a silent wrong answer.</p>
+<p><strong>What this does not cover:</strong> <code>backend-python/</code> is not present in this
+checkout (confirmed: <code>ls backend-python</code> fails), so the optional Python
+sidecar route cannot be runtime-verified here at all — not with network, not
+without it. Source inspection of <code>infrastructure/python_sidecar.rs</code> shows its
+HTTP client only ever targets <code>http://127.0.0.1:{port}</code> (a locally reserved
+port, never a remote host) and that the sidecar process is spawned locally
+via <code>std::process::Command</code>, never fetched from the network — but this is
+<em>source-level</em> confirmation only, explicitly distinguished from the
+namespace-executed proof above, because no Python backend exists here to
+actually run.</p>
+<p><strong>Explicit network-capable entry points, and why they stay unreachable from
+compute:</strong> exactly three modules contain <code>reqwest</code>/HTTP code in this crate —
+<code>infrastructure::geocoding</code> (location search; a different service entirely,
+not astronomical computation), <code>infrastructure::python_sidecar</code> (loopback
+only, see above), and <code>infrastructure::ephemeris</code>&rsquo;s <code>EphemerisManager::download</code>
+(the explicit, user/command-triggered kernel download — reachable only from
+the <code>download_ephemeris</code> Tauri command, confirmed by <code>grep</code> for its only
+call site). Running <code>fetch_candidates</code> (the geocoding HTTP call) inside the
+same no-network namespace fails in 24 ms with an explicit
+<code>&quot;error sending request&quot;</code> message — demonstrating the <em>same</em> reqwest/DNS
+mechanism the ephemeris downloader and geocoding both use fails fast and
+explicitly, not via a hang, even though this was exercised through geocoding
+specifically rather than through <code>download_ephemeris</code> itself (which needs a
+running Tauri <code>AppHandle</code> to invoke directly). Generating a Horizons
+reference fixture (<code>scripts/generate-horizons-type13.py</code>, and the manual
+<code>curl</code> calls that built the <code>tests/fixtures/horizons/</code> fixture used above)
+is a separate, manually-triggered, development-only action, never invoked
+from any Rust code path — confirmed by <code>grep</code> finding zero subprocess or HTTP
+call sites referencing either.</p>
+<p>Read all of the above as order-of-magnitude evidence from a single
+development machine, not a certified benchmark result. None of it has run on
+CI, on a second machine, or across multiple build profiles, and none of it
+has been compared against a pre-optimization baseline on the same machine (no
+prior numbers were recorded in the repository to diff against before this
+documentation pass).</p>
+<h2 id="known-validation-gaps">Known validation gaps</h2>
+<ul>
+<li>No per-body Horizons accuracy table exists for the 15 <code>codes_300ast</code> bodies
+other than Ceres/Pallas/Juno/Vesta-class coverage implied by the catalog;
+only kernel <em>resolution</em> is tested for them. Mercury is the only body
+checked against an independently fetched Horizons vector fixture; the Sun,
+Moon, and the other eight classical planets are not.</li>
+<li>No automated Rust/Swiss-Ephemeris parity run in this checkout (the
+<code>swisseph</code> feature and its vendored C source are not present here).</li>
+<li>The transit-series benchmarks use a 1-hour step for the single-body case
+and a 1-day step for the multi-body case; neither benchmarks a
+minute-resolution series, and the multi-body case has not been run at the
+30-body (classical + full asteroid + Chiron) scale <code>warm_all</code> exercises for
+a single chart.</li>
+<li>The single-result <code>find_stationary_point</code> / <code>find_aspect_exact_time</code>
+functions themselves are still not exposed as a Tauri command, only the
+complete-interval <code>find_all_*</code>/<code>compute_transit_events</code> layer built on top
+of them is; neither is benchmarked at coarse-step granularities other than
+the fixed 6-hour default. The &ldquo;a body stationing, un-stationing, and
+stationing again within one coarse step would be missed&rdquo; gap this bullet
+used to describe is now closed for the <code>find_all_*</code>/<code>compute_transit_events</code>
+layer specifically — see the triple-crossing and repeated-wrap tests in
+<code>application::event_search</code>&rsquo;s test module and the two-tier recursion budget
+described above — but the discovery scan still cannot resolve a tangential
+contact (touches but does not cross the target) as an event, and a request
+that plans enough searches to divide the shared work-limit pool below its
+floor (<code>MIN_PROBES_PER_SEARCH</code> in <code>application/transit.rs</code>) can still
+report <code>complete: false</code> for an individual search that would otherwise have
+converged, rather than guaranteeing every requested combination resolves.
+<code>exact_hits</code>/<code>station_events</code> only run through the Rust path — the Python
+sidecar has no event-search endpoint, so a Python-routed sampled series
+still gets its event search from Rust, not from parity-checked Python code.</li>
+<li><code>get_usable_coverage</code>&rsquo;s chain discovery now reads loaded segment metadata
+directly (<code>ephemeris_path_to_root</code> on both the target and Earth sides) and
+is no longer limited to a fixed anchor-id list — but it still requires the
+target to have at least one of its own loaded segments to begin
+discovering from, and ANISE&rsquo;s own evaluator still caps chain depth at 8
+hops (reported as <code>Unknown</code>, tested via a synthetic 9-hop chain). The
+different-center-overlap precedence case
+(<code>last_loaded_file_can_shadow_an_otherwise_valid_chain_with_a_dead_end</code>) is
+proven only with a synthetic kernel; no real bundled or downloaded kernel
+pair in this project has been found to actually exhibit it.</li>
+<li>The probe-per-sub-interval design (one midpoint per boundary-delimited
+window) is a sampled validation of a structural analysis, not an
+exhaustive scan — see &ldquo;Structural analysis, sampled validation, and
+<code>Unknown</code>&rdquo; above. No stress test has looked for an isolated mid-segment
+apparent-mode convergence failure that this sampling could miss.</li>
+<li>The optional Python sidecar route cannot be runtime-verified in this
+checkout at all (<code>backend-python/</code> is absent); only its Rust-side HTTP
+client code (loopback-only) has been inspected, not executed end-to-end.</li>
+<li>No CI-tracked performance baseline; the numbers above are a single
+developer machine, not a regression gate, and have not been compared
+against a pre-optimization baseline (none was recorded before this pass).</li>
+<li>Python-path numerical parity against the Rust JPL path is not covered by
+this page; see <a href="../python-package/">Python package</a> and
+<a href="../testing-strategy/">testing strategy</a> for that boundary.</li>
+</ul>
+<h2 id="what-this-page-does-not-claim">What this page does not claim</h2>
+<ul>
+<li>Not nanosecond accuracy — see the
+<a href="../astronomy-coordinate-contract/#time-pipeline">time pipeline</a> limitation.</li>
+<li>Not complete agreement with JPL Horizons across all bodies and epochs. The
+<strong>exact, complete scope</strong> of independent Horizons-reference checks in this
+checkout is:
+<ul>
+<li><strong>Mercury Barycenter</strong>, geocentric, <strong>raw J2000/ICRF</strong> (no mean-of-date
+rotation applied yet), <strong>geometric</strong> (<code>VEC_CORR=NONE</code>), 23 epochs 2-days
+apart across <strong>2024-01-01 through 2024-02-15</strong> — position and velocity,
+against a saved fixture.</li>
+<li><strong>Moon</strong>, true apogee (true Lilith) longitude, <strong>geometric</strong>, <strong>a single
+epoch</strong> (J2000.0 exactly) — against Horizons&rsquo; own published osculating
+elements, tolerance 0.5°.</li>
+<li><strong>Chiron</strong> (Type 13 artifact), heliocentric, <strong>geometric</strong>, <strong>a single
+held-out epoch</strong> — position and velocity, against an independent Horizons
+<code>VECTORS</code> sample not used as an interpolation knot.</li>
+<li><strong>Mercury</strong>, topocentric RA/Dec/alt/az, <strong>apparent</strong>, <strong>a single
+epoch</strong> (2024-04-10 12:00 Europe/Prague) — against a Skyfield/JPL
+reference computation, not a Horizons query directly.</li>
+<li>The Sun, Moon&rsquo;s own longitude (as opposed to true Lilith), and the other
+eight classical planets have <strong>no</strong> independent Horizons/Skyfield
+reference check in this checkout, at any epoch, in either correction
+mode. &ldquo;Internal consistency&rdquo; tests (retrograde flip, 0° crossing,
+segment-boundary continuity, apparent-vs-geometric sanity, event-search
+cross-checks) exercise those bodies but prove internal consistency only,
+never independent accuracy — see the per-test table above for which
+category each test falls into.</li>
+</ul>
+</li>
+<li>Not general numerical superiority over Swiss Ephemeris — no such comparison
+has been run in this checkout.</li>
+</ul>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

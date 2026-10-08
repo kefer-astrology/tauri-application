@@ -186,6 +186,12 @@ and traceability, not the physical test files.</p>
 					<td>Rust transit command tests; optional Python parity when provisioned</td>
 			</tr>
 			<tr>
+					<td>TRANSIT-002</td>
+					<td><code>exact_hits</code>/<code>station_events</code> return real root-found events (moving-vs-radix and moving-vs-moving), independent of and never rounded to <code>time_step_seconds</code>; an incomplete or failed sub-search is reported honestly, never as a silent empty success</td>
+					<td>Domain/command contract</td>
+					<td><code>application::transit::tests</code> (flag combinations, structurally-locked-pair exclusion, missing-coverage error propagation, probe-allocation formula) and <code>application::event_search::tests</code> (repeated/retrograde crossings, 0° wrapping, interval boundaries, budget exhaustion) in Rust; <code>commands::transits::tests</code> for the Tauri-level <code>event_search</code> response field and backward-compatible omission of both flags; no Python parity (the Python sidecar has no event-search endpoint)</td>
+			</tr>
+			<tr>
 					<td>ROUTE-001</td>
 					<td>Auto routing uses Rust when Python is unavailable</td>
 					<td>Integration</td>
@@ -198,10 +204,28 @@ and traceability, not the physical test files.</p>
 					<td>Rust route-selection tests</td>
 			</tr>
 			<tr>
+					<td>ROUTE-003</td>
+					<td>A per-chart <code>override_ephemeris</code> JPL kernel does not force Python; only Jyotish/Custom engines do</td>
+					<td>Integration</td>
+					<td><code>application::compute_router::tests</code> (Rust-only mode, auto mode with/without Python) and <code>infrastructure::jpl_backend::tests</code> (invalid override path, missing auxiliary kernel, partial body coverage)</td>
+			</tr>
+			<tr>
+					<td>PROVIDER-002</td>
+					<td>Chart, transit-series, and event-search computation execute with no network access</td>
+					<td>Provider/integration</td>
+					<td>Full <code>cargo test --lib</code> (146 tests) and all four release benchmarks re-run inside a Linux network namespace with no interfaces up; see <a href="../ephemeris-validation/#offline-execution-verified-not-just-read-from-source">ephemeris validation</a> for the exact mechanism and what it does not cover (the optional Python sidecar, absent in this checkout)</td>
+			</tr>
+			<tr>
+					<td>COVERAGE-001</td>
+					<td>Usable-coverage chain discovery and precedence match the pinned ANISE evaluator&rsquo;s actual behavior, including cases real kernels cannot exhibit</td>
+					<td>Provider</td>
+					<td><code>infrastructure::ephemeris::usable_coverage_tests</code> (synthetic-SPK missing link, alternate chain, depth-limit, and different-center-overlap-narrows-coverage cases, alongside real-kernel complete-chain/overlap cases) — see <a href="../ephemeris-validation/#usable-coverage-raw-vs-chain-aware">ephemeris validation</a></td>
+			</tr>
+			<tr>
 					<td>PROVIDER-001</td>
 					<td>Provider numerical output matches a named reference within tolerance</td>
 					<td>Provider</td>
-					<td>Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources</td>
+					<td>Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources — see <a href="../ephemeris-validation/">ephemeris validation</a> for the current per-test reference list and known gaps</td>
 			</tr>
 			<tr>
 					<td>FRONTEND-001</td>
@@ -292,7 +316,10 @@ therefore the locally verifiable backend baseline. Do not report missing Python
 tests as passing parity coverage.</p>
 <p>Provider tests that require BSP files or optional dependencies may skip. CI and
 local output must make those skips visible so a skipped provider suite is not
-mistaken for passing numerical validation.</p>
+mistaken for passing numerical validation. See
+<a href="../ephemeris-validation/">ephemeris validation</a> for the ignored-by-default
+provider tests, the diagnostic benchmark&rsquo;s exact command, and output
+conventions.</p>
 <h2 id="contract-maintenance-rule">Contract maintenance rule</h2>
 <p>When behavior changes:</p>
 <ol>

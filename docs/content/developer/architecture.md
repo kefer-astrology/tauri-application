@@ -77,9 +77,25 @@ lunar details, or transit-series results. Transit *setup* is persisted. The
 legacy computed-data storage commands are explicit no-ops.
 
 In `auto` mode, a reachable Python sidecar is preferred; otherwise supported
-work uses Rust. A forced Python route fails if it is unavailable. Some chart
-forms (Jyotish/custom or an override ephemeris) require Python and cannot use
-the Rust fallback. Route/fallback data is included in computation results.
+work uses Rust. A forced Python route fails if it is unavailable. Jyotish and
+Custom engine charts require Python and have no Rust implementation — this is
+the *only* condition `chart_requires_python_precision` /
+`chart_json_requires_python_precision` (`application/compute_router.rs`) force
+onto the Python route.
+
+A per-chart `override_ephemeris` kernel does **not** force Python: it was
+historically also routed as requiring Python precision, but `JplAstronomyBackend`
+(`infrastructure/jpl_backend.rs`) already implemented per-chart
+`override_ephemeris` natively in Rust at the time, which made that a
+router-policy gap rather than a real capability gap — confirmed by git
+history (`jpl_backend.rs`'s override support predates the router check that
+forced Python for it) and fixed by removing `override_ephemeris` from both
+precision checks. `KEFER_COMPUTE_BACKEND=Rust` with an override-ephemeris
+chart, and `Auto` mode with Python unavailable, both now compute through Rust
+directly; tests in `application::compute_router` and
+`infrastructure::jpl_backend` cover Rust-only mode, auto mode with and without
+Python, invalid override paths, and the still-forced Jyotish/Custom case.
+Route/fallback data is included in computation results.
 
 ## Current responsibility split
 

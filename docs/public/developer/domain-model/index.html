@@ -54,6 +54,93 @@ variants form <code>DomainCatalog</code>.</p>
 <p>Semantic IDs and computation capability belong to Rust. A body or aspect can
 be valid in a model yet unavailable from a selected provider or local
 ephemeris; validity and availability are different facts.</p>
+<h2 id="astrological-traditions-škola-and-the-two-different-things-called-school">Astrological traditions (&ldquo;Škola&rdquo;) and the two different things called &ldquo;school&rdquo;</h2>
+<p>The codebase has two unrelated concepts that both get called &ldquo;school&rdquo; in
+conversation, and they must not be merged:</p>
+<ol>
+<li><strong><code>AstrologySchoolId</code> / <code>AstrologySchool</code> / <code>WorkspaceManifest.active_school</code></strong>
+(see <a href="../workspace-yaml/">Workspace YAML contract</a>) — an open, free-form
+string catalog used only to pick a named <code>AstroModel</code>. Deliberately not a
+closed enum, so a workspace can define arbitrary schools without an
+application release. It has no direct effect on objects, aspects, or
+orbs — those come from whichever <code>AstroModel</code> it points to.</li>
+<li><strong><code>AstrologicalTradition</code> / <code>WorkspaceDefaults.astrology_tradition</code></strong>
+(&ldquo;Škola&rdquo; in the UI) — a closed enum of seven well-known traditions
+(Hellenistic, Medieval/Renaissance traditional, Modern Western,
+Harmonic/vibrational, Cosmobiology, Uranian/Hamburg, Jyotish–Parāśari).
+Picking one seeds a bundle of settings for that tradition, reusing
+whatever settings fields already exist rather than introducing a parallel
+computation path.</li>
+</ol>
+<h3 id="the-seven-axis-decomposition">The seven-axis decomposition</h3>
+<p>Traditions differ along (at least) seven largely independent axes. Treat a
+tradition as a cross-cutting <em>preset</em> over these axes, not as a single
+monolithic setting — each axis already has, or will eventually have, its own
+independently overridable field, exactly like <code>default_house_system</code> today
+can be overridden per chart regardless of which school picked it:</p>
+<table>
+	<thead>
+			<tr>
+					<th>Axis</th>
+					<th>What it covers</th>
+					<th>Status</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>Zodiac</strong></td>
+					<td>Tropical vs. sidereal, ayanāṃśa choice</td>
+					<td><code>ChartConfig.zodiac_type</code> (<code>ZodiacType</code>) and <code>ChartConfig.ayanamsa</code> (<code>Ayanamsa</code>) exist, but per-chart only — not yet workspace-wide, not yet tradition-linked.</td>
+			</tr>
+			<tr>
+					<td><strong>Houses</strong></td>
+					<td>Division method (Whole Sign, Placidus, Alcabitius, …) and how houses are used</td>
+					<td><code>HouseSystem</code> + <code>WorkspaceDefaults.default_house_system</code>, enforced as a single workspace-wide value (see &ldquo;one project, one house system&rdquo; in the workspace contract). Not yet tradition-linked — picking a tradition does not currently change the project&rsquo;s house system.</td>
+			</tr>
+			<tr>
+					<td><strong>Objects</strong></td>
+					<td>Bodies, mathematical points (Lots/Parts), fixed stars, hypothetical factors</td>
+					<td><code>BodyDefinition.object_type</code> (<code>ObjectType</code>: Planet/Asteroid/Angle/LunarNode/Part/CalculatedPoint/HouseCusp) and <code>WorkspaceDefaults.default_bodies</code> exist. Fixed stars and true hypothetical bodies (the Uranian eight) are <strong>not</strong> modeled yet. Not yet tradition-linked.</td>
+			</tr>
+			<tr>
+					<td><strong>Relationships</strong></td>
+					<td>Degree aspects, sign-based configurations, directional aspects, midpoints</td>
+					<td>Degree aspects are fully implemented: <code>AspectDefinition</code>, <code>ObjectTypeRule</code>/<code>extended_orb</code>, <code>WorkspaceDefaults.default_aspect_*</code>. <strong>This is the only axis <code>astrology_tradition</code> currently drives</strong> (<code>workspace::tradition::tradition_aspect_preset</code>). Sign-based &ldquo;same sign&rdquo; configurations, Jyotish directional drishti, and midpoint analysis are not implemented.</td>
+			</tr>
+			<tr>
+					<td><strong>Planetary condition</strong></td>
+					<td>Rulerships, essential/accidental dignities, sect, reception, strength</td>
+					<td>Not implemented as a general concept. A day/night (sect-like) calculation exists only narrowly, for the Part of Fortune/Spirit formula (<code>domain::astrology::day_night_parts</code>) — it is not exposed as a reusable &ldquo;sect&rdquo; fact.</td>
+			</tr>
+			<tr>
+					<td><strong>Derived charts and timing</strong></td>
+					<td>Returns, progressions, directions, harmonics, profections, zodiacal releasing, daśās</td>
+					<td><code>DerivedChartMethod</code> (Return/Progression/Direction/Relocation/Harmonic/Persona/Composite/Davison/Draconic/Coalescent) covers the modern/general-purpose techniques. Profections, zodiacal releasing, and daśā systems (Hellenistic and Jyotish time-lord techniques) are not implemented.</td>
+			</tr>
+			<tr>
+					<td><strong>Interpretation</strong></td>
+					<td>Which rules and meanings get applied to a configuration</td>
+					<td>Not implemented. This application computes and visualizes charts; it does not generate interpretive text.</td>
+			</tr>
+	</tbody>
+</table>
+<p>Extending a later axis means adding that axis&rsquo;s own settings fields (mirroring
+how <code>default_aspect_include_angles</code> etc. were added) plus a
+<code>tradition_*_preset</code>-shaped function, the same pattern <code>tradition.rs</code>
+established for aspects — it does not require changing
+<code>current_model_report_with_layers</code>&rsquo;s precedence chain.</p>
+<h3 id="purpose-is-a-separate-axis-not-a-school-setting">Purpose is a separate axis, not a school setting</h3>
+<p><code>BaseChartPurpose</code> (<code>Natal</code>/<code>Event</code>/<code>Horary</code>/<code>Electional</code>/<code>Moment</code>, on
+<code>ChartDefinition::Base</code>) already exists as a <strong>per-chart</strong>, tradition-independent
+classification — this is &ldquo;purpose&rdquo; in the sense of natal vs. horary vs.
+electional work. It is orthogonal to <code>astrology_tradition</code> today: nothing
+couples a chart&rsquo;s purpose to the workspace&rsquo;s tradition (e.g. a horary chart
+does not currently nudge toward a traditional-leaning preset). Relationship
+charts are handled via <code>DerivedChartMethod::Composite</code>/<code>Davison</code> plus synastry
+analyses rather than a <code>BaseChartPurpose</code> variant; there is no dedicated
+&ldquo;mundane&rdquo; purpose yet (a mundane chart is currently just <code>Event</code>/<code>Moment</code>).
+Coupling purpose to tradition (so that, say, horary work defaults to a
+traditional profile) is a plausible future enhancement, not current behavior.</p>
 <h2 id="catalog-ownership">Catalog ownership</h2>
 <p><code>workspace::model_catalog</code> builds the standard model, and
 <code>workspace::domain_catalog_for_model</code> projects a resolved model to the catalog

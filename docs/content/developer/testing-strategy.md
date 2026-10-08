@@ -63,9 +63,13 @@ and traceability, not the physical test files.
 | CATALOG-001 | Built-in and effective runtime catalogs cover model entries and emitted shapes/configurations | Domain/bridge | Rust catalog tests; frontend type/build coverage; **GAP-CATALOG-001:** automated React/Svelte refresh and fallback behavior |
 | COMPUTE-001 | A radix result exposes the required backend-neutral fields | Command contract | Rust command/application tests; optional Python contract parity when provisioned |
 | TRANSIT-001 | Transit ranges reject invalid order and non-positive step | Command contract | Rust transit command tests; optional Python parity when provisioned |
+| TRANSIT-002 | `exact_hits`/`station_events` return real root-found events (moving-vs-radix and moving-vs-moving), independent of and never rounded to `time_step_seconds`; an incomplete or failed sub-search is reported honestly, never as a silent empty success | Domain/command contract | `application::transit::tests` (flag combinations, structurally-locked-pair exclusion, missing-coverage error propagation, probe-allocation formula) and `application::event_search::tests` (repeated/retrograde crossings, 0° wrapping, interval boundaries, budget exhaustion) in Rust; `commands::transits::tests` for the Tauri-level `event_search` response field and backward-compatible omission of both flags; no Python parity (the Python sidecar has no event-search endpoint) |
 | ROUTE-001 | Auto routing uses Rust when Python is unavailable | Integration | Rust route-selection tests |
 | ROUTE-002 | Forced Python fails clearly when unavailable | Integration | Rust route-selection tests |
-| PROVIDER-001 | Provider numerical output matches a named reference within tolerance | Provider | Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources |
+| ROUTE-003 | A per-chart `override_ephemeris` JPL kernel does not force Python; only Jyotish/Custom engines do | Integration | `application::compute_router::tests` (Rust-only mode, auto mode with/without Python) and `infrastructure::jpl_backend::tests` (invalid override path, missing auxiliary kernel, partial body coverage) |
+| PROVIDER-002 | Chart, transit-series, and event-search computation execute with no network access | Provider/integration | Full `cargo test --lib` (146 tests) and all four release benchmarks re-run inside a Linux network namespace with no interfaces up; see [ephemeris validation](../ephemeris-validation/#offline-execution-verified-not-just-read-from-source) for the exact mechanism and what it does not cover (the optional Python sidecar, absent in this checkout) |
+| COVERAGE-001 | Usable-coverage chain discovery and precedence match the pinned ANISE evaluator's actual behavior, including cases real kernels cannot exhibit | Provider | `infrastructure::ephemeris::usable_coverage_tests` (synthetic-SPK missing link, alternate chain, depth-limit, and different-center-overlap-narrows-coverage cases, alongside real-kernel complete-chain/overlap cases) — see [ephemeris validation](../ephemeris-validation/#usable-coverage-raw-vs-chain-aware) |
+| PROVIDER-001 | Provider numerical output matches a named reference within tolerance | Provider | Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources — see [ephemeris validation](../ephemeris-validation/) for the current per-test reference list and known gaps |
 | FRONTEND-001 | Both bridges serialize the same chart calculation intent | Frontend bridge/parity | Type/build coverage; **GAP-FRONTEND-001:** dedicated bridge test runner |
 | FRONTEND-002 | Both shells open the same workspace and apply the same effective defaults | Workflow/parity | Manual/structural coverage; **GAP-FRONTEND-002:** automated workflow coverage |
 | STATIC-001 | Static documentation mode renders the normal shell without native services | Smoke/workflow | Build coverage; automated behavior coverage is a current gap |
@@ -156,7 +160,10 @@ tests as passing parity coverage.
 
 Provider tests that require BSP files or optional dependencies may skip. CI and
 local output must make those skips visible so a skipped provider suite is not
-mistaken for passing numerical validation.
+mistaken for passing numerical validation. See
+[ephemeris validation](../ephemeris-validation/) for the ignored-by-default
+provider tests, the diagnostic benchmark's exact command, and output
+conventions.
 
 ## Contract maintenance rule
 
