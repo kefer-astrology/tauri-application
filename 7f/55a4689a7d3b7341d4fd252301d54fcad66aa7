@@ -1,0 +1,196 @@
+docs/content/developer/lunar-phase.md
+  s_edee7eb0abc83d::t_01e053e7e85c24 12
+docs/public/developer/ephemeris-validation/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 1-67,70-187,191,193,200,218-230,291,293,296,299,314-319,321-326,329,350,353,359-436,439-485,489-491,494-496,499-504,511-602,639-649,675-687
+  s_34270085d5ef33::t_1eefaaff1173ec 68-69,188-190,192,194-199,201-217,231-290,292,294-295,297-298,300-313,320,327-328,330-349,351-352,354-358,437-438,486-488,492-493,497-498,505-510,603-638,650-674
+docs/content/developer/workspace-yaml.md
+  s_edee7eb0abc83d::t_15f4ed70cabd7c 407-414
+docs/public/developer/spice-backend/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 97,100,125-133,222-227
+  s_34270085d5ef33::t_4e6077ac02491a 98-99,101
+docs/public/apps/web-react/assets/vendor-BtkjxxEO.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/public/apps/web-react/assets/react-vendor-Bl9kNBUA.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-8
+docs/content/developer/ephemeris-manager.md
+  s_edee7eb0abc83d::t_24a985f1c92842 463
+  s_edee7eb0abc83d::t_08a4e174f14e1a 181-211,213-224
+  s_a9ffa81a7a7e40::t_98994cc411857f 164-165,174-177,226-229
+  s_edee7eb0abc83d::t_fa5f33415a88d9 98-122
+  s_edee7eb0abc83d::t_5a0bb860005d36 55-79
+  s_edee7eb0abc83d::t_9b8e2504928b3d 542-558,562-569
+  s_edee7eb0abc83d::t_0af1d92488122a 343-346
+  s_edee7eb0abc83d::t_fd3d2352509ba8 522-539
+  s_edee7eb0abc83d::t_1db32aff99cf90 347
+  s_edee7eb0abc83d::t_722d56b7be4070 12
+  s_edee7eb0abc83d::t_4892acca07b93b 559-561
+  s_edee7eb0abc83d::t_d4aafa8fdaf115 166-173,178-180,212
+  s_edee7eb0abc83d::t_a7c1b9db4a92e1 412-420
+  s_edee7eb0abc83d::t_576f9098954dad 395-406
+  s_a9ffa81a7a7e40::t_22213f27748692 230
+  s_edee7eb0abc83d::t_da18cc314310d2 540-541
+  s_edee7eb0abc83d::t_15b6a005aae147 570-571
+  s_edee7eb0abc83d::t_96ab9e8098a317 225
+docs/public/apps/web-svelte/assets/index-DdRLofCd.css
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-2
+docs/content/developer/_index.md
+  s_edee7eb0abc83d::t_ebc11444c2335c 47-48
+  s_edee7eb0abc83d::t_8d9708698af048 65-67
+docs/public/apps/web-svelte/assets/ui-vendor-Qp80Z_Ed.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-5
+docs/content/developer/architecture.md
+  s_edee7eb0abc83d::t_2bde7630e973f3 81-98
+  s_edee7eb0abc83d::t_46fc5098f3e411 80
+docs/public/developer/workspace-yaml/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 204-208
+  s_34270085d5ef33::t_6e733b72fa7035 382-389
+docs/public/developer/architecture/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 100-117
+docs/public/developer/domain-model/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 57-143
+docs/public/developer/lunar-phase/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 46
+docs/content/developer/ephemeris-validation.md
+  s_edee7eb0abc83d::t_ba7335f36ebe5a 508-510,513-517,555-556
+  s_edee7eb0abc83d::t_41b6b0482c461a 58-62,68-73,77-78
+  s_edee7eb0abc83d::t_ab02f0d11269ab 518-535
+  s_edee7eb0abc83d::t_809bec987aa267 84-86,88-95,97-113
+  s_edee7eb0abc83d::t_d1fe50959f0d6b 24-26,31,33-36,41-43
+  s_edee7eb0abc83d::t_325af94c7f0610 420-423
+  s_edee7eb0abc83d::t_431c63756fe4f7 338-348,351-353,366-367,370-371,376-378,382-383,386,389,396-397,400,402-403,405,408-409,412,417,438-439,456-495
+  s_edee7eb0abc83d::t_25444c25164fde 130-217,224,232-233,235-254,257-258,260-265
+  s_edee7eb0abc83d::t_53d74661a4de7b 440-455
+  s_edee7eb0abc83d::t_de6a8d258d36ac 565-588
+  s_edee7eb0abc83d::t_a3fc1b288ab508 418-419,424-437
+  s_edee7eb0abc83d::t_7f37d3d32774bc 1-23,27-30,32,38-39,44-57,65-67,74-76,79,269-293,328-329,334-337,355-358,503-507,511-512,554,557-564,589-590
+  s_edee7eb0abc83d::t_390fe3aea4eeb5 319-326
+  s_edee7eb0abc83d::t_d4d6ef703df582 80-83,87,96,114-129,218-223,225-231,234,255-256,259,266-268
+  s_edee7eb0abc83d::t_0bd40b7cd97103 294-318,327
+  s_edee7eb0abc83d::t_3a965c111bb977 63-64
+  s_edee7eb0abc83d::t_b9e8010b97a455 37,40
+  s_edee7eb0abc83d::t_4cdc453613fbcc 536-553
+  s_edee7eb0abc83d::t_f1e019d3f4abdd 330-333,349-350,354,359-365,368-369,372-375,379-381,384-385,387-388,390-395,398-399,401,404,406-407,410-411,413-416,496-502
+docs/public/apps/web-react/index.html
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 15-18
+  s_edee7eb0abc83d::t_dade7ddbe75270 14,19
+docs/content/developer/tauri-command-contracts.md
+  s_edee7eb0abc83d::t_08055e1c5245c6 336-345
+  s_edee7eb0abc83d::t_617c61c6b6a2f9 203-208
+  s_edee7eb0abc83d::t_b9bfcfa45bd203 279-280,286-288,291,295-305,311-313
+  s_edee7eb0abc83d::t_bf6fc64863ce93 346
+docs/public/apps/web-react/assets/rolldown-runtime-CbXtAM7H.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/public/developer/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 80-81,98-100
+docs/public/apps/web-react/assets/index-7PsNcU8V.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-2
+docs/public/apps/web-svelte/index.html
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 8-11
+docs/content/developer/spice-backend.md
+  s_edee7eb0abc83d::t_f923122ee98246 219-224
+  s_edee7eb0abc83d::t_cbc3349092f2fa 78-81
+  s_edee7eb0abc83d::t_4a6b9f58eaa62b 77
+  s_edee7eb0abc83d::t_8b74ba19cb8a8c 108-117
+docs/public/apps/web-react/assets/vendor-B3of0zas.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-4
+docs/content/developer/astronomy-coordinate-contract.md
+  s_edee7eb0abc83d::t_2a0818a0543a75 155-181,204-239
+  s_edee7eb0abc83d::t_ce10b3deb8d245 113-137
+  s_edee7eb0abc83d::t_cc5ef3714c1190 46-83
+  s_edee7eb0abc83d::t_2220663fde669e 86-112
+  s_edee7eb0abc83d::t_7320873cedf214 182-203
+  s_edee7eb0abc83d::t_fe39b825fdd40e 240
+docs/public/apps/web-svelte/assets/index-BvjOWgYo.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-2
+docs/public/apps/web-react/assets/i18n-vendor-UA5sNPhu.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/public/apps/web-svelte/assets/vendor-D1efq1ci.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/public/developer/testing-strategy/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 228,319-322
+  s_34270085d5ef33::t_90ba00ee05d601 188-193,206-223
+docs/content/developer/transit-series-contract.md
+  s_edee7eb0abc83d::t_8a04b276010749 29-31,36-47,55-58,65,68-116
+  s_edee7eb0abc83d::t_d556e7471c99a1 144-145
+  s_edee7eb0abc83d::t_4b8c9bda36135b 152-153,156-158
+  s_edee7eb0abc83d::t_2223e5da012c60 117
+docs/public/apps/web-react/assets/ui-vendor-D6qO2cvD.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/public/apps/web-svelte/assets/svelte-vendor-TRsv9Jcf.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-6
+docs/public/apps/web-react/assets/index-Db1Brbl1.css
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-2
+docs/public/apps/web-svelte/assets/App-D8V2gwQy.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/content/developer/testing-strategy.md
+  s_edee7eb0abc83d::t_a4d4d34548ffa2 66
+  s_edee7eb0abc83d::t_5614f4a702856f 69
+  s_edee7eb0abc83d::t_b96ec9300ea1f2 163-166
+  s_edee7eb0abc83d::t_04bb3f05054268 70-71
+  s_edee7eb0abc83d::t_3603f44c71dd69 72
+docs/public/apps/web-react/assets/App-C-z9aAJF.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/public/developer/ephemeris-manager/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 85,96,186-209,262-275,282-283,287,540-547,592,647-671
+  s_edee7eb0abc83d::t_868010446ed4dd 632-646,672
+  s_34270085d5ef33::t_ea84902d3f6dce 46,74-84,86-95,276-281,284-286,288-321,438-440,517,521-525,534-537
+docs/content/developer/rust-code-structure.md
+  s_edee7eb0abc83d::t_6d0f810f7a879d 18
+  s_edee7eb0abc83d::t_1fe35eb768cde8 35
+docs/public/developer/tauri-command-contracts/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 234-239,308-309,315-317,320,324-334,340-342,364-373
+  s_34270085d5ef33::t_1c8409ed8df1b3 374
+docs/public/developer/astronomy-coordinate-contract/index.html
+  s_edee7eb0abc83d::t_4cd96c905d4111 100-152,154-203,218-320
+docs/public/apps/web-react/assets/radix-vendor-CQoF3Nrz.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1-41
+docs/public/apps/web-svelte/assets/vendor-D86jcLzD.js
+  s_edee7eb0abc83d::t_cc972e0fa4a1ec 1
+docs/public/apps/web-react/assets/App-DAM21d7j.js
+  s_edee7eb0abc83d::t_1c354ae72c1074 1
+docs/public/apps/web-react/assets/index-By7LPucc.css
+  s_edee7eb0abc83d::t_5238296f28bc05 1-2
+docs/public/apps/web-react/assets/index-xwG2_qMv.js
+  s_edee7eb0abc83d::t_7457177ab595b8 1-2
+docs/public/developer/rust-code-structure/index.html
+  s_34270085d5ef33::t_4b605683fa4777 51,68
+docs/public/developer/transit-series-contract/index.html
+  s_34270085d5ef33::t_44e3379ded070d 58-60,65-75,83-86,93,96-145,171-172,179-180,183-185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7f55a4689a7d3b7341d4fd252301d54fcad66aa7",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_34270085d5ef33": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ff968dc-1fab-44b4-8f07-3f93d8c3ef40",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_a9ffa81a7a7e40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a117e1-ebaf-7601-9b9f-3f2e6c32b266",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_edee7eb0abc83d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c4fa429a-5c98-453f-8500-b973fd635871",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}

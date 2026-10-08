@@ -1,0 +1,215 @@
+docs/content/manual/objects-aspects-and-patterns.es.md
+  s_cd807265e09c59::t_ec837bbcec7d06 63-84
+  s_cd807265e09c59::t_642784aebf8973 1-62,85-86,90-98
+  s_cd807265e09c59::t_49478d4e5e2b2b 87-89
+docs/content/manual/transits-and-time.es.md
+  s_cd807265e09c59::t_87741560bd5ca5 9,11-17,19-48
+docs/content/developer/ephemeris-validation.md
+  s_edee7eb0abc83d::t_3c73271485e95a 347,352
+  s_edee7eb0abc83d::t_a091340f7b32a3 815-819,821-838
+  s_edee7eb0abc83d::t_8054e8807de4d7 339-344,348-350,363-377,392-395,405
+  s_edee7eb0abc83d::t_699ac47fbff169 120-142
+  s_edee7eb0abc83d::t_4585fa9d9225c2 272-286
+  s_edee7eb0abc83d::t_989bb7b76799c1 241-257,287-338,345-346,351,408
+  s_edee7eb0abc83d::t_4a4b4fc5615223 178,206-215
+  s_edee7eb0abc83d::t_7698ba6123814f 727-735
+  s_edee7eb0abc83d::t_c8b41db4070b86 38,41-44
+  s_edee7eb0abc83d::t_5c90019eb075f1 111-119,143,216-226
+  s_cd807265e09c59::t_9bb69ed93d441f 2
+  s_edee7eb0abc83d::t_c549d37e02411d 724-726,736-743
+  s_edee7eb0abc83d::t_612d47a24f95fd 353-362,378-391,396-404,406-407
+  s_edee7eb0abc83d::t_62c377c3ccc5b5 144-177,179-205
+  s_edee7eb0abc83d::t_01d703a26fec08 258-271
+docs/public/manual/objects-aspects-and-patterns/index.html
+  s_edee7eb0abc83d::t_ef9bc408fcbff9 1-278
+docs/content/manual/objects-aspects-and-patterns.fr.md
+  s_cd807265e09c59::t_49478d4e5e2b2b 88-89
+  s_cd807265e09c59::t_642784aebf8973 1-62,86-87,90-99
+  s_cd807265e09c59::t_ec837bbcec7d06 63-85
+docs/content/guides/_index.md
+  s_cd807265e09c59::t_bf64a28635b073 28-31
+docs/content/developer/tauri-command-contracts.md
+  s_cd807265e09c59::t_31fcca25d11ebc 269-279
+docs/public/developer/testing-strategy/index.html
+  s_edee7eb0abc83d::t_ddf06bbf4ffdd0 193-194,199-200,205-209
+  s_edee7eb0abc83d::t_8a1bf8f10dd9b3 192
+  s_edee7eb0abc83d::t_f558f2d3263812 195-198
+  s_edee7eb0abc83d::t_2f62d1aaf4b282 201-204
+  s_edee7eb0abc83d::t_8f5b0a2bff2b6d 210
+docs/content/developer/project-context.md
+  s_cd807265e09c59::t_99293b4abdca6b 87-88,155
+docs/public/apps/web-svelte/assets/index-C_UNI8F5.js
+  s_cd807265e09c59::t_daa08daa1acca0 1-2
+docs/content/_index.fr.md
+  s_cd807265e09c59::t_9bb69ed93d441f 11
+docs/public/apps/web-react/assets/App-CyXwTgxA.js
+  s_cd807265e09c59::t_974a057001d8c3 1
+docs/content/guides/_index.fr.md
+  s_cd807265e09c59::t_2e41b0391883f4 28-31
+docs/content/developer/archive/discussion-summary.md
+  s_cd807265e09c59::t_9bb69ed93d441f 1-31
+docs/content/manual/settings-and-appearance.es.md
+  s_cd807265e09c59::t_627953a2bbdac7 3,7,9,11,13,15,17,19-25
+docs/content/developer/radix-render-contract.md
+  s_edee7eb0abc83d::t_2af591f37d15fd 61
+docs/public/developer/transit-series-contract/index.html
+  s_edee7eb0abc83d::t_ddf06bbf4ffdd0 126-147
+docs/content/manual/objects-aspects-and-patterns.md
+  s_cd807265e09c59::t_ec837bbcec7d06 66-95
+  s_cd807265e09c59::t_49478d4e5e2b2b 98-101
+  s_cd807265e09c59::t_97b85e61159e4e 1-65,96-97,102-117
+docs/content/manual/chart-views.cs.md
+  s_cd807265e09c59::t_2f7290babaabbc 9-15,19-25,29-31,35-40
+docs/content/_index.cs.md
+  s_cd807265e09c59::t_9bb69ed93d441f 11
+docs/public/apps/web-svelte/assets/App-BhIsp5wM.js
+  s_cd807265e09c59::t_daa08daa1acca0 1
+docs/content/manual/_index.cs.md
+  s_cd807265e09c59::t_e030fd218f71a5 17
+docs/content/manual/_index.es.md
+  s_cd807265e09c59::t_e030fd218f71a5 17
+docs/public/apps/web-svelte/index.html
+  s_cd807265e09c59::t_daa08daa1acca0 8
+docs/content/developer/workspace-yaml.md
+  s_cd807265e09c59::t_99293b4abdca6b 8-9,377-398,434-439
+  s_edee7eb0abc83d::t_c74fe96bf39950 425-429
+docs/public/apps/web-react/assets/index-Z_DWbW-P.js
+  s_cd807265e09c59::t_974a057001d8c3 1-2
+docs/content/developer/ui-conventions.md
+  s_cd807265e09c59::t_dcda11b7277115 27-33
+docs/public/developer/ephemeris-validation/index.html
+  s_edee7eb0abc83d::t_ddf06bbf4ffdd0 223-324,337-487
+  s_edee7eb0abc83d::t_a5b0ec3738918c 220-222
+  s_edee7eb0abc83d::t_1261c2655a937d 488-489
+docs/content/manual/getting-started.es.md
+  s_cd807265e09c59::t_49478d4e5e2b2b 14,23
+docs/public/apps/web-react/assets/index-CgB1uxBT.css
+  s_cd807265e09c59::t_daa08daa1acca0 1-2
+docs/public/manual/transits-and-time/index.html
+  s_edee7eb0abc83d::t_eef9c38652f02f 46-88
+docs/content/developer/spice-backend.md
+  s_cd807265e09c59::t_9bb69ed93d441f 2
+  s_cd807265e09c59::t_937cc57c912e11 89-95,110-112
+docs/content/manual/getting-started.md
+  s_cd807265e09c59::t_49478d4e5e2b2b 14,23
+docs/content/developer/architecture.md
+  s_cd807265e09c59::t_99293b4abdca6b 8-9,116-131,139-140
+docs/public/manual/settings-and-appearance/index.html
+  s_edee7eb0abc83d::t_a78a4cbf2d45a1 7,41,45-140
+docs/content/manual/settings-and-appearance.fr.md
+  s_cd807265e09c59::t_53753ed19d23dc 3,7,9,11,13,15,17,19-25
+docs/content/manual/getting-started.cs.md
+  s_cd807265e09c59::t_49478d4e5e2b2b 14,23
+docs/public/apps/web-react/assets/index-ycdtlhYo.css
+  s_cd807265e09c59::t_974a057001d8c3 1-2
+docs/public/cs/manual/settings-and-appearance/index.html
+  s_edee7eb0abc83d::t_a78a4cbf2d45a1 7,41,45-77
+docs/content/manual/chart-views.md
+  s_cd807265e09c59::t_2f7290babaabbc 9-16,20-28,32-35,39-49
+docs/content/developer/configuration-reference.md
+  s_cd807265e09c59::t_99293b4abdca6b 14-21
+docs/content/developer/domain-model.md
+  s_cd807265e09c59::t_99293b4abdca6b 11
+docs/content/developer/transit-series-contract.md
+  s_edee7eb0abc83d::t_949b6a48262c49 101-102,110-121
+  s_edee7eb0abc83d::t_a89d98f5b2b373 240
+  s_edee7eb0abc83d::t_f54a2c7dc5b14f 39-48,54-57,59-63,70-77,96-100,103-109,122-131,150-233
+  s_edee7eb0abc83d::t_08eb84d5ce866b 274-277
+  s_cd807265e09c59::t_31fcca25d11ebc 17-20,146-149
+  s_edee7eb0abc83d::t_53c0f5a5412d3f 262
+docs/content/manual/chart-views.es.md
+  s_cd807265e09c59::t_2f7290babaabbc 9-15,19-25,29-31,35-40
+docs/content/guides/_index.cs.md
+  s_cd807265e09c59::t_2e41b0391883f4 28-30
+docs/content/manual/chart-views.fr.md
+  s_cd807265e09c59::t_2f7290babaabbc 9-15,19-25,29-31,35-40
+docs/public/apps/web-react/assets/App-juyTL5Ob.js
+  s_cd807265e09c59::t_daa08daa1acca0 1
+docs/content/manual/_index.md
+  s_cd807265e09c59::t_e030fd218f71a5 17
+docs/content/developer/testing-strategy.md
+  s_edee7eb0abc83d::t_9216f6ab809e41 66
+  s_edee7eb0abc83d::t_280bea9dec9a9b 69
+  s_edee7eb0abc83d::t_b0e2d771a98334 67-68
+  s_edee7eb0abc83d::t_d6948110c86278 73
+docs/public/apps/web-react/index.html
+  s_cd807265e09c59::t_daa08daa1acca0 14,19
+docs/CONSOLIDATION.md
+  s_cd807265e09c59::t_9bb69ed93d441f 1-7,11-12,17,19-25
+  s_cd807265e09c59::t_7231a4b22735f1 8-10,13-16,18
+docs/content/developer/archive/_index.md
+  s_cd807265e09c59::t_9bb69ed93d441f 1-13
+docs/content/manual/getting-started.fr.md
+  s_cd807265e09c59::t_49478d4e5e2b2b 14,23
+docs/content/guides/_index.es.md
+  s_cd807265e09c59::t_2e41b0391883f4 28-31
+docs/content/manual/transits-and-time.cs.md
+  s_cd807265e09c59::t_87741560bd5ca5 9,11-17,19-47
+docs/content/manual/transits-and-time.md
+  s_cd807265e09c59::t_c1daed6bd7f655 9,11-19,21-57
+docs/content/developer/_index.md
+  s_cd807265e09c59::t_99293b4abdca6b 52-53,73-74
+  s_cd807265e09c59::t_3551a082a771ac 3,10-12,14-16,18,20-25,27,29-39,41-42,44,46-51,55,57-69,71,75-79,81-82
+docs/content/manual/_index.fr.md
+  s_cd807265e09c59::t_e030fd218f71a5 17
+docs/content/manual/settings-and-appearance.cs.md
+  s_cd807265e09c59::t_5d85c885b3f00a 3,7-9,11,13-17,19-22,24,26-29,31-48
+docs/content/manual/transits-and-time.fr.md
+  s_cd807265e09c59::t_87741560bd5ca5 9,11-17,19-49
+docs/public/apps/web-react/assets/index-BtummNKX.js
+  s_cd807265e09c59::t_daa08daa1acca0 1-2
+docs/content/developer/ephemeris-manager.md
+  s_cd807265e09c59::t_937cc57c912e11 64
+  s_cd807265e09c59::t_9bb69ed93d441f 2
+docs/content/_index.es.md
+  s_cd807265e09c59::t_9bb69ed93d441f 11
+docs/content/developer/rust-code-structure.md
+  s_cd807265e09c59::t_99293b4abdca6b 106
+docs/content/manual/settings-and-appearance.md
+  s_cd807265e09c59::t_8aba6efe212c14 3,7-10,12,14-17,19,21-22,24-28,30,32-122
+docs/content/manual/objects-aspects-and-patterns.cs.md
+  s_cd807265e09c59::t_642784aebf8973 1-62,84-85,88-97
+  s_cd807265e09c59::t_ec837bbcec7d06 63-83
+  s_cd807265e09c59::t_49478d4e5e2b2b 86-87
+docs/public/apps/web-react/assets/App-5oZ6oj2p.js
+  s_cd807265e09c59::t_f457d993fec0b6 1
+docs/public/apps/web-react/assets/index-CY7FQDa0.js
+  s_cd807265e09c59::t_b12940a04421ea 1-2
+docs/public/apps/web-svelte/assets/App-C7vgTGNR.js
+  s_cd807265e09c59::t_16570c38a4f275 1
+docs/public/apps/web-svelte/assets/index-C5liijhc.js
+  s_cd807265e09c59::t_aafc568c0172b5 1-2
+docs/public/apps/web-react/assets/App-BcjgTjSV.js
+  s_edee7eb0abc83d::t_ddc9ae2a26f24b 1
+docs/public/apps/web-react/assets/index-CjWOqxKp.js
+  s_edee7eb0abc83d::t_f6f35bd2f3e38f 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ce59302efdab71156b789e136d479b828e36343f",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_cd807265e09c59": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11b9b-e986-7740-b3fc-5c1207817619",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_edee7eb0abc83d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c4fa429a-5c98-453f-8500-b973fd635871",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
