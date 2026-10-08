@@ -56,7 +56,8 @@ use crate::infrastructure::ephemeris::{
     PALLAS_J2000, PARTHENOPE_J2000, PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
 };
 use crate::infrastructure::position_provider::{
-    AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion,
+    AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion, MinimalChartData,
+    RequiredQuantities,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem, PositionMode};
 
@@ -378,6 +379,16 @@ impl JplAstronomyBackend {
     }
 }
 
+/// How much of `compute_chart_data_impl`'s usual output is actually needed.
+/// `Full` is always exactly today's behavior; `Minimal` skips RA/Dec/Alt/Az
+/// and (when nothing requires it) axes/house cusps, for a root-finder that
+/// only ever reads `.positions`/`.motion`.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Tier {
+    Full,
+    Minimal(RequiredQuantities),
+}
+
 impl AstronomyBackend for JplAstronomyBackend {
     fn backend_id(&self) -> &'static str {
         "jpl"
@@ -401,6 +412,34 @@ impl AstronomyBackend for JplAstronomyBackend {
         &self,
         chart: &ChartInstance,
         requested_objects: Option<&Vec<String>>,
+    ) -> Result<AstronomyChartData, String> {
+        self.compute_chart_data_impl(chart, requested_objects, Tier::Full)
+    }
+
+    fn compute_minimal(
+        &self,
+        chart: &ChartInstance,
+        body_ids: &[String],
+        quantities: RequiredQuantities,
+    ) -> Result<MinimalChartData, String> {
+        let full = self.compute_chart_data_impl(
+            chart,
+            Some(&body_ids.to_vec()),
+            Tier::Minimal(quantities),
+        )?;
+        Ok(MinimalChartData {
+            positions: full.positions,
+            motion: full.motion,
+        })
+    }
+}
+
+impl JplAstronomyBackend {
+    fn compute_chart_data_impl(
+        &self,
+        chart: &ChartInstance,
+        requested_objects: Option<&Vec<String>>,
+        tier: Tier,
     ) -> Result<AstronomyChartData, String> {
         let almanac = self.build_almanac()?;
 
@@ -442,10 +481,22 @@ impl AstronomyBackend for JplAstronomyBackend {
         let mut warnings: Vec<String> = Vec::new();
         warnings.push("ut1_approximated_from_utc: no EOP/ΔUT1 data loaded; sidereal quantities are approximate".to_string());
 
+        // A minimal-path caller never needs motion for a pure longitude/orb
+        // search, and never needs RA/Dec/Alt/Az at all (only the full path
+        // or an explicit angle/axes request does — see `need_axes` below,
+        // which governs a *different* block).
+        let want_motion = matches!(
+            tier,
+            Tier::Full | Tier::Minimal(RequiredQuantities::LongitudeAndMotion)
+        );
+        let want_equatorial_and_horizontal = matches!(tier, Tier::Full);
+
         // ── Standard planetary positions ─────────────────────────────────
         // Equatorial (RA/Dec) and topocentric (alt/az) coordinates are only attached for
         // this classical-body loop, matching the Python/Skyfield backend's own parity
-        // (jpl_supported = the 10 classical planets) rather than nodes, angles, or asteroids.
+        // (jpl_supported = the 10 classical planets) rather than nodes, angles, or asteroids,
+        // and only when `want_equatorial_and_horizontal` — a minimal-path root-finder never
+        // reads these.
         for &(id, frame) in body_frames() {
             if !wanted(id) {
                 continue;
@@ -454,15 +505,19 @@ impl AstronomyBackend for JplAstronomyBackend {
                 Ok(state) => {
                     let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
-                        motion.insert(id.to_string(), body_motion);
+                    if want_motion {
+                        if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
+                            motion.insert(id.to_string(), body_motion);
+                        }
                     }
-                    let (ra, dec) = equatorial_from_state(&state);
-                    right_ascension.insert(id.to_string(), ra);
-                    declination.insert(id.to_string(), dec);
-                    let (alt, az) = equatorial_to_horizontal_deg(ra, dec, lst_deg, lat);
-                    altitude.insert(id.to_string(), alt);
-                    azimuth.insert(id.to_string(), az);
+                    if want_equatorial_and_horizontal {
+                        let (ra, dec) = equatorial_from_state(&state);
+                        right_ascension.insert(id.to_string(), ra);
+                        declination.insert(id.to_string(), dec);
+                        let (alt, az) = equatorial_to_horizontal_deg(ra, dec, lst_deg, lat);
+                        altitude.insert(id.to_string(), alt);
+                        azimuth.insert(id.to_string(), az);
+                    }
                 }
                 Err(e) => {
                     warnings.push(format!("{id}_unavailable: {e}"));
@@ -585,15 +640,49 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         // ── Axes and house cusps ──────────────────────────────────────────
-        let (asc, mc, desc, ic) = compute_axes(jd_utc_as_ut1, lat, lon)
-            .map_err(|e| format!("Failed to compute axes: {e}"))?;
+        // Skipped entirely on the minimal path unless the request actually
+        // depends on an angle (a legitimate case: `ObjectType::Angle` ids
+        // like "asc" are ordinary, unrestricted `transiting_objects`/
+        // `transited_objects` entries — nothing stops an event/configuration
+        // search from targeting one). A root-finder over ordinary bodies
+        // never sets any of these `wanted(...)` checks, so this is the
+        // common case in practice.
+        let need_axes = matches!(tier, Tier::Full)
+            || wanted("asc")
+            || wanted("mc")
+            || wanted("desc")
+            || wanted("ic")
+            || wanted("part_of_fortune")
+            || wanted("part_of_spirit");
 
-        let axes = AstronomyAxes { asc, desc, mc, ic };
-        for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
-            if wanted(id) {
-                positions.insert(id.to_string(), longitude);
+        let (asc, axes, house_cusps) = if need_axes {
+            let (asc, mc, desc, ic) = compute_axes(jd_utc_as_ut1, lat, lon)
+                .map_err(|e| format!("Failed to compute axes: {e}"))?;
+            let axes = AstronomyAxes { asc, desc, mc, ic };
+            for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
+                if wanted(id) {
+                    positions.insert(id.to_string(), longitude);
+                }
             }
-        }
+            let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
+                Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
+                Some(HouseSystem::Placidus) => placidus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
+                Some(HouseSystem::Campanus) => campanus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
+                Some(other) => {
+                    let name = format!("{other:?}").to_lowercase();
+                    (
+                        whole_sign_cusps(asc),
+                        vec![format!(
+                            "house_system_{name}_not_yet_supported: whole_sign_used"
+                        )],
+                    )
+                }
+            };
+            warnings.extend(house_warnings);
+            (asc, axes, house_cusps)
+        } else {
+            (0.0, AstronomyAxes::default(), Vec::new())
+        };
 
         if wanted("vertex") || wanted("antivertex") {
             // RAMC (right ascension of the midheaven) is the same quantity as local sidereal time.
@@ -655,22 +744,6 @@ impl AstronomyBackend for JplAstronomyBackend {
                 }
             }
         }
-
-        let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
-            Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
-            Some(HouseSystem::Placidus) => placidus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
-            Some(HouseSystem::Campanus) => campanus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
-            Some(other) => {
-                let name = format!("{other:?}").to_lowercase();
-                (
-                    whole_sign_cusps(asc),
-                    vec![format!(
-                        "house_system_{name}_not_yet_supported: whole_sign_used"
-                    )],
-                )
-            }
-        };
-        warnings.extend(house_warnings);
 
         Ok(AstronomyChartData {
             positions,
@@ -1161,9 +1234,12 @@ mod tests {
             .unwrap()
             .with_timezone(&chrono::Utc);
         let end = start + chrono::Duration::days(45);
-        let station = crate::application::event_search::find_stationary_point(
+        let ctx = crate::application::evaluation_context::EvaluationContext::new(
             &resolved.chart,
             &resolved.model,
+        );
+        let station = crate::application::event_search::find_stationary_point(
+            &ctx,
             "mercury",
             start,
             end,
@@ -1210,9 +1286,12 @@ mod tests {
             .with_timezone(&chrono::Utc);
         let end = start + chrono::Duration::days(35);
 
-        let crossing = crate::application::event_search::find_aspect_exact_time(
+        let ctx = crate::application::evaluation_context::EvaluationContext::new(
             &resolved.chart,
             &resolved.model,
+        );
+        let crossing = crate::application::event_search::find_aspect_exact_time(
+            &ctx,
             "moon",
             0.0,
             0.0,
@@ -1342,6 +1421,90 @@ mod tests {
             delta < 1.0,
             "expected a sub-degree light-time/aberration shift for Mars, got {delta} deg"
         );
+    }
+
+    /// `compute_minimal` must agree with `compute_chart_data` (the full
+    /// path) on every quantity it actually returns — it is a *skip*, not a
+    /// separate computation: both ultimately call the same `sample_state`/
+    /// `longitude_from_state`/`motion_from_state` pipeline, but this proves
+    /// the tier-gating logic in `compute_chart_data_impl` didn't
+    /// accidentally change a value while skipping the rest. Covers both
+    /// `RequiredQuantities` tiers, several representative objects (a fast
+    /// mover, a slow mover, and a secular lunar-node quantity that bypasses
+    /// `sample_state` entirely), two distinct epochs, and both
+    /// geometric/apparent position modes.
+    #[test]
+    fn minimal_path_agrees_with_full_path_for_representative_objects_epochs_and_modes() {
+        use crate::infrastructure::position_provider::RequiredQuantities;
+        use crate::workspace::models::PositionMode;
+
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let backend = JplAstronomyBackend::new(vec![bsp.clone()]);
+
+        let bodies = ["moon", "mars", "north_node"];
+        let epochs = ["2000-01-01 12:00:00", "2024-06-15 08:30:00"];
+        let modes = [PositionMode::Apparent, PositionMode::Geometric];
+
+        for epoch in epochs {
+            for mode in modes {
+                let mut chart = j2000_chart(bsp.to_str().unwrap());
+                chart.subject.event_time = Some(
+                    chrono::NaiveDateTime::parse_from_str(epoch, "%Y-%m-%d %H:%M:%S")
+                        .expect("valid fixed test epoch")
+                        .and_utc(),
+                );
+                chart.config.position_mode = Some(mode);
+
+                let requested: Vec<String> = bodies.iter().map(|b| b.to_string()).collect();
+                let full = backend
+                    .compute_chart_data(&chart, Some(&requested))
+                    .expect("full path should compute");
+
+                for tier in [
+                    RequiredQuantities::LongitudeOnly,
+                    RequiredQuantities::LongitudeAndMotion,
+                ] {
+                    let minimal = backend
+                        .compute_minimal(&chart, &requested, tier)
+                        .expect("minimal path should compute");
+
+                    for body in bodies {
+                        let full_lon = full.positions.get(body);
+                        let minimal_lon = minimal.positions.get(body);
+                        assert_eq!(
+                            full_lon.is_some(),
+                            minimal_lon.is_some(),
+                            "{body} availability should match between paths at {epoch} ({mode:?}, {tier:?})"
+                        );
+                        if let (Some(full_lon), Some(minimal_lon)) = (full_lon, minimal_lon) {
+                            assert!(
+                                (full_lon - minimal_lon).abs() < 1e-9,
+                                "{body} longitude should match exactly between paths at {epoch} ({mode:?}, {tier:?}): full={full_lon}, minimal={minimal_lon}"
+                            );
+                        }
+
+                        if tier == RequiredQuantities::LongitudeAndMotion {
+                            let full_motion = full.motion.get(body);
+                            let minimal_motion = minimal.motion.get(body);
+                            assert_eq!(
+                                full_motion.is_some(),
+                                minimal_motion.is_some(),
+                                "{body} motion availability should match at {epoch} ({mode:?})"
+                            );
+                            if let (Some(full_motion), Some(minimal_motion)) =
+                                (full_motion, minimal_motion)
+                            {
+                                assert!(
+                                    (full_motion.speed - minimal_motion.speed).abs() < 1e-9,
+                                    "{body} motion speed should match exactly at {epoch} ({mode:?}): full={full_motion:?}, minimal={minimal_motion:?}"
+                                );
+                                assert_eq!(full_motion.retrograde, minimal_motion.retrograde);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// An out-of-coverage epoch must degrade to an explicit per-body
