@@ -1,0 +1,132 @@
+schema_version: 1
+owner: Tag Showcase
+active_school: null
+active_model: null
+schools: {}
+aspects: []
+bodies: []
+models: {}
+model_overrides: null
+default:
+  ephemeris_engine: jpl
+  position_mode: apparent
+  ephemeris_backend: null
+  element_colors: null
+  radix_point_colors: null
+  default_location:
+    name: Prague, Czech Republic
+    latitude: 50.0875
+    longitude: 14.4214
+    timezone: Europe/Prague
+  language: null
+  theme: null
+  default_house_system: Placidus
+  default_bodies:
+  - sun
+  - moon
+  - mercury
+  - venus
+  - mars
+  - jupiter
+  - saturn
+  - uranus
+  - neptune
+  - pluto
+  - asc
+  - mc
+  - desc
+  - ic
+  - north_node
+  - south_node
+  - lilith
+  - true_lilith
+  - chiron
+  - vertex
+  - antivertex
+  - part_of_fortune
+  - part_of_spirit
+  default_aspects:
+  - conjunction
+  - sextile
+  - square
+  - trine
+  - quincunx
+  - opposition
+  default_aspect_orbs:
+    conjunction: 8.0
+    square: 8.0
+    quincunx: 3.0
+    trine: 8.0
+    sextile: 6.0
+    opposition: 8.0
+  default_aspect_colors: null
+  aspect_line_tier_style: null
+  time_system: gregorian
+presentation:
+  theme: midnight
+  language: en
+  glyph_set: classic
+  element_colors: null
+  radix_point_colors: null
+  aspect_colors: null
+  aspect_line_tier_style: null
+tag_catalog:
+- name: client
+  color: '#3b82f6'
+- name: family
+  color: '#10b981'
+- name: organization
+  color: '#6366f1'
+- name: research
+  color: '#8b5cf6'
+- name: consultation
+  color: '#06b6d4'
+- name: natal
+  color: '#14b8a6'
+- name: event
+  color: '#f59e0b'
+- name: electional
+  color: '#eab308'
+- name: horary
+  color: '#ec4899'
+- name: verified-data
+  color: '#22c55e'
+- name: approximate-data
+  color: '#f97316'
+- name: priority-high
+  color: '#ef4444'
+- name: urgent
+  color: '#dc2626'
+- name: follow-up
+  color: '#0ea5e9'
+- name: private
+  color: '#64748b'
+- name: mundane
+  color: '#a855f7'
+- name: project-alpha
+  color: '#d946ef'
+- name: planned
+  color: '#84cc16'
+- name: prague
+  color: '#0891b2'
+- name: brno
+  color: '#0284c7'
+- name: vienna
+  color: '#7c3aed'
+- name: bratislava
+  color: '#9333ea'
+chart_presets: []
+subjects: []
+charts:
+- charts/alice-natal.yml
+- charts/bob-natal.yml
+- charts/company-founding.yml
+- charts/product-launch-election.yml
+- charts/contract-horary.yml
+analyses: []
+layouts: []
+annotations: []
+transit_analyses:
+- transits/bob-natal.yml
+- transits/alice-natal.yml
+- transits/company-founding.yml

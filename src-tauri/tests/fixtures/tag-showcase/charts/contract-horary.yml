@@ -1,0 +1,31 @@
+id: contract-horary
+subject:
+  id: contract-question
+  name: Should the partnership contract be signed?
+  event_time: '2026-10-05T14:27:00+02:00'
+  location:
+    name: Bratislava, Slovakia
+    latitude: 48.1486
+    longitude: 17.1077
+    timezone: Europe/Bratislava
+    location_mode: manual
+    timezone_mode: auto
+config:
+  definition:
+    kind: base
+    purpose: horary
+  house_system: Regiomontanus
+  zodiac_type: Tropical
+  aspect_orbs:
+    conjunction: 5.0
+    opposition: 5.0
+    trine: 4.0
+    square: 4.0
+    sextile: 3.0
+  selected_aspects: [conjunction, opposition, trine, square, sextile]
+  model: null
+  model_overrides: null
+  position_mode: apparent
+  time_system: gregorian
+tags: [horary, consultation, urgent, private, follow-up, bratislava]
+roden_rating: AA

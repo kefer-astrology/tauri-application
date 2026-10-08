@@ -1,0 +1,80 @@
+config:
+  aspect_orbs:
+    binovile: 1
+    biquintile: 2
+    conjunction: 8
+    decile: 1
+    novile: 1
+    opposition: 8
+    quadrinovile: 1
+    quincunx: 3
+    quintile: 2
+    semisextile: 2
+    septile: 1
+    sextile: 6
+    square: 8
+    tridecile: 1
+    trine: 8
+  definition:
+    kind: base
+    purpose: event
+  engine: jpl
+  house_system: Placidus
+  model: null
+  model_overrides: null
+  observable_objects:
+  - sun
+  - moon
+  - mercury
+  - venus
+  - mars
+  - jupiter
+  - saturn
+  - uranus
+  - neptune
+  - pluto
+  - asc
+  - mc
+  - desc
+  - ic
+  - north_node
+  - south_node
+  - lilith
+  - true_lilith
+  - chiron
+  - vertex
+  - antivertex
+  - part_of_fortune
+  - part_of_spirit
+  override_ephemeris: null
+  position_mode: apparent
+  selected_aspects:
+  - conjunction
+  - sextile
+  - square
+  - trine
+  - quincunx
+  - opposition
+  time_system: gregorian
+  zodiac_type: Tropical
+id: company-founding
+roden_rating: AA
+subject:
+  event_time: 2016-09-19T08:00:00.000Z
+  id: company-founding
+  location:
+    latitude: 50.0875
+    location_mode: manual
+    longitude: 14.4214
+    name: Prague, Czech Republic
+    timezone: Europe/Prague
+    timezone_mode: auto
+  name: Acme Studio founding
+tag_colors:
+  event: '#f59e0b'
+  organization: '#6366f1'
+  research: '#8b5cf6'
+tags:
+- organization
+- event
+- research
