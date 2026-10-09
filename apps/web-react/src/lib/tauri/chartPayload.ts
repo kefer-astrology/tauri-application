@@ -1,13 +1,18 @@
 import type {
 	AnalysisDto,
 	AnalysisInputDto,
+	AstrologicalTraditionId,
 	ChartDetails,
 	ChartDefinitionDto,
 	ModelOverridesDto,
-	MoonDetails
+	MoonDetails,
+	ObjectTypeId
 } from './types';
 import { catalogHouseSystems, DOMAIN_CATALOG } from '@/lib/astrology/domainCatalog';
-import { DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
+import {
+	DEFAULT_BODY_COLORS,
+	DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS
+} from '@/lib/astrology/observableObjects';
 import {
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ASPECT_ORBS,
@@ -252,6 +257,17 @@ export interface WorkspaceDefaultsState {
 	defaultAspects: string[];
 	defaultAspectOrbs: Record<string, number>;
 	defaultAspectColors: Record<string, string>;
+	/** Per-object id -> hex color, applied to the radix wheel, aspectarium, and transit overlay. */
+	bodyColors: Record<string, string>;
+	/** Which object categories (`angle`, asteroids, nodes, ...) may participate in *any* aspect
+	 *  at all — global, not per-aspect. `planet` is always implicitly eligible and never
+	 *  appears here. See `src-tauri/src/workspace/models.rs`'s `PER_OBJECT_ORB_TYPES`. */
+	extendedObjectTypes: ObjectTypeId[];
+	/** Per-object id -> orb (degrees), global across every aspect. Narrows an aspect's own
+	 *  orb whenever an object in `extendedObjectTypes` is on either side of a pair. */
+	objectOrbs: Record<string, number>;
+	/** The workspace's chosen astrological tradition ("Škola"), or `null` if unset. */
+	astrologyTradition: AstrologicalTraditionId | null;
 	aspectLineTierStyle: AspectLineTierStyleState;
 }
 
@@ -268,6 +284,13 @@ export const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
 	defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
 	defaultAspectOrbs: DEFAULT_ASPECT_ORBS,
 	defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
+	bodyColors: { ...DEFAULT_BODY_COLORS },
+	// Angle participation is opt-out, not opt-in — pre-checked so a fresh/standalone session
+	// keeps today's "angles generally participate" expectation (mirrors the Rust-side default
+	// seeded for a brand-new workspace in `empty_workspace_manifest`).
+	extendedObjectTypes: ['angle'],
+	objectOrbs: {},
+	astrologyTradition: 'modern_western',
 	aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }
 };
 

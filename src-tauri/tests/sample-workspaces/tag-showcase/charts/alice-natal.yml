@@ -1,0 +1,31 @@
+id: alice-natal
+subject:
+  id: alice
+  name: Alice Novak
+  event_time: '1988-05-14T06:42:00+02:00'
+  location:
+    name: Prague, Czech Republic
+    latitude: 50.0875
+    longitude: 14.4214
+    timezone: Europe/Prague
+    location_mode: manual
+    timezone_mode: auto
+config:
+  definition:
+    kind: base
+    purpose: natal
+  house_system: Placidus
+  zodiac_type: Tropical
+  aspect_orbs:
+    conjunction: 7.5
+    opposition: 7.5
+    trine: 6.5
+    square: 6.5
+    sextile: 4.5
+  selected_aspects: [conjunction, opposition, trine, square, sextile]
+  model: null
+  model_overrides: null
+  position_mode: apparent
+  time_system: gregorian
+tags: [client, family, natal, verified-data, priority-high, prague]
+roden_rating: AA

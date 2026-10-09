@@ -120,8 +120,64 @@ export interface WorkspaceDefaultsDto {
 	default_aspects?: string[] | null;
 	default_aspect_orbs?: Record<string, number> | null;
 	default_aspect_colors?: Record<string, string> | null;
+	/** Per-object color overrides (body id -> hex color), applied to the radix
+	 *  wheel, aspectarium, and transit overlay. Mirrors `default_aspect_colors`'
+	 *  shape and round-trip (see `src-tauri/src/workspace/models.rs`'s
+	 *  `RadixPointColorSettings`), just unwrapped to a plain map on the wire. */
+	radix_point_colors?: Record<string, string> | null;
+	/** Which `ObjectTypeId` categories (`angle`, asteroids, nodes, ...) may participate in *any*
+	 *  aspect at all — global, not per-aspect. `planet` is always implicitly eligible and never
+	 *  appears here. See `src-tauri/src/workspace/models.rs`'s `WorkspaceDefaults::extended_object_types`. */
+	extended_object_types?: ObjectTypeId[] | null;
+	/** Per-object id -> orb (degrees), global across every aspect. Narrows an
+	 *  aspect's own orb whenever an object in `extended_object_types` is on
+	 *  either side of a pair. See `WorkspaceDefaults::object_orbs`. */
+	object_orbs?: Record<string, number> | null;
+	/** The workspace's chosen astrological tradition ("Škola"). Distinct from the
+	 *  free-form `active_school`/model-catalog selector — see AstrologicalTradition
+	 *  in src-tauri/src/workspace/models.rs. */
+	astrology_tradition?: AstrologicalTraditionId | null;
 	aspect_line_tier_style?: AspectLineTierStyleDto | null;
 }
+
+/**
+ * Mirrors the Rust `AstrologicalTradition` enum (src-tauri/src/workspace/models.rs).
+ * A closed set of well-known traditions, each seeding a suggested aspect-settings
+ * bundle (see `workspace::tradition::tradition_aspect_preset`). First iteration:
+ * only touches aspects — object selection and each tradition's native orb model
+ * are future work.
+ */
+export type AstrologicalTraditionId =
+	| 'hellenistic'
+	| 'medieval_traditional'
+	| 'modern_western'
+	| 'harmonic'
+	| 'cosmobiology'
+	| 'uranian_hamburg'
+	| 'jyotish_parashari';
+
+/** Mirrors the Rust `ObjectType` enum (src-tauri/src/workspace/models.rs). */
+export type ObjectTypeId =
+	| 'planet'
+	| 'asteroid'
+	| 'angle'
+	| 'house_cusp'
+	| 'calculated_point'
+	| 'lunar_node'
+	| 'part'
+	| 'geocentric_node'
+	| 'trans_neptunian'
+	| 'hypothetical_planet'
+	| 'fixed_star';
+
+/**
+ * Restricts which object categories an aspect may form between. Mirrors the
+ * Rust `ObjectTypeRule` enum: `exclude` drops a pair if either side belongs
+ * to `types`; `only_between` requires both sides to belong to `types`.
+ */
+export type ObjectTypeRuleDto =
+	| { mode: 'exclude'; types: ObjectTypeId[] }
+	| { mode: 'only_between'; types: ObjectTypeId[] };
 
 export interface ModelOverrideEntryDto {
 	id: string;
@@ -136,6 +192,7 @@ export interface ModelOverrideEntryDto {
 	computed?: boolean | null;
 	valid_contexts?: Array<'chart' | 'transit' | 'direction'> | null;
 	interpretation_weight?: number | null;
+	object_type_rule?: ObjectTypeRuleDto | null;
 }
 
 export interface ModelOverridesDto {
@@ -153,7 +210,7 @@ export interface BodyDefinitionDto {
 	avg_speed: number;
 	max_orb: number;
 	i18n: Record<string, string>;
-	object_type?: string | null;
+	object_type?: ObjectTypeId | null;
 	computation_map: Record<string, string | null>;
 	requires_location: boolean;
 	requires_house_system: boolean;
@@ -175,6 +232,7 @@ export interface AspectDefinitionDto {
 	show_label?: boolean | null;
 	valid_contexts?: string[] | null;
 	interpretation_weight?: number | null;
+	object_type_rule?: ObjectTypeRuleDto | null;
 }
 
 export interface SignDefinitionDto {
@@ -384,6 +442,14 @@ export interface TransitSeriesEntry {
 	aspects?: Array<Record<string, unknown>>;
 }
 
+/** Persisted form of one `configurationRequests` entry — see
+ *  `application::transit::ConfigurationSearchRequest`. */
+export interface ConfigurationSearchSetup {
+	configuration_id: string;
+	fixed_roles: string[];
+	role_candidates: Record<string, string[]>;
+}
+
 export interface TransitSetup {
 	version: 1;
 	source_chart_id: string;
@@ -405,8 +471,20 @@ export interface TransitSetup {
 	sign_transitions: boolean;
 	exact_hits?: boolean;
 	station_events?: boolean;
+	/** Defaults to `true` server-side when absent (`#[serde(default = "default_true")]`) — an
+	 *  older saved setup keeps computing the sampled series exactly as before. */
+	sampled_series?: boolean;
+	configuration_requests?: ConfigurationSearchSetup[];
 	transit_limits: boolean;
 	precession_correction: boolean;
+}
+
+/** One requested multi-body configuration search — see
+ *  `application::transit::ConfigurationSearchRequest`. */
+export interface ConfigurationSearchRequest {
+	configurationId: 'grand_trine' | 't_square' | 'yod' | 'grand_cross';
+	fixedRoles?: string[];
+	roleCandidates?: Record<string, string[]>;
 }
 
 export interface TransitSeriesRequest extends Record<string, unknown> {
@@ -414,10 +492,24 @@ export interface TransitSeriesRequest extends Record<string, unknown> {
 	chartId: string;
 	startDatetime: string;
 	endDatetime: string;
-	timeStepSeconds: number;
+	/** Required when `sampledSeries` is true (the default); ignored when it's `false`. */
+	timeStepSeconds?: number;
 	transitingObjects: string[];
 	transitedObjects: string[];
 	aspectTypes: string[];
+	/** Also run an exact-event search (real root-found aspect-crossing times) over the same
+	 *  interval, independent of `timeStepSeconds`. Omitting this behaves like `false`. */
+	exactHits?: boolean;
+	/** Also run a stationary-point search for each transiting body, independent of
+	 *  `timeStepSeconds`. Omitting this behaves like `false`. */
+	stationEvents?: boolean;
+	/** Also run one or more multi-body configuration interval searches. Omitting this behaves
+	 *  like `[]`. */
+	configurationRequests?: ConfigurationSearchSetup[];
+	/** Whether the sampled `results` graph series is computed at all. Omitting this behaves like
+	 *  `true` — set to `false` for an event/configuration-only request with no use for a graph
+	 *  sampling step. */
+	sampledSeries?: boolean;
 	presetId?: string | null;
 	settingsOverrides?: ComputeSettingsOverrides | null;
 }
@@ -428,18 +520,114 @@ export interface TransitSeriesFromDataRequest extends Record<string, unknown> {
 	chartJson: Record<string, unknown>;
 	startDatetime: string;
 	endDatetime: string;
-	timeStepSeconds: number;
+	timeStepSeconds?: number;
 	transitingObjects: string[];
 	transitedObjects: string[];
 	aspectTypes: string[];
+	exactHits?: boolean;
+	stationEvents?: boolean;
+	configurationRequests?: ConfigurationSearchSetup[];
+	sampledSeries?: boolean;
 	settingsOverrides?: ComputeSettingsOverrides | null;
+}
+
+/** One exact, root-found event from `exact_hits`/`station_events` — never a sampled/rounded
+ *  point from `results`. See the [transit-series contract](../../../docs/content/developer/transit-series-contract.md). */
+export type TransitEvent = {
+	/** RFC3339 instant the event was found at, independent of `timeStepSeconds`. */
+	datetime: string;
+	motion?: Record<string, { speed: number; retrograde: boolean }>;
+} & (
+	| {
+			kind: 'aspect_hit';
+			from: string;
+			to: string;
+			type: string;
+			exact_angle: number;
+			/** `"tangential"`: the offset grazed exact and receded without crossing — a heuristic,
+			 *  grid-resolution-dependent detection, not proof of exhaustive discovery. */
+			contact: 'crossing' | 'tangential';
+			/** Independent of `contact`: `contact` is the geometry, `confirmed` is detection
+			 *  confidence. Always `true` for `contact: "crossing"`. For `"tangential"`, `false`
+			 *  means refinement did not actually converge within tolerance (or regressed) — still
+			 *  surfaced, never silently dropped, but not a verified event. */
+			confirmed: boolean;
+	  }
+	| {
+			kind: 'station';
+			body: string;
+			/** `"tangential_no_change"`: speed grazed zero without actually switching direction —
+			 *  same heuristic as `contact: "tangential"` above. */
+			direction_change: 'direct_to_retrograde' | 'retrograde_to_direct' | 'tangential_no_change';
+			/** Same meaning as `TransitEvent`'s `aspect_hit.confirmed` above. */
+			confirmed: boolean;
+	  }
+);
+
+/** One participant in a `ConfigurationMatch`. */
+export interface ConfigurationParticipant {
+	role: string;
+	body_id: string;
+	is_fixed: boolean;
+}
+
+/** One constituent aspect's state at a `ConfigurationMatch`'s evaluation instant. */
+export interface ConstituentAspectState {
+	role_a: string;
+	role_b: string;
+	body_a: string;
+	body_b: string;
+	aspect_id: string;
+	exact_angle: number;
+	allowed_orb: number;
+	deviation_deg: number;
+}
+
+/** A local (not globally certified) best-fit instant within a configuration match's interval —
+ *  never "simultaneous exactness." */
+export interface ConfigurationBestFit {
+	datetime: string;
+	max_normalized_deviation: number;
+}
+
+/** One multi-body configuration interval match — see the
+ *  [transit-series contract](../../../docs/content/developer/transit-series-contract.md#multi-body-configuration-search-configurationrequests). */
+export interface ConfigurationMatch {
+	configuration_id: string;
+	participants: ConfigurationParticipant[];
+	entry: string | null;
+	/** `null` when `entry` is a real found root; `"period_start"` when the requested period
+	 *  itself clipped it; `"missing_coverage"` when the underlying search failed. */
+	entry_clipped: 'period_start' | 'missing_coverage' | null;
+	exit: string | null;
+	exit_clipped: 'period_end' | 'missing_coverage' | null;
+	constituent_aspects: ConstituentAspectState[];
+	best_fit: ConfigurationBestFit | null;
+}
+
+export interface TransitEventSearch {
+	events: TransitEvent[];
+	/** Multi-body configuration interval matches from `configurationRequests`. */
+	configuration_matches: ConfigurationMatch[];
+	/** `false` if any individual search failed (e.g. missing kernel coverage) or exhausted its
+	 *  work-limit — `events`/`configuration_matches` may then be partial. Never silently
+	 *  presented as a complete result. */
+	complete: boolean;
+	/** One entry per failed/incomplete sub-search, naming which body/pair/aspect/configuration it
+	 *  was. */
+	warnings: string[];
 }
 
 export interface TransitSeriesResult {
 	source_chart_id?: string;
 	time_range?: { start: string; end: string };
+	/** The literal sentinel `"n/a"` when `sampledSeries` was `false`. */
 	time_step?: string;
+	/** Always `[]` when `sampledSeries` was `false`. */
 	results?: TransitSeriesEntry[];
+	/** Always present; a fixed empty/complete shape when `exactHits`, `stationEvents`, and
+	 *  `configurationRequests` were all omitted or false/empty. */
+	event_search?: TransitEventSearch;
 	backend_used?: string;
 	fallback_used?: boolean;
 	ephemeris_source?: string;

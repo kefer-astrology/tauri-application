@@ -1,0 +1,52 @@
+version: 1
+source_chart_id: alice-natal
+transit_type: transit
+period_mode: custom
+from_date: 2026-10-05
+from_time: 20:51
+to_date: 2026-10-06
+to_time: 20:51
+time_step_seconds: 3600
+transiting_bodies:
+- sun
+- moon
+- mercury
+- venus
+- mars
+- jupiter
+- saturn
+- uranus
+- neptune
+- pluto
+transited_bodies:
+- sun
+- moon
+- mercury
+- venus
+- mars
+- jupiter
+- saturn
+- uranus
+- neptune
+- pluto
+aspect_types:
+- conjunction
+- sextile
+- square
+- trine
+- opposition
+aspect_orbs:
+  square: 6.5
+  opposition: 7.5
+  conjunction: 7.5
+  sextile: 4.5
+  trine: 6.5
+school: null
+model: null
+model_overrides: null
+house_transitions: false
+sign_transitions: false
+exact_hits: false
+station_events: false
+transit_limits: false
+precession_correction: false

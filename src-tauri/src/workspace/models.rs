@@ -101,7 +101,7 @@ pub struct AnalysisInstance {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum HouseSystem {
     #[serde(rename = "Placidus")]
     Placidus,
@@ -121,6 +121,23 @@ pub enum HouseSystem {
     Porphyry,
     #[serde(rename = "Alcabitius")]
     Alcabitius,
+}
+
+impl HouseSystem {
+    /// Human-readable label matching the serde wire representation.
+    pub fn label(&self) -> &'static str {
+        match self {
+            HouseSystem::Placidus => "Placidus",
+            HouseSystem::WholeSign => "Whole Sign",
+            HouseSystem::Campanus => "Campanus",
+            HouseSystem::Koch => "Koch",
+            HouseSystem::Equal => "Equal",
+            HouseSystem::Regiomontanus => "Regiomontanus",
+            HouseSystem::Vehlow => "Vehlow",
+            HouseSystem::Porphyry => "Porphyry",
+            HouseSystem::Alcabitius => "Alcabitius",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,7 +186,7 @@ pub enum Ayanamsa {
     UserDefined,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ObjectType {
     Planet,
@@ -182,6 +199,31 @@ pub enum ObjectType {
     #[serde(rename = "lunar_node")]
     LunarNode,
     Part,
+    #[serde(rename = "geocentric_node")]
+    GeocentricNode,
+    #[serde(rename = "trans_neptunian")]
+    TransNeptunian,
+    #[serde(rename = "hypothetical_planet")]
+    HypotheticalPlanet,
+    #[serde(rename = "fixed_star")]
+    FixedStar,
+}
+
+/// Restricts which object categories an aspect definition may form between.
+///
+/// Mirrors how most astrology engines scope aspect sets (e.g. limiting fixed
+/// stars to conjunction-only, or hard aspects to angles) without hand-listing
+/// individual object ids: the rule is expressed over `ObjectType` categories
+/// and evaluated per candidate pair at aspect-detection time. A `None` object
+/// known only by an id with no catalog `object_type` never satisfies
+/// `OnlyBetween` and is never matched by `Exclude`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode", rename_all = "snake_case")]
+pub enum ObjectTypeRule {
+    /// The aspect never forms when either side belongs to one of these categories.
+    Exclude { types: Vec<ObjectType> },
+    /// The aspect only forms when both sides belong to one of these categories.
+    OnlyBetween { types: Vec<ObjectType> },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -257,6 +299,57 @@ pub struct AstrologySchool {
     #[serde(default)]
     pub extends: Option<AstrologySchoolId>,
     pub default_model: String,
+}
+
+/// A closed set of well-known astrological traditions, each with a characteristic
+/// approach to objects, aspects, and orbs.
+///
+/// This is deliberately **not** the same concept as [`AstrologySchoolId`]/
+/// [`AstrologySchool`] above, which remains an open, user-definable label whose
+/// only job is picking a named [`AstroModel`]. `AstrologicalTradition` is the
+/// "Škola" workspace setting: choosing one rewrites the workspace's aspect
+/// selection and per-aspect orbs (`WorkspaceDefaults::default_aspects` /
+/// `default_aspect_orbs`), and ensures `Angle` is present in the global
+/// `extended_object_types` — see `workspace::tradition::tradition_aspect_preset`.
+/// A first iteration: it only touches aspects.
+/// Object selection and a tradition-specific orb *model* (whole-sign tolerance,
+/// planetary moieties, harmonic-scaled orbs, midpoint/dial orbs, or Jyotish
+/// directional drishti) are intentionally out of scope for now and remain
+/// future work — applying a tradition today is an approximation using the
+/// existing per-aspect-orb computation engine, not a true implementation of
+/// each school's native method.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AstrologicalTradition {
+    /// Sign-based major aspects (conjunction/sextile/square/trine/opposition);
+    /// angles and Lots are relevant targets. True whole-sign "no numeric orb"
+    /// aspect detection is not implemented — wide orbs approximate it.
+    Hellenistic,
+    /// Major aspects (including conjunction); applying/separating and
+    /// reception traditionally matter. True per-planet orb moieties are not
+    /// implemented — a single widened orb per aspect approximates them.
+    MedievalTraditional,
+    /// Major aspects plus a curated set of minor aspects — the app's existing
+    /// historical defaults.
+    ModernWestern,
+    /// Every harmonic family (quintile, septile, novile, undecile, …) enabled
+    /// at once, using the catalog's existing per-aspect orbs (already roughly
+    /// scaled down with harmonic number) rather than a true harmonic-number
+    /// orb formula.
+    Harmonic,
+    /// The hard-aspect family (0/45/90/135/180 degrees) with tight orbs,
+    /// echoing the 90-degree dial. True midpoint-dial computation is not
+    /// implemented.
+    Cosmobiology,
+    /// Same hard-aspect family as Cosmobiology with even tighter orbs,
+    /// echoing Uranian dial practice. True dial/midpoint computation and the
+    /// Uranian hypothetical bodies are not implemented.
+    UranianHamburg,
+    /// Placeholder using Western major aspects at default orbs. Real Parāśari
+    /// planetary aspects (directional per-planet "graha drishti", not a
+    /// mutual angle-plus-orb model) are not representable by this engine yet
+    /// and are explicitly future work.
+    JyotishParashari,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -470,8 +563,32 @@ pub struct TransitSetup {
     pub exact_hits: bool,
     #[serde(default)]
     pub station_events: bool,
+    /// Whether the sampled `results` graph series is computed at all —
+    /// `#[serde(default = "default_true")]` so a setup saved before this
+    /// field existed still behaves exactly as before (the sampled series
+    /// was always computed unconditionally).
+    #[serde(default = "default_true")]
+    pub sampled_series: bool,
+    /// Persisted multi-body configuration searches (Grand Trine, T-square,
+    /// Grand Cross, Yod) — see `application::transit::ConfigurationSearchRequest`.
+    #[serde(default)]
+    pub configuration_requests: Vec<ConfigurationSearchSetup>,
     pub transit_limits: bool,
     pub precession_correction: bool,
+}
+
+/// Persisted form of one `application::transit::ConfigurationSearchRequest`
+/// — kept as its own serializable type here (rather than deriving
+/// `Serialize`/`Deserialize` on the application-layer type itself) for the
+/// same reason `TransitSetup` is a workspace-layer type distinct from
+/// `application::transit::TransitEventSearchRequest`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ConfigurationSearchSetup {
+    pub configuration_id: String,
+    #[serde(default)]
+    pub fixed_roles: Vec<String>,
+    #[serde(default)]
+    pub role_candidates: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -596,6 +713,32 @@ pub struct WorkspaceDefaults {
     pub default_aspect_orbs: Option<HashMap<String, f64>>,
     #[serde(default)]
     pub default_aspect_colors: Option<HashMap<String, String>>,
+    /// Which object categories — `Planet` is always implicitly included and never appears here;
+    /// every other category (`Angle`, asteroids, lunar nodes, parts, geocentric nodes,
+    /// trans-Neptunian objects, hypothetical bodies) is opt-in — may participate in *any* aspect
+    /// at all. Global, not per-aspect: every aspect's `object_type_rule` is rebuilt from the same
+    /// set. `None` (never configured) keeps the catalog's own unrestricted baseline (every
+    /// category eligible). See `apply_workspace_aspect_scope_defaults`.
+    #[serde(default)]
+    pub extended_object_types: Option<Vec<ObjectType>>,
+    /// Per-object id: the orb to use whenever that object is on either side of a pair — narrows
+    /// the aspect's own orb down to this value (never widens it; see
+    /// `domain::astrology::resolve_allowed_orb`). Applies to *any* object category, including
+    /// individual planets and angles, not just the opt-in `extended_object_types` ones — see
+    /// `PER_OBJECT_ORB_TYPES`. Global across every aspect, unlike `default_aspect_orbs`. A
+    /// missing entry means that object doesn't get a narrower orb (behaves like a plain core
+    /// object) until the settings UI gives it a value.
+    #[serde(default)]
+    pub object_orbs: Option<HashMap<String, f64>>,
+    /// The workspace's chosen astrological tradition ("Škola"). Remembered so
+    /// the UI can show the current selection and so future iterations can use
+    /// it to drive object/orb-model choices too. Setting it (re)populates
+    /// `default_aspects`/`default_aspect_orbs` with that tradition's suggested
+    /// values and ensures `Angle` is present in `extended_object_types` — see
+    /// `workspace::tradition::tradition_aspect_preset`. Distinct from
+    /// `WorkspaceManifest::active_school`.
+    #[serde(default)]
+    pub astrology_tradition: Option<AstrologicalTradition>,
     #[serde(default)]
     pub aspect_line_tier_style: Option<AspectLineTierStyle>,
     #[serde(default)]
@@ -751,7 +894,50 @@ pub struct AspectDefinition {
     pub valid_contexts: Option<Vec<AspectContext>>,
     #[serde(default)]
     pub interpretation_weight: Option<f64>,
+    /// Restricts which object categories this aspect may form between. `None`
+    /// means unrestricted (every pair of selected objects is eligible), which
+    /// matches prior behavior for existing catalogs.
+    #[serde(default)]
+    pub object_type_rule: Option<ObjectTypeRule>,
 }
+
+/// Every object category eligible for a per-object orb override (see
+/// `WorkspaceDefaults::object_orbs`, `domain::astrology::resolve_allowed_orb`) — this is
+/// deliberately *every* category, not just the once-"extended" ones: `Planet` and `Angle` are
+/// always eligible to form any aspect (see `apply_workspace_aspect_scope_defaults`), but a user
+/// can still give an individual planet or angle its own narrower orb, the same as an asteroid or
+/// node. A missing `object_orbs` entry for a given object simply means no narrowing, regardless
+/// of which category it's in.
+pub const PER_OBJECT_ORB_TYPES: [ObjectType; 9] = [
+    ObjectType::Planet,
+    ObjectType::Angle,
+    ObjectType::Asteroid,
+    ObjectType::LunarNode,
+    ObjectType::Part,
+    ObjectType::CalculatedPoint,
+    ObjectType::GeocentricNode,
+    ObjectType::TransNeptunian,
+    ObjectType::HypotheticalPlanet,
+];
+
+/// Object categories with no physical substance — nothing there to reflect or emit light.
+/// Classical (Ptolemaic) aspect theory modeled aspects as geometric "rays" cast between actual
+/// bodies in the sky; it covered the Sun, Moon, and the visible planets specifically because a
+/// ray needs something to cast and receive it. Lunar/geocentric nodes are orbital-plane
+/// intersections, Lilith/Vertex (`CalculatedPoint`) are derived geometric points, Arabic Parts
+/// (`Part`) are arithmetic combinations, angles are horizon/meridian directions, and the Uranian
+/// "hypothetical" bodies have never been astronomically confirmed to exist at all — none of them
+/// are objects a ray of light could pass through. Conjunction (bodily co-presence, a real
+/// geometric coincidence regardless of substance) is the one exception and stays unrestricted;
+/// see `apply_workspace_aspect_scope_defaults`, the only place this is consulted.
+pub const NON_PHYSICAL_OBJECT_TYPES: [ObjectType; 6] = [
+    ObjectType::Angle,
+    ObjectType::LunarNode,
+    ObjectType::CalculatedPoint,
+    ObjectType::Part,
+    ObjectType::GeocentricNode,
+    ObjectType::HypotheticalPlanet,
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sign {
@@ -875,6 +1061,8 @@ pub struct OverrideEntry {
     pub valid_contexts: Option<Vec<AspectContext>>,
     #[serde(default)]
     pub interpretation_weight: Option<f64>,
+    #[serde(default)]
+    pub object_type_rule: Option<ObjectTypeRule>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]

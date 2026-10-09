@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Objects, aspects, and chart patterns | Kefer Astrology</title>
+    <meta name="description" content="The built-in objects and aspects, plus chart shapes and configurations Kefer can report." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/manual/">Manual</a>
+            <a href="/developer/">Developer Manual</a>
+            <a href="/guides/">Guides</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/manual/objects-aspects-and-patterns/" aria-current="page">English</a>
+            
+              <a href="/cs/manual/objects-aspects-and-patterns/" >Čeština</a>
+            
+              <a href="/es/manual/objects-aspects-and-patterns/" >Español</a>
+            
+              <a href="/fr/manual/objects-aspects-and-patterns/" >Français</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">manual</p>
+      <h1>Objects, aspects, and chart patterns</h1>
+      <p class="lede">The built-in objects and aspects, plus chart shapes and configurations Kefer can report.</p>
+      
+    </header>
+    <div class="prose">
+      <p>This reference lists the built-in catalog. The available choices in <strong>Settings</strong>
+are the final authority for the selected workspace and calculation engine: an
+object can be defined here but unavailable for a date when its local ephemeris
+kernel does not cover it.</p>
+<h2 id="observable-objects">Observable objects</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Group</th>
+					<th>Built-in objects</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Luminaries and planets</td>
+					<td>Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto</td>
+			</tr>
+			<tr>
+					<td>Angles</td>
+					<td>Ascendant, Midheaven, Descendant, Imum Coeli</td>
+			</tr>
+			<tr>
+					<td>Lunar nodes</td>
+					<td>North Node, South Node, True North Node, True South Node</td>
+			</tr>
+			<tr>
+					<td>Calculated points and lots</td>
+					<td>Lilith, True Lilith, Vertex, Antivertex, Part of Fortune, Part of Spirit</td>
+			</tr>
+			<tr>
+					<td>Asteroids and centaurs</td>
+					<td>Chiron, Ceres, Pallas, Juno, Vesta, Astraea, Hebe, Iris, Flora, Metis, Hygiea, Parthenope, Victoria, Egeria, Irene, Eunomia, Psyche, Thetis, Melpomene, Fortuna, Massalia</td>
+			</tr>
+	</tbody>
+</table>
+<p>The JPL route computes the JPL-only points and the extended asteroid set when
+the necessary local kernels are present. The application never silently
+downloads ephemerides during chart calculation. See
+<a href="../settings-and-appearance/">Settings and appearance</a> to choose objects, and
+<a href="/developer/ephemeris-manager/">Ephemerides and coverage</a> for acquisition,
+coverage, and offline behavior.</p>
+<h2 id="available-aspects">Available aspects</h2>
+<p>All built-in aspects can be enabled, assigned an orb, and limited by object
+category in <strong>Settings</strong>. The default selected set is conjunction, sextile,
+square, trine, quincunx, and opposition.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Aspect</th>
+					<th style="text-align: right">Exact angle</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Conjunction</td>
+					<td style="text-align: right">0°</td>
+			</tr>
+			<tr>
+					<td>Semisextile</td>
+					<td style="text-align: right">30°</td>
+			</tr>
+			<tr>
+					<td>Undecile</td>
+					<td style="text-align: right">32.727…°</td>
+			</tr>
+			<tr>
+					<td>Decile</td>
+					<td style="text-align: right">36°</td>
+			</tr>
+			<tr>
+					<td>Novile</td>
+					<td style="text-align: right">40°</td>
+			</tr>
+			<tr>
+					<td>Octile</td>
+					<td style="text-align: right">45°</td>
+			</tr>
+			<tr>
+					<td>Septile</td>
+					<td style="text-align: right">51.429…°</td>
+			</tr>
+			<tr>
+					<td>Sextile</td>
+					<td style="text-align: right">60°</td>
+			</tr>
+			<tr>
+					<td>Biundecile</td>
+					<td style="text-align: right">65.455…°</td>
+			</tr>
+			<tr>
+					<td>Quintile</td>
+					<td style="text-align: right">72°</td>
+			</tr>
+			<tr>
+					<td>Binovile</td>
+					<td style="text-align: right">80°</td>
+			</tr>
+			<tr>
+					<td>Triundecile</td>
+					<td style="text-align: right">98.182…°</td>
+			</tr>
+			<tr>
+					<td>Square</td>
+					<td style="text-align: right">90°</td>
+			</tr>
+			<tr>
+					<td>Biseptile</td>
+					<td style="text-align: right">102.857…°</td>
+			</tr>
+			<tr>
+					<td>Tridecile</td>
+					<td style="text-align: right">108°</td>
+			</tr>
+			<tr>
+					<td>Trine</td>
+					<td style="text-align: right">120°</td>
+			</tr>
+			<tr>
+					<td>Quadriundecile</td>
+					<td style="text-align: right">130.909…°</td>
+			</tr>
+			<tr>
+					<td>Trioctile</td>
+					<td style="text-align: right">135°</td>
+			</tr>
+			<tr>
+					<td>Biquintile</td>
+					<td style="text-align: right">144°</td>
+			</tr>
+			<tr>
+					<td>Quincunx</td>
+					<td style="text-align: right">150°</td>
+			</tr>
+			<tr>
+					<td>Triseptile</td>
+					<td style="text-align: right">154.286…°</td>
+			</tr>
+			<tr>
+					<td>Quadrinovile</td>
+					<td style="text-align: right">160°</td>
+			</tr>
+			<tr>
+					<td>Quinundecile</td>
+					<td style="text-align: right">163.636…°</td>
+			</tr>
+			<tr>
+					<td>Opposition</td>
+					<td style="text-align: right">180°</td>
+			</tr>
+	</tbody>
+</table>
+<p>An aspect is reported only when the selected model, enabled aspect list,
+object-category rule, and resolved orb allow it. The exact angle is fixed; the
+orb is a configurable tolerance around it.</p>
+<h2 id="schools-and-aspect-settings">Schools and aspect settings</h2>
+<p>The <strong>School</strong> selector in React is an <strong>astrological-tradition preset</strong>. It
+replaces the workspace defaults for enabled aspects, their orbs, and whether
+angles may participate. You can then adjust individual aspects in Settings.
+It does <strong>not</strong> currently change objects, house system, zodiac, ayanamsa,
+calculation engine, or the underlying model.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Tradition</th>
+					<th>Enabled aspects and default orb</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Hellenistic</td>
+					<td>Conjunction 10°, sextile 8°, square 9°, trine 9°, opposition 10°</td>
+			</tr>
+			<tr>
+					<td>Medieval / Renaissance traditional</td>
+					<td>Conjunction 8°, sextile 6°, square 7°, trine 8°, opposition 8°</td>
+			</tr>
+			<tr>
+					<td>Modern Western</td>
+					<td>Conjunction 8°, sextile 5°, square 6°, trine 6°, quincunx 2°, semisextile 1°, opposition 8°</td>
+			</tr>
+			<tr>
+					<td>Harmonic / vibrational</td>
+					<td>Every built-in aspect, using the catalog orb for each aspect (0.5°–8°)</td>
+			</tr>
+			<tr>
+					<td>Cosmobiology</td>
+					<td>Conjunction, octile, square, trioctile, opposition — 2° each</td>
+			</tr>
+			<tr>
+					<td>Uranian / Hamburg</td>
+					<td>Conjunction, octile, square, trioctile, opposition — 1.5° each</td>
+			</tr>
+			<tr>
+					<td>Jyotish — Parāśari</td>
+					<td>Conjunction 8°, sextile 5°, square 6°, trine 6°, opposition 8°</td>
+			</tr>
+	</tbody>
+</table>
+<p>Angles are included for the listed major/hard aspects. Modern Western does not
+include angles for its semisextile; Harmonic follows the per-aspect catalog
+setting. The Hellenistic widths stand in for a whole-sign tolerance, Medieval
+widths for per-planet moieties, and the Jyotish option is a temporary
+Western-angle approximation—not Jyotish directional <em>drishti</em>.</p>
+<p>The workspace format has a second, separate concept: an optional
+<strong>active school</strong> names a workspace-defined school and chooses its default
+calculation model. It is not limited to these seven traditions and does not
+automatically merge settings from an <code>extends</code> relationship. Most users only
+need the visible School preset; see <strong>Settings</strong> for its current effect.</p>
+<h2 id="chart-shapes-and-configurations">Chart shapes and configurations</h2>
+<p>Aspectarium can report these calculated patterns. Information, including its
+Spektrum prototype, does not yet use the selected chart&rsquo;s computed result.
+Patterns are descriptions of a chart at its computed instant, not extra objects
+or additional calculations to configure.</p>
+<p><strong>Distribution shapes:</strong> Bundle, Bowl, Locomotive, Bucket, Seesaw, Splash,
+Splay, Shifted Center, and Stellium. Bowl, Bucket, and Locomotive can include
+a leader or hemisphere variant. Shape detection uses the ten classical bodies
+(Sun through Pluto) and needs at least seven of them in the calculation.</p>
+<p><strong>Aspect configurations:</strong> T-square, Grand Trine, Grand Cross, Kite, Mystic
+Rectangle, Double Quincunx, Double Biquintile, Hexagram, and Pentagram.
+T-squares and Grand Crosses can include a modality; Grand Trines and Kites can
+include an element. These configurations use the computed aspect list among
+the ten classical bodies.</p>
+<p>For transits, <strong>Yod</strong> is the name used for the same two-quincunx-plus-sextile
+geometry called <strong>Double Quincunx</strong> in a chart snapshot. Transit configuration
+search currently supports Grand Trine, T-square, Yod, and Grand Cross; see
+<a href="../transits-and-time/">Transits and time</a> for the user workflow.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

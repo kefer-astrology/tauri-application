@@ -5,6 +5,8 @@ weight: 41
 doc_kind: contract
 status: current
 authority: normative
+aliases:
+  - /developer/rust-workspace-contract/
 ---
 
 This is the authoritative description of the portable workspace format. The
@@ -98,6 +100,10 @@ default:                                # calculation defaults only
   default_bodies: [sun, moon, mercury, venus, mars, jupiter, saturn, asc, mc]
   default_aspects: [conjunction, opposition, trine, square, sextile]
   default_aspect_orbs: { conjunction: 7.0, square: 5.0 }
+  default_aspect_colors: { conjunction: '#555555', square: '#d04444' }
+  extended_object_types: [angle, asteroid, lunar_node]
+  object_orbs: { ceres: 1.0, north_node: 2.0 }
+  astrology_tradition: modern_western
   time_system: gregorian
   default_location:
     name: Prague
@@ -137,6 +143,53 @@ bodies: []                              # legacy external catalog references
 The unreleased schema has one canonical representation: visual settings belong
 under `presentation`; calculation settings belong under `default` or a model,
 preset, chart, or operation layer.
+
+### Object scope and the `astrology_tradition` ("Škola") setting
+
+`extended_object_types` and `object_orbs` are **global** — the same
+set/table applies to every aspect at once, not per-aspect-id:
+
+- `extended_object_types`: which `ObjectType` categories — `Angle`,
+  asteroids, lunar nodes, parts/lots, other calculated points, geocentric
+  nodes, trans-Neptunian objects, hypothetical bodies — may participate in
+  *any* aspect at all. `Planet` is always implicitly eligible and never
+  appears in this list. Rebuilds every aspect's `object_type_rule` the same
+  way, in `apply_workspace_aspect_scope_defaults`
+  (`src-tauri/src/workspace/settings.rs`). Absent means every category is
+  eligible (the catalog's own unrestricted baseline) — not that none are;
+  this only narrows eligibility once set.
+- `object_orbs`: per-object id → orb (degrees). Whenever that object is on
+  either side of a pair, its aspect's own orb is narrowed to this value
+  instead (never widened) — see `domain::astrology::resolve_allowed_orb`.
+  Applies to *any* object, including individual planets and angles, not
+  just the opt-in `extended_object_types` categories. An object with no
+  entry here behaves like a plain core object until given one.
+  Workspace-level only — no preset/chart/operation layer overrides it.
+
+A brand-new workspace seeds `extended_object_types: [angle]` (see
+`empty_workspace_manifest`, `src-tauri/src/commands/workspace.rs`) so angle
+participation keeps working out of the box, the same expectation the old
+per-aspect angle toggle it replaced provided by default.
+
+`astrology_tradition` is a closed-enum convenience, distinct from
+`active_school` below: picking one of `hellenistic`, `medieval_traditional`,
+`modern_western`, `harmonic`, `cosmobiology`, `uranian_hamburg`, or
+`jyotish_parashari` (re)populates `default_aspects`/`default_aspect_orbs`
+with that tradition's suggested values, and ensures `angle` is present in
+`extended_object_types` (merged in, not replacing whatever other categories
+were already enabled) — see `workspace::tradition::tradition_aspect_preset`
+in `src-tauri/src/workspace/tradition.rs`. A user can still edit individual
+aspects afterward; their edits simply overwrite the preset's suggestion for
+that one aspect. Setting the same tradition again is a no-op for aspect
+settings (it only re-applies the preset on an actual change), so resaving
+unrelated settings — which resend the whole `WorkspaceDefaults` snapshot —
+never clobbers per-aspect customizations made after the tradition was picked.
+This is a first iteration: it only drives aspect selection/orbs/angle
+inclusion. See [Domain model and extensibility](../domain-model/#astrological-traditions-škola-and-the-two-different-things-called-school)
+for the full seven-axis decomposition (zodiac, houses, objects, relationships,
+planetary condition, derived charts/timing, interpretation) a tradition could
+eventually drive, which of those axes exist today, and how `BaseChartPurpose`
+(natal/horary/electional/…) is a separate, tradition-independent axis.
 
 `tag_catalog` is the workspace-wide registry used for tag completion and shared
 colors. Names must be non-empty and unique after surrounding whitespace is
@@ -318,8 +371,34 @@ An absent field inherits. An explicitly empty body/aspect collection means
 “none” in preset and operation layers. Existing chart
 `observable_objects: []` retains its legacy “inherit” meaning.
 
-School is an extensible string ID, not a closed enum. It classifies a model and
-provides its default model. `extends` records lineage; it does not copy settings.
+School (`active_school`/`schools`/`AstrologySchoolId`) is an extensible string
+ID, not a closed enum. It classifies a model and provides its default model.
+`extends` records lineage; it does not copy settings. This is a different
+concept from `default.astrology_tradition` above — that one is a closed enum
+("Škola" in the UI) whose job is seeding aspect settings for a well-known
+tradition, not selecting a named model.
+
+## Loading, validation, and runtime catalog
+
+`create_workspace` creates `charts/`, `transits/`, and an empty manifest, and
+refuses an existing manifest. `save_workspace` writes supplied charts as
+`charts/<sanitized-id>.yml`, preserves other represented manifest fields, and
+updates chart references and optional defaults. These commands currently do
+filesystem work directly.
+
+`load_workspace` is intentionally tolerant: a parseable manifest is required,
+but unreadable chart or analysis references are skipped and only loaded
+summaries are returned. `validate_workspace` uses the aggregate loader instead:
+it attempts every referenced kind, retains valid items, and reports structured
+diagnostics for failures. Absolute references and paths escaping the workspace
+root are rejected; a missing or malformed manifest is fatal to both paths.
+
+`get_builtin_domain_catalog` supplies the startup catalog. On workspace open,
+each frontend requests the resolved model report and catalog without a chart
+ID. A chart-specific catalog can be requested, but neither shell refreshes it
+when chart selection changes. A selected chart can therefore calculate with a
+different resolved model from the catalog currently displayed; this is a known
+frontend propagation gap, not a different resolution rule.
 
 ## Persisted transit intent
 
@@ -347,15 +426,21 @@ house_transitions: true
 sign_transitions: true
 exact_hits: true
 station_events: true
+sampled_series: true
+configuration_requests:
+  - configuration_id: grand_trine
+    fixed_roles: []
+    role_candidates: {}
 transit_limits: false
 precession_correction: true
 ```
 
-The source chart supplies subject coordinates and inherited settings. The
-transit file chooses the interval, sampling, moving and target bodies, aspects,
-orbs, and event families. Exact-time refinement is represented by `exact_hits`;
-the current series engine still samples at `time_step_seconds` and may refine
-execution in a later compatible implementation.
+The source chart supplies inherited settings; the transit file supplies the
+interval, sampling, selected bodies/aspects, and requested event families.
+`sampled_series` defaults to true so existing saved setups keep their sampled
+output. Event and configuration behavior, response shape, supported patterns,
+and completeness rules are defined once in the
+[Transit series contract](../transit-series-contract/).
 
 ## What is intentionally not persisted
 

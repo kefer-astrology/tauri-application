@@ -1,73 +1,9 @@
-<!doctype html>
-<html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Backend structure and data ownership | Kefer Astrology</title>
-    <meta name="description" content="Current persistence, resolution, provenance, and backend mechanisms." />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    
-    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
-  </head>
-  <body>
-    <div class="shell">
-      <header class="site-header">
-        <a class="brand" href="/">Kefer Astrology</a>
-        <div class="nav-group">
-          <nav class="top-nav" aria-label="Primary">
-            <a href="/manual/">Manual</a>
-            <a href="/developer/">Developer Manual</a>
-            <a href="/guides/">Guides</a>
-          </nav>
-          <nav class="lang-switch" aria-label="Language">
-            
-              <a href="/developer/backend-structure/" aria-current="page">English</a>
-            
-          </nav>
-        </div>
-      </header>
-      <main>
-        
-  <article class="content">
-    <header class="page-header">
-      <p class="eyebrow">developer</p>
-      <h1>Backend structure and data ownership</h1>
-      <p class="lede">Current persistence, resolution, provenance, and backend mechanisms.</p>
-      
-        <div class="doc-meta" aria-label="Document classification">
-          <span>Architecture</span>
-          <span>Current</span>
-          <span>Informative</span>
-        </div>
-      
-    </header>
-    <div class="prose">
-      <p>Rust owns workspace YAML, model/settings resolution, diagnostics, runtime
-catalog construction, and the supported no-sidecar calculation route.
-<code>WorkspaceManifest</code> is an index/persistence representation; loaded charts and
-other references are separate representations. <code>WorkspaceInfo</code> is only a
-tolerant summary projection. <code>LoadedWorkspace</code> is the diagnostics-aware typed
-aggregate.</p>
-<p><code>workspace::writer</code> writes YAML. The storage command module is not a database:
-its computed-position/relation writes are no-ops. Frontends keep computation
-responses in memory and recompute as needed; persisted transit setup contains
-intent, not a computed series.</p>
-<p><code>workspace::settings</code> resolves model/settings and emits a source report.
-<code>workspace::validation</code> separates malformed configuration from provider or
-kernel availability. <code>application::computation</code> and <code>application::transit</code>
-consume resolved inputs; astronomy infrastructure computes canonical data; the
-domain layer adds astrology results. Result metadata exposes backend used,
-fallback state, ephemeris source where available, and warnings.</p>
-<p>Python is optional, not a competing persistence/configuration authority. In
-auto mode the router prefers an available sidecar and otherwise routes
-supported requests to Rust. Some inputs explicitly require Python. See
-<a href="../architecture/">Architecture</a> for the exact routing caveats and <a href="../rust-workspace-contract/">Rust
-workspace contract</a> for loader semantics.</p>
-
-    </div>
-  </article>
-
-      </main>
-    </div>
-  </body>
+<!DOCTYPE html>
+<html lang="en-US">
+	<head>
+		<title>//localhost:1313/developer/architecture/</title>
+		<link rel="canonical" href="//localhost:1313/developer/architecture/">
+		<meta charset="utf-8">
+		<meta http-equiv="refresh" content="0; url=//localhost:1313/developer/architecture/">
+	</head>
 </html>

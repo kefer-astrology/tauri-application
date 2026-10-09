@@ -9,6 +9,26 @@
 ///   - House cusps: computed in houses.rs
 ///   - Chiron/custom small bodies: validated Horizons vectors converted to Type 13 SPKs
 ///     are discovered from adjacent manifests and evaluated through the same frame pipeline
+///
+/// ## Time and output contract
+///
+/// Input chart times are UTC timestamps (including their fractional second).  `hifitime`
+/// converts that UTC instant through TT to the ET/TDB-compatible epoch ANISE uses to evaluate
+/// SPK Chebyshev records; the backend never creates a sampled position table.  TT is used for mean ecliptic
+/// orientation and lunar element formulae.  For pre-UTC historical civil dates the caller
+/// must first supply a UTC-equivalent instant using its selected calendar and Delta-T model;
+/// that civil-time policy deliberately is not hidden in this trajectory provider.
+///
+/// The application currently has no bundled Earth-orientation-parameter (EOP) table, so
+/// sidereal time uses UTC as an explicitly labelled UT1 approximation.  It is suitable for
+/// the existing chart convention, but is not a substitute for UT1 when sub-arcsecond angles
+/// are required.  A future EOP provider must supply UT1 rather than changing this fallback.
+///
+/// `PositionMode::Geometric` returns the instantaneous Earth-relative mean-of-date vector.
+/// `PositionMode::Apparent` asks ANISE for converged light-time plus stellar-aberration
+/// corrections (`CN_S`) before that same frame projection.  Neither mode is topocentric:
+/// altitude/azimuth is an observer-direction convenience derived from the geocentric vector,
+/// not a parallax-corrected apparent place.
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock, RwLock};
@@ -18,15 +38,16 @@ use anise::constants::frames::{
     NEPTUNE_BARYCENTER_J2000, PLUTO_BARYCENTER_J2000, SATURN_BARYCENTER_J2000, SUN_J2000,
     URANUS_BARYCENTER_J2000, VENUS_J2000,
 };
+use anise::math::cartesian::CartesianState;
 use anise::prelude::*;
 use hifitime::Epoch;
 
 use crate::domain::astrology::day_night_parts;
 use crate::domain::houses::{
-    campanus_cusps, compute_axes, equatorial_ra_dec_deg, equatorial_to_ecliptic,
+    campanus_cusps, compute_axes, equal_cusps, equatorial_ra_dec_deg, equatorial_to_ecliptic,
     equatorial_to_horizontal_deg, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
-    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, true_apogee_tropical_deg,
-    true_node_tropical_deg, vertex_lon, whole_sign_cusps,
+    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, porphyry_cusps,
+    true_apogee_tropical_deg, true_node_tropical_deg, vertex_lon, whole_sign_cusps,
 };
 use crate::infrastructure::ephemeris::{
     load_almanac_from_paths, small_body_kernels_for_bsp_paths, EphemerisManager, ASTRAEA_J2000,
@@ -35,7 +56,8 @@ use crate::infrastructure::ephemeris::{
     PALLAS_J2000, PARTHENOPE_J2000, PSYCHE_J2000, THETIS_J2000, VESTA_J2000, VICTORIA_J2000,
 };
 use crate::infrastructure::position_provider::{
-    AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion,
+    AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion, MinimalChartData,
+    RequiredQuantities,
 };
 use crate::workspace::models::{ChartInstance, HouseSystem, PositionMode};
 
@@ -122,7 +144,22 @@ fn almanac_cache() -> &'static RwLock<AlmanacCache> {
 fn almanac_cache_key(paths: &[PathBuf]) -> String {
     paths
         .iter()
-        .map(|path| path.to_string_lossy().into_owned())
+        // A path alone is insufficient: an ephemeris download can atomically replace an
+        // existing filename while this process is alive.
+        .map(|path| {
+            let fingerprint = std::fs::metadata(path)
+                .ok()
+                .and_then(|meta| meta.modified().ok().map(|modified| (meta.len(), modified)))
+                .and_then(|(len, modified)| {
+                    modified
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .ok()
+                        .map(|d| (len, d.as_nanos()))
+                })
+                .map(|(len, modified)| format!("{len}:{modified}"))
+                .unwrap_or_else(|| "missing".to_string());
+            format!("{}:{fingerprint}", path.to_string_lossy())
+        })
         .collect::<Vec<_>>()
         .join("|")
 }
@@ -134,43 +171,43 @@ fn aberration_for_position_mode(mode: Option<PositionMode>) -> Option<Aberration
     }
 }
 
-fn sample_tropical_longitude(
+fn sample_state(
     almanac: &Almanac,
     frame: Frame,
     unix_secs: f64,
     ab_corr: Option<Aberration>,
-) -> Result<f64, String> {
+) -> Result<CartesianState, String> {
     let epoch = Epoch::from_unix_seconds(unix_secs);
-    let obliquity = mean_obliquity_deg(epoch.to_jde_tt_days());
-    let state = almanac
+    almanac
         .transform(frame, EARTH_MOD_FRAME, epoch, ab_corr)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())
+}
+
+fn longitude_from_state(state: &CartesianState, jd_tt: f64) -> f64 {
+    let obliquity = mean_obliquity_deg(jd_tt);
     let (lon, _lat) = equatorial_to_ecliptic(
         state.radius_km.x,
         state.radius_km.y,
         state.radius_km.z,
         obliquity,
     );
-    Ok(lon)
+    lon
+}
+
+/// IAU 2006 mean-obliquity derivative in radians per SI second.  It is the
+/// derivative of exactly the polynomial used by `mean_obliquity_deg`.
+fn mean_obliquity_rate_rad_s(jd_tt: f64) -> f64 {
+    let t = (jd_tt - 2_451_545.0) / 36_525.0;
+    let arcsec_per_century = -46.836_769 - 2.0 * 0.000_183_1 * t + 3.0 * 0.002_003_40 * t.powi(2)
+        - 4.0 * 0.000_000_576 * t.powi(3)
+        - 5.0 * 0.000_000_043_4 * t.powi(4);
+    (arcsec_per_century / 3600.0 / 36_525.0 / 86_400.0).to_radians()
 }
 
 /// Right ascension and declination (degrees) from the same equatorial mean-of-date state
 /// vector `sample_tropical_longitude` rotates into ecliptic coordinates.
-fn sample_equatorial(
-    almanac: &Almanac,
-    frame: Frame,
-    unix_secs: f64,
-    ab_corr: Option<Aberration>,
-) -> Result<(f64, f64), String> {
-    let epoch = Epoch::from_unix_seconds(unix_secs);
-    let state = almanac
-        .transform(frame, EARTH_MOD_FRAME, epoch, ab_corr)
-        .map_err(|e| e.to_string())?;
-    Ok(equatorial_ra_dec_deg(
-        state.radius_km.x,
-        state.radius_km.y,
-        state.radius_km.z,
-    ))
+fn equatorial_from_state(state: &CartesianState) -> (f64, f64) {
+    equatorial_ra_dec_deg(state.radius_km.x, state.radius_km.y, state.radius_km.z)
 }
 
 fn angular_delta_deg(from: f64, to: f64) -> f64 {
@@ -183,23 +220,43 @@ fn angular_delta_deg(from: f64, to: f64) -> f64 {
     delta
 }
 
-fn sample_motion(
-    almanac: &Almanac,
-    frame: Frame,
-    unix_secs: f64,
-    ab_corr: Option<Aberration>,
-) -> Result<AstronomyMotion, String> {
-    const SAMPLE_STEP_SECONDS: f64 = 3600.0;
-    let before =
-        sample_tropical_longitude(almanac, frame, unix_secs - SAMPLE_STEP_SECONDS, ab_corr)?;
-    let after =
-        sample_tropical_longitude(almanac, frame, unix_secs + SAMPLE_STEP_SECONDS, ab_corr)?;
-    let delta = angular_delta_deg(before, after);
-    let speed = delta / ((SAMPLE_STEP_SECONDS * 2.0) / 86_400.0);
+fn motion_from_state(state: &CartesianState, jd_tt: f64) -> Result<AstronomyMotion, String> {
+    let eps = mean_obliquity_deg(jd_tt).to_radians();
+    let x = state.radius_km.x;
+    let y = state.radius_km.y * eps.cos() + state.radius_km.z * eps.sin();
+    let vx = state.velocity_km_s.x;
+    // ANISE applies its DCM state matrix when rotating into EARTH_MOD_FRAME, so
+    // its transformed velocity includes that frame rotation's transport term.
+    // Add the remaining time-dependent ecliptic rotation here.  For apparent
+    // states ANISE returns the velocity carried by its aberration calculation;
+    // it is validated below against complete-pipeline finite differences rather
+    // than assumed to be an exact derivative of converged CN+S position.
+    let vy = state.velocity_km_s.y * eps.cos()
+        + state.velocity_km_s.z * eps.sin()
+        + mean_obliquity_rate_rad_s(jd_tt)
+            * (-state.radius_km.y * eps.sin() + state.radius_km.z * eps.cos());
+    let denominator = x * x + y * y;
+    if denominator <= f64::MIN_POSITIVE {
+        return Err("motion_unavailable: ecliptic longitude singularity".to_string());
+    }
+    let speed = ((x * vy - y * vx) / denominator).to_degrees() * 86_400.0;
     Ok(AstronomyMotion {
         speed,
         retrograde: speed < 0.0,
     })
+}
+
+fn sample_tropical_longitude(
+    almanac: &Almanac,
+    frame: Frame,
+    unix_secs: f64,
+    ab_corr: Option<Aberration>,
+) -> Result<f64, String> {
+    let state = sample_state(almanac, frame, unix_secs, ab_corr)?;
+    Ok(longitude_from_state(
+        &state,
+        Epoch::from_unix_seconds(unix_secs).to_jde_tt_days(),
+    ))
 }
 
 fn true_node_tropical_at_unix(
@@ -322,6 +379,16 @@ impl JplAstronomyBackend {
     }
 }
 
+/// How much of `compute_chart_data_impl`'s usual output is actually needed.
+/// `Full` is always exactly today's behavior; `Minimal` skips RA/Dec/Alt/Az
+/// and (when nothing requires it) axes/house cusps, for a root-finder that
+/// only ever reads `.positions`/`.motion`.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Tier {
+    Full,
+    Minimal(RequiredQuantities),
+}
+
 impl AstronomyBackend for JplAstronomyBackend {
     fn backend_id(&self) -> &'static str {
         "jpl"
@@ -346,6 +413,34 @@ impl AstronomyBackend for JplAstronomyBackend {
         chart: &ChartInstance,
         requested_objects: Option<&Vec<String>>,
     ) -> Result<AstronomyChartData, String> {
+        self.compute_chart_data_impl(chart, requested_objects, Tier::Full)
+    }
+
+    fn compute_minimal(
+        &self,
+        chart: &ChartInstance,
+        body_ids: &[String],
+        quantities: RequiredQuantities,
+    ) -> Result<MinimalChartData, String> {
+        let full = self.compute_chart_data_impl(
+            chart,
+            Some(&body_ids.to_vec()),
+            Tier::Minimal(quantities),
+        )?;
+        Ok(MinimalChartData {
+            positions: full.positions,
+            motion: full.motion,
+        })
+    }
+}
+
+impl JplAstronomyBackend {
+    fn compute_chart_data_impl(
+        &self,
+        chart: &ChartInstance,
+        requested_objects: Option<&Vec<String>>,
+        tier: Tier,
+    ) -> Result<AstronomyChartData, String> {
         let almanac = self.build_almanac()?;
 
         let event_time = chart
@@ -353,15 +448,22 @@ impl AstronomyBackend for JplAstronomyBackend {
             .event_time
             .ok_or_else(|| "Chart has no subject.event_time".to_string())?;
 
+        // Keep the fractional UTC second all the way to ANISE.  ANISE evaluates the BSP at
+        // its TDB-compatible epoch internally; SPK coverage failures are returned below as
+        // explicit per-body `_unavailable` warnings rather than extrapolated.
         let unix_secs =
             event_time.timestamp() as f64 + event_time.timestamp_subsec_nanos() as f64 * 1e-9;
-        let jd_ut = julian_day_from_unix(unix_secs);
-        let obliquity = mean_obliquity_deg(jd_ut);
+        let epoch = Epoch::from_unix_seconds(unix_secs);
+        // GMST formally requires UT1.  No EOP/ΔUT1 data set is bundled yet, so retain the
+        // historic UTC approximation but make it visible in the result contract below.
+        let jd_utc_as_ut1 = julian_day_from_unix(unix_secs);
+        let jd_tt = epoch.to_jde_tt_days();
+        let obliquity = mean_obliquity_deg(jd_tt);
         // Needed up front (not just for axes/houses below) so the classical-planet loop can
         // attach topocentric altitude/azimuth alongside each body's longitude.
         let lat = chart.subject.location.latitude;
         let lon = chart.subject.location.longitude;
-        let lst_deg = local_sidereal_time_deg(jd_ut, lon);
+        let lst_deg = local_sidereal_time_deg(jd_utc_as_ut1, lon);
         let ab_corr = aberration_for_position_mode(chart.config.position_mode);
 
         let wanted = |id: &str| {
@@ -377,22 +479,39 @@ impl AstronomyBackend for JplAstronomyBackend {
         let mut altitude: HashMap<String, f64> = HashMap::new();
         let mut azimuth: HashMap<String, f64> = HashMap::new();
         let mut warnings: Vec<String> = Vec::new();
+        warnings.push("ut1_approximated_from_utc: no EOP/ΔUT1 data loaded; sidereal quantities are approximate".to_string());
+
+        // A minimal-path caller never needs motion for a pure longitude/orb
+        // search, and never needs RA/Dec/Alt/Az at all (only the full path
+        // or an explicit angle/axes request does — see `need_axes` below,
+        // which governs a *different* block).
+        let want_motion = matches!(
+            tier,
+            Tier::Full | Tier::Minimal(RequiredQuantities::LongitudeAndMotion)
+        );
+        let want_equatorial_and_horizontal = matches!(tier, Tier::Full);
 
         // ── Standard planetary positions ─────────────────────────────────
         // Equatorial (RA/Dec) and topocentric (alt/az) coordinates are only attached for
         // this classical-body loop, matching the Python/Skyfield backend's own parity
-        // (jpl_supported = the 10 classical planets) rather than nodes, angles, or asteroids.
+        // (jpl_supported = the 10 classical planets) rather than nodes, angles, or asteroids,
+        // and only when `want_equatorial_and_horizontal` — a minimal-path root-finder never
+        // reads these.
         for &(id, frame) in body_frames() {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, frame, unix_secs, ab_corr) {
-                Ok(longitude) => {
+            match sample_state(&almanac, frame, unix_secs, ab_corr) {
+                Ok(state) => {
+                    let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs, ab_corr) {
-                        motion.insert(id.to_string(), body_motion);
+                    if want_motion {
+                        if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
+                            motion.insert(id.to_string(), body_motion);
+                        }
                     }
-                    if let Ok((ra, dec)) = sample_equatorial(&almanac, frame, unix_secs, ab_corr) {
+                    if want_equatorial_and_horizontal {
+                        let (ra, dec) = equatorial_from_state(&state);
                         right_ascension.insert(id.to_string(), ra);
                         declination.insert(id.to_string(), dec);
                         let (alt, az) = equatorial_to_horizontal_deg(ra, dec, lst_deg, lat);
@@ -411,10 +530,11 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, frame, unix_secs, ab_corr) {
-                Ok(longitude) => {
+            match sample_state(&almanac, frame, unix_secs, ab_corr) {
+                Ok(state) => {
+                    let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.to_string(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, frame, unix_secs, ab_corr) {
+                    if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
                         motion.insert(id.to_string(), body_motion);
                     }
                 }
@@ -429,10 +549,11 @@ impl AstronomyBackend for JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_tropical_longitude(&almanac, *frame, unix_secs, ab_corr) {
-                Ok(longitude) => {
+            match sample_state(&almanac, *frame, unix_secs, ab_corr) {
+                Ok(state) => {
+                    let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.clone(), longitude);
-                    if let Ok(body_motion) = sample_motion(&almanac, *frame, unix_secs, ab_corr) {
+                    if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
                         motion.insert(id.clone(), body_motion);
                     }
                 }
@@ -441,8 +562,9 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         // ── Lunar nodes ───────────────────────────────────────────────────
-        let mean_node = mean_node_lon(jd_ut);
-        let mean_motion = mean_node_motion(jd_ut);
+        // These secular lunar expressions are TT quantities, unlike sidereal time above.
+        let mean_node = mean_node_lon(jd_tt);
+        let mean_motion = mean_node_motion(jd_tt);
         if wanted("north_node") || wanted("mean_node") {
             let key = if wanted("north_node") {
                 "north_node"
@@ -465,9 +587,11 @@ impl AstronomyBackend for JplAstronomyBackend {
         let want_true_nn = wanted("true_north_node") || wanted("true_node");
         let want_true_sn = wanted("true_south_node");
         if want_true_nn || want_true_sn {
-            match true_node_tropical_at_unix(&almanac, unix_secs, ab_corr) {
+            // Osculating orbital elements are defined from the instantaneous geometric
+            // Earth–Moon state, not a retarded/apparent line of sight.
+            match true_node_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_nn) => {
-                    let true_motion = true_node_motion(&almanac, unix_secs, ab_corr).ok();
+                    let true_motion = true_node_motion(&almanac, unix_secs, Aberration::NONE).ok();
                     if want_true_nn {
                         positions.insert("true_north_node".to_string(), true_nn);
                         if wanted("true_node") {
@@ -495,10 +619,12 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         if wanted("true_lilith") {
-            match true_apogee_tropical_at_unix(&almanac, unix_secs, ab_corr) {
+            match true_apogee_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_apogee) => {
                     positions.insert("true_lilith".to_string(), true_apogee);
-                    if let Ok(apogee_motion) = true_apogee_motion(&almanac, unix_secs, ab_corr) {
+                    if let Ok(apogee_motion) =
+                        true_apogee_motion(&almanac, unix_secs, Aberration::NONE)
+                    {
                         motion.insert("true_lilith".to_string(), apogee_motion);
                     }
                 }
@@ -514,15 +640,51 @@ impl AstronomyBackend for JplAstronomyBackend {
         }
 
         // ── Axes and house cusps ──────────────────────────────────────────
-        let (asc, mc, desc, ic) =
-            compute_axes(jd_ut, lat, lon).map_err(|e| format!("Failed to compute axes: {e}"))?;
+        // Skipped entirely on the minimal path unless the request actually
+        // depends on an angle (a legitimate case: `ObjectType::Angle` ids
+        // like "asc" are ordinary, unrestricted `transiting_objects`/
+        // `transited_objects` entries — nothing stops an event/configuration
+        // search from targeting one). A root-finder over ordinary bodies
+        // never sets any of these `wanted(...)` checks, so this is the
+        // common case in practice.
+        let need_axes = matches!(tier, Tier::Full)
+            || wanted("asc")
+            || wanted("mc")
+            || wanted("desc")
+            || wanted("ic")
+            || wanted("part_of_fortune")
+            || wanted("part_of_spirit");
 
-        let axes = AstronomyAxes { asc, desc, mc, ic };
-        for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
-            if wanted(id) {
-                positions.insert(id.to_string(), longitude);
+        let (asc, axes, house_cusps) = if need_axes {
+            let (asc, mc, desc, ic) = compute_axes(jd_utc_as_ut1, lat, lon)
+                .map_err(|e| format!("Failed to compute axes: {e}"))?;
+            let axes = AstronomyAxes { asc, desc, mc, ic };
+            for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
+                if wanted(id) {
+                    positions.insert(id.to_string(), longitude);
+                }
             }
-        }
+            let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
+                Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
+                Some(HouseSystem::Placidus) => placidus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
+                Some(HouseSystem::Campanus) => campanus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
+                Some(HouseSystem::Equal) => (equal_cusps(asc), vec![]),
+                Some(HouseSystem::Porphyry) => (porphyry_cusps(asc, mc), vec![]),
+                Some(other) => {
+                    let name = format!("{other:?}").to_lowercase();
+                    (
+                        whole_sign_cusps(asc),
+                        vec![format!(
+                            "house_system_{name}_not_yet_supported: whole_sign_used"
+                        )],
+                    )
+                }
+            };
+            warnings.extend(house_warnings);
+            (asc, axes, house_cusps)
+        } else {
+            (0.0, AstronomyAxes::default(), Vec::new())
+        };
 
         if wanted("vertex") || wanted("antivertex") {
             // RAMC (right ascension of the midheaven) is the same quantity as local sidereal time.
@@ -584,22 +746,6 @@ impl AstronomyBackend for JplAstronomyBackend {
                 }
             }
         }
-
-        let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
-            Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
-            Some(HouseSystem::Placidus) => placidus_cusps(jd_ut, lat, lon, asc, mc),
-            Some(HouseSystem::Campanus) => campanus_cusps(jd_ut, lat, lon, asc, mc),
-            Some(other) => {
-                let name = format!("{other:?}").to_lowercase();
-                (
-                    whole_sign_cusps(asc),
-                    vec![format!(
-                        "house_system_{name}_not_yet_supported: whole_sign_used"
-                    )],
-                )
-            }
-        };
-        warnings.extend(house_warnings);
 
         Ok(AstronomyChartData {
             positions,
@@ -667,6 +813,89 @@ mod tests {
     fn no_bsp_returns_error() {
         let backend = JplAstronomyBackend::new(vec![PathBuf::from("nonexistent.bsp")]);
         assert!(backend.build_almanac().is_err());
+    }
+
+    #[test]
+    fn jpl_backend_for_chart_falls_back_to_catalog_when_override_path_is_invalid() {
+        // A nonexistent or non-.bsp override path must not be a hard error: the
+        // documented contract is that `jpl_backend_for_chart` silently falls
+        // through to the normal EphemerisManager-resolved catalog in that case.
+        let chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        let backend = jpl_backend_for_chart(&chart).expect(
+            "an invalid override_ephemeris path should fall back to the catalog, not error",
+        );
+        let data = backend
+            .compute_chart_data(&chart, Some(&vec!["sun".to_string()]))
+            .expect("fallback catalog kernels should still compute");
+        assert!(data.positions.contains_key("sun"));
+    }
+
+    /// Copies `de440s.bsp` alone into a bare temp directory (no sibling
+    /// `pck11.pca`, no bundled asteroid/Chiron kernels) to exercise the
+    /// override path's auxiliary-kernel and partial-coverage semantics: the
+    /// planetary-orientation kernel must still resolve from the bundled
+    /// resource directory, and bodies absent from the lone override file must
+    /// be reported as per-body `_unavailable` warnings, never a hard error.
+    fn isolated_override_bsp_dir() -> std::path::PathBuf {
+        let source = dev_bsp_path("de440s.bsp").expect("bundled de440s.bsp required for this test");
+        let dir = std::env::temp_dir().join(format!(
+            "kefer-jpl-override-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&dir).expect("create isolated override dir");
+        std::fs::copy(&source, dir.join("de440s.bsp")).expect("copy de440s.bsp into isolated dir");
+        dir
+    }
+
+    #[test]
+    fn override_without_sibling_pck_still_loads_bundled_orientation_kernel() {
+        let dir = isolated_override_bsp_dir();
+        let override_path = dir.join("de440s.bsp");
+        assert!(
+            !dir.join("pck11.pca").exists(),
+            "test setup must not have a sibling pck11.pca"
+        );
+
+        let chart = j2000_chart(override_path.to_str().unwrap());
+        let backend = jpl_backend_for_chart(&chart).expect("override path should resolve");
+        let data = backend
+            .compute_chart_data(&chart, Some(&vec!["sun".to_string(), "moon".to_string()]))
+            .expect("compute should succeed using the bundled pck11.pca fallback");
+        assert!(data.positions.contains_key("sun"));
+        assert!(data.positions.contains_key("moon"));
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn override_to_single_kernel_reports_missing_bodies_as_warnings_not_errors() {
+        // The override file supplies only the ten planets + Moon — it does not
+        // "supply every requested object". Chiron (a separate bundled Type 13
+        // SPK) must degrade to a warning, not fail the whole chart.
+        let dir = isolated_override_bsp_dir();
+        let override_path = dir.join("de440s.bsp");
+        let chart = j2000_chart(override_path.to_str().unwrap());
+        let backend = jpl_backend_for_chart(&chart).expect("override path should resolve");
+        let requested = vec!["sun".to_string(), "chiron".to_string()];
+        let data = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .expect("a single-kernel override must not fail the whole chart");
+
+        assert!(data.positions.contains_key("sun"));
+        assert!(!data.positions.contains_key("chiron"));
+        assert!(
+            data.warnings
+                .iter()
+                .any(|warning| warning.starts_with("chiron_unavailable")),
+            "expected a chiron_unavailable warning, got: {:?}",
+            data.warnings
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]
@@ -940,10 +1169,621 @@ mod tests {
     }
 
     fn dev_bsp_path(filename: &str) -> Option<PathBuf> {
-        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()?
-            .join(format!("backend-python/source/{filename}"));
-        root.exists().then_some(root)
+        // Keep unit tests runnable from a clean checkout.  Development used to look only
+        // for a removed Python-sidecar copy of the kernel, although the Rust application
+        // ships the resources it needs beside this crate.
+        let resource = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join(filename);
+        resource.exists().then_some(resource)
+    }
+
+    #[test]
+    fn longitude_velocity_matches_complete_pipeline_central_differences() {
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        let almanac = load_almanac_from_paths(&paths).expect("bundled almanac");
+        let epoch = Epoch::from_gregorian_utc(2024, 4, 10, 12, 0, 0, 0);
+        let t = epoch.to_unix_seconds();
+        // Moon, inner/outer planet, asteroid, and the bundled custom Type-13 body.
+        let frames = [
+            MOON_J2000,
+            MERCURY_J2000,
+            SATURN_BARYCENTER_J2000,
+            ASTRAEA_J2000,
+            Frame::from_ephem_j2000(20_002_060),
+        ];
+        for aberration in [Aberration::NONE, Aberration::CN_S] {
+            for frame in frames {
+                let state = sample_state(&almanac, frame, t, aberration).expect("state");
+                let analytic = motion_from_state(&state, epoch.to_jde_tt_days())
+                    .expect("motion")
+                    .speed;
+                let mut estimates = Vec::new();
+                for step in [1.0, 10.0, 60.0] {
+                    let before = sample_tropical_longitude(&almanac, frame, t - step, aberration)
+                        .expect("before");
+                    let after = sample_tropical_longitude(&almanac, frame, t + step, aberration)
+                        .expect("after");
+                    estimates.push(angular_delta_deg(before, after) / (2.0 * step / 86_400.0));
+                }
+                let reference = estimates[2];
+                assert!((estimates[1] - reference).abs() < 2e-3,
+                    "central differences did not converge for {frame:?} {aberration:?}: {estimates:?}");
+                // CN+S is a corrected apparent state, whose velocity is validated rather
+                // than assumed exact; 0.01 deg/day = 36 arcsec/day is deliberately looser
+                // than the geometric 0.002 deg/day transport/frame tolerance.
+                let tolerance = if aberration.is_some() { 1e-2 } else { 2e-3 };
+                assert!((analytic - reference).abs() < tolerance,
+                    "velocity mismatch for {frame:?} {aberration:?}: analytic={analytic}, fd={reference}");
+            }
+        }
+    }
+
+    /// Confirms the `retrograde` flag actually flips across a real station,
+    /// not just that `speed < 0.0` is internally consistent with itself. Uses
+    /// `application::event_search::find_stationary_point` to locate a real
+    /// Mercury station (same search exercised by its own dedicated tests),
+    /// then samples the full `compute_chart_data` output immediately before
+    /// and after through the public chart pipeline.
+    #[test]
+    fn retrograde_flag_flips_across_a_real_stationary_point() {
+        let payload = crate::test_support::sample_chart_payload("retrograde-flip-test");
+        let resolved =
+            crate::application::chart_resolution::resolve_standalone_chart(&payload, None)
+                .expect("sample chart should resolve");
+        let start = chrono::DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let end = start + chrono::Duration::days(45);
+        let ctx = crate::application::evaluation_context::EvaluationContext::new(
+            &resolved.chart,
+            &resolved.model,
+        );
+        let station = crate::application::event_search::find_stationary_point(
+            &ctx,
+            "mercury",
+            start,
+            end,
+            chrono::Duration::hours(6),
+        )
+        .expect("search should not error")
+        .expect("expected a Mercury station in this window");
+
+        let sample_at = |at: chrono::DateTime<chrono::Utc>| -> AstronomyMotion {
+            let mut chart = resolved.chart.clone();
+            chart.subject.event_time = Some(at);
+            let backend = jpl_backend_for_chart(&chart).expect("backend should resolve");
+            let data = backend
+                .compute_chart_data(&chart, Some(&vec!["mercury".to_string()]))
+                .expect("compute should succeed");
+            data.motion["mercury"].clone()
+        };
+
+        let before = sample_at(station - chrono::Duration::hours(6));
+        let after = sample_at(station + chrono::Duration::hours(6));
+        assert_ne!(
+            before.retrograde, after.retrograde,
+            "retrograde flag should flip across a real station: before={before:?}, after={after:?}"
+        );
+        assert_eq!(before.retrograde, before.speed < 0.0);
+        assert_eq!(after.retrograde, after.speed < 0.0);
+    }
+
+    /// A fast mover (Moon) genuinely crosses the 0°/360° tropical boundary
+    /// within any ~30-day window. Reuses `find_aspect_exact_time` against a
+    /// fixed target longitude of exactly 0° to locate the real crossing
+    /// (not a synthetic `normalize_deg` unit case), then confirms the
+    /// analytic motion speed stays physically continuous (no spurious
+    /// ~360°/day jump from an unwrapped subtraction) immediately either side
+    /// of the wrap.
+    #[test]
+    fn longitude_wraps_through_zero_degrees_without_a_motion_discontinuity() {
+        let payload = crate::test_support::sample_chart_payload("zero-crossing-test");
+        let resolved =
+            crate::application::chart_resolution::resolve_standalone_chart(&payload, None)
+                .expect("sample chart should resolve");
+        let start = chrono::DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let end = start + chrono::Duration::days(35);
+
+        let ctx = crate::application::evaluation_context::EvaluationContext::new(
+            &resolved.chart,
+            &resolved.model,
+        );
+        let crossing = crate::application::event_search::find_aspect_exact_time(
+            &ctx,
+            "moon",
+            0.0,
+            0.0,
+            start,
+            end,
+            chrono::Duration::hours(6),
+        )
+        .expect("search should not error")
+        .expect("the Moon should cross 0 degrees within 35 days");
+
+        let sample_lon_and_speed = |at: chrono::DateTime<chrono::Utc>| -> (f64, f64) {
+            let mut chart = resolved.chart.clone();
+            chart.subject.event_time = Some(at);
+            let backend = jpl_backend_for_chart(&chart).expect("backend should resolve");
+            let data = backend
+                .compute_chart_data(&chart, Some(&vec!["moon".to_string()]))
+                .expect("compute should succeed");
+            (data.positions["moon"], data.motion["moon"].speed)
+        };
+
+        let (lon_before, speed_before) =
+            sample_lon_and_speed(crossing - chrono::Duration::minutes(30));
+        let (lon_after, speed_after) =
+            sample_lon_and_speed(crossing + chrono::Duration::minutes(30));
+
+        // A genuine wrap: one side reads just under 360, the other just over 0.
+        assert!(
+            lon_before > 300.0 || lon_before < 60.0,
+            "expected a longitude near the 0/360 boundary, got {lon_before}"
+        );
+        assert!(
+            lon_after > 300.0 || lon_after < 60.0,
+            "expected a longitude near the 0/360 boundary, got {lon_after}"
+        );
+        assert!(
+            (lon_before - lon_after).abs() > 90.0,
+            "expected the raw longitude values to straddle the wrap: {lon_before} vs {lon_after}"
+        );
+        // The Moon's true speed is on the order of ~13 deg/day; an unwrapped
+        // subtraction across the 0/360 seam would instead read close to
+        // +/-360 deg/day. A tenfold margin cleanly separates the two.
+        assert!(speed_before.abs() < 20.0, "speed_before={speed_before}");
+        assert!(speed_after.abs() < 20.0, "speed_after={speed_after}");
+        assert!((speed_before - speed_after).abs() < 2.0, "speed should stay continuous across the wrap: before={speed_before}, after={speed_after}");
+    }
+
+    /// The bundled Chiron artifact is stored as two adjacent SPK segments
+    /// (see `ephemeris-validation.md`); samples the real boundary instant
+    /// (read from `spk_summaries`, not hardcoded) a few seconds either side
+    /// and confirms the longitude is continuous across that internal seam —
+    /// Chiron moves ~0.03 deg/day, so any multi-degree jump would indicate a
+    /// broken handoff between segments rather than normal motion.
+    #[test]
+    fn chiron_longitude_is_continuous_across_its_internal_spk_segment_boundary() {
+        use anise::naif::daf::NAIFSummaryRecord;
+
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        let almanac = load_almanac_from_paths(&paths).expect("bundled almanac");
+        let mut summaries = almanac
+            .spk_summaries(20_002_060)
+            .expect("bundled Chiron SPK should have segments");
+        summaries.sort_by(|a, b| a.start_epoch().partial_cmp(&b.start_epoch()).unwrap());
+        assert!(
+            summaries.len() >= 2,
+            "expected multiple segments to exercise a real internal boundary, found {}",
+            summaries.len()
+        );
+        let boundary_et = summaries[0].end_epoch().to_et_seconds();
+        assert!(
+            (summaries[1].start_epoch().to_et_seconds() - boundary_et).abs() < 1.0,
+            "expected the two segments to be contiguous, not a real gap"
+        );
+
+        let sample_lon = |et_seconds: f64| -> f64 {
+            let epoch = Epoch::from_et_seconds(et_seconds);
+            let state = almanac
+                .transform(
+                    Frame::from_ephem_j2000(20_002_060),
+                    EARTH_MOD_FRAME,
+                    epoch,
+                    None,
+                )
+                .expect("transform across the segment boundary should succeed");
+            longitude_from_state(&state, epoch.to_jde_tt_days())
+        };
+
+        let before = sample_lon(boundary_et - 5.0);
+        let after = sample_lon(boundary_et + 5.0);
+        let delta = angular_delta_deg(before, after).abs();
+        assert!(
+            delta < 0.01,
+            "expected a near-zero longitude jump across the segment seam (10s apart), got {delta} deg: before={before}, after={after}"
+        );
+    }
+
+    /// Internal-consistency sanity check (not an independent accuracy proof):
+    /// apparent (CN+S) and geometric positions for the same body/epoch must
+    /// differ by a nonzero but physically small amount. Mars near opposition
+    /// has a light-time of several minutes, which at its orbital speed is an
+    /// arcminute-scale apparent/geometric difference — real, but nowhere near
+    /// a degree.
+    #[test]
+    fn apparent_and_geometric_mars_positions_differ_by_a_small_physical_amount() {
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let almanac = load_almanac_from_paths(&[bsp]).expect("almanac should load");
+        let epoch = Epoch::from_gregorian_utc(2024, 4, 10, 12, 0, 0, 0);
+        let unix_secs = epoch.to_unix_seconds();
+        let jd_tt = epoch.to_jde_tt_days();
+
+        let geometric_state =
+            sample_state(&almanac, MARS_BARYCENTER_J2000, unix_secs, Aberration::NONE)
+                .expect("geometric state");
+        let apparent_state =
+            sample_state(&almanac, MARS_BARYCENTER_J2000, unix_secs, Aberration::CN_S)
+                .expect("apparent state");
+
+        let geometric_lon = longitude_from_state(&geometric_state, jd_tt);
+        let apparent_lon = longitude_from_state(&apparent_state, jd_tt);
+        let delta = angular_delta_deg(geometric_lon, apparent_lon).abs();
+
+        assert!(
+            delta > 1e-4,
+            "expected a nonzero light-time/aberration shift, got {delta} deg"
+        );
+        assert!(
+            delta < 1.0,
+            "expected a sub-degree light-time/aberration shift for Mars, got {delta} deg"
+        );
+    }
+
+    /// `compute_minimal` must agree with `compute_chart_data` (the full
+    /// path) on every quantity it actually returns — it is a *skip*, not a
+    /// separate computation: both ultimately call the same `sample_state`/
+    /// `longitude_from_state`/`motion_from_state` pipeline, but this proves
+    /// the tier-gating logic in `compute_chart_data_impl` didn't
+    /// accidentally change a value while skipping the rest. Covers both
+    /// `RequiredQuantities` tiers, several representative objects (a fast
+    /// mover, a slow mover, and a secular lunar-node quantity that bypasses
+    /// `sample_state` entirely), two distinct epochs, and both
+    /// geometric/apparent position modes.
+    #[test]
+    fn minimal_path_agrees_with_full_path_for_representative_objects_epochs_and_modes() {
+        use crate::infrastructure::position_provider::RequiredQuantities;
+        use crate::workspace::models::PositionMode;
+
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let backend = JplAstronomyBackend::new(vec![bsp.clone()]);
+
+        let bodies = ["moon", "mars", "north_node"];
+        let epochs = ["2000-01-01 12:00:00", "2024-06-15 08:30:00"];
+        let modes = [PositionMode::Apparent, PositionMode::Geometric];
+
+        for epoch in epochs {
+            for mode in modes {
+                let mut chart = j2000_chart(bsp.to_str().unwrap());
+                chart.subject.event_time = Some(
+                    chrono::NaiveDateTime::parse_from_str(epoch, "%Y-%m-%d %H:%M:%S")
+                        .expect("valid fixed test epoch")
+                        .and_utc(),
+                );
+                chart.config.position_mode = Some(mode);
+
+                let requested: Vec<String> = bodies.iter().map(|b| b.to_string()).collect();
+                let full = backend
+                    .compute_chart_data(&chart, Some(&requested))
+                    .expect("full path should compute");
+
+                for tier in [
+                    RequiredQuantities::LongitudeOnly,
+                    RequiredQuantities::LongitudeAndMotion,
+                ] {
+                    let minimal = backend
+                        .compute_minimal(&chart, &requested, tier)
+                        .expect("minimal path should compute");
+
+                    for body in bodies {
+                        let full_lon = full.positions.get(body);
+                        let minimal_lon = minimal.positions.get(body);
+                        assert_eq!(
+                            full_lon.is_some(),
+                            minimal_lon.is_some(),
+                            "{body} availability should match between paths at {epoch} ({mode:?}, {tier:?})"
+                        );
+                        if let (Some(full_lon), Some(minimal_lon)) = (full_lon, minimal_lon) {
+                            assert!(
+                                (full_lon - minimal_lon).abs() < 1e-9,
+                                "{body} longitude should match exactly between paths at {epoch} ({mode:?}, {tier:?}): full={full_lon}, minimal={minimal_lon}"
+                            );
+                        }
+
+                        if tier == RequiredQuantities::LongitudeAndMotion {
+                            let full_motion = full.motion.get(body);
+                            let minimal_motion = minimal.motion.get(body);
+                            assert_eq!(
+                                full_motion.is_some(),
+                                minimal_motion.is_some(),
+                                "{body} motion availability should match at {epoch} ({mode:?})"
+                            );
+                            if let (Some(full_motion), Some(minimal_motion)) =
+                                (full_motion, minimal_motion)
+                            {
+                                assert!(
+                                    (full_motion.speed - minimal_motion.speed).abs() < 1e-9,
+                                    "{body} motion speed should match exactly at {epoch} ({mode:?}): full={full_motion:?}, minimal={minimal_motion:?}"
+                                );
+                                assert_eq!(full_motion.retrograde, minimal_motion.retrograde);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// An out-of-coverage epoch must degrade to an explicit per-body
+    /// `_unavailable` warning, not a hard error and not any attempt to reach
+    /// a remote ephemeris. Year 3000 falls outside the bundled `de440s.bsp`'s
+    /// measured 1849-2150 coverage (see ephemeris-validation.md), and no
+    /// `de441` supplement is present in this checkout to extend it, so this
+    /// also exercises "missing kernel for this epoch" with only local files
+    /// on the path.
+    #[test]
+    fn out_of_coverage_epoch_produces_explicit_local_warnings_not_an_error() {
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let chart = j2000_chart(bsp.to_str().unwrap());
+        let mut far_future_chart = chart.clone();
+        far_future_chart.subject.event_time =
+            chrono::DateTime::parse_from_rfc3339("3000-01-01T00:00:00Z")
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc));
+        assert!(
+            far_future_chart.subject.event_time.is_some(),
+            "test fixture date should parse"
+        );
+
+        let backend = JplAstronomyBackend::new(vec![bsp]);
+        let requested = vec!["sun".to_string(), "moon".to_string()];
+        let data = backend
+            .compute_chart_data(&far_future_chart, Some(&requested))
+            .expect("an out-of-coverage epoch must not fail the whole chart");
+
+        assert!(
+            !data.positions.contains_key("sun"),
+            "sun should not resolve at an epoch outside loaded coverage"
+        );
+        assert!(
+            data.warnings
+                .iter()
+                .any(|warning| warning.starts_with("sun_unavailable")),
+            "expected an explicit sun_unavailable warning, got: {:?}",
+            data.warnings
+        );
+        assert!(
+            data.warnings
+                .iter()
+                .any(|warning| warning.starts_with("moon_unavailable")),
+            "expected an explicit moon_unavailable warning, got: {:?}",
+            data.warnings
+        );
+    }
+
+    /// An unknown/unsupported body id must also degrade to an explicit local
+    /// diagnostic through the full resolved-chart pipeline (not through the
+    /// bare backend, which only knows its own fixed frame tables), and must
+    /// not attempt any kind of lookup beyond the local body-definition
+    /// catalog.
+    #[test]
+    fn unsupported_body_id_produces_explicit_local_warning_through_resolved_chart() {
+        let payload = crate::test_support::sample_chart_payload("unsupported-body-test");
+        let resolved =
+            crate::application::chart_resolution::resolve_standalone_chart(&payload, None)
+                .expect("sample chart should resolve");
+        let result = crate::application::computation::compute_chart(
+            crate::application::computation::ChartComputeRequest {
+                resolved_chart: resolved,
+                body_ids: Some(vec!["not_a_real_body_id".to_string()]),
+                aspect_types: None,
+            },
+        )
+        .expect("an unsupported body id must not fail the whole chart");
+        assert!(
+            result
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("not_a_real_body_id")),
+            "expected a local diagnostic naming the unsupported body id, got: {:?}",
+            result.warnings
+        );
+    }
+
+    #[derive(serde::Deserialize)]
+    struct HorizonsVectorSample {
+        jd_tdb: f64,
+        x_km: f64,
+        y_km: f64,
+        z_km: f64,
+        vx_km_s: f64,
+        vy_km_s: f64,
+        vz_km_s: f64,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct HorizonsVectorFixture {
+        samples: Vec<HorizonsVectorSample>,
+    }
+
+    /// Independent external reference, fetched from the live JPL Horizons API
+    /// (see `tests/fixtures/horizons/mercury_2024_geocentric.json` for exact
+    /// request parameters and provenance) and saved for offline use. This
+    /// compares the raw J2000/ICRF geocentric state ANISE returns for Mercury
+    /// Barycenter — *before* this backend's own mean-of-date/ecliptic
+    /// rotation — against Horizons' own independently generated geometric
+    /// (VEC_CORR=NONE) state at 23 epochs across Jan-Feb 2024, the same
+    /// window `retrograde_flag_flips_across_a_real_stationary_point` and
+    /// `stationary_point_search_finds_a_real_mercury_station_and_independently_verifies_it`
+    /// search for a station in.
+    #[test]
+    fn mercury_2024_geocentric_state_matches_independent_horizons_fixture() {
+        let fixture_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/horizons/mercury_2024_geocentric.json");
+        let fixture: HorizonsVectorFixture = serde_json::from_str(
+            &std::fs::read_to_string(&fixture_path)
+                .unwrap_or_else(|e| panic!("cannot read {}: {e}", fixture_path.display())),
+        )
+        .expect("fixture should parse");
+        assert_eq!(
+            fixture.samples.len(),
+            23,
+            "expected the full fetched series"
+        );
+
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let almanac = load_almanac_from_paths(&[bsp]).expect("almanac should load");
+
+        let mut max_pos_error_km = 0.0_f64;
+        let mut max_vel_error_km_s = 0.0_f64;
+        for sample in &fixture.samples {
+            let epoch = Epoch::from_jde_tdb(sample.jd_tdb);
+            let state = almanac
+                .transform(MERCURY_J2000, EARTH_J2000, epoch, None)
+                .expect("geometric transform should succeed within de440s coverage");
+            let pos_error = ((state.radius_km.x - sample.x_km).powi(2)
+                + (state.radius_km.y - sample.y_km).powi(2)
+                + (state.radius_km.z - sample.z_km).powi(2))
+            .sqrt();
+            let vel_error = ((state.velocity_km_s.x - sample.vx_km_s).powi(2)
+                + (state.velocity_km_s.y - sample.vy_km_s).powi(2)
+                + (state.velocity_km_s.z - sample.vz_km_s).powi(2))
+            .sqrt();
+            max_pos_error_km = max_pos_error_km.max(pos_error);
+            max_vel_error_km_s = max_vel_error_km_s.max(vel_error);
+        }
+
+        // de440s is JPL's own compact/short re-fit of the DE440 solution;
+        // Horizons here reports DE441 (a related but separately fit
+        // solution). Observed maximum error across these 23 epochs was
+        // ~0.035 km in position and ~4.8e-8 km/s in velocity — these bounds
+        // keep generous margin above that, not tuned to just barely pass.
+        // See ephemeris-validation.md for the full reproducible record.
+        assert!(
+            max_pos_error_km < 1.0,
+            "max position error vs. independent Horizons fixture: {max_pos_error_km} km"
+        );
+        assert!(
+            max_vel_error_km_s < 1e-5,
+            "max velocity error vs. independent Horizons fixture: {max_vel_error_km_s} km/s"
+        );
+    }
+
+    /// Repeatable direct-SPK benchmark.  This intentionally measures the public chart path,
+    /// including apparent-place corrections and finite-difference motion, rather than only a
+    /// raw segment lookup.  Run with:
+    /// `cargo test --release jpl_direct_path_benchmark -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "diagnostic benchmark; run manually on the target machine"]
+    fn jpl_direct_path_benchmark() {
+        use std::hint::black_box;
+        use std::time::Instant;
+
+        let paths =
+            crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths();
+        let backend = JplAstronomyBackend::new(paths);
+        let chart = j2000_chart("");
+        let one = vec!["mercury".to_string()];
+        let all: Vec<String> = body_frames()
+            .iter()
+            .map(|(id, _)| (*id).to_string())
+            .chain(
+                asteroid_body_frames()
+                    .iter()
+                    .map(|(id, _)| (*id).to_string()),
+            )
+            .chain(std::iter::once("chiron".to_string()))
+            .collect();
+        let almanac = backend.build_almanac().expect("benchmark almanac");
+        let unix_secs = chart.subject.event_time.expect("event time").timestamp() as f64;
+        let jd_tt = Epoch::from_unix_seconds(unix_secs).to_jde_tt_days();
+        const ITERATIONS: u32 = 10;
+        let frames: Vec<Frame> = body_frames()
+            .iter()
+            .map(|(_, frame)| *frame)
+            .chain(asteroid_body_frames().iter().map(|(_, frame)| *frame))
+            .chain(std::iter::once(Frame::from_ephem_j2000(20_002_060)))
+            .collect();
+
+        // Cold means no in-process Almanac; OS page cache is intentionally not controlled.
+        almanac_cache().write().expect("cache lock").clear();
+        let cold_start = Instant::now();
+        black_box(
+            backend
+                .compute_chart_data(&chart, Some(&one))
+                .expect("cold direct computation"),
+        );
+        let cold = cold_start.elapsed();
+
+        let mut position_only_samples = Vec::with_capacity(ITERATIONS as usize);
+        for _ in 0..ITERATIONS {
+            let start = Instant::now();
+            for frame in &frames {
+                let state = sample_state(&almanac, *frame, unix_secs, Aberration::CN_S)
+                    .expect("position-only state");
+                let motion = motion_from_state(&state, jd_tt).expect("position-only motion");
+                black_box((longitude_from_state(&state, jd_tt), motion));
+            }
+            position_only_samples.push(start.elapsed());
+        }
+
+        let mut warm_one_samples = Vec::with_capacity(ITERATIONS as usize);
+        for _ in 0..ITERATIONS {
+            let start = Instant::now();
+            black_box(
+                backend
+                    .compute_chart_data(&chart, Some(&one))
+                    .expect("warm single-body computation"),
+            );
+            warm_one_samples.push(start.elapsed());
+        }
+
+        let mut warm_all_samples = Vec::with_capacity(ITERATIONS as usize);
+        for _ in 0..ITERATIONS {
+            let start = Instant::now();
+            let data = backend
+                .compute_chart_data(&chart, Some(&all))
+                .expect("warm all-body computation");
+            let unavailable: Vec<&str> = all
+                .iter()
+                .filter(|id| !data.positions.contains_key(id.as_str()))
+                .map(String::as_str)
+                .collect();
+            assert!(
+                unavailable.is_empty(),
+                "benchmark request contained unavailable bodies: {unavailable:?}; warnings: {:?}",
+                data.warnings
+            );
+            black_box(data);
+            warm_all_samples.push(start.elapsed());
+        }
+
+        // Chart rendering samples a dense time range.  The requested body has motion, so this
+        // also represents the three direct evaluations made for a displayed moving body.
+        let dense_start = Instant::now();
+        let mut dense_chart = chart.clone();
+        const DENSE_SAMPLES: i64 = 8;
+        for day in 0..DENSE_SAMPLES {
+            dense_chart.subject.event_time = chart
+                .subject
+                .event_time
+                .map(|time| time + chrono::Duration::days(day));
+            black_box(
+                backend
+                    .compute_chart_data(&dense_chart, Some(&one))
+                    .expect("dense direct computation"),
+            );
+        }
+        let dense = dense_start.elapsed();
+
+        warm_one_samples.sort_unstable();
+        warm_all_samples.sort_unstable();
+        position_only_samples.sort_unstable();
+        let p95 = |samples: &[std::time::Duration]| {
+            samples[(samples.len() * 95 / 100).min(samples.len() - 1)]
+        };
+        println!(
+            "direct JPL benchmark: cold={cold:?}, position_only_{} p50={:?} p95={:?}, warm_one p50={:?} p95={:?}, warm_all p50={:?} p95={:?}, dense_{DENSE_SAMPLES}={dense:?} ({:.1} samples/s)", frames.len(),
+            position_only_samples[position_only_samples.len() / 2], p95(&position_only_samples),
+            warm_one_samples[warm_one_samples.len() / 2], p95(&warm_one_samples),
+            warm_all_samples[warm_all_samples.len() / 2], p95(&warm_all_samples),
+            DENSE_SAMPLES as f64 / dense.as_secs_f64()
+        );
     }
 
     /// Validate positions at J2000.0 against known Horizons values.

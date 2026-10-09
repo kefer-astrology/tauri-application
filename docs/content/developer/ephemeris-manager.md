@@ -1,5 +1,5 @@
 ---
-title: 'Ephemeris manager'
+title: 'Ephemerides and coverage'
 description: 'Multi-BSP catalog, automatic download, and asteroid body support via EphemerisManager.'
 weight: 42
 doc_kind: implementation-reference
@@ -9,7 +9,7 @@ authority: informative
 
 `EphemerisManager` is the Rust module that owns all BSP file lifecycle concerns: what files exist, where they live, which one to load, how to download a missing file, and how to hand multiple files to `anise` as a single chained `Almanac`.
 
-Source: [src-tauri/src/infrastructure/ephemeris.rs](https://github.com/kefer-astrology/tauri-application-react/blob/main/src-tauri/src/infrastructure/ephemeris.rs)
+Source: [src-tauri/src/infrastructure/ephemeris.rs](https://github.com/kefer-astrology/tauri-application/blob/main/src-tauri/src/infrastructure/ephemeris.rs)
 
 ---
 
@@ -52,6 +52,31 @@ if let Ok(data_dir) = app.path().app_data_dir() {
 
 Anywhere else in the Rust backend: `EphemerisManager::from_global()` returns a manager pointed at that directory.
 
+### Almanac reuse and cache invalidation
+
+`JplAstronomyBackend::build_almanac` keeps a process-lifetime, in-memory cache
+of constructed `Almanac`s (`almanac_cache` in `infrastructure/jpl_backend.rs`),
+keyed by joining every resolved path's `length:modified-time` fingerprint
+(`almanac_cache_key`). This avoids re-parsing the PCK and every chained BSP
+file on each compute call — it is a **kernel-load** cache, not a cache of
+computed positions; every body query still evaluates its SPK Chebyshev record
+fresh for the requested epoch (see the
+[this page](#almanac-reuse-and-cache-invalidation)
+for that distinction).
+
+Limitations of fingerprint-based invalidation:
+
+- It relies on OS-reported file length and modification time. A filesystem
+  with coarse mtime resolution, or a replacement that preserves both length
+  and mtime (unusual, but not impossible with some sync/restore tools), would
+  not be detected as a change.
+- The cache is per-process and in-memory only; it is not persisted and does
+  not need explicit eviction — process restart clears it.
+- It is distinct from the small-body artifact probe cache
+  (`artifact_probe_cache`), which caches *validation* results (SHA-256 +
+  in-range ANISE probe) keyed the same way, not the constructed `Almanac`
+  itself.
+
 ---
 
 ## BSP catalog
@@ -69,6 +94,31 @@ The static catalog and `available_bsp_paths()` define which files Kefer can down
 | `vesta_spk`          | `vesta_1900_2100.bsp`       | ~1.1 MB        | 1900–2100                 | `vesta`                             | optional download                                  |
 | `codes_300ast`       | `codes_300ast_20100725.bsp` | ~59 MB         | 1600–2200                 | subset of 300 asteroids (see below) | bundled; includes Ceres and **Juno** (`2000003`)    |
 | manifest artifact    | `chiron_1900_2100_type13.bsp` | ~1.1 MB       | 1900–2100                 | `chiron`                            | bundled Horizons-derived Type 13; not a static download row |
+
+**The "date range" column above is catalog/documentation-facing metadata, not
+measured BSP coverage.** Directly inspecting the bundled kernels'
+actual stored segments (`almanac.spk_summaries`, the same evaluator
+`get_loaded_spk_coverage`/`get_usable_coverage` use) shows real stored ranges
+that differ from the table above, sometimes significantly:
+
+- `de440s.bsp`'s Sun/Earth/Earth-Moon-barycenter segments are actually stored
+  from **1849-12-26 through 2150-01-21** — noticeably wider on both ends than
+  the "1900–2050" label, which reflects NAIF's documented/recommended
+  accuracy window, not the file's physical Chebyshev coverage.
+- `codes_300ast_20100725.bsp`'s Ceres segment specifically is actually stored
+  from **1799-12-30 through 2199-12-13** — narrower on the start side than
+  the table's "1600" (other asteroids in that same multi-body file may have
+  different individual windows; this was checked for Ceres only).
+
+Treat the table as a rough, documentation-facing guide for deciding which
+file to download, not as a source of truth for whether a specific chart date
+is actually covered. For an authoritative answer, use
+[`get_usable_coverage`](#runtime-coverage-inspection) (chain-aware) or
+[`get_loaded_spk_coverage`](#runtime-coverage-inspection) (raw per-target,
+faster but ignores center-chain completeness) against the currently loaded
+kernel set, not this table. See
+[ephemeris validation](../ephemeris-validation/) for the reproducible test
+that measured the two figures above.
 
 Current status:
 
@@ -110,6 +160,73 @@ evaluates the configured 20-body subset (`CODES_300AST_MAJOR_BODIES` in
 `infrastructure/ephemeris.rs`: Ceres through Massalia). Without that kernel, only
 the four classical asteroids (Ceres, Pallas, Juno, Vesta) are attempted. When the
 client passes an explicit object list, every listed body is attempted.
+
+### Runtime coverage inspection
+
+Two Tauri commands expose coverage, at two different levels. Neither invents
+coverage: both are built directly on the real evaluator, not file-declared
+ranges.
+
+**`get_loaded_spk_coverage`** exposes **raw** domains read from loaded SPK
+segment summaries (NAIF target ID, ET seconds, and TDB endpoints) — the union
+of whatever epochs the *target's own* segments span, with no regard for
+whether anything connects it back to Earth. This is a diagnostic inventory,
+not a promise that a body can be transformed from Earth: a chart query also
+requires an unbroken target-to-Earth center chain at the requested epoch and,
+for apparent output, at the retarded epoch. Gaps remain explicit errors; the
+backend never extrapolates.
+
+**`get_usable_coverage(naif_target_id, apparent)`** answers the actual
+question "would a chart query at this epoch succeed end-to-end": it
+discovers the real ascent chain from *both* the target and Earth toward the
+common ephemeris root (two separate calls to ANISE's own
+`Almanac::ephemeris_path_to_root`, reading real loaded-segment target/center
+metadata — not a hardcoded anchor list; see the scope note below for why both
+sides are necessary), collects every segment boundary along the discovered
+ids, and probes the real `Almanac::transform` at each resulting
+sub-interval's midpoint. `apparent: true` probes with converged light-time +
+stellar aberration, so apparent coverage already reflects whatever the
+retarded epoch can or cannot resolve. `chain_ids_considered` lists every
+center id actually discovered (plus the target's own id and Earth's own id,
+which are definitional, not discovered), and `intervals` can be more than one
+entry — a genuine gap (or disjoint alternate-path coverage) is reported as
+two separate windows, never bridged.
+
+The report's `determination` field is `"determined"` or `"unknown"`, and a
+caller must not treat them the same:
+
+- **`determined`** — chain discovery succeeded at least once for both the
+  target's own ascent and Earth's own ascent, so the boundary set is believed
+  complete for the chains actually observed.
+- **`unknown`** (with a `reason`) — chain discovery never succeeded for one
+  side despite the target having its own loaded segment(s) — for example a
+  genuinely broken center link, or a chain deeper than ANISE's 8-node limit.
+  The `intervals` field still holds real `Almanac::transform` probe results
+  (never fabricated), but the boundary set that produced them may have missed
+  an internal transition, so treat them as a conservative, possibly-too-coarse
+  approximation rather than a confirmed answer. An empty result for a target
+  with **no** loaded segment at all, or where Earth itself has no loaded data
+  at all, is still conclusively `determined` — absence of data is itself a
+  confident answer, not a discovery failure.
+
+This is implemented in `infrastructure::ephemeris::usable_earth_relative_coverage`
+and covered by tests for complete chains, missing links, gaps, alternate
+chains, and overlapping/precedence scenarios (including ones built from a
+hand-crafted synthetic SPK, for cases no bundled or realistically
+downloadable kernel can exhibit on demand) — see
+[ephemeris validation](../ephemeris-validation/#usable-coverage-raw-vs-chain-aware)
+for exactly what those tests exercise and what they do not.
+
+Scope limitation: discovering the target side's chain requires the target to
+already have at least one loaded segment of its own (there is nothing to walk
+from otherwise); beyond that, chain discovery makes no assumption about which
+intermediate bodies exist — it reads whatever `ephemeris_path_to_root`
+reports from the loaded data, for any depth up to ANISE's own 8-node limit.
+
+The bundled installation exposes ten classical bodies, 20 named asteroids, and
+Chiron—not approximately 300 selectable bodies. DE441 extends the
+planetary/lunar foundation, but does not supply independently queryable asteroid
+or satellite trajectories; those require their own SPKs.
 
 ### NAIF body IDs
 
@@ -223,6 +340,11 @@ the user's astrological model.
 
 **Load order and duplicates:** SPICE-style chaining uses **last-loaded wins** when two files both define a segment for the same body and epoch. Asteroid files are appended **after** the planetary primary (and after any de441 supplements). Among asteroid files, **`codes_300ast` is loaded last**, so if you have both `ceres_1900_2100.bsp` and `codes_300ast`, the CODES segment for Ceres takes precedence for overlapping epochs unless you remove one of the files from the path.
 
+Precision matters here: `anise::almanac::Almanac::spk_summary_at_epoch` walks loaded files in **reverse load order** and *falls through* to the next-earlier file whenever the most-recently-loaded one has no valid segment **for that exact body id** at the probed epoch. "Last loaded wins" therefore only decides **which file's numbers** are used for an epoch multiple files cover for the *same* target — it does not shrink coverage merely because an earlier file also had data, since an epoch the last-loaded file doesn't cover for that id falls through normally.
+
+**This is narrower than "last loaded wins can never shrink usable coverage" — an earlier, over-general version of this claim turned out to be wrong.** The fall-through above only protects you when the shadowing (last-loaded) file has **no entry at all** for that epoch. If it **does** have an entry — for the same target, at an overlapping epoch, but through a **different, dead-end center** — that entry wins outright and chain resolution fails there, even though an earlier-loaded file would have resolved that exact instant through its own (different) center. A synthetic-kernel test proves this directly:
+`last_loaded_file_can_shadow_an_otherwise_valid_chain_with_a_dead_end` (`infrastructure::ephemeris::usable_coverage_tests`) loads two kernels where a later file's overlapping segment for the same target routes through a center that has no chain of its own; resolution succeeds immediately outside that overlap and fails inside it. This has not been observed in any bundled or downloaded kernel pair in this project (every real pair checked — `ceres_1900_2100.bsp` vs. `codes_300ast`, see `load_order_does_not_change_usable_coverage_when_one_segment_is_a_superset` — happens to share a fully valid chain on both sides), but it is reachable in principle and must not be asserted away. See [ephemeris validation](../ephemeris-validation/#usable-coverage-raw-vs-chain-aware) for the full precedence test matrix.
+
 ---
 
 ## Date range overlaps
@@ -270,18 +392,32 @@ For normal astrological use (1900–2050), this is acceptable: DE441 was derived
 
 ### When to download de441 parts
 
-| Intended use                                    | File needed                   |
-| ----------------------------------------------- | ----------------------------- |
-| Modern charts (1900–2050)                       | de440s (bundled, no download) |
-| Renaissance / medieval (1550–1899 or 2051–2650) | de440                         |
-| Ancient charts (before 1550 / before 1 AD)      | de441_part1                   |
-| Far-future charts (after 2650)                  | de441_part2                   |
+| Intended use                                       | File needed                   |
+| --------------------------------------------------- | ----------------------------- |
+| Modern charts (1900–2050)                           | de440s (bundled, no download) |
+| Renaissance / medieval (1550–2650, outside 1900–2050) | de440                         |
+| Year 1 AD – 1549 (before de440's coverage starts)   | de441_part2                   |
+| Before 1 AD / BCE (year ≤ 0)                        | de441_part1                   |
+| Far-future charts (after 2650)                      | de441_part2                   |
+
+`de441_part1` only reaches year 0; it does **not** cover "all dates before
+1550" — the gap between year 0 and 1550 (where de440 starts) is covered by
+`de441_part2`, not `de441_part1`. Pick the supplementary file by the actual
+chart year against the coverage map above, not by a single "ancient" bucket.
 
 You do **not** need to download de441 if all your charts fall inside de440s's 1900–2050 window.
 
 ### Per-chart override
 
-Setting `chart.config.override_ephemeris` to a valid `.bsp` path bypasses the manager entirely — only that single file is loaded. This is useful for testing, for comparing DE solutions, or for charts that require a specific ephemeris version.
+Setting `chart.config.override_ephemeris` to a valid `.bsp` path bypasses the manager entirely — only that single file is loaded. `JplAstronomyBackend::new` and `jpl_backend_for_chart` (`infrastructure/jpl_backend.rs`) implement this directly in Rust, and the public compute commands now reach that path: `application::compute_router::chart_json_requires_python_precision` / `chart_requires_python_precision` no longer treat `override_ephemeris` as requiring Python (only `jyotish`/`custom` engines genuinely have no Rust implementation and still force the Python route). See [Architecture](../architecture/#calculation-and-persistence) for the routing rule and its own history, and [tauri-command-contracts](../tauri-command-contracts/#backend-selection) for the current backend-selection contract.
+
+The override only replaces the kernel set — it does not imply every requested object resolves:
+
+- An invalid or missing override path (nonexistent file, wrong extension) is not a hard error: `jpl_backend_for_chart` falls through to the normal `EphemerisManager`-resolved catalog instead (`jpl_backend_for_chart_falls_back_to_catalog_when_override_path_is_invalid`).
+- Overriding to a lone planetary kernel (no sibling `pck11.pca`) still resolves the required orientation kernel from the bundled resource directory (`override_without_sibling_pck_still_loads_bundled_orientation_kernel`).
+- Requesting a body the override file doesn't contain (e.g. Chiron against a bare `de440s.bsp` override) degrades to a normal per-body `_unavailable` warning, not a failed chart (`override_to_single_kernel_reports_missing_bodies_as_warnings_not_errors`).
+
+All three are covered by dedicated tests in `infrastructure::jpl_backend::tests`.
 
 ---
 
@@ -324,7 +460,7 @@ On the next chart compute after download completes, `available_bsp_paths()` will
 
 ## Tauri commands
 
-Three new commands are registered in `lib.rs`:
+Five commands are registered in `lib.rs`:
 
 ### `list_ephemeris_catalog`
 
@@ -381,6 +517,56 @@ Returns the union of body IDs queryable given currently available BSP files.
 const bodies = await invoke<string[]>('get_available_bodies');
 // Always includes the ten planets + Moon when a DE primary is loaded.
 // With bundled resources: Ceres, Juno, "astraea", "hebe", … and "chiron".
+```
+
+### `get_loaded_spk_coverage`
+
+Returns raw per-target coverage intervals read from the currently resolved
+BSP set's loaded SPK segment summaries. See
+[Runtime coverage inspection](#runtime-coverage-inspection) above for why this
+is diagnostic information, not a guarantee that a body is queryable from
+Earth at a given epoch.
+
+```typescript
+interface LoadedSpkCoverage {
+	naif_target_id: number;
+	start_et_seconds: number;
+	end_et_seconds: number;
+	start_tdb: string;
+	end_tdb: string;
+}
+
+const coverage = await invoke<LoadedSpkCoverage[]>('get_loaded_spk_coverage');
+```
+
+### `get_usable_coverage`
+
+Returns chain-aware, evaluator-verified Earth-relative coverage for one NAIF
+target id — see [Runtime coverage inspection](#runtime-coverage-inspection)
+above for the algorithm and its scope limitation.
+
+```typescript
+interface UsableCoverageInterval {
+	start_et_seconds: number;
+	end_et_seconds: number;
+	start_tdb: string;
+	end_tdb: string;
+}
+
+interface UsableCoverageReport {
+	naif_target_id: number;
+	apparent: boolean;
+	// Tagged union: `{ status: 'determined' }` or
+	// `{ status: 'unknown', reason: string }`.
+	determination: { status: 'determined' } | { status: 'unknown'; reason: string };
+	chain_ids_considered: number[];
+	intervals: UsableCoverageInterval[];
+}
+
+const report = await invoke<UsableCoverageReport>('get_usable_coverage', {
+	naifTargetId: 2_000_001, // Ceres
+	apparent: false,
+});
 ```
 
 ---

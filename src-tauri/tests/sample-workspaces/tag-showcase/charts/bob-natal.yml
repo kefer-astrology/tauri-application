@@ -1,0 +1,31 @@
+id: bob-natal
+subject:
+  id: bob
+  name: Bob Svoboda
+  event_time: '1991-11-02T18:15:00+01:00'
+  location:
+    name: Brno, Czech Republic
+    latitude: 49.1951
+    longitude: 16.6068
+    timezone: Europe/Prague
+    location_mode: manual
+    timezone_mode: auto
+config:
+  definition:
+    kind: base
+    purpose: natal
+  house_system: Whole Sign
+  zodiac_type: Tropical
+  aspect_orbs:
+    conjunction: 8.0
+    opposition: 8.0
+    trine: 7.0
+    square: 7.0
+    sextile: 5.0
+  selected_aspects: [conjunction, opposition, trine, square, sextile]
+  model: null
+  model_overrides: null
+  position_mode: apparent
+  time_system: gregorian
+tags: [client, family, natal, approximate-data, follow-up, brno]
+roden_rating: C

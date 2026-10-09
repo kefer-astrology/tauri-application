@@ -43,11 +43,16 @@ import { useAppFormFieldTheme } from './form-field-theme';
 import type { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { tagColor } from '@/lib/chartTags';
+import { AppShellIcon } from '@/ui/app-shell-icon';
+import type { AppShellIconSetId } from '@/lib/app-shell';
+import { DetailSidePanel } from './detail-side-panel';
 import {
 	persistChartFavorites,
 	persistChartListSort,
+	persistVisibleFilterGroups,
 	readStoredChartFavorites,
-	readStoredChartListSort
+	readStoredChartListSort,
+	readStoredVisibleFilterGroups
 } from '@/lib/chartListPreferences';
 import type { AppChart } from '@/lib/tauri/chartPayload';
 import { ASPECT_ROWS } from '@/lib/astrology/aspects';
@@ -73,7 +78,24 @@ export type OpenWorkspaceViewProps = {
 	workspacePath: string | null;
 	onOpenWorkspace: () => void | Promise<void>;
 	onActivateChart: (chartId: string) => void;
+	appShellIconSet: AppShellIconSetId;
 };
+
+/** The 2nd-level menu's 9 expandable filter groups, in display order — each already labeled via
+ *  an existing i18n key reused verbatim here, so the "visible filters" drawer never needs its own
+ *  copy of these strings. */
+const FILTER_GROUP_LABEL_KEYS: Record<string, string> = {
+	'chart-type': 'open_filter_chart_type',
+	tags: 'new_tags',
+	date: 'new_date',
+	location: 'new_location',
+	planets: 'open_filter_planets',
+	aspects: 'open_filter_aspects',
+	houses: 'open_filter_houses',
+	shapes: 'open_filter_chart_shape',
+	configurations: 'info_planetary_configuration'
+};
+const ALL_FILTER_GROUP_IDS = Object.keys(FILTER_GROUP_LABEL_KEYS);
 
 const CHART_TYPE_OPTIONS: Array<{
 	id: string;
@@ -235,7 +257,8 @@ export function OpenWorkspaceView({
 	theme,
 	workspacePath,
 	onOpenWorkspace,
-	onActivateChart
+	onActivateChart,
+	appShellIconSet
 }: OpenWorkspaceViewProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
@@ -247,6 +270,20 @@ export function OpenWorkspaceView({
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredChartFavorites);
 	const [sorting, setSorting] = useState<SortingState>(readStoredChartListSort);
+	const [visibleFilterGroups, setVisibleFilterGroups] = useState<string[]>(
+		() => readStoredVisibleFilterGroups() ?? ALL_FILTER_GROUP_IDS
+	);
+	const [filterSettingsOpen, setFilterSettingsOpen] = useState(false);
+
+	useEffect(() => {
+		persistVisibleFilterGroups(visibleFilterGroups);
+	}, [visibleFilterGroups]);
+
+	function toggleFilterGroupVisibility(id: string, visible: boolean) {
+		setVisibleFilterGroups((prev) =>
+			visible ? Array.from(new Set([...prev, id])) : prev.filter((existing) => existing !== id)
+		);
+	}
 	const [focusedChartId, setFocusedChartId] = useState<string | null>(selectedChartId);
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 	const [tagQuery, setTagQuery] = useState('');
@@ -693,7 +730,7 @@ export function OpenWorkspaceView({
 								))}
 							</div>
 						</div>
-						<div className="px-4 pt-3 pb-1 sm:px-6">
+						<div className="flex items-center gap-2 px-4 pt-3 pb-1 sm:px-6">
 							<Input
 								type="search"
 								value={contentQuery}
@@ -701,161 +738,417 @@ export function OpenWorkspaceView({
 								placeholder={t('open_filter_content_search')}
 								className={ft.inputCompact}
 							/>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="shrink-0"
+								onClick={() => setFilterSettingsOpen(true)}
+								aria-label={t('open_filter_visibility_title', { defaultValue: 'Visible filters' })}
+							>
+								<AppShellIcon iconId="settings" iconSet={appShellIconSet} size={24} />
+							</Button>
 						</div>
 						<div className="min-h-0 flex-1 overflow-y-auto pb-28">
 							<Accordion type="multiple" className="w-full">
-								<AccordionItem value="chart-type" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('open_filter_chart_type')}
-									</AccordionTrigger>
-									<AccordionContent className="space-y-2 px-4 sm:px-6">
-										{CHART_TYPE_OPTIONS.map((option) =>
-											option.group ? (
-												<p
-													key={option.id}
-													className={cn('pt-1 text-xs font-medium', ft.muted)}
-													style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
-												>
-													{t(option.labelKey)}
-												</p>
-											) : (
-												<div
-													key={option.id}
-													className="flex items-center gap-2"
-													style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
-												>
-													<Checkbox
-														id={`type-${option.id}`}
-														checked={selectedTypes.includes(option.id)}
-														onCheckedChange={() => toggleListValue(setSelectedTypes, option.id)}
-													/>
-													<Label
-														htmlFor={`type-${option.id}`}
-														className={cn('cursor-pointer text-sm', ft.bodyText)}
+								{visibleFilterGroups.includes('chart-type') && (
+									<AccordionItem value="chart-type" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('open_filter_chart_type')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-2 px-4 sm:px-6">
+											{CHART_TYPE_OPTIONS.map((option) =>
+												option.group ? (
+													<p
+														key={option.id}
+														className={cn('pt-1 text-xs font-medium', ft.muted)}
+														style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
 													>
 														{t(option.labelKey)}
-													</Label>
-												</div>
-											)
-										)}
-									</AccordionContent>
-								</AccordionItem>
+													</p>
+												) : (
+													<div
+														key={option.id}
+														className="flex items-center gap-2"
+														style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
+													>
+														<Checkbox
+															id={`type-${option.id}`}
+															checked={selectedTypes.includes(option.id)}
+															onCheckedChange={() => toggleListValue(setSelectedTypes, option.id)}
+														/>
+														<Label
+															htmlFor={`type-${option.id}`}
+															className={cn('cursor-pointer text-sm', ft.bodyText)}
+														>
+															{t(option.labelKey)}
+														</Label>
+													</div>
+												)
+											)}
+										</AccordionContent>
+									</AccordionItem>
+								)}
 
-								<AccordionItem value="tags" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('new_tags')}
-									</AccordionTrigger>
-									<AccordionContent className="space-y-3 px-4 sm:px-6">
-										<div>
-											<FieldLabel>{t('open_filter_tag_fulltext')}</FieldLabel>
-											<Input
-												type="search"
-												value={tagQuery}
-												onChange={(event) => setTagQuery(event.target.value)}
-												placeholder={t('open_filter_tag_fulltext')}
-												className={cn(ft.inputCompact, 'mt-1.5')}
-											/>
-										</div>
-										<div className="flex flex-wrap gap-1.5">
-											{availableTags.map((tag) => (
-												<Button
-													key={tag}
-													type="button"
-													size="sm"
-													variant="outline"
-													className="h-7 rounded-full px-2 text-xs"
-													onClick={() => setTagQuery(tag)}
-												>
-													{tag}
-												</Button>
-											))}
-										</div>
-									</AccordionContent>
-								</AccordionItem>
-
-								<AccordionItem value="date" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('new_date')}
-									</AccordionTrigger>
-									<AccordionContent className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-6">
-										{(['day', 'month', 'year', 'hour', 'minute', 'second'] as const).map((part) => (
-											<div key={part}>
-												<FieldLabel>{t(`open_date_${part}`)}</FieldLabel>
+								{visibleFilterGroups.includes('tags') && (
+									<AccordionItem value="tags" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('new_tags')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-3 px-4 sm:px-6">
+											<div>
+												<FieldLabel>{t('open_filter_tag_fulltext')}</FieldLabel>
 												<Input
-													type="number"
-													value={dateParts[part]}
-													onChange={(event) =>
-														setDateParts((current) => ({ ...current, [part]: event.target.value }))
-													}
-													min={part === 'second' || part === 'minute' || part === 'hour' ? 0 : 1}
-													max={
-														part === 'month' ? 12 : part === 'day' ? 31 : part === 'hour' ? 23 : 59
-													}
+													type="search"
+													value={tagQuery}
+													onChange={(event) => setTagQuery(event.target.value)}
+													placeholder={t('open_filter_tag_fulltext')}
 													className={cn(ft.inputCompact, 'mt-1.5')}
 												/>
 											</div>
-										))}
-									</AccordionContent>
-								</AccordionItem>
+											<div className="flex flex-wrap gap-1.5">
+												{availableTags.map((tag) => (
+													<Button
+														key={tag}
+														type="button"
+														size="sm"
+														variant="outline"
+														className="h-7 rounded-full px-2 text-xs"
+														onClick={() => setTagQuery(tag)}
+													>
+														{tag}
+													</Button>
+												))}
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+								)}
 
-								<AccordionItem value="location" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('new_location')}
-									</AccordionTrigger>
-									<AccordionContent className="px-4 pt-1 sm:px-6">
-										<Input
-											type="search"
-											value={locationQuery}
-											onChange={(event) => setLocationQuery(event.target.value)}
-											placeholder={t('open_filter_location_fulltext')}
-											className={ft.inputCompact}
-										/>
-									</AccordionContent>
-								</AccordionItem>
+								{visibleFilterGroups.includes('date') && (
+									<AccordionItem value="date" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('new_date')}
+										</AccordionTrigger>
+										<AccordionContent className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-6">
+											{(['day', 'month', 'year', 'hour', 'minute', 'second'] as const).map((part) => (
+												<div key={part}>
+													<FieldLabel>{t(`open_date_${part}`)}</FieldLabel>
+													<Input
+														type="number"
+														value={dateParts[part]}
+														onChange={(event) =>
+															setDateParts((current) => ({ ...current, [part]: event.target.value }))
+														}
+														min={part === 'second' || part === 'minute' || part === 'hour' ? 0 : 1}
+														max={
+															part === 'month' ? 12 : part === 'day' ? 31 : part === 'hour' ? 23 : 59
+														}
+														className={cn(ft.inputCompact, 'mt-1.5')}
+													/>
+												</div>
+											))}
+										</AccordionContent>
+									</AccordionItem>
+								)}
 
-								<AccordionItem value="planets" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('open_filter_planets')}
-									</AccordionTrigger>
-									<AccordionContent className="px-4 sm:px-6">
-										<div className="overflow-x-auto">
-											<div className="min-w-[30rem]">
+								{visibleFilterGroups.includes('location') && (
+									<AccordionItem value="location" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('new_location')}
+										</AccordionTrigger>
+										<AccordionContent className="px-4 pt-1 sm:px-6">
+											<Input
+												type="search"
+												value={locationQuery}
+												onChange={(event) => setLocationQuery(event.target.value)}
+												placeholder={t('open_filter_location_fulltext')}
+												className={ft.inputCompact}
+											/>
+										</AccordionContent>
+									</AccordionItem>
+								)}
+
+								{visibleFilterGroups.includes('planets') && (
+									<AccordionItem value="planets" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('open_filter_planets')}
+										</AccordionTrigger>
+										<AccordionContent className="px-4 sm:px-6">
+											<div className="overflow-x-auto">
+												<div className="min-w-[30rem]">
+													<div
+														className={cn(
+															'mb-2 grid grid-cols-[80px_1fr_64px_64px_94px] gap-2 text-xs font-medium',
+															ft.muted
+														)}
+													>
+														<div />
+														<div>{t('open_filter_sign')}</div>
+														<div>{t('open_filter_degree')}</div>
+														<div>{t('open_filter_house')}</div>
+														<div>{t('open_filter_motion')}</div>
+													</div>
+													<div className="space-y-2">
+														{planetItems.map(({ id, label }) => {
+															const filter = planetFilters[id];
+															return (
+																<div
+																	key={id}
+																	className="grid grid-cols-[80px_1fr_64px_64px_94px] items-center gap-2 text-sm"
+																>
+																	<div className={cn('truncate', ft.bodyText)}>{label}</div>
+																	<Select
+																		value={filter.sign}
+																		onValueChange={(value) => updatePlanetFilter(id, { sign: value })}
+																	>
+																		<SelectTrigger
+																			className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
+																		>
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent className={ft.selectContent}>
+																			<AnyItem />
+																			{ZODIAC_KEYS.map((key, index) => (
+																				<SelectItem
+																					key={key}
+																					value={String(index)}
+																					className={ft.selectItem}
+																				>
+																					{t(key)}
+																				</SelectItem>
+																			))}
+																		</SelectContent>
+																	</Select>
+																	<Select
+																		value={filter.degree}
+																		onValueChange={(value) =>
+																			updatePlanetFilter(id, { degree: value })
+																		}
+																	>
+																		<SelectTrigger
+																			className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
+																		>
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent className={ft.selectContent}>
+																			<AnyItem />
+																			{Array.from({ length: 30 }, (_, index) => index + 1).map(
+																				(degree) => (
+																					<SelectItem
+																						key={degree}
+																						value={String(degree)}
+																						className={ft.selectItem}
+																					>
+																						{degree}°
+																					</SelectItem>
+																				)
+																			)}
+																		</SelectContent>
+																	</Select>
+																	<Select
+																		value={filter.house}
+																		onValueChange={(value) =>
+																			updatePlanetFilter(id, { house: value })
+																		}
+																	>
+																		<SelectTrigger
+																			className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
+																		>
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent className={ft.selectContent}>
+																			<AnyItem />
+																			{Array.from({ length: 12 }, (_, index) => index + 1).map(
+																				(house) => (
+																					<SelectItem
+																						key={house}
+																						value={String(house)}
+																						className={ft.selectItem}
+																					>
+																						{house}.
+																					</SelectItem>
+																				)
+																			)}
+																		</SelectContent>
+																	</Select>
+																	<Select
+																		value={filter.motion}
+																		onValueChange={(value) =>
+																			updatePlanetFilter(id, { motion: value })
+																		}
+																	>
+																		<SelectTrigger
+																			className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
+																		>
+																			<SelectValue />
+																		</SelectTrigger>
+																		<SelectContent className={ft.selectContent}>
+																			<AnyItem />
+																			<SelectItem value="direct" className={ft.selectItem}>
+																				{t('open_motion_direct')}
+																			</SelectItem>
+																			<SelectItem value="stationary" className={ft.selectItem}>
+																				{t('open_motion_stationary')}
+																			</SelectItem>
+																			<SelectItem value="retrograde" className={ft.selectItem}>
+																				{t('open_motion_retrograde')}
+																			</SelectItem>
+																		</SelectContent>
+																	</Select>
+																</div>
+															);
+														})}
+													</div>
+												</div>
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+								)}
+
+								{visibleFilterGroups.includes('aspects') && (
+									<AccordionItem value="aspects" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('open_filter_aspects')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-2 px-4 sm:px-6">
+											<div
+												className={cn(
+													'grid grid-cols-[1fr_1fr_1fr_28px] gap-2 text-xs font-medium',
+													ft.muted
+												)}
+											>
+												<div>{t('open_filter_planet')}</div>
+												<div>{t('open_filter_aspect')}</div>
+												<div>{t('open_filter_planet')}</div>
+												<div />
+											</div>
+											{aspectFilters.map((filter) => (
+												<div
+													key={filter.id}
+													className="grid grid-cols-[1fr_1fr_1fr_28px] items-center gap-2"
+												>
+													{(['left', 'aspect', 'right'] as const).map((field) => (
+														<Select
+															key={field}
+															value={filter[field]}
+															onValueChange={(value) =>
+																updateAspectFilter(filter.id, { [field]: value })
+															}
+														>
+															<SelectTrigger className={cn(ft.inputCompact, 'min-w-0 px-2 text-xs')}>
+																<SelectValue />
+															</SelectTrigger>
+															<SelectContent className={ft.selectContent}>
+																<AnyItem />
+																{field === 'aspect'
+																	? ASPECT_ROWS.map((aspect) => (
+																			<SelectItem
+																				key={aspect.id}
+																				value={aspect.id}
+																				className={ft.selectItem}
+																			>
+																				{t(aspect.labelKey)}
+																			</SelectItem>
+																		))
+																	: planetItems.map((planet) => (
+																			<SelectItem
+																				key={planet.id}
+																				value={planet.id}
+																				className={ft.selectItem}
+																			>
+																				{planet.label}
+																			</SelectItem>
+																		))}
+															</SelectContent>
+														</Select>
+													))}
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														className="size-7"
+														disabled={aspectFilters.length === 1}
+														onClick={() =>
+															setAspectFilters((current) =>
+																current.filter((item) => item.id !== filter.id)
+															)
+														}
+														aria-label={t('open_filter_remove_condition')}
+													>
+														<X className="size-3.5" />
+													</Button>
+												</div>
+											))}
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												className={cn('h-8 text-xs', ft.footerCancel)}
+												onClick={() => {
+													setAspectFilters((current) => [
+														...current,
+														{ id: nextAspectId, left: 'any', aspect: 'any', right: 'any' }
+													]);
+													setNextAspectId((value) => value + 1);
+												}}
+											>
+												<Plus className="size-3.5" />
+												{t('open_filter_add_condition')}
+											</Button>
+										</AccordionContent>
+									</AccordionItem>
+								)}
+
+								{visibleFilterGroups.includes('houses') && (
+									<AccordionItem value="houses" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('open_filter_houses')}
+										</AccordionTrigger>
+										<AccordionContent className="px-4 sm:px-6">
+											<div className="mx-auto max-w-sm">
 												<div
 													className={cn(
-														'mb-2 grid grid-cols-[80px_1fr_64px_64px_94px] gap-2 text-xs font-medium',
+														'mb-2 grid grid-cols-[72px_1fr_80px] gap-2 text-xs font-medium',
 														ft.muted
 													)}
 												>
 													<div />
 													<div>{t('open_filter_sign')}</div>
 													<div>{t('open_filter_degree')}</div>
-													<div>{t('open_filter_house')}</div>
-													<div>{t('open_filter_motion')}</div>
 												</div>
 												<div className="space-y-2">
-													{planetItems.map(({ id, label }) => {
-														const filter = planetFilters[id];
+													{Array.from({ length: 12 }, (_, index) => index + 1).map((house) => {
+														const filter = houseFilters[house];
 														return (
 															<div
-																key={id}
-																className="grid grid-cols-[80px_1fr_64px_64px_94px] items-center gap-2 text-sm"
+																key={house}
+																className="grid grid-cols-[72px_1fr_80px] items-center gap-2"
 															>
-																<div className={cn('truncate', ft.bodyText)}>{label}</div>
+																<span className={cn('text-sm', ft.bodyText)}>
+																	{house}.{' '}
+																	{house === 1
+																		? '(ASC)'
+																		: house === 4
+																			? '(IC)'
+																			: house === 7
+																				? '(DSC)'
+																				: house === 10
+																					? '(MC)'
+																					: ''}
+																</span>
 																<Select
 																	value={filter.sign}
-																	onValueChange={(value) => updatePlanetFilter(id, { sign: value })}
+																	onValueChange={(value) => updateHouseFilter(house, { sign: value })}
 																>
-																	<SelectTrigger
-																		className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
-																	>
+																	<SelectTrigger className={cn(ft.inputCompact, 'px-2 text-xs')}>
 																		<SelectValue />
 																	</SelectTrigger>
 																	<SelectContent className={ft.selectContent}>
 																		<AnyItem />
-																		{ZODIAC_KEYS.map((key, index) => (
+																		{ZODIAC_KEYS.map((key, sign) => (
 																			<SelectItem
 																				key={key}
-																				value={String(index)}
+																				value={String(sign)}
 																				className={ft.selectItem}
 																			>
 																				{t(key)}
@@ -866,17 +1159,15 @@ export function OpenWorkspaceView({
 																<Select
 																	value={filter.degree}
 																	onValueChange={(value) =>
-																		updatePlanetFilter(id, { degree: value })
+																		updateHouseFilter(house, { degree: value })
 																	}
 																>
-																	<SelectTrigger
-																		className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
-																	>
+																	<SelectTrigger className={cn(ft.inputCompact, 'px-2 text-xs')}>
 																		<SelectValue />
 																	</SelectTrigger>
 																	<SelectContent className={ft.selectContent}>
 																		<AnyItem />
-																		{Array.from({ length: 30 }, (_, index) => index + 1).map(
+																		{Array.from({ length: 30 }, (_, degree) => degree + 1).map(
 																			(degree) => (
 																				<SelectItem
 																					key={degree}
@@ -889,310 +1180,84 @@ export function OpenWorkspaceView({
 																		)}
 																	</SelectContent>
 																</Select>
-																<Select
-																	value={filter.house}
-																	onValueChange={(value) =>
-																		updatePlanetFilter(id, { house: value })
-																	}
-																>
-																	<SelectTrigger
-																		className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
-																	>
-																		<SelectValue />
-																	</SelectTrigger>
-																	<SelectContent className={ft.selectContent}>
-																		<AnyItem />
-																		{Array.from({ length: 12 }, (_, index) => index + 1).map(
-																			(house) => (
-																				<SelectItem
-																					key={house}
-																					value={String(house)}
-																					className={ft.selectItem}
-																				>
-																					{house}.
-																				</SelectItem>
-																			)
-																		)}
-																	</SelectContent>
-																</Select>
-																<Select
-																	value={filter.motion}
-																	onValueChange={(value) =>
-																		updatePlanetFilter(id, { motion: value })
-																	}
-																>
-																	<SelectTrigger
-																		className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
-																	>
-																		<SelectValue />
-																	</SelectTrigger>
-																	<SelectContent className={ft.selectContent}>
-																		<AnyItem />
-																		<SelectItem value="direct" className={ft.selectItem}>
-																			{t('open_motion_direct')}
-																		</SelectItem>
-																		<SelectItem value="stationary" className={ft.selectItem}>
-																			{t('open_motion_stationary')}
-																		</SelectItem>
-																		<SelectItem value="retrograde" className={ft.selectItem}>
-																			{t('open_motion_retrograde')}
-																		</SelectItem>
-																	</SelectContent>
-																</Select>
 															</div>
 														);
 													})}
 												</div>
 											</div>
-										</div>
-									</AccordionContent>
-								</AccordionItem>
+										</AccordionContent>
+									</AccordionItem>
+								)}
 
-								<AccordionItem value="aspects" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('open_filter_aspects')}
-									</AccordionTrigger>
-									<AccordionContent className="space-y-2 px-4 sm:px-6">
-										<div
-											className={cn(
-												'grid grid-cols-[1fr_1fr_1fr_28px] gap-2 text-xs font-medium',
-												ft.muted
-											)}
-										>
-											<div>{t('open_filter_planet')}</div>
-											<div>{t('open_filter_aspect')}</div>
-											<div>{t('open_filter_planet')}</div>
-											<div />
-										</div>
-										{aspectFilters.map((filter) => (
-											<div
-												key={filter.id}
-												className="grid grid-cols-[1fr_1fr_1fr_28px] items-center gap-2"
-											>
-												{(['left', 'aspect', 'right'] as const).map((field) => (
-													<Select
-														key={field}
-														value={filter[field]}
-														onValueChange={(value) =>
-															updateAspectFilter(filter.id, { [field]: value })
-														}
+								{visibleFilterGroups.includes('shapes') && (
+									<AccordionItem value="shapes" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('open_filter_chart_shape')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-2 px-4 sm:px-6">
+											{shapeOptions().map((option) =>
+												option.group ? (
+													<p
+														key={option.id}
+														className={cn('pt-1 text-xs font-medium', ft.muted)}
+														style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
 													>
-														<SelectTrigger className={cn(ft.inputCompact, 'min-w-0 px-2 text-xs')}>
-															<SelectValue />
-														</SelectTrigger>
-														<SelectContent className={ft.selectContent}>
-															<AnyItem />
-															{field === 'aspect'
-																? ASPECT_ROWS.map((aspect) => (
-																		<SelectItem
-																			key={aspect.id}
-																			value={aspect.id}
-																			className={ft.selectItem}
-																		>
-																			{t(aspect.labelKey)}
-																		</SelectItem>
-																	))
-																: planetItems.map((planet) => (
-																		<SelectItem
-																			key={planet.id}
-																			value={planet.id}
-																			className={ft.selectItem}
-																		>
-																			{planet.label}
-																		</SelectItem>
-																	))}
-														</SelectContent>
-													</Select>
-												))}
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="size-7"
-													disabled={aspectFilters.length === 1}
-													onClick={() =>
-														setAspectFilters((current) =>
-															current.filter((item) => item.id !== filter.id)
-														)
-													}
-													aria-label={t('open_filter_remove_condition')}
-												>
-													<X className="size-3.5" />
-												</Button>
-											</div>
-										))}
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className={cn('h-8 text-xs', ft.footerCancel)}
-											onClick={() => {
-												setAspectFilters((current) => [
-													...current,
-													{ id: nextAspectId, left: 'any', aspect: 'any', right: 'any' }
-												]);
-												setNextAspectId((value) => value + 1);
-											}}
-										>
-											<Plus className="size-3.5" />
-											{t('open_filter_add_condition')}
-										</Button>
-									</AccordionContent>
-								</AccordionItem>
-
-								<AccordionItem value="houses" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('open_filter_houses')}
-									</AccordionTrigger>
-									<AccordionContent className="px-4 sm:px-6">
-										<div className="mx-auto max-w-sm">
-											<div
-												className={cn(
-													'mb-2 grid grid-cols-[72px_1fr_80px] gap-2 text-xs font-medium',
-													ft.muted
-												)}
-											>
-												<div />
-												<div>{t('open_filter_sign')}</div>
-												<div>{t('open_filter_degree')}</div>
-											</div>
-											<div className="space-y-2">
-												{Array.from({ length: 12 }, (_, index) => index + 1).map((house) => {
-													const filter = houseFilters[house];
-													return (
-														<div
-															key={house}
-															className="grid grid-cols-[72px_1fr_80px] items-center gap-2"
+														{t(option.labelKey)}
+													</p>
+												) : (
+													<div
+														key={option.id}
+														className="flex items-center gap-2"
+														style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
+													>
+														<Checkbox
+															id={`shape-${option.id}`}
+															checked={selectedShapes.includes(option.id)}
+															onCheckedChange={() => toggleListValue(setSelectedShapes, option.id)}
+														/>
+														<Label
+															htmlFor={`shape-${option.id}`}
+															className={cn('cursor-pointer text-sm', ft.bodyText)}
 														>
-															<span className={cn('text-sm', ft.bodyText)}>
-																{house}.{' '}
-																{house === 1
-																	? '(ASC)'
-																	: house === 4
-																		? '(IC)'
-																		: house === 7
-																			? '(DSC)'
-																			: house === 10
-																				? '(MC)'
-																				: ''}
-															</span>
-															<Select
-																value={filter.sign}
-																onValueChange={(value) => updateHouseFilter(house, { sign: value })}
-															>
-																<SelectTrigger className={cn(ft.inputCompact, 'px-2 text-xs')}>
-																	<SelectValue />
-																</SelectTrigger>
-																<SelectContent className={ft.selectContent}>
-																	<AnyItem />
-																	{ZODIAC_KEYS.map((key, sign) => (
-																		<SelectItem
-																			key={key}
-																			value={String(sign)}
-																			className={ft.selectItem}
-																		>
-																			{t(key)}
-																		</SelectItem>
-																	))}
-																</SelectContent>
-															</Select>
-															<Select
-																value={filter.degree}
-																onValueChange={(value) =>
-																	updateHouseFilter(house, { degree: value })
-																}
-															>
-																<SelectTrigger className={cn(ft.inputCompact, 'px-2 text-xs')}>
-																	<SelectValue />
-																</SelectTrigger>
-																<SelectContent className={ft.selectContent}>
-																	<AnyItem />
-																	{Array.from({ length: 30 }, (_, degree) => degree + 1).map(
-																		(degree) => (
-																			<SelectItem
-																				key={degree}
-																				value={String(degree)}
-																				className={ft.selectItem}
-																			>
-																				{degree}°
-																			</SelectItem>
-																		)
-																	)}
-																</SelectContent>
-															</Select>
-														</div>
-													);
-												})}
-											</div>
-										</div>
-									</AccordionContent>
-								</AccordionItem>
+															{t(option.labelKey)}
+														</Label>
+													</div>
+												)
+											)}
+										</AccordionContent>
+									</AccordionItem>
+								)}
 
-								<AccordionItem value="shapes" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('open_filter_chart_shape')}
-									</AccordionTrigger>
-									<AccordionContent className="space-y-2 px-4 sm:px-6">
-										{shapeOptions().map((option) =>
-											option.group ? (
-												<p
-													key={option.id}
-													className={cn('pt-1 text-xs font-medium', ft.muted)}
-													style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
-												>
-													{t(option.labelKey)}
-												</p>
-											) : (
+								{visibleFilterGroups.includes('configurations') && (
+									<AccordionItem value="configurations" className="border-none">
+										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
+											{t('info_planetary_configuration')}
+										</AccordionTrigger>
+										<AccordionContent className="space-y-2 px-4 sm:px-6">
+									{configurationOptions().map((option) => (
 												<div
 													key={option.id}
 													className="flex items-center gap-2"
 													style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
 												>
 													<Checkbox
-														id={`shape-${option.id}`}
-														checked={selectedShapes.includes(option.id)}
-														onCheckedChange={() => toggleListValue(setSelectedShapes, option.id)}
+														id={`configuration-${option.id}`}
+														checked={selectedConfigurations.includes(option.id)}
+														onCheckedChange={() =>
+															toggleListValue(setSelectedConfigurations, option.id)
+														}
 													/>
 													<Label
-														htmlFor={`shape-${option.id}`}
+														htmlFor={`configuration-${option.id}`}
 														className={cn('cursor-pointer text-sm', ft.bodyText)}
 													>
 														{t(option.labelKey)}
 													</Label>
 												</div>
-											)
-										)}
-									</AccordionContent>
-								</AccordionItem>
-
-								<AccordionItem value="configurations" className="border-none">
-									<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
-										{t('info_planetary_configuration')}
-									</AccordionTrigger>
-									<AccordionContent className="space-y-2 px-4 sm:px-6">
-								{configurationOptions().map((option) => (
-											<div
-												key={option.id}
-												className="flex items-center gap-2"
-												style={{ paddingLeft: `${(option.indent ?? 0) * 16}px` }}
-											>
-												<Checkbox
-													id={`configuration-${option.id}`}
-													checked={selectedConfigurations.includes(option.id)}
-													onCheckedChange={() =>
-														toggleListValue(setSelectedConfigurations, option.id)
-													}
-												/>
-												<Label
-													htmlFor={`configuration-${option.id}`}
-													className={cn('cursor-pointer text-sm', ft.bodyText)}
-												>
-													{t(option.labelKey)}
-												</Label>
-											</div>
-										))}
-									</AccordionContent>
-								</AccordionItem>
+											))}
+										</AccordionContent>
+									</AccordionItem>
+								)}
 							</Accordion>
 						</div>
 						<div
@@ -1224,6 +1289,33 @@ export function OpenWorkspaceView({
 							</Button>
 						</div>
 					</aside>
+
+					<DetailSidePanel
+						theme={theme}
+						open={filterSettingsOpen}
+						onOpenChange={setFilterSettingsOpen}
+						title={t('open_filter_visibility_title', { defaultValue: 'Visible filters' })}
+					>
+						<div className="flex flex-col gap-1">
+							{ALL_FILTER_GROUP_IDS.map((id) => (
+								<Label
+									key={id}
+									htmlFor={`filter-group-${id}`}
+									className={cn(
+										'flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1.5 text-sm',
+										ft.bodyText
+									)}
+								>
+									<Checkbox
+										id={`filter-group-${id}`}
+										checked={visibleFilterGroups.includes(id)}
+										onCheckedChange={(checked) => toggleFilterGroupVisibility(id, checked === true)}
+									/>
+									{t(FILTER_GROUP_LABEL_KEYS[id]!)}
+								</Label>
+							))}
+						</div>
+					</DetailSidePanel>
 
 					<section className="relative flex min-w-0 flex-1 flex-col">
 						<div className="flex-1 overflow-auto pb-16">

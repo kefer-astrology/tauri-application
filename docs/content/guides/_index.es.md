@@ -25,3 +25,7 @@ Cada escenario se ejecuta en la interfaz React principal en modo de demostració
 </nav>
 
 Los escenarios usan los controles **Siguiente** y **Atrás** dentro del marco de la aplicación. Puede cerrar una superposición en cualquier momento y continuar explorando libremente.
+
+Para instrucciones sobre la aplicación de escritorio, vuelva al
+**[Manual](../manual/)**. Las guías muestran una ruta por la interfaz; no
+definen ni duplican el comportamiento de la aplicación.

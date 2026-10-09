@@ -14,7 +14,7 @@ import {
 } from './components/settings-secondary-sidebar';
 import { TransitsSecondarySidebar, TransitSection } from './components/transits-secondary-sidebar';
 import { TransitsContent } from './components/transits-content';
-import { TransitedObjectsNav } from './components/transited-objects-nav';
+import { TransitLayersPanel } from './components/transit-layers-panel';
 import { TransitsResultsDashboard } from './components/transits-results-dashboard';
 import { Aspectarium } from './components/aspectarium';
 import { HoroscopeDashboard } from './components/horoscope-dashboard';
@@ -26,6 +26,7 @@ import { OpenWorkspaceView } from './components/open-workspace-view';
 import { ExportWorkspaceView } from './components/export-workspace-view';
 import { GuidedTour } from './components/guided-tour';
 import { Toaster } from './components/ui/sonner';
+import { KeferLoaderOverlay } from './components/ui/kefer-loader';
 import { toast } from 'sonner';
 import {
 	aspectLineTierStyleFromDto,
@@ -170,6 +171,18 @@ function mergeWorkspaceDefaults(
 			dto.default_aspect_colors && typeof dto.default_aspect_colors === 'object'
 				? { ...prev.defaultAspectColors, ...dto.default_aspect_colors }
 				: prev.defaultAspectColors,
+		bodyColors:
+			dto.radix_point_colors && typeof dto.radix_point_colors === 'object'
+				? { ...prev.bodyColors, ...dto.radix_point_colors }
+				: prev.bodyColors,
+		extendedObjectTypes: Array.isArray(dto.extended_object_types)
+			? [...dto.extended_object_types]
+			: prev.extendedObjectTypes,
+		objectOrbs:
+			dto.object_orbs && typeof dto.object_orbs === 'object'
+				? { ...prev.objectOrbs, ...dto.object_orbs }
+				: prev.objectOrbs,
+		astrologyTradition: dto.astrology_tradition ?? prev.astrologyTradition,
 		aspectLineTierStyle: aspectLineTierStyleFromDto(dto.aspect_line_tier_style)
 	};
 }
@@ -193,6 +206,15 @@ function mergeWorkspaceDefaultsPatch(
 		defaultAspectColors: patch.defaultAspectColors
 			? { ...prev.defaultAspectColors, ...patch.defaultAspectColors }
 			: prev.defaultAspectColors,
+		bodyColors: patch.bodyColors ? { ...prev.bodyColors, ...patch.bodyColors } : prev.bodyColors,
+		extendedObjectTypes: Array.isArray(patch.extendedObjectTypes)
+			? [...patch.extendedObjectTypes]
+			: prev.extendedObjectTypes,
+		objectOrbs: patch.objectOrbs
+			? { ...prev.objectOrbs, ...patch.objectOrbs }
+			: prev.objectOrbs,
+		astrologyTradition:
+			patch.astrologyTradition !== undefined ? patch.astrologyTradition : prev.astrologyTradition,
 		aspectLineTierStyle: patch.aspectLineTierStyle
 			? { ...prev.aspectLineTierStyle, ...patch.aspectLineTierStyle }
 			: prev.aspectLineTierStyle
@@ -282,7 +304,7 @@ function TransitsSecondarySidebarSlot({
 }) {
 	const { mode } = useTransitsWorkspace();
 	if (mode === 'results') {
-		return <TransitedObjectsNav theme={theme} dynamic={dynamic} />;
+		return <TransitLayersPanel theme={theme} />;
 	}
 	return (
 		<TransitsSecondarySidebar
@@ -298,15 +320,19 @@ function TransitsSecondarySidebarSlot({
 function TransitsMainContentSlot({
 	theme,
 	glyphSet,
-	section
+	section,
+	workspaceDefaults
 }: {
 	theme: Theme;
 	glyphSet: AstrologyGlyphSetId;
 	section: TransitSection;
+	workspaceDefaults: WorkspaceDefaultsState;
 }) {
 	const { mode } = useTransitsWorkspace();
 	if (mode === 'results') {
-		return <TransitsResultsDashboard theme={theme} glyphSet={glyphSet} />;
+		return (
+			<TransitsResultsDashboard theme={theme} glyphSet={glyphSet} workspaceDefaults={workspaceDefaults} />
+		);
 	}
 	return <TransitsContent section={section} theme={theme} glyphSet={glyphSet} />;
 }
@@ -362,8 +388,16 @@ export default function App() {
 	}));
 	const [workspaceTags, setWorkspaceTags] = useState<WorkspaceTagDefinition[]>([]);
 	const [currentModelReport, setCurrentModelReport] = useState<CurrentModelReport | null>(null);
+	const [appBootLoading, setAppBootLoading] = useState(true);
 	const computingChartIdsRef = useRef<Set<string>>(new Set());
 	const bootstrapComputeAttemptedRef = useRef(false);
+
+	// Defensive: if the bootstrap compute effect below never settles for any reason, don't leave
+	// the whole app hidden behind the loader forever — a failure is already toast-reported there.
+	useEffect(() => {
+		const id = setTimeout(() => setAppBootLoading(false), 10000);
+		return () => clearTimeout(id);
+	}, []);
 
 	const addChart = useCallback((chart: AppChart) => {
 		setSelectedChartPreview(null);
@@ -661,12 +695,15 @@ export default function App() {
 	}, [shadcnDark]);
 
 	useEffect(() => {
-		if (workspacePath) return;
+		if (workspacePath) {
+			setAppBootLoading(false);
+			return;
+		}
 		if (bootstrapComputeAttemptedRef.current) return;
 		const bootstrapChart = charts.find((chart) => chart.id === BOOTSTRAP_CHART_ID);
 		if (!bootstrapChart) return;
 		bootstrapComputeAttemptedRef.current = true;
-		void computeChartInBackground(bootstrapChart, null);
+		void computeChartInBackground(bootstrapChart, null).finally(() => setAppBootLoading(false));
 	}, [charts, computeChartInBackground, workspacePath]);
 
 	const runOpenWorkspaceFolder = useCallback(async () => {
@@ -877,6 +914,7 @@ export default function App() {
 											handleSelectChartId(id);
 											setActiveView('horoskop');
 										}}
+										appShellIconSet={appShellIconSet}
 									/>
 								) : activeView === 'export' ? (
 									<ExportWorkspaceView theme={theme} />
@@ -914,6 +952,7 @@ export default function App() {
 										section={activeTransitSection}
 										theme={theme}
 										glyphSet={astrologyGlyphSet}
+										workspaceDefaults={workspaceDefaults}
 									/>
 								) : activeView === 'nastaveni' ? (
 									<SettingsView
@@ -998,6 +1037,7 @@ export default function App() {
 			</WorkspaceChartsProvider>
 			<Toaster theme={shadcnDark ? 'dark' : 'light'} />
 			<GuidedTour />
+			<KeferLoaderOverlay active={appBootLoading} />
 		</>
 	);
 }

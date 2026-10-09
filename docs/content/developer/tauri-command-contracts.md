@@ -200,6 +200,12 @@ Acceptance criteria:
 - `KEFER_COMPUTE_BACKEND=Python`: Python only.
 - `KEFER_COMPUTE_BACKEND=Rust`: Rust only.
 - The contract should make backend provenance observable to callers.
+- Only a `jyotish`/`custom` engine is force-routed to Python regardless of
+  backend selection (no Rust implementation exists). A per-chart
+  `override_ephemeris` kernel does **not** force Python — the Rust JPL
+  backend implements it natively — see
+  [Architecture](../architecture/#calculation-and-persistence) for the fixed
+  router-policy gap this used to be.
 
 Recommended response metadata:
 
@@ -260,34 +266,17 @@ Acceptance criteria:
 
 ### `compute_transit_series(...) -> Result<Value, String>`
 
-Inputs:
+Transport names are `workspace_path`, `chart_id`, `start_datetime`,
+`end_datetime`, `transiting_objects`, `transited_objects`, `aspect_types`, and
+optional `time_step_seconds`, `sampled_series`, `exact_hits`, `station_events`,
+`configuration_requests`, `preset_id`, and `settings_overrides`. It returns
+the transit-series response and backend provenance. The authoritative request
+rules, defaults, response shape, completeness semantics, and supported
+configuration IDs are in the [Transit series contract](../transit-series-contract/).
 
-- `workspace_path`
-- `chart_id`
-- `start_datetime`
-- `end_datetime`
-- `time_step_seconds`
-- `transiting_objects`
-- `transited_objects`
-- `aspect_types`
-- optional `preset_id`
-- optional `settings_overrides`
-
-Behavior:
-
-- `time_step_seconds` must be greater than `0`.
-- `end_datetime` must be greater than or equal to `start_datetime`.
-- Rust mode enforces a hard cap of `50_000` generated steps.
-- Returns a response with `source_chart_id`, `time_range`, `time_step`, `results`, and backend provenance fields.
-- Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.
-- Preset and operation settings use the same precedence and temporary Rust-only
-  routing described for `compute_chart`.
-
-Acceptance criteria:
-
-- Invalid date order returns an error.
-- Non-positive step returns an error.
-- A valid range returns ordered results with `datetime`, `transit_positions`, and `aspects`.
+Rust caps a sampled response at 50,000 generated steps. Event and
+configuration searches run locally through Rust even when a Python sidecar
+produced sampled results; Python has no equivalent endpoint.
 
 ## Ephemeris commands
 
@@ -309,6 +298,17 @@ Acceptance criteria:
 - A manifest-defined body is returned only after schema, checksum, validation
   thresholds, and an in-range ANISE state probe pass. Traditional static catalog
   kernels continue to use their declared filename/body mapping.
+
+### `get_loaded_spk_coverage() -> Result<Vec<LoadedSpkCoverage>, String>`
+
+- Returns raw per-target coverage intervals (`naif_target_id`, `start_et_seconds`,
+  `end_et_seconds`, `start_tdb`, `end_tdb`) read directly from the loaded SPK
+  segment summaries of the currently resolved BSP set.
+- Diagnostic only: a target appearing here is not a guarantee it can be
+  transformed from Earth at a given epoch — that also requires an unbroken
+  target-to-Earth center chain, and, for apparent output, chain coverage at the
+  retarded epoch too. See
+  [ephemeris-manager](../ephemeris-manager/#runtime-coverage-inspection).
 
 ## Storage commands
 

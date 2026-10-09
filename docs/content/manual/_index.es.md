@@ -14,6 +14,7 @@ El Manual describe Kefer Astrology desde el punto de vista del usuario. No neces
 ## Examinar una carta
 
 - **[Vistas de carta](./chart-views/)** — muévase entre las vistas de carta natal, aspectos, información, revolución y sinastría.
+- **[Objetos, aspectos y patrones de carta](./objects-aspects-and-patterns/)** — consulte el catálogo integrado y de qué depende su disponibilidad.
 - **[Tránsitos y tiempo](./transits-and-time/)** — inspeccione un momento, navegue por el tiempo y trabaje con las vistas de tránsito.
 
 ## Personalizar la aplicación

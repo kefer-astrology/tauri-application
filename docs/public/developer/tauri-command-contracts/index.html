@@ -231,6 +231,12 @@ frontends retain these fields during load/save round-trips.</li>
 <li><code>KEFER_COMPUTE_BACKEND=Python</code>: Python only.</li>
 <li><code>KEFER_COMPUTE_BACKEND=Rust</code>: Rust only.</li>
 <li>The contract should make backend provenance observable to callers.</li>
+<li>Only a <code>jyotish</code>/<code>custom</code> engine is force-routed to Python regardless of
+backend selection (no Rust implementation exists). A per-chart
+<code>override_ephemeris</code> kernel does <strong>not</strong> force Python — the Rust JPL
+backend implements it natively — see
+<a href="../architecture/#calculation-and-persistence">Architecture</a> for the fixed
+router-policy gap this used to be.</li>
 </ul>
 <p>Recommended response metadata:</p>
 <ul>
@@ -289,35 +295,16 @@ path. The chart layer overrides the preset layer.</li>
 normal backend selection, and fallback preserves the same layers.</li>
 </ul>
 <h3 id="compute_transit_series---resultvalue-string"><code>compute_transit_series(...) -&gt; Result&lt;Value, String&gt;</code></h3>
-<p>Inputs:</p>
-<ul>
-<li><code>workspace_path</code></li>
-<li><code>chart_id</code></li>
-<li><code>start_datetime</code></li>
-<li><code>end_datetime</code></li>
-<li><code>time_step_seconds</code></li>
-<li><code>transiting_objects</code></li>
-<li><code>transited_objects</code></li>
-<li><code>aspect_types</code></li>
-<li>optional <code>preset_id</code></li>
-<li>optional <code>settings_overrides</code></li>
-</ul>
-<p>Behavior:</p>
-<ul>
-<li><code>time_step_seconds</code> must be greater than <code>0</code>.</li>
-<li><code>end_datetime</code> must be greater than or equal to <code>start_datetime</code>.</li>
-<li>Rust mode enforces a hard cap of <code>50_000</code> generated steps.</li>
-<li>Returns a response with <code>source_chart_id</code>, <code>time_range</code>, <code>time_step</code>, <code>results</code>, and backend provenance fields.</li>
-<li>Rust cross-aspects use the same resolved model definitions and effective orb overrides as radix computation.</li>
-<li>Preset and operation settings use the same precedence and temporary Rust-only
-routing described for <code>compute_chart</code>.</li>
-</ul>
-<p>Acceptance criteria:</p>
-<ul>
-<li>Invalid date order returns an error.</li>
-<li>Non-positive step returns an error.</li>
-<li>A valid range returns ordered results with <code>datetime</code>, <code>transit_positions</code>, and <code>aspects</code>.</li>
-</ul>
+<p>Transport names are <code>workspace_path</code>, <code>chart_id</code>, <code>start_datetime</code>,
+<code>end_datetime</code>, <code>transiting_objects</code>, <code>transited_objects</code>, <code>aspect_types</code>, and
+optional <code>time_step_seconds</code>, <code>sampled_series</code>, <code>exact_hits</code>, <code>station_events</code>,
+<code>configuration_requests</code>, <code>preset_id</code>, and <code>settings_overrides</code>. It returns
+the transit-series response and backend provenance. The authoritative request
+rules, defaults, response shape, completeness semantics, and supported
+configuration IDs are in the <a href="../transit-series-contract/">Transit series contract</a>.</p>
+<p>Rust caps a sampled response at 50,000 generated steps. Event and
+configuration searches run locally through Rust even when a Python sidecar
+produced sampled results; Python has no equivalent endpoint.</p>
 <h2 id="ephemeris-commands">Ephemeris commands</h2>
 <h3 id="list_ephemeris_catalog---vecephemerisinfo"><code>list_ephemeris_catalog() -&gt; Vec&lt;EphemerisInfo&gt;</code></h3>
 <ul>
@@ -337,6 +324,17 @@ small-body SPKs.</li>
 <li>A manifest-defined body is returned only after schema, checksum, validation
 thresholds, and an in-range ANISE state probe pass. Traditional static catalog
 kernels continue to use their declared filename/body mapping.</li>
+</ul>
+<h3 id="get_loaded_spk_coverage---resultvecloadedspkcoverage-string"><code>get_loaded_spk_coverage() -&gt; Result&lt;Vec&lt;LoadedSpkCoverage&gt;, String&gt;</code></h3>
+<ul>
+<li>Returns raw per-target coverage intervals (<code>naif_target_id</code>, <code>start_et_seconds</code>,
+<code>end_et_seconds</code>, <code>start_tdb</code>, <code>end_tdb</code>) read directly from the loaded SPK
+segment summaries of the currently resolved BSP set.</li>
+<li>Diagnostic only: a target appearing here is not a guarantee it can be
+transformed from Earth at a given epoch — that also requires an unbroken
+target-to-Earth center chain, and, for apparent output, chain coverage at the
+retarded epoch too. See
+<a href="../ephemeris-manager/#runtime-coverage-inspection">ephemeris-manager</a>.</li>
 </ul>
 <h2 id="storage-commands">Storage commands</h2>
 <p>Current Rust storage behavior is workspace-only.</p>

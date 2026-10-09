@@ -55,6 +55,12 @@ time/location, and transit intent. See the
 <a href="../workspace-yaml/">Workspace YAML contract</a> for the exact boundary. Legacy
 model glyph/color fields remain readable during migration but are not the new
 source of truth.</p>
+<p>The React wheel-orientation choice (<code>ascendant</code> or <code>aries</code>) is likewise
+presentation-only: it changes the longitude pinned to the left edge of the
+rendered radix, not house cusps, axes, positions, or aspects. It is currently
+stored under <code>wheel_orientation</code> in browser local storage, rather than in
+workspace presentation YAML. The user-facing behavior is documented in
+<a href="/manual/settings-and-appearance/#radix-wheel-orientation">Settings and appearance</a>.</p>
 <h2 id="ui-view-modes">UI View Modes</h2>
 <ul>
 <li><strong>Radix View</strong>: circular chart, houses, aspects (derived).</li>

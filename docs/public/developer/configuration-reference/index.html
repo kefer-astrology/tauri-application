@@ -45,19 +45,13 @@
       <p>This reference describes Rust&rsquo;s current serialized/configuration types. The
 source of exact enum spelling is <code>src-tauri/src/workspace/models.rs</code>; callers
 should not treat frontend labels as identifiers.</p>
-<h2 id="resolution">Resolution</h2>
-<p>Calculation settings are merged as follows where a field is represented:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>application baseline &lt; model &lt; workspace &lt; preset &lt; chart &lt; operation
-</span></span></code></pre></div><p>The output includes <code>EffectiveSettingsSources</code>. An omitted optional field
-inherits; a provided preset/chart/operation body or aspect array, including an
-empty array, replaces the inherited selection. See <a href="../rust-workspace-contract/">Rust workspace
-contract</a> for legacy workspace-body behavior and
-the chart <code>zodiac_type</code> caveat.</p>
-<p>Current calculation fields include house system, selected bodies/aspects and
-per-aspect orbs, engine, position mode, zodiac type, ayanamsa, and time system.
-Models also carry defaults and computational constants. Workspace defaults add
-location and presentation-adjacent defaults. Provider availability is separate
-from a valid model/catalog entry.</p>
+<h2 id="calculation-settings">Calculation settings</h2>
+<p>The <a href="../workspace-yaml/#resolution-order">Workspace YAML contract</a> owns
+precedence, inheritance, empty-selection semantics, and source provenance.
+This page owns the implemented setting vocabulary: house system, selected
+bodies/aspects and per-aspect orbs, engine, position mode, zodiac type,
+ayanamsa, and time system. Provider availability remains separate from a valid
+model or catalog entry.</p>
 <h2 id="serialized-enum-families">Serialized enum families</h2>
 <ul>
 <li>House systems: <code>Placidus</code>, <code>Whole Sign</code>, <code>Campanus</code>, <code>Koch</code>, <code>Equal</code>,

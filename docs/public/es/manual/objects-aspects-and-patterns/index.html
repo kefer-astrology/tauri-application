@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Objetos, aspectos y patrones de carta | Kefer Astrology</title>
+    <meta name="description" content="Los objetos y aspectos integrados, y las formas y configuraciones que Kefer puede mostrar." />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <a class="brand" href="/es/">Kefer Astrology</a>
+        <div class="nav-group">
+          <nav class="top-nav" aria-label="Primary">
+            <a href="/es/manual/">Manual</a>
+            <a href="/developer/">Manual para desarrolladores</a>
+            <a href="/es/guides/">Guías</a>
+          </nav>
+          <nav class="lang-switch" aria-label="Language">
+            
+              <a href="/manual/objects-aspects-and-patterns/" >English</a>
+            
+              <a href="/cs/manual/objects-aspects-and-patterns/" >Čeština</a>
+            
+              <a href="/es/manual/objects-aspects-and-patterns/" aria-current="page">Español</a>
+            
+              <a href="/fr/manual/objects-aspects-and-patterns/" >Français</a>
+            
+          </nav>
+        </div>
+      </header>
+      <main>
+        
+  <article class="content">
+    <header class="page-header">
+      <p class="eyebrow">manual</p>
+      <h1>Objetos, aspectos y patrones de carta</h1>
+      <p class="lede">Los objetos y aspectos integrados, y las formas y configuraciones que Kefer puede mostrar.</p>
+      
+    </header>
+    <div class="prose">
+      <p>Esta referencia enumera el catálogo integrado. Las opciones de <strong>Ajustes</strong> son
+la autoridad final para el espacio de trabajo y motor concretos: un objeto puede
+estar definido pero no disponible si un núcleo local de efemérides no lo cubre.</p>
+<h2 id="objetos-observables">Objetos observables</h2>
+<table>
+	<thead>
+			<tr>
+					<th>Grupo</th>
+					<th>Objetos integrados</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Luminarias y planetas</td>
+					<td>Sol, Luna, Mercurio, Venus, Marte, Júpiter, Saturno, Urano, Neptuno, Plutón</td>
+			</tr>
+			<tr>
+					<td>Ángulos</td>
+					<td>Ascendente, Medio Cielo, Descendente, Fondo del Cielo</td>
+			</tr>
+			<tr>
+					<td>Nodos lunares</td>
+					<td>Nodo Norte, Nodo Sur, Nodo Norte verdadero, Nodo Sur verdadero</td>
+			</tr>
+			<tr>
+					<td>Puntos calculados y lotes</td>
+					<td>Lilith, Lilith verdadera, Vértice, Antivértice, Parte de la Fortuna, Parte del Espíritu</td>
+			</tr>
+			<tr>
+					<td>Asteroides y centauros</td>
+					<td>Quirón, Ceres, Palas, Juno, Vesta, Astraea, Hebe, Iris, Flora, Metis, Hygiea, Parthenope, Victoria, Egeria, Irene, Eunomia, Psyche, Thetis, Melpomene, Fortuna, Massalia</td>
+			</tr>
+	</tbody>
+</table>
+<p>La ruta JPL calcula los puntos exclusivos de JPL y los asteroides ampliados si
+los núcleos locales necesarios están presentes. La aplicación nunca descarga
+efemérides silenciosamente durante un cálculo. Elija objetos en
+<a href="../settings-and-appearance/">Ajustes y apariencia</a>.</p>
+<h2 id="aspectos-disponibles">Aspectos disponibles</h2>
+<p>Todos los aspectos integrados se pueden activar, recibir un orbe y limitarse
+por categoría de objeto en <strong>Ajustes</strong>. El conjunto predeterminado contiene
+conjunción, sextil, cuadratura, trígono, quincuncio y oposición.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Aspecto</th>
+					<th style="text-align: right">Ángulo exacto</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Conjunción</td>
+					<td style="text-align: right">0°</td>
+			</tr>
+			<tr>
+					<td>Semisextil</td>
+					<td style="text-align: right">30°</td>
+			</tr>
+			<tr>
+					<td>Undécil</td>
+					<td style="text-align: right">32,727…°</td>
+			</tr>
+			<tr>
+					<td>Décil</td>
+					<td style="text-align: right">36°</td>
+			</tr>
+			<tr>
+					<td>Novil</td>
+					<td style="text-align: right">40°</td>
+			</tr>
+			<tr>
+					<td>Octil</td>
+					<td style="text-align: right">45°</td>
+			</tr>
+			<tr>
+					<td>Septil</td>
+					<td style="text-align: right">51,429…°</td>
+			</tr>
+			<tr>
+					<td>Sextil</td>
+					<td style="text-align: right">60°</td>
+			</tr>
+			<tr>
+					<td>Biundécil</td>
+					<td style="text-align: right">65,455…°</td>
+			</tr>
+			<tr>
+					<td>Quintil</td>
+					<td style="text-align: right">72°</td>
+			</tr>
+			<tr>
+					<td>Binovil</td>
+					<td style="text-align: right">80°</td>
+			</tr>
+			<tr>
+					<td>Triundécil</td>
+					<td style="text-align: right">98,182…°</td>
+			</tr>
+			<tr>
+					<td>Cuadratura</td>
+					<td style="text-align: right">90°</td>
+			</tr>
+			<tr>
+					<td>Biseptil</td>
+					<td style="text-align: right">102,857…°</td>
+			</tr>
+			<tr>
+					<td>Tridécil</td>
+					<td style="text-align: right">108°</td>
+			</tr>
+			<tr>
+					<td>Trígono</td>
+					<td style="text-align: right">120°</td>
+			</tr>
+			<tr>
+					<td>Cuatriundécil</td>
+					<td style="text-align: right">130,909…°</td>
+			</tr>
+			<tr>
+					<td>Trioctil</td>
+					<td style="text-align: right">135°</td>
+			</tr>
+			<tr>
+					<td>Biquintil</td>
+					<td style="text-align: right">144°</td>
+			</tr>
+			<tr>
+					<td>Quincuncio</td>
+					<td style="text-align: right">150°</td>
+			</tr>
+			<tr>
+					<td>Triseptil</td>
+					<td style="text-align: right">154,286…°</td>
+			</tr>
+			<tr>
+					<td>Cuadrinovil</td>
+					<td style="text-align: right">160°</td>
+			</tr>
+			<tr>
+					<td>Quindécil</td>
+					<td style="text-align: right">163,636…°</td>
+			</tr>
+			<tr>
+					<td>Oposición</td>
+					<td style="text-align: right">180°</td>
+			</tr>
+	</tbody>
+</table>
+<p>El ángulo exacto es fijo; el orbe es una tolerancia configurable. Un aspecto
+solo aparece cuando lo permiten el modelo, la lista activa, la regla de
+categorías y el orbe resultante.</p>
+<h2 id="escuelas-y-ajustes-de-aspectos">Escuelas y ajustes de aspectos</h2>
+<p>El selector <strong>Escuela</strong> de React es un preajuste de tradición astrológica.
+Sustituye los aspectos activos por defecto, sus orbes y la inclusión de ángulos;
+después puede ajustar cada aspecto en Ajustes. Por ahora no cambia objetos,
+sistema de casas, zodiaco, ayanamsa, motor de cálculo ni el modelo subyacente.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Tradición</th>
+					<th>Aspectos activos y orbe predeterminado</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Helenística</td>
+					<td>Conjunción 10°, sextil 8°, cuadratura 9°, trígono 9°, oposición 10°</td>
+			</tr>
+			<tr>
+					<td>Tradicional medieval / renacentista</td>
+					<td>Conjunción 8°, sextil 6°, cuadratura 7°, trígono 8°, oposición 8°</td>
+			</tr>
+			<tr>
+					<td>Occidental moderna</td>
+					<td>Conjunción 8°, sextil 5°, cuadratura 6°, trígono 6°, quincuncio 2°, semisextil 1°, oposición 8°</td>
+			</tr>
+			<tr>
+					<td>Armónica / vibracional</td>
+					<td>Todos los aspectos integrados; orbe de catálogo de cada uno (0,5°–8°)</td>
+			</tr>
+			<tr>
+					<td>Cosmobiología</td>
+					<td>Conjunción, octil, cuadratura, trioctil, oposición — 2° cada uno</td>
+			</tr>
+			<tr>
+					<td>Uraniana / Hamburgo</td>
+					<td>Conjunción, octil, cuadratura, trioctil, oposición — 1,5° cada uno</td>
+			</tr>
+			<tr>
+					<td>Jyotish — Parāśari</td>
+					<td>Conjunción 8°, sextil 5°, cuadratura 6°, trígono 6°, oposición 8°</td>
+			</tr>
+	</tbody>
+</table>
+<p>El formato de espacio de trabajo tiene un segundo concepto distinto: una
+<strong>escuela activa</strong> definida por el espacio elige su modelo de cálculo
+predeterminado. No se limita a estas siete tradiciones ni mezcla
+automáticamente ajustes de una relación <code>extends</code>.</p>
+<h2 id="formas-y-configuraciones-de-carta">Formas y configuraciones de carta</h2>
+<p>Aspectario puede informar estos patrones calculados. Información, incluido su
+prototipo Espectro, todavía no usa el resultado calculado de la carta seleccionada.
+Los patrones describen una carta en su instante calculado, no objetos adicionales ni opciones de cálculo.</p>
+<p><strong>Formas de distribución:</strong> Haz, Cuenco, Locomotora, Cubo, Balancín,
+Salpicadura, Dispersión, Centro desplazado y Stellium. La detección usa los
+diez cuerpos clásicos (del Sol a Plutón) y requiere al menos siete.</p>
+<p><strong>Configuraciones aspectuales:</strong> T-cuadrada, Gran trígono, Gran cruz, Cometa,
+Rectángulo místico, Doble quincuncio, Doble biquintil, Hexagrama y Pentagrama.
+En tránsitos, <strong>Yod</strong> nombra la geometría de dos quincuncios y un sextil que
+en la instantánea de carta se llama <strong>Doble quincuncio</strong>.</p>
+
+    </div>
+  </article>
+
+      </main>
+    </div>
+  </body>
+</html>

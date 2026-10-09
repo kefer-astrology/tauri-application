@@ -43,9 +43,42 @@
     </header>
     <div class="prose">
       <p>Ouvrez <strong>Transits</strong> pour comparer un thème Radix sélectionné avec les positions d’un autre instant. Utilisez sa navigation secondaire pour choisir l’opération de transit disponible.</p>
-<p><strong>Dynamique</strong> utilise la même partie temporelle de l’application pour des flux de mouvement et de plage plus larges. Les contrôles distinguent un instant unique d’une série temporelle générée.</p>
-<p>Lorsque la navigation temporelle est disponible, choisissez une unité et une quantité avant d’avancer ou de reculer. Les unités calendaires telles que les mois et les années sont appliquées comme des changements de calendrier plutôt que comme des nombres fixes de secondes.</p>
-<p>Le thème sélectionné reste le point de référence, sauf si l’interface affiche explicitement un aperçu temporaire ou une superposition de transit.</p>
+<h2 id="calculer-une-période-de-transits">Calculer une période de transits</h2>
+<ol>
+<li>Choisissez <strong>Transit</strong> comme type. Les directions primaires et secondaires
+sont visibles comme travail futur, mais ne sont pas encore sélectionnables.</li>
+<li>Choisissez le thème radix source : le calcul exige un thème enregistré.</li>
+<li>Utilisez <strong>Actuel</strong> pour un instant présent, ou <strong>Personnalisé</strong> pour saisir
+les date et heure de début et de fin.</li>
+<li>Sélectionnez les objets mobiles, les objets radix cibles et les aspects.</li>
+<li>Choisissez l’intervalle d’échantillonnage du graphique et sélectionnez <strong>Calculer</strong>.</li>
+</ol>
+<p>Le résultat échantillonné est une suite d’instantanés. Un intervalle plus court
+donne un graphique ou tableau plus dense, mais ne rend pas la recherche
+d’événements exacts plus précise. Les résultats s’affichent en thème ou tableau ;
+le radix sélectionné reste la référence fixe.</p>
+<h2 id="événements-exacts-stations-et-configurations">Événements exacts, stations et configurations</h2>
+<p>Ces recherches facultatives sont indépendantes de l’échantillonnage. Vous pouvez
+désactiver <strong>Sortie graphique échantillonnée</strong> si vous ne voulez que ces résultats.</p>
+<ul>
+<li><strong>Événements exacts</strong> trouve le moment où un aspect demandé devient exact.</li>
+<li><strong>Stations</strong> trouve les points de retournement direct/rétrograde.</li>
+<li><strong>Configurations à plusieurs corps</strong> trouve l’intervalle pendant lequel un
+Grand trigone, un T-carré, un Yod ou un Grand carré reste dans l’orbe.</li>
+</ul>
+<p>Un événement ou une configuration peut être ouvert comme thème à cet instant.
+Un avertissement ou résultat incomplet indique une couverture d’éphémérides
+insuffisante ou une recherche limitée non terminée ; une liste incomplète vide
+ne prouve pas l’absence d’événement.</p>
+<h2 id="limites-actuelles">Limites actuelles</h2>
+<p>Les contrôles visibles pour passages de maisons, passages de signes, limites de
+transit et précession générale sont des emplacements désactivés. Les champs de
+fuseau horaire ne sont pas non plus disponibles dans cette vue. <strong>Dynamique</strong>
+partage la zone temporelle, mais n’active pas encore les directions primaires
+ni secondaires.</p>
+<p>Lorsque la navigation temporelle est disponible ailleurs dans l’application,
+choisissez une unité et une quantité avant d’avancer ou reculer. Les mois et
+années sont appliqués comme changements de calendrier, non comme secondes fixes.</p>
 
     </div>
   </article>

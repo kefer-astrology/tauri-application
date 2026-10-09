@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { addMonths, addYears } from 'date-fns';
 import { cs, enUS, es, fr } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
@@ -7,7 +8,7 @@ import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ModeSwitcher, ModeSwitcherDetails } from './ui/mode-switcher';
+import { ModeSwitcherDetails } from './ui/mode-switcher';
 import { Separator } from './ui/separator';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { DatePickerInput } from './date-picker-input';
@@ -15,10 +16,16 @@ import { TimeRollerPicker } from './time-roller-picker';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
-import { useTransitsWorkspace, type TimeStepUnit } from '../providers/transits-workspace';
+import {
+	PERIOD_PRESET_IDS,
+	humanizePeriodPresetId,
+	useTransitsWorkspace,
+	type TimeStepUnit
+} from '../providers/transits-workspace';
 import type { TransitSection } from './transits-secondary-sidebar';
 import { AspectSelector } from './aspect-selector';
 import { BodySelector } from './body-selector';
+import { ConfigurationSelector } from './configuration-selector';
 import type { Theme } from './astrology-sidebar';
 import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 
@@ -29,6 +36,19 @@ interface TransitsContentProps {
 }
 
 type DropdownOption = { id: string; label: string };
+
+/** `current`/`custom` keep their existing special handling (single instant / user-edited range,
+ *  respectively, in `handleComputeTransits`) — every other id computes a fixed `[from, to]` range
+ *  from "now" at selection time, shown (but not editable) in the always-visible calendar area
+ *  below; only `custom` allows editing it. */
+const PERIOD_PRESET_RANGES: Partial<Record<(typeof PERIOD_PRESET_IDS)[number], (now: Date) => [Date, Date]>> = {
+	next_3_months: (now) => [now, addMonths(now, 3)],
+	next_6_months: (now) => [now, addMonths(now, 6)],
+	previous_3_months: (now) => [addMonths(now, -3), now],
+	previous_6_months: (now) => [addMonths(now, -6), now],
+	next_year: (now) => [now, addYears(now, 1)],
+	previous_year: (now) => [addYears(now, -1), now]
+};
 
 /** The setup screen for a transit/dynamic-transit computation — shown until a series has been
  *  computed, at which point the results dashboard takes over both this area and the secondary
@@ -51,6 +71,14 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 		setPeriodModeId,
 		checkboxes,
 		setCheckboxes,
+		exactHits,
+		setExactHits,
+		stationEvents,
+		setStationEvents,
+		sampledGraphOutput,
+		setSampledGraphOutput,
+		configurationSearches,
+		setConfigurationSearches,
 		effectiveSourceChartId,
 		setSourceChartId,
 		fromDateTime,
@@ -81,6 +109,24 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 		],
 		[t]
 	);
+
+	const periodOptions = useMemo<DropdownOption[]>(
+		() =>
+			PERIOD_PRESET_IDS.map((id) => ({
+				id,
+				label: t(`transits_period_${id}`, { defaultValue: humanizePeriodPresetId(id) })
+			})),
+		[t]
+	);
+
+	function handlePeriodModeChange(id: string) {
+		setPeriodModeId(id);
+		const computeRange = PERIOD_PRESET_RANGES[id as (typeof PERIOD_PRESET_IDS)[number]];
+		if (!computeRange) return;
+		const [from, to] = computeRange(new Date());
+		setFromDateTime(from);
+		setToDateTime(to);
+	}
 
 	const areCheckboxesDisabled = true;
 	const areTimezoneInputsDisabled = true;
@@ -116,17 +162,20 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 
 							<Separator className="bg-[color:var(--theme-panel-border)]" />
 
-							<div data-tour="transits-period" className="flex items-center justify-between gap-3">
-								<Label className={cn('text-sm', ft.title)}>{t('transits_label_period')}</Label>
-								<ModeSwitcher
-									value={periodModeId}
-									onValueChange={setPeriodModeId}
-									ariaLabel={t('transits_label_period')}
-									options={[
-										{ value: 'current', label: t('transits_period_current') },
-										{ value: 'custom', label: t('transits_period_custom') }
-									]}
-								/>
+							<div data-tour="transits-period">
+								<Label className={cn('mb-2 block', ft.label)}>{t('transits_label_period')}</Label>
+								<Select value={periodModeId} onValueChange={handlePeriodModeChange}>
+									<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className={ft.selectContent}>
+										{periodOptions.map((option) => (
+											<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 
 							<div>
@@ -258,8 +307,85 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								</div>
 							</div>
 
+							<Separator className="bg-[color:var(--theme-panel-border)]" />
+
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-1.5">
+									<Label className={cn('flex items-start gap-3 cursor-pointer')}>
+										<Checkbox
+											checked={exactHits}
+											onCheckedChange={(checked) => setExactHits(checked === true)}
+											className={cn('mt-0.5', ft.checkboxAccent)}
+										/>
+										<span className={cn('text-sm', ft.bodyText)}>
+											{t('transits_exact_hits_label')}
+										</span>
+									</Label>
+									<p className={cn('text-xs pl-7', ft.muted)}>
+										{t('transits_exact_hits_hint')}
+									</p>
+								</div>
+								<div className="space-y-1.5">
+									<Label className={cn('flex items-start gap-3 cursor-pointer')}>
+										<Checkbox
+											checked={stationEvents}
+											onCheckedChange={(checked) => setStationEvents(checked === true)}
+											className={cn('mt-0.5', ft.checkboxAccent)}
+										/>
+										<span className={cn('text-sm', ft.bodyText)}>
+											{t('transits_station_events_label')}
+										</span>
+									</Label>
+									<p className={cn('text-xs pl-7', ft.muted)}>
+										{t('transits_station_events_hint')}
+									</p>
+								</div>
+							</div>
+
+							<Separator className="bg-[color:var(--theme-panel-border)]" />
+
+							<div className="space-y-1.5">
+								<Label className={cn('flex items-start gap-3 cursor-pointer')}>
+									<Checkbox
+										checked={sampledGraphOutput}
+										onCheckedChange={(checked) => setSampledGraphOutput(checked === true)}
+										className={cn('mt-0.5', ft.checkboxAccent)}
+									/>
+									<span className={cn('text-sm', ft.bodyText)}>
+										{t('transits_sampled_graph_output_label', {
+											defaultValue: 'Sampled graph output'
+										})}
+									</span>
+								</Label>
+								<p className={cn('text-xs pl-7', ft.muted)}>
+									{t('transits_sampled_graph_output_hint', {
+										defaultValue:
+											'Plots the chart/table view below. Turn off if you only want exact events, stations, or configurations.'
+									})}
+								</p>
+							</div>
+
+							<div className="space-y-2">
+								<Label className={cn('block', ft.label)}>
+									{t('transits_configuration_label', {
+										defaultValue: 'Multi-body configurations'
+									})}
+								</Label>
+								<p className={cn('text-xs', ft.muted)}>
+									{t('transits_configuration_hint', {
+										defaultValue:
+											'Finds the time interval during which Grand Trine, T-square, Yod, or Grand Cross is simultaneously in orb, independent of graph sampling.'
+									})}
+								</p>
+								<ConfigurationSelector
+									theme={theme}
+									searches={configurationSearches}
+									onSearchesChange={setConfigurationSearches}
+								/>
+							</div>
+
 							<ModeSwitcherDetails
-								open={periodModeId === 'custom'}
+								open
 								contentClassName={cn('space-y-4', ft.advancedPanel)}
 							>
 								<div>
@@ -271,6 +397,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											onValueChange={setFromDateTime}
 											locale={dateFnsLocale}
 											showLabel
+											disabled={periodModeId !== 'custom'}
 											labelClassName={cn('mb-1 block text-xs', ft.muted)}
 											iconClassName={ft.iconColor}
 											panelClassName={ft.datePicker}
@@ -280,6 +407,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											value={fromDateTime}
 											onValueChange={setFromDateTime}
 											showLabel
+											disabled={periodModeId !== 'custom'}
 											labelClassName={cn('mb-1 block text-xs', ft.muted)}
 											iconClassName={ft.iconColor}
 											panelClassName={ft.datePicker}
@@ -311,6 +439,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											onValueChange={setToDateTime}
 											locale={dateFnsLocale}
 											showLabel
+											disabled={periodModeId !== 'custom'}
 											labelClassName={cn('mb-1 block text-xs', ft.muted)}
 											iconClassName={ft.iconColor}
 											panelClassName={ft.datePicker}
@@ -320,6 +449,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											value={toDateTime}
 											onValueChange={setToDateTime}
 											showLabel
+											disabled={periodModeId !== 'custom'}
 											labelClassName={cn('mb-1 block text-xs', ft.muted)}
 											iconClassName={ft.iconColor}
 											panelClassName={ft.datePicker}
@@ -342,9 +472,12 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 									</div>
 								</div>
 
+								{periodModeId !== 'current' && sampledGraphOutput && (
 								<div>
 									<Label className={cn('mb-2 block', ft.label)}>
-										{t('transits_label_granularity', { defaultValue: 'Granularity' })}
+										{t('transits_label_graph_sampling_interval', {
+											defaultValue: 'Graph sampling interval'
+										})}
 									</Label>
 									<div className="flex items-center gap-3">
 										<Input
@@ -396,6 +529,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										</p>
 									)}
 								</div>
+								)}
 							</ModeSwitcherDetails>
 
 							{transitError && <div className="text-destructive text-xs">{transitError}</div>}

@@ -26,6 +26,7 @@ import {
 	type WorkspaceDefaultsState
 } from './chartPayload';
 import type { TransitAspect } from '@/lib/astrology/transits';
+import type { Midpoint, MidpointContact } from '@/lib/astrology/midpoints';
 import { isTauriRuntime } from './runtime';
 
 const DEMO_LOCATIONS: ResolvedLocation[] = [
@@ -203,6 +204,40 @@ export async function computeCrossAspectsFromData(
 	});
 }
 
+/** Every midpoint among `objectIds` (unordered, distinct pairs only) from an already-computed
+ *  position map — pure geometry, no chart/model resolution needed. */
+export async function computeMidpointsFromData(
+	positions: Record<string, number>,
+	objectIds: string[],
+	chartId?: string | null
+): Promise<Midpoint[]> {
+	if (!isTauriRuntime()) return [];
+	return invoke<Midpoint[]>('compute_midpoints_from_data', {
+		positions,
+		objectIds,
+		chartId: chartId ?? null
+	});
+}
+
+/** Which `contactPositions` form a hard aspect (conjunction/opposition/square/semisquare/
+ *  sesquisquare) to any of `midpoints` — typically the output of `computeMidpointsFromData`. */
+export async function computeMidpointContactsFromData(
+	chartJson: Record<string, unknown>,
+	midpoints: Midpoint[],
+	contactPositions: Record<string, number>,
+	aspectTypes: string[],
+	settingsOverrides?: ComputeSettingsOverrides | null
+): Promise<MidpointContact[]> {
+	if (!isTauriRuntime()) return [];
+	return invoke<MidpointContact[]>('compute_midpoint_contacts_from_data', {
+		chartJson,
+		midpoints,
+		contactPositions,
+		aspectTypes,
+		settingsOverrides: settingsOverrides ?? null
+	});
+}
+
 export function computeTransitSeries(params: TransitSeriesRequest): Promise<TransitSeriesResult> {
 	return invoke<TransitSeriesResult>('compute_transit_series', {
 		...params,
@@ -297,6 +332,9 @@ export async function saveWorkspace(
 					default_aspects: defaults.defaultAspects,
 					default_aspect_orbs: defaults.defaultAspectOrbs,
 					default_aspect_colors: defaults.defaultAspectColors,
+					radix_point_colors: defaults.bodyColors,
+					extended_object_types: defaults.extendedObjectTypes,
+					object_orbs: defaults.objectOrbs,
 					aspect_line_tier_style: aspectLineTierStyleToDto(defaults.aspectLineTierStyle)
 				}
 			: undefined
@@ -321,6 +359,9 @@ export async function saveWorkspaceDefaults(
 			default_aspects: defaults.defaultAspects,
 			default_aspect_orbs: defaults.defaultAspectOrbs,
 			default_aspect_colors: defaults.defaultAspectColors,
+			radix_point_colors: defaults.bodyColors,
+			extended_object_types: defaults.extendedObjectTypes,
+			object_orbs: defaults.objectOrbs,
 			aspect_line_tier_style: aspectLineTierStyleToDto(defaults.aspectLineTierStyle)
 		}
 	});

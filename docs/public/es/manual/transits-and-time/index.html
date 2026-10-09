@@ -43,9 +43,41 @@
     </header>
     <div class="prose">
       <p>Abra <strong>Tránsitos</strong> para comparar una carta radix seleccionada con las posiciones de otro momento. Use su navegación secundaria para elegir la operación de tránsito disponible.</p>
-<p><strong>Dinámica</strong> utiliza la misma parte de la aplicación orientada al tiempo para flujos de trabajo de movimiento y rango más amplios. Los controles distinguen un instante único de una serie temporal generada.</p>
-<p>Cuando la navegación temporal está disponible, elija una unidad y una cantidad antes de avanzar o retroceder. Las unidades sensibles al calendario, como los meses y los años, se aplican como cambios de calendario en lugar de números fijos de segundos.</p>
-<p>La carta seleccionada sigue siendo el punto de referencia a menos que la interfaz muestre explícitamente una vista previa temporal o una superposición de tránsito.</p>
+<h2 id="calcular-un-intervalo-de-tránsitos">Calcular un intervalo de tránsitos</h2>
+<ol>
+<li>Elija <strong>Tránsito</strong> como tipo. Las direcciones primarias y secundarias se
+muestran como trabajo futuro, pero todavía no se pueden seleccionar.</li>
+<li>Elija la carta radix de origen; el cálculo requiere una carta guardada.</li>
+<li>Use <strong>Actual</strong> para un único instante actual o <strong>Personalizado</strong> para indicar
+fecha y hora inicial y final.</li>
+<li>Seleccione los objetos en movimiento, los objetos radix de destino y los aspectos.</li>
+<li>Elija el intervalo de muestreo del gráfico y seleccione <strong>Calcular</strong>.</li>
+</ol>
+<p>El resultado muestreado es una serie de instantáneas. Un intervalo menor produce
+un gráfico o tabla más denso, pero no hace más precisa la búsqueda de eventos.
+Los resultados se pueden ver como carta o tabla; el radix seleccionado sigue
+siendo el punto de referencia fijo.</p>
+<h2 id="eventos-exactos-estaciones-y-configuraciones">Eventos exactos, estaciones y configuraciones</h2>
+<p>Estas búsquedas opcionales son independientes del muestreo. Puede desactivar
+<strong>Salida de gráfico muestreada</strong> si solo necesita estos resultados.</p>
+<ul>
+<li><strong>Eventos exactos</strong> busca cuándo un aspecto solicitado llega a ser exacto.</li>
+<li><strong>Estaciones</strong> busca los puntos de cambio entre movimiento directo y retrógrado.</li>
+<li><strong>Configuraciones de varios cuerpos</strong> busca el intervalo en que un Gran
+trígono, T-cuadrada, Yod o Gran cruz permanece dentro del orbe.</li>
+</ul>
+<p>Puede abrir un evento o configuración como carta en ese instante. Una
+advertencia o resultado incompleto indica falta de cobertura utilizable de
+efemérides o que la búsqueda limitada no terminó; una lista vacía incompleta
+no demuestra que no ocurriera ningún evento.</p>
+<h2 id="limitaciones-actuales">Limitaciones actuales</h2>
+<p>Los controles visibles de cruces de casas, cruces de signos, límites de tránsito
+y precesión general son marcadores desactivados. Los campos de zona horaria
+tampoco están disponibles en esta vista. <strong>Dinámica</strong> comparte el área temporal,
+pero todavía no habilita direcciones primarias ni secundarias.</p>
+<p>Cuando la navegación temporal esté disponible en otra parte de la aplicación,
+elija unidad y cantidad antes de avanzar o retroceder. Meses y años se aplican
+como cambios de calendario, no como números fijos de segundos.</p>
 
     </div>
   </article>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Grid3X3, List, Search } from 'lucide-react';
+import { ChevronDown, Grid3X3, List, Search, Target } from 'lucide-react';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { Card, CardContent } from './ui/card';
@@ -10,16 +10,18 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Table, TableBody, TableCell, TableRow } from './ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { Theme } from './astrology-sidebar';
 import { DetailSidePanel } from './detail-side-panel';
-import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
+import { chartDataToComputePayload, type WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
+import { computeMidpointContactsFromData, computeMidpointsFromData } from '@/lib/tauri/workspace';
 import {
 	DEFAULT_ENABLED_OBSERVABLE_OBJECT_IDS,
-	DEFAULT_OBSERVABLE_OBJECT_IDS
+	DEFAULT_OBSERVABLE_OBJECT_IDS,
+	getDefaultBodyColor
 } from '@/lib/astrology/observableObjects';
 import {
 	ASPECT_GLYPHS,
@@ -33,6 +35,7 @@ import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabe
 import { parseComputedAspect, type ParsedAspect } from '@/lib/astrology/aspectParsing';
 import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
 import { AspectDetailPanel } from './aspect-detail-panel';
+import { MIDPOINT_CONTACT_ASPECT_IDS, type Midpoint, type MidpointContact } from '@/lib/astrology/midpoints';
 
 interface AspectariumProps {
 	theme: Theme;
@@ -42,7 +45,7 @@ interface AspectariumProps {
 }
 
 type AspectLayer = 'radix' | 'transit';
-type AspectariumView = 'table' | 'list';
+type AspectariumView = 'table' | 'list' | 'midpoints';
 type OrbPreset = 'default' | 'tight' | 'normal' | 'wide' | 'custom';
 
 interface AspectEntry {
@@ -115,12 +118,14 @@ function BodyGlyph({
 	bodyId,
 	glyphSet,
 	className,
-	size = 20
+	size = 20,
+	color
 }: {
 	bodyId: string;
 	glyphSet: AstrologyGlyphSetId;
 	className?: string;
 	size?: number;
+	color?: string;
 }) {
 	const fallback = objectIcon(bodyId);
 
@@ -132,6 +137,7 @@ function BodyGlyph({
 			size={size}
 			className={className}
 			title={fallback}
+			style={color ? { color } : undefined}
 		/>
 	);
 }
@@ -375,6 +381,43 @@ export function Aspectarium({
 		unknown
 	>;
 	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? {};
+
+	const [midpoints, setMidpoints] = useState<Midpoint[]>([]);
+	const [midpointContacts, setMidpointContacts] = useState<MidpointContact[]>([]);
+	const [midpointAspectTypes, setMidpointAspectTypes] = useState<Set<string>>(
+		() => new Set(MIDPOINT_CONTACT_ASPECT_IDS)
+	);
+
+	useEffect(() => {
+		if (view !== 'midpoints' || !selectedChart) return;
+		const ids = Array.from(selectedBodyIds);
+		const numericPositions: Record<string, number> = {};
+		for (const id of ids) {
+			const longitude = normalizeLongitude(positions[id]);
+			if (longitude !== null) numericPositions[id] = longitude;
+		}
+		let cancelled = false;
+		void computeMidpointsFromData(numericPositions, ids, selectedChart.id ?? null).then(
+			(computedMidpoints) => {
+				if (cancelled) return;
+				setMidpoints(computedMidpoints);
+				const chartJson = chartDataToComputePayload(selectedChart, workspaceDefaults);
+				void computeMidpointContactsFromData(
+					chartJson,
+					computedMidpoints,
+					numericPositions,
+					Array.from(midpointAspectTypes)
+				).then((contacts) => {
+					if (!cancelled) setMidpointContacts(contacts);
+				});
+			}
+		);
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [view, selectedChart, selectedBodyIds, midpointAspectTypes]);
+
 	// Unfiltered (not narrowed by the current orb/body/aspect-type filters): an object's own
 	// detail view should list every aspect it actually has, matching the radix wheel's own
 	// planet-click panel, not just the ones the matrix/list currently shows.
@@ -498,7 +541,7 @@ export function Aspectarium({
 				bodyId={id}
 				glyphSet={glyphSet}
 				size={18}
-				className="text-[color:var(--theme-content-primary)]"
+				color={workspaceDefaults.bodyColors[id] ?? getDefaultBodyColor(id)}
 			/>
 		)
 	}));
@@ -535,7 +578,7 @@ export function Aspectarium({
 				bodyId={bodyId}
 				glyphSet={glyphSet}
 				size={compact ? 18 : 22}
-				className="text-[color:var(--theme-content-primary)]"
+				color={workspaceDefaults.bodyColors[bodyId] ?? getDefaultBodyColor(bodyId)}
 			/>
 			<div className="min-w-0">
 				<p className={cn('truncate text-sm font-medium', ft.title)}>{objectLabel(bodyId, t)}</p>
@@ -610,11 +653,147 @@ export function Aspectarium({
 								<List />
 								{t('aspectarium_view_list')}
 							</TabsTrigger>
+							<TabsTrigger value="midpoints">
+								<Target />
+								{t('aspectarium_view_midpoints', { defaultValue: 'Midpoints' })}
+							</TabsTrigger>
 						</TabsList>
 					</Tabs>
 				</div>
 
-				{view === 'table' ? (
+				{view === 'midpoints' ? (
+					<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4">
+						<div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+							<span className={cn('text-xs font-semibold tracking-wide uppercase', ft.muted)}>
+								{t('aspectarium_midpoint_contact_aspects', { defaultValue: 'Contact aspects' })}
+							</span>
+							{MIDPOINT_CONTACT_ASPECT_IDS.map((aspectId) => (
+								<Label
+									key={aspectId}
+									className={cn('flex cursor-pointer items-center gap-1.5 text-xs', ft.bodyText)}
+								>
+									<Checkbox
+										checked={midpointAspectTypes.has(aspectId)}
+										onCheckedChange={(checked) => {
+											setMidpointAspectTypes((prev) => {
+												const next = new Set(prev);
+												if (checked === true) next.add(aspectId);
+												else next.delete(aspectId);
+												return next;
+											});
+										}}
+									/>
+									{aspectLabel(aspectId, t)}
+								</Label>
+							))}
+						</div>
+
+						<div>
+							<h3 className={cn('mb-2 text-sm font-semibold', ft.title)}>
+								{t('aspectarium_view_midpoints', { defaultValue: 'Midpoints' })}
+							</h3>
+							{midpoints.length === 0 ? (
+								<p className={cn('text-sm', ft.muted)}>
+									{t('aspectarium_no_midpoints', {
+										defaultValue: 'Select at least two objects to see their midpoints.'
+									})}
+								</p>
+							) : (
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}</TableHead>
+											<TableHead>{t('aspectarium_position', { defaultValue: 'Position' })}</TableHead>
+											<TableHead>
+												{t('aspectarium_midpoint_opposite', { defaultValue: 'Opposite' })}
+											</TableHead>
+											<TableHead />
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{midpoints.map((midpoint) => (
+											<TableRow key={`${midpoint.object_a}:${midpoint.object_b}`}>
+												<TableCell>
+													{objectLabel(midpoint.object_a, t)} / {objectLabel(midpoint.object_b, t)}
+												</TableCell>
+												<TableCell>
+													<PositionValue longitude={midpoint.position} glyphSet={glyphSet} />
+												</TableCell>
+												<TableCell>
+													<PositionValue longitude={midpoint.opposite} glyphSet={glyphSet} />
+												</TableCell>
+												<TableCell>
+													{midpoint.ambiguous && (
+														<span
+															className={cn('text-xs italic', ft.muted)}
+															title={t('aspectarium_midpoint_ambiguous_hint', {
+																defaultValue:
+																	'These objects are ~180° apart — both positions are equally valid.'
+															})}
+														>
+															{t('aspectarium_midpoint_ambiguous', { defaultValue: 'ambiguous' })}
+														</span>
+													)}
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							)}
+						</div>
+
+						<div>
+							<h3 className={cn('mb-2 text-sm font-semibold', ft.title)}>
+								{t('aspectarium_midpoint_contacts_title', { defaultValue: 'Contacts' })}
+							</h3>
+							{midpointContacts.length === 0 ? (
+								<p className={cn('text-sm', ft.muted)}>
+									{t('aspectarium_no_midpoint_contacts', {
+										defaultValue: 'No contacts found within orb.'
+									})}
+								</p>
+							) : (
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>
+												{t('aspectarium_midpoint_contact_object', { defaultValue: 'Object' })}
+											</TableHead>
+											<TableHead>{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}</TableHead>
+											<TableHead>{t('aspectarium_aspect', { defaultValue: 'Aspect' })}</TableHead>
+											<TableHead>{t('label_orb')}</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{midpointContacts.map((contact, index) => (
+											<TableRow
+												key={`${contact.contact_object}:${contact.object_a}:${contact.object_b}:${contact.aspect_type}:${index}`}
+											>
+												<TableCell>{objectLabel(contact.contact_object, t)}</TableCell>
+												<TableCell>
+													{objectLabel(contact.object_a, t)} / {objectLabel(contact.object_b, t)}
+												</TableCell>
+												<TableCell>
+													<span className="inline-flex items-center gap-1.5">
+														<AstrologyGlyph
+															glyphId={contact.aspect_type}
+															glyphSet={glyphSet}
+															domain="aspect"
+															fallback={ASPECT_GLYPHS[contact.aspect_type] ?? '•'}
+															size={16}
+														/>
+														{aspectLabel(contact.aspect_type, t)}
+													</span>
+												</TableCell>
+												<TableCell className="font-mono text-xs">{formatOrb(contact.orb)}</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							)}
+						</div>
+					</div>
+				) : view === 'table' ? (
 					<div
 						dir="rtl"
 						className="min-h-0 flex-1 overflow-auto bg-[color:var(--theme-panel-bg)]/40"
@@ -664,6 +843,7 @@ export function Aspectarium({
 																glyphSet={glyphSet}
 																size={22}
 																className="mx-auto opacity-80"
+																color={workspaceDefaults.bodyColors[rowId] ?? getDefaultBodyColor(rowId)}
 															/>
 														</TableCell>
 													);

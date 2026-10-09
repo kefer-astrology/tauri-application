@@ -3,7 +3,7 @@
   <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SPICE backend | Kefer Astrology</title>
+    <title>SPICE calculation backend | Kefer Astrology</title>
     <meta name="description" content="JPL/SPICE backend contract, implementation boundary, and current status." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
@@ -31,7 +31,7 @@
   <article class="content">
     <header class="page-header">
       <p class="eyebrow">developer</p>
-      <h1>SPICE backend</h1>
+      <h1>SPICE calculation backend</h1>
       <p class="lede">JPL/SPICE backend contract, implementation boundary, and current status.</p>
       
         <div class="doc-meta" aria-label="Document classification">
@@ -94,29 +94,23 @@ directly and to perform dynamic Earth frame transformations.</p>
 IAU 2006 <code>EARTH_MOD_FRAME</code></li>
 <li>bundled <code>pck11.pca</code> planetary constants loaded before SPKs to supply ANISE&rsquo;s
 orientation graph offline</li>
+<li>raw loaded-SPK target coverage inspection (<code>get_loaded_spk_coverage</code>), for
+diagnostics only, and chain-aware, evaluator-verified Earth-relative
+coverage (<code>get_usable_coverage</code>) — see
+<a href="../ephemeris-manager/#runtime-coverage-inspection">ephemeris-manager</a> for
+the distinction and what each does and does not guarantee</li>
 </ul>
 <p>The PCA is ANISE&rsquo;s published v0.10 artifact, generated from NAIF/JPL <code>pck00011</code>
 and DE431 gravity constants. Its pinned checksum and load-order rules are recorded
 in <a href="../ephemeris-manager/">Ephemeris manager</a>.</p>
 <h2 id="coordinate-pipeline">Coordinate pipeline</h2>
-<p>For planets, asteroids, the osculating lunar node, and true lunar apogee, the
-backend follows one pipeline:</p>
-<ol>
-<li>ANISE obtains the Earth-centred state from the loaded SPKs. In the default
-<code>apparent</code> mode it applies converged reception light-time and stellar
-aberration (<code>CN+S</code>); <code>geometric</code> mode disables both corrections.</li>
-<li>ANISE rotates the complete position/velocity state into Earth mean-of-date
-(<code>EARTH_MOD_FRAME</code>, IAU 2006).</li>
-<li>Rust rotates that dated equatorial vector by IAU 2006 mean obliquity into the
-mean ecliptic of date.</li>
-<li>Longitude is extracted and normalized to <code>[0, 360)</code>.</li>
-</ol>
-<p>This produces apparent mean-tropical longitude by default, or geometric
-mean-tropical longitude when selected. Nutation and a scalar &ldquo;general
-precession in longitude&rdquo; are not applied.
-The full frame rotation must precede longitude extraction because precession can
-also change the ecliptic latitude of an inclined vector. See the normative
-<a href="../astronomy-coordinate-contract/">Astronomy coordinate contract</a>.</p>
+<p>The backend implements, but does not redefine, the
+<a href="../astronomy-coordinate-contract/">Astronomy coordinate contract</a>: it obtains
+an Earth-centred state from local SPKs, applies the selected correction, makes
+a three-dimensional dated-frame transformation, then projects to the mean
+ecliptic. The contract is the authoritative source for frames, corrections,
+motion, time, and topocentric limitations; this page owns the code boundary
+that realizes it.</p>
 <h2 id="horizons-generated-kernels">Horizons-generated kernels</h2>
 <p>Horizons is treated as an artifact generator, not an online calculator in the
 chart request path. <code>scripts/generate-horizons-type13.py</code> requests bounded
@@ -128,7 +122,9 @@ in-range ANISE state before appending the kernel to the ordinary almanac. The
 bundled Chiron artifact uses this path because native Horizons SPKs currently use
 unsupported Type 21 segments. A successful DAF load alone is never treated as
 proof that a target is queryable. Per-chart Horizons calls remain outside this
-architecture.</p>
+architecture. <a href="../ephemeris-manager/#manifest-defined-small-body-spks">Ephemerides and coverage</a>
+owns the artifact schema, acceptance checks, and measured Chiron interpolation
+evidence.</p>
 <p>What still sits above or beside it:</p>
 <ul>
 <li>astrology-layer interpretation</li>
@@ -205,6 +201,12 @@ small bodies) still needs compatible local SPKs</li>
 <li>how downloads work</li>
 <li>how multi-file kernel selection works</li>
 <li>why asteroid kernels are separate</li>
+</ul>
+<p>Use <a href="../ephemeris-validation/">Ephemeris validation</a> when the question is:</p>
+<ul>
+<li>how to reproduce a numerical or performance check locally</li>
+<li>what a provider test actually measured, on what machine, against what reference</li>
+<li>what validation gaps remain open</li>
 </ul>
 
     </div>

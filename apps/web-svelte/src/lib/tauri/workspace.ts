@@ -46,6 +46,10 @@ export function workspaceDefaultsToDto(defaults: WorkspaceDefaultsState): Worksp
     default_aspects: defaults.defaultAspects,
     default_aspect_orbs: defaults.defaultAspectOrbs,
     default_aspect_colors: defaults.defaultAspectColors,
+    default_aspect_include_angles: defaults.aspectIncludeAngles,
+    default_aspect_include_extended: defaults.aspectIncludeExtended,
+    default_aspect_extended_orbs: defaults.aspectExtendedOrbs,
+    astrology_tradition: defaults.astrologyTradition,
     aspect_line_tier_style: {
       tight_threshold_pct: defaults.aspectLineTierStyle.tightThresholdPct,
       medium_threshold_pct: defaults.aspectLineTierStyle.mediumThresholdPct,
@@ -74,6 +78,10 @@ export function workspaceDefaultsDtoToStatePatch(
     defaultAspects: defaults.default_aspects ?? undefined,
     defaultAspectOrbs: defaults.default_aspect_orbs ?? undefined,
     defaultAspectColors: defaults.default_aspect_colors ?? undefined,
+    aspectIncludeAngles: defaults.default_aspect_include_angles ?? undefined,
+    aspectIncludeExtended: defaults.default_aspect_include_extended ?? undefined,
+    aspectExtendedOrbs: defaults.default_aspect_extended_orbs ?? undefined,
+    astrologyTradition: defaults.astrology_tradition ?? undefined,
     aspectLineTierStyle: defaults.aspect_line_tier_style
       ? {
           tightThresholdPct:

@@ -1,0 +1,52 @@
+version: 1
+source_chart_id: company-founding
+transit_type: transit
+period_mode: custom
+from_date: 2026-10-05
+from_time: 22:03
+to_date: 2026-10-16
+to_time: 22:03
+time_step_seconds: 3600
+transiting_bodies:
+- sun
+- moon
+- mercury
+- venus
+- mars
+- jupiter
+- saturn
+- uranus
+- neptune
+- pluto
+transited_bodies:
+- sun
+- moon
+- mercury
+- venus
+- mars
+- jupiter
+- saturn
+- uranus
+- neptune
+- pluto
+aspect_types:
+- conjunction
+- sextile
+- square
+- trine
+- opposition
+aspect_orbs:
+  opposition: 6.0
+  sextile: 3.5
+  square: 5.0
+  trine: 5.0
+  conjunction: 6.0
+school: null
+model: null
+model_overrides: null
+house_transitions: false
+sign_transitions: false
+exact_hits: false
+station_events: false
+transit_limits: false
+precession_correction: false

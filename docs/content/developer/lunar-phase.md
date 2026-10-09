@@ -9,7 +9,7 @@ authority: informative
 
 Chart compute commands attach a **`moon_details`** object to the JSON result whenever **`positions.sun`** and **`positions.moon`** are present (tropical longitude in degrees, same convention as the rest of the radix).
 
-Source: [src-tauri/src/lunar_phase.rs](https://github.com/kefer-astrology/tauri-application-react/blob/main/src-tauri/src/lunar_phase.rs)
+Source: [src-tauri/src/lunar_phase.rs](https://github.com/kefer-astrology/tauri-application/blob/main/src-tauri/src/lunar_phase.rs)
 
 ---
 

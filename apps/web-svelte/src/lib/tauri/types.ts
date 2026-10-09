@@ -79,8 +79,50 @@ export interface WorkspaceDefaultsDto {
   default_aspects?: string[] | null;
   default_aspect_orbs?: Record<string, number> | null;
   default_aspect_colors?: Record<string, string> | null;
+  default_aspect_include_angles?: Record<string, boolean> | null;
+  default_aspect_include_extended?: Record<string, boolean> | null;
+  default_aspect_extended_orbs?: Record<string, number> | null;
+  /** The workspace's chosen astrological tradition ("Škola"). Distinct from the
+   *  free-form `active_school`/model-catalog selector — see AstrologicalTradition
+   *  in src-tauri/src/workspace/models.rs. */
+  astrology_tradition?: AstrologicalTraditionId | null;
   aspect_line_tier_style?: AspectLineTierStyleDto | null;
 }
+
+/**
+ * Mirrors the Rust `AstrologicalTradition` enum (src-tauri/src/workspace/models.rs).
+ * A closed set of well-known traditions, each seeding a suggested aspect-settings
+ * bundle (see `workspace::tradition::tradition_aspect_preset`). First iteration:
+ * only touches aspects — object selection and each tradition's native orb model
+ * are future work.
+ */
+export type AstrologicalTraditionId =
+  | 'hellenistic'
+  | 'medieval_traditional'
+  | 'modern_western'
+  | 'harmonic'
+  | 'cosmobiology'
+  | 'uranian_hamburg'
+  | 'jyotish_parashari';
+
+/** Mirrors the Rust `ObjectType` enum (src-tauri/src/workspace/models.rs). */
+export type ObjectTypeId =
+  | 'planet'
+  | 'asteroid'
+  | 'angle'
+  | 'house_cusp'
+  | 'calculated_point'
+  | 'lunar_node'
+  | 'part';
+
+/**
+ * Restricts which object categories an aspect may form between. Mirrors the
+ * Rust `ObjectTypeRule` enum: `exclude` drops a pair if either side belongs
+ * to `types`; `only_between` requires both sides to belong to `types`.
+ */
+export type ObjectTypeRuleDto =
+  | { mode: 'exclude'; types: ObjectTypeId[] }
+  | { mode: 'only_between'; types: ObjectTypeId[] };
 
 export interface ModelOverrideEntryDto {
   id: string;
@@ -95,6 +137,8 @@ export interface ModelOverrideEntryDto {
   computed?: boolean | null;
   valid_contexts?: Array<'chart' | 'transit' | 'direction'> | null;
   interpretation_weight?: number | null;
+  object_type_rule?: ObjectTypeRuleDto | null;
+  extended_orb?: number | null;
 }
 
 export interface ModelOverridesDto {
@@ -112,7 +156,7 @@ export interface BodyDefinitionDto {
   avg_speed: number;
   max_orb: number;
   i18n: Record<string, string>;
-  object_type?: string | null;
+  object_type?: ObjectTypeId | null;
   computation_map: Record<string, string | null>;
   requires_location: boolean;
   requires_house_system: boolean;
@@ -134,6 +178,8 @@ export interface AspectDefinitionDto {
   show_label?: boolean | null;
   valid_contexts?: string[] | null;
   interpretation_weight?: number | null;
+  object_type_rule?: ObjectTypeRuleDto | null;
+  extended_orb?: number | null;
 }
 
 export interface SignDefinitionDto {

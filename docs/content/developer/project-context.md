@@ -84,8 +84,8 @@ navigation metadata, not an authority source.
 | [Architecture](../architecture/) | Current system boundaries, runtime flows, implementation debt | YAML fields or source map |
 | [Domain model](../domain-model/) | Semantic concepts and runtime catalog/presentation ownership | Workspace lifecycle |
 | [Rust code structure](../rust-code-structure/) | Current module map and mixed command responsibilities | Target-layer promises |
-| [Rust workspace contract](../rust-workspace-contract/) | Lifecycle, loaders, invariants, resolution, catalog propagation | User-facing option inventory |
-| [Backend structure](../backend-structure/) | Persistence representations, provenance, backend mechanisms | Command-by-command source map |
+| [Workspace YAML contract](../workspace-yaml/) | Portable format, lifecycle, loaders, resolution, and catalog propagation | Framework-specific UI behavior |
+| [Architecture](../architecture/) | Runtime boundaries, result lifecycle, persistence/provenance ownership | Command-by-command source map |
 | [Configuration reference](../configuration-reference/) | Implemented user-visible settings, values, and scope semantics | Catalog architecture |
 | [Testing strategy](../testing-strategy/) | Existing test layers, commands, fixtures, and named gaps | Architecture design |
 | This guide | Documentation taxonomy, authority, contribution orientation | Runtime behavior |
@@ -152,7 +152,7 @@ Use the exact commands and coverage inventory in the
 
 - [Domain model and extensibility](../domain-model/) — schools, models, providers, and extension points.
 - [System architecture](../architecture/) — cross-layer runtime flow.
-- [Backend structure](../backend-structure/) — Rust/Python ownership and migration boundaries.
+- [Architecture](../architecture/) — Rust/Python ownership, persistence, and migration boundaries.
 - [Workspace YAML contract](../workspace-yaml/) — portable persistence.
 - [Tauri command contracts](../tauri-command-contracts/) — frontend-visible API.
 - [Frontend workflow baseline](../frontend-workflow-baseline/) — shared user-facing workflows.

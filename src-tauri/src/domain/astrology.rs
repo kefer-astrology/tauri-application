@@ -8,7 +8,10 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::workspace::models::{AspectContext, AspectDefinition, BodyDefinition};
+use crate::workspace::models::{
+    AspectContext, AspectDefinition, BodyDefinition, ObjectType, ObjectTypeRule,
+    PER_OBJECT_ORB_TYPES,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BodySelection {
@@ -93,11 +96,46 @@ fn is_structurally_locked_pair(from: &str, to: &str) -> bool {
         .any(|(a, b)| (from == *a && to == *b) || (from == *b && to == *a))
 }
 
+/// Build an id -> category lookup from a model's body catalog, for restricting
+/// which object pairs an aspect definition may apply to via `AspectDefinition
+/// ::object_type_rule`. Bodies without a declared `object_type` are omitted;
+/// a missing entry is treated as "unknown category" by `pair_allowed`, not as
+/// unrestricted.
+pub fn object_type_map(body_definitions: &[BodyDefinition]) -> HashMap<String, ObjectType> {
+    body_definitions
+        .iter()
+        .filter_map(|body| {
+            body.object_type
+                .map(|object_type| (body.id.clone(), object_type))
+        })
+        .collect()
+}
+
+fn pair_allowed(
+    rule: Option<&ObjectTypeRule>,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+) -> bool {
+    match rule {
+        None => true,
+        Some(ObjectTypeRule::Exclude { types }) => {
+            !from_type.is_some_and(|value| types.contains(value))
+                && !to_type.is_some_and(|value| types.contains(value))
+        }
+        Some(ObjectTypeRule::OnlyBetween { types }) => {
+            from_type.is_some_and(|value| types.contains(value))
+                && to_type.is_some_and(|value| types.contains(value))
+        }
+    }
+}
+
 pub fn compute_chart_aspects(
     positions: &HashMap<String, f64>,
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
     aspect_types: Option<&[String]>,
+    object_types: &HashMap<String, ObjectType>,
+    object_orbs: &HashMap<String, f64>,
 ) -> Vec<ComputedAspect> {
     let specs = selected_aspects(
         aspect_definitions,
@@ -118,8 +156,15 @@ pub fn compute_chart_aspects(
                 *positions.get(*from).unwrap_or(&0.0),
                 *positions.get(*to).unwrap_or(&0.0),
             );
-            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(angle, &specs)
-            {
+            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(
+                angle,
+                &specs,
+                from,
+                to,
+                object_types.get(*from),
+                object_types.get(*to),
+                object_orbs,
+            ) {
                 aspects.push(ComputedAspect {
                     from: (*from).clone(),
                     to: (*to).clone(),
@@ -143,6 +188,8 @@ pub fn compute_cross_aspects(
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
     aspect_types: &[String],
+    object_types: &HashMap<String, ObjectType>,
+    object_orbs: &HashMap<String, f64>,
 ) -> Vec<ComputedAspect> {
     let specs = selected_aspects(
         aspect_definitions,
@@ -161,8 +208,15 @@ pub fn compute_cross_aspects(
         for to in &transited_ids {
             let to_lon = *transited_positions.get(*to).unwrap_or(&0.0);
             let angle = shortest_arc_deg(from_lon, to_lon);
-            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(angle, &specs)
-            {
+            if let Some((aspect_type, exact_angle, orb, allowed_orb)) = detect_aspect(
+                angle,
+                &specs,
+                from,
+                to,
+                object_types.get(from),
+                object_types.get(*to),
+                object_orbs,
+            ) {
                 aspects.push(ComputedAspect {
                     from: from.clone(),
                     to: (*to).clone(),
@@ -180,12 +234,245 @@ pub fn compute_cross_aspects(
     aspects
 }
 
-fn selected_aspects(
+/// Aspect ids eligible for midpoint-axis contacts: conjunction, opposition, square, and the two
+/// 45°-family aspects already in the catalog under their classical names — `octile` (45°,
+/// "semisquare") and `trioctile` (135°, "sesquisquare"). Reusing these exact catalog ids/angles/
+/// default orbs rather than inventing a parallel five-aspect system.
+pub const MIDPOINT_CONTACT_ASPECT_IDS: [&str; 5] =
+    ["conjunction", "opposition", "square", "octile", "trioctile"];
+
+/// Which end of a midpoint axis a contact fell near — see `compute_midpoint_contacts`'s doc
+/// comment for why a single scan against `Midpoint::position` can report either end without a
+/// second pass against `Midpoint::opposite`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MidpointContactPoint {
+    /// The contact fell near `Midpoint::position` (a conjunction or semisquare/octile to it).
+    Position,
+    /// The contact fell near `Midpoint::opposite` (an opposition or sesquisquare/trioctile to
+    /// `position` — equivalently, a conjunction/semisquare to the antipode).
+    Opposite,
+    /// A square: exactly 90° from `position` is also exactly 90° from `opposite` (since
+    /// 180−90=90), so it's equidistant from both ends of the axis.
+    Both,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MidpointContact {
+    pub contact_object: String,
+    pub object_a: String,
+    pub object_b: String,
+    pub aspect_type: String,
+    pub contact_point: MidpointContactPoint,
+    /// Shortest-arc angular separation between `contact_object` and `Midpoint::position`
+    /// (always measured against `position`, never `opposite` — see `compute_midpoint_contacts`).
+    pub angle: f64,
+    pub exact_angle: f64,
+    /// Deviation from `exact_angle`: `(angle - exact_angle).abs()`.
+    pub orb: f64,
+    pub allowed_orb: f64,
+}
+
+fn midpoint_contact_point_for_aspect(aspect_id: &str) -> MidpointContactPoint {
+    match aspect_id {
+        "conjunction" | "octile" => MidpointContactPoint::Position,
+        "opposition" | "trioctile" => MidpointContactPoint::Opposite,
+        _ => MidpointContactPoint::Both,
+    }
+}
+
+/// Detect which `contact_positions` form a hard aspect (conjunction/opposition/square/
+/// semisquare/sesquisquare, per `aspect_types`) to any of the given midpoint axes.
+///
+/// Deliberately does **not** route through `detect_aspect`/`pair_allowed`/`object_type_rule`:
+/// those encode planet-to-planet eligibility rules, including the "only conjunction forms for
+/// non-physical points" rule (`NON_PHYSICAL_OBJECT_TYPES`, see `workspace::settings`) — a
+/// midpoint is itself a non-physical, derived point, and that rule would silently suppress the
+/// square/semisquare/sesquisquare contacts this function exists to find. Midpoint-axis contacts
+/// are a distinct, well-established technique (Ebertin/Uranian) that deliberately uses hard
+/// aspects to a non-physical point, so this reuses the catalog's angle/default-orb values
+/// directly rather than the object-type-gated matching pipeline.
+///
+/// Only ever tests `midpoint.position` (never `midpoint.opposite`) — this is what structurally
+/// prevents duplicate contacts from the axis's two ends: for any point `x`,
+/// `shortest_arc(x, opposite) == 180 - shortest_arc(x, position)` always (opposite points on a
+/// circle), so scanning `position` alone across {0°,45°,90°,135°,180°} already reaches every
+/// contact a second `opposite` scan would find, just expressed as the complementary angle. A
+/// contact equal to the midpoint's own `object_a`/`object_b` is skipped (a source object
+/// trivially "contacting" its own pair's midpoint isn't a meaningful signal).
+#[allow(clippy::too_many_arguments)]
+pub fn compute_midpoint_contacts(
+    midpoints: &[crate::domain::midpoints::Midpoint],
+    contact_positions: &HashMap<String, f64>,
     aspect_definitions: &[AspectDefinition],
+    aspect_orbs: &HashMap<String, f64>,
+    aspect_types: &[String],
+    contact_object_types: &HashMap<String, ObjectType>,
+    object_orbs: &HashMap<String, f64>,
+) -> Vec<MidpointContact> {
+    let enabled: HashSet<&str> = aspect_types
+        .iter()
+        .map(String::as_str)
+        .filter(|id| MIDPOINT_CONTACT_ASPECT_IDS.contains(id))
+        .collect();
+    let specs: Vec<(&str, f64, f64)> = aspect_definitions
+        .iter()
+        .filter(|definition| definition.enabled && enabled.contains(definition.id.as_str()))
+        .map(|definition| {
+            let orb = aspect_orbs
+                .get(&definition.id)
+                .copied()
+                .unwrap_or(definition.default_orb);
+            (definition.id.as_str(), definition.angle, orb)
+        })
+        .collect();
+
+    let mut contact_ids: Vec<&String> = contact_positions.keys().collect();
+    contact_ids.sort();
+
+    let mut contacts = Vec::new();
+    for midpoint in midpoints {
+        for contact_id in &contact_ids {
+            if **contact_id == midpoint.object_a || **contact_id == midpoint.object_b {
+                continue;
+            }
+            let contact_lon = *contact_positions.get(contact_id.as_str()).unwrap_or(&0.0);
+            let angle = shortest_arc_deg(contact_lon, midpoint.position);
+            for (aspect_id, exact_angle, base_orb) in &specs {
+                let override_orb = contact_object_types
+                    .get(contact_id.as_str())
+                    .filter(|object_type| PER_OBJECT_ORB_TYPES.contains(object_type))
+                    .and_then(|_| object_orbs.get(contact_id.as_str()).copied());
+                let allowed_orb = override_orb.map_or(*base_orb, |value| value.min(*base_orb));
+                let orb = (angle - exact_angle).abs();
+                if orb <= allowed_orb {
+                    contacts.push(MidpointContact {
+                        contact_object: (*contact_id).clone(),
+                        object_a: midpoint.object_a.clone(),
+                        object_b: midpoint.object_b.clone(),
+                        aspect_type: aspect_id.to_string(),
+                        contact_point: midpoint_contact_point_for_aspect(aspect_id),
+                        angle,
+                        exact_angle: *exact_angle,
+                        orb,
+                        allowed_orb,
+                    });
+                }
+            }
+        }
+    }
+    contacts
+}
+
+struct AspectSpec<'a> {
+    id: String,
+    exact_angle: f64,
+    allowed_orb: f64,
+    object_type_rule: Option<&'a ObjectTypeRule>,
+}
+
+fn is_extended_object(object_type: Option<&ObjectType>) -> bool {
+    object_type.is_some_and(|value| PER_OBJECT_ORB_TYPES.contains(value))
+}
+
+/// Narrows `base_orb` to the tightest per-object override in `object_orbs` for
+/// whichever side(s) of the pair are eligible for one (see [`PER_OBJECT_ORB_TYPES`]
+/// — in practice every real object category) — global across every aspect, unlike
+/// the old per-aspect `extended_orb` it replaces (see
+/// `workspace::models::WorkspaceDefaults::object_orbs`). Never widens: an object
+/// with no override set yet keeps `base_orb`.
+#[allow(clippy::too_many_arguments)]
+fn resolve_allowed_orb(
+    base_orb: f64,
+    from_id: &str,
+    to_id: &str,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+    object_orbs: &HashMap<String, f64>,
+) -> f64 {
+    [
+        is_extended_object(from_type).then(|| object_orbs.get(from_id)).flatten(),
+        is_extended_object(to_type).then(|| object_orbs.get(to_id)).flatten(),
+    ]
+    .into_iter()
+    .flatten()
+    .copied()
+    .fold(base_orb, f64::min)
+}
+
+/// Enabled, context-valid, type-selected aspect ids and their exact angle for
+/// one specific body-type pair — "which aspects would even be considered for
+/// this pair," independent of any particular instantaneous separation (no
+/// orb is applied or returned). This is the same eligibility logic
+/// `compute_chart_aspects`/`compute_cross_aspects` use via `selected_aspects`
+/// + `pair_allowed` internally, exposed so exact-event-time discovery (which
+/// has no "current separation" to test an orb against) can determine exactly
+/// the same set of (aspect, exact_angle) combinations the sampled path would
+/// ever report for this pair, rather than re-deriving selection rules
+/// separately and risking the two silently drifting apart.
+pub fn eligible_aspects_for_pair(
+    aspect_definitions: &[AspectDefinition],
+    aspect_orbs: &HashMap<String, f64>,
+    aspect_types: Option<&[String]>,
+    context: AspectContext,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+) -> Vec<(String, f64)> {
+    selected_aspects(aspect_definitions, aspect_orbs, aspect_types, context)
+        .into_iter()
+        .filter(|spec| pair_allowed(spec.object_type_rule, from_type, to_type))
+        .map(|spec| (spec.id, spec.exact_angle))
+        .collect()
+}
+
+/// Like [`eligible_aspects_for_pair`], but for one already-known aspect id
+/// rather than a selection filter, additionally returning its resolved
+/// allowed orb for this specific pair (including the global per-object
+/// `object_orbs` narrowing — see [`resolve_allowed_orb`]) — exactly the orb a
+/// live `detect_aspect` call would use for this pair. `None` if the aspect is
+/// disabled, invalid for `context`, or excluded for this pair by
+/// `object_type_rule`. Exposed for `application::configuration_search`'s
+/// edge-eligibility and orb-interval lookups, for the same "don't re-derive
+/// selection rules separately and risk drift" reason `eligible_aspects_for_pair`
+/// itself was added.
+#[allow(clippy::too_many_arguments)]
+pub fn eligible_aspect_angle_and_orb(
+    aspect_definitions: &[AspectDefinition],
+    aspect_orbs: &HashMap<String, f64>,
+    aspect_id: &str,
+    context: AspectContext,
+    from_id: &str,
+    to_id: &str,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+    object_orbs: &HashMap<String, f64>,
+) -> Option<(f64, f64)> {
+    let spec = selected_aspects(aspect_definitions, aspect_orbs, None, context)
+        .into_iter()
+        .find(|spec| spec.id == aspect_id)?;
+    if !pair_allowed(spec.object_type_rule, from_type, to_type) {
+        return None;
+    }
+    let allowed_orb =
+        resolve_allowed_orb(spec.allowed_orb, from_id, to_id, from_type, to_type, object_orbs);
+    Some((spec.exact_angle, allowed_orb))
+}
+
+/// Whether `(from, to)` is excluded from moving-vs-moving aspect detection
+/// because their separation is fixed by definition (see
+/// `STRUCTURALLY_LOCKED_PAIRS`). Exposed so event-time discovery mirrors
+/// `compute_chart_aspects`'s own exclusion instead of silently omitting or
+/// re-deriving it.
+pub fn is_structurally_locked_aspect_pair(from: &str, to: &str) -> bool {
+    is_structurally_locked_pair(from, to)
+}
+
+fn selected_aspects<'a>(
+    aspect_definitions: &'a [AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
     selected_types: Option<&[String]>,
     context: AspectContext,
-) -> Vec<(String, f64, f64)> {
+) -> Vec<AspectSpec<'a>> {
     let selected: Option<HashSet<String>> = selected_types.map(|types| {
         types
             .iter()
@@ -217,21 +504,40 @@ fn selected_aspects(
                 .copied()
                 .unwrap_or(definition.default_orb)
                 .max(0.0);
-            Some((id, definition.angle, orb))
+            Some(AspectSpec {
+                id,
+                exact_angle: definition.angle,
+                allowed_orb: orb,
+                object_type_rule: definition.object_type_rule.as_ref(),
+            })
         })
         .collect()
 }
 
-fn detect_aspect(angle: f64, specs: &[(String, f64, f64)]) -> Option<(String, f64, f64, f64)> {
-    for (id, exact_angle, allowed_orb) in specs {
-        let normalized_exact = if *exact_angle > 180.0 {
-            360.0 - *exact_angle
+#[allow(clippy::too_many_arguments)]
+fn detect_aspect(
+    angle: f64,
+    specs: &[AspectSpec],
+    from_id: &str,
+    to_id: &str,
+    from_type: Option<&ObjectType>,
+    to_type: Option<&ObjectType>,
+    object_orbs: &HashMap<String, f64>,
+) -> Option<(String, f64, f64, f64)> {
+    for spec in specs {
+        if !pair_allowed(spec.object_type_rule, from_type, to_type) {
+            continue;
+        }
+        let allowed_orb =
+            resolve_allowed_orb(spec.allowed_orb, from_id, to_id, from_type, to_type, object_orbs);
+        let normalized_exact = if spec.exact_angle > 180.0 {
+            360.0 - spec.exact_angle
         } else {
-            *exact_angle
+            spec.exact_angle
         };
         let orb = (angle - normalized_exact).abs();
-        if orb <= *allowed_orb {
-            return Some((id.clone(), *exact_angle, orb, *allowed_orb));
+        if orb <= allowed_orb {
+            return Some((spec.id.clone(), spec.exact_angle, orb, allowed_orb));
         }
     }
     None
@@ -610,6 +916,26 @@ pub fn detect_chart_configurations(
     result.into_iter().collect()
 }
 
+/// Whether the Sun is above the horizon (a "day chart") given the Ascendant — the standard
+/// sect determination used by Arabic Parts without needing full house cusps: the Sun sits in
+/// the ecliptic semicircle from the Descendant to the Ascendant through the MC (houses 7-12).
+pub fn is_day_chart(asc_deg: f64, sun_deg: f64) -> bool {
+    crate::domain::houses::normalize_deg(sun_deg - asc_deg) >= 180.0
+}
+
+/// Generic Arabic Part (Lot): `Asc + a_deg − b_deg` by day, swapped (`Asc + b_deg − a_deg`) by
+/// night — the classical day/night-sect reversal shared by every Hermetic Lot, not just Fortune
+/// and Spirit. Callers pass the pair in "day order" (e.g. Fortune is day-order `(moon, sun)`),
+/// and this function swaps it for a night chart. Returns degrees in [0, 360).
+pub fn arabic_part(asc_deg: f64, is_day: bool, a_deg: f64, b_deg: f64) -> f64 {
+    let part = if is_day {
+        asc_deg + a_deg - b_deg
+    } else {
+        asc_deg + b_deg - a_deg
+    };
+    crate::domain::houses::normalize_deg(part)
+}
+
 /// Day/night-sect-dependent Arabic Parts (Lots) of Fortune and Spirit, degrees [0,360).
 /// Returns `(part_of_fortune, part_of_spirit)`.
 ///
@@ -620,15 +946,10 @@ pub fn detect_chart_configurations(
 /// along the ecliptic — the standard sect determination used without needing
 /// full house cusps.
 pub fn day_night_parts(asc_deg: f64, sun_deg: f64, moon_deg: f64) -> (f64, f64) {
-    let is_day_chart = crate::domain::houses::normalize_deg(sun_deg - asc_deg) >= 180.0;
-    let (fortune, spirit) = if is_day_chart {
-        (asc_deg + moon_deg - sun_deg, asc_deg + sun_deg - moon_deg)
-    } else {
-        (asc_deg + sun_deg - moon_deg, asc_deg + moon_deg - sun_deg)
-    };
+    let is_day = is_day_chart(asc_deg, sun_deg);
     (
-        crate::domain::houses::normalize_deg(fortune),
-        crate::domain::houses::normalize_deg(spirit),
+        arabic_part(asc_deg, is_day, moon_deg, sun_deg),
+        arabic_part(asc_deg, is_day, sun_deg, moon_deg),
     )
 }
 
@@ -705,6 +1026,186 @@ mod tests {
         assert!((spirit - 230.0).abs() < 1e-9, "spirit={spirit}");
     }
 
+    fn midpoint_contact_aspect_definition(id: &str, angle: f64, default_orb: f64) -> AspectDefinition {
+        AspectDefinition {
+            id: id.to_string(),
+            aspect_type: "major".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle,
+            harmonic: 1,
+            default_orb,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+            interpretation_weight: None,
+            object_type_rule: None,
+        }
+    }
+
+    /// Matches the real catalog's angles/default orbs (`model_catalog.rs`'s
+    /// `builtin_aspect_definitions`) closely enough for these tests' purposes.
+    fn midpoint_contact_aspect_definitions() -> Vec<AspectDefinition> {
+        vec![
+            midpoint_contact_aspect_definition("conjunction", 0.0, 8.0),
+            midpoint_contact_aspect_definition("opposition", 180.0, 8.0),
+            midpoint_contact_aspect_definition("square", 90.0, 6.0),
+            midpoint_contact_aspect_definition("octile", 45.0, 1.5),
+            midpoint_contact_aspect_definition("trioctile", 135.0, 1.5),
+        ]
+    }
+
+    fn single_midpoint(position: f64) -> crate::domain::midpoints::Midpoint {
+        crate::domain::midpoints::Midpoint {
+            object_a: "sun".to_string(),
+            object_b: "moon".to_string(),
+            chart_id: None,
+            position,
+            opposite: normalize_deg(position + 180.0),
+            ambiguous: false,
+        }
+    }
+
+    #[test]
+    fn midpoint_contact_detects_each_of_the_five_supported_aspects() {
+        let midpoint = single_midpoint(100.0); // opposite = 280.0
+        let definitions = midpoint_contact_aspect_definitions();
+        let aspect_types: Vec<String> = MIDPOINT_CONTACT_ASPECT_IDS
+            .iter()
+            .map(|id| id.to_string())
+            .collect();
+
+        let cases: [(&str, f64, MidpointContactPoint); 5] = [
+            ("conjunction", 100.0, MidpointContactPoint::Position), // at position
+            ("opposition", 280.0, MidpointContactPoint::Opposite),  // at opposite
+            ("square", 10.0, MidpointContactPoint::Both),           // 90 deg from position (and opposite)
+            ("octile", 145.0, MidpointContactPoint::Position),      // 45 deg from position
+            ("trioctile", 235.0, MidpointContactPoint::Opposite),   // 135 deg from position = 45 from opposite
+        ];
+
+        for (expected_aspect, contact_lon, expected_point) in cases {
+            let contacts = compute_midpoint_contacts(
+                std::slice::from_ref(&midpoint),
+                &HashMap::from([("mars".to_string(), contact_lon)]),
+                &definitions,
+                &HashMap::new(),
+                &aspect_types,
+                &HashMap::new(),
+                &HashMap::new(),
+            );
+            assert_eq!(
+                contacts.len(),
+                1,
+                "{expected_aspect}: expected exactly one contact, got {contacts:?}"
+            );
+            assert_eq!(contacts[0].aspect_type, expected_aspect);
+            assert_eq!(contacts[0].contact_point, expected_point);
+            assert!((contacts[0].orb).abs() < 1e-9, "orb={}", contacts[0].orb);
+        }
+    }
+
+    #[test]
+    fn midpoint_contact_respects_the_orb_boundary() {
+        let midpoint = single_midpoint(0.0);
+        let definitions = vec![midpoint_contact_aspect_definition("conjunction", 0.0, 2.0)];
+        let aspect_types = vec!["conjunction".to_string()];
+
+        let just_inside = compute_midpoint_contacts(
+            &[midpoint.clone()],
+            &HashMap::from([("mars".to_string(), 2.0)]),
+            &definitions,
+            &HashMap::new(),
+            &aspect_types,
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert_eq!(just_inside.len(), 1, "2.0 deg orb should be exactly admitted");
+
+        let just_outside = compute_midpoint_contacts(
+            &[midpoint],
+            &HashMap::from([("mars".to_string(), 2.1)]),
+            &definitions,
+            &HashMap::new(),
+            &aspect_types,
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert!(just_outside.is_empty(), "2.1 deg should exceed the 2.0 deg orb");
+    }
+
+    #[test]
+    fn midpoint_contact_skips_the_source_objects_of_their_own_midpoint() {
+        let midpoint = single_midpoint(0.0); // sun/moon midpoint at 0 deg
+        let definitions = vec![midpoint_contact_aspect_definition("conjunction", 0.0, 8.0)];
+        let aspect_types = vec!["conjunction".to_string()];
+
+        let contacts = compute_midpoint_contacts(
+            &[midpoint],
+            &HashMap::from([("sun".to_string(), 0.0), ("moon".to_string(), 0.0)]),
+            &definitions,
+            &HashMap::new(),
+            &aspect_types,
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert!(
+            contacts.is_empty(),
+            "the pair's own objects must not be reported as contacting their own midpoint"
+        );
+    }
+
+    #[test]
+    fn midpoint_contact_never_duplicates_across_the_two_axis_ends() {
+        // A square is 90 deg from BOTH `position` and `opposite` (180-90=90) — a naive
+        // implementation that scanned both ends separately would report this twice.
+        let midpoint = single_midpoint(0.0);
+        let definitions = vec![midpoint_contact_aspect_definition("square", 90.0, 6.0)];
+        let aspect_types = vec!["square".to_string()];
+
+        let contacts = compute_midpoint_contacts(
+            &[midpoint],
+            &HashMap::from([("mars".to_string(), 90.0)]),
+            &definitions,
+            &HashMap::new(),
+            &aspect_types,
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+        assert_eq!(contacts.len(), 1, "exactly one contact, not one per axis end");
+        assert_eq!(contacts[0].contact_point, MidpointContactPoint::Both);
+    }
+
+    #[test]
+    fn is_day_chart_matches_sun_asc_relationship() {
+        assert!(!is_day_chart(0.0, 100.0), "sun in houses 1-6 is night");
+        assert!(is_day_chart(0.0, 280.0), "sun in houses 7-12 is day");
+    }
+
+    #[test]
+    fn arabic_part_swaps_pair_order_by_night() {
+        let day = arabic_part(10.0, true, 50.0, 20.0);
+        let night = arabic_part(10.0, false, 50.0, 20.0);
+        assert!((day - 40.0).abs() < 1e-9, "day={day}");
+        assert!((night - 340.0).abs() < 1e-9, "night={night}");
+    }
+
+    #[test]
+    fn arabic_part_composes_into_day_night_parts_for_sun_moon() {
+        let asc = 0.0;
+        let sun = 280.0;
+        let moon = 50.0;
+        let is_day = is_day_chart(asc, sun);
+        let fortune = arabic_part(asc, is_day, moon, sun);
+        let spirit = arabic_part(asc, is_day, sun, moon);
+        let (expected_fortune, expected_spirit) = day_night_parts(asc, sun, moon);
+        assert!((fortune - expected_fortune).abs() < 1e-9);
+        assert!((spirit - expected_spirit).abs() < 1e-9);
+    }
+
     #[test]
     fn model_definition_and_effective_orb_control_detection() {
         let definitions = vec![AspectDefinition {
@@ -723,17 +1224,30 @@ mod tests {
             show_label: None,
             valid_contexts: None,
             interpretation_weight: None,
+            object_type_rule: None,
         }];
         let positions = HashMap::from([("moon".to_string(), 30.75), ("sun".to_string(), 0.0)]);
         let selected = vec!["semisextile".to_string()];
 
-        let without_override =
-            compute_chart_aspects(&positions, &definitions, &HashMap::new(), Some(&selected));
+        let without_override = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
         assert!(without_override.is_empty());
 
         let effective_orbs = HashMap::from([("semisextile".to_string(), 1.0)]);
-        let with_override =
-            compute_chart_aspects(&positions, &definitions, &effective_orbs, Some(&selected));
+        let with_override = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &effective_orbs,
+            Some(&selected),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
 
         assert_eq!(
             with_override,
@@ -769,6 +1283,7 @@ mod tests {
             show_label: None,
             valid_contexts: None,
             interpretation_weight: None,
+            object_type_rule: None,
         }];
         let positions = HashMap::from([
             ("asc".to_string(), 10.0),
@@ -783,8 +1298,14 @@ mod tests {
         ]);
         let selected = vec!["opposition".to_string()];
 
-        let aspects =
-            compute_chart_aspects(&positions, &definitions, &HashMap::new(), Some(&selected));
+        let aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &HashMap::new(),
+            &HashMap::new(),
+        );
 
         assert_eq!(aspects.len(), 1);
         assert_eq!(aspects[0].from, "moon");
@@ -809,6 +1330,7 @@ mod tests {
             show_label: None,
             valid_contexts: None,
             interpretation_weight: None,
+            object_type_rule: None,
         }];
         let transiting = HashMap::from([("mars".to_string(), 90.0)]);
         let transited = HashMap::from([("sun".to_string(), 0.0)]);
@@ -819,6 +1341,8 @@ mod tests {
             &definitions,
             &HashMap::new(),
             &["square".to_string()],
+            &HashMap::new(),
+            &HashMap::new(),
         );
 
         assert_eq!(aspects[0].from, "mars");
@@ -844,6 +1368,7 @@ mod tests {
             show_label: None,
             valid_contexts: Some(vec![AspectContext::Transit]),
             interpretation_weight: None,
+            object_type_rule: None,
         };
 
         assert!(compute_chart_aspects(
@@ -851,6 +1376,8 @@ mod tests {
             std::slice::from_ref(&definition),
             &HashMap::new(),
             None,
+            &HashMap::new(),
+            &HashMap::new(),
         )
         .is_empty());
         assert_eq!(
@@ -860,6 +1387,8 @@ mod tests {
                 std::slice::from_ref(&definition),
                 &HashMap::new(),
                 &["square".to_string()],
+                &HashMap::new(),
+                &HashMap::new(),
             )
             .len(),
             1
@@ -872,8 +1401,185 @@ mod tests {
             &[definition],
             &HashMap::new(),
             &["square".to_string()],
+            &HashMap::new(),
+            &HashMap::new(),
         )
         .is_empty());
+    }
+
+    #[test]
+    fn object_type_rule_excludes_configured_categories() {
+        let mut definitions = vec![AspectDefinition {
+            id: "quincunx".to_string(),
+            aspect_type: "minor".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle: 150.0,
+            harmonic: 12,
+            default_orb: 2.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+            interpretation_weight: None,
+            object_type_rule: Some(ObjectTypeRule::Exclude {
+                types: vec![ObjectType::Angle],
+            }),
+        }];
+        let positions = HashMap::from([
+            ("asc".to_string(), 0.0),
+            ("venus".to_string(), 150.0),
+            ("mars".to_string(), 300.0),
+        ]);
+        let object_types = HashMap::from([
+            ("asc".to_string(), ObjectType::Angle),
+            ("venus".to_string(), ObjectType::Planet),
+            ("mars".to_string(), ObjectType::Planet),
+        ]);
+        let selected = vec!["quincunx".to_string()];
+
+        let aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+            &HashMap::new(),
+        );
+
+        assert_eq!(aspects.len(), 1, "aspects: {aspects:?}");
+        assert_eq!(aspects[0].from, "mars");
+        assert_eq!(aspects[0].to, "venus");
+
+        definitions[0].object_type_rule = None;
+        let aspects_without_rule = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+            &HashMap::new(),
+        );
+        assert_eq!(
+            aspects_without_rule.len(),
+            2,
+            "aspects: {aspects_without_rule:?}"
+        );
+    }
+
+    #[test]
+    fn object_type_rule_only_between_restricts_to_listed_categories() {
+        let definitions = vec![AspectDefinition {
+            id: "square".to_string(),
+            aspect_type: "major".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle: 90.0,
+            harmonic: 4,
+            default_orb: 1.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+            interpretation_weight: None,
+            object_type_rule: Some(ObjectTypeRule::OnlyBetween {
+                types: vec![ObjectType::Angle, ObjectType::Planet],
+            }),
+        }];
+        let positions = HashMap::from([
+            ("asc".to_string(), 0.0),
+            ("pallas".to_string(), 90.0),
+            ("mars".to_string(), 90.0),
+        ]);
+        let object_types = HashMap::from([
+            ("asc".to_string(), ObjectType::Angle),
+            ("pallas".to_string(), ObjectType::Asteroid),
+            ("mars".to_string(), ObjectType::Planet),
+        ]);
+        let selected = vec!["square".to_string()];
+
+        let aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+            &HashMap::new(),
+        );
+
+        // asc-pallas is also exactly square, but pallas (Asteroid) is not in
+        // the OnlyBetween allow-list, so only asc-mars (Angle-Planet) matches.
+        assert_eq!(aspects.len(), 1, "aspects: {aspects:?}");
+        assert_eq!(aspects[0].from, "asc");
+        assert_eq!(aspects[0].to, "mars");
+    }
+
+    #[test]
+    fn global_object_orbs_tighten_the_match_window_per_object() {
+        let definitions = vec![AspectDefinition {
+            id: "conjunction".to_string(),
+            aspect_type: "major".to_string(),
+            enabled: true,
+            glyph: String::new(),
+            angle: 0.0,
+            harmonic: 1,
+            default_orb: 8.0,
+            i18n: HashMap::new(),
+            color: None,
+            importance: None,
+            line_style: None,
+            line_width: None,
+            show_label: None,
+            valid_contexts: None,
+            interpretation_weight: None,
+            object_type_rule: Some(ObjectTypeRule::OnlyBetween {
+                types: vec![ObjectType::Planet, ObjectType::Asteroid],
+            }),
+        }];
+        // sun-moon (7 deg apart, both planets, no override) fits the normal 8 deg orb.
+        // ceres-sun (0.5 deg apart) fits its own 1 deg object_orbs override.
+        // chiron-sun (5 deg apart) would fit the normal orb but not its own 1 deg override.
+        let positions = HashMap::from([
+            ("sun".to_string(), 0.0),
+            ("moon".to_string(), 7.0),
+            ("chiron".to_string(), 5.0),
+            ("ceres".to_string(), 0.5),
+        ]);
+        let object_types = HashMap::from([
+            ("sun".to_string(), ObjectType::Planet),
+            ("moon".to_string(), ObjectType::Planet),
+            ("chiron".to_string(), ObjectType::Asteroid),
+            ("ceres".to_string(), ObjectType::Asteroid),
+        ]);
+        let object_orbs = HashMap::from([
+            ("ceres".to_string(), 1.0),
+            ("chiron".to_string(), 1.0),
+        ]);
+        let selected = vec!["conjunction".to_string()];
+
+        let mut aspects = compute_chart_aspects(
+            &positions,
+            &definitions,
+            &HashMap::new(),
+            Some(&selected),
+            &object_types,
+            &object_orbs,
+        );
+        aspects.sort_by(|a, b| a.from.cmp(&b.from));
+
+        assert_eq!(aspects.len(), 2, "aspects: {aspects:?}");
+        assert_eq!(aspects[0].from, "ceres");
+        assert_eq!(aspects[0].to, "sun");
+        assert_eq!(aspects[0].allowed_orb, 1.0);
+        assert_eq!(aspects[1].from, "moon");
+        assert_eq!(aspects[1].to, "sun");
+        assert_eq!(aspects[1].allowed_orb, 8.0);
     }
 
     #[test]

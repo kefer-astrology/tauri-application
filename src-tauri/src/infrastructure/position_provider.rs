@@ -13,7 +13,7 @@ use serde::Serialize;
 
 use crate::workspace::models::{ChartInstance, EngineType};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AstronomyAxes {
     pub asc: f64,
     pub desc: f64,
@@ -42,6 +42,35 @@ pub struct AstronomyChartData {
     pub warnings: Vec<String>,
 }
 
+/// How much of [`AstronomyChartData`] a caller actually needs. A minimal-path
+/// caller never gets *less* correctness than the full path for the same
+/// `body_ids` — only RA/Dec/Alt/Az and axes/house cusps (irrelevant to a
+/// longitude- or motion-based root-finder) are allowed to be skipped, and
+/// only when the requested ids don't themselves depend on those (see
+/// `JplAstronomyBackend::compute_minimal`'s angle-id guard).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RequiredQuantities {
+    /// Longitude only — aspect/orb root-finders.
+    LongitudeOnly,
+    /// Longitude and direct/retrograde motion — stationary-point root-finders.
+    LongitudeAndMotion,
+}
+
+/// Trimmed-down counterpart to [`AstronomyChartData`] for
+/// [`AstronomyBackend::compute_minimal`] — only what [`RequiredQuantities`]
+/// ever asks for. Deliberately has no `warnings` field: this is a hot,
+/// per-probe cache-fill path (`evaluation_context::EvaluationContext`), and
+/// an unresolved id there simply stays absent from `positions`/`motion` —
+/// the caller already turns that into its own `{id}_unavailable` error. Any
+/// *detailed* reason a body failed to resolve (e.g. ephemeris coverage) is
+/// still visible via the full `AstronomyChartData::warnings` path, which
+/// every request also exercises once for its radix/source chart.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct MinimalChartData {
+    pub positions: HashMap<String, f64>,
+    pub motion: HashMap<String, AstronomyMotion>,
+}
+
 pub trait AstronomyBackend {
     fn backend_id(&self) -> &'static str;
     fn ephemeris_source(&self, chart: &ChartInstance) -> Option<String>;
@@ -50,6 +79,26 @@ pub trait AstronomyBackend {
         chart: &ChartInstance,
         requested_objects: Option<&Vec<String>>,
     ) -> Result<AstronomyChartData, String>;
+
+    /// Same contract as `compute_chart_data`, but may skip quantities
+    /// `quantities` says aren't needed. The default delegates to the full
+    /// path unchanged — always correct, just not faster — so a provider that
+    /// doesn't override this (the Swiss Ephemeris backends; their own
+    /// per-call FFI setup/teardown cost dwarfs this optimization anyway)
+    /// never needs touching. `JplAstronomyBackend` is the one real override.
+    fn compute_minimal(
+        &self,
+        chart: &ChartInstance,
+        body_ids: &[String],
+        quantities: RequiredQuantities,
+    ) -> Result<MinimalChartData, String> {
+        let _ = quantities;
+        let full = self.compute_chart_data(chart, Some(&body_ids.to_vec()))?;
+        Ok(MinimalChartData {
+            positions: full.positions,
+            motion: full.motion,
+        })
+    }
 }
 
 #[cfg(feature = "swisseph")]

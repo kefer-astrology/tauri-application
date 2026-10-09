@@ -1,4 +1,4 @@
-import type { AspectDefinitionDto } from '@/lib/tauri/types';
+import type { AspectDefinitionDto, ObjectTypeRuleDto } from '@/lib/tauri/types';
 
 export type AspectType = 'major' | 'minor';
 
@@ -12,6 +12,8 @@ export type AspectRow = {
 	harmonic: number;
 	type: AspectType;
 	defaultOrb: number;
+	/** Raw catalog rule, once a workspace has configured this aspect's object scope. */
+	objectTypeRule: ObjectTypeRuleDto | null;
 };
 
 /** Runtime projection of the Rust model catalog. */
@@ -30,7 +32,8 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[], default
 			angle: definition.angle,
 			harmonic: definition.harmonic,
 			type: definition.type,
-			defaultOrb: definition.default_orb
+			defaultOrb: definition.default_orb,
+			objectTypeRule: definition.object_type_rule ?? null
 		}))
 	);
 	for (const key of Object.keys(ASPECT_ANGLES)) delete ASPECT_ANGLES[key];

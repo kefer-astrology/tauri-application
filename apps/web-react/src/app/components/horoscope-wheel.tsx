@@ -380,6 +380,9 @@ export interface HoroscopeWheelProps {
 	aspectOrbsForRadix?: Record<string, number>;
 	/** Stroke color per aspect type (workspace defaults). */
 	aspectColorsForRadix?: Record<string, string>;
+	/** Per-object glyph tint override (workspace defaults), keyed by body/angle id. Objects
+	 *  absent from this map keep the default `lightPlanetFill`/dark-theme glyph color. */
+	bodyColors?: Record<string, string>;
 	/** Thresholds (% of max orb) and stroke widths for tight / medium / loose bands. */
 	aspectLineTierStyle?: AspectLineTierStyleState;
 	/** Horoskop tab uses radix-only wheel; Informace view enables glyphs + axes */
@@ -413,6 +416,7 @@ export function HoroscopeWheel({
 	radixAspects,
 	aspectOrbsForRadix,
 	aspectColorsForRadix,
+	bodyColors,
 	aspectLineTierStyle: aspectLineTierStyleProp,
 	showPlanetGlyphs = false,
 	showAxisLines = false,
@@ -533,6 +537,16 @@ export function HoroscopeWheel({
 			item !== null
 	);
 	const planetGlyphColor = isDark ? 'var(--token-wheel-glyph)' : lightPlanetFill;
+	const bodyGlyphFilterId = (id: string) =>
+		bodyColors?.[id] ? `${wheelFilterUid}-b-${id}` : isDark ? planetDarkFilterId : planetLightFilterId;
+	const bodyGlyphFillColor = (id: string) => bodyColors?.[id] ?? planetGlyphColor;
+	/** Transit-ring counterpart to the two above — same per-body filter/color override,
+	 *  falling back to the ring's own uniform accent tint (`transitFilterId`) rather than the
+	 *  radix glyph color, since that accent color is what visually marks "this is the transit
+	 *  layer" for every uncustomized body. */
+	const transitGlyphFilterId = (id: string) =>
+		bodyColors?.[id] ? `${wheelFilterUid}-b-${id}` : transitFilterId;
+	const transitGlyphFillColor = (id: string) => bodyColors?.[id] ?? 'var(--theme-accent)';
 	const elementColors = elementColorsProp;
 	const angleMarkerRadius = outerRadius + 22;
 
@@ -667,6 +681,25 @@ export function HoroscopeWheel({
 							);
 						})
 					: null}
+					{glyphSet && bodyColors
+						? Object.entries(bodyColors).map(([id, color]) => (
+								<filter
+									key={`bf-${id}`}
+									id={`${wheelFilterUid}-b-${id}`}
+									colorInterpolationFilters="sRGB"
+									x="-50%"
+									y="-50%"
+									width="200%"
+									height="200%"
+								>
+									<feFlood floodColor={color} floodOpacity="1" result="bc" />
+									<feComposite in="bc" in2="SourceGraphic" operator="in" result="br" />
+									<feMerge>
+										<feMergeNode in="br" />
+									</feMerge>
+								</filter>
+							))
+						: null}
 				<filter
 					id={transitFilterId}
 					colorInterpolationFilters="sRGB"
@@ -735,7 +768,7 @@ export function HoroscopeWheel({
 										x={p.x}
 										y={p.y}
 										size={18}
-										filterId={transitFilterId}
+										filterId={transitGlyphFilterId(key)}
 									/>
 								) : (
 									<text
@@ -745,7 +778,7 @@ export function HoroscopeWheel({
 										dominantBaseline="middle"
 										fontSize={icon.length > 2 ? 8 : 14}
 										fontWeight="700"
-										fill="var(--theme-accent)"
+										fill={transitGlyphFillColor(key)}
 									>
 										{icon}
 									</text>
@@ -964,18 +997,18 @@ export function HoroscopeWheel({
 					{anglePoints.map(({ key, icon, longitude }) => {
 						const p = polar(center, center, angleMarkerRadius, displayLon(longitude));
 						const angleHref = astrologyGlyphSrc(key);
+						const angleId = key === 'dsc' ? 'desc' : key;
 						return (
 							<g
 								key={key}
 								data-handoff={`Angle_${key}`}
 								style={{ cursor: 'pointer' }}
-								onClick={(event) => emitObjectClick(event, key === 'dsc' ? 'desc' : key, 'radix')}
+								onClick={(event) => emitObjectClick(event, angleId, 'radix')}
 							>
 								<circle cx={p.x} cy={p.y} r="18" fill="transparent" />
-								{selectedObject?.layer === 'radix' &&
-									selectedObject.bodyId === (key === 'dsc' ? 'desc' : key) && (
-										<circle cx={p.x} cy={p.y} r="18" fill="var(--token-wheel-highlight)" />
-									)}
+								{selectedObject?.layer === 'radix' && selectedObject.bodyId === angleId && (
+									<circle cx={p.x} cy={p.y} r="18" fill="var(--token-wheel-highlight)" />
+								)}
 								{angleHref ? (
 									isDark ? (
 										<WheelTintedGlyphImage
@@ -984,7 +1017,7 @@ export function HoroscopeWheel({
 											x={p.x}
 											y={p.y}
 											size={22}
-											filterId={planetDarkFilterId}
+											filterId={bodyGlyphFilterId(angleId)}
 										/>
 									) : (
 										<WheelTintedGlyphImage
@@ -993,7 +1026,7 @@ export function HoroscopeWheel({
 											x={p.x}
 											y={p.y}
 											size={22}
-											filterId={planetLightFilterId}
+											filterId={bodyGlyphFilterId(angleId)}
 										/>
 									)
 								) : (
@@ -1004,7 +1037,7 @@ export function HoroscopeWheel({
 										dominantBaseline="middle"
 										fontSize="11"
 										fontWeight="700"
-										fill={planetGlyphColor}
+										fill={bodyGlyphFillColor(angleId)}
 									>
 										{icon}
 									</text>
@@ -1166,7 +1199,7 @@ export function HoroscopeWheel({
 											x={p.x}
 											y={p.y}
 											size={22}
-											filterId={planetDarkFilterId}
+											filterId={bodyGlyphFilterId(key)}
 										/>
 									) : (
 										<WheelTintedGlyphImage
@@ -1175,7 +1208,7 @@ export function HoroscopeWheel({
 											x={p.x}
 											y={p.y}
 											size={22}
-											filterId={planetLightFilterId}
+											filterId={bodyGlyphFilterId(key)}
 										/>
 									)
 								) : (
@@ -1186,7 +1219,7 @@ export function HoroscopeWheel({
 										dominantBaseline="middle"
 										fontSize="18"
 										fontWeight="600"
-										fill={planetGlyphColor}
+										fill={bodyGlyphFillColor(key)}
 									>
 										{icon}
 									</text>

@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 type SharedSvgIconProps = {
 	src: string;
 	className?: string;
@@ -7,6 +9,9 @@ type SharedSvgIconProps = {
 	height?: number;
 	maskScale?: number;
 	title?: string;
+	/** Merged into the computed style below — `color` here sets `currentColor`, which the
+	 *  mask-based icon's `backgroundColor: currentColor` then picks up. */
+	style?: CSSProperties;
 };
 
 export function SharedSvgIcon({
@@ -16,7 +21,8 @@ export function SharedSvgIcon({
 	width,
 	height,
 	maskScale = 1,
-	title
+	title,
+	style
 }: SharedSvgIconProps) {
 	const resolvedWidth = width ?? size;
 	const resolvedHeight = height ?? size;
@@ -37,6 +43,7 @@ export function SharedSvgIcon({
 				...(hasExplicitPixelBox
 					? { width: resolvedWidth, height: resolvedHeight }
 					: {}),
+				...style,
 				display: 'block',
 				flexShrink: 0,
 				lineHeight: 0,

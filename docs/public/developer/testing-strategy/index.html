@@ -186,6 +186,30 @@ and traceability, not the physical test files.</p>
 					<td>Rust transit command tests; optional Python parity when provisioned</td>
 			</tr>
 			<tr>
+					<td>TRANSIT-002</td>
+					<td><code>exact_hits</code>/<code>station_events</code> return real root-found events (moving-vs-radix and moving-vs-moving), independent of and never rounded to <code>time_step_seconds</code>; stations/aspect hits are tagged with direction-change/contact-kind (crossing vs. tangential) and an independent <code>confirmed</code> field (always <code>true</code> for a crossing; for a tangential contact, <code>true</code> only when refinement actually converged within tolerance without regressing relative to the coarse sample that triggered it, <em>and</em> its computed, exposed <code>bracket_width_seconds</code> is at or below an explicit 1-second time-precision tolerance — checked, not assumed from a fixed iteration count); an unconfirmed candidate is never silently dropped, and the React event list visibly distinguishes it (an &ldquo;unconfirmed&rdquo; badge, independent of the &ldquo;tangential&rdquo; geometry badge); an incomplete or failed sub-search is reported honestly, never as a silent empty success</td>
+					<td>Domain/command contract</td>
+					<td><code>application::transit::tests</code> (flag combinations, structurally-locked-pair exclusion, missing-coverage error propagation, probe-allocation formula, direction-change alternation) and <code>application::event_search::tests</code> (repeated/retrograde crossings, 0° wrapping, interval boundaries, budget exhaustion, tangential-contact detection on synthetic functions including a refinement-regression case that must come back <code>confirmed: false</code>, a minimum sitting strictly between two coarse samples with a sub-10-microsecond time-convergence assertion against an analytically exact minimum, a real graze near an unrelated branch-cut artifact, direct bracket-width measurements at two different initial widths matching the theoretical <code>0.618^40</code> narrowing factor, a too-few-iterations case demonstrating an under-converged bracket, and an end-to-end case where a 10-year discovery step produces a well-within-tolerance residual but <code>confirmed: false</code> because the resulting bracket exceeds the explicit time-precision tolerance) in Rust; <code>commands::transits::tests</code> for the Tauri-level <code>event_search</code> response field and backward-compatible omission of both flags; no automated frontend test for the &ldquo;unconfirmed&rdquo; badge (manual/visual only, consistent with this component&rsquo;s existing test coverage); no Python parity (the Python sidecar has no event-search endpoint)</td>
+			</tr>
+			<tr>
+					<td>TRANSIT-003</td>
+					<td><code>configuration_requests</code> finds the time interval(s) during which a role-assignment of bodies simultaneously satisfies a configuration pattern (Grand Trine/T-square/Yod/Grand Cross), without requiring any constituent aspect to become exact; deduplication respects each pattern&rsquo;s actual geometric symmetries; role-assignment and best-fit-refinement combinatorial growth are both bounded and reported, never silently truncated</td>
+					<td>Domain/command contract</td>
+					<td><code>domain::configurations::tests</code> (per-pattern automorphism validity, including a deliberately-wrong-permutation rejection case) and <code>application::configuration_search::tests</code> (orb-interval union/intersection on synthetic data, enumeration-cap and best-fit-cap behavior, dedup of symmetric vs. genuinely-distinct role assignments, a real Grand Trine found against real ephemeris and independently cross-checked against <code>domain::astrology::detect_chart_configurations</code> at an interior and a boundary-adjacent time, and a 6x-finer-discovery-step stability check) in Rust; <code>commands::transits::tests</code> for the Tauri-level <code>configuration_requests</code>/<code>configuration_matches</code> wiring; no Python parity (no configuration-search endpoint exists there)</td>
+			</tr>
+			<tr>
+					<td>TRANSIT-004</td>
+					<td><code>sampled_series: false</code> makes the sampled <code>results</code> graph series itself opt-in, independent of <code>time_step_seconds</code>/any event or configuration search, while keeping the response shape (backend provenance, <code>event_search</code>) uniform with the <code>sampled_series: true</code> case</td>
+					<td>Command contract</td>
+					<td><code>commands::transits::tests</code> (<code>compute_transit_events_only_response_skips_sampled_series_but_computes_events</code>, backward-compatible default via <code>TransitSetup</code>&rsquo;s <code>#[serde(default = &quot;default_true&quot;)]</code>)</td>
+			</tr>
+			<tr>
+					<td>TRANSIT-005</td>
+					<td><code>EvaluationContext</code> shares one position-provider backend and a bounded, FIFO-evicting <code>(body id, exact epoch)</code> cache (capacity configurable for tests; 2,000,000 in production) across every exact-aspect, station, and configuration search one <code>compute_transit_events</code> call performs, without changing any result — a minimal backend path also skips RA/Dec/Alt/Az/axes/house cusps for a longitude-only or longitude+motion probe, matching the unchanged full path&rsquo;s values exactly for whatever it does compute; the cache is request-scoped only (never shared across requests or between concurrent ones)</td>
+					<td>Performance/correctness (no API surface)</td>
+					<td><code>infrastructure::jpl_backend::tests::minimal_path_agrees_with_full_path_for_representative_objects_epochs_and_modes</code> (longitude/motion equality between the full and minimal paths across several bodies, two epochs, both position modes, both <code>RequiredQuantities</code> tiers); <code>application::transit::tests::combined_exact_hits_station_events_and_configuration_request_in_one_call</code> (all three search kinds sharing one context in one call); <code>application::evaluation_context::tests</code> (<code>eviction_is_bounded_and_drops_the_oldest_entry_first</code>, <code>eviction_never_grows_past_capacity_across_many_inserts</code> — direct, deterministic, small-capacity proof of the FIFO eviction mechanism itself, not just its end-to-end effect; <code>measures_real_per_entry_memory_cost</code>, <code>#[ignore]</code>, a real <code>/proc/self/status</code> RSS-delta measurement checked against the documented <code>APPROX_BYTES_PER_ENTRY</code> estimate rather than trusting a hand count); the full existing event-search/configuration-search suite re-passing unchanged after the refactor is itself the regression guard; <code>application::configuration_search::tests::configuration_search_benchmark</code> (<code>#[ignore]</code>) reports real p50/p95, repetition count and percentile method, and <code>cache_stats()</code> (hit/miss/upgrade counts, entry count, measured approximate bytes) against the pre-optimization baseline recorded in <code>ephemeris-validation.md</code>, which also documents the distinction between total accesses, true unique working set, and a misleadingly-inflated miss count observed once under an undersized cache</td>
+			</tr>
+			<tr>
 					<td>ROUTE-001</td>
 					<td>Auto routing uses Rust when Python is unavailable</td>
 					<td>Integration</td>
@@ -198,10 +222,28 @@ and traceability, not the physical test files.</p>
 					<td>Rust route-selection tests</td>
 			</tr>
 			<tr>
+					<td>ROUTE-003</td>
+					<td>A per-chart <code>override_ephemeris</code> JPL kernel does not force Python; only Jyotish/Custom engines do</td>
+					<td>Integration</td>
+					<td><code>application::compute_router::tests</code> (Rust-only mode, auto mode with/without Python) and <code>infrastructure::jpl_backend::tests</code> (invalid override path, missing auxiliary kernel, partial body coverage)</td>
+			</tr>
+			<tr>
+					<td>PROVIDER-002</td>
+					<td>Chart, transit-series, event-search, and configuration-search computation execute with no network access</td>
+					<td>Provider/integration</td>
+					<td>Full <code>cargo test --lib</code> (209 tests) re-run inside a Linux network namespace with no interfaces up, plus <code>compute_transit_events_benchmark</code> (re-run this pass); the other six release benchmarks were verified the same way in earlier passes and not re-run here — see <a href="../ephemeris-validation/#offline-execution-verified-not-just-read-from-source">ephemeris validation</a> for the exact mechanism and what it does not cover (the optional Python sidecar, absent in this checkout)</td>
+			</tr>
+			<tr>
+					<td>COVERAGE-001</td>
+					<td>Usable-coverage chain discovery and precedence match the pinned ANISE evaluator&rsquo;s actual behavior, including cases real kernels cannot exhibit</td>
+					<td>Provider</td>
+					<td><code>infrastructure::ephemeris::usable_coverage_tests</code> (synthetic-SPK missing link, alternate chain, depth-limit, and different-center-overlap-narrows-coverage cases, alongside real-kernel complete-chain/overlap cases) — see <a href="../ephemeris-validation/#usable-coverage-raw-vs-chain-aware">ephemeris validation</a></td>
+			</tr>
+			<tr>
 					<td>PROVIDER-001</td>
 					<td>Provider numerical output matches a named reference within tolerance</td>
 					<td>Provider</td>
-					<td>Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources</td>
+					<td>Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources — see <a href="../ephemeris-validation/">ephemeris validation</a> for the current per-test reference list and known gaps</td>
 			</tr>
 			<tr>
 					<td>FRONTEND-001</td>
@@ -292,7 +334,10 @@ therefore the locally verifiable backend baseline. Do not report missing Python
 tests as passing parity coverage.</p>
 <p>Provider tests that require BSP files or optional dependencies may skip. CI and
 local output must make those skips visible so a skipped provider suite is not
-mistaken for passing numerical validation.</p>
+mistaken for passing numerical validation. See
+<a href="../ephemeris-validation/">ephemeris validation</a> for the ignored-by-default
+provider tests, the diagnostic benchmark&rsquo;s exact command, and output
+conventions.</p>
 <h2 id="contract-maintenance-rule">Contract maintenance rule</h2>
 <p>When behavior changes:</p>
 <ol>

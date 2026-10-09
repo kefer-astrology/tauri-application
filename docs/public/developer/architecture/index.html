@@ -97,9 +97,24 @@ Rust does not persist computed positions, houses, aspects, configurations,
 lunar details, or transit-series results. Transit <em>setup</em> is persisted. The
 legacy computed-data storage commands are explicit no-ops.</p>
 <p>In <code>auto</code> mode, a reachable Python sidecar is preferred; otherwise supported
-work uses Rust. A forced Python route fails if it is unavailable. Some chart
-forms (Jyotish/custom or an override ephemeris) require Python and cannot use
-the Rust fallback. Route/fallback data is included in computation results.</p>
+work uses Rust. A forced Python route fails if it is unavailable. Jyotish and
+Custom engine charts require Python and have no Rust implementation — this is
+the <em>only</em> condition <code>chart_requires_python_precision</code> /
+<code>chart_json_requires_python_precision</code> (<code>application/compute_router.rs</code>) force
+onto the Python route.</p>
+<p>A per-chart <code>override_ephemeris</code> kernel does <strong>not</strong> force Python: it was
+historically also routed as requiring Python precision, but <code>JplAstronomyBackend</code>
+(<code>infrastructure/jpl_backend.rs</code>) already implemented per-chart
+<code>override_ephemeris</code> natively in Rust at the time, which made that a
+router-policy gap rather than a real capability gap — confirmed by git
+history (<code>jpl_backend.rs</code>&rsquo;s override support predates the router check that
+forced Python for it) and fixed by removing <code>override_ephemeris</code> from both
+precision checks. <code>KEFER_COMPUTE_BACKEND=Rust</code> with an override-ephemeris
+chart, and <code>Auto</code> mode with Python unavailable, both now compute through Rust
+directly; tests in <code>application::compute_router</code> and
+<code>infrastructure::jpl_backend</code> cover Rust-only mode, auto mode with and without
+Python, invalid override paths, and the still-forced Jyotish/Custom case.
+Route/fallback data is included in computation results.</p>
 <h2 id="current-responsibility-split">Current responsibility split</h2>
 <ul>
 <li><code>workspace</code> owns YAML representations, loading/writing, validation, model
@@ -114,14 +129,27 @@ are mixed transport/use-case modules. Workspace and transit-setup commands
 directly perform YAML/filesystem work; calculation/transit commands still
 route backends and call the sidecar. Do not describe them as thin adapters.</li>
 </ul>
+<h3 id="persistence-and-result-lifecycle">Persistence and result lifecycle</h3>
+<p><code>WorkspaceManifest</code> is the durable index; loaded charts and references are
+separate typed representations. <code>WorkspaceInfo</code> is a tolerant shell summary,
+whereas <code>LoadedWorkspace</code> retains diagnostics. YAML, settings resolution,
+validation, and runtime catalog construction belong to Rust. Computed
+positions, houses, aspects, configurations, lunar details, and transit series
+are response data held by the frontend, not a database-backed workspace cache;
+only transit setup is persisted. Result metadata exposes the selected backend,
+fallback state, ephemeris source when available, and warnings.</p>
+<p>The Python sidecar is optional infrastructure, not a second persistence or
+configuration authority. It may be chosen in auto mode, while Rust handles
+supported no-sidecar requests. The exact workspace lifecycle and precedence
+are defined by the <a href="../workspace-yaml/">Workspace YAML contract</a>.</p>
 <h2 id="intended-direction-and-debt">Intended direction and debt</h2>
 <p>The intended boundary is commands as thin transport adapters over application
 use cases, with filesystem/provider orchestration moved behind those use cases.
 Only the typed computation and transit cores are substantially there today.
 Chart-selection catalog refresh and automated React/Svelte parity coverage are
 also incomplete. See <a href="../rust-code-structure/">Rust code structure</a> for the
-module map, <a href="../rust-workspace-contract/">Rust workspace contract</a> for the
-observable lifecycle, and <a href="../testing-strategy/">Testing strategy</a> for gaps.</p>
+module map, <a href="../workspace-yaml/">Workspace YAML contract</a> for the observable
+lifecycle, and <a href="../testing-strategy/">Testing strategy</a> for gaps.</p>
 
     </div>
   </article>

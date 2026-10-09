@@ -9,7 +9,12 @@ import {
   normalizeAspectLineTierStyle,
   type AspectLineTierStyleState
 } from '$lib/astrology/aspects';
-import type { ChartDefinitionDto, CurrentModelReport, ModelOverridesDto } from '$lib/tauri/types';
+import type {
+  AstrologicalTraditionId,
+  ChartDefinitionDto,
+  CurrentModelReport,
+  ModelOverridesDto
+} from '$lib/tauri/types';
 import { DOMAIN_CATALOG } from '$lib/astrology/domainCatalog';
 
 export interface MoonDetailsDto {
@@ -83,6 +88,14 @@ export interface WorkspaceDefaultsState {
   defaultAspects: string[];
   defaultAspectOrbs: Record<string, number>;
   defaultAspectColors: Record<string, string>;
+  /** Per-aspect id: whether Asc/MC may participate. Missing key = use the aspect's suggested default. */
+  aspectIncludeAngles: Record<string, boolean>;
+  /** Per-aspect id: whether extended objects (asteroids, nodes, parts, other points) may participate. */
+  aspectIncludeExtended: Record<string, boolean>;
+  /** Per-aspect id: tighter orb used once that aspect's extended objects are included. */
+  aspectExtendedOrbs: Record<string, number>;
+  /** The workspace's chosen astrological tradition ("Škola"), or `null` if unset. */
+  astrologyTradition: AstrologicalTraditionId | null;
   aspectLineTierStyle: AspectLineTierStyleState;
 }
 
@@ -99,6 +112,10 @@ const DEFAULT_WORKSPACE_DEFAULTS: WorkspaceDefaultsState = {
   defaultAspects: [...DEFAULT_ENABLED_ASPECT_IDS],
   defaultAspectOrbs: DEFAULT_ASPECT_ORBS,
   defaultAspectColors: { ...DEFAULT_ASPECT_COLORS },
+  aspectIncludeAngles: {},
+  aspectIncludeExtended: {},
+  aspectExtendedOrbs: {},
+  astrologyTradition: null,
   aspectLineTierStyle: { ...DEFAULT_ASPECT_LINE_TIER_STYLE }
 };
 
@@ -179,6 +196,19 @@ export function setWorkspaceDefaults(defaults: Partial<WorkspaceDefaultsState>) 
       defaults.defaultAspectColors && typeof defaults.defaultAspectColors === 'object'
         ? { ...layout.workspaceDefaults.defaultAspectColors, ...defaults.defaultAspectColors }
         : layout.workspaceDefaults.defaultAspectColors,
+    aspectIncludeAngles:
+      defaults.aspectIncludeAngles && typeof defaults.aspectIncludeAngles === 'object'
+        ? { ...layout.workspaceDefaults.aspectIncludeAngles, ...defaults.aspectIncludeAngles }
+        : layout.workspaceDefaults.aspectIncludeAngles,
+    aspectIncludeExtended:
+      defaults.aspectIncludeExtended && typeof defaults.aspectIncludeExtended === 'object'
+        ? { ...layout.workspaceDefaults.aspectIncludeExtended, ...defaults.aspectIncludeExtended }
+        : layout.workspaceDefaults.aspectIncludeExtended,
+    aspectExtendedOrbs:
+      defaults.aspectExtendedOrbs && typeof defaults.aspectExtendedOrbs === 'object'
+        ? { ...layout.workspaceDefaults.aspectExtendedOrbs, ...defaults.aspectExtendedOrbs }
+        : layout.workspaceDefaults.aspectExtendedOrbs,
+    astrologyTradition: defaults.astrologyTradition ?? layout.workspaceDefaults.astrologyTradition,
     aspectLineTierStyle:
       defaults.aspectLineTierStyle
         ? normalizeAspectLineTierStyle({

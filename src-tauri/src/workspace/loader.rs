@@ -668,9 +668,13 @@ mod tests {
 
     #[test]
     fn rust_loads_the_tag_showcase_workspace() {
+        // Pinned under version control, not the live `tests/sample-workspaces/`
+        // tree: that directory is user-owned, mutable demo content and must not
+        // be a test dependency, even though it sits nearby for easy comparison.
+        // See `src-tauri/tests/fixtures/tag-showcase/README.md`.
         let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("sample-workspaces")
+            .join("tests")
+            .join("fixtures")
             .join("tag-showcase");
         let loaded = load_workspace_aggregate(&fixture).expect("tag showcase should load");
 

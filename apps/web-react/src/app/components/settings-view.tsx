@@ -30,7 +30,12 @@ import {
 	readStoredAppShellIconSet,
 	type AppShellIconSetId
 } from '@/lib/app-shell';
-import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
+import {
+	ASPECT_ROWS,
+	DEFAULT_ASPECT_COLORS,
+	DEFAULT_ASPECT_ORBS,
+	type AspectRow
+} from '@/lib/astrology/aspects';
 import { type ElementColors, type ElementId } from '@/lib/astrology/elementColors';
 import { persistGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import { DEGREE_SYMBOL_SET_CATALOG } from '@/lib/astrology/degreeSymbolSets';
@@ -41,7 +46,11 @@ import {
 	type WheelOrientationId,
 	type WheelStyleId
 } from '@/lib/astrology/wheelStyle';
-import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
+import {
+	DEFAULT_OBSERVABLE_OBJECT_IDS,
+	OBSERVABLE_OBJECTS,
+	getObservableObjectLabel
+} from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
 import { JAN_KEFER_BIOGRAPHY } from '@/lib/content/janKefer';
 import { persistMonochrome } from '@/lib/appLayoutPreferences';
@@ -52,8 +61,62 @@ import {
 } from '@/lib/tauri/chartPayload';
 import { catalogHouseSystems } from '@/lib/astrology/domainCatalog';
 import { searchLocations } from '@/lib/tauri/workspace';
+import type { AstrologicalTraditionId, ObjectTypeId } from '@/lib/tauri/types';
 import { BodySelector } from './body-selector';
 import { GlyphManager } from './glyph-manager';
+
+const ASTROLOGY_TRADITION_OPTIONS: { id: AstrologicalTraditionId; labelKey: string }[] = [
+	{ id: 'hellenistic', labelKey: 'tradition_hellenistic' },
+	{ id: 'medieval_traditional', labelKey: 'tradition_medieval_traditional' },
+	{ id: 'modern_western', labelKey: 'tradition_modern_western' },
+	{ id: 'harmonic', labelKey: 'tradition_harmonic' },
+	{ id: 'cosmobiology', labelKey: 'tradition_cosmobiology' },
+	{ id: 'uranian_hamburg', labelKey: 'tradition_uranian_hamburg' },
+	{ id: 'jyotish_parashari', labelKey: 'tradition_jyotish_parashari' }
+];
+
+/** One checkbox per eligibility-toggleable object category — every real `ObjectType` except
+ *  `planet`, which is always implicitly eligible and has no checkbox of its own (see the
+ *  always-shown per-planet orb section instead). `types` may list more than one Rust
+ *  `ObjectType` when they share a single checkbox here (`calculated_point` and `part` are both
+ *  "Sensitive Points" from a user's perspective — Lilith variants are `calculated_point` too,
+ *  but the observed-objects catalog groups those into "Black Luna" instead; see
+ *  `categoryForBody` in `observableObjects.ts`). */
+const EXTENDED_OBJECT_TYPE_OPTIONS: { labelKey: string; types: ObjectTypeId[] }[] = [
+	{ labelKey: 'observable_category_angles', types: ['angle'] },
+	{ labelKey: 'transits_group_asteroids', types: ['asteroid'] },
+	{ labelKey: 'transits_group_lunar_nodes', types: ['lunar_node'] },
+	{ labelKey: 'observable_category_sensitive_points', types: ['calculated_point', 'part'] },
+	{ labelKey: 'transits_group_geo_nodes', types: ['geocentric_node'] },
+	{ labelKey: 'transits_group_tno', types: ['trans_neptunian'] },
+	{ labelKey: 'transits_group_hypotheticals', types: ['hypothetical_planet'] }
+];
+
+type AspectRowState = {
+	enabled: boolean;
+	orb: number;
+	color: string;
+};
+
+/** A sensible starting point for a newly-ticked extended category's objects: half the
+ *  conjunction orb, floored at 0.5° — same heuristic the old per-aspect extended orb used,
+ *  just no longer tied to one specific aspect since the orb is now global per object. */
+function suggestedObjectOrb(): number {
+	const baseOrb = DEFAULT_ASPECT_ORBS.conjunction ?? 8;
+	return Math.max(0.5, Math.round((baseOrb / 2) * 2) / 2);
+}
+
+function aspectRowStateFromDefaults(
+	aspect: AspectRow,
+	workspaceDefaults: WorkspaceDefaultsState
+): AspectRowState {
+	const orb = workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb;
+	return {
+		enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
+		orb,
+		color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
+	};
+}
 
 /** Each language's own autonym — always shown in that language, not translated, so a user can
  *  recognize their language regardless of which language the UI currently happens to be in. */
@@ -196,6 +259,9 @@ function SettingsView({
 	const [longitude, setLongitude] = useState(String(workspaceDefaults.locationLongitude));
 	const [timezone, setTimezone] = useState(workspaceDefaults.timezone);
 	const [houseSystem, setHouseSystem] = useState<string>(workspaceDefaults.houseSystem);
+	const [astrologyTradition, setAstrologyTradition] = useState<AstrologicalTraditionId | ''>(
+		workspaceDefaults.astrologyTradition ?? ''
+	);
 	const [glyphSetValue, setGlyphSetValue] = useState<AstrologyGlyphSetId>(astrologyGlyphSet);
 	const [enabledSymbolSetIdsValue, setEnabledSymbolSetIdsValue] = useState<string[]>(() => [
 		...enabledSymbolSetIds
@@ -210,19 +276,14 @@ function SettingsView({
 			? workspaceDefaults.defaultBodies
 			: DEFAULT_OBSERVABLE_OBJECT_IDS
 	);
-	const [aspects, setAspects] = useState<
-		Record<string, { enabled: boolean; orb: number; color: string }>
-	>(() =>
+	const [bodyColors, setBodyColors] = useState<Record<string, string>>(workspaceDefaults.bodyColors);
+	const [extendedObjectTypes, setExtendedObjectTypes] = useState<ObjectTypeId[]>(
+		workspaceDefaults.extendedObjectTypes
+	);
+	const [objectOrbs, setObjectOrbs] = useState<Record<string, number>>(workspaceDefaults.objectOrbs);
+	const [aspects, setAspects] = useState<Record<string, AspectRowState>>(() =>
 		Object.fromEntries(
-			ASPECT_ROWS.map((aspect) => [
-				aspect.id,
-				{
-					enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
-					orb: workspaceDefaults.defaultAspectOrbs[aspect.id] ?? aspect.defaultOrb,
-					color:
-						workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
-				}
-			])
+			ASPECT_ROWS.map((aspect) => [aspect.id, aspectRowStateFromDefaults(aspect, workspaceDefaults)])
 		)
 	);
 	const [aspectLineTiers, setAspectLineTiers] = useState<AspectLineTierStyleState>(() => ({
@@ -235,11 +296,15 @@ function SettingsView({
 		setLongitude(String(workspaceDefaults.locationLongitude));
 		setTimezone(workspaceDefaults.timezone);
 		setHouseSystem(workspaceDefaults.houseSystem);
+		setAstrologyTradition(workspaceDefaults.astrologyTradition ?? '');
 		setSelectedBodies(
 			workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
 				: DEFAULT_OBSERVABLE_OBJECT_IDS
 		);
+		setBodyColors(workspaceDefaults.bodyColors);
+		setExtendedObjectTypes(workspaceDefaults.extendedObjectTypes);
+		setObjectOrbs(workspaceDefaults.objectOrbs);
 		setAspects(
 			Object.fromEntries(
 				ASPECT_ROWS.map((aspect) => [
@@ -288,6 +353,61 @@ function SettingsView({
 			void onWorkspaceDefaultsChange({ defaultBodies: next });
 		},
 		[markChanged, onWorkspaceDefaultsChange]
+	);
+
+	const applyBodyColorChange = useCallback(
+		(id: string, color: string) => {
+			const next = { ...bodyColors, [id]: color };
+			setBodyColors(next);
+			markChanged();
+			void onWorkspaceDefaultsChange({ bodyColors: next });
+		},
+		[bodyColors, markChanged, onWorkspaceDefaultsChange]
+	);
+
+	// Global (not per-aspect) — ticking/unticking a category here changes eligibility for
+	// every aspect at once. See `src-tauri/src/workspace/models.rs`'s
+	// `WorkspaceDefaults::extended_object_types`/`object_orbs`. `types` may list more than
+	// one Rust `ObjectType` (e.g. "Sensitive Points" covers both `calculated_point` and `part`)
+	// when they share a single checkbox in the UI — see `EXTENDED_OBJECT_TYPE_OPTIONS`.
+	const applyExtendedTypeToggle = useCallback(
+		(types: ObjectTypeId[], checked: boolean) => {
+			const nextTypes = checked
+				? Array.from(new Set([...extendedObjectTypes, ...types]))
+				: extendedObjectTypes.filter((existing) => !types.includes(existing));
+			setExtendedObjectTypes(nextTypes);
+
+			// Pre-fill a starting orb for this category's objects that don't have one yet,
+			// so newly-enabling a category doesn't silently mean "no narrowing at all".
+			let nextOrbs = objectOrbs;
+			if (checked) {
+				const additions = OBSERVABLE_OBJECTS.filter(
+					(item) =>
+						item.objectType !== null &&
+						types.includes(item.objectType) &&
+						objectOrbs[item.id] === undefined
+				);
+				if (additions.length > 0) {
+					nextOrbs = { ...objectOrbs };
+					for (const item of additions) nextOrbs[item.id] = suggestedObjectOrb();
+					setObjectOrbs(nextOrbs);
+				}
+			}
+
+			markChanged();
+			void onWorkspaceDefaultsChange({ extendedObjectTypes: nextTypes, objectOrbs: nextOrbs });
+		},
+		[extendedObjectTypes, objectOrbs, markChanged, onWorkspaceDefaultsChange]
+	);
+
+	const applyObjectOrbChange = useCallback(
+		(id: string, orb: number) => {
+			const next = { ...objectOrbs, [id]: orb };
+			setObjectOrbs(next);
+			markChanged();
+			void onWorkspaceDefaultsChange({ objectOrbs: next });
+		},
+		[objectOrbs, markChanged, onWorkspaceDefaultsChange]
 	);
 
 	const onGlyphSetChange = useCallback(
@@ -358,11 +478,15 @@ function SettingsView({
 		setLongitude(String(workspaceDefaults.locationLongitude));
 		setTimezone(workspaceDefaults.timezone);
 		setHouseSystem(workspaceDefaults.houseSystem);
+		setAstrologyTradition(workspaceDefaults.astrologyTradition ?? '');
 		setSelectedBodies(
 			workspaceDefaults.defaultBodies.length > 0
 				? workspaceDefaults.defaultBodies
 				: DEFAULT_OBSERVABLE_OBJECT_IDS
 		);
+		setBodyColors(workspaceDefaults.bodyColors);
+		setExtendedObjectTypes(workspaceDefaults.extendedObjectTypes);
+		setObjectOrbs(workspaceDefaults.objectOrbs);
 		setAspects(
 			Object.fromEntries(
 				ASPECT_ROWS.map((aspect) => [
@@ -440,7 +564,7 @@ function SettingsView({
 	);
 
 	const persistAspectSettings = useCallback(
-		async (nextAspects: Record<string, { enabled: boolean; orb: number; color: string }>) => {
+		async (nextAspects: Record<string, AspectRowState>) => {
 			const defaultAspects = ASPECT_ROWS.filter((aspect) => nextAspects[aspect.id]?.enabled).map(
 				(aspect) => aspect.id
 			);
@@ -680,89 +804,224 @@ function SettingsView({
 									subtitleKey="settings_observable_objects_hint"
 									selectedBodyIds={selectedBodies}
 									onSelectedBodyIdsChange={applyObservableObjectSelection}
+									colors={bodyColors}
+									onColorChange={applyBodyColorChange}
 								/>
 							)}
 
 							{section === 'nastaveni_aspektu' && (
 								<div className="space-y-4">
+									<div className="space-y-2 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+										<Label className={ft.label}>{t('settings_astrology_tradition_label')}</Label>
+										<Select
+											value={astrologyTradition}
+											onValueChange={(value) => {
+												const next = value as AstrologicalTraditionId;
+												setAstrologyTradition(next);
+												markChanged();
+												void onWorkspaceDefaultsChange({ astrologyTradition: next });
+											}}
+										>
+											<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+												<SelectValue placeholder={t('settings_astrology_tradition_none')} />
+											</SelectTrigger>
+											<SelectContent className={ft.selectContent}>
+												<SelectGroup>
+													{ASTROLOGY_TRADITION_OPTIONS.map((option) => (
+														<SelectItem key={option.id} value={option.id} className={ft.selectItem}>
+															{t(option.labelKey)}
+														</SelectItem>
+													))}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<p className={cn('text-xs', ft.muted)}>
+											{t('settings_astrology_tradition_hint')}
+										</p>
+									</div>
+									<div className="space-y-2 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+										<p className={ft.label}>{t('settings_aspect_scope_extended_categories')}</p>
+										<p className={cn('text-xs', ft.muted)}>
+											{t('settings_aspect_scope_extended_shared_hint')}
+										</p>
+										<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+											{EXTENDED_OBJECT_TYPE_OPTIONS.map((option) => (
+												<label
+													key={option.labelKey}
+													className="flex cursor-pointer items-center gap-2 text-sm"
+												>
+													<Checkbox
+														checked={option.types.some((type) =>
+															extendedObjectTypes.includes(type)
+														)}
+														onCheckedChange={(checked) =>
+															applyExtendedTypeToggle(option.types, checked === true)
+														}
+													/>
+													{t(option.labelKey)}
+												</label>
+											))}
+										</div>
+									</div>
 									<div className="space-y-2">
 										<p className={ft.label}>{t('default_aspects')}</p>
-										<div className="space-y-3">
+										<Accordion type="multiple" className="space-y-3">
 											{ASPECT_ROWS.map((aspect) => {
 												const row = aspects[aspect.id] ?? {
 													enabled: true,
 													orb: aspect.defaultOrb,
 													color: DEFAULT_ASPECT_COLORS[aspect.id]
 												};
+												const updateRow = (
+													patch: Partial<AspectRowState>,
+													options?: { persist?: boolean }
+												) => {
+													const next = { ...aspects, [aspect.id]: { ...row, ...patch } };
+													setAspects(next);
+													markChanged();
+													if (options?.persist !== false) void persistAspectSettings(next);
+												};
 												return (
-													<div
+													<AccordionItem
 														key={aspect.id}
-														className="grid items-center gap-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_170px]"
+														value={aspect.id}
+														className="rounded-xl border-0 bg-[color:var(--theme-soft-bg)]/45 px-4"
 													>
-														<Label className="flex cursor-pointer items-center gap-3">
-															<Checkbox
-																checked={row.enabled}
-																onCheckedChange={(checked) => {
-																	const next = {
-																		...aspects,
-																		[aspect.id]: {
-																			...row,
-																			enabled: checked === true
-																		}
-																	};
-																	setAspects(next);
-																	markChanged();
-																	void persistAspectSettings(next);
-																}}
-															/>
-															<span className={cn('text-sm', ft.title)}>{t(aspect.labelKey)}</span>
-														</Label>
-														<div className="flex items-center gap-2">
+														<div className="flex items-center gap-3 py-3">
+															<Label className="flex flex-1 cursor-pointer items-center gap-3">
+																<Checkbox
+																	checked={row.enabled}
+																	onCheckedChange={(checked) =>
+																		updateRow({ enabled: checked === true })
+																	}
+																/>
+																<span className={cn('text-sm', ft.title)}>{t(aspect.labelKey)}</span>
+															</Label>
 															<ColorInput
 																value={row.color}
-																onChange={(e) => {
-																	const next = {
-																		...aspects,
-																		[aspect.id]: {
-																			...row,
-																			color: e.target.value
-																		}
-																	};
-																	setAspects(next);
-																	markChanged();
-																	void persistAspectSettings(next);
-																}}
+																onChange={(e) => updateRow({ color: e.target.value })}
 																aria-label={`${t(aspect.labelKey)} ${t('color_theme')}`}
 															/>
-															<span className={cn('text-xs tracking-wide uppercase', ft.muted)}>
-																{t('label_orb')}
-															</span>
-															<Input
-																type="number"
-																className={cn(ft.inputCompact, 'h-9 w-20')}
-																value={row.orb}
-																min={0}
-																max={30}
-																step={0.5}
-																onChange={(e) => {
-																	const n = Number(e.target.value);
-																	const next = {
-																		...aspects,
-																		[aspect.id]: {
-																			...row,
-																			orb: Number.isFinite(n) ? n : row.orb
-																		}
-																	};
-																	setAspects(next);
-																	markChanged();
-																}}
-																onBlur={() => void persistAspectSettings(aspects)}
-															/>
+															<AccordionTrigger className="w-auto flex-none gap-2 py-0 text-xs hover:no-underline">
+																<span className={cn('tracking-wide uppercase tabular-nums', ft.muted)}>
+																	{row.orb}° {t('label_orb')}
+																</span>
+															</AccordionTrigger>
 														</div>
-													</div>
+														<AccordionContent className="pt-0 pb-4">
+															<div className="space-y-3 rounded-lg bg-black/10 p-3 dark:bg-white/5">
+																<div className="grid grid-cols-[1fr_auto] items-center gap-3">
+																	<Label
+																		className={cn('text-xs', ft.muted)}
+																		htmlFor={`${aspect.id}-orb`}
+																	>
+																		{t('label_orb')}
+																	</Label>
+																	<Input
+																		id={`${aspect.id}-orb`}
+																		type="number"
+																		className={cn(ft.inputCompact, 'h-9 w-20')}
+																		value={row.orb}
+																		min={0}
+																		max={30}
+																		step={0.5}
+																		onChange={(e) => {
+																			const n = Number(e.target.value);
+																			updateRow(
+																				{ orb: Number.isFinite(n) ? n : row.orb },
+																				{ persist: false }
+																			);
+																		}}
+																		onBlur={() => void persistAspectSettings(aspects)}
+																	/>
+																</div>
+																{/* Planets are always eligible (no checkbox needed) but each still gets its
+																	own orb, same global mechanism as the opt-in categories below. */}
+																<div className="space-y-1.5 border-t border-[color:var(--theme-panel-border)]/60 pt-3">
+																	<p className={cn('text-[0.65rem] tracking-wide uppercase', ft.muted)}>
+																		{t('settings_aspect_scope_planets')}
+																	</p>
+																	<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+																		{OBSERVABLE_OBJECTS.filter(
+																			(item) => item.objectType === 'planet' && item.status === 'available'
+																		).map((item) => (
+																			<div key={item.id} className="flex items-center justify-between gap-2">
+																				<span className={cn('truncate text-xs', ft.muted)}>
+																					{getObservableObjectLabel(item, t)}
+																				</span>
+																				<Input
+																					type="number"
+																					className={cn(ft.inputCompact, 'h-8 w-16')}
+																					value={objectOrbs[item.id] ?? row.orb}
+																					min={0}
+																					step={0.5}
+																					onChange={(e) => {
+																						const n = Number(e.target.value);
+																						if (Number.isFinite(n)) applyObjectOrbChange(item.id, n);
+																					}}
+																				/>
+																			</div>
+																		))}
+																	</div>
+																</div>
+																{extendedObjectTypes.length > 0 && (
+																	<div className="space-y-3 border-t border-[color:var(--theme-panel-border)]/60 pt-3">
+																		{EXTENDED_OBJECT_TYPE_OPTIONS.filter((option) =>
+																			option.types.some((type) => extendedObjectTypes.includes(type))
+																		).map((option) => {
+																			const items = OBSERVABLE_OBJECTS.filter(
+																				(item) =>
+																					item.objectType !== null &&
+																					option.types.includes(item.objectType) &&
+																					item.status === 'available'
+																			);
+																			if (items.length === 0) return null;
+																			return (
+																				<div key={option.labelKey} className="space-y-1.5">
+																					<p
+																						className={cn(
+																							'text-[0.65rem] tracking-wide uppercase',
+																							ft.muted
+																						)}
+																					>
+																						{t(option.labelKey)}
+																					</p>
+																					<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+																						{items.map((item) => (
+																							<div
+																								key={item.id}
+																								className="flex items-center justify-between gap-2"
+																							>
+																								<span className={cn('truncate text-xs', ft.muted)}>
+																									{getObservableObjectLabel(item, t)}
+																								</span>
+																								<Input
+																									type="number"
+																									className={cn(ft.inputCompact, 'h-8 w-16')}
+																									value={objectOrbs[item.id] ?? suggestedObjectOrb()}
+																									min={0}
+																									step={0.5}
+																									onChange={(e) => {
+																										const n = Number(e.target.value);
+																										if (Number.isFinite(n)) {
+																											applyObjectOrbChange(item.id, n);
+																										}
+																									}}
+																								/>
+																							</div>
+																						))}
+																					</div>
+																				</div>
+																			);
+																		})}
+																	</div>
+																)}
+															</div>
+														</AccordionContent>
+													</AccordionItem>
 												);
 											})}
-										</div>
+										</Accordion>
 									</div>
 									<Separator className="bg-[color:var(--theme-panel-border)]" />
 									<div className="space-y-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">

@@ -98,6 +98,43 @@ pub fn resolve_workspace_chart(
     ))
 }
 
+/// Enforce that a project uses exactly one house system across all of its charts.
+///
+/// A chart with no explicit `house_system` always inherits the project's
+/// choice and is never in conflict. The first chart to set an explicit house
+/// system establishes the project's house system (persisted onto
+/// `manifest.default.default_house_system`); every later chart must agree
+/// with it. This only gates persistence (chart create/update/import) — it
+/// intentionally leaves `current_model_report_with_layers`'s general
+/// workspace/preset/chart/operation precedence chain untouched, since that
+/// resolution path also serves ephemeral, non-persisted overrides (e.g. a
+/// one-off compute with a different house system for comparison) that this
+/// restriction is not meant to block.
+///
+/// Returns `Ok(true)` if it set the project's house system for the first
+/// time, so the caller knows to persist the updated manifest.
+pub fn enforce_single_project_house_system(
+    manifest: &mut crate::workspace::models::WorkspaceManifest,
+    chart: &crate::workspace::models::ChartInstance,
+) -> Result<bool, String> {
+    let Some(requested) = chart.config.house_system.clone() else {
+        return Ok(false);
+    };
+    match &manifest.default.default_house_system {
+        Some(existing) if *existing != requested => Err(format!(
+            "This project uses '{}' houses; chart '{}' cannot select a different house system ('{}'). Change the project's house system in workspace settings instead.",
+            existing.label(),
+            chart.id,
+            requested.label(),
+        )),
+        Some(_) => Ok(false),
+        None => {
+            manifest.default.default_house_system = Some(requested);
+            Ok(true)
+        }
+    }
+}
+
 pub fn validate_chart_instance(
     chart: &crate::workspace::models::ChartInstance,
 ) -> Result<(), String> {

@@ -1,19 +1,25 @@
 ---
 title: 'Paramètres et apparence'
-description: 'Ajuster la langue, l’identité visuelle, les objets, les aspects et les valeurs par défaut de l’espace de travail.'
+description: 'Valeurs de calcul par défaut et apparence de l’application.'
 weight: 50
 ---
 
-Ouvrez **Paramètres** depuis le bas de la barre latérale principale. Sa navigation secondaire répartit les préférences disponibles en sections ciblées.
+Ouvrez **Paramètres** au bas de la barre principale. Il comprend langue et lieu, système de maisons, objets observés, aspects, symboles et disposition.
 
-Les paramètres d’apparence comprennent les quatre thèmes de l’application, la famille d’icônes de la coque applicative, la famille de glyphes astrologiques, les couleurs des éléments et les palettes de thème. Le contrôle de thème compact au bas de la barre latérale principale donne un accès rapide aux quatre thèmes.
+## Valeurs de calcul par défaut
 
-Les paramètres de calcul comprennent le lieu et le fuseau horaire par défaut, le système de maisons, le moteur de calcul, les positions planétaires apparentes ou géométriques, les corps observables, les aspects et les orbes. Utilisez **Apparentes** pour le travail astrologique courant ; choisissez **Géométriques / vraies** seulement si le vecteur instantané non corrigé est intentionnel. Les valeurs par défaut de l’espace de travail peuvent actualiser les résultats existants lorsqu’un paramètre de calcul change.
+Ces valeurs servent aux nouveaux thèmes et aux vues sans choix propre ; elles ne modifient pas un thème enregistré. L’interface propose **Čeština**, **English**, **Français** et **Español**. Recherchez le lieu par défaut ou entrez ses coordonnées ; **Fuseau horaire** est la valeur initiale d’un nouveau thème. Le nom du lieu est descriptif : coordonnées et heure sont les entrées du calcul.
 
-Les ressources linguistiques sont partagées par les deux implémentations frontend. Changer la langue de l’application modifie les libellés de l’interface ; cela ne modifie pas les valeurs astronomiques stockées. La langue et le lieu par défaut se trouvent désormais dans une seule section ; la langue se choisit dans une liste où chaque langue est désignée par son propre nom.
+**Système de maisons** montre les systèmes calculables par le backend Rust/JPL et modifie les cuspides. **Apparent** utilise positions apparentes et corrections ; **Géométrique / vrai** utilise le vecteur non corrigé. Cet écran ne propose pas de moteur ; voir [Éphémérides et couverture](../../developer/ephemeris-manager/).
 
-Le sélecteur d’objets observés propose, pour les étoiles fixes, un filtre rapide pour le ciel nord ou sud, fondé sur la latitude écliptique de chaque étoile. Les étoiles fixes restent pour l’instant à titre indicatif, en attendant qu’un moteur de calcul les prenne en charge.
+## Objets et aspects
 
-La section de disposition de l’application comprend un interrupteur de vue monochrome (niveaux de gris), appliqué par-dessus le thème et la palette actifs sans modifier leurs couleurs enregistrées. Les jeux de symboles de degré (Sepharial, Charubel) suivent la langue de l’application, avec un repli vers l’anglais là où une traduction n’est pas encore disponible.
+Choisissez corps et points pour les nouveaux thèmes. La liste figure dans [Objets, aspects et figures du thème](../objects-aspects-and-patterns/#objets-observés). La sélection n’installe pas de données et ne garantit pas la couverture. Les étoiles fixes se filtrent par latitude écliptique, mais le backend ne les calcule pas encore.
 
-La barre latérale des paramètres propose aussi une courte biographie de Jan Kefer et, tout en bas, un moyen de soutenir le projet.
+**École** remplace aspects actifs, orbes et participation des angles, non les maisons, objets ou moteur. Voir [Écoles et réglages des aspects](../objects-aspects-and-patterns/#écoles-et-réglages-des-aspects). Chaque aspect accepte activation, couleur, orbe de 0–30° par 0,5°, angles et orbe étendu. Les lignes d’aspects du radix ne changent que le dessin.
+
+## Symboles et disposition
+
+Choisissez glyphes par défaut/modernes, icônes par défaut/alternatives, jeux de textes de degrés disponibles, couleurs des éléments et réglages du gestionnaire de glyphes. La roue minimaliste a anneau zodiacal et 12 séparateurs ; la technique ajoute l’échelle 360°. **Bord gauche du radix** place ASC ou 0° du Bélier à gauche sans changer maisons, positions ni aspects ; c’est local à l’appareil.
+
+Choisissez **Sunrise**, **Noon**, **Twilight** ou **Midnight**. La palette règle barres, canevas, textes, accent et fonds ; la vue monochrome les désature. **Enregistrer** confirme palette et couleurs des éléments ; **Annuler** rétablit les champs non enregistrés. Les préférences visuelles peuvent ne pas suivre un autre appareil.

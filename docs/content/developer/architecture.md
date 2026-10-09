@@ -5,6 +5,8 @@ weight: 40
 doc_kind: architecture
 status: current
 authority: informative
+aliases:
+  - /developer/backend-structure/
 ---
 
 This page describes the implementation in this checkout. Statements under
@@ -77,9 +79,25 @@ lunar details, or transit-series results. Transit *setup* is persisted. The
 legacy computed-data storage commands are explicit no-ops.
 
 In `auto` mode, a reachable Python sidecar is preferred; otherwise supported
-work uses Rust. A forced Python route fails if it is unavailable. Some chart
-forms (Jyotish/custom or an override ephemeris) require Python and cannot use
-the Rust fallback. Route/fallback data is included in computation results.
+work uses Rust. A forced Python route fails if it is unavailable. Jyotish and
+Custom engine charts require Python and have no Rust implementation — this is
+the *only* condition `chart_requires_python_precision` /
+`chart_json_requires_python_precision` (`application/compute_router.rs`) force
+onto the Python route.
+
+A per-chart `override_ephemeris` kernel does **not** force Python: it was
+historically also routed as requiring Python precision, but `JplAstronomyBackend`
+(`infrastructure/jpl_backend.rs`) already implemented per-chart
+`override_ephemeris` natively in Rust at the time, which made that a
+router-policy gap rather than a real capability gap — confirmed by git
+history (`jpl_backend.rs`'s override support predates the router check that
+forced Python for it) and fixed by removing `override_ephemeris` from both
+precision checks. `KEFER_COMPUTE_BACKEND=Rust` with an override-ephemeris
+chart, and `Auto` mode with Python unavailable, both now compute through Rust
+directly; tests in `application::compute_router` and
+`infrastructure::jpl_backend` cover Rust-only mode, auto mode with and without
+Python, invalid override paths, and the still-forced Jyotish/Custom case.
+Route/fallback data is included in computation results.
 
 ## Current responsibility split
 
@@ -95,6 +113,22 @@ the Rust fallback. Route/fallback data is included in computation results.
   directly perform YAML/filesystem work; calculation/transit commands still
   route backends and call the sidecar. Do not describe them as thin adapters.
 
+### Persistence and result lifecycle
+
+`WorkspaceManifest` is the durable index; loaded charts and references are
+separate typed representations. `WorkspaceInfo` is a tolerant shell summary,
+whereas `LoadedWorkspace` retains diagnostics. YAML, settings resolution,
+validation, and runtime catalog construction belong to Rust. Computed
+positions, houses, aspects, configurations, lunar details, and transit series
+are response data held by the frontend, not a database-backed workspace cache;
+only transit setup is persisted. Result metadata exposes the selected backend,
+fallback state, ephemeris source when available, and warnings.
+
+The Python sidecar is optional infrastructure, not a second persistence or
+configuration authority. It may be chosen in auto mode, while Rust handles
+supported no-sidecar requests. The exact workspace lifecycle and precedence
+are defined by the [Workspace YAML contract](../workspace-yaml/).
+
 ## Intended direction and debt
 
 The intended boundary is commands as thin transport adapters over application
@@ -102,5 +136,5 @@ use cases, with filesystem/provider orchestration moved behind those use cases.
 Only the typed computation and transit cores are substantially there today.
 Chart-selection catalog refresh and automated React/Svelte parity coverage are
 also incomplete. See [Rust code structure](../rust-code-structure/) for the
-module map, [Rust workspace contract](../rust-workspace-contract/) for the
-observable lifecycle, and [Testing strategy](../testing-strategy/) for gaps.
+module map, [Workspace YAML contract](../workspace-yaml/) for the observable
+lifecycle, and [Testing strategy](../testing-strategy/) for gaps.

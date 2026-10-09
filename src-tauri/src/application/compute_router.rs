@@ -102,20 +102,20 @@ pub fn select_transit_compute_route(
     }
 }
 
-/// Only Jyotish and Custom require Python; JPL and Swisseph can run through Rust.
+/// Only Jyotish and Custom require Python; JPL (including a per-chart
+/// `override_ephemeris` kernel) and Swisseph can run through Rust.
+/// `JplAstronomyBackend`/`jpl_backend_for_chart` (`infrastructure/jpl_backend.rs`)
+/// implement `override_ephemeris` natively, so it is not a Python-only capability —
+/// see the "Per-chart override" section of the ephemeris-manager documentation
+/// for the history of this (former) discrepancy.
 pub fn chart_json_requires_python_precision(chart_json: &serde_json::Value) -> bool {
     let cfg = chart_json.get("config").and_then(|v| v.as_object());
     let engine = cfg
         .and_then(|c| c.get("engine"))
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_ascii_lowercase());
-    let has_override_ephemeris = cfg
-        .and_then(|c| c.get("override_ephemeris"))
-        .and_then(|v| v.as_str())
-        .map(|s| !s.trim().is_empty())
-        .unwrap_or(false);
 
-    matches!(engine.as_deref(), Some("jyotish" | "custom")) || has_override_ephemeris
+    matches!(engine.as_deref(), Some("jyotish" | "custom"))
 }
 
 pub fn chart_requires_python_precision(
@@ -128,19 +128,16 @@ pub fn chart_requires_python_precision(
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
     let chart = crate::workspace::loader::load_chart(base, &chart_rel)?;
 
-    // Only Jyotish and Custom require Python; JPL and Swisseph can use Rust.
+    // Only Jyotish and Custom require Python; JPL (including a per-chart
+    // override_ephemeris kernel) and Swisseph can use Rust — see
+    // chart_json_requires_python_precision above.
     let requires = matches!(
         chart.config.engine,
         Some(
             crate::workspace::models::EngineType::Jyotish
                 | crate::workspace::models::EngineType::Custom
         )
-    ) || chart
-        .config
-        .override_ephemeris
-        .as_deref()
-        .map(|s| !s.trim().is_empty())
-        .unwrap_or(false);
+    );
 
     Ok(requires)
 }
@@ -258,6 +255,72 @@ mod tests {
     fn chart_route_honors_python_when_available() {
         let route = select_chart_compute_route(ComputeBackend::Auto, true, true)
             .expect("python should be selected when available");
+        assert_eq!(route, ComputeRoute::Python);
+    }
+
+    /// `JplAstronomyBackend`/`jpl_backend_for_chart` implement `override_ephemeris`
+    /// natively (`infrastructure/jpl_backend.rs`), so it must not force Python —
+    /// regression test for the router/backend discrepancy this previously had.
+    #[test]
+    fn override_ephemeris_alone_does_not_force_python_precision() {
+        let chart_json = serde_json::json!({
+            "config": {
+                "engine": "jpl",
+                "override_ephemeris": "/some/path/to.bsp",
+            }
+        });
+        assert!(!chart_json_requires_python_precision(&chart_json));
+
+        let no_engine = serde_json::json!({
+            "config": { "override_ephemeris": "/some/path/to.bsp" }
+        });
+        assert!(!chart_json_requires_python_precision(&no_engine));
+    }
+
+    #[test]
+    fn jyotish_and_custom_engines_force_python_precision_regardless_of_override() {
+        for engine in ["jyotish", "custom"] {
+            let with_override = serde_json::json!({
+                "config": { "engine": engine, "override_ephemeris": "/some/path.bsp" }
+            });
+            assert!(chart_json_requires_python_precision(&with_override));
+
+            let without_override = serde_json::json!({ "config": { "engine": engine } });
+            assert!(chart_json_requires_python_precision(&without_override));
+        }
+    }
+
+    #[test]
+    fn empty_override_ephemeris_string_is_not_treated_as_set() {
+        let chart_json = serde_json::json!({
+            "config": { "engine": "jpl", "override_ephemeris": "" }
+        });
+        assert!(!chart_json_requires_python_precision(&chart_json));
+    }
+
+    #[test]
+    fn override_ephemeris_chart_routes_to_rust_in_rust_only_mode() {
+        // force_python=false (override no longer forces it) — explicit Rust
+        // backend selection must succeed instead of erroring with "Rust backend
+        // does not support this chart type yet."
+        let route = select_chart_compute_route(ComputeBackend::Rust, false, false)
+            .expect("Rust must support an override-ephemeris JPL chart directly");
+        assert_eq!(route, ComputeRoute::Rust);
+    }
+
+    #[test]
+    fn override_ephemeris_chart_falls_back_to_rust_in_auto_mode_without_python() {
+        let route = select_chart_compute_route(ComputeBackend::Auto, false, false)
+            .expect("auto mode should use the Rust JPL override path when Python is unavailable");
+        assert_eq!(route, ComputeRoute::Rust);
+    }
+
+    #[test]
+    fn override_ephemeris_chart_still_prefers_python_in_auto_mode_when_available() {
+        // Auto mode's ordinary Python-preferred policy is untouched; only the
+        // *forced, no-fallback* requirement tied to override_ephemeris is gone.
+        let route = select_chart_compute_route(ComputeBackend::Auto, true, false)
+            .expect("auto mode with python available should still prefer python");
         assert_eq!(route, ComputeRoute::Python);
     }
 

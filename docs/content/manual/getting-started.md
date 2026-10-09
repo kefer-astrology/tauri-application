@@ -11,7 +11,7 @@ Kefer Astrology opens on the horoscope workspace. The primary sidebar remains av
 - **New, Open, Save, and Export** manage the work you keep in a workspace.
 - **Horoscope** is the main chart dashboard.
 - **Aspectarium** presents relationships between the selected chart objects.
-- **Information** presents chart details and calculated values.
+- **Information** (including Spektrum) is a visual prototype for a future calculated summary; it does not yet show the selected chart's actual values.
 - **Transits and Dynamics** provide time-based views.
 - **Revolution and Synastry** provide specialized comparison workflows.
 - **Settings** controls language, appearance, calculation defaults, objects, and aspects.
@@ -20,7 +20,7 @@ Kefer Astrology opens on the horoscope workspace. The primary sidebar remains av
 
 1. Open **New** and enter the subject, date, time, and location.
 2. Create the chart and return to **Horoscope**.
-3. Use **Information** and **Aspectarium** to inspect the result.
+3. Use **Horoscope** and **Aspectarium** to inspect the calculated result.
 4. Save the workspace when you want to keep it.
 
 The browser build used by the Guided Tour is a demonstration surface. Native file dialogs, persistence, and backend-dependent calculations require the desktop application.

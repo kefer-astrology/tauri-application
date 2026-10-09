@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Developer Manual | Kefer Astrology</title>
-    <meta name="description" content="Architecture, contracts, implementation guidance, and verification for contributors and coding agents." />
+    <meta name="description" content="Architecture, contracts, implementation references, and verification for contributors." />
     <link rel="icon" type="image/png" href="/favicon.png" />
     
     <link rel="stylesheet" href="/css/site.min.f201ddb38e623592a6d7332dbf2d2bb0b31182a31e7f30b2822906c421b3fe02.css" integrity="sha256-8gHds45iNZKm1zMtvy0rsLMRgqMefzCygikGxCGz/gI=" />
@@ -32,7 +32,7 @@
     <header class="page-header">
       <p class="eyebrow">developer</p>
       <h1>Developer Manual</h1>
-      <p class="lede">Architecture, contracts, implementation guidance, and verification for contributors and coding agents.</p>
+      <p class="lede">Architecture, contracts, implementation references, and verification for contributors.</p>
       
         <div class="doc-meta" aria-label="Document classification">
           <span>Index</span>
@@ -42,71 +42,76 @@
       
     </header>
     <div class="prose">
-      <p>The Developer Manual explains how Kefer Astrology is designed, implemented,
-extended, and verified. The separate <strong><a href="/manual/">Manual</a></strong> describes the
-application from a user&rsquo;s point of view.</p>
-<p>Developer pages have distinct roles:</p>
-<ul>
-<li><strong>Contract</strong> — normative behavior that implementations and consumers may rely on.</li>
-<li><strong>Architecture</strong> — system boundaries, ownership, and design rationale.</li>
-<li><strong>Implementation reference</strong> — where and how current code realizes a contract.</li>
-<li><strong>Guide</strong> — how contributors work in this repository.</li>
-<li><strong>Policy</strong> — repository-wide rules that govern changes or presentation.</li>
-<li><strong>Roadmap</strong> — desired work that is not yet a current contract.</li>
-<li><strong>Archive</strong> — historical context only.</li>
-<li><strong>Index</strong> — navigation and page discovery; it is not a behavioral authority.</li>
-</ul>
-<p>When pages disagree, follow a current normative contract. Do not infer current
-behavior from a roadmap or archive page.</p>
-<h2 id="contributing">Contributing</h2>
+      <p>Use this section by the question you need to answer. The <strong><a href="/manual/">Manual</a></strong>
+is the authoritative task guide for application users; the <strong><a href="/guides/">Guides</a></strong>
+are interactive previews and walkthroughs, not a second manual.</p>
+<p>Current contracts describe behavior an implementation or consumer may rely on.
+Implementation references explain the current code and evidence. The
+<strong><a href="/developer/development-driver/">roadmap</a></strong> describes planned work only.</p>
+<h2 id="start-here">Start here</h2>
 <ul>
 <li><strong><a href="/developer/project-context/">Repository and contribution guide</a></strong> — repository map,
-document roles, contract workflow, and definition of done.</li>
-<li><strong><a href="/developer/testing-strategy/">Testing strategy</a></strong> — test levels, shared fixtures, parity, and traceability.</li>
+document roles, change workflow, and definition of done.</li>
+<li><strong><a href="/developer/architecture/">System architecture</a></strong> — runtime boundaries, actual flows,
+ownership, and known debt.</li>
+<li><strong><a href="/developer/testing-strategy/">Testing strategy</a></strong> — test levels, fixtures,
+traceability, and the evidence required for a change.</li>
 </ul>
-<h2 id="architecture">Architecture</h2>
+<h2 id="build-or-change-astronomical-calculation">Build or change astronomical calculation</h2>
+<ol>
+<li><strong><a href="/developer/astronomy-coordinate-contract/">Astronomy coordinate contract</a></strong> is the
+normative source for time scales, frames, corrections, longitudes, motion,
+artifacts, and the topocentric limitation.</li>
+<li><strong><a href="/developer/spice-backend/">SPICE calculation backend</a></strong> explains the JPL/ANISE
+implementation and provider boundary. It does not redefine the contract.</li>
+<li><strong><a href="/developer/ephemeris-manager/">Ephemerides and coverage</a></strong> is the source for BSP
+acquisition, installation, selection/precedence, usable versus raw coverage,
+and offline operation.</li>
+<li><strong><a href="/developer/ephemeris-validation/">Validation and performance</a></strong> records fixtures,
+independent references, tests, benchmarks, measured errors, and gaps. Passing
+tests are scoped evidence, not a general accuracy claim.</li>
+</ol>
+<p>For domain-specific work, use <strong><a href="/developer/house-systems/">house systems</a></strong>,
+<strong><a href="/developer/lunar-phase/">lunar phase</a></strong>, and <strong><a href="/developer/physical-properties/">physical properties</a></strong>.</p>
+<h2 id="change-persisted-workspaces-settings-or-commands">Change persisted workspaces, settings, or commands</h2>
 <ul>
-<li><strong><a href="/developer/architecture/">System architecture</a></strong> — cross-layer runtime overview.</li>
+<li><strong><a href="/developer/workspace-yaml/">Workspace YAML contract</a></strong> — portable workspace tree,
+inheritance, chart overrides, presentation boundary, and persisted transit intent.</li>
+<li><strong><a href="/developer/configuration-reference/">Configuration reference</a></strong> — implemented
+calculation settings, serialized values, and inactive persisted settings.</li>
+<li><strong><a href="/developer/tauri-command-contracts/">Tauri command contracts</a></strong> — frontend-facing
+command inputs and outputs.</li>
+<li><strong><a href="/developer/chart-datetime-contract/">Chart datetime contract</a></strong> — canonical time
+handling; workspace lifecycle and loading are part of the Workspace YAML contract.</li>
+</ul>
+<h2 id="implement-a-feature-or-frontend-workflow">Implement a feature or frontend workflow</h2>
+<ul>
 <li><strong><a href="/developer/domain-model/">Domain model and extensibility</a></strong> — canonical concepts,
-the Rust-owned runtime domain catalog, calculations, providers, and extension points.</li>
-<li><strong><a href="/developer/shared-core/">Shared astrology core</a></strong> — the planned boundary shared by
-Rust and the separately extractable Python sidecar.</li>
-<li><strong><a href="/developer/backend-structure/">Backend structure</a></strong> — current persistence, provenance, and backend mechanisms.</li>
-<li><strong><a href="/developer/rust-code-structure/">Rust code structure</a></strong> — current Rust module and
-responsibility map.</li>
+catalog ownership, and extension points.</li>
+<li><strong><a href="/developer/frontend-workflow-baseline/">Frontend workflow baseline</a></strong> — workflows
+both shells must support; use the React or Svelte reference for shell details.</li>
+<li><strong><a href="/developer/frontend-react/">React frontend</a></strong> / <strong><a href="/developer/frontend-svelte/">Svelte frontend</a></strong> —
+supported implementation differences and current limitations.</li>
+<li><strong><a href="/developer/transit-series-contract/">Transit series contract</a></strong>,
+<strong><a href="/developer/radix-render-contract/">radix render contract</a></strong>, and
+<strong><a href="/developer/import-chart-contract/">import chart contract</a></strong> — feature-level payload
+and output contracts.</li>
+<li><strong><a href="/developer/ui-conventions/">UI conventions</a></strong>, <strong><a href="/developer/time-navigation/">time navigation</a></strong>,
+and <strong><a href="/developer/guided-tour/">Guided Tour contract</a></strong> — interaction, presentation,
+and stable tour-anchor rules.</li>
 </ul>
-<h2 id="contracts">Contracts</h2>
+<h2 id="code-maps-plans-and-history">Code maps, plans, and history</h2>
 <ul>
-<li><strong><a href="/developer/configuration-reference/">Configuration reference</a></strong> — implemented calculation
-settings, serialized values, and presentation boundary.</li>
-<li><strong><a href="/developer/workspace-yaml/">Workspace YAML contract</a></strong> — complete project tree,
-schools/models, settings inheritance, chart overrides, presentation, and
-persisted transit intent.</li>
-<li><strong><a href="/developer/tauri-command-contracts/">Tauri command contracts</a></strong> — frontend-facing native commands.</li>
-<li><strong><a href="/developer/rust-workspace-contract/">Rust workspace contract</a></strong> — workspace lifecycle,
-manifest/chart boundaries, catalog loading, and no-sidecar rules.</li>
-<li><strong><a href="/developer/frontend-workflow-baseline/">Frontend workflow baseline</a></strong> — workflows both frontends are measured against.</li>
-<li><strong><a href="/developer/chart-datetime-contract/">Chart datetime contract</a></strong> — canonical timestamps.</li>
-<li><strong><a href="/developer/transit-series-contract/">Transit series contract</a></strong> — transit computation payload and result.</li>
-<li><strong><a href="/developer/import-chart-contract/">Import chart contract</a></strong> — supported import behavior.</li>
-<li><strong><a href="/developer/radix-render-contract/">Radix render contract</a></strong> — computed output required for a radix view.</li>
+<li><strong><a href="/developer/rust-code-structure/">Rust code structure</a></strong> — current module and
+responsibility map; system ownership is in Architecture.</li>
+<li><strong><a href="/developer/python-package/">Python package</a></strong> and <strong><a href="/developer/shared-core/">shared core</a></strong> —
+optional-sidecar reality and a proposed extraction boundary, respectively.</li>
+<li><strong><a href="/developer/development-driver/">Development roadmap</a></strong> and <strong><a href="/developer/ci-todo/">CI todo</a></strong> —
+planned work; neither changes a current contract.</li>
+<li><strong><a href="/developer/versioning/">Versioning</a></strong> — release-number policy.</li>
 </ul>
-<h2 id="implementation-reference">Implementation reference</h2>
-<ul>
-<li><strong><a href="/developer/spice-backend/">SPICE backend</a></strong>, <strong><a href="/developer/ephemeris-manager/">ephemeris manager</a></strong>, and <strong><a href="/developer/python-package/">Python package</a></strong> describe computation backends.</li>
-<li><strong><a href="/developer/house-systems/">House systems</a></strong>, <strong><a href="/developer/lunar-phase/">lunar phase</a></strong>, and <strong><a href="/developer/physical-properties/">physical properties</a></strong> document domain calculations and data.</li>
-<li><strong><a href="/developer/frontend-react/">React frontend</a></strong> — the primary desktop interface.</li>
-<li><strong><a href="/developer/frontend-svelte/">Svelte frontend</a></strong> — the alternate implementation and parity surface.</li>
-<li><strong><a href="/developer/guided-tour/">Guided Tour contract</a></strong> — tour mode, stable anchors, and overlay behavior.</li>
-<li><strong><a href="/developer/ui-conventions/">UI conventions</a></strong> and <strong><a href="/developer/time-navigation/">time navigation</a></strong> — shared interaction rules.</li>
-</ul>
-<h2 id="roadmap-and-history">Roadmap and history</h2>
-<ul>
-<li><strong><a href="/developer/development-driver/">Development roadmap</a></strong> — active implementation and architecture gaps.</li>
-<li><strong><a href="/developer/ci-todo/">CI todo</a></strong> records remaining automation work.</li>
-<li><strong><a href="/developer/versioning/">Versioning</a></strong> defines the release-number policy.</li>
-<li><strong><a href="/developer/discussion-summary/">Discussion summary</a></strong> preserves historical context and is explicitly non-normative.</li>
-</ul>
+<p>Historical material is intentionally outside this reading path in the
+<strong><a href="/developer/archive/">archive</a></strong>.</p>
 
     </div>
     

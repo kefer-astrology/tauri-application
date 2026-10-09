@@ -11,8 +11,9 @@ use serde::{Deserialize, Serialize};
 
 use super::model_catalog::{builtin_model_settings, builtin_standard_model};
 use super::models::{
-    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, PositionMode,
-    TimeSystem, WorkspaceManifest, ZodiacType,
+    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides,
+    NON_PHYSICAL_OBJECT_TYPES, ObjectType, ObjectTypeRule, PositionMode, TimeSystem,
+    WorkspaceManifest, ZodiacType,
 };
 use super::validation::Diagnostic;
 
@@ -103,6 +104,11 @@ pub struct EffectiveModelSettings {
     pub default_direction_bodies: Option<Vec<String>>,
     #[serde(default)]
     pub aspect_orbs: HashMap<String, f64>,
+    /// Per-object orb override (body id -> degrees), global across every
+    /// aspect — see `WorkspaceDefaults::object_orbs`. Workspace-level only,
+    /// unlike `aspect_orbs`: no preset/chart/operation layer overrides this.
+    #[serde(default)]
+    pub object_orbs: HashMap<String, f64>,
     #[serde(default)]
     pub standard_orb: f64,
     #[serde(default)]
@@ -242,6 +248,7 @@ pub fn current_model_report_with_layers(
     if let Some(layer) = operation {
         model = merge_model_with_overrides(model, layer.model_overrides.as_ref());
     }
+    apply_workspace_aspect_scope_defaults(&mut model, manifest);
     let effective_settings =
         effective_model_settings(Some(manifest), &model, preset, chart_config, operation);
     let mut diagnostics = super::validation::validate_manifest_model_references(manifest, &model);
@@ -387,6 +394,9 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
             if let Some(weight) = override_entry.interpretation_weight {
                 aspect.interpretation_weight = Some(weight);
             }
+            if let Some(object_type_rule) = &override_entry.object_type_rule {
+                aspect.object_type_rule = Some(object_type_rule.clone());
+            }
         }
     }
 
@@ -396,6 +406,42 @@ fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrid
         }
     }
     merged
+}
+
+/// Apply the workspace's "Settings > Aspects" object-scope choice onto the resolved model.
+///
+/// `extended_object_types` — which non-`Planet` categories (`Angle`, asteroids, lunar nodes,
+/// parts, geocentric nodes, trans-Neptunian objects, hypothetical bodies) may participate — is
+/// global: the same set is the eligibility baseline for every aspect. `None` (never configured)
+/// leaves every aspect's baseline untouched (the catalog's own unrestricted default, or whatever
+/// `model_overrides` already gave it). The per-object orb narrowing itself
+/// (`WorkspaceDefaults::object_orbs`) is resolved later, during actual aspect matching in
+/// `domain::astrology`, not here — this function only decides eligibility.
+///
+/// One exception to "global, same for every aspect": conjunction gets the full enabled set, but
+/// every other aspect additionally excludes `NON_PHYSICAL_OBJECT_TYPES` — a trine/square/sextile/
+/// etc. models a geometric ray of light between two bodies, which a pure mathematical point
+/// (a node, Lilith, an angle, an Arabic Part, a never-confirmed Uranian hypothetical) can't
+/// participate in; conjunction (bodily co-presence) still applies to them regardless.
+fn apply_workspace_aspect_scope_defaults(model: &mut AstroModel, manifest: &WorkspaceManifest) {
+    let Some(extended_types) = manifest.default.extended_object_types.as_ref() else {
+        return;
+    };
+
+    for aspect in &mut model.aspect_definitions {
+        let mut types = vec![ObjectType::Planet];
+        if aspect.id == "conjunction" {
+            types.extend(extended_types.iter().copied());
+        } else {
+            types.extend(
+                extended_types
+                    .iter()
+                    .copied()
+                    .filter(|object_type| !NON_PHYSICAL_OBJECT_TYPES.contains(object_type)),
+            );
+        }
+        aspect.object_type_rule = Some(ObjectTypeRule::OnlyBetween { types });
+    }
 }
 
 fn override_applies(entry: &super::models::OverrideEntry, model: &AstroModel) -> bool {
@@ -451,6 +497,9 @@ fn effective_model_settings(
         .keys()
         .map(|id| (id.clone(), SettingSource::Model))
         .collect();
+    let object_orbs = manifest
+        .and_then(|manifest| manifest.default.object_orbs.clone())
+        .unwrap_or_default();
 
     if let Some(manifest) = manifest {
         if let Some(value) = manifest.default.default_house_system.clone() {
@@ -591,6 +640,7 @@ fn effective_model_settings(
         default_transit_bodies: model_settings.default_transit_bodies.clone(),
         default_direction_bodies: model_settings.default_direction_bodies.clone(),
         aspect_orbs,
+        object_orbs,
         standard_orb: model_settings.standard_orb,
         engine,
         position_mode,
@@ -749,6 +799,9 @@ mod tests {
             default_aspects: None,
             default_aspect_orbs: None,
             default_aspect_colors: None,
+            extended_object_types: None,
+            object_orbs: None,
+            astrology_tradition: None,
             aspect_line_tier_style: None,
             time_system: None,
         }
@@ -843,6 +896,7 @@ mod tests {
                 enabled: None,
                 valid_contexts: None,
                 interpretation_weight: None,
+                object_type_rule: None,
             }],
             override_orbs: HashMap::new(),
         });
@@ -943,6 +997,7 @@ mod tests {
                 enabled: Some(false),
                 valid_contexts: Some(vec![AspectContext::Transit]),
                 interpretation_weight: Some(0.5),
+                object_type_rule: None,
             }],
             override_orbs: HashMap::new(),
         });
@@ -1114,5 +1169,87 @@ mod tests {
         assert!(report.diagnostics.iter().all(|diagnostic| {
             diagnostic.severity != super::super::validation::DiagnosticSeverity::Error
         }));
+    }
+
+    #[test]
+    fn untouched_workspace_leaves_aspect_object_type_rule_unrestricted() {
+        let mut manifest = empty_manifest();
+        manifest
+            .models
+            .insert("standard".to_string(), builtin_standard_model("standard"));
+        manifest.active_model = Some("standard".to_string());
+
+        let report = current_model_report(&manifest, None);
+        let square = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|aspect| aspect.id == "square")
+            .expect("square definition");
+
+        assert!(square.object_type_rule.is_none());
+    }
+
+    #[test]
+    fn workspace_extended_object_types_apply_to_every_aspect_except_angle() {
+        let mut manifest = empty_manifest();
+        manifest
+            .models
+            .insert("standard".to_string(), builtin_standard_model("standard"));
+        manifest.active_model = Some("standard".to_string());
+        // Asteroid is physical (eligible everywhere); Angle is not (conjunction-only).
+        manifest.default.extended_object_types = Some(vec![
+            super::super::models::ObjectType::Asteroid,
+            super::super::models::ObjectType::Angle,
+        ]);
+
+        let report = current_model_report(&manifest, None);
+        for id in ["quincunx", "trine"] {
+            let aspect = report
+                .model
+                .aspect_definitions
+                .iter()
+                .find(|aspect| aspect.id == id)
+                .unwrap_or_else(|| panic!("{id} definition"));
+            match &aspect.object_type_rule {
+                Some(super::super::models::ObjectTypeRule::OnlyBetween { types }) => {
+                    assert!(types.contains(&super::super::models::ObjectType::Planet));
+                    assert!(types.contains(&super::super::models::ObjectType::Asteroid));
+                    assert!(!types.contains(&super::super::models::ObjectType::Angle));
+                }
+                other => panic!("{id}: expected OnlyBetween rule, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn conjunction_keeps_every_enabled_category_including_non_physical_ones() {
+        let mut manifest = empty_manifest();
+        manifest
+            .models
+            .insert("standard".to_string(), builtin_standard_model("standard"));
+        manifest.active_model = Some("standard".to_string());
+        manifest.default.extended_object_types = Some(vec![
+            super::super::models::ObjectType::Asteroid,
+            super::super::models::ObjectType::Angle,
+            super::super::models::ObjectType::LunarNode,
+        ]);
+
+        let report = current_model_report(&manifest, None);
+        let conjunction = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|aspect| aspect.id == "conjunction")
+            .expect("conjunction definition");
+        match &conjunction.object_type_rule {
+            Some(super::super::models::ObjectTypeRule::OnlyBetween { types }) => {
+                assert!(types.contains(&super::super::models::ObjectType::Planet));
+                assert!(types.contains(&super::super::models::ObjectType::Asteroid));
+                assert!(types.contains(&super::super::models::ObjectType::Angle));
+                assert!(types.contains(&super::super::models::ObjectType::LunarNode));
+            }
+            other => panic!("conjunction: expected OnlyBetween rule, got {other:?}"),
+        }
     }
 }

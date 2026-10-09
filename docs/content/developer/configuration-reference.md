@@ -11,25 +11,14 @@ This reference describes Rust's current serialized/configuration types. The
 source of exact enum spelling is `src-tauri/src/workspace/models.rs`; callers
 should not treat frontend labels as identifiers.
 
-## Resolution
+## Calculation settings
 
-Calculation settings are merged as follows where a field is represented:
-
-```text
-application baseline < model < workspace < preset < chart < operation
-```
-
-The output includes `EffectiveSettingsSources`. An omitted optional field
-inherits; a provided preset/chart/operation body or aspect array, including an
-empty array, replaces the inherited selection. See [Rust workspace
-contract](../rust-workspace-contract/) for legacy workspace-body behavior and
-the chart `zodiac_type` caveat.
-
-Current calculation fields include house system, selected bodies/aspects and
-per-aspect orbs, engine, position mode, zodiac type, ayanamsa, and time system.
-Models also carry defaults and computational constants. Workspace defaults add
-location and presentation-adjacent defaults. Provider availability is separate
-from a valid model/catalog entry.
+The [Workspace YAML contract](../workspace-yaml/#resolution-order) owns
+precedence, inheritance, empty-selection semantics, and source provenance.
+This page owns the implemented setting vocabulary: house system, selected
+bodies/aspects and per-aspect orbs, engine, position mode, zodiac type,
+ayanamsa, and time system. Provider availability remains separate from a valid
+model or catalog entry.
 
 ## Serialized enum families
 

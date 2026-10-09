@@ -283,6 +283,53 @@ fn placidus_cusp(
     cusp
 }
 
+/// Equal house cusps: 12 cusps of exactly 30°, starting at the Ascendant's own
+/// degree — unlike [`whole_sign_cusps`], which rounds house 1 down to the
+/// start of the Ascendant's zodiac sign. Always defined (pure arithmetic on
+/// the Ascendant, no latitude/obliquity trigonometry involved).
+pub fn equal_cusps(asc_lon_deg: f64) -> Vec<f64> {
+    (0..12)
+        .map(|i| normalize_deg(asc_lon_deg + i as f64 * 30.0))
+        .collect()
+}
+
+/// Porphyry house cusps: houses 1/4/7/10 are the angles (Asc/IC/Desc/MC); each
+/// quadrant's arc between consecutive angles is trisected equally for that
+/// quadrant's two intermediate cusps. Always defined (no latitude singularity,
+/// unlike Placidus/Campanus) since it only needs the already-computed angles.
+pub fn porphyry_cusps(asc_lon_deg: f64, mc_lon_deg: f64) -> Vec<f64> {
+    let desc = normalize_deg(asc_lon_deg + 180.0);
+    let ic = normalize_deg(mc_lon_deg + 180.0);
+
+    let trisect = |from: f64, to: f64| -> (f64, f64) {
+        let arc = normalize_deg(to - from);
+        (
+            normalize_deg(from + arc / 3.0),
+            normalize_deg(from + arc * 2.0 / 3.0),
+        )
+    };
+
+    let (h2, h3) = trisect(asc_lon_deg, ic);
+    let (h5, h6) = trisect(ic, desc);
+    let (h8, h9) = trisect(desc, mc_lon_deg);
+    let (h11, h12) = trisect(mc_lon_deg, asc_lon_deg);
+
+    vec![
+        asc_lon_deg,
+        h2,
+        h3,
+        ic,
+        h5,
+        h6,
+        desc,
+        h8,
+        h9,
+        mc_lon_deg,
+        h11,
+        h12,
+    ]
+}
+
 /// Intersection of the ecliptic with a great circle. `equator_crossing_deg` is
 /// the great circle's ascending-node-like crossing on the equator; `pole_height_deg`
 /// is the circle pole's height above the equator.
@@ -741,5 +788,61 @@ mod tests {
                 (index + 1) % cusps.len() + 1
             );
         }
+    }
+
+    #[test]
+    fn equal_cusps_are_exactly_30_degrees_apart_from_the_ascendant() {
+        let asc = 15.0; // 15° Taurus, so Whole Sign would instead start house 1 at 30°
+        let cusps = equal_cusps(asc);
+        assert_eq!(cusps.len(), 12);
+        for (i, cusp) in cusps.iter().enumerate() {
+            let expected = normalize_deg(asc + i as f64 * 30.0);
+            assert!((cusp - expected).abs() < 1e-9, "house {}: {cusp} != {expected}", i + 1);
+        }
+        // Distinguishes Equal from Whole Sign: house 1 keeps the exact Ascendant
+        // degree rather than rounding down to the sign boundary.
+        assert!((cusps[0] - asc).abs() < 1e-9);
+        let whole = whole_sign_cusps(asc);
+        assert!(angular_delta_deg_shortest(cusps[0], whole[0]).abs() > 1.0);
+    }
+
+    #[test]
+    fn porphyry_cusps_trisect_each_quadrant_and_are_not_whole_sign() {
+        let jd = 2451545.0;
+        let lat = 50.0875;
+        let lon = 14.4214;
+        let (asc, mc, desc, ic) = compute_axes(jd, lat, lon).expect("axes");
+        let cusps = porphyry_cusps(asc, mc);
+        assert_eq!(cusps.len(), 12);
+        assert!((cusps[0] - asc).abs() < 1e-9);
+        assert!((cusps[3] - ic).abs() < 1e-9);
+        assert!((cusps[6] - desc).abs() < 1e-9);
+        assert!((cusps[9] - mc).abs() < 1e-9);
+
+        // Each quadrant's two intermediate cusps split its arc into three equal parts.
+        for &(start, end) in &[(0, 3), (3, 6), (6, 9), (9, 12)] {
+            let quadrant_arc = normalize_deg(cusps[end % 12] - cusps[start]);
+            let first_third = normalize_deg(cusps[start + 1] - cusps[start]);
+            let second_third = normalize_deg(cusps[start + 2] - cusps[start]);
+            assert!(
+                (first_third - quadrant_arc / 3.0).abs() < 1e-9,
+                "quadrant {start}-{end}: first third {first_third} != {}",
+                quadrant_arc / 3.0
+            );
+            assert!(
+                (second_third - quadrant_arc * 2.0 / 3.0).abs() < 1e-9,
+                "quadrant {start}-{end}: second third {second_third} != {}",
+                quadrant_arc * 2.0 / 3.0
+            );
+        }
+
+        let whole = whole_sign_cusps(asc);
+        assert!(
+            cusps
+                .iter()
+                .zip(whole.iter())
+                .any(|(a, b)| angular_delta_deg_shortest(*a, *b).abs() > 1.0),
+            "Porphyry collapsed to Whole Sign: {cusps:?}"
+        );
     }
 }
