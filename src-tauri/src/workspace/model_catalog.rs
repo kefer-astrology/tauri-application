@@ -491,6 +491,277 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::JplOnly,
         ),
+        // Osculating Black Moon Lilith — a third Lilith variant distinct from
+        // the mean (`lilith`) and true/oscillating-apogee (`true_lilith`)
+        // definitions above. Restored from the pre-Rust frontend catalog
+        // (`observableObjects.ts` at commit 7cb443e); it was always a
+        // UI-only placeholder there too, never backend-computed.
+        body_definition(
+            "lilith_oscu",
+            "Osculating Lilith",
+            "⚸",
+            ObjectType::CalculatedPoint,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        // Geocentric planetary nodes (ascending-node crossings of each outer
+        // planet's orbit, as seen from Earth) — restored from the same
+        // pre-Rust catalog, always a UI-only placeholder there, never
+        // computed by any backend before or since.
+        body_definition(
+            "geo_node_mercury",
+            "Mercury node",
+            "GMe",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "geo_node_venus",
+            "Venus node",
+            "GVe",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "geo_node_mars",
+            "Mars node",
+            "GMa",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "geo_node_jupiter",
+            "Jupiter node",
+            "GJu",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "geo_node_saturn",
+            "Saturn node",
+            "GSa",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "geo_node_uranus",
+            "Uranus node",
+            "GUr",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "geo_node_neptune",
+            "Neptune node",
+            "GNe",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "geo_node_pluto",
+            "Pluto node",
+            "GPl",
+            ObjectType::GeocentricNode,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        // Trans-Neptunian dwarf planets — restored from the same pre-Rust
+        // catalog. Unlike the extra minor planets above, these aren't yet
+        // claimed by any engine (no bundled/downloadable kernel is wired up
+        // for them here), so they stay a UI-only placeholder for now too.
+        body_definition(
+            "eris",
+            "Eris",
+            "Er",
+            ObjectType::TransNeptunian,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "sedna",
+            "Sedna",
+            "Se",
+            ObjectType::TransNeptunian,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "haumea",
+            "Haumea",
+            "Ha",
+            ObjectType::TransNeptunian,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "makemake",
+            "Makemake",
+            "Mk",
+            ObjectType::TransNeptunian,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "quaoar",
+            "Quaoar",
+            "Qu",
+            ObjectType::TransNeptunian,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "orcus",
+            "Orcus",
+            "Or",
+            ObjectType::TransNeptunian,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "varuna",
+            "Varuna",
+            "Va",
+            ObjectType::TransNeptunian,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        // The Uranian/Hamburg-school hypothetical eight — restored from the
+        // same pre-Rust catalog, always a UI-only placeholder there (these
+        // aren't real astronomical bodies with an ephemeris to compute).
+        body_definition(
+            "cupido",
+            "Cupido",
+            "Cu",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "hades",
+            "Hades",
+            "Hd",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "zeus",
+            "Zeus",
+            "Ze",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "kronos",
+            "Kronos",
+            "Kr",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "apollon",
+            "Apollon",
+            "Ap",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "admetos",
+            "Admetos",
+            "Ad",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "vulcanus",
+            "Vulcanus",
+            "Vu",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        body_definition(
+            "poseidon",
+            "Poseidon",
+            "Po",
+            ObjectType::HypotheticalPlanet,
+            false,
+            false,
+            EngineSupport::NotYetSupported,
+        ),
+        // Fixed stars: a curated prototype catalog (~30 classically significant stars — the four
+        // Royal Stars, the Behenian fixed stars, and other well-known zodiacal/navigational stars).
+        // No engine computes star positions yet (no proper-motion/precession model is wired up),
+        // so every entry here is `NotYetSupported`, same as the other restored placeholders above.
+        // Zodiac sign/hemisphere/significance presentation metadata lives in the frontend
+        // (`FIXED_STAR_METADATA` in `observableObjects.ts`), not here — these ids only establish
+        // catalog membership, matching "Rust computes, React presents" for non-computed data.
+        body_definition("star_alpheratz", "Alpheratz", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_algenib", "Algenib", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_hamal", "Hamal", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_algol", "Algol", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_alcyone", "Alcyone", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_aldebaran", "Aldebaran", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_rigel", "Rigel", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_capella", "Capella", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_bellatrix", "Bellatrix", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_betelgeuse", "Betelgeuse", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_sirius", "Sirius", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_canopus", "Canopus", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_procyon", "Procyon", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_pollux", "Pollux", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_regulus", "Regulus", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_denebola", "Denebola", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_zosma", "Zosma", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_vindemiatrix", "Vindemiatrix", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_spica", "Spica", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_arcturus", "Arcturus", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_alphecca", "Alphecca", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_zuben_elgenubi", "Zuben Elgenubi", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_zuben_eschamali", "Zuben Eschamali", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_antares", "Antares", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_vega", "Vega", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_altair", "Altair", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_deneb", "Deneb", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_fomalhaut", "Fomalhaut", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_deneb_algedi", "Deneb Algedi", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_scheat", "Scheat", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_markab", "Markab", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
+        body_definition("star_achernar", "Achernar", "✦", ObjectType::FixedStar, false, false, EngineSupport::NotYetSupported),
     ]
 }
 
@@ -501,6 +772,15 @@ enum EngineSupport {
     /// kernels). Swiss Ephemeris support would require asteroid `.se1` files this
     /// project does not bundle, so it is left unclaimed rather than guessed at.
     JplOnly,
+    /// Catalogued but not computed by any engine yet — every `computation_map`
+    /// entry is `None`. This is what drives the frontend's `status: 'planned'`
+    /// (`ObservableObjectDefinition.status` in `observableObjects.ts`): a
+    /// restored-but-disabled object shows up greyed out until a real compute
+    /// path is wired up, the same treatment `vertex`/`true_lilith` etc. got
+    /// before their JPL path existed. `validate_model` reports this as the
+    /// non-fatal `body_not_computable` warning, which has no frontend
+    /// consumer today (see `src-tauri/src/workspace/validation.rs`).
+    NotYetSupported,
 }
 
 fn body_definition(
@@ -514,7 +794,7 @@ fn body_definition(
 ) -> BodyDefinition {
     let mut computation_map = HashMap::from([(
         "swisseph".to_string(),
-        (!matches!(engine_support, EngineSupport::JplOnly)).then(|| id.to_string()),
+        matches!(engine_support, EngineSupport::Both).then(|| id.to_string()),
     )]);
     computation_map.insert(
         "jpl".to_string(),
@@ -604,7 +884,6 @@ fn aspect_definition(
         valid_contexts: None,
         interpretation_weight: None,
         object_type_rule: None,
-        extended_orb: None,
     }
 }
 

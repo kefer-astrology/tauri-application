@@ -44,10 +44,10 @@ use hifitime::Epoch;
 
 use crate::domain::astrology::day_night_parts;
 use crate::domain::houses::{
-    campanus_cusps, compute_axes, equatorial_ra_dec_deg, equatorial_to_ecliptic,
+    campanus_cusps, compute_axes, equal_cusps, equatorial_ra_dec_deg, equatorial_to_ecliptic,
     equatorial_to_horizontal_deg, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
-    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, true_apogee_tropical_deg,
-    true_node_tropical_deg, vertex_lon, whole_sign_cusps,
+    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, porphyry_cusps,
+    true_apogee_tropical_deg, true_node_tropical_deg, vertex_lon, whole_sign_cusps,
 };
 use crate::infrastructure::ephemeris::{
     load_almanac_from_paths, small_body_kernels_for_bsp_paths, EphemerisManager, ASTRAEA_J2000,
@@ -668,6 +668,8 @@ impl JplAstronomyBackend {
                 Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
                 Some(HouseSystem::Placidus) => placidus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
                 Some(HouseSystem::Campanus) => campanus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
+                Some(HouseSystem::Equal) => (equal_cusps(asc), vec![]),
+                Some(HouseSystem::Porphyry) => (porphyry_cusps(asc, mc), vec![]),
                 Some(other) => {
                     let name = format!("{other:?}").to_lowercase();
                     (

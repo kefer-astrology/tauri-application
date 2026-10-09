@@ -105,6 +105,7 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         &resolved.settings.aspect_orbs,
         Some(selected_aspects),
         &object_types,
+        &resolved.settings.object_orbs,
     );
     let moon_details = crate::lunar_phase::from_position_map(&computed.positions);
     let shapes =

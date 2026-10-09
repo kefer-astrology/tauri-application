@@ -135,6 +135,7 @@ pub fn search_configuration(
     ctx: &EvaluationContext,
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
+    object_orbs: &HashMap<String, f64>,
     object_types: &HashMap<String, ObjectType>,
     definition: &ConfigurationDefinition,
     role_pools: &HashMap<&'static str, ResolvedRole>,
@@ -177,6 +178,7 @@ pub fn search_configuration(
         object_types,
         aspect_definitions,
         aspect_orbs,
+        object_orbs,
         0,
         &mut current,
         &mut used_bodies,
@@ -225,8 +227,11 @@ pub fn search_configuration(
                 aspect_orbs,
                 edge.aspect_id,
                 context,
+                &body_a,
+                &body_b,
                 object_types.get(&body_a),
                 object_types.get(&body_b),
+                object_orbs,
             ) else {
                 // Already filtered during enumeration; defensive only.
                 continue;
@@ -274,8 +279,11 @@ pub fn search_configuration(
                 aspect_orbs,
                 &key.aspect_id,
                 AspectContext::Chart,
+                &key.body_a,
+                &key.body_b,
                 object_types.get(&key.body_a),
                 object_types.get(&key.body_b),
+                object_orbs,
             ) else {
                 edge_interval_cache.insert(key.clone(), Vec::new());
                 continue;
@@ -300,8 +308,11 @@ pub fn search_configuration(
                     aspect_orbs,
                     &key.aspect_id,
                     context,
+                    &key.body_a,
+                    &key.body_b,
                     object_types.get(&key.body_a),
                     object_types.get(&key.body_b),
+                    object_orbs,
                 ) else {
                     edge_interval_cache.insert(key.clone(), Vec::new());
                     continue;
@@ -413,6 +424,7 @@ pub fn search_configuration(
                     ctx,
                     aspect_definitions,
                     aspect_orbs,
+                    object_orbs,
                     object_types,
                     definition,
                     assignment,
@@ -438,6 +450,7 @@ pub fn search_configuration(
                 ctx,
                 aspect_definitions,
                 aspect_orbs,
+                object_orbs,
                 object_types,
                 definition,
                 assignment,
@@ -520,6 +533,7 @@ fn enumerate_role_assignments(
     object_types: &HashMap<String, ObjectType>,
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
+    object_orbs: &HashMap<String, f64>,
     role_index: usize,
     current: &mut HashMap<&'static str, String>,
     used_bodies: &mut HashSet<String>,
@@ -548,8 +562,11 @@ fn enumerate_role_assignments(
                 aspect_orbs,
                 edge.aspect_id,
                 edge_context(fixed_a, fixed_b),
+                body_a,
+                body_b,
                 object_types.get(body_a),
                 object_types.get(body_b),
+                object_orbs,
             )
             .is_some()
         });
@@ -561,6 +578,7 @@ fn enumerate_role_assignments(
                 object_types,
                 aspect_definitions,
                 aspect_orbs,
+                object_orbs,
                 role_index + 1,
                 current,
                 used_bodies,
@@ -753,6 +771,7 @@ fn evaluate_constituent_aspects(
     ctx: &EvaluationContext,
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
+    object_orbs: &HashMap<String, f64>,
     object_types: &HashMap<String, ObjectType>,
     definition: &ConfigurationDefinition,
     assignment: &HashMap<&'static str, String>,
@@ -771,8 +790,11 @@ fn evaluate_constituent_aspects(
             aspect_orbs,
             edge.aspect_id,
             edge_context(fixed_a, fixed_b),
+            body_a,
+            body_b,
             object_types.get(body_a),
             object_types.get(body_b),
+            object_orbs,
         ) else {
             continue;
         };
@@ -813,6 +835,7 @@ fn refine_best_fit(
     ctx: &EvaluationContext,
     aspect_definitions: &[AspectDefinition],
     aspect_orbs: &HashMap<String, f64>,
+    object_orbs: &HashMap<String, f64>,
     object_types: &HashMap<String, ObjectType>,
     definition: &ConfigurationDefinition,
     assignment: &HashMap<&'static str, String>,
@@ -830,6 +853,7 @@ fn refine_best_fit(
             ctx,
             aspect_definitions,
             aspect_orbs,
+            object_orbs,
             object_types,
             definition,
             assignment,
@@ -978,6 +1002,7 @@ mod tests {
             &object_types,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             0,
             &mut current,
             &mut used,
@@ -1097,6 +1122,7 @@ mod tests {
             &ctx,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             &object_types,
             &GRAND_TRINE,
             &role_pools,
@@ -1158,6 +1184,7 @@ mod tests {
             &ctx,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             &object_types,
             &GRAND_TRINE,
             &role_pools,
@@ -1191,6 +1218,7 @@ mod tests {
                 &resolved.settings.aspect_orbs,
                 None,
                 &object_types,
+                &resolved.settings.object_orbs,
             );
             crate::domain::astrology::detect_chart_configurations(&calc.positions, &aspects)
         };
@@ -1256,6 +1284,7 @@ mod tests {
             &ctx,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             &object_types,
             &GRAND_TRINE,
             &role_pools,
@@ -1271,6 +1300,7 @@ mod tests {
             &ctx,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             &object_types,
             &GRAND_TRINE,
             &role_pools,
@@ -1333,6 +1363,7 @@ mod tests {
             &ctx,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             &object_types,
             &GRAND_CROSS,
             &role_pools,
@@ -1382,6 +1413,7 @@ mod tests {
             &ctx,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             &object_types,
             &YOD,
             &role_pools,
@@ -1475,6 +1507,7 @@ mod tests {
                 &warm_up_ctx,
                 &resolved.model.aspect_definitions,
                 &resolved.settings.aspect_orbs,
+                &resolved.settings.object_orbs,
                 &object_types,
                 &GRAND_TRINE,
                 &role_pools,
@@ -1502,6 +1535,7 @@ mod tests {
                 &ctx,
                 &resolved.model.aspect_definitions,
                 &resolved.settings.aspect_orbs,
+                &resolved.settings.object_orbs,
                 &object_types,
                 &GRAND_TRINE,
                 &role_pools,

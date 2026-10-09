@@ -95,6 +95,55 @@ pub async fn compute_cross_aspects_from_data(
         &report.effective_settings.aspect_orbs,
         &aspect_types,
         &object_types,
+        &report.effective_settings.object_orbs,
+    ))
+}
+
+/// Every midpoint among `object_ids` (unordered, distinct pairs only) from an already-computed
+/// position map. Pure geometry — no model/orb resolution needed, unlike the aspect commands.
+#[tauri::command]
+pub fn compute_midpoints_from_data(
+    positions: HashMap<String, f64>,
+    object_ids: Vec<String>,
+    chart_id: Option<String>,
+) -> Result<Vec<crate::domain::midpoints::Midpoint>, String> {
+    Ok(crate::domain::midpoints::compute_midpoints(
+        &positions,
+        &object_ids,
+        chart_id.as_deref(),
+    ))
+}
+
+/// Detect which `contact_positions` form a hard aspect (conjunction/opposition/square/
+/// semisquare/sesquisquare) to any of the given midpoint axes, using the same resolved model
+/// definitions and orb overrides as `compute_cross_aspects_from_data`. `midpoints` is typically
+/// the output of `compute_midpoints_from_data` — kept as a separate command/pass so the same
+/// midpoints can feed either a natal-only contact check or a transit-to-natal one, by swapping
+/// `contact_positions`.
+#[tauri::command]
+pub fn compute_midpoint_contacts_from_data(
+    chart_json: serde_json::Value,
+    midpoints: Vec<crate::domain::midpoints::Midpoint>,
+    contact_positions: HashMap<String, f64>,
+    aspect_types: Vec<String>,
+    settings_overrides: Option<crate::workspace::settings::SettingsLayer>,
+) -> Result<Vec<crate::domain::astrology::MidpointContact>, String> {
+    crate::application::chart_resolution::validate_chart_payload(&chart_json)?;
+    let chart: crate::workspace::models::ChartInstance =
+        serde_json::from_value(chart_json).map_err(|e| format!("Invalid chart payload: {}", e))?;
+    let report = crate::workspace::settings::standalone_model_report_with_operation(
+        &chart.config,
+        settings_overrides.as_ref(),
+    );
+    let object_types = crate::domain::astrology::object_type_map(&report.model.body_definitions);
+    Ok(crate::domain::astrology::compute_midpoint_contacts(
+        &midpoints,
+        &contact_positions,
+        &report.model.aspect_definitions,
+        &report.effective_settings.aspect_orbs,
+        &aspect_types,
+        &object_types,
+        &report.effective_settings.object_orbs,
     ))
 }
 

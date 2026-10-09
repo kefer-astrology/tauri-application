@@ -34,14 +34,14 @@ pub struct SaveWorkspaceDefaultsInput {
     #[serde(default)]
     pub default_aspect_colors: Option<HashMap<String, String>>,
     #[serde(default)]
-    pub default_aspect_include_angles: Option<HashMap<String, bool>>,
+    pub radix_point_colors: Option<HashMap<String, String>>,
     #[serde(default)]
-    pub default_aspect_include_extended: Option<HashMap<String, bool>>,
+    pub extended_object_types: Option<Vec<crate::workspace::models::ObjectType>>,
     #[serde(default)]
-    pub default_aspect_extended_orbs: Option<HashMap<String, f64>>,
-    /// Setting this ("Škola") (re)populates `default_aspects`,
-    /// `default_aspect_orbs`, and `default_aspect_include_angles` with that
-    /// tradition's suggested values — see `workspace::tradition`.
+    pub object_orbs: Option<HashMap<String, f64>>,
+    /// Setting this ("Škola") (re)populates `default_aspects`/`default_aspect_orbs` with that
+    /// tradition's suggested values, and ensures `Angle` is present in `extended_object_types`
+    /// — see `workspace::tradition`.
     #[serde(default)]
     pub astrology_tradition: Option<String>,
     #[serde(default)]
@@ -354,9 +354,12 @@ pub async fn get_workspace_defaults(workspace_path: String) -> Result<serde_json
         "default_aspects": defaults.default_aspects,
         "default_aspect_orbs": defaults.default_aspect_orbs,
         "default_aspect_colors": presentation.aspect_colors.or(defaults.default_aspect_colors),
-        "default_aspect_include_angles": defaults.default_aspect_include_angles,
-        "default_aspect_include_extended": defaults.default_aspect_include_extended,
-        "default_aspect_extended_orbs": defaults.default_aspect_extended_orbs,
+        "radix_point_colors": presentation
+            .radix_point_colors
+            .or(defaults.radix_point_colors)
+            .map(|settings| settings.colors),
+        "extended_object_types": defaults.extended_object_types,
+        "object_orbs": defaults.object_orbs,
         "astrology_tradition": defaults.astrology_tradition,
         "aspect_line_tier_style": presentation.aspect_line_tier_style.or(defaults.aspect_line_tier_style),
         "time_system": defaults.time_system,
@@ -427,12 +430,22 @@ pub async fn get_domain_catalog(
     Ok(crate::workspace::domain_catalog_for_model(report.model))
 }
 
+/// A brand-new workspace's default astrological tradition ("Škola") — pre-selected
+/// so Settings > Aspects opens with a real, working aspect set already in effect
+/// rather than a blank dropdown. Matches what manually selecting it from the
+/// dropdown already does (`tradition_aspect_preset`), just applied once up front.
+fn default_workspace_tradition() -> crate::workspace::models::AstrologicalTradition {
+    crate::workspace::models::AstrologicalTradition::ModernWestern
+}
+
 fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceManifest {
     let owner_value = if owner.is_empty() {
         "User".to_string()
     } else {
         owner.to_string()
     };
+    let tradition = default_workspace_tradition();
+    let preset = crate::workspace::tradition::tradition_aspect_preset(tradition);
     crate::workspace::models::WorkspaceManifest {
         schema_version: 1,
         owner: owner_value,
@@ -454,13 +467,15 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
             theme: None,
             default_house_system: None,
             default_bodies: None,
-            default_aspects: None,
-            default_aspect_orbs: None,
+            default_aspects: Some(preset.enabled_aspects),
+            default_aspect_orbs: Some(preset.orbs),
             default_aspect_colors: None,
-            default_aspect_include_angles: None,
-            default_aspect_include_extended: None,
-            default_aspect_extended_orbs: None,
-            astrology_tradition: None,
+            // Angle participation is global now, not per-aspect — a brand-new workspace keeps
+            // today's "angles generally participate" expectation by enabling the category
+            // up front, same as selecting a tradition from the dropdown already does.
+            extended_object_types: Some(vec![crate::workspace::models::ObjectType::Angle]),
+            object_orbs: None,
+            astrology_tradition: Some(tradition),
             aspect_line_tier_style: None,
             time_system: None,
         },
@@ -582,19 +597,21 @@ fn apply_workspace_defaults_patch(
     if let Some(value) = patch.default_aspect_colors {
         defaults.default_aspect_colors = Some(value);
     }
-    if let Some(value) = patch.default_aspect_include_angles {
-        defaults.default_aspect_include_angles = Some(value);
+    if let Some(value) = patch.radix_point_colors {
+        defaults.radix_point_colors = Some(crate::workspace::models::RadixPointColorSettings {
+            colors: value,
+        });
     }
-    if let Some(value) = patch.default_aspect_include_extended {
-        defaults.default_aspect_include_extended = Some(value);
+    if let Some(value) = patch.extended_object_types {
+        defaults.extended_object_types = Some(value);
     }
-    if let Some(value) = patch.default_aspect_extended_orbs {
-        defaults.default_aspect_extended_orbs = Some(value);
+    if let Some(value) = patch.object_orbs {
+        defaults.object_orbs = Some(value);
     }
     if let Some(value) = patch.astrology_tradition.as_deref() {
         if let Some(tradition) = parse_astrology_tradition(value) {
             // Callers always resend the whole `WorkspaceDefaultsState`, including
-            // whatever default_aspects/orbs/include_angles and tradition are
+            // whatever default_aspects/orbs/extended_object_types and tradition are
             // already set, on every save (e.g. tweaking one aspect's orb) — so
             // this must run after the generic aspect-field assignments above,
             // not before them, or a resent-but-unchanged tradition would do
@@ -608,7 +625,13 @@ fn apply_workspace_defaults_patch(
                 let preset = crate::workspace::tradition::tradition_aspect_preset(tradition);
                 defaults.default_aspects = Some(preset.enabled_aspects);
                 defaults.default_aspect_orbs = Some(preset.orbs);
-                defaults.default_aspect_include_angles = Some(preset.include_angles);
+                // Angle participation is global, not per-aspect — ensure it's enabled
+                // without clobbering whatever other categories were already toggled on.
+                let mut types = defaults.extended_object_types.clone().unwrap_or_default();
+                if !types.contains(&crate::workspace::models::ObjectType::Angle) {
+                    types.push(crate::workspace::models::ObjectType::Angle);
+                }
+                defaults.extended_object_types = Some(types);
             }
         }
     }
@@ -623,6 +646,11 @@ fn apply_workspace_presentation_patch(
 ) {
     if let Some(value) = patch.default_aspect_colors.as_ref() {
         presentation.aspect_colors = Some(value.clone());
+    }
+    if let Some(value) = patch.radix_point_colors.as_ref() {
+        presentation.radix_point_colors = Some(crate::workspace::models::RadixPointColorSettings {
+            colors: value.clone(),
+        });
     }
     if let Some(value) = patch.aspect_line_tier_style.as_ref() {
         presentation.aspect_line_tier_style = Some(value.clone());
@@ -911,48 +939,48 @@ mod tests {
         let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
             workspace_path_str.clone(),
             SaveWorkspaceDefaultsInput {
-                default_aspect_include_angles: Some(HashMap::from([
-                    ("square".to_string(), true),
-                    ("quincunx".to_string(), false),
+                extended_object_types: Some(vec![crate::workspace::models::ObjectType::Asteroid]),
+                object_orbs: Some(HashMap::from([
+                    ("ceres".to_string(), 0.5),
+                    ("sun".to_string(), 4.0),
                 ])),
-                default_aspect_include_extended: Some(HashMap::from([(
-                    "quincunx".to_string(),
-                    true,
-                )])),
-                default_aspect_extended_orbs: Some(HashMap::from([("quincunx".to_string(), 0.5)])),
                 ..Default::default()
             },
         ))
         .expect("aspect scope settings should persist");
 
         assert_eq!(
-            defaults.get("default_aspect_include_angles"),
-            Some(&serde_json::json!({"square": true, "quincunx": false}))
+            defaults.get("extended_object_types"),
+            Some(&serde_json::json!(["asteroid"]))
         );
         assert_eq!(
-            defaults.get("default_aspect_include_extended"),
-            Some(&serde_json::json!({"quincunx": true}))
-        );
-        assert_eq!(
-            defaults.get("default_aspect_extended_orbs"),
-            Some(&serde_json::json!({"quincunx": 0.5}))
+            defaults.get("object_orbs"),
+            Some(&serde_json::json!({"ceres": 0.5, "sun": 4.0}))
         );
 
         let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
         let report = crate::workspace::settings::current_model_report(&manifest, None);
-        let quincunx = report
-            .model
-            .aspect_definitions
-            .iter()
-            .find(|aspect| aspect.id == "quincunx")
-            .expect("quincunx definition");
-        assert_eq!(quincunx.extended_orb, Some(0.5));
-        assert!(matches!(
-            &quincunx.object_type_rule,
-            Some(crate::workspace::models::ObjectTypeRule::OnlyBetween { types })
-                if types.contains(&crate::workspace::models::ObjectType::Asteroid)
-                    && !types.contains(&crate::workspace::models::ObjectType::Angle)
-        ));
+        // Angle participation is global now: this workspace only enabled Asteroid, so every
+        // aspect — not just one specially-configured aspect — excludes Angle uniformly.
+        for id in ["quincunx", "square", "trine"] {
+            let aspect = report
+                .model
+                .aspect_definitions
+                .iter()
+                .find(|aspect| aspect.id == id)
+                .unwrap_or_else(|| panic!("{id} definition"));
+            assert!(
+                matches!(
+                    &aspect.object_type_rule,
+                    Some(crate::workspace::models::ObjectTypeRule::OnlyBetween { types })
+                        if types.contains(&crate::workspace::models::ObjectType::Asteroid)
+                            && types.contains(&crate::workspace::models::ObjectType::Planet)
+                            && !types.contains(&crate::workspace::models::ObjectType::Angle)
+                ),
+                "{id}: {:?}",
+                aspect.object_type_rule
+            );
+        }
     }
 
     #[test]
@@ -1003,6 +1031,12 @@ mod tests {
                 .and_then(|o| o.get("square")),
             Some(&serde_json::json!(2.0))
         );
+        // Angle participation is global now — selecting a tradition still ensures it's on,
+        // same as it would have per-aspect before, without needing its own map anymore.
+        assert_eq!(
+            defaults.get("extended_object_types"),
+            Some(&serde_json::json!(["angle"]))
+        );
 
         let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
         assert!(matches!(
@@ -1031,6 +1065,49 @@ mod tests {
             "octile should no longer be enabled after switching to Hellenistic"
         );
         assert!(enabled_aspects.contains("sextile"));
+    }
+
+    #[test]
+    fn selecting_a_tradition_adds_angle_without_clobbering_other_enabled_categories() {
+        let temp = TestWorkspaceDir::new("workspace-defaults-tradition-angle-merge");
+        let workspace_path = temp.path.join("project");
+        let workspace_path_str = workspace_path.to_string_lossy().into_owned();
+
+        tauri::async_runtime::block_on(create_workspace(
+            workspace_path_str.clone(),
+            "Tester".to_string(),
+        ))
+        .expect("workspace should be created");
+
+        tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str.clone(),
+            SaveWorkspaceDefaultsInput {
+                extended_object_types: Some(vec![crate::workspace::models::ObjectType::Asteroid]),
+                ..Default::default()
+            },
+        ))
+        .expect("enabling asteroids should persist");
+
+        let defaults = tauri::async_runtime::block_on(save_workspace_defaults(
+            workspace_path_str,
+            SaveWorkspaceDefaultsInput {
+                astrology_tradition: Some("hellenistic".to_string()),
+                ..Default::default()
+            },
+        ))
+        .expect("selecting a tradition should persist");
+
+        let types: std::collections::HashSet<String> = defaults
+            .get("extended_object_types")
+            .and_then(|value| value.as_array())
+            .expect("extended_object_types should be an array")
+            .iter()
+            .map(|value| value.as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(
+            types,
+            std::collections::HashSet::from(["asteroid".to_string(), "angle".to_string()])
+        );
     }
 
     #[test]
@@ -1253,7 +1330,6 @@ mod tests {
                 valid_contexts: None,
                 interpretation_weight: None,
                 object_type_rule: None,
-                extended_orb: None,
             }],
             aspects: Vec::new(),
             override_orbs: HashMap::new(),

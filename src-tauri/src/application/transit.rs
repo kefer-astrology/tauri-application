@@ -122,6 +122,7 @@ pub fn compute_transit_series(
             &resolved.settings.aspect_orbs,
             &request.aspect_types,
             &object_types,
+            &resolved.settings.object_orbs,
         );
         aspects.extend(crate::domain::astrology::compute_chart_aspects(
             &transit.positions,
@@ -129,6 +130,7 @@ pub fn compute_transit_series(
             &resolved.settings.aspect_orbs,
             Some(&request.aspect_types),
             &object_types,
+            &resolved.settings.object_orbs,
         ));
         results.push(TransitSeriesStep {
             datetime: current.to_rfc3339(),
@@ -916,6 +918,7 @@ pub fn compute_transit_events(
             &ctx,
             &resolved.model.aspect_definitions,
             &resolved.settings.aspect_orbs,
+            &resolved.settings.object_orbs,
             &object_types,
             definition,
             &role_pools,

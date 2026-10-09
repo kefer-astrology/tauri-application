@@ -199,6 +199,14 @@ pub enum ObjectType {
     #[serde(rename = "lunar_node")]
     LunarNode,
     Part,
+    #[serde(rename = "geocentric_node")]
+    GeocentricNode,
+    #[serde(rename = "trans_neptunian")]
+    TransNeptunian,
+    #[serde(rename = "hypothetical_planet")]
+    HypotheticalPlanet,
+    #[serde(rename = "fixed_star")]
+    FixedStar,
 }
 
 /// Restricts which object categories an aspect definition may form between.
@@ -300,10 +308,10 @@ pub struct AstrologySchool {
 /// [`AstrologySchool`] above, which remains an open, user-definable label whose
 /// only job is picking a named [`AstroModel`]. `AstrologicalTradition` is the
 /// "Škola" workspace setting: choosing one rewrites the workspace's aspect
-/// selection, per-aspect orbs, and angle-inclusion (`WorkspaceDefaults
-/// ::default_aspects` / `default_aspect_orbs` / `default_aspect_include_angles`)
-/// to that tradition's suggested defaults — see `workspace::tradition
-/// ::tradition_aspect_preset`. A first iteration: it only touches aspects.
+/// selection and per-aspect orbs (`WorkspaceDefaults::default_aspects` /
+/// `default_aspect_orbs`), and ensures `Angle` is present in the global
+/// `extended_object_types` — see `workspace::tradition::tradition_aspect_preset`.
+/// A first iteration: it only touches aspects.
 /// Object selection and a tradition-specific orb *model* (whole-sign tolerance,
 /// planetary moieties, harmonic-scaled orbs, midpoint/dial orbs, or Jyotish
 /// directional drishti) are intentionally out of scope for now and remain
@@ -705,26 +713,28 @@ pub struct WorkspaceDefaults {
     pub default_aspect_orbs: Option<HashMap<String, f64>>,
     #[serde(default)]
     pub default_aspect_colors: Option<HashMap<String, String>>,
-    /// Per-aspect id: whether Ascendant/Midheaven may participate in that
-    /// aspect. `None` (the map, or a missing key within it) falls back to the
-    /// resolved model's own `AspectDefinition::object_type_rule` baseline.
+    /// Which object categories — `Planet` is always implicitly included and never appears here;
+    /// every other category (`Angle`, asteroids, lunar nodes, parts, geocentric nodes,
+    /// trans-Neptunian objects, hypothetical bodies) is opt-in — may participate in *any* aspect
+    /// at all. Global, not per-aspect: every aspect's `object_type_rule` is rebuilt from the same
+    /// set. `None` (never configured) keeps the catalog's own unrestricted baseline (every
+    /// category eligible). See `apply_workspace_aspect_scope_defaults`.
     #[serde(default)]
-    pub default_aspect_include_angles: Option<HashMap<String, bool>>,
-    /// Per-aspect id: whether extended objects (see
-    /// [`EXTENDED_ASPECT_OBJECT_TYPES`]) may participate in that aspect. A
-    /// missing key defaults to `false` — extended objects are opt-in.
+    pub extended_object_types: Option<Vec<ObjectType>>,
+    /// Per-object id: the orb to use whenever that object is on either side of a pair — narrows
+    /// the aspect's own orb down to this value (never widens it; see
+    /// `domain::astrology::resolve_allowed_orb`). Applies to *any* object category, including
+    /// individual planets and angles, not just the opt-in `extended_object_types` ones — see
+    /// `PER_OBJECT_ORB_TYPES`. Global across every aspect, unlike `default_aspect_orbs`. A
+    /// missing entry means that object doesn't get a narrower orb (behaves like a plain core
+    /// object) until the settings UI gives it a value.
     #[serde(default)]
-    pub default_aspect_include_extended: Option<HashMap<String, bool>>,
-    /// Per-aspect id: the tighter orb to use when an extended object is
-    /// involved (only meaningful once that aspect's `include_extended` is
-    /// on). See `AspectDefinition::extended_orb`.
-    #[serde(default)]
-    pub default_aspect_extended_orbs: Option<HashMap<String, f64>>,
+    pub object_orbs: Option<HashMap<String, f64>>,
     /// The workspace's chosen astrological tradition ("Škola"). Remembered so
     /// the UI can show the current selection and so future iterations can use
     /// it to drive object/orb-model choices too. Setting it (re)populates
-    /// `default_aspects`/`default_aspect_orbs`/`default_aspect_include_angles`
-    /// with that tradition's suggested values — see
+    /// `default_aspects`/`default_aspect_orbs` with that tradition's suggested
+    /// values and ensures `Angle` is present in `extended_object_types` — see
     /// `workspace::tradition::tradition_aspect_preset`. Distinct from
     /// `WorkspaceManifest::active_school`.
     #[serde(default)]
@@ -889,23 +899,44 @@ pub struct AspectDefinition {
     /// matches prior behavior for existing catalogs.
     #[serde(default)]
     pub object_type_rule: Option<ObjectTypeRule>,
-    /// Tighter orb used instead of `default_orb` whenever either side of a
-    /// pair belongs to [`EXTENDED_ASPECT_OBJECT_TYPES`] (asteroids, lunar
-    /// nodes, parts, other calculated points). `None` means extended objects
-    /// use the same orb as everything else. Only takes effect for a pair that
-    /// already passes `object_type_rule` — it narrows the orb, not eligibility.
-    #[serde(default)]
-    pub extended_orb: Option<f64>,
 }
 
-/// Object categories treated as "extended" objects for `AspectDefinition::extended_orb`
-/// purposes: optional chart points that usually warrant a tighter orb than the
-/// core planets/angles (asteroids, lunar nodes, parts/lots, other calculated points).
-pub const EXTENDED_ASPECT_OBJECT_TYPES: [ObjectType; 4] = [
+/// Every object category eligible for a per-object orb override (see
+/// `WorkspaceDefaults::object_orbs`, `domain::astrology::resolve_allowed_orb`) — this is
+/// deliberately *every* category, not just the once-"extended" ones: `Planet` and `Angle` are
+/// always eligible to form any aspect (see `apply_workspace_aspect_scope_defaults`), but a user
+/// can still give an individual planet or angle its own narrower orb, the same as an asteroid or
+/// node. A missing `object_orbs` entry for a given object simply means no narrowing, regardless
+/// of which category it's in.
+pub const PER_OBJECT_ORB_TYPES: [ObjectType; 9] = [
+    ObjectType::Planet,
+    ObjectType::Angle,
     ObjectType::Asteroid,
     ObjectType::LunarNode,
     ObjectType::Part,
     ObjectType::CalculatedPoint,
+    ObjectType::GeocentricNode,
+    ObjectType::TransNeptunian,
+    ObjectType::HypotheticalPlanet,
+];
+
+/// Object categories with no physical substance — nothing there to reflect or emit light.
+/// Classical (Ptolemaic) aspect theory modeled aspects as geometric "rays" cast between actual
+/// bodies in the sky; it covered the Sun, Moon, and the visible planets specifically because a
+/// ray needs something to cast and receive it. Lunar/geocentric nodes are orbital-plane
+/// intersections, Lilith/Vertex (`CalculatedPoint`) are derived geometric points, Arabic Parts
+/// (`Part`) are arithmetic combinations, angles are horizon/meridian directions, and the Uranian
+/// "hypothetical" bodies have never been astronomically confirmed to exist at all — none of them
+/// are objects a ray of light could pass through. Conjunction (bodily co-presence, a real
+/// geometric coincidence regardless of substance) is the one exception and stays unrestricted;
+/// see `apply_workspace_aspect_scope_defaults`, the only place this is consulted.
+pub const NON_PHYSICAL_OBJECT_TYPES: [ObjectType; 6] = [
+    ObjectType::Angle,
+    ObjectType::LunarNode,
+    ObjectType::CalculatedPoint,
+    ObjectType::Part,
+    ObjectType::GeocentricNode,
+    ObjectType::HypotheticalPlanet,
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1032,8 +1063,6 @@ pub struct OverrideEntry {
     pub interpretation_weight: Option<f64>,
     #[serde(default)]
     pub object_type_rule: Option<ObjectTypeRule>,
-    #[serde(default)]
-    pub extended_orb: Option<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]

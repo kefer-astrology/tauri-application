@@ -11,6 +11,7 @@ mod workspace;
 use commands::analyses::create_analysis;
 use commands::calculation::{
     compute_chart, compute_chart_from_data, compute_cross_aspects_from_data,
+    compute_midpoint_contacts_from_data, compute_midpoints_from_data,
 };
 use commands::charts::{create_chart, delete_chart, get_chart_details, import_chart, update_chart};
 use commands::default::{read, write};
@@ -108,6 +109,8 @@ pub fn run() {
             compute_chart,
             compute_chart_from_data,
             compute_cross_aspects_from_data,
+            compute_midpoints_from_data,
+            compute_midpoint_contacts_from_data,
             compute_transit_series,
             compute_transit_series_from_data,
             open_chart_file_dialog,

@@ -1065,7 +1065,7 @@ impl EphemerisManager {
                 );
                 continue;
             }
-            log::info!(
+            log::debug!(
                 "ephemeris: validated small body {} ({}) → {}",
                 manifest.body_id,
                 manifest.naif_target_id,
@@ -1086,6 +1086,17 @@ impl EphemerisManager {
     /// The primary currently resolves in this order:
     /// `de440s` → `de440`.
     pub fn available_bsp_paths(&self) -> Vec<PathBuf> {
+        // `compute_positions` resolves a fresh `EphemerisManager`/backend on every sample point of
+        // a transit series (potentially thousands per series), and this resolution re-scans the
+        // manifest directories and re-parses every small-body manifest JSON file each time — cheap
+        // per call, but needlessly repeated since nothing here changes except right after
+        // `download()` adds a new kernel. Cached per `cache_dir` (not globally) so tests using
+        // distinct temp directories never share an entry, and invalidated by `download()` on
+        // success — the only place kernel files are added at runtime.
+        if let Some(cached) = bsp_paths_cache().lock().unwrap().get(&self.cache_dir) {
+            return cached.clone();
+        }
+
         let mut paths = Vec::new();
         if let Some(primary) = self.resolve_primary_bsp() {
             paths.push(primary);
@@ -1095,6 +1106,11 @@ impl EphemerisManager {
         paths.extend(asteroid_paths);
         let small_body_paths = self.resolve_small_body_bsps(&paths);
         paths.extend(small_body_paths);
+
+        bsp_paths_cache()
+            .lock()
+            .unwrap()
+            .insert(self.cache_dir.clone(), paths.clone());
         paths
     }
 
@@ -1165,6 +1181,10 @@ impl EphemerisManager {
         std::fs::rename(&partial, &final_path)
             .map_err(|e| format!("Cannot finalise download: {e}"))?;
 
+        // The newly downloaded kernel must be visible to the very next computation, not just
+        // after a restart — drop this cache_dir's `available_bsp_paths` cache entry.
+        bsp_paths_cache().lock().unwrap().remove(&self.cache_dir);
+
         let _ = app.emit("ephemeris-ready", serde_json::json!({ "id": id }));
         log::info!(
             "ephemeris: download complete — {id} at {}",
@@ -1189,6 +1209,11 @@ fn file_fingerprint(path: &Path) -> String {
 
 fn artifact_probe_cache() -> &'static Mutex<HashMap<String, Result<(), String>>> {
     static CACHE: OnceLock<Mutex<HashMap<String, Result<(), String>>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn bsp_paths_cache() -> &'static Mutex<HashMap<PathBuf, Vec<PathBuf>>> {
+    static CACHE: OnceLock<Mutex<HashMap<PathBuf, Vec<PathBuf>>>> = OnceLock::new();
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
