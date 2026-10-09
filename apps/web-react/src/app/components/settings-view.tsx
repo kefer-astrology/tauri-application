@@ -32,7 +32,6 @@ import {
 } from '@/lib/app-shell';
 import {
 	ASPECT_ROWS,
-	ASPECT_SUGGESTED_INCLUDE_ANGLES,
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ASPECT_ORBS,
 	type AspectRow
@@ -47,7 +46,11 @@ import {
 	type WheelOrientationId,
 	type WheelStyleId
 } from '@/lib/astrology/wheelStyle';
-import { DEFAULT_OBSERVABLE_OBJECT_IDS } from '@/lib/astrology/observableObjects';
+import {
+	DEFAULT_OBSERVABLE_OBJECT_IDS,
+	OBSERVABLE_OBJECTS,
+	getObservableObjectLabel
+} from '@/lib/astrology/observableObjects';
 import { DEFAULT_THEME_PALETTES, type ThemePalette } from '@/lib/themePalettes';
 import { JAN_KEFER_BIOGRAPHY } from '@/lib/content/janKefer';
 import { persistMonochrome } from '@/lib/appLayoutPreferences';
@@ -58,7 +61,7 @@ import {
 } from '@/lib/tauri/chartPayload';
 import { catalogHouseSystems } from '@/lib/astrology/domainCatalog';
 import { searchLocations } from '@/lib/tauri/workspace';
-import type { AstrologicalTraditionId } from '@/lib/tauri/types';
+import type { AstrologicalTraditionId, ObjectTypeId } from '@/lib/tauri/types';
 import { BodySelector } from './body-selector';
 import { GlyphManager } from './glyph-manager';
 
@@ -72,20 +75,34 @@ const ASTROLOGY_TRADITION_OPTIONS: { id: AstrologicalTraditionId; labelKey: stri
 	{ id: 'jyotish_parashari', labelKey: 'tradition_jyotish_parashari' }
 ];
 
+/** One checkbox per eligibility-toggleable object category — every real `ObjectType` except
+ *  `planet`, which is always implicitly eligible and has no checkbox of its own (see the
+ *  always-shown per-planet orb section instead). `types` may list more than one Rust
+ *  `ObjectType` when they share a single checkbox here (`calculated_point` and `part` are both
+ *  "Sensitive Points" from a user's perspective — Lilith variants are `calculated_point` too,
+ *  but the observed-objects catalog groups those into "Black Luna" instead; see
+ *  `categoryForBody` in `observableObjects.ts`). */
+const EXTENDED_OBJECT_TYPE_OPTIONS: { labelKey: string; types: ObjectTypeId[] }[] = [
+	{ labelKey: 'observable_category_angles', types: ['angle'] },
+	{ labelKey: 'transits_group_asteroids', types: ['asteroid'] },
+	{ labelKey: 'transits_group_lunar_nodes', types: ['lunar_node'] },
+	{ labelKey: 'observable_category_sensitive_points', types: ['calculated_point', 'part'] },
+	{ labelKey: 'transits_group_geo_nodes', types: ['geocentric_node'] },
+	{ labelKey: 'transits_group_tno', types: ['trans_neptunian'] },
+	{ labelKey: 'transits_group_hypotheticals', types: ['hypothetical_planet'] }
+];
+
 type AspectRowState = {
 	enabled: boolean;
 	orb: number;
 	color: string;
-	/** Whether Ascendant/Midheaven may participate in this aspect. */
-	includeAngles: boolean;
-	/** Whether extended objects (asteroids, nodes, parts, other calculated points) may participate. */
-	includeExtended: boolean;
-	/** Tighter orb used instead of `orb` once `includeExtended` is on. */
-	extendedOrb: number;
 };
 
-/** A sensible starting point for the extended-objects orb: half the base orb, floored at 0.5°. */
-function suggestedExtendedOrb(baseOrb: number): number {
+/** A sensible starting point for a newly-ticked extended category's objects: half the
+ *  conjunction orb, floored at 0.5° — same heuristic the old per-aspect extended orb used,
+ *  just no longer tied to one specific aspect since the orb is now global per object. */
+function suggestedObjectOrb(): number {
+	const baseOrb = DEFAULT_ASPECT_ORBS.conjunction ?? 8;
 	return Math.max(0.5, Math.round((baseOrb / 2) * 2) / 2);
 }
 
@@ -97,13 +114,7 @@ function aspectRowStateFromDefaults(
 	return {
 		enabled: workspaceDefaults.defaultAspects.includes(aspect.id),
 		orb,
-		color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id],
-		includeAngles:
-			workspaceDefaults.aspectIncludeAngles[aspect.id] ??
-			ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ??
-			true,
-		includeExtended: workspaceDefaults.aspectIncludeExtended[aspect.id] ?? false,
-		extendedOrb: workspaceDefaults.aspectExtendedOrbs[aspect.id] ?? suggestedExtendedOrb(orb)
+		color: workspaceDefaults.defaultAspectColors[aspect.id] ?? DEFAULT_ASPECT_COLORS[aspect.id]
 	};
 }
 
@@ -265,6 +276,11 @@ function SettingsView({
 			? workspaceDefaults.defaultBodies
 			: DEFAULT_OBSERVABLE_OBJECT_IDS
 	);
+	const [bodyColors, setBodyColors] = useState<Record<string, string>>(workspaceDefaults.bodyColors);
+	const [extendedObjectTypes, setExtendedObjectTypes] = useState<ObjectTypeId[]>(
+		workspaceDefaults.extendedObjectTypes
+	);
+	const [objectOrbs, setObjectOrbs] = useState<Record<string, number>>(workspaceDefaults.objectOrbs);
 	const [aspects, setAspects] = useState<Record<string, AspectRowState>>(() =>
 		Object.fromEntries(
 			ASPECT_ROWS.map((aspect) => [aspect.id, aspectRowStateFromDefaults(aspect, workspaceDefaults)])
@@ -286,6 +302,9 @@ function SettingsView({
 				? workspaceDefaults.defaultBodies
 				: DEFAULT_OBSERVABLE_OBJECT_IDS
 		);
+		setBodyColors(workspaceDefaults.bodyColors);
+		setExtendedObjectTypes(workspaceDefaults.extendedObjectTypes);
+		setObjectOrbs(workspaceDefaults.objectOrbs);
 		setAspects(
 			Object.fromEntries(
 				ASPECT_ROWS.map((aspect) => [
@@ -334,6 +353,61 @@ function SettingsView({
 			void onWorkspaceDefaultsChange({ defaultBodies: next });
 		},
 		[markChanged, onWorkspaceDefaultsChange]
+	);
+
+	const applyBodyColorChange = useCallback(
+		(id: string, color: string) => {
+			const next = { ...bodyColors, [id]: color };
+			setBodyColors(next);
+			markChanged();
+			void onWorkspaceDefaultsChange({ bodyColors: next });
+		},
+		[bodyColors, markChanged, onWorkspaceDefaultsChange]
+	);
+
+	// Global (not per-aspect) — ticking/unticking a category here changes eligibility for
+	// every aspect at once. See `src-tauri/src/workspace/models.rs`'s
+	// `WorkspaceDefaults::extended_object_types`/`object_orbs`. `types` may list more than
+	// one Rust `ObjectType` (e.g. "Sensitive Points" covers both `calculated_point` and `part`)
+	// when they share a single checkbox in the UI — see `EXTENDED_OBJECT_TYPE_OPTIONS`.
+	const applyExtendedTypeToggle = useCallback(
+		(types: ObjectTypeId[], checked: boolean) => {
+			const nextTypes = checked
+				? Array.from(new Set([...extendedObjectTypes, ...types]))
+				: extendedObjectTypes.filter((existing) => !types.includes(existing));
+			setExtendedObjectTypes(nextTypes);
+
+			// Pre-fill a starting orb for this category's objects that don't have one yet,
+			// so newly-enabling a category doesn't silently mean "no narrowing at all".
+			let nextOrbs = objectOrbs;
+			if (checked) {
+				const additions = OBSERVABLE_OBJECTS.filter(
+					(item) =>
+						item.objectType !== null &&
+						types.includes(item.objectType) &&
+						objectOrbs[item.id] === undefined
+				);
+				if (additions.length > 0) {
+					nextOrbs = { ...objectOrbs };
+					for (const item of additions) nextOrbs[item.id] = suggestedObjectOrb();
+					setObjectOrbs(nextOrbs);
+				}
+			}
+
+			markChanged();
+			void onWorkspaceDefaultsChange({ extendedObjectTypes: nextTypes, objectOrbs: nextOrbs });
+		},
+		[extendedObjectTypes, objectOrbs, markChanged, onWorkspaceDefaultsChange]
+	);
+
+	const applyObjectOrbChange = useCallback(
+		(id: string, orb: number) => {
+			const next = { ...objectOrbs, [id]: orb };
+			setObjectOrbs(next);
+			markChanged();
+			void onWorkspaceDefaultsChange({ objectOrbs: next });
+		},
+		[objectOrbs, markChanged, onWorkspaceDefaultsChange]
 	);
 
 	const onGlyphSetChange = useCallback(
@@ -410,6 +484,9 @@ function SettingsView({
 				? workspaceDefaults.defaultBodies
 				: DEFAULT_OBSERVABLE_OBJECT_IDS
 		);
+		setBodyColors(workspaceDefaults.bodyColors);
+		setExtendedObjectTypes(workspaceDefaults.extendedObjectTypes);
+		setObjectOrbs(workspaceDefaults.objectOrbs);
 		setAspects(
 			Object.fromEntries(
 				ASPECT_ROWS.map((aspect) => [
@@ -505,32 +582,10 @@ function SettingsView({
 					nextAspects[aspect.id]?.color || DEFAULT_ASPECT_COLORS[aspect.id]
 				])
 			);
-			const aspectIncludeAngles = Object.fromEntries(
-				ASPECT_ROWS.map((aspect) => [
-					aspect.id,
-					nextAspects[aspect.id]?.includeAngles ??
-						ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ??
-						true
-				])
-			);
-			const aspectIncludeExtended = Object.fromEntries(
-				ASPECT_ROWS.map((aspect) => [aspect.id, nextAspects[aspect.id]?.includeExtended ?? false])
-			);
-			const aspectExtendedOrbs = Object.fromEntries(
-				ASPECT_ROWS.map((aspect) => [
-					aspect.id,
-					Number.isFinite(nextAspects[aspect.id]?.extendedOrb)
-						? nextAspects[aspect.id]!.extendedOrb
-						: suggestedExtendedOrb(DEFAULT_ASPECT_ORBS[aspect.id] ?? 1)
-				])
-			);
 			await onWorkspaceDefaultsChange({
 				defaultAspects,
 				defaultAspectOrbs,
-				defaultAspectColors,
-				aspectIncludeAngles,
-				aspectIncludeExtended,
-				aspectExtendedOrbs
+				defaultAspectColors
 			});
 		},
 		[onWorkspaceDefaultsChange]
@@ -749,6 +804,8 @@ function SettingsView({
 									subtitleKey="settings_observable_objects_hint"
 									selectedBodyIds={selectedBodies}
 									onSelectedBodyIdsChange={applyObservableObjectSelection}
+									colors={bodyColors}
+									onColorChange={applyBodyColorChange}
 								/>
 							)}
 
@@ -782,6 +839,30 @@ function SettingsView({
 											{t('settings_astrology_tradition_hint')}
 										</p>
 									</div>
+									<div className="space-y-2 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+										<p className={ft.label}>{t('settings_aspect_scope_extended_categories')}</p>
+										<p className={cn('text-xs', ft.muted)}>
+											{t('settings_aspect_scope_extended_shared_hint')}
+										</p>
+										<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+											{EXTENDED_OBJECT_TYPE_OPTIONS.map((option) => (
+												<label
+													key={option.labelKey}
+													className="flex cursor-pointer items-center gap-2 text-sm"
+												>
+													<Checkbox
+														checked={option.types.some((type) =>
+															extendedObjectTypes.includes(type)
+														)}
+														onCheckedChange={(checked) =>
+															applyExtendedTypeToggle(option.types, checked === true)
+														}
+													/>
+													{t(option.labelKey)}
+												</label>
+											))}
+										</div>
+									</div>
 									<div className="space-y-2">
 										<p className={ft.label}>{t('default_aspects')}</p>
 										<Accordion type="multiple" className="space-y-3">
@@ -789,10 +870,7 @@ function SettingsView({
 												const row = aspects[aspect.id] ?? {
 													enabled: true,
 													orb: aspect.defaultOrb,
-													color: DEFAULT_ASPECT_COLORS[aspect.id],
-													includeAngles: ASPECT_SUGGESTED_INCLUDE_ANGLES[aspect.id] ?? true,
-													includeExtended: false,
-													extendedOrb: suggestedExtendedOrb(aspect.defaultOrb)
+													color: DEFAULT_ASPECT_COLORS[aspect.id]
 												};
 												const updateRow = (
 													patch: Partial<AspectRowState>,
@@ -837,10 +915,7 @@ function SettingsView({
 																		className={cn('text-xs', ft.muted)}
 																		htmlFor={`${aspect.id}-orb`}
 																	>
-																		{t('settings_aspect_scope_planets')}
-																		{row.includeAngles
-																			? ` + ${t('settings_aspect_scope_angles_short')}`
-																			: ''}
+																		{t('label_orb')}
 																	</Label>
 																	<Input
 																		id={`${aspect.id}-orb`}
@@ -860,53 +935,85 @@ function SettingsView({
 																		onBlur={() => void persistAspectSettings(aspects)}
 																	/>
 																</div>
-																<label className="flex cursor-pointer items-center gap-2 text-sm">
-																	<Checkbox
-																		checked={row.includeAngles}
-																		onCheckedChange={(checked) =>
-																			updateRow({ includeAngles: checked === true })
-																		}
-																	/>
-																	{t('settings_aspect_scope_include_angles')}
-																</label>
-																<label className="flex cursor-pointer items-center gap-2 text-sm">
-																	<Checkbox
-																		checked={row.includeExtended}
-																		onCheckedChange={(checked) =>
-																			updateRow({ includeExtended: checked === true })
-																		}
-																	/>
-																	{t('settings_aspect_scope_include_extended')}
-																</label>
-																{row.includeExtended && (
-																	<div className="grid grid-cols-[1fr_auto] items-center gap-3 pl-6">
-																		<Label
-																			className={cn('text-xs', ft.muted)}
-																			htmlFor={`${aspect.id}-extended-orb`}
-																		>
-																			{t('settings_aspect_scope_extended_orb')}
-																		</Label>
-																		<Input
-																			id={`${aspect.id}-extended-orb`}
-																			type="number"
-																			className={cn(ft.inputCompact, 'h-9 w-20')}
-																			value={row.extendedOrb}
-																			min={0}
-																			max={row.orb}
-																			step={0.5}
-																			onChange={(e) => {
-																				const n = Number(e.target.value);
-																				updateRow(
-																					{
-																						extendedOrb: Number.isFinite(n)
-																							? n
-																							: row.extendedOrb
-																					},
-																					{ persist: false }
-																				);
-																			}}
-																			onBlur={() => void persistAspectSettings(aspects)}
-																		/>
+																{/* Planets are always eligible (no checkbox needed) but each still gets its
+																	own orb, same global mechanism as the opt-in categories below. */}
+																<div className="space-y-1.5 border-t border-[color:var(--theme-panel-border)]/60 pt-3">
+																	<p className={cn('text-[0.65rem] tracking-wide uppercase', ft.muted)}>
+																		{t('settings_aspect_scope_planets')}
+																	</p>
+																	<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+																		{OBSERVABLE_OBJECTS.filter(
+																			(item) => item.objectType === 'planet' && item.status === 'available'
+																		).map((item) => (
+																			<div key={item.id} className="flex items-center justify-between gap-2">
+																				<span className={cn('truncate text-xs', ft.muted)}>
+																					{getObservableObjectLabel(item, t)}
+																				</span>
+																				<Input
+																					type="number"
+																					className={cn(ft.inputCompact, 'h-8 w-16')}
+																					value={objectOrbs[item.id] ?? row.orb}
+																					min={0}
+																					step={0.5}
+																					onChange={(e) => {
+																						const n = Number(e.target.value);
+																						if (Number.isFinite(n)) applyObjectOrbChange(item.id, n);
+																					}}
+																				/>
+																			</div>
+																		))}
+																	</div>
+																</div>
+																{extendedObjectTypes.length > 0 && (
+																	<div className="space-y-3 border-t border-[color:var(--theme-panel-border)]/60 pt-3">
+																		{EXTENDED_OBJECT_TYPE_OPTIONS.filter((option) =>
+																			option.types.some((type) => extendedObjectTypes.includes(type))
+																		).map((option) => {
+																			const items = OBSERVABLE_OBJECTS.filter(
+																				(item) =>
+																					item.objectType !== null &&
+																					option.types.includes(item.objectType) &&
+																					item.status === 'available'
+																			);
+																			if (items.length === 0) return null;
+																			return (
+																				<div key={option.labelKey} className="space-y-1.5">
+																					<p
+																						className={cn(
+																							'text-[0.65rem] tracking-wide uppercase',
+																							ft.muted
+																						)}
+																					>
+																						{t(option.labelKey)}
+																					</p>
+																					<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+																						{items.map((item) => (
+																							<div
+																								key={item.id}
+																								className="flex items-center justify-between gap-2"
+																							>
+																								<span className={cn('truncate text-xs', ft.muted)}>
+																									{getObservableObjectLabel(item, t)}
+																								</span>
+																								<Input
+																									type="number"
+																									className={cn(ft.inputCompact, 'h-8 w-16')}
+																									value={objectOrbs[item.id] ?? suggestedObjectOrb()}
+																									min={0}
+																									step={0.5}
+																									onChange={(e) => {
+																										const n = Number(e.target.value);
+																										if (Number.isFinite(n)) {
+																											applyObjectOrbChange(item.id, n);
+																										}
+																									}}
+																								/>
+																							</div>
+																						))}
+																					</div>
+																				</div>
+																			);
+																		})}
 																	</div>
 																)}
 															</div>

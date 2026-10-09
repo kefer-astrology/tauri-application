@@ -720,6 +720,7 @@ export function HoroscopeDashboard({
 							radixAspects={radixAspects}
 							aspectOrbsForRadix={workspaceDefaults.defaultAspectOrbs}
 							aspectColorsForRadix={workspaceDefaults.defaultAspectColors}
+						bodyColors={workspaceDefaults.bodyColors}
 							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
 							selectedObject={selectedWheelObject}
 							selectedAspectIndex={selectedWheelAspect?.index}

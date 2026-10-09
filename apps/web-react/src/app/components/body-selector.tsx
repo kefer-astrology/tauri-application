@@ -6,18 +6,23 @@ import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import {
 	OBSERVABLE_OBJECTS,
 	OBSERVABLE_OBJECT_CATEGORY_LABELS,
+	getDefaultBodyColor,
 	getObservableCategoryLabel,
 	getObservableObjectLabel,
 	starHemisphere,
+	type FixedStarSignificance,
 	type ObservableObjectCategory,
 	type ObservableObjectDefinition,
 	type StarHemisphere
 } from '@/lib/astrology/observableObjects';
+import { ZODIAC_ID_ELEMENT } from '@/lib/astrology/elementColors';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Card, CardContent } from './ui/card';
 import { Checkbox } from './ui/checkbox';
+import { ColorInput } from './ui/color-input';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { DetailSidePanel } from './detail-side-panel';
 import { HighlightText } from './highlight-text';
 import { cn } from './ui/utils';
@@ -39,6 +44,16 @@ const PLANET_GLYPH_FALLBACK: Record<string, string> = {
 
 const CATEGORY_ORDER = Object.keys(OBSERVABLE_OBJECT_CATEGORY_LABELS) as ObservableObjectCategory[];
 
+/** The 12 sign ids in zodiac order, for the fixed-star catalog's sign filter — sourced from the
+ *  static element map rather than the runtime Rust catalog, since this filter has nothing to do
+ *  with a workspace's actual sign presentation. */
+const ZODIAC_SIGN_IDS = Object.keys(ZODIAC_ID_ELEMENT);
+const ZODIAC_SIGN_GLYPHS: Record<string, string> = {
+	aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
+	libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+};
+const STAR_SIGNIFICANCE_FILTERS: readonly FixedStarSignificance[] = ['royal', 'behenian', 'notable'];
+
 /** Categories collapsed by default — exotic/aspirational groups, mirroring the reference design. */
 const COLLAPSED_BY_DEFAULT = new Set<ObservableObjectCategory>([
 	'asteroids',
@@ -55,6 +70,12 @@ type BodySelectorProps = {
 	subtitleKey: string;
 	selectedBodyIds: string[];
 	onSelectedBodyIdsChange: (ids: string[]) => void;
+	/** When provided alongside `onColorChange`, renders a color picker to the right of each
+	 *  selectable object — the settings dialog's per-object color setting. Omitted at the other
+	 *  call sites (horoscope dashboard's picker, transit transiting/transited pickers), where
+	 *  colors aren't a relevant concept. */
+	colors?: Record<string, string>;
+	onColorChange?: (id: string, color: string) => void;
 };
 
 function matchesQuery(item: ObservableObjectDefinition, label: string, query: string): boolean {
@@ -71,7 +92,9 @@ export function BodySelector({
 	glyphSet,
 	subtitleKey,
 	selectedBodyIds,
-	onSelectedBodyIdsChange
+	onSelectedBodyIdsChange,
+	colors,
+	onColorChange
 }: BodySelectorProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme(theme);
@@ -80,6 +103,8 @@ export function BodySelector({
 		CATEGORY_ORDER.filter((category) => !COLLAPSED_BY_DEFAULT.has(category))
 	);
 	const [starHemisphereFilter, setStarHemisphereFilter] = useState<StarHemisphere | 'all'>('all');
+	const [starSignificanceFilter, setStarSignificanceFilter] = useState<FixedStarSignificance | 'all'>('all');
+	const [starSignFilter, setStarSignFilter] = useState<string | 'all'>('all');
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [panelQuery, setPanelQuery] = useState('');
 	const [highlighted, setHighlighted] = useState<string | null>(null);
@@ -272,7 +297,7 @@ export function BodySelector({
 										{category === 'fixed_stars' ? (
 											<div className="space-y-3">
 												<div
-													className="flex items-center gap-1.5"
+													className="flex flex-wrap items-center gap-1.5"
 													role="group"
 													aria-label={t('settings_stars_hemisphere_filter', {
 														defaultValue: 'Filter by sky hemisphere'
@@ -302,13 +327,63 @@ export function BodySelector({
 															{t(labelKey, { defaultValue: fallback })}
 														</button>
 													))}
+													<Select value={starSignFilter} onValueChange={(value) => setStarSignFilter(value)}>
+														<SelectTrigger
+															size="sm"
+															className="h-auto w-auto gap-1 rounded-full border-[color:var(--theme-panel-border)] px-2.5 py-1 text-xs font-medium"
+															aria-label={t('settings_stars_sign_filter', {
+																defaultValue: 'Filter by zodiac sign'
+															})}
+														>
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="all">
+																{t('settings_stars_filter_all', { defaultValue: 'All' })}
+															</SelectItem>
+															{ZODIAC_SIGN_IDS.map((signId) => (
+																<SelectItem key={signId} value={signId}>
+																	{ZODIAC_SIGN_GLYPHS[signId]} {t(`open_sign_${signId}`, { defaultValue: signId })}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												</div>
+												<div
+													className="flex items-center gap-1.5"
+													role="group"
+													aria-label={t('settings_stars_significance_filter', {
+														defaultValue: 'Filter by astrological significance'
+													})}
+												>
+													{(['all', ...STAR_SIGNIFICANCE_FILTERS] as const).map((value) => (
+														<button
+															key={value}
+															type="button"
+															onClick={() => setStarSignificanceFilter(value)}
+															className={cn(
+																'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+																starSignificanceFilter === value
+																	? 'border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)] text-white'
+																	: cn(
+																			'border-[color:var(--theme-panel-border)] bg-transparent',
+																			ft.muted
+																		)
+															)}
+														>
+															{t(`settings_stars_filter_${value}`, { defaultValue: value })}
+														</button>
+													))}
 												</div>
 												<div className="grid grid-cols-2 gap-x-8 gap-y-1.5 sm:grid-cols-3">
 													{filtered
 														.filter(
 															(item) =>
-																starHemisphereFilter === 'all' ||
-																starHemisphere(item) === starHemisphereFilter
+																(starHemisphereFilter === 'all' ||
+																	starHemisphere(item) === starHemisphereFilter) &&
+																(starSignFilter === 'all' || item.zodiacSign === starSignFilter) &&
+																(starSignificanceFilter === 'all' ||
+																	item.significance === starSignificanceFilter)
 														)
 														.map((item) => (
 															<span
@@ -319,10 +394,20 @@ export function BodySelector({
 																	ft.bodyText
 																)}
 															>
+																{item.zodiacSign && (
+																	<span className="mr-1" aria-hidden="true">
+																		{ZODIAC_SIGN_GLYPHS[item.zodiacSign]}
+																	</span>
+																)}
 																<HighlightText text={labelFor(item)} query={trimmedQuery} />
 																{item.altName && (
 																	<span className={cn('ml-1 text-xs italic', ft.muted)}>
 																		({item.altName})
+																	</span>
+																)}
+																{item.significance && item.significance !== 'notable' && (
+																	<span className={cn('ml-1 text-xs italic', ft.muted)}>
+																		&middot; {t(`settings_stars_filter_${item.significance}`, { defaultValue: item.significance })}
 																	</span>
 																)}
 															</span>
@@ -341,11 +426,12 @@ export function BodySelector({
 																if (el) itemRefs.current.set(item.id, el);
 																else itemRefs.current.delete(item.id);
 															}}
+															className="flex items-center gap-2"
 														>
 															<Label
 																htmlFor={`body-${item.id}`}
 																className={cn(
-																	'flex items-center gap-2.5 rounded-md px-1 py-1 transition-colors',
+																	'flex flex-1 items-center gap-2.5 rounded-md px-1 py-1 transition-colors',
 																	isPlanned ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
 																	highlighted === item.id &&
 																		'ring-2 ring-[color:var(--theme-accent)]',
@@ -382,6 +468,13 @@ export function BodySelector({
 																	</span>
 																)}
 															</Label>
+															{colors && onColorChange && !isPlanned && (
+																<ColorInput
+																	value={colors[item.id] ?? getDefaultBodyColor(item.id)}
+																	onChange={(e) => onColorChange(item.id, e.target.value)}
+																	aria-label={`${labelFor(item)} ${t('color_theme')}`}
+																/>
+															)}
 														</div>
 													);
 												})}

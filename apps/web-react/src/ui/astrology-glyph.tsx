@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { SharedSvgIcon } from './shared-svg-icon';
 import {
 	getAspectGlyphSrc,
@@ -19,7 +20,8 @@ export function AstrologyGlyph({
 	fallback,
 	className,
 	size = 20,
-	title
+	title,
+	style
 }: {
 	glyphId: string;
 	glyphSet: AstrologyGlyphSetId;
@@ -29,6 +31,9 @@ export function AstrologyGlyph({
 	className?: string;
 	size?: number;
 	title?: string;
+	/** Tint override (e.g. a per-object color) — sets `color`, which both the mask-based SVG
+	 *  path (`currentColor`) and the plain-text fallback span pick up. */
+	style?: CSSProperties;
 }) {
 	const overrides = useCustomGlyphOverrides();
 	const src =
@@ -40,13 +45,15 @@ export function AstrologyGlyph({
 				: getAstrologyGlyphSrc(glyphSet, glyphId));
 	const scaledSize = Math.round(size * GLYPH_SIZE_SCALE);
 	if (src) {
-		return <SharedSvgIcon src={src} className={className} size={scaledSize} title={title} />;
+		return (
+			<SharedSvgIcon src={src} className={className} size={scaledSize} title={title} style={style} />
+		);
 	}
 
 	return (
 		<span
 			className={cn('inline-flex items-center justify-center leading-none', className)}
-			style={{ width: scaledSize, height: scaledSize }}
+			style={{ width: scaledSize, height: scaledSize, ...style }}
 			title={title}
 			aria-hidden={title ? undefined : true}
 			role={title ? 'img' : 'presentation'}

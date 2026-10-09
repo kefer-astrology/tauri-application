@@ -1,5 +1,6 @@
 import {
 	createContext,
+	useCallback,
 	useContext,
 	useEffect,
 	useMemo,
@@ -15,7 +16,12 @@ import {
 	loadTransitSetup,
 	saveTransitSetup
 } from '@/lib/tauri/workspace';
-import type { TransitSeriesEntry, TransitSetup } from '@/lib/tauri/types';
+import type {
+	ConfigurationSearchRequest,
+	TransitEventSearch,
+	TransitSeriesEntry,
+	TransitSetup
+} from '@/lib/tauri/types';
 import { normalizeLongitude } from '@/lib/astrology/transits';
 import { DEFAULT_ENABLED_ASPECT_IDS } from '@/lib/astrology/aspects';
 import { buildAspectTimelines, type AspectTimelineSeries } from '@/lib/astrology/aspectTimeline';
@@ -27,6 +33,7 @@ import {
 } from '@/lib/tauri/chartPayload';
 import { useWorkspaceCharts } from './workspace-charts';
 import { DOMAIN_CATALOG } from '@/lib/astrology/domainCatalog';
+import { KeferLoaderOverlay } from '../components/ui/kefer-loader';
 
 const BROWSER_TRANSIT_BODY_FALLBACK = [
 	'sun',
@@ -52,8 +59,28 @@ export function getDefaultTransitBodyIds(): string[] {
  *  anchor is picked once and shown in the results sidebar, so it should be something that still
  *  means the same thing across the whole scan — an inner planet's own position would itself be
  *  stale within days, defeating the point of pinning it. The Transited Bodies tab still lets
- *  anyone add faster ones back in. */
+ *  anyone add other objects back in; this is only the starting selection, not a restriction. */
 export const DEFAULT_FIXED_ANCHOR_BODY_IDS = ['jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+
+/** Period preset ids (general transit setup's period `<Select>`), in display order. `current`/
+ *  `custom` keep their existing special handling (single instant / user-edited range) in
+ *  `handleComputeTransits`; every other id is a fixed, non-editable `[from, to]` window computed
+ *  from "now" at selection time (see `transits-content.tsx`'s `PERIOD_PRESET_RANGES`). Exported
+ *  so the results dashboard's period summary can label whichever preset was actually used. */
+export const PERIOD_PRESET_IDS = [
+	'current',
+	'next_3_months',
+	'next_6_months',
+	'previous_3_months',
+	'previous_6_months',
+	'next_year',
+	'previous_year',
+	'custom'
+] as const;
+
+export function humanizePeriodPresetId(id: string): string {
+	return id.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 // `ASPECT_ROWS` is a runtime projection of the Rust model catalog — empty until
 // `setAspectDefinitions` populates it, so filtering it at module-eval time (before that call
@@ -133,6 +160,22 @@ export interface TransitsWorkspaceValue {
 		precessionCorrection: boolean;
 	};
 	setCheckboxes: (value: TransitsWorkspaceValue['checkboxes']) => void;
+	/** Independent of `checkboxes` above — these two are real, enabled controls (not disabled
+	 *  placeholders) that trigger an actual adaptive event search; see `exact_hits`/
+	 *  `station_events` in the transit-series contract. */
+	exactHits: boolean;
+	setExactHits: (value: boolean) => void;
+	stationEvents: boolean;
+	setStationEvents: (value: boolean) => void;
+	/** Whether the sampled graph (`transitSeries`) is computed at all — defaults to `true` so
+	 *  existing behavior is unchanged. `timeStepSeconds`/"Graph sampling interval" should only be
+	 *  shown in the UI while this is on. */
+	sampledGraphOutput: boolean;
+	setSampledGraphOutput: (value: boolean) => void;
+	/** Requested multi-body configuration interval searches (Grand Trine/T-square/Yod/Grand
+	 *  Cross) — independent of `sampledGraphOutput`/`timeStepSeconds`. */
+	configurationSearches: ConfigurationSearchRequest[];
+	setConfigurationSearches: (value: ConfigurationSearchRequest[]) => void;
 	sourceChartId: string;
 	setSourceChartId: (value: string) => void;
 	effectiveSourceChartId: string;
@@ -159,6 +202,10 @@ export interface TransitsWorkspaceValue {
 	 *  shown alongside the results even though they didn't stop a series from coming back. */
 	transitWarnings: string[];
 	transitSeries: TransitSeriesEntry[];
+	/** Exact-event search results (`exactHits`/`stationEvents`), kept separate from the sampled
+	 *  `transitSeries` above — always present after a compute, a fixed empty/complete shape when
+	 *  both flags are off. */
+	transitEventSearch: TransitEventSearch;
 	transitResultsCountLabel: string;
 	/** Transiting body ids actually present in the computed series (falls back to the
 	 *  configured selection while nothing has been computed yet). */
@@ -170,15 +217,31 @@ export interface TransitsWorkspaceValue {
 	 *  so the left nav and the results dashboard never derive it twice. */
 	aspectTimelineCategories: number[];
 	aspectTimelineSeries: AspectTimelineSeries[];
-	handleComputeTransits: () => Promise<void>;
+	handleComputeTransits: (overrideRange?: { start: Date; end: Date }) => Promise<void>;
 	/** Clears the computed series (returns to the setup screen) without touching the configured
 	 *  setup fields, so hitting "Calculate" again reruns with the same selection. */
 	reset: () => void;
+	/** Jumps the whole transit computation to a single instant (an event's `datetime`, or a
+	 *  configuration match's entry/best-fit/exit) and recomputes — reuses the same
+	 *  `handleComputeTransits`/overlay flow `periodModeId === 'current'` already goes through,
+	 *  rather than a separate code path. */
+	openChartAtInstant: (datetime: string) => Promise<void>;
 
-	selectedTransitedObjectId: string | null;
-	setSelectedTransitedObjectId: (value: string | null) => void;
 	resultsViewMode: TransitsResultsViewMode;
 	setResultsViewMode: (value: TransitsResultsViewMode) => void;
+
+	/** Aspect-timeline series keys (`AspectTimelineSeries.key`) hidden from the resonance chart —
+	 *  the left layers panel's checkboxes. Reset (emptied) on every fresh computation so a
+	 *  previous series' hidden keys never silently carry over. */
+	hiddenSeriesKeys: ReadonlySet<string>;
+	toggleSeriesVisibility: (key: string) => void;
+	setSeriesGroupVisibility: (keys: string[], visible: boolean) => void;
+	/** Resonance chart's Y-axis span in degrees, `[0.5, 6.0]` in `0.1` steps. */
+	chartYZoomDegrees: number;
+	setChartYZoomDegrees: (value: number) => void;
+	/** Resonance chart's visible X window (epoch ms); `null` shows the full computed range. */
+	chartVisibleRange: [number, number] | null;
+	setChartVisibleRange: (value: [number, number] | null) => void;
 }
 
 const TransitsWorkspaceContext = createContext<TransitsWorkspaceValue | null>(null);
@@ -230,13 +293,53 @@ export function TransitsWorkspaceProvider({
 	const [selectedAspects, setSelectedAspects] = useState<string[]>(DEFAULT_TRANSIT_ASPECT_IDS);
 	const [timeStepValue, setTimeStepValue] = useState(1);
 	const [timeStepUnit, setTimeStepUnit] = useState<TimeStepUnit>('hours');
+	const [exactHits, setExactHits] = useState(false);
+	const [stationEvents, setStationEvents] = useState(false);
+	const [sampledGraphOutput, setSampledGraphOutput] = useState(true);
+	const [configurationSearches, setConfigurationSearches] = useState<ConfigurationSearchRequest[]>(
+		[]
+	);
 	const [transitLoading, setTransitLoading] = useState(false);
 	const [transitError, setTransitError] = useState<string | null>(null);
 	const [transitWarnings, setTransitWarnings] = useState<string[]>([]);
 	const [transitSeries, setTransitSeries] = useState<TransitSeriesEntry[]>([]);
-	const [selectedTransitedObjectId, setSelectedTransitedObjectId] = useState<string | null>(null);
+	const [transitEventSearch, setTransitEventSearch] = useState<TransitEventSearch>({
+		events: [],
+		configuration_matches: [],
+		complete: true,
+		warnings: []
+	});
 	const [resultsViewMode, setResultsViewMode] = useState<TransitsResultsViewMode>('chart');
 	const [forceSetupView, setForceSetupView] = useState(false);
+	const [hiddenSeriesKeys, setHiddenSeriesKeys] = useState<ReadonlySet<string>>(() => new Set());
+	const [chartYZoomDegrees, setChartYZoomDegreesState] = useState(6);
+	const [chartVisibleRange, setChartVisibleRange] = useState<[number, number] | null>(null);
+
+	const toggleSeriesVisibility = useCallback((key: string) => {
+		setHiddenSeriesKeys((prev) => {
+			const next = new Set(prev);
+			if (next.has(key)) next.delete(key);
+			else next.add(key);
+			return next;
+		});
+	}, []);
+
+	/** Bulk visibility for a group of series keys at once — the layers panel's per-transited-body
+	 *  checkbox toggles every series for that body together, not one at a time. */
+	const setSeriesGroupVisibility = useCallback((keys: string[], visible: boolean) => {
+		setHiddenSeriesKeys((prev) => {
+			const next = new Set(prev);
+			for (const key of keys) {
+				if (visible) next.delete(key);
+				else next.add(key);
+			}
+			return next;
+		});
+	}, []);
+
+	const setChartYZoomDegrees = useCallback((value: number) => {
+		setChartYZoomDegreesState(Math.min(6, Math.max(0.5, Math.round(value * 10) / 10)));
+	}, []);
 
 	const effectiveSourceChartId = sourceChartId || selectedChartId || charts[0]?.id || '';
 
@@ -276,6 +379,21 @@ export function TransitsWorkspaceProvider({
 					transitLimits: setup.transit_limits,
 					precessionCorrection: setup.precession_correction
 				});
+				// `?? false`: older saved setups predate these two fields entirely (the Rust side
+				// already defaults a missing YAML field to `false` via `#[serde(default)]`), so a
+				// loaded `undefined` here must behave the same as an explicit `false`, not crash.
+				setExactHits(setup.exact_hits ?? false);
+				setStationEvents(setup.station_events ?? false);
+				// `?? true`: an older saved setup predates this field entirely and always computed
+				// the sampled series unconditionally (the Rust side defaults the same way).
+				setSampledGraphOutput(setup.sampled_series ?? true);
+				setConfigurationSearches(
+					(setup.configuration_requests ?? []).map((entry) => ({
+						configurationId: entry.configuration_id as ConfigurationSearchRequest['configurationId'],
+						fixedRoles: entry.fixed_roles,
+						roleCandidates: entry.role_candidates
+					}))
+				);
 			})
 			.catch((err) => {
 				if (cancelled) return;
@@ -301,10 +419,20 @@ export function TransitsWorkspaceProvider({
 		[charts, effectiveSourceChartId]
 	);
 
-	const { categories: aspectTimelineCategories, series: aspectTimelineSeries } = useMemo(
-		() => buildAspectTimelines(transitSeries, transitingBodyIdsInSeries, fixedChartPositions),
-		[transitSeries, transitingBodyIdsInSeries, fixedChartPositions]
-	);
+	const { categories: aspectTimelineCategories, series: aspectTimelineSeries } = useMemo(() => {
+		const result = buildAspectTimelines(transitSeries, transitingBodyIdsInSeries, fixedChartPositions);
+		// The resonance chart/layers panel model is "transiting body vs. my selected Transited
+		// Bodies" — `compute_chart_aspects` (Rust) also returns mutual aspects *among* the
+		// transiting bodies themselves, a different signal (used by exact event search/
+		// configuration search) that isn't tied to any selected anchor. Filter those out by the
+		// actual `transitedBodies` selection, not `kind`: the default Transiting/Transited lists
+		// overlap (e.g. Jupiter/Saturn/.../Pluto appear in both), so a `kind` check based on
+		// transiting-set membership alone misclassifies real cross aspects to those overlapping
+		// anchors as "mutual" too — `to` is only ever a genuine anchor when it's literally in
+		// `transitedBodies`, regardless of whether that id also happens to be swept as transiting.
+		const transitedSet = new Set(transitedBodies);
+		return { ...result, series: result.series.filter((s) => transitedSet.has(s.to)) };
+	}, [transitSeries, transitingBodyIdsInSeries, fixedChartPositions, transitedBodies]);
 
 	const timeStepSeconds = Math.max(
 		1,
@@ -337,7 +465,7 @@ export function TransitsWorkspaceProvider({
 		return computed;
 	};
 
-	const handleComputeTransits = async () => {
+	const handleComputeTransits = async (overrideRange?: { start: Date; end: Date }) => {
 		if (!effectiveSourceChartId) {
 			setTransitError('No chart selected for transit computation.');
 			return;
@@ -352,8 +480,12 @@ export function TransitsWorkspaceProvider({
 			return;
 		}
 
-		const range: { startDatetime: string; endDatetime: string } =
-			periodModeId === 'current'
+		const range: { startDatetime: string; endDatetime: string } = overrideRange
+			? {
+					startDatetime: overrideRange.start.toISOString(),
+					endDatetime: overrideRange.end.toISOString()
+				}
+			: periodModeId === 'current'
 				? (() => {
 						const instant = new Date().toISOString();
 						return { startDatetime: instant, endDatetime: instant };
@@ -367,9 +499,11 @@ export function TransitsWorkspaceProvider({
 		setTransitError(null);
 		setTransitWarnings([]);
 		setTransitSeries([]);
-		setSelectedTransitedObjectId(null);
+		setTransitEventSearch({ events: [], configuration_matches: [], complete: true, warnings: [] });
 		setResultsViewMode('chart');
 		setForceSetupView(false);
+		setHiddenSeriesKeys(new Set());
+		setChartVisibleRange(null);
 
 		try {
 			if (workspacePath) {
@@ -391,8 +525,14 @@ export function TransitsWorkspaceProvider({
 					model_overrides: sourceChart.modelOverrides ?? null,
 					house_transitions: checkboxes.houseTransitions,
 					sign_transitions: checkboxes.signTransitions,
-					exact_hits: false,
-					station_events: false,
+					exact_hits: exactHits,
+					station_events: stationEvents,
+					sampled_series: sampledGraphOutput,
+					configuration_requests: configurationSearches.map((entry) => ({
+						configuration_id: entry.configurationId,
+						fixed_roles: entry.fixedRoles ?? [],
+						role_candidates: entry.roleCandidates ?? {}
+					})),
 					transit_limits: checkboxes.transitLimits,
 					precession_correction: checkboxes.precessionCorrection
 				};
@@ -459,7 +599,15 @@ export function TransitsWorkspaceProvider({
 							timeStepSeconds,
 							transitingObjects: transitingBodies,
 							transitedObjects: effectiveTransitedBodies,
-							aspectTypes: selectedAspects
+							aspectTypes: selectedAspects,
+							exactHits,
+							stationEvents,
+							configurationRequests: configurationSearches.map((entry) => ({
+								configuration_id: entry.configurationId,
+								fixed_roles: entry.fixedRoles ?? [],
+								role_candidates: entry.roleCandidates ?? {}
+							})),
+							sampledSeries: sampledGraphOutput
 						})
 					: await computeTransitSeriesFromData({
 							chartJson: sourceChartPayload,
@@ -468,14 +616,37 @@ export function TransitsWorkspaceProvider({
 							timeStepSeconds,
 							transitingObjects: transitingBodies,
 							transitedObjects: effectiveTransitedBodies,
-							aspectTypes: selectedAspects
+							aspectTypes: selectedAspects,
+							exactHits,
+							stationEvents,
+							configurationRequests: configurationSearches.map((entry) => ({
+								configuration_id: entry.configurationId,
+								fixed_roles: entry.fixedRoles ?? [],
+								role_candidates: entry.roleCandidates ?? {}
+							})),
+							sampledSeries: sampledGraphOutput
 						});
 
 				// Treat a present-but-empty array the same as a missing one — either way there's
 				// nothing to show except the snapshot already computed above for the overlay.
+				// Only when a sampled series was actually requested: an explicit
+				// `sampledGraphOutput: false` must show no sampled points at all, not a
+				// synthetic single-entry fallback pretending to be one.
 				const rawResults = result.results ?? [];
-				const results = rawResults.length > 0 ? rawResults : [singleEntry];
+				const results = !sampledGraphOutput
+					? []
+					: rawResults.length > 0
+						? rawResults
+						: [singleEntry];
 				setTransitSeries(results);
+				setTransitEventSearch(
+					result.event_search ?? {
+						events: [],
+						configuration_matches: [],
+						complete: true,
+						warnings: []
+					}
+				);
 				const warnings = [...(result.warnings ?? [])];
 				if (result.fallback_used) {
 					warnings.push(
@@ -510,15 +681,26 @@ export function TransitsWorkspaceProvider({
 
 	const reset = () => {
 		setTransitSeries([]);
+		setTransitEventSearch({ events: [], configuration_matches: [], complete: true, warnings: [] });
 		setTransitError(null);
 		setTransitWarnings([]);
-		setSelectedTransitedObjectId(null);
 		setResultsViewMode('chart');
 		setForceSetupView(false);
+		setHiddenSeriesKeys(new Set());
+		setChartVisibleRange(null);
 		clearTransitOverlay();
 	};
 
 	const editSetup = () => setForceSetupView(true);
+
+	const openChartAtInstant = async (datetime: string) => {
+		const instant = new Date(datetime);
+		if (Number.isNaN(instant.getTime())) return;
+		setPeriodModeId('current');
+		setFromDateTime(instant);
+		setToDateTime(instant);
+		await handleComputeTransits({ start: instant, end: instant });
+	};
 
 	const value: TransitsWorkspaceValue = {
 		mode: transitSeries.length > 0 && !forceSetupView ? 'results' : 'setup',
@@ -529,6 +711,14 @@ export function TransitsWorkspaceProvider({
 		setPeriodModeId,
 		checkboxes,
 		setCheckboxes,
+		exactHits,
+		setExactHits,
+		stationEvents,
+		setStationEvents,
+		sampledGraphOutput,
+		setSampledGraphOutput,
+		configurationSearches,
+		setConfigurationSearches,
 		sourceChartId,
 		setSourceChartId,
 		effectiveSourceChartId,
@@ -552,6 +742,7 @@ export function TransitsWorkspaceProvider({
 		transitError,
 		transitWarnings,
 		transitSeries,
+		transitEventSearch,
 		transitResultsCountLabel,
 		transitingBodyIdsInSeries,
 		fixedChartPositions,
@@ -559,14 +750,23 @@ export function TransitsWorkspaceProvider({
 		aspectTimelineSeries,
 		handleComputeTransits,
 		reset,
-		selectedTransitedObjectId,
-		setSelectedTransitedObjectId,
+		openChartAtInstant,
 		resultsViewMode,
-		setResultsViewMode
+		setResultsViewMode,
+		hiddenSeriesKeys,
+		toggleSeriesVisibility,
+		setSeriesGroupVisibility,
+		chartYZoomDegrees,
+		setChartYZoomDegrees,
+		chartVisibleRange,
+		setChartVisibleRange
 	};
 
 	return (
-		<TransitsWorkspaceContext.Provider value={value}>{children}</TransitsWorkspaceContext.Provider>
+		<TransitsWorkspaceContext.Provider value={value}>
+			{children}
+			<KeferLoaderOverlay active={transitLoading} />
+		</TransitsWorkspaceContext.Provider>
 	);
 }
 
