@@ -101,9 +101,8 @@ default:                                # calculation defaults only
   default_aspects: [conjunction, opposition, trine, square, sextile]
   default_aspect_orbs: { conjunction: 7.0, square: 5.0 }
   default_aspect_colors: { conjunction: '#555555', square: '#d04444' }
-  default_aspect_include_angles: { square: true, quincunx: false }
-  default_aspect_include_extended: { quincunx: true }
-  default_aspect_extended_orbs: { quincunx: 0.5 }
+  extended_object_types: [angle, asteroid, lunar_node]
+  object_orbs: { ceres: 1.0, north_node: 2.0 }
   astrology_tradition: modern_western
   time_system: gregorian
   default_location:
@@ -145,36 +144,41 @@ The unreleased schema has one canonical representation: visual settings belong
 under `presentation`; calculation settings belong under `default` or a model,
 preset, chart, or operation layer.
 
-### Per-aspect object scope and the `astrology_tradition` ("Škola") setting
+### Object scope and the `astrology_tradition` ("Škola") setting
 
-`default_aspect_include_angles`, `default_aspect_include_extended`, and
-`default_aspect_extended_orbs` are per-aspect-id maps that restrict which
-object categories an aspect may form between, mirroring
-`AspectDefinition::object_type_rule`/`extended_orb` in
-`src-tauri/src/workspace/models.rs`:
+`extended_object_types` and `object_orbs` are **global** — the same
+set/table applies to every aspect at once, not per-aspect-id:
 
-- `default_aspect_include_angles`: whether Ascendant/Midheaven may
-  participate in that aspect. A missing key falls back to the resolved
-  model's own `object_type_rule` baseline (unrestricted, by default).
-- `default_aspect_include_extended`: whether extended objects — asteroids,
-  lunar nodes, parts/lots, other calculated points
-  (`EXTENDED_ASPECT_OBJECT_TYPES`) — may participate. A missing key defaults
-  to `false`; extended objects are opt-in.
-- `default_aspect_extended_orbs`: the tighter orb used instead of
-  `default_aspect_orbs` whenever an extended object is involved, once that
-  aspect's `include_extended` is on.
+- `extended_object_types`: which `ObjectType` categories — `Angle`,
+  asteroids, lunar nodes, parts/lots, other calculated points, geocentric
+  nodes, trans-Neptunian objects, hypothetical bodies — may participate in
+  *any* aspect at all. `Planet` is always implicitly eligible and never
+  appears in this list. Rebuilds every aspect's `object_type_rule` the same
+  way, in `apply_workspace_aspect_scope_defaults`
+  (`src-tauri/src/workspace/settings.rs`). Absent means every category is
+  eligible (the catalog's own unrestricted baseline) — not that none are;
+  this only narrows eligibility once set.
+- `object_orbs`: per-object id → orb (degrees). Whenever that object is on
+  either side of a pair, its aspect's own orb is narrowed to this value
+  instead (never widened) — see `domain::astrology::resolve_allowed_orb`.
+  Applies to *any* object, including individual planets and angles, not
+  just the opt-in `extended_object_types` categories. An object with no
+  entry here behaves like a plain core object until given one.
+  Workspace-level only — no preset/chart/operation layer overrides it.
 
-An untouched workspace (none of these three maps present) computes exactly as
-before — nothing here changes default behavior until a workspace explicitly
-sets it.
+A brand-new workspace seeds `extended_object_types: [angle]` (see
+`empty_workspace_manifest`, `src-tauri/src/commands/workspace.rs`) so angle
+participation keeps working out of the box, the same expectation the old
+per-aspect angle toggle it replaced provided by default.
 
 `astrology_tradition` is a closed-enum convenience, distinct from
 `active_school` below: picking one of `hellenistic`, `medieval_traditional`,
 `modern_western`, `harmonic`, `cosmobiology`, `uranian_hamburg`, or
-`jyotish_parashari` (re)populates `default_aspects`, `default_aspect_orbs`,
-and `default_aspect_include_angles` with that tradition's suggested values —
-see `workspace::tradition::tradition_aspect_preset` in
-`src-tauri/src/workspace/tradition.rs`. A user can still edit individual
+`jyotish_parashari` (re)populates `default_aspects`/`default_aspect_orbs`
+with that tradition's suggested values, and ensures `angle` is present in
+`extended_object_types` (merged in, not replacing whatever other categories
+were already enabled) — see `workspace::tradition::tradition_aspect_preset`
+in `src-tauri/src/workspace/tradition.rs`. A user can still edit individual
 aspects afterward; their edits simply overwrite the preset's suggestion for
 that one aspect. Setting the same tradition again is a no-op for aspect
 settings (it only re-applies the preset on an actual change), so resaving

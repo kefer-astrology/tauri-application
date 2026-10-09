@@ -105,7 +105,7 @@ can be overridden per chart regardless of which school picked it:</p>
 			<tr>
 					<td><strong>Relationships</strong></td>
 					<td>Degree aspects, sign-based configurations, directional aspects, midpoints</td>
-					<td>Degree aspects are fully implemented: <code>AspectDefinition</code>, <code>ObjectTypeRule</code>/<code>extended_orb</code>, <code>WorkspaceDefaults.default_aspect_*</code>. <strong>This is the only axis <code>astrology_tradition</code> currently drives</strong> (<code>workspace::tradition::tradition_aspect_preset</code>). Sign-based &ldquo;same sign&rdquo; configurations, Jyotish directional drishti, and midpoint analysis are not implemented.</td>
+					<td>Degree aspects are fully implemented: <code>AspectDefinition</code>, <code>ObjectTypeRule</code>, <code>WorkspaceDefaults.default_aspect_*</code>/<code>extended_object_types</code>/<code>object_orbs</code>. <strong>This is the only axis <code>astrology_tradition</code> currently drives</strong> (<code>workspace::tradition::tradition_aspect_preset</code>). Sign-based &ldquo;same sign&rdquo; configurations, Jyotish directional drishti, and midpoint analysis are not implemented.</td>
 			</tr>
 			<tr>
 					<td><strong>Planetary condition</strong></td>
@@ -125,7 +125,7 @@ can be overridden per chart regardless of which school picked it:</p>
 	</tbody>
 </table>
 <p>Extending a later axis means adding that axis&rsquo;s own settings fields (mirroring
-how <code>default_aspect_include_angles</code> etc. were added) plus a
+how <code>extended_object_types</code>/<code>object_orbs</code> etc. were added) plus a
 <code>tradition_*_preset</code>-shaped function, the same pattern <code>tradition.rs</code>
 established for aspects — it does not require changing
 <code>current_model_report_with_layers</code>&rsquo;s precedence chain.</p>
