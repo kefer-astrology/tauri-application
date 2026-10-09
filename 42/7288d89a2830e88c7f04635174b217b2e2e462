@@ -1,0 +1,133 @@
+src-tauri/src/application/configuration_search.rs
+  s_42d4ef0bf34e6a::t_f65f40ab8fd2ed 856
+  s_42d4ef0bf34e6a::t_6d100fe47709e0 1005
+  s_42d4ef0bf34e6a::t_345474ee4ce6d8 453
+  s_42d4ef0bf34e6a::t_ffff3a278e6c03 1125,1187,1287,1303,1366,1416,1510,1538
+  s_42d4ef0bf34e6a::t_31eb94eaa2ac1b 311-312,315
+  s_42d4ef0bf34e6a::t_8324e85cd0c951 138,536,774,838
+  s_42d4ef0bf34e6a::t_e1154b4cdad6ab 282-283,286
+  s_42d4ef0bf34e6a::t_887f4099b46a26 181
+  s_42d4ef0bf34e6a::t_29a5f1f5484a01 230-231,234
+  s_42d4ef0bf34e6a::t_83be153a05d8e7 1221
+  s_42d4ef0bf34e6a::t_4ea6c23210a1a5 565-566,569,581
+  s_42d4ef0bf34e6a::t_5329cecb6ebe0f 427
+  s_42d4ef0bf34e6a::t_85e0e99fe0a9b8 793-794,797
+src-tauri/src/workspace/model_catalog.rs
+  s_42d4ef0bf34e6a::t_d3c67a6fbaa645 726-764
+  s_42d4ef0bf34e6a::t_0e376dd4017f53 775-783,797
+  s_42d4ef0bf34e6a::t_c324966f955442 494-725
+src-tauri/src/workspace/settings.rs
+  s_42d4ef0bf34e6a::t_effc7e5b08500f 643
+  s_42d4ef0bf34e6a::t_659c841547a7ad 411-414,427,429
+  s_42d4ef0bf34e6a::t_6ec541118a2cac 1194,1200,1203,1218,1221-1239,1243-1245,1249,1252
+  s_42d4ef0bf34e6a::t_0d2af67b11352d 14-16
+  s_42d4ef0bf34e6a::t_5c8efc9084833c 107-111
+  s_42d4ef0bf34e6a::t_6489768c7818bc 1207-1217,1219-1220
+  s_42d4ef0bf34e6a::t_7ec25e50bd850e 415-419,421-425,433-441
+  s_42d4ef0bf34e6a::t_4316b3b617755a 802-803
+  s_42d4ef0bf34e6a::t_a4868386f113d5 1201-1202,1204
+  s_42d4ef0bf34e6a::t_cf65df71106ad9 500-502
+src-tauri/src/domain/mod.rs
+  s_42d4ef0bf34e6a::t_ae011b5f8bf04c 4
+src-tauri/src/domain/astrology.rs
+  s_42d4ef0bf34e6a::t_3914438d4b8ce4 430-438,444-445,448,456-457
+  s_42d4ef0bf34e6a::t_8686f1c2ee32ff 1345
+  s_42d4ef0bf34e6a::t_8d370619b4d656 138,162-163,166,192,211-219,376-378,384-400
+  s_42d4ef0bf34e6a::t_0365c0e42a4eb3 919-938,949,951-952
+  s_42d4ef0bf34e6a::t_db9e5a9e8cc1c7 1380,1391
+  s_42d4ef0bf34e6a::t_afd00867020cba 1238
+  s_42d4ef0bf34e6a::t_4234da8f0bfb13 237-366
+  s_42d4ef0bf34e6a::t_4f3f5d20e8fb5a 375
+  s_42d4ef0bf34e6a::t_47d7dc4a7104bc 1182-1208
+  s_42d4ef0bf34e6a::t_6a36bf017e4bc1 517,521-522,525,531-532
+  s_42d4ef0bf34e6a::t_fe9113500b3a76 1249,1405,1513
+  s_42d4ef0bf34e6a::t_4fd1caaabfd8fe 1524
+  s_42d4ef0bf34e6a::t_cd99fb92897869 379-383
+  s_42d4ef0bf34e6a::t_bd3105059436d1 1450,1464
+  s_42d4ef0bf34e6a::t_36ee6cad1ff6e5 13
+  s_42d4ef0bf34e6a::t_c6226d84b80c4f 1029-1181
+  s_42d4ef0bf34e6a::t_8db9c110b98f32 1307
+  s_42d4ef0bf34e6a::t_4f6804b8fc7365 1545-1547,1560-1563,1572
+src-tauri/src/workspace/models.rs
+  s_42d4ef0bf34e6a::t_d9e46e8606eced 918-920
+  s_42d4ef0bf34e6a::t_9eb7bc45ac4fe0 202-207
+  s_42d4ef0bf34e6a::t_20cd783543ee38 311-314
+  s_42d4ef0bf34e6a::t_f78f453cdeba54 716-721,724-730
+  s_42d4ef0bf34e6a::t_93f758d0f2c609 723,732
+  s_42d4ef0bf34e6a::t_238beeabab13a3 904-913
+  s_42d4ef0bf34e6a::t_96446efff8372f 208-209
+  s_42d4ef0bf34e6a::t_ee8c588f00d0da 736-737
+  s_42d4ef0bf34e6a::t_4c79f4b8685a2a 923-939
+  s_42d4ef0bf34e6a::t_29844b035a2170 722
+  s_42d4ef0bf34e6a::t_6af51833a555d5 731
+  s_42d4ef0bf34e6a::t_3f32492a61debb 921-922
+src-tauri/src/workspace/tradition.rs
+  s_42d4ef0bf34e6a::t_cdc5f187d6b705 3-11,29,31-32
+  s_42d4ef0bf34e6a::t_a413d246c2e8da 42-46,50-54,58-64,69-92,96-100,104-108,114-118
+src-tauri/src/infrastructure/ephemeris.rs
+  s_42d4ef0bf34e6a::t_472c89f8781498 1184-1187
+  s_42d4ef0bf34e6a::t_71e363d016b777 1215-1219
+  s_42d4ef0bf34e6a::t_42e846845d4a57 1068
+  s_42d4ef0bf34e6a::t_7f3849475c9c57 1089-1099,1109-1113
+src-tauri/src/domain/midpoints.rs
+  s_42d4ef0bf34e6a::t_15f696fb6ea482 51-57,63-66
+  s_42d4ef0bf34e6a::t_c04be112e0c00f 1-50,58-62,67-201
+src-tauri/src/lib.rs
+  s_42d4ef0bf34e6a::t_c9022a7d7a3261 14
+  s_42d4ef0bf34e6a::t_8eb371288810f5 112-113
+src-tauri/src/infrastructure/jpl_backend.rs
+  s_42d4ef0bf34e6a::t_278f13b39582ca 47,49-50
+  s_42d4ef0bf34e6a::t_e501e77e2a9ae3 671-672
+src-tauri/src/application/computation.rs
+  s_42d4ef0bf34e6a::t_15b46f67e2eec0 108
+src-tauri/src/commands/calculation.rs
+  s_42d4ef0bf34e6a::t_51ca19f90e2b4e 99-100,102-146
+  s_42d4ef0bf34e6a::t_e4672dc2140254 98
+  s_42d4ef0bf34e6a::t_175f938120b8ae 101
+src-tauri/src/application/transit.rs
+  s_42d4ef0bf34e6a::t_b734d65e9f99d5 921
+  s_42d4ef0bf34e6a::t_e3b4c39a54fdbd 125,133
+src-tauri/src/commands/workspace.rs
+  s_42d4ef0bf34e6a::t_cba1da482fb57a 42-44
+  s_42d4ef0bf34e6a::t_424e3dc4f60430 37
+  s_42d4ef0bf34e6a::t_809b96883764ed 361-362
+  s_42d4ef0bf34e6a::t_15f090939b825a 470-471,477-478
+  s_42d4ef0bf34e6a::t_b7587e4953f85e 650-654
+  s_42d4ef0bf34e6a::t_b1b514a26c5af3 1071-1112
+  s_42d4ef0bf34e6a::t_d95b1daf9aba8b 605-606,608-609
+  s_42d4ef0bf34e6a::t_ff90d69a35e62e 1034-1039
+  s_42d4ef0bf34e6a::t_b5a17479bbd7de 473-476
+  s_42d4ef0bf34e6a::t_e810849618ac7e 433-440,447-448
+  s_42d4ef0bf34e6a::t_d210a8fb8ed2bf 39,41
+  s_42d4ef0bf34e6a::t_f7e8fe07ed8b69 628-634
+  s_42d4ef0bf34e6a::t_a4bdb40b19aa76 614
+  s_42d4ef0bf34e6a::t_8d583bc1bc546b 357-360
+  s_42d4ef0bf34e6a::t_d15c48c9f58519 600-603
+  s_42d4ef0bf34e6a::t_1843dfcabb9852 942,953-954,957
+  s_42d4ef0bf34e6a::t_5e657594eb8002 943-945,958,963-983
+  s_42d4ef0bf34e6a::t_31b67222733c27 1070
+src-tauri/src/domain/houses.rs
+  s_42d4ef0bf34e6a::t_e34bdaeb5a13e1 286-332
+  s_42d4ef0bf34e6a::t_89332e0bf739b6 792-847
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "427288d89a2830e88c7f04635174b217b2e2e462",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_42d4ef0bf34e6a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54b16683-9b35-40c6-a808-38fccab8c851",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
