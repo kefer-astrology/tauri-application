@@ -1,0 +1,26 @@
+docs/diagrams/application-structure.mmd
+  s_b6130e02b5ee30::t_947e18d24673d8 1-109
+docs/diagrams/code-navigation.mmd
+  s_b6130e02b5ee30::t_2deaf53111fe7b 1-209
+docs/diagrams/rust-code-map.mmd
+  s_b6130e02b5ee30::t_4dadcbb4d2d966 1-2,4-14,16-18,23-29,39-54,66-87,93-103,112,115-123,127-130
+  s_b6130e02b5ee30::t_f801aeb344e62c 15,19-22,30-38,55-65,88-92,104-111,124-126
+  s_b6130e02b5ee30::t_1ea96cb006443f 113-114
+  s_b6130e02b5ee30::t_d8b917f75139b0 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cb25ad7299c48b13e1a92b83fe88dc671f0a9894",
+  "prompts": {},
+  "sessions": {
+    "s_b6130e02b5ee30": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12eda-5f96-7441-9903-b2fa6c996e11",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
