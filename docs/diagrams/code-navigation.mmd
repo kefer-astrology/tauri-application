@@ -1,0 +1,209 @@
+%% Kefer code navigation map
+%% A class-style map of the primary components, modules, data types, and public functions.
+%% Boxes represent TypeScript components/providers, Rust modules, traits, or structs as labelled.
+%% Open in GitHub, Mermaid Live Editor, or a Mermaid-capable editor.
+
+classDiagram
+  direction LR
+
+  class App {
+    <<React component>>
+    +selects application view
+    +composes providers and shells
+  }
+  class WorkspaceChartsProvider {
+    <<React provider>>
+    +charts: AppChart[]
+    +selectedChartId: string
+    +setCharts()
+    +setSelectedChartId()
+  }
+  class TransitsWorkspaceProvider {
+    <<React provider>>
+    +handleComputeTransits()
+    +openChartAtInstant()
+    +transitSeries: TransitSeriesEntry[]
+    +transitEventSearch: TransitEventSearch
+  }
+  class TransitsContent {
+    <<React component>>
+    +edits TransitSeriesRequest inputs
+    +calls handleComputeTransits()
+  }
+  class TransitsResultsDashboard {
+    <<React component>>
+    +renders resonance and table views
+    +opens exact events/configurations
+  }
+  class ReactWorkspaceBridge {
+    <<TypeScript module>>
+    +openWorkspaceFolder()
+    +computeChart()
+    +computeChartFromData()
+    +computeCrossAspectsFromData()
+    +computeTransitSeries()
+    +computeTransitSeriesFromData()
+  }
+  class TransitSeriesRequest {
+    <<TypeScript DTO>>
+    +startDatetime
+    +endDatetime
+    +transitingObjects
+    +transitedObjects
+    +aspectTypes
+    +exactHits
+    +stationEvents
+    +configurationRequests
+  }
+  class TransitSeriesResult {
+    <<TypeScript DTO>>
+    +results
+    +event_search
+    +warnings
+  }
+
+  App --> WorkspaceChartsProvider : owns state
+  App --> TransitsWorkspaceProvider : owns state
+  TransitsWorkspaceProvider --> WorkspaceChartsProvider : reads/updates chart
+  TransitsContent --> TransitsWorkspaceProvider : configuration
+  TransitsResultsDashboard --> TransitsWorkspaceProvider : results/actions
+  TransitsWorkspaceProvider --> ReactWorkspaceBridge : invokes
+  ReactWorkspaceBridge --> TransitSeriesRequest : accepts
+  ReactWorkspaceBridge --> TransitSeriesResult : returns
+
+  class SvelteApp {
+    <<Svelte component>>
+    +composes alternate shell
+  }
+  class SvelteWorkspaceBridge {
+    <<TypeScript module>>
+    +same typed Tauri bridge surface
+  }
+  SvelteApp --> SvelteWorkspaceBridge : invokes
+
+  class CalculationCommands {
+    <<Rust Tauri commands>>
+    +compute_chart()
+    +compute_chart_from_data()
+    +compute_cross_aspects_from_data()
+    +compute_midpoints_from_data()
+  }
+  class TransitCommands {
+    <<Rust Tauri commands>>
+    +compute_transit_series()
+    +compute_transit_series_from_data()
+    +load_transit_setup()
+    +save_transit_setup()
+  }
+  class WorkspaceCommands {
+    <<Rust Tauri commands>>
+    +load_workspace()
+    +save_workspace()
+    +get_current_model_report()
+    +get_domain_catalog()
+  }
+  ReactWorkspaceBridge --> CalculationCommands : Tauri invoke
+  ReactWorkspaceBridge --> TransitCommands : Tauri invoke
+  ReactWorkspaceBridge --> WorkspaceCommands : Tauri invoke
+  SvelteWorkspaceBridge --> CalculationCommands : Tauri invoke
+  SvelteWorkspaceBridge --> TransitCommands : Tauri invoke
+  SvelteWorkspaceBridge --> WorkspaceCommands : Tauri invoke
+
+  class ChartResolution {
+    <<Rust application module>>
+    +resolve_standalone_chart()
+    +resolve_workspace_chart()
+    +validate_chart_payload()
+  }
+  class Computation {
+    <<Rust application module>>
+    +compute_chart(ChartComputeRequest)
+  }
+  class TransitService {
+    <<Rust application module>>
+    +compute_transit_series(TransitSeriesRequest)
+    +compute_transit_events()
+    +parse_datetime_input()
+  }
+  class ComputeRouter {
+    <<Rust application module>>
+    +select_chart_compute_route()
+    +select_transit_compute_route()
+  }
+  class EventSearch {
+    <<Rust application module>>
+    +EventSearchLimits
+    +EventSearchOutcome
+  }
+  class ConfigurationSearch {
+    <<Rust application module>>
+    +ConfigurationSearchRequest
+    +ConfigurationMatch
+    +BestFit
+  }
+
+  CalculationCommands --> ChartResolution
+  CalculationCommands --> Computation
+  TransitCommands --> ChartResolution
+  TransitCommands --> TransitService
+  Computation --> ComputeRouter
+  TransitService --> ComputeRouter
+  TransitService --> EventSearch
+  TransitService --> ConfigurationSearch
+
+  class WorkspaceModule {
+    <<Rust module>>
+    +builtin_domain_catalog()
+    +domain_catalog_for_model()
+    +load/save/validate workspace YAML
+  }
+  class AstrologyDomain {
+    <<Rust domain module>>
+    +resolve_body_selection()
+    +compute_chart_aspects()
+    +compute_cross_aspects()
+  }
+  class HousesDomain {
+    <<Rust domain module>>
+    +compute houses, angles, points
+  }
+  class ConfigurationsDomain {
+    <<Rust domain module>>
+    +detect_chart_configurations()
+  }
+  class MidpointsDomain {
+    <<Rust domain module>>
+    +compute_midpoints()
+    +compute_midpoint_contacts()
+  }
+  class AstronomyBackend {
+    <<Rust trait>>
+    +compute_chart_data()
+    +compute_positions()
+  }
+  class JplAstronomyBackend {
+    <<Rust struct>>
+    +JPL/SPICE calculation
+  }
+  class SwissAstronomyBackend {
+    <<Rust struct>>
+    +Swiss Ephemeris calculation
+  }
+  class PythonSidecar {
+    <<Rust infrastructure module>>
+    +BackendState
+    +sidecar lifecycle and calls
+  }
+
+  WorkspaceCommands --> WorkspaceModule
+  ChartResolution --> WorkspaceModule
+  Computation --> AstrologyDomain
+  Computation --> HousesDomain
+  Computation --> ConfigurationsDomain
+  CalculationCommands --> MidpointsDomain
+  TransitService --> AstrologyDomain
+  ConfigurationSearch --> ConfigurationsDomain
+  ComputeRouter --> AstronomyBackend
+  ComputeRouter --> PythonSidecar : optional route
+  AstronomyBackend <|.. JplAstronomyBackend
+  AstronomyBackend <|.. SwissAstronomyBackend

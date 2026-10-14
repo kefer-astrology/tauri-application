@@ -1,0 +1,130 @@
+%% Kefer Rust code map — src-tauri/src/
+%% Public functions are abbreviated to the navigation-relevant surface.
+%% Solid arrows are calls/dependencies; dashed arrows mark serialized, optional, or implementation relationships.
+
+flowchart TB
+  classDef command fill:#fff2df,stroke:#b46913,color:#56300a
+  classDef app fill:#e8f4ff,stroke:#2673a8,color:#0d3554
+  classDef contract fill:#f4f1ff,stroke:#7157b7,color:#24144f
+  classDef domain fill:#e8f8ed,stroke:#31834b,color:#123d20
+  classDef infra fill:#f4f4f4,stroke:#666,color:#222
+  classDef data fill:#fff8cc,stroke:#9a7a00,color:#483900
+  classDef support fill:#ffeaf0,stroke:#af3f63,color:#571a2c
+
+  subgraph entry[Crate entry]
+    run["app_lib::run()<br/>registers Tauri invoke handlers<br/>initializes ephemeris and Python state"]:::command
+  end
+
+  subgraph commands[commands/ — Tauri transport functions]
+    workspaceCmd["workspace.rs<br/>load_workspace()<br/>save_workspace()<br/>validate_workspace()<br/>get_current_model_report()<br/>get_domain_catalog()"]:::command
+    chartCmd["calculation.rs<br/>compute_chart()<br/>compute_chart_from_data()<br/>compute_cross_aspects_from_data()<br/>compute_midpoints_from_data()"]:::command
+    transitCmd["transits.rs<br/>compute_transit_series()<br/>compute_transit_series_from_data()<br/>load_transit_setup()<br/>save_transit_setup()"]:::command
+    supportCmd["charts.rs · analyses.rs · location.rs<br/>ephemeris.rs · dialogs.rs · storage.rs"]:::command
+  end
+  run --> workspaceCmd
+  run --> chartCmd
+  run --> transitCmd
+  run --> supportCmd
+
+  subgraph workspace[workspace/ — persisted model and settings contracts]
+    manifest["WorkspaceManifest<br/>references charts, analyses, models, defaults"]:::contract
+    chartInstance["ChartInstance<br/>ChartSubject + ChartConfig + ChartDefinition"]:::contract
+    transitSetup["TransitSetup<br/>period, selections, searches, sampling"]:::contract
+    astroModel["AstroModel<br/>BodyDefinition + AspectDefinition + ModelSettings"]:::contract
+    catalog["DomainCatalog<br/>model + house/domain definitions"]:::contract
+    settings["EffectiveModelSettings<br/>CurrentModelReport<br/>SettingsLayer / SettingSource"]:::contract
+    loader["loader.rs<br/>load_workspace_manifest()<br/>load_chart()<br/>load_workspace_aggregate()"]:::data
+    writer["writer.rs<br/>write_workspace_manifest()<br/>write_chart_yaml()<br/>write_transit_setup()"]:::data
+    validation["validation.rs<br/>validate_model()<br/>validate_effective_settings()<br/>validate_chart_config()"]:::data
+    manifest --> chartInstance
+    manifest --> astroModel
+    astroModel --> catalog
+    astroModel --> settings
+    loader --> manifest
+    writer --> manifest
+    validation --> astroModel
+    validation --> chartInstance
+  end
+  workspaceCmd --> loader
+  workspaceCmd --> writer
+  workspaceCmd --> validation
+  workspaceCmd --> settings
+  transitCmd --> transitSetup
+
+  subgraph application[application/ — use cases and compute contracts]
+    resolution["chart_resolution.rs<br/>resolve_standalone_chart()<br/>resolve_workspace_chart()<br/>validate_chart_payload()"]:::app
+    chartRequest["ChartComputeRequest"]:::contract
+    chartResult["ChartCalculation<br/>ResolvedChart + ChartAxes"]:::contract
+    computation["computation.rs<br/>compute_chart(request)"]:::app
+    router["compute_router.rs<br/>select_chart_compute_route()<br/>select_transit_compute_route()<br/>normalize_*_response()"]:::app
+    transitRequest["TransitSeriesRequest<br/>TransitEventSearchRequest<br/>ConfigurationSearchRequest"]:::contract
+    transitResult["TransitSeriesCalculation<br/>TransitSeriesStep<br/>TransitEventSearch + TransitEvent"]:::contract
+    transit["transit.rs<br/>compute_transit_series()<br/>compute_transit_events()<br/>parse_datetime_input()"]:::app
+    events["event_search.rs<br/>find_all_aspect_exact_times_*()<br/>find_all_stationary_points()<br/>find_all_orb_intervals_*()"]:::app
+    configurations["configuration_search.rs<br/>search_configuration()<br/>ConfigurationMatch + BestFit"]:::app
+    location["location.rs<br/>search_locations()<br/>GeocodedLocation"]:::app
+    resolution --> chartRequest
+    chartRequest --> computation
+    computation --> chartResult
+    computation --> router
+    transitRequest --> transit
+    transit --> transitResult
+    transit --> router
+    transit --> events
+    transit --> configurations
+  end
+  chartCmd --> resolution
+  chartCmd --> computation
+  transitCmd --> resolution
+  transitCmd --> transit
+  supportCmd --> location
+  chartInstance -.-> resolution
+  settings -.-> resolution
+  chartInstance -.-> transit
+  astroModel -.-> computation
+  astroModel -.-> transit
+
+  subgraph domain[domain/ — pure astrology and geometry]
+    astrology["astrology.rs<br/>resolve_body_selection()<br/>compute_chart_aspects()<br/>compute_cross_aspects()<br/>detect_chart_shapes()<br/>detect_chart_configurations()"]:::domain
+    aspectContract["BodySelection<br/>ComputedAspect<br/>MidpointContact"]:::contract
+    houses["houses.rs<br/>compute_axes()<br/>whole_sign_cusps()<br/>placidus_cusps()<br/>day_night_parts()"]:::domain
+    configurationsDomain["configurations.rs<br/>configuration_definition()<br/>ConfigurationDefinition + ConfigurationEdge"]:::domain
+    midpoints["midpoints.rs<br/>compute_midpoint()<br/>compute_midpoints()"]:::domain
+    astrology --> aspectContract
+    configurationsDomain --> configurations
+  end
+  computation --> astrology
+  computation --> houses
+  computation --> configurationsDomain
+  chartCmd --> midpoints
+  transit --> astrology
+  configurations --> astrology
+
+  subgraph infrastructure[infrastructure/ — provider and operating-system adapters]
+    backendTrait["trait AstronomyBackend<br/>backend_id()<br/>ephemeris_source()<br/>compute_chart_data()<br/>compute_minimal()"]:::infra
+    jpl["JplAstronomyBackend<br/>JPL/SPICE implementation"]:::infra
+    swiss["SwissAstronomyBackend<br/>JplViaSwissAstronomyBackend<br/>Swiss Ephemeris implementations"]:::infra
+    provider["position_provider.rs<br/>backend_for_chart()"]:::infra
+    ephemeris["ephemeris.rs<br/>EphemerisManager<br/>usable_earth_relative_coverage()"]:::infra
+    python["python_sidecar.rs<br/>BackendState<br/>ensure_backend()<br/>post_json()"]:::infra
+    geocoding["geocoding.rs<br/>fetch_candidates()<br/>timezone_for_coordinates()"]:::infra
+    dialogs["dialogs.rs<br/>select_folder()<br/>select_chart_file()"]:::infra
+    provider --> backendTrait
+    jpl -. implements .-> backendTrait
+    swiss -. implements .-> backendTrait
+  end
+  router -.-> python
+  computation --> provider
+  events --> provider
+  location --> geocoding
+  supportCmd --> ephemeris
+  supportCmd --> dialogs
+
+  subgraph support[Supporting modules]
+    eventTime["event_time.rs<br/>parse_event_time()"]:::support
+    moon["lunar_phase.rs<br/>LunarPhaseDetails<br/>moon_details_from_tropical_longitudes()"]:::support
+    storage["storage/<br/>legacy storage models and commands"]:::support
+  end
+  computation --> moon
+  supportCmd --> storage
+  transit --> eventTime
