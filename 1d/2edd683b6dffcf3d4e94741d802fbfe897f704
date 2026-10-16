@@ -1,0 +1,37 @@
+src-tauri/src/domain/astrology/geometry.rs
+  s_ca8341851f541e::t_1afdc2592abf95 1-123
+src-tauri/src/domain/astrology/tests.rs
+  s_ca8341851f541e::t_a7b2b66897926b 1-663
+src-tauri/src/domain/astrology/patterns.rs
+  s_ca8341851f541e::t_1815e74e8fe747 1-319
+src-tauri/src/domain/astrology/midpoint_contacts.rs
+  s_ca8341851f541e::t_f4955ef8701692 1-142
+src-tauri/src/domain/astrology/body_selection.rs
+  s_ca8341851f541e::t_d8454bb81bce67 1-73
+src-tauri/src/domain/astrology/aspect_computation.rs
+  s_ca8341851f541e::t_26814cbfd1adc5 35
+  s_ca8341851f541e::t_78d2813a404319 171
+  s_ca8341851f541e::t_06fcd8d81a13dc 182
+  s_ca8341851f541e::t_b00dfcbdfdaba9 1-34,36-40,42-170,172-181,183-341
+  s_ca8341851f541e::t_8aaa6a3397c94f 41
+src-tauri/src/domain/astrology/parts.rs
+  s_ca8341851f541e::t_b024100a9490d5 1-36
+src-tauri/src/domain/astrology.rs
+  s_ca8341851f541e::t_b0b22912643a00 6-28,31,33-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1d2edd683b6dffcf3d4e94741d802fbfe897f704",
+  "prompts": {},
+  "sessions": {
+    "s_ca8341851f541e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "675f0173-7ae4-4624-bb0c-b03cdd40ef83",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
