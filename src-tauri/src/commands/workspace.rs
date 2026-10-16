@@ -434,8 +434,8 @@ pub async fn get_domain_catalog(
 /// so Settings > Aspects opens with a real, working aspect set already in effect
 /// rather than a blank dropdown. Matches what manually selecting it from the
 /// dropdown already does (`tradition_aspect_preset`), just applied once up front.
-fn default_workspace_tradition() -> crate::workspace::models::AstrologicalTradition {
-    crate::workspace::models::AstrologicalTradition::ModernWestern
+fn default_workspace_tradition() -> crate::workspace::models::AspectTradition {
+    crate::workspace::models::AspectTradition::ModernWestern
 }
 
 fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceManifest {
@@ -508,7 +508,7 @@ fn parse_house_system(value: &str) -> Option<crate::workspace::models::HouseSyst
 
 fn parse_astrology_tradition(
     value: &str,
-) -> Option<crate::workspace::models::AstrologicalTradition> {
+) -> Option<crate::workspace::models::AspectTradition> {
     serde_json::from_value(serde_json::Value::String(value.to_string())).ok()
 }
 
@@ -1041,7 +1041,7 @@ mod tests {
         let manifest = load_workspace_manifest(&workspace_path).expect("manifest should reload");
         assert!(matches!(
             manifest.default.astrology_tradition,
-            Some(crate::workspace::models::AstrologicalTradition::Cosmobiology)
+            Some(crate::workspace::models::AspectTradition::Cosmobiology)
         ));
 
         // Switching traditions again fully replaces the previous tradition's picks.

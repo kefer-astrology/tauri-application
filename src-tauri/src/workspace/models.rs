@@ -44,7 +44,7 @@ pub use location::{
     validate_location, validate_timezone_identifier, validate_utc_offset, InputMode, Location,
 };
 pub use manifest::{
-    AstrologicalTradition, AstrologySchool, AstrologySchoolId, WorkspaceDefaults,
+    AspectTradition, AstrologySchool, AstrologySchoolId, WorkspaceDefaults,
     WorkspaceInfo, WorkspaceManifest, WorkspacePresentation, WorkspaceTagDefinition,
 };
 pub use transit_setup::{ConfigurationSearchSetup, TransitSetup};

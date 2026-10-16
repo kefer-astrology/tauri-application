@@ -1,6 +1,6 @@
 //! Astrological tradition ("Škola") presets.
 //!
-//! Each [`AstrologicalTradition`] maps to a suggested bundle of aspect settings (which aspects
+//! Each [`AspectTradition`] maps to a suggested bundle of aspect settings (which aspects
 //! are enabled and their orbs). Selecting a tradition writes this bundle into the workspace's
 //! `default_aspects` / `default_aspect_orbs` fields — the same fields the Settings > Aspects
 //! panel edits by hand — so no new resolution-engine code is needed to make it take effect, and
@@ -13,12 +13,12 @@
 //! This is a first iteration: object selection and each tradition's native
 //! orb *model* (whole-sign tolerance, planetary moieties, harmonic-scaled
 //! orbs, midpoint/dial orbs, Jyotish directional drishti) are not
-//! implemented — see [`AstrologicalTradition`]'s doc comments for the
+//! implemented — see [`AspectTradition`]'s doc comments for the
 //! specific approximation each preset makes instead.
 
 use std::collections::HashMap;
 
-use super::models::AstrologicalTradition;
+use super::models::AspectTradition;
 
 /// The aspect-settings bundle a tradition seeds into `WorkspaceDefaults`.
 pub struct TraditionAspectPreset {
@@ -33,12 +33,12 @@ fn preset(entries: &[(&str, f64)]) -> TraditionAspectPreset {
     }
 }
 
-/// Suggested aspect settings for a given tradition. See [`AstrologicalTradition`]
+/// Suggested aspect settings for a given tradition. See [`AspectTradition`]
 /// for the scope and caveats of this first-iteration approximation.
-pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAspectPreset {
+pub fn tradition_aspect_preset(tradition: AspectTradition) -> TraditionAspectPreset {
     match tradition {
         // Sign-based major aspects; wide orbs stand in for whole-sign tolerance.
-        AstrologicalTradition::Hellenistic => preset(&[
+        AspectTradition::Hellenistic => preset(&[
             ("conjunction", 10.0),
             ("sextile", 8.0),
             ("square", 9.0),
@@ -46,7 +46,7 @@ pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAsp
             ("opposition", 10.0),
         ]),
         // Majors plus conjunction, slightly widened to stand in for per-planet moieties.
-        AstrologicalTradition::MedievalTraditional => preset(&[
+        AspectTradition::MedievalTraditional => preset(&[
             ("conjunction", 8.0),
             ("sextile", 6.0),
             ("square", 7.0),
@@ -54,7 +54,7 @@ pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAsp
             ("opposition", 8.0),
         ]),
         // Majors plus the app's established curated minor aspects.
-        AstrologicalTradition::ModernWestern => preset(&[
+        AspectTradition::ModernWestern => preset(&[
             ("conjunction", 8.0),
             ("sextile", 5.0),
             ("square", 6.0),
@@ -65,7 +65,7 @@ pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAsp
         ]),
         // Every harmonic family at once, reusing the catalog's existing
         // per-aspect orbs (already roughly tighter for higher harmonics).
-        AstrologicalTradition::Harmonic => preset(&[
+        AspectTradition::Harmonic => preset(&[
             ("conjunction", 8.0),
             ("semisextile", 1.0),
             ("undecile", 0.5),
@@ -92,7 +92,7 @@ pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAsp
             ("opposition", 8.0),
         ]),
         // The hard-aspect / 90-degree-dial family with tight orbs.
-        AstrologicalTradition::Cosmobiology => preset(&[
+        AspectTradition::Cosmobiology => preset(&[
             ("conjunction", 2.0),
             ("octile", 2.0),
             ("square", 2.0),
@@ -100,7 +100,7 @@ pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAsp
             ("opposition", 2.0),
         ]),
         // Same hard-aspect family, tighter still, echoing Uranian dial practice.
-        AstrologicalTradition::UranianHamburg => preset(&[
+        AspectTradition::UranianHamburg => preset(&[
             ("conjunction", 1.5),
             ("octile", 1.5),
             ("square", 1.5),
@@ -110,7 +110,7 @@ pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAsp
         // Placeholder: Western majors at default orbs. Real graha drishti is
         // directional and per-planet, not a mutual angle-plus-orb model, and
         // is not implemented.
-        AstrologicalTradition::JyotishParashari => preset(&[
+        AspectTradition::JyotishParashari => preset(&[
             ("conjunction", 8.0),
             ("sextile", 5.0),
             ("square", 6.0),
@@ -124,14 +124,14 @@ pub fn tradition_aspect_preset(tradition: AstrologicalTradition) -> TraditionAsp
 mod tests {
     use super::*;
 
-    const ALL_TRADITIONS: [AstrologicalTradition; 7] = [
-        AstrologicalTradition::Hellenistic,
-        AstrologicalTradition::MedievalTraditional,
-        AstrologicalTradition::ModernWestern,
-        AstrologicalTradition::Harmonic,
-        AstrologicalTradition::Cosmobiology,
-        AstrologicalTradition::UranianHamburg,
-        AstrologicalTradition::JyotishParashari,
+    const ALL_TRADITIONS: [AspectTradition; 7] = [
+        AspectTradition::Hellenistic,
+        AspectTradition::MedievalTraditional,
+        AspectTradition::ModernWestern,
+        AspectTradition::Harmonic,
+        AspectTradition::Cosmobiology,
+        AspectTradition::UranianHamburg,
+        AspectTradition::JyotishParashari,
     ];
 
     #[test]
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn harmonic_preset_enables_every_catalog_aspect() {
         let model = crate::workspace::builtin_standard_model("standard");
-        let preset = tradition_aspect_preset(AstrologicalTradition::Harmonic);
+        let preset = tradition_aspect_preset(AspectTradition::Harmonic);
         for aspect in &model.aspect_definitions {
             assert!(
                 preset.enabled_aspects.contains(&aspect.id),

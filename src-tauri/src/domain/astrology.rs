@@ -779,6 +779,12 @@ pub fn detect_chart_shapes(positions: &HashMap<String, f64>, house_cusps: &[f64]
 
 /// T-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram configurations
 /// derived from the same already-computed internal aspect graph used for the radix wheel.
+///
+/// This is a single-instant chart-snapshot *detection* function, distinct from
+/// `domain::configuration_topology`'s role-topology definitions, which drive a
+/// time-aware multi-body *search* across a transit date range — see that
+/// module's doc comment for the full distinction (and why it was renamed from
+/// `domain::configurations` to avoid being confused with this function).
 pub fn detect_chart_configurations(
     positions: &HashMap<String, f64>,
     aspects: &[ComputedAspect],

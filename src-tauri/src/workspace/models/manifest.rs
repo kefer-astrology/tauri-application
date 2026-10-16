@@ -27,7 +27,7 @@ pub struct AstrologySchool {
 ///
 /// This is deliberately **not** the same concept as [`AstrologySchoolId`]/
 /// [`AstrologySchool`] above, which remains an open, user-definable label whose
-/// only job is picking a named [`AstroModel`]. `AstrologicalTradition` is the
+/// only job is picking a named [`AstroModel`]. `AspectTradition` is the
 /// "Škola" workspace setting: choosing one rewrites the workspace's aspect
 /// selection and per-aspect orbs (`WorkspaceDefaults::default_aspects` /
 /// `default_aspect_orbs`), and ensures `Angle` is present in the global
@@ -39,9 +39,15 @@ pub struct AstrologySchool {
 /// future work — applying a tradition today is an approximation using the
 /// existing per-aspect-orb computation engine, not a true implementation of
 /// each school's native method.
+///
+/// Renamed from `AstrologicalTradition`: that name and `AstrologySchool`/
+/// `AstrologySchoolId`/`WorkspaceManifest::active_school` are two unrelated
+/// concepts that both got called "tradition/school" in code, which was
+/// confusing; `AspectTradition` makes clear this one is specifically the
+/// aspect-preset selector.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum AstrologicalTradition {
+pub enum AspectTradition {
     /// Sign-based major aspects (conjunction/sextile/square/trine/opposition);
     /// angles and Lots are relevant targets. True whole-sign "no numeric orb"
     /// aspect detection is not implemented — wide orbs approximate it.
@@ -126,7 +132,7 @@ pub struct WorkspaceDefaults {
     /// `workspace::tradition::tradition_aspect_preset`. Distinct from
     /// `WorkspaceManifest::active_school`.
     #[serde(default)]
-    pub astrology_tradition: Option<AstrologicalTradition>,
+    pub astrology_tradition: Option<AspectTradition>,
     #[serde(default)]
     pub aspect_line_tier_style: Option<AspectLineTierStyle>,
     #[serde(default)]
