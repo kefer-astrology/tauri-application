@@ -1,0 +1,43 @@
+src-tauri/src/workspace/tradition.rs
+  s_ca8341851f541e::t_76b563dac3ee59 32-35
+src-tauri/src/domain/astrology.rs
+  s_ca8341851f541e::t_76b563dac3ee59 39
+src-tauri/src/workspace/model_catalog.rs
+  s_ca8341851f541e::t_76b563dac3ee59 733-1020
+src-tauri/src/commands/workspace.rs
+  s_ca8341851f541e::t_76b563dac3ee59 506
+src-tauri/src/domain/astrology/tests.rs
+  s_ca8341851f541e::t_76b563dac3ee59 11,87-89,128-132,143-146,187-191,573
+src-tauri/src/workspace/models.rs
+  s_ca8341851f541e::t_76b563dac3ee59 47-48
+src-tauri/src/workspace/settings/effective_settings.rs
+  s_ca8341851f541e::t_76b563dac3ee59 3-4
+src-tauri/src/workspace/settings/apply.rs
+  s_ca8341851f541e::t_76b563dac3ee59 4
+src-tauri/src/domain/houses.rs
+  s_ca8341851f541e::t_76b563dac3ee59 800-804
+src-tauri/src/workspace/settings/report.rs
+  s_ca8341851f541e::t_76b563dac3ee59 6,209-211
+src-tauri/src/workspace/settings.rs
+  s_ca8341851f541e::t_76b563dac3ee59 34-35,46
+src-tauri/src/domain/midpoints.rs
+  s_ca8341851f541e::t_76b563dac3ee59 190-192,197
+src-tauri/src/domain/astrology/aspect_computation.rs
+  s_ca8341851f541e::t_76b563dac3ee59 191-196,257-264,338-345
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8a8421b602b5dc676110845f65ac1b83d856070e",
+  "prompts": {},
+  "sessions": {
+    "s_ca8341851f541e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "675f0173-7ae4-4624-bb0c-b03cdd40ef83",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
