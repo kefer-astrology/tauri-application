@@ -4,777 +4,42 @@
 //! application fallback < model < workspace < preset < chart < operation.
 //! The resolved report includes provenance so callers can explain why a value
 //! was selected.
+//!
+//! Facade for the `settings/` submodules: `layer` (the sparse per-scope
+//! settings layer and its source enum), `report` (the resolved report types
+//! and the `current_model_report*`/`standalone_model_report*` entry points),
+//! `model_catalog_resolution` (picking and merging the workspace's model
+//! catalog), `effective_settings` (the core layering algorithm), and `apply`
+//! (materializing resolved settings, plus small shared helpers). Every
+//! existing `crate::workspace::settings::X` import path keeps resolving
+//! unchanged through the re-exports below.
+//!
+//! Some re-exports below are only ever reached through the shorter
+//! `crate::workspace::X` path (via `workspace::mod`'s own further `pub use
+//! settings::{...}`), never through the fully-qualified `settings::X` path
+//! directly, so rustc's `unused_imports` lint fires on them in isolation even
+//! though they are load-bearing public API — hence the blanket allow (see the
+//! identical situation and rationale in `workspace/models.rs`).
+#![allow(unused_imports)]
 
-use std::collections::HashMap;
+mod apply;
+mod effective_settings;
+mod layer;
+mod model_catalog_resolution;
+mod report;
 
-use serde::{Deserialize, Serialize};
-
-use super::model_catalog::{builtin_model_settings, builtin_standard_model};
-use super::models::{
-    AstroModel, Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides,
-    NON_PHYSICAL_OBJECT_TYPES, ObjectType, ObjectTypeRule, PositionMode, TimeSystem,
-    WorkspaceManifest, ZodiacType,
+pub use apply::apply_effective_settings;
+pub use layer::{SettingSource, SettingsLayer};
+pub use report::{
+    current_model_report, current_model_report_with_layers,
+    standalone_model_report_with_operation, CurrentModelReport, EffectiveModelSettings,
+    EffectiveSettingsSources,
 };
-use super::validation::Diagnostic;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum SettingSource {
-    Application,
-    Model,
-    Workspace,
-    Preset,
-    Chart,
-    Operation,
-}
-
-/// Sparse settings supplied by a preset or a single compute operation.
-///
-/// `None` means inherit. Empty body/aspect lists are explicit values at these
-/// scopes and therefore mean "select none".
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct SettingsLayer {
-    pub house_system: Option<HouseSystem>,
-    pub bodies: Option<Vec<String>>,
-    pub aspects: Option<Vec<String>>,
-    pub aspect_orbs: HashMap<String, f64>,
-    pub engine: Option<EngineType>,
-    pub position_mode: Option<PositionMode>,
-    pub zodiac_type: Option<ZodiacType>,
-    pub ayanamsa: Option<Ayanamsa>,
-    pub time_system: Option<TimeSystem>,
-    pub model_overrides: Option<ModelOverrides>,
-}
-
-impl SettingsLayer {
-    pub fn from_chart_config(config: &ChartConfig) -> Self {
-        let bodies = config.observable_objects.clone();
-        Self {
-            house_system: config.house_system.clone(),
-            bodies,
-            aspects: config.selected_aspects.clone(),
-            aspect_orbs: config.aspect_orbs.clone(),
-            engine: config.engine.clone(),
-            position_mode: config.position_mode,
-            zodiac_type: Some(config.zodiac_type.clone()),
-            ayanamsa: config.ayanamsa.clone(),
-            time_system: config.time_system.clone(),
-            model_overrides: config.model_overrides.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EffectiveSettingsSources {
-    #[serde(default)]
-    pub default_house_system: Option<SettingSource>,
-    pub default_bodies: SettingSource,
-    pub default_aspects: SettingSource,
-    #[serde(default)]
-    pub aspect_orbs: HashMap<String, SettingSource>,
-    pub standard_orb: SettingSource,
-    #[serde(default)]
-    pub engine: Option<SettingSource>,
-    pub position_mode: SettingSource,
-    #[serde(default)]
-    pub zodiac_type: Option<SettingSource>,
-    #[serde(default)]
-    pub ayanamsa: Option<SettingSource>,
-    #[serde(default)]
-    pub time_system: Option<SettingSource>,
-    pub computational_constants: SettingSource,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EffectiveModelSettings {
-    #[serde(default)]
-    pub default_house_system: Option<HouseSystem>,
-    #[serde(default)]
-    pub default_bodies: Vec<String>,
-    #[serde(default)]
-    pub default_aspects: Vec<String>,
-    #[serde(default)]
-    pub default_transit_aspects: Option<Vec<String>>,
-    #[serde(default)]
-    pub default_direction_aspects: Option<Vec<String>>,
-    #[serde(default)]
-    pub default_transit_bodies: Option<Vec<String>>,
-    #[serde(default)]
-    pub default_direction_bodies: Option<Vec<String>>,
-    #[serde(default)]
-    pub aspect_orbs: HashMap<String, f64>,
-    /// Per-object orb override (body id -> degrees), global across every
-    /// aspect — see `WorkspaceDefaults::object_orbs`. Workspace-level only,
-    /// unlike `aspect_orbs`: no preset/chart/operation layer overrides this.
-    #[serde(default)]
-    pub object_orbs: HashMap<String, f64>,
-    #[serde(default)]
-    pub standard_orb: f64,
-    #[serde(default)]
-    pub engine: Option<EngineType>,
-    pub position_mode: PositionMode,
-    #[serde(default)]
-    pub zodiac_type: Option<ZodiacType>,
-    #[serde(default)]
-    pub ayanamsa: Option<Ayanamsa>,
-    #[serde(default)]
-    pub time_system: Option<TimeSystem>,
-    pub degrees_in_circle: f64,
-    pub obliquity_j2000: f64,
-    pub coordinate_tolerance: f64,
-    pub sources: EffectiveSettingsSources,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CurrentModelReport {
-    #[serde(default)]
-    pub requested_school: Option<String>,
-    #[serde(default)]
-    pub resolved_school: Option<String>,
-    #[serde(default)]
-    pub requested_model: Option<String>,
-    pub resolved_model: String,
-    pub source: String,
-    #[serde(default)]
-    pub available_models: Vec<String>,
-    pub model: AstroModel,
-    pub effective_settings: EffectiveModelSettings,
-    #[serde(default)]
-    pub model_overrides: Option<ModelOverrides>,
-    #[serde(default)]
-    pub warnings: Vec<String>,
-    #[serde(default)]
-    pub diagnostics: Vec<Diagnostic>,
-}
-
-pub fn current_model_report(
-    manifest: &WorkspaceManifest,
-    chart_config: Option<&ChartConfig>,
-) -> CurrentModelReport {
-    current_model_report_with_layers(manifest, None, chart_config, None)
-}
-
-/// Resolve an in-memory chart without inventing a workspace manifest.
-///
-/// Standalone charts have application and built-in model defaults followed by
-/// chart overrides. They intentionally have no workspace or preset scope.
+// `standalone_model_report` is itself `#[cfg(test)]` in `report` (only ever used from this
+// module's own test suite), so its re-export must be cfg-gated the same way, or a plain
+// `cargo check`/non-test build fails to resolve the always-on `pub use` above.
 #[cfg(test)]
-pub fn standalone_model_report(chart_config: &ChartConfig) -> CurrentModelReport {
-    standalone_model_report_with_operation(chart_config, None)
-}
-
-pub fn standalone_model_report_with_operation(
-    chart_config: &ChartConfig,
-    operation: Option<&SettingsLayer>,
-) -> CurrentModelReport {
-    let requested_model = non_empty_string(chart_config.model.as_deref()).map(str::to_string);
-    let resolved_model = requested_model
-        .clone()
-        .unwrap_or_else(|| "standard".to_string());
-    let model = builtin_standard_model(&resolved_model);
-    let effective_settings =
-        effective_model_settings(None, &model, None, Some(chart_config), operation);
-    let warnings = Vec::new();
-    let mut diagnostics = super::validation::validate_model(&model, "model");
-    diagnostics.extend(super::validation::validate_effective_settings(
-        &model,
-        &effective_settings,
-        "effective_settings",
-    ));
-    diagnostics.extend(super::validation::validate_chart_config(
-        chart_config,
-        &model,
-        "chart.config",
-    ));
-
-    CurrentModelReport {
-        requested_school: None,
-        resolved_school: model.school.clone(),
-        requested_model,
-        resolved_model,
-        source: "builtin_standard_model".to_string(),
-        available_models: Vec::new(),
-        model,
-        effective_settings,
-        model_overrides: None,
-        warnings,
-        diagnostics,
-    }
-}
-
-/// Resolve a model report with optional preset and operation layers.
-///
-/// Chart commands use `current_model_report`; application services can use this
-/// expanded entry point once presets and ephemeral compute overrides are wired
-/// into their request DTOs.
-pub fn current_model_report_with_layers(
-    manifest: &WorkspaceManifest,
-    preset: Option<&SettingsLayer>,
-    chart_config: Option<&ChartConfig>,
-    operation: Option<&SettingsLayer>,
-) -> CurrentModelReport {
-    let mut warnings = Vec::new();
-    let available_models = sorted_model_names(&manifest.models);
-    let requested_school = chart_config
-        .and_then(|config| config.model.as_deref())
-        .and_then(|model_name| manifest.models.get(model_name))
-        .and_then(|model| model.school.clone())
-        .or_else(|| manifest.active_school.clone());
-    let requested_model = chart_config
-        .and_then(|config| non_empty_string(config.model.as_deref()))
-        .or_else(|| non_empty_string(manifest.active_model.as_deref()))
-        .or_else(|| {
-            requested_school
-                .as_deref()
-                .and_then(|school| manifest.schools.get(school))
-                .and_then(|school| non_empty_string(Some(&school.default_model)))
-        })
-        .map(str::to_string);
-
-    let (base_model, source) = resolve_model_catalog(
-        manifest,
-        requested_model.as_deref(),
-        &available_models,
-        &mut warnings,
-    );
-    let mut model = merge_model_with_overrides(base_model, manifest.model_overrides.as_ref());
-    if let Some(layer) = preset {
-        model = merge_model_with_overrides(model, layer.model_overrides.as_ref());
-    }
-    if let Some(config) = chart_config {
-        model = merge_model_with_overrides(model, config.model_overrides.as_ref());
-    }
-    if let Some(layer) = operation {
-        model = merge_model_with_overrides(model, layer.model_overrides.as_ref());
-    }
-    apply_workspace_aspect_scope_defaults(&mut model, manifest);
-    let effective_settings =
-        effective_model_settings(Some(manifest), &model, preset, chart_config, operation);
-    let mut diagnostics = super::validation::validate_manifest_model_references(manifest, &model);
-    if source == "builtin_standard_model" {
-        diagnostics.extend(super::validation::validate_model(&model, "model"));
-    }
-    diagnostics.extend(super::validation::validate_effective_settings(
-        &model,
-        &effective_settings,
-        "effective_settings",
-    ));
-    if let Some(chart_config) = chart_config {
-        diagnostics.extend(super::validation::validate_chart_config(
-            chart_config,
-            &model,
-            "chart.config",
-        ));
-    }
-    for warning in &warnings {
-        if let Some(model_name) = warning.strip_prefix("model_not_found: ") {
-            diagnostics.push(Diagnostic::warning(
-                "model_not_found",
-                format!(
-                    "Requested model '{model_name}' was not found; fallback resolution applied"
-                ),
-                Some("chart.config.model".to_string()),
-            ));
-        }
-    }
-
-    CurrentModelReport {
-        requested_school,
-        resolved_school: model.school.clone(),
-        requested_model,
-        resolved_model: model.name.clone(),
-        source,
-        available_models,
-        model,
-        effective_settings,
-        model_overrides: manifest.model_overrides.clone(),
-        warnings,
-        diagnostics,
-    }
-}
-
-fn sorted_model_names(models: &HashMap<String, AstroModel>) -> Vec<String> {
-    let mut names: Vec<String> = models.keys().cloned().collect();
-    names.sort();
-    names
-}
-
-fn resolve_model_catalog(
-    manifest: &WorkspaceManifest,
-    requested_model: Option<&str>,
-    available_models: &[String],
-    warnings: &mut Vec<String>,
-) -> (AstroModel, String) {
-    if let Some(name) = requested_model {
-        if let Some(model) = manifest.models.get(name) {
-            return (model.clone(), "workspace_model".to_string());
-        }
-        warnings.push(format!("model_not_found: {name}"));
-    }
-
-    if let Some(first) = available_models.first() {
-        if requested_model.is_none() {
-            warnings.push(format!(
-                "active_model_missing_using_first_available: {first}"
-            ));
-        } else {
-            warnings.push(format!("using_first_available_model: {first}"));
-        }
-        if let Some(model) = manifest.models.get(first) {
-            return (model.clone(), "workspace_model_fallback".to_string());
-        }
-    }
-
-    let fallback_name = requested_model.unwrap_or("standard");
-    warnings.push("using_builtin_standard_model".to_string());
-    (
-        builtin_standard_model(fallback_name),
-        "builtin_standard_model".to_string(),
-    )
-}
-
-fn merge_model_with_overrides(model: AstroModel, overrides: Option<&ModelOverrides>) -> AstroModel {
-    let Some(overrides) = overrides else {
-        return model;
-    };
-
-    let mut merged = model;
-    for override_entry in &overrides.points {
-        if !override_applies(override_entry, &merged) {
-            continue;
-        }
-        if let Some(body) = merged
-            .body_definitions
-            .iter_mut()
-            .find(|body| body.id == override_entry.id)
-        {
-            if let Some(glyph) = &override_entry.glyph {
-                body.glyph = glyph.clone();
-            }
-            if let Some(i18n) = &override_entry.i18n {
-                body.i18n = i18n.clone();
-            }
-            if let Some(enabled) = override_entry.enabled {
-                body.enabled = enabled;
-            }
-        }
-    }
-
-    for override_entry in &overrides.aspects {
-        if !override_applies(override_entry, &merged) {
-            continue;
-        }
-        if let Some(aspect) = merged
-            .aspect_definitions
-            .iter_mut()
-            .find(|aspect| aspect.id == override_entry.id)
-        {
-            if let Some(glyph) = &override_entry.glyph {
-                aspect.glyph = glyph.clone();
-            }
-            if let Some(angle) = override_entry.angle {
-                aspect.angle = angle;
-            }
-            if let Some(harmonic) = override_entry.harmonic {
-                aspect.harmonic = harmonic;
-            }
-            if let Some(default_orb) = override_entry.default_orb {
-                aspect.default_orb = default_orb;
-            }
-            if let Some(i18n) = &override_entry.i18n {
-                aspect.i18n = i18n.clone();
-            }
-            if let Some(enabled) = override_entry.enabled {
-                aspect.enabled = enabled;
-            }
-            if let Some(valid_contexts) = &override_entry.valid_contexts {
-                aspect.valid_contexts = Some(valid_contexts.clone());
-            }
-            if let Some(weight) = override_entry.interpretation_weight {
-                aspect.interpretation_weight = Some(weight);
-            }
-            if let Some(object_type_rule) = &override_entry.object_type_rule {
-                aspect.object_type_rule = Some(object_type_rule.clone());
-            }
-        }
-    }
-
-    for aspect in &mut merged.aspect_definitions {
-        if let Some(default_orb) = overrides.override_orbs.get(&aspect.id) {
-            aspect.default_orb = *default_orb;
-        }
-    }
-    merged
-}
-
-/// Apply the workspace's "Settings > Aspects" object-scope choice onto the resolved model.
-///
-/// `extended_object_types` — which non-`Planet` categories (`Angle`, asteroids, lunar nodes,
-/// parts, geocentric nodes, trans-Neptunian objects, hypothetical bodies) may participate — is
-/// global: the same set is the eligibility baseline for every aspect. `None` (never configured)
-/// leaves every aspect's baseline untouched (the catalog's own unrestricted default, or whatever
-/// `model_overrides` already gave it). The per-object orb narrowing itself
-/// (`WorkspaceDefaults::object_orbs`) is resolved later, during actual aspect matching in
-/// `domain::astrology`, not here — this function only decides eligibility.
-///
-/// One exception to "global, same for every aspect": conjunction gets the full enabled set, but
-/// every other aspect additionally excludes `NON_PHYSICAL_OBJECT_TYPES` — a trine/square/sextile/
-/// etc. models a geometric ray of light between two bodies, which a pure mathematical point
-/// (a node, Lilith, an angle, an Arabic Part, a never-confirmed Uranian hypothetical) can't
-/// participate in; conjunction (bodily co-presence) still applies to them regardless.
-fn apply_workspace_aspect_scope_defaults(model: &mut AstroModel, manifest: &WorkspaceManifest) {
-    let Some(extended_types) = manifest.default.extended_object_types.as_ref() else {
-        return;
-    };
-
-    for aspect in &mut model.aspect_definitions {
-        let mut types = vec![ObjectType::Planet];
-        if aspect.id == "conjunction" {
-            types.extend(extended_types.iter().copied());
-        } else {
-            types.extend(
-                extended_types
-                    .iter()
-                    .copied()
-                    .filter(|object_type| !NON_PHYSICAL_OBJECT_TYPES.contains(object_type)),
-            );
-        }
-        aspect.object_type_rule = Some(ObjectTypeRule::OnlyBetween { types });
-    }
-}
-
-fn override_applies(entry: &super::models::OverrideEntry, model: &AstroModel) -> bool {
-    entry.only_for.as_ref().is_none_or(|selectors| {
-        selectors.iter().any(|selector| {
-            selector.eq_ignore_ascii_case(&model.name)
-                || model
-                    .school
-                    .as_deref()
-                    .is_some_and(|school| selector.eq_ignore_ascii_case(school))
-        })
-    })
-}
-
-fn effective_model_settings(
-    manifest: Option<&WorkspaceManifest>,
-    model: &AstroModel,
-    preset: Option<&SettingsLayer>,
-    chart_config: Option<&ChartConfig>,
-    operation: Option<&SettingsLayer>,
-) -> EffectiveModelSettings {
-    let baseline = builtin_model_settings();
-    let (model_settings, settings_source) = match model.settings.as_ref() {
-        Some(settings) => (settings, SettingSource::Model),
-        None => (&baseline, SettingSource::Application),
-    };
-
-    let mut house_system = model_settings.default_house_system.clone();
-    let mut house_source = house_system.as_ref().map(|_| settings_source);
-    let mut bodies = model_settings.default_bodies.clone();
-    let mut bodies_source = settings_source;
-    let mut aspects = model_settings.default_aspects.clone();
-    let mut aspects_source = settings_source;
-    let mut engine = model.engine.clone();
-    let mut engine_source = engine.as_ref().map(|_| SettingSource::Model);
-    let mut position_mode = model_settings
-        .position_mode
-        .unwrap_or(PositionMode::Apparent);
-    let mut position_mode_source = if model_settings.position_mode.is_some() {
-        settings_source
-    } else {
-        SettingSource::Application
-    };
-    let mut zodiac_type = model.zodiac_type.clone();
-    let mut zodiac_source = zodiac_type.as_ref().map(|_| SettingSource::Model);
-    let mut ayanamsa = model.ayanamsa.clone();
-    let mut ayanamsa_source = ayanamsa.as_ref().map(|_| SettingSource::Model);
-    let mut time_system = None;
-    let mut time_source = None;
-
-    let mut aspect_orbs = aspect_orbs_from_model(model);
-    let mut aspect_orb_sources = aspect_orbs
-        .keys()
-        .map(|id| (id.clone(), SettingSource::Model))
-        .collect();
-    let object_orbs = manifest
-        .and_then(|manifest| manifest.default.object_orbs.clone())
-        .unwrap_or_default();
-
-    if let Some(manifest) = manifest {
-        if let Some(value) = manifest.default.default_house_system.clone() {
-            house_system = Some(value);
-            house_source = Some(SettingSource::Workspace);
-        }
-        if let Some(value) = non_empty_vec(manifest.default.default_bodies.as_ref()) {
-            bodies = value;
-            bodies_source = SettingSource::Workspace;
-        }
-        if !manifest.bodies.is_empty() {
-            bodies.clone_from(&manifest.bodies);
-            bodies_source = SettingSource::Workspace;
-        }
-        if let Some(value) = manifest.default.default_aspects.clone() {
-            aspects = value;
-            aspects_source = SettingSource::Workspace;
-        }
-        if !manifest.aspects.is_empty() {
-            aspects.clone_from(&manifest.aspects);
-            aspects_source = SettingSource::Workspace;
-        }
-        apply_orbs(
-            &mut aspect_orbs,
-            &mut aspect_orb_sources,
-            manifest.default.default_aspect_orbs.as_ref(),
-            SettingSource::Workspace,
-        );
-        if let Some(value) = manifest.default.ephemeris_engine.clone() {
-            engine = Some(value);
-            engine_source = Some(SettingSource::Workspace);
-        }
-        if let Some(value) = manifest.default.position_mode {
-            position_mode = value;
-            position_mode_source = SettingSource::Workspace;
-        }
-        if let Some(value) = manifest.default.time_system.clone() {
-            time_system = Some(value);
-            time_source = Some(SettingSource::Workspace);
-        }
-    }
-
-    if let Some(layer) = preset {
-        apply_settings_layer(
-            layer,
-            SettingSource::Preset,
-            &mut house_system,
-            &mut house_source,
-            &mut bodies,
-            &mut bodies_source,
-            &mut aspects,
-            &mut aspects_source,
-            &mut aspect_orbs,
-            &mut aspect_orb_sources,
-            &mut engine,
-            &mut engine_source,
-            &mut position_mode,
-            &mut position_mode_source,
-            &mut zodiac_type,
-            &mut zodiac_source,
-            &mut ayanamsa,
-            &mut ayanamsa_source,
-            &mut time_system,
-            &mut time_source,
-        );
-    }
-
-    if let Some(config) = chart_config {
-        if let Some(value) = config.house_system.clone() {
-            house_system = Some(value);
-            house_source = Some(SettingSource::Chart);
-        }
-        if let Some(value) = config.observable_objects.clone() {
-            bodies = value;
-            bodies_source = SettingSource::Chart;
-        }
-        if let Some(value) = config.selected_aspects.clone() {
-            aspects = value;
-            aspects_source = SettingSource::Chart;
-        }
-        apply_orbs(
-            &mut aspect_orbs,
-            &mut aspect_orb_sources,
-            Some(&config.aspect_orbs),
-            SettingSource::Chart,
-        );
-        if let Some(value) = config.engine.clone() {
-            engine = Some(value);
-            engine_source = Some(SettingSource::Chart);
-        }
-        if let Some(value) = config.position_mode {
-            position_mode = value;
-            position_mode_source = SettingSource::Chart;
-        }
-        zodiac_type = Some(config.zodiac_type.clone());
-        zodiac_source = Some(SettingSource::Chart);
-        if let Some(value) = config.ayanamsa.clone() {
-            ayanamsa = Some(value);
-            ayanamsa_source = Some(SettingSource::Chart);
-        }
-        if let Some(value) = config.time_system.clone() {
-            time_system = Some(value);
-            time_source = Some(SettingSource::Chart);
-        }
-    }
-
-    if let Some(layer) = operation {
-        apply_settings_layer(
-            layer,
-            SettingSource::Operation,
-            &mut house_system,
-            &mut house_source,
-            &mut bodies,
-            &mut bodies_source,
-            &mut aspects,
-            &mut aspects_source,
-            &mut aspect_orbs,
-            &mut aspect_orb_sources,
-            &mut engine,
-            &mut engine_source,
-            &mut position_mode,
-            &mut position_mode_source,
-            &mut zodiac_type,
-            &mut zodiac_source,
-            &mut ayanamsa,
-            &mut ayanamsa_source,
-            &mut time_system,
-            &mut time_source,
-        );
-    }
-
-    EffectiveModelSettings {
-        default_house_system: house_system,
-        default_bodies: bodies,
-        default_aspects: aspects,
-        default_transit_aspects: model_settings.default_transit_aspects.clone(),
-        default_direction_aspects: model_settings.default_direction_aspects.clone(),
-        default_transit_bodies: model_settings.default_transit_bodies.clone(),
-        default_direction_bodies: model_settings.default_direction_bodies.clone(),
-        aspect_orbs,
-        object_orbs,
-        standard_orb: model_settings.standard_orb,
-        engine,
-        position_mode,
-        zodiac_type,
-        ayanamsa,
-        time_system,
-        degrees_in_circle: model_settings.degrees_in_circle,
-        obliquity_j2000: model_settings.obliquity_j2000,
-        coordinate_tolerance: model_settings.coordinate_tolerance,
-        sources: EffectiveSettingsSources {
-            default_house_system: house_source,
-            default_bodies: bodies_source,
-            default_aspects: aspects_source,
-            aspect_orbs: aspect_orb_sources,
-            standard_orb: settings_source,
-            engine: engine_source,
-            position_mode: position_mode_source,
-            zodiac_type: zodiac_source,
-            ayanamsa: ayanamsa_source,
-            time_system: time_source,
-            computational_constants: settings_source,
-        },
-    }
-}
-
-/// Materialize resolved settings on a chart configuration immediately before
-/// computation. Persisted input remains unchanged unless a caller explicitly
-/// saves the resulting configuration.
-pub fn apply_effective_settings(config: &mut ChartConfig, settings: &EffectiveModelSettings) {
-    config.house_system = settings.default_house_system.clone();
-    config.observable_objects = Some(settings.default_bodies.clone());
-    config.selected_aspects = Some(settings.default_aspects.clone());
-    config.aspect_orbs.clone_from(&settings.aspect_orbs);
-    config.engine = settings.engine.clone();
-    config.position_mode = Some(settings.position_mode);
-    if let Some(zodiac_type) = settings.zodiac_type.clone() {
-        config.zodiac_type = zodiac_type;
-    }
-    config.ayanamsa = settings.ayanamsa.clone();
-    config.time_system = settings.time_system.clone();
-}
-
-#[allow(clippy::too_many_arguments)]
-fn apply_settings_layer(
-    layer: &SettingsLayer,
-    source: SettingSource,
-    house_system: &mut Option<HouseSystem>,
-    house_source: &mut Option<SettingSource>,
-    bodies: &mut Vec<String>,
-    bodies_source: &mut SettingSource,
-    aspects: &mut Vec<String>,
-    aspects_source: &mut SettingSource,
-    aspect_orbs: &mut HashMap<String, f64>,
-    aspect_orb_sources: &mut HashMap<String, SettingSource>,
-    engine: &mut Option<EngineType>,
-    engine_source: &mut Option<SettingSource>,
-    position_mode: &mut PositionMode,
-    position_mode_source: &mut SettingSource,
-    zodiac_type: &mut Option<ZodiacType>,
-    zodiac_source: &mut Option<SettingSource>,
-    ayanamsa: &mut Option<Ayanamsa>,
-    ayanamsa_source: &mut Option<SettingSource>,
-    time_system: &mut Option<TimeSystem>,
-    time_source: &mut Option<SettingSource>,
-) {
-    if let Some(value) = layer.house_system.clone() {
-        *house_system = Some(value);
-        *house_source = Some(source);
-    }
-    if let Some(value) = layer.bodies.clone() {
-        *bodies = value;
-        *bodies_source = source;
-    }
-    if let Some(value) = layer.aspects.clone() {
-        *aspects = value;
-        *aspects_source = source;
-    }
-    apply_orbs(
-        aspect_orbs,
-        aspect_orb_sources,
-        Some(&layer.aspect_orbs),
-        source,
-    );
-    if let Some(value) = layer.engine.clone() {
-        *engine = Some(value);
-        *engine_source = Some(source);
-    }
-    if let Some(value) = layer.position_mode {
-        *position_mode = value;
-        *position_mode_source = source;
-    }
-    if let Some(value) = layer.zodiac_type.clone() {
-        *zodiac_type = Some(value);
-        *zodiac_source = Some(source);
-    }
-    if let Some(value) = layer.ayanamsa.clone() {
-        *ayanamsa = Some(value);
-        *ayanamsa_source = Some(source);
-    }
-    if let Some(value) = layer.time_system.clone() {
-        *time_system = Some(value);
-        *time_source = Some(source);
-    }
-}
-
-fn apply_orbs(
-    values: &mut HashMap<String, f64>,
-    sources: &mut HashMap<String, SettingSource>,
-    overrides: Option<&HashMap<String, f64>>,
-    source: SettingSource,
-) {
-    if let Some(overrides) = overrides {
-        for (id, orb) in overrides {
-            values.insert(id.clone(), *orb);
-            sources.insert(id.clone(), source);
-        }
-    }
-}
-
-fn non_empty_string(value: Option<&str>) -> Option<&str> {
-    value.map(str::trim).filter(|value| !value.is_empty())
-}
-
-fn non_empty_vec(value: Option<&Vec<String>>) -> Option<Vec<String>> {
-    value.filter(|items| !items.is_empty()).cloned()
-}
-
-fn aspect_orbs_from_model(model: &AstroModel) -> HashMap<String, f64> {
-    model
-        .aspect_definitions
-        .iter()
-        .map(|aspect| (aspect.id.clone(), aspect.default_orb))
-        .collect()
-}
+pub use report::standalone_model_report;
 
 #[cfg(test)]
 mod tests {
@@ -783,6 +48,12 @@ mod tests {
         AspectContext, AstrologySchool, BaseChartPurpose, ChartDefinition, OverrideEntry,
         RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
     };
+    use crate::workspace::models::{
+        Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, PositionMode, TimeSystem,
+        WorkspaceManifest, ZodiacType,
+    };
+    use crate::workspace::model_catalog::builtin_standard_model;
+    use std::collections::HashMap;
 
     fn empty_defaults() -> WorkspaceDefaults {
         WorkspaceDefaults {
@@ -866,7 +137,7 @@ mod tests {
         ));
         assert!(
             !report.diagnostics.iter().any(|diagnostic| {
-                diagnostic.severity == super::super::validation::DiagnosticSeverity::Error
+                diagnostic.severity == crate::workspace::validation::DiagnosticSeverity::Error
             }),
             "the built-in model should satisfy its own invariants"
         );
@@ -1164,7 +435,7 @@ mod tests {
             assert_eq!(settings.sources.aspect_orbs.get(aspect_id), Some(&source));
         }
         assert!(report.diagnostics.iter().all(|diagnostic| {
-            diagnostic.severity != super::super::validation::DiagnosticSeverity::Error
+            diagnostic.severity != crate::workspace::validation::DiagnosticSeverity::Error
         }));
     }
 
@@ -1196,8 +467,8 @@ mod tests {
         manifest.active_model = Some("standard".to_string());
         // Asteroid is physical (eligible everywhere); Angle is not (conjunction-only).
         manifest.default.extended_object_types = Some(vec![
-            super::super::models::ObjectType::Asteroid,
-            super::super::models::ObjectType::Angle,
+            crate::workspace::models::ObjectType::Asteroid,
+            crate::workspace::models::ObjectType::Angle,
         ]);
 
         let report = current_model_report(&manifest, None);
@@ -1209,10 +480,10 @@ mod tests {
                 .find(|aspect| aspect.id == id)
                 .unwrap_or_else(|| panic!("{id} definition"));
             match &aspect.object_type_rule {
-                Some(super::super::models::ObjectTypeRule::OnlyBetween { types }) => {
-                    assert!(types.contains(&super::super::models::ObjectType::Planet));
-                    assert!(types.contains(&super::super::models::ObjectType::Asteroid));
-                    assert!(!types.contains(&super::super::models::ObjectType::Angle));
+                Some(crate::workspace::models::ObjectTypeRule::OnlyBetween { types }) => {
+                    assert!(types.contains(&crate::workspace::models::ObjectType::Planet));
+                    assert!(types.contains(&crate::workspace::models::ObjectType::Asteroid));
+                    assert!(!types.contains(&crate::workspace::models::ObjectType::Angle));
                 }
                 other => panic!("{id}: expected OnlyBetween rule, got {other:?}"),
             }
@@ -1227,9 +498,9 @@ mod tests {
             .insert("standard".to_string(), builtin_standard_model("standard"));
         manifest.active_model = Some("standard".to_string());
         manifest.default.extended_object_types = Some(vec![
-            super::super::models::ObjectType::Asteroid,
-            super::super::models::ObjectType::Angle,
-            super::super::models::ObjectType::LunarNode,
+            crate::workspace::models::ObjectType::Asteroid,
+            crate::workspace::models::ObjectType::Angle,
+            crate::workspace::models::ObjectType::LunarNode,
         ]);
 
         let report = current_model_report(&manifest, None);
@@ -1240,11 +511,11 @@ mod tests {
             .find(|aspect| aspect.id == "conjunction")
             .expect("conjunction definition");
         match &conjunction.object_type_rule {
-            Some(super::super::models::ObjectTypeRule::OnlyBetween { types }) => {
-                assert!(types.contains(&super::super::models::ObjectType::Planet));
-                assert!(types.contains(&super::super::models::ObjectType::Asteroid));
-                assert!(types.contains(&super::super::models::ObjectType::Angle));
-                assert!(types.contains(&super::super::models::ObjectType::LunarNode));
+            Some(crate::workspace::models::ObjectTypeRule::OnlyBetween { types }) => {
+                assert!(types.contains(&crate::workspace::models::ObjectType::Planet));
+                assert!(types.contains(&crate::workspace::models::ObjectType::Asteroid));
+                assert!(types.contains(&crate::workspace::models::ObjectType::Angle));
+                assert!(types.contains(&crate::workspace::models::ObjectType::LunarNode));
             }
             other => panic!("conjunction: expected OnlyBetween rule, got {other:?}"),
         }
