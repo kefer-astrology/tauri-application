@@ -780,8 +780,8 @@ fn aspect_orbs_from_model(model: &AstroModel) -> HashMap<String, f64> {
 mod tests {
     use super::*;
     use crate::workspace::models::{
-        AspectContext, AstrologySchool, BaseChartPurpose, ChartDefinition, ElementColorSettings,
-        OverrideEntry, RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
+        AspectContext, AstrologySchool, BaseChartPurpose, ChartDefinition, OverrideEntry,
+        RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
     };
 
     fn empty_defaults() -> WorkspaceDefaults {
@@ -789,11 +789,8 @@ mod tests {
             ephemeris_engine: None,
             position_mode: None,
             ephemeris_backend: None,
-            element_colors: None::<ElementColorSettings>,
             radix_point_colors: None::<RadixPointColorSettings>,
             default_location: None,
-            language: None,
-            theme: None,
             default_house_system: None,
             default_bodies: None,
             default_aspects: None,

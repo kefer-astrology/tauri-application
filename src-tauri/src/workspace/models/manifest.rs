@@ -88,15 +88,7 @@ pub struct WorkspaceDefaults {
     #[serde(default)]
     pub ephemeris_backend: Option<String>,
     #[serde(default)]
-    pub element_colors: Option<ElementColorSettings>,
-    #[serde(default)]
-    pub radix_point_colors: Option<RadixPointColorSettings>,
-    #[serde(default)]
     pub default_location: Option<Location>,
-    #[serde(default)]
-    pub language: Option<String>,
-    #[serde(default)]
-    pub theme: Option<String>,
     #[serde(default)]
     pub default_house_system: Option<HouseSystem>,
     #[serde(default)]
@@ -105,6 +97,12 @@ pub struct WorkspaceDefaults {
     pub default_aspects: Option<Vec<String>>,
     #[serde(default)]
     pub default_aspect_orbs: Option<HashMap<String, f64>>,
+    /// Read-only legacy fallback for workspaces saved before `WorkspacePresentation`
+    /// existed. `WorkspacePresentation::aspect_colors` is the single owner of all new
+    /// writes (see `commands/workspace.rs::apply_workspace_presentation_patch`); this
+    /// field is no longer written by `apply_workspace_defaults_patch` and is only
+    /// consulted as a fallback when presentation's value is absent — see the `.or()`
+    /// read in `commands/workspace.rs` (around line 345-366).
     #[serde(default)]
     pub default_aspect_colors: Option<HashMap<String, String>>,
     /// Which object categories — `Planet` is always implicitly included and never appears here;
@@ -133,6 +131,20 @@ pub struct WorkspaceDefaults {
     /// `WorkspaceManifest::active_school`.
     #[serde(default)]
     pub astrology_tradition: Option<AspectTradition>,
+    /// Read-only legacy fallback for workspaces saved before `WorkspacePresentation`
+    /// existed. `WorkspacePresentation::radix_point_colors` is the single owner of all
+    /// new writes (see `commands/workspace.rs::apply_workspace_presentation_patch`);
+    /// this field is no longer written by `apply_workspace_defaults_patch` and is only
+    /// consulted as a fallback when presentation's value is absent — see the `.or()`
+    /// read in `commands/workspace.rs` (around line 345-366).
+    #[serde(default)]
+    pub radix_point_colors: Option<RadixPointColorSettings>,
+    /// Read-only legacy fallback for workspaces saved before `WorkspacePresentation`
+    /// existed. `WorkspacePresentation::aspect_line_tier_style` is the single owner of
+    /// all new writes (see `commands/workspace.rs::apply_workspace_presentation_patch`);
+    /// this field is no longer written by `apply_workspace_defaults_patch` and is only
+    /// consulted as a fallback when presentation's value is absent — see the `.or()`
+    /// read in `commands/workspace.rs` (around line 345-366).
     #[serde(default)]
     pub aspect_line_tier_style: Option<AspectLineTierStyle>,
     #[serde(default)]

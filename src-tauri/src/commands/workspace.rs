@@ -460,11 +460,8 @@ fn empty_workspace_manifest(owner: &str) -> crate::workspace::models::WorkspaceM
             ephemeris_engine: Some(crate::workspace::models::EngineType::Jpl),
             position_mode: Some(crate::workspace::models::PositionMode::Apparent),
             ephemeris_backend: None,
-            element_colors: None,
             radix_point_colors: None,
             default_location: None,
-            language: None,
-            theme: None,
             default_house_system: None,
             default_bodies: None,
             default_aspects: Some(preset.enabled_aspects),
@@ -594,14 +591,10 @@ fn apply_workspace_defaults_patch(
     if let Some(value) = patch.default_aspect_orbs {
         defaults.default_aspect_orbs = Some(value);
     }
-    if let Some(value) = patch.default_aspect_colors {
-        defaults.default_aspect_colors = Some(value);
-    }
-    if let Some(value) = patch.radix_point_colors {
-        defaults.radix_point_colors = Some(crate::workspace::models::RadixPointColorSettings {
-            colors: value,
-        });
-    }
+    // default_aspect_colors / radix_point_colors / aspect_line_tier_style are NOT
+    // written here anymore — WorkspacePresentation (see apply_workspace_presentation_patch)
+    // is the single owner of all new writes for these three fields; defaults' copies are
+    // a read-only legacy fallback only (see the doc comments on WorkspaceDefaults).
     if let Some(value) = patch.extended_object_types {
         defaults.extended_object_types = Some(value);
     }
@@ -634,9 +627,6 @@ fn apply_workspace_defaults_patch(
                 defaults.extended_object_types = Some(types);
             }
         }
-    }
-    if let Some(value) = patch.aspect_line_tier_style {
-        defaults.aspect_line_tier_style = Some(value);
     }
 }
 
