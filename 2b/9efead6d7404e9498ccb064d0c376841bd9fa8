@@ -1,0 +1,43 @@
+src-tauri/src/workspace/models/views.rs
+  s_ca8341851f541e::t_c2ef9d9168447c 1-40
+src-tauri/src/workspace/models/colors.rs
+  s_ca8341851f541e::t_3b85f4f90c754b 1-36
+src-tauri/src/workspace/models/shared.rs
+  s_ca8341851f541e::t_239f512a0e75d7 1-9
+src-tauri/src/workspace/models/elements.rs
+  s_ca8341851f541e::t_4981414fc29050 1-23
+src-tauri/src/workspace/models/catalog.rs
+  s_ca8341851f541e::t_ad670fb1904a33 1-176
+src-tauri/src/workspace/models/calculation.rs
+  s_ca8341851f541e::t_33ff10ac87b60d 1-108
+src-tauri/src/workspace/models/aspects.rs
+  s_ca8341851f541e::t_dde539bcd5d5ef 1-202
+src-tauri/src/workspace/models/location.rs
+  s_ca8341851f541e::t_750639713d63d0 1-145
+src-tauri/src/workspace/models/manifest.rs
+  s_ca8341851f541e::t_f4652f8f6d161a 1-29,31-43,45-84,89-90,95-128,130-215
+  s_ca8341851f541e::t_0680b38978fa03 30,44,85-88,91-94,129
+src-tauri/src/workspace/models/transit_setup.rs
+  s_ca8341851f541e::t_44d872c12b1dd4 1-64
+src-tauri/src/workspace/models.rs
+  s_ca8341851f541e::t_059e5551f325df 7-13
+  s_ca8341851f541e::t_0ec080d1eb479f 1-6,14-51
+src-tauri/src/workspace/models/chart.rs
+  s_ca8341851f541e::t_6f969bc40c1388 1-222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2b9efead6d7404e9498ccb064d0c376841bd9fa8",
+  "prompts": {},
+  "sessions": {
+    "s_ca8341851f541e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "675f0173-7ae4-4624-bb0c-b03cdd40ef83",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
