@@ -31,9 +31,8 @@ mod report;
 pub use apply::apply_effective_settings;
 pub use layer::{SettingSource, SettingsLayer};
 pub use report::{
-    current_model_report, current_model_report_with_layers,
-    standalone_model_report_with_operation, CurrentModelReport, EffectiveModelSettings,
-    EffectiveSettingsSources,
+    current_model_report, current_model_report_with_layers, standalone_model_report_with_operation,
+    CurrentModelReport, EffectiveModelSettings, EffectiveSettingsSources,
 };
 // `standalone_model_report` is itself `#[cfg(test)]` in `report` (only ever used from this
 // module's own test suite), so its re-export must be cfg-gated the same way, or a plain
@@ -44,6 +43,7 @@ pub use report::standalone_model_report;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::workspace::model_catalog::builtin_standard_model;
     use crate::workspace::models::{
         AspectContext, AstrologySchool, BaseChartPurpose, ChartDefinition, OverrideEntry,
         RadixPointColorSettings, WorkspaceDefaults, WorkspacePresentation,
@@ -52,7 +52,6 @@ mod tests {
         Ayanamsa, ChartConfig, EngineType, HouseSystem, ModelOverrides, PositionMode, TimeSystem,
         WorkspaceManifest, ZodiacType,
     };
-    use crate::workspace::model_catalog::builtin_standard_model;
     use std::collections::HashMap;
 
     fn empty_defaults() -> WorkspaceDefaults {

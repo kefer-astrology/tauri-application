@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::workspace::model_catalog::builtin_standard_model;
+use crate::workspace::models::HouseSystem;
 use crate::workspace::models::{
     AstroModel, Ayanamsa, ChartConfig, EngineType, ModelOverrides, PositionMode, TimeSystem,
     WorkspaceManifest, ZodiacType,
 };
-use crate::workspace::models::HouseSystem;
 use crate::workspace::validation::Diagnostic;
 
 use super::apply::non_empty_string;
@@ -206,7 +206,9 @@ pub fn current_model_report_with_layers(
     let mut diagnostics =
         crate::workspace::validation::validate_manifest_model_references(manifest, &model);
     if source == "builtin_standard_model" {
-        diagnostics.extend(crate::workspace::validation::validate_model(&model, "model"));
+        diagnostics.extend(crate::workspace::validation::validate_model(
+            &model, "model",
+        ));
     }
     diagnostics.extend(crate::workspace::validation::validate_effective_settings(
         &model,

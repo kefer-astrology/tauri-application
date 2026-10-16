@@ -29,7 +29,10 @@ pub struct TraditionAspectPreset {
 fn preset(entries: &[(&str, f64)]) -> TraditionAspectPreset {
     TraditionAspectPreset {
         enabled_aspects: entries.iter().map(|(id, _)| id.to_string()).collect(),
-        orbs: entries.iter().map(|(id, orb)| (id.to_string(), *orb)).collect(),
+        orbs: entries
+            .iter()
+            .map(|(id, orb)| (id.to_string(), *orb))
+            .collect(),
     }
 }
 

@@ -188,8 +188,12 @@ fn resolve_allowed_orb(
     object_orbs: &HashMap<String, f64>,
 ) -> f64 {
     [
-        is_extended_object(from_type).then(|| object_orbs.get(from_id)).flatten(),
-        is_extended_object(to_type).then(|| object_orbs.get(to_id)).flatten(),
+        is_extended_object(from_type)
+            .then(|| object_orbs.get(from_id))
+            .flatten(),
+        is_extended_object(to_type)
+            .then(|| object_orbs.get(to_id))
+            .flatten(),
     ]
     .into_iter()
     .flatten()
@@ -250,8 +254,14 @@ pub fn eligible_aspect_angle_and_orb(
     if !pair_allowed(spec.object_type_rule, from_type, to_type) {
         return None;
     }
-    let allowed_orb =
-        resolve_allowed_orb(spec.allowed_orb, from_id, to_id, from_type, to_type, object_orbs);
+    let allowed_orb = resolve_allowed_orb(
+        spec.allowed_orb,
+        from_id,
+        to_id,
+        from_type,
+        to_type,
+        object_orbs,
+    );
     Some((spec.exact_angle, allowed_orb))
 }
 
@@ -325,8 +335,14 @@ fn detect_aspect(
         if !pair_allowed(spec.object_type_rule, from_type, to_type) {
             continue;
         }
-        let allowed_orb =
-            resolve_allowed_orb(spec.allowed_orb, from_id, to_id, from_type, to_type, object_orbs);
+        let allowed_orb = resolve_allowed_orb(
+            spec.allowed_orb,
+            from_id,
+            to_id,
+            from_type,
+            to_type,
+            object_orbs,
+        );
         let normalized_exact = if spec.exact_angle > 180.0 {
             360.0 - spec.exact_angle
         } else {

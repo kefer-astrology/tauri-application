@@ -36,8 +36,7 @@ pub use aspect_computation::{
 };
 pub use body_selection::{object_type_map, resolve_body_selection, BodySelection};
 pub use midpoint_contacts::{
-    compute_midpoint_contacts, MidpointContact, MidpointContactPoint,
-    MIDPOINT_CONTACT_ASPECT_IDS,
+    compute_midpoint_contacts, MidpointContact, MidpointContactPoint, MIDPOINT_CONTACT_ASPECT_IDS,
 };
 pub use parts::{arabic_part, day_night_parts, is_day_chart};
 pub use patterns::{

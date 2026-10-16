@@ -1,7 +1,7 @@
 use crate::workspace::model_catalog::builtin_model_settings;
 use crate::workspace::models::{
-    AstroModel, ChartConfig, NON_PHYSICAL_OBJECT_TYPES, ObjectType, ObjectTypeRule, PositionMode,
-    WorkspaceManifest,
+    AstroModel, ChartConfig, ObjectType, ObjectTypeRule, PositionMode, WorkspaceManifest,
+    NON_PHYSICAL_OBJECT_TYPES,
 };
 
 use super::apply::{apply_orbs, apply_settings_layer, aspect_orbs_from_model, non_empty_vec};

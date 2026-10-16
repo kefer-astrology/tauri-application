@@ -503,9 +503,7 @@ fn parse_house_system(value: &str) -> Option<crate::workspace::models::HouseSyst
     }
 }
 
-fn parse_astrology_tradition(
-    value: &str,
-) -> Option<crate::workspace::models::AspectTradition> {
+fn parse_astrology_tradition(value: &str) -> Option<crate::workspace::models::AspectTradition> {
     serde_json::from_value(serde_json::Value::String(value.to_string())).ok()
 }
 

@@ -7,8 +7,8 @@
 //! external callers would, plus the one private geometry helper (`normalize_deg`) a couple of
 //! fixtures need directly.
 
-use super::*;
 use super::geometry::normalize_deg;
+use super::*;
 use crate::workspace::models::{AspectContext, AspectDefinition, ObjectType, ObjectTypeRule};
 use std::collections::HashMap;
 
@@ -84,9 +84,9 @@ fn midpoint_contact_detects_each_of_the_five_supported_aspects() {
     let cases: [(&str, f64, MidpointContactPoint); 5] = [
         ("conjunction", 100.0, MidpointContactPoint::Position), // at position
         ("opposition", 280.0, MidpointContactPoint::Opposite),  // at opposite
-        ("square", 10.0, MidpointContactPoint::Both),           // 90 deg from position (and opposite)
-        ("octile", 145.0, MidpointContactPoint::Position),      // 45 deg from position
-        ("trioctile", 235.0, MidpointContactPoint::Opposite),   // 135 deg from position = 45 from opposite
+        ("square", 10.0, MidpointContactPoint::Both), // 90 deg from position (and opposite)
+        ("octile", 145.0, MidpointContactPoint::Position), // 45 deg from position
+        ("trioctile", 235.0, MidpointContactPoint::Opposite), // 135 deg from position = 45 from opposite
     ];
 
     for (expected_aspect, contact_lon, expected_point) in cases {
@@ -125,7 +125,11 @@ fn midpoint_contact_respects_the_orb_boundary() {
         &HashMap::new(),
         &HashMap::new(),
     );
-    assert_eq!(just_inside.len(), 1, "2.0 deg orb should be exactly admitted");
+    assert_eq!(
+        just_inside.len(),
+        1,
+        "2.0 deg orb should be exactly admitted"
+    );
 
     let just_outside = compute_midpoint_contacts(
         &[midpoint],
@@ -136,7 +140,10 @@ fn midpoint_contact_respects_the_orb_boundary() {
         &HashMap::new(),
         &HashMap::new(),
     );
-    assert!(just_outside.is_empty(), "2.1 deg should exceed the 2.0 deg orb");
+    assert!(
+        just_outside.is_empty(),
+        "2.1 deg should exceed the 2.0 deg orb"
+    );
 }
 
 #[test]
@@ -177,7 +184,11 @@ fn midpoint_contact_never_duplicates_across_the_two_axis_ends() {
         &HashMap::new(),
         &HashMap::new(),
     );
-    assert_eq!(contacts.len(), 1, "exactly one contact, not one per axis end");
+    assert_eq!(
+        contacts.len(),
+        1,
+        "exactly one contact, not one per axis end"
+    );
     assert_eq!(contacts[0].contact_point, MidpointContactPoint::Both);
 }
 
@@ -559,10 +570,7 @@ fn global_object_orbs_tighten_the_match_window_per_object() {
         ("chiron".to_string(), ObjectType::Asteroid),
         ("ceres".to_string(), ObjectType::Asteroid),
     ]);
-    let object_orbs = HashMap::from([
-        ("ceres".to_string(), 1.0),
-        ("chiron".to_string(), 1.0),
-    ]);
+    let object_orbs = HashMap::from([("ceres".to_string(), 1.0), ("chiron".to_string(), 1.0)]);
     let selected = vec!["conjunction".to_string()];
 
     let mut aspects = compute_chart_aspects(
