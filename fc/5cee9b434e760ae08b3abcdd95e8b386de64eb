@@ -1,0 +1,36 @@
+src-tauri/src/commands/workspace.rs
+  s_ca8341851f541e::t_b0fb3e986769ad 437-438,511,1044
+src-tauri/src/application/transit.rs
+  s_ca8341851f541e::t_4673b84c1ae890 309,879
+src-tauri/src/domain/mod.rs
+  s_ca8341851f541e::t_8cefd8f747ec78 2
+src-tauri/src/application/configuration_search.rs
+  s_ca8341851f541e::t_4673b84c1ae890 2,24,951
+src-tauri/src/domain/configuration_topology.rs
+  s_ca8341851f541e::t_9354a5e760a76f 4-10,22,31
+src-tauri/src/workspace/models/manifest.rs
+  s_ca8341851f541e::t_7be4f3fba6bb05 135
+  s_ca8341851f541e::t_cf19e92983423d 30,42-47,50
+src-tauri/src/workspace/models.rs
+  s_ca8341851f541e::t_b0fb3e986769ad 47
+src-tauri/src/workspace/tradition.rs
+  s_ca8341851f541e::t_b0fb3e986769ad 3,16,21,36,38,41,49,57,68,95,103,113,127-134,181
+src-tauri/src/domain/astrology.rs
+  s_ca8341851f541e::t_11dd885900ab54 782-787
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fc5cee9b434e760ae08b3abcdd95e8b386de64eb",
+  "prompts": {},
+  "sessions": {
+    "s_ca8341851f541e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "675f0173-7ae4-4624-bb0c-b03cdd40ef83",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
