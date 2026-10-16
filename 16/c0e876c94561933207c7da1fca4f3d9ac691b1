@@ -1,0 +1,31 @@
+src-tauri/src/workspace/settings/model_catalog_resolution.rs
+  s_ca8341851f541e::t_dedb92413842f5 1-133
+src-tauri/src/workspace/settings/layer.rs
+  s_ca8341851f541e::t_edb45870761830 1-56
+src-tauri/src/workspace/settings/effective_settings.rs
+  s_ca8341851f541e::t_194c9150ba3e28 1-258
+src-tauri/src/workspace/settings/report.rs
+  s_ca8341851f541e::t_f1d85b370c3430 1-248
+src-tauri/src/workspace/settings.rs
+  s_ca8341851f541e::t_fecd1f3cadd4be 7-15,24-33,35-36,51-56,140,438,470-471,483-486,501-503,514-518
+  s_ca8341851f541e::t_a6d41a8c6962f8 16-23
+  s_ca8341851f541e::t_3c44e3511dcbd9 34,38-40,42
+src-tauri/src/workspace/settings/apply.rs
+  s_ca8341851f541e::t_2b615c00f2b708 1-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "16c0e876c94561933207c7da1fca4f3d9ac691b1",
+  "prompts": {},
+  "sessions": {
+    "s_ca8341851f541e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "675f0173-7ae4-4624-bb0c-b03cdd40ef83",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
