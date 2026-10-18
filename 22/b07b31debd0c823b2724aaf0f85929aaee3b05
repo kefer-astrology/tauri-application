@@ -1,0 +1,27 @@
+README.md
+  s_b6130e02b5ee30::t_4dadcbb4d2d966 55-57
+  s_b6130e02b5ee30::t_2deaf53111fe7b 53-54,58
+  s_b6130e02b5ee30::t_eae094b2687712 60
+  s_b6130e02b5ee30::t_947e18d24673d8 51-52,59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "22b07b31debd0c823b2724aaf0f85929aaee3b05",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_b6130e02b5ee30": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12eda-5f96-7441-9903-b2fa6c996e11",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
