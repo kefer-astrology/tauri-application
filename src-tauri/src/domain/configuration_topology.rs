@@ -2,6 +2,12 @@
 //! T-square, Grand Cross, Yod) for the time-aware interval search in
 //! `application::configuration_search`.
 //!
+//! Renamed from `domain::configurations` to `domain::configuration_topology`:
+//! the old name was confusingly similar to `detect_chart_configurations` in
+//! `domain::astrology` despite the two solving different problems (role
+//! topology for a multi-body *search* across a transit time range here, vs.
+//! single-instant chart-snapshot *detection* there) — see the next paragraph.
+//!
 //! This is deliberately separate from `astrology::detect_chart_configurations`
 //! — that function is a single-instant snapshot classifier over a fixed
 //! 10-body set, producing flat ids with no participant/role output and no

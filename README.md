@@ -48,6 +48,16 @@ JPL / SPICE is the preferred long-term runtime direction. Swiss Ephemeris remain
 
 At a high level, the repo is split by responsibility:
 
+The full subsystem, persistence, and delivery map is maintained separately in
+[`docs/diagrams/application-structure.mmd`](docs/diagrams/application-structure.mmd).
+For the primary components, modules, DTOs, traits, structs, and public
+functions, use [`docs/diagrams/code-navigation.mmd`](docs/diagrams/code-navigation.mmd).
+For a Rust-only view of Tauri commands, workspace contracts, application use
+cases, domain functions, and infrastructure traits, use
+[`docs/diagrams/rust-code-map.mmd`](docs/diagrams/rust-code-map.mmd).
+They are Mermaid source, so GitHub and Mermaid-capable editors can render them
+without making the Hugo site depend on an external diagram runtime.
+
 - `apps/web-react/` contains the desktop UI. Inside `src/`, `app/` is app composition and feature wiring, `app/components/` holds feature-facing UI, `ui/` holds shared presentational React primitives, and `lib/` holds non-visual logic such as Tauri helpers, i18n setup, and app-shell metadata.
 - `apps/web-svelte/` contains the alternate frontend workspace. Inside `src/`, `lib/components/` holds feature and shared Svelte UI, `lib/components/ui/` holds shared primitives, and `lib/stores/` resolves shared app-shell and glyph assets from repo-root `static/`.
 - `static/` is the shared source of truth for public assets used by frontends, especially app-shell icons, logos, and glyph families.

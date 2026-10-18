@@ -797,7 +797,11 @@ mod tests {
         assert_eq!(cusps.len(), 12);
         for (i, cusp) in cusps.iter().enumerate() {
             let expected = normalize_deg(asc + i as f64 * 30.0);
-            assert!((cusp - expected).abs() < 1e-9, "house {}: {cusp} != {expected}", i + 1);
+            assert!(
+                (cusp - expected).abs() < 1e-9,
+                "house {}: {cusp} != {expected}",
+                i + 1
+            );
         }
         // Distinguishes Equal from Whole Sign: house 1 keeps the exact Ascendant
         // degree rather than rounding down to the sign boundary.

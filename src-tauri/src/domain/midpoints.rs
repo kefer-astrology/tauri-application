@@ -187,13 +187,14 @@ mod tests {
         assert!(pairs.contains(&("moon".to_string(), "sun".to_string())));
         assert!(pairs.contains(&("moon".to_string(), "venus".to_string())));
         assert!(pairs.contains(&("sun".to_string(), "venus".to_string())));
-        assert!(midpoints.iter().all(|m| m.chart_id.as_deref() == Some("chart-1")));
+        assert!(midpoints
+            .iter()
+            .all(|m| m.chart_id.as_deref() == Some("chart-1")));
     }
 
     #[test]
     fn compute_midpoints_skips_ids_with_no_known_position() {
-        let positions: HashMap<String, f64> =
-            [("sun".to_string(), 10.0)].into_iter().collect();
+        let positions: HashMap<String, f64> = [("sun".to_string(), 10.0)].into_iter().collect();
         let ids = vec!["sun".to_string(), "unknown".to_string()];
         let midpoints = compute_midpoints(&positions, &ids, None);
         assert!(midpoints.is_empty(), "only one resolvable id -> no pairs");
