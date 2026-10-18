@@ -1,0 +1,60 @@
+docs/content/manual/settings-and-appearance.md
+  s_ca8341851f541e::t_c6f0ce4a191f37 30,37-48
+  s_ca8341851f541e::t_2275ef489500ef 49
+docs/content/manual/objects-aspects-and-patterns.fr.md
+  s_b6130e02b5ee30::t_38ba612853c24c 7-11,15,23-27,31-47
+  s_ca8341851f541e::t_2c4e8d05a9283c 48
+docs/content/manual/transits-and-time.es.md
+  s_b6130e02b5ee30::t_e73f12f233fccf 7-11,16-26,30-47,54-56,61-64,68-70
+  s_ca8341851f541e::t_9acc6596aaccbf 65
+docs/content/manual/objects-aspects-and-patterns.es.md
+  s_b6130e02b5ee30::t_38ba612853c24c 7-11,15,23-27,31-47
+  s_ca8341851f541e::t_923b6da0b23504 48
+docs/content/manual/objects-aspects-and-patterns.md
+  s_b6130e02b5ee30::t_80f6b49f8b7447 7-12,16,24-27,33-49
+  s_ca8341851f541e::t_0f88c31f5e3e41 50
+docs/content/manual/transits-and-time.cs.md
+  s_ca8341851f541e::t_9acc6596aaccbf 62
+  s_b6130e02b5ee30::t_e73f12f233fccf 7-10,14-25,28-45,52-53,58-61,65-67
+docs/content/manual/transits-and-time.md
+  s_b6130e02b5ee30::t_80f6b49f8b7447 7-11,15-30,34-53,60-62,67-71,76-78
+  s_ca8341851f541e::t_9acc6596aaccbf 72
+docs/content/manual/charts-and-workspaces.md
+  s_ca8341851f541e::t_deb5421e683fb5 11-22
+docs/content/manual/transits-and-time.fr.md
+  s_ca8341851f541e::t_9acc6596aaccbf 67
+  s_b6130e02b5ee30::t_e73f12f233fccf 7-8,10,15-26,30-48,55-57,62-66,70-72
+  s_b6130e02b5ee30::t_eae094b2687712 9
+docs/content/manual/objects-aspects-and-patterns.cs.md
+  s_b6130e02b5ee30::t_38ba612853c24c 7-11,15,23-26,30-45
+  s_ca8341851f541e::t_a44774321973e8 46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "535342ce9eea903f1ad48dfbb4ffc680eeff8401",
+  "prompts": {},
+  "humans": {
+    "h_0907ec034f4a17": {
+      "author": "kubow <kube.kubow@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_b6130e02b5ee30": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12eda-5f96-7441-9903-b2fa6c996e11",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    },
+    "s_ca8341851f541e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "675f0173-7ae4-4624-bb0c-b03cdd40ef83",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "kubow <kube.kubow@gmail.com>"
+    }
+  }
+}
