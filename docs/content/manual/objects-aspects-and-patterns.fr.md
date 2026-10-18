@@ -4,13 +4,15 @@ description: 'Les objets et aspects intégrés, ainsi que les formes et configur
 weight: 35
 ---
 
-Cette référence énumère le catalogue intégré. Les choix dans **Paramètres**
-font autorité pour l’espace de travail et le moteur concernés : un objet peut
-être défini mais indisponible si un noyau d’éphémérides local ne le couvre pas.
+Cette référence énumère le catalogue intégré complet. Les choix dans
+**Paramètres** font autorité pour l’espace de travail et le moteur concernés.
+Un espace de travail peut définir son propre modèle, et un objet peut être
+catalogué mais indisponible parce que le moteur ou le noyau d’éphémérides local
+ne le prend pas en charge. Le sélecteur indique les éléments non calculables.
 
 ## Objets observables
 
-| Groupe | Objets intégrés |
+| Groupe | Objets intégrés calculables |
 | --- | --- |
 | Luminaires et planètes | Soleil, Lune, Mercure, Vénus, Mars, Jupiter, Saturne, Uranus, Neptune, Pluton |
 | Axes | Ascendant, Milieu du Ciel, Descendant, Fond du Ciel |
@@ -18,10 +20,31 @@ font autorité pour l’espace de travail et le moteur concernés : un objet pe
 | Points calculés et lots | Lilith, Vraie Lilith, Vertex, Antivertex, Part de Fortune, Part d’Esprit |
 | Astéroïdes et centaures | Chiron, Cérès, Pallas, Junon, Vesta, Astraea, Hebe, Iris, Flora, Metis, Hygiea, Parthenope, Victoria, Egeria, Irene, Eunomia, Psyche, Thetis, Melpomene, Fortuna, Massalia |
 
-La voie JPL calcule les points réservés à JPL et les astéroïdes étendus si les
-noyaux locaux nécessaires sont présents. L’application ne télécharge jamais
+Les dix planètes, les axes, les nœuds lunaires, Lilith moyenne, Chiron, Cérès,
+Pallas, Junon et Vesta fonctionnent avec les deux moteurs pris en charge.
+Vraie Lilith, Vertex, Antivertex, les Parts de Fortune et d’Esprit ainsi que
+les astéroïdes étendus nécessitent la voie JPL et les noyaux locaux appropriés.
+L’application ne télécharge jamais
 silencieusement des éphémérides pendant un calcul. Choisissez les objets dans
 [Paramètres et apparence](../settings-and-appearance/).
+
+### Catalogués, mais pas encore calculables
+
+Les entrées suivantes sont volontairement visibles dans le catalogue intégré,
+mais désactivées jusqu’à ce qu’une voie de calcul existe. Ce ne sont ni des
+options cachées ni des noms alternatifs d’un objet actuellement calculé.
+
+| Groupe | Entrées cataloguées |
+| --- | --- |
+| Lilith supplémentaire | Lilith osculatrice |
+| Nœuds planétaires géocentriques | Nœuds de Mercure, Vénus, Mars, Jupiter, Saturne, Uranus, Neptune et Pluton |
+| Objets transneptuniens | Éris, Sedna, Haumea, Makemake, Quaoar, Orcus, Varuna |
+| Hypothétiques uraniens / de Hambourg | Cupido, Hadès, Zeus, Kronos, Apollon, Admetos, Vulcanus, Poséidon |
+| Étoiles fixes | Alpheratz, Algenib, Hamal, Algol, Alcyone, Aldebaran, Rigel, Capella, Bellatrix, Bételgeuse, Sirius, Canopus, Procyon, Pollux, Regulus, Denebola, Zosma, Vindemiatrix, Spica, Arcturus, Alphecca, Zuben Elgenubi, Zuben Eschamali, Antarès, Véga, Altaïr, Deneb, Fomalhaut, Deneb Algedi, Scheat, Markab, Achernar |
+
+Un autre espace de travail peut choisir un autre catalogue de modèle, mais la
+sélection d’une entrée prévue du catalogue intégré n’invente jamais une
+position de remplacement.
 
 ## Aspects disponibles
 

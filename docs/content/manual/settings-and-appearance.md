@@ -27,12 +27,25 @@ is the default timezone for new chart forms. Check all three location values
 before calculating: a place name is descriptive, while coordinates and time
 are the calculation inputs.
 
-### House system and position mode
+### House system, zodiac type, and position mode
 
 **House system** offers the systems which the current Rust/JPL backend reports
 as computable. The list is deliberately supplied by the backend, so it can
 change with backend capability; choosing one changes the cusps and house-based
 results.
+
+**Zodiac type** is a radix-level setting with two choices:
+
+- **Tropical** — positions measured from the moving equinox point, the
+  default and the usual choice in Western astrology.
+- **Sidereal** — positions measured against the fixed background of stars.
+  Choosing Sidereal switches the ephemeris calculation itself, not just a
+  display label, so sign placements change accordingly.
+
+**Ayanamsa** only applies when **Zodiac type** is set to Sidereal: it picks
+the reference-point convention used to offset tropical positions into the
+sidereal zodiac. The available choices are **Lahiri**, **Raman**,
+**Krishnamurti**, **Fagan/Bradley**, **De Luce**, and **User Defined**.
 
 **Position mode** has two choices:
 

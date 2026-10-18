@@ -4,13 +4,15 @@ description: 'Vestavěné objekty a aspekty a tvary a konfigurace, které může
 weight: 35
 ---
 
-Tento přehled uvádí vestavěný katalog. Volby v **Nastavení** jsou pro konkrétní
-pracovní prostor a výpočetní jádro konečnou autoritou: objekt může být
-definovaný, ale pro dané datum nedostupný, pokud jej nepokrývá místní jádro efemerid.
+Tento přehled uvádí úplný vestavěný katalog. Volby v **Nastavení** jsou pro
+konkrétní pracovní prostor a výpočetní jádro konečnou autoritou. Pracovní
+prostor může definovat vlastní model a objekt může být katalogizován, ale
+nedostupný, protože jej jádro nebo místní efemeridový kernel nepodporuje.
+Výběr označuje objekty, které zatím nelze vypočítat.
 
 ## Pozorovatelné objekty
 
-| Skupina | Vestavěné objekty |
+| Skupina | Vypočitatelné vestavěné objekty |
 | --- | --- |
 | Světla a planety | Slunce, Měsíc, Merkur, Venuše, Mars, Jupiter, Saturn, Uran, Neptun, Pluto |
 | Osy | Ascendent, Medium Coeli, Descendent, Imum Coeli |
@@ -18,10 +20,29 @@ definovaný, ale pro dané datum nedostupný, pokud jej nepokrývá místní já
 | Vypočtené body a loty | Lilith, Pravá Lilith, Vertex, Antivertex, Bod štěstí, Bod ducha |
 | Asteroidy a kentauři | Chiron, Ceres, Pallas, Juno, Vesta, Astraea, Hebe, Iris, Flora, Metis, Hygiea, Parthenope, Victoria, Egeria, Irene, Eunomia, Psyche, Thetis, Melpomene, Fortuna, Massalia |
 
-Trasa JPL vypočítá body pouze pro JPL a rozšířený soubor asteroidů, jsou-li
-nutná místní jádra k dispozici. Aplikace při výpočtu horoskopu efemeridy nikdy
+Deset planet, osy, lunární uzly, střední Lilith, Chiron, Ceres, Pallas, Juno a
+Vesta fungují s oběma podporovanými jádry. Pravá Lilith, Vertex, Antivertex,
+Body štěstí a ducha a rozšířená sada asteroidů vyžadují řadu JPL a příslušné
+místní kernely. Aplikace při výpočtu horoskopu efemeridy nikdy
 potichu nestahuje. Objekty vybírejte v části
 [Nastavení a vzhled](../settings-and-appearance/).
+
+### Katalogizované, ale zatím nevypočitatelné
+
+Následující položky jsou ve vestavěném katalogu záměrně viditelné, ale zůstanou
+zakázané, dokud pro ně nebude vytvořena výpočetní cesta. Nejde o skryté volby
+ani alternativní názvy současně vypočítávaných objektů.
+
+| Skupina | Katalogizované položky |
+| --- | --- |
+| Další Lilith | Osculační Lilith |
+| Geocentrické planetární uzly | Uzly Merkuru, Venuše, Marsu, Jupitera, Saturnu, Uranu, Neptunu a Pluta |
+| Transneptunická tělesa | Eris, Sedna, Haumea, Makemake, Quaoar, Orcus, Varuna |
+| Uranské / hamburské hypotetické planety | Cupido, Hades, Zeus, Kronos, Apollon, Admetos, Vulcanus, Poseidon |
+| Stálice | Alpheratz, Algenib, Hamal, Algol, Alcyone, Aldebaran, Rigel, Capella, Bellatrix, Betelgeuse, Sirius, Canopus, Procyon, Pollux, Regulus, Denebola, Zosma, Vindemiatrix, Spica, Arcturus, Alphecca, Zuben Elgenubi, Zuben Eschamali, Antares, Vega, Altair, Deneb, Fomalhaut, Deneb Algedi, Scheat, Markab, Achernar |
+
+Jiný pracovní prostor může zvolit jiný modelový katalog, ale výběr plánované
+položky ve vestavěném katalogu nikdy nevytvoří náhradní pozici.
 
 ## Dostupné aspekty
 

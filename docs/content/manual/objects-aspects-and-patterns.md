@@ -4,14 +4,16 @@ description: 'The built-in objects and aspects, plus chart shapes and configurat
 weight: 35
 ---
 
-This reference lists the built-in catalog. The available choices in **Settings**
-are the final authority for the selected workspace and calculation engine: an
-object can be defined here but unavailable for a date when its local ephemeris
-kernel does not cover it.
+This reference lists the complete built-in catalog. The available choices in
+**Settings** are the final authority for the selected workspace and calculation
+engine. A workspace can define its own model, and an object can be catalogued
+but unavailable because its engine or local ephemeris kernel does not support
+it. The selector marks entries that are not computable; they cannot be used to
+produce a chart yet.
 
 ## Observable objects
 
-| Group | Built-in objects |
+| Group | Computable built-in objects |
 | --- | --- |
 | Luminaries and planets | Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto |
 | Angles | Ascendant, Midheaven, Descendant, Imum Coeli |
@@ -19,12 +21,32 @@ kernel does not cover it.
 | Calculated points and lots | Lilith, True Lilith, Vertex, Antivertex, Part of Fortune, Part of Spirit |
 | Asteroids and centaurs | Chiron, Ceres, Pallas, Juno, Vesta, Astraea, Hebe, Iris, Flora, Metis, Hygiea, Parthenope, Victoria, Egeria, Irene, Eunomia, Psyche, Thetis, Melpomene, Fortuna, Massalia |
 
-The JPL route computes the JPL-only points and the extended asteroid set when
-the necessary local kernels are present. The application never silently
+The ten planets, angles, lunar nodes, mean Lilith, Chiron, Ceres, Pallas, Juno,
+and Vesta work with either supported engine. True Lilith, Vertex, Antivertex,
+the Parts of Fortune and Spirit, and the extended asteroid set require the JPL
+route and the applicable local kernels. The application never silently
 downloads ephemerides during chart calculation. See
 [Settings and appearance](../settings-and-appearance/) to choose objects, and
 [Ephemerides and coverage](../../developer/ephemeris-manager/) for acquisition,
 coverage, and offline behavior.
+
+### Catalogued, not yet computable
+
+The following entries are intentionally visible in the built-in catalog but
+are disabled until a calculation route is implemented. They are not hidden
+options or alternative names for a currently calculated object.
+
+| Group | Catalogued entries |
+| --- | --- |
+| Additional Lilith | Osculating Lilith |
+| Geocentric planetary nodes | Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto nodes |
+| Trans-Neptunian objects | Eris, Sedna, Haumea, Makemake, Quaoar, Orcus, Varuna |
+| Uranian / Hamburg hypotheticals | Cupido, Hades, Zeus, Kronos, Apollon, Admetos, Vulcanus, Poseidon |
+| Fixed stars | Alpheratz, Algenib, Hamal, Algol, Alcyone, Aldebaran, Rigel, Capella, Bellatrix, Betelgeuse, Sirius, Canopus, Procyon, Pollux, Regulus, Denebola, Zosma, Vindemiatrix, Spica, Arcturus, Alphecca, Zuben Elgenubi, Zuben Eschamali, Antares, Vega, Altair, Deneb, Fomalhaut, Deneb Algedi, Scheat, Markab, Achernar |
+
+This distinction is useful when sharing a workspace: another workspace may
+choose a different model catalog, but selecting a planned entry in the
+built-in one does not cause a fallback position to be invented.
 
 ## Available aspects
 
