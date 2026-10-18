@@ -1,0 +1,109 @@
+%% Kefer application structure
+%% Open this file in GitHub, Mermaid Live Editor, or a Mermaid-capable editor.
+%% It is intentionally a subsystem map, not a generated inventory of every source file.
+
+flowchart TB
+  classDef source fill:#f4f1ff,stroke:#7157b7,color:#24144f
+  classDef frontend fill:#e8f4ff,stroke:#2673a8,color:#0d3554
+  classDef native fill:#fff2df,stroke:#b46913,color:#56300a
+  classDef domain fill:#e8f8ed,stroke:#31834b,color:#123d20
+  classDef data fill:#fff8cc,stroke:#9a7a00,color:#483900
+  classDef optional fill:#f4f4f4,stroke:#777,color:#333,stroke-dasharray: 5 5
+  classDef build fill:#ffeaf0,stroke:#af3f63,color:#571a2c
+
+  subgraph sources[Shared source and contracts]
+    static[static/<br/>glyphs, logos, app-shell assets]:::source
+    i18n[translations.csv]:::source
+    contracts[contracts/workspace-v1/<br/>workspace format examples]:::source
+    docsSource[docs/content + layouts + assets]:::source
+  end
+
+  subgraph desktop[Desktop application]
+    direction LR
+
+    subgraph react[React frontend — primary shell]
+      reactEntry[main.tsx → App.tsx]:::frontend
+      reactApp[app/<br/>screens, providers, feature components]:::frontend
+      reactLib[lib/<br/>domain presentation, i18n, Tauri bridge]:::frontend
+      reactUi[ui/<br/>shared React presentation primitives]:::frontend
+      reactEntry --> reactApp
+      reactApp --> reactLib
+      reactApp --> reactUi
+    end
+
+    subgraph svelte[Svelte frontend — alternate shell]
+      svelteEntry[main.ts → App.svelte]:::frontend
+      svelteComponents[lib/components + state]:::frontend
+      svelteBridge[lib/tauri + i18n]:::frontend
+      svelteEntry --> svelteComponents --> svelteBridge
+    end
+
+    subgraph tauri[Tauri native boundary — src-tauri]
+      tauriMain[main + configuration]:::native
+      commands[commands/<br/>workspace, calculation, transits, dialogs]:::native
+      application[application/<br/>chart resolution, computation, transit/event search]:::native
+      tauriMain --> commands --> application
+    end
+
+    reactLib -->|invoke / typed DTOs| commands
+    svelteBridge -->|invoke / typed DTOs| commands
+  end
+
+  subgraph core[Rust core — semantic and computation authority]
+    workspace[workspace/<br/>YAML load/save, validation, settings, model catalog]:::domain
+    domain[domain/<br/>astrology, houses, aspects, configurations]:::domain
+    infrastructure[infrastructure/<br/>JPL/SPICE, Swiss Ephemeris, geocoding, dialogs, sidecar process]:::domain
+    router[compute router<br/>Rust / Python / auto route selection]:::domain
+
+    application --> workspace
+    application --> domain
+    application --> router
+    router --> infrastructure
+    workspace --> domain
+    domain --> infrastructure
+  end
+
+  subgraph durable[Durable user data]
+    workspaceFolder[Workspace folder]:::data
+    manifest[workspace.yaml<br/>manifest, defaults, models]:::data
+    chartFiles[chart and analysis YAML files]:::data
+    transitSetup[Persisted transit setup]:::data
+    workspaceFolder --> manifest
+    workspaceFolder --> chartFiles
+    workspaceFolder --> transitSetup
+  end
+
+  workspace <-->|read / write| workspaceFolder
+  contracts -.->|examples and compatibility reference| workspace
+
+  subgraph optionalRuntime[Optional computation route]
+    pythonSource[backend-python/<br/>Python computation package and CLI]:::optional
+    pythonBinary[src-tauri/binaries/<br/>staged sidecar executable]:::optional
+    pythonProcess[Python sidecar process]:::optional
+    pythonSource --> pythonBinary --> pythonProcess
+    router -.->|when selected or required| pythonProcess
+  end
+
+  subgraph delivery[Build and documentation delivery]
+    direction LR
+    rootPackage[package.json<br/>npm workspace scripts]:::build
+    reactBuild[Vite: web-react/dist]:::build
+    svelteBuild[Vite: web-svelte/dist]:::build
+    desktopBundle[Tauri desktop bundle<br/>React or Svelte configuration]:::build
+    docsPrepare[docs:prepare<br/>browser-safe frontend builds + staging]:::build
+    hugo[Hugo<br/>static documentation site]:::build
+
+    rootPackage --> reactBuild --> desktopBundle
+    rootPackage --> svelteBuild --> desktopBundle
+    rootPackage --> docsPrepare --> hugo
+    reactBuild --> docsPrepare
+    svelteBuild --> docsPrepare
+  end
+
+  static --> reactApp
+  static --> svelteComponents
+  static --> docsPrepare
+  i18n --> reactLib
+  i18n --> svelteBridge
+  docsSource --> hugo
+  pythonBinary --> desktopBundle

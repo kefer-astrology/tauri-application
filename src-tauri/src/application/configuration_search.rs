@@ -1,5 +1,5 @@
 //! Multi-body "configuration" interval search (Grand Trine, T-square, Grand
-//! Cross, Yod) — orchestrates `domain::configurations`' data-driven pattern
+//! Cross, Yod) — orchestrates `domain::configuration_topology`' data-driven pattern
 //! definitions against `event_search`'s orb-interval primitive to find the
 //! time *interval* during which a role-assignment of bodies simultaneously
 //! satisfies every required pairwise aspect, not merely an instant snapshot.
@@ -21,7 +21,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 
 use crate::domain::astrology::eligible_aspect_angle_and_orb;
-use crate::domain::configurations::ConfigurationDefinition;
+use crate::domain::configuration_topology::ConfigurationDefinition;
 use crate::workspace::models::{AspectContext, AspectDefinition, ObjectType};
 
 use super::evaluation_context::EvaluationContext;
@@ -948,7 +948,7 @@ mod tests {
     use super::*;
     use crate::application::chart_resolution::resolve_standalone_chart;
     use crate::application::computation::compute_positions;
-    use crate::domain::configurations::{GRAND_CROSS, GRAND_TRINE, T_SQUARE, YOD};
+    use crate::domain::configuration_topology::{GRAND_CROSS, GRAND_TRINE, T_SQUARE, YOD};
     use crate::test_support::sample_chart_payload;
 
     fn resolved_sample_chart() -> super::super::computation::ResolvedChart {

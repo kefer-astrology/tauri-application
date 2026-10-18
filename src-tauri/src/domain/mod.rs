@@ -1,4 +1,4 @@
 pub mod astrology;
-pub mod configurations;
+pub mod configuration_topology;
 pub mod houses;
 pub mod midpoints;

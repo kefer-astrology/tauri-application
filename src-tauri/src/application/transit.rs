@@ -306,7 +306,7 @@ pub struct TransitEventSearch {
 /// `application::configuration_search` for the matching algorithm.
 #[derive(Debug, Clone)]
 pub struct ConfigurationSearchRequest {
-    /// One of `domain::configurations::BUILT_IN_CONFIGURATIONS`'ids
+    /// One of `domain::configuration_topology::BUILT_IN_CONFIGURATIONS`'ids
     /// (`grand_trine`, `t_square`, `yod`, `grand_cross`); an unknown id is
     /// reported as a warning, not an error, consistent with how an
     /// unrecognized aspect/body id elsewhere in this request is handled.
@@ -876,7 +876,7 @@ pub fn compute_transit_events(
 
     let mut configuration_matches = Vec::new();
     for configuration_request in &request.configuration_requests {
-        let Some(definition) = crate::domain::configurations::configuration_definition(
+        let Some(definition) = crate::domain::configuration_topology::configuration_definition(
             &configuration_request.configuration_id,
         ) else {
             complete = false;
