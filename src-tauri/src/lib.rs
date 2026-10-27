@@ -11,7 +11,7 @@ mod workspace;
 use commands::analyses::create_analysis;
 use commands::calculation::{
     compute_chart, compute_chart_from_data, compute_cross_aspects_from_data,
-    compute_midpoint_contacts_from_data, compute_midpoints_from_data,
+    compute_midpoint_contacts_from_data, compute_midpoints_from_data, load_workspace_charts,
 };
 use commands::charts::{create_chart, delete_chart, get_chart_details, import_chart, update_chart};
 use commands::default::{read, write};
@@ -56,6 +56,11 @@ pub fn run() {
             // Initialise the ephemeris cache dir from the platform app-data directory.
             if let Ok(data_dir) = app.path().app_data_dir() {
                 infrastructure::ephemeris::init_cache_dir(data_dir.join("ephemeris"));
+            }
+            if let Ok(cache_dir) = app.path().app_cache_dir() {
+                infrastructure::compute_cache::init_compute_cache_dir(
+                    cache_dir.join("chart-computations"),
+                );
             }
             if let Ok(resource_dir) = app.path().resource_dir() {
                 infrastructure::ephemeris::init_resource_dir(resource_dir);
@@ -107,6 +112,7 @@ pub fn run() {
             load_transit_setup,
             save_transit_setup,
             compute_chart,
+            load_workspace_charts,
             compute_chart_from_data,
             compute_cross_aspects_from_data,
             compute_midpoints_from_data,

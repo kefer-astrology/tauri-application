@@ -186,7 +186,7 @@ pub async fn compute_chart(
         crate::infrastructure::python_sidecar::BackendAvailability::Available
     );
     let route = select_chart_compute_route(backend, backend_available, force_python)?;
-    match route {
+    let mut result = match route {
         ComputeRoute::Rust => compute_chart_rust(
             &workspace_path,
             &chart_id,
@@ -227,7 +227,84 @@ pub async fn compute_chart(
         )
         .await
         .map(|result| normalize_chart_response(result, Some("python"))),
+    }?;
+    // Python results carry no search facts; derive them in Rust from the returned positions.
+    if !result.contains_key("facts") {
+        if let Ok(resolved) = crate::application::chart_resolution::resolve_workspace_chart(
+            &workspace_path,
+            &chart_id,
+            preset_id.as_deref(),
+            settings_overrides.as_ref(),
+        ) {
+            crate::application::computation::inject_chart_facts(&mut result, &resolved);
+        }
     }
+    Ok(result)
+}
+
+/// One chart of `load_workspace_charts`: frontend chart details plus its calculation, or the
+/// reason it has none. `compute_individually` charts are routed to the Python backend and must
+/// be computed with `compute_chart`.
+#[derive(Debug, serde::Serialize)]
+pub struct WorkspaceChartLoad {
+    pub chart_id: String,
+    pub details: serde_json::Value,
+    pub computed: Option<serde_json::Value>,
+    pub compute_error: Option<String>,
+    pub compute_individually: bool,
+}
+
+/// Load every chart of a workspace with its Rust calculation in one call (parallel, cached),
+/// instead of one `get_chart_details` + `compute_chart` round trip per chart.
+#[tauri::command]
+pub async fn load_workspace_charts(
+    backend_state: State<'_, crate::infrastructure::python_sidecar::BackendState>,
+    workspace_path: String,
+) -> Result<Vec<WorkspaceChartLoad>, String> {
+    let backend = selected_compute_backend();
+    let backend_available = matches!(
+        backend_state.availability()?,
+        crate::infrastructure::python_sidecar::BackendAvailability::Available
+    );
+    tauri::async_runtime::spawn_blocking(move || {
+        let defer = |chart: &crate::workspace::models::ChartInstance| {
+            let force_python = matches!(
+                chart.config.engine,
+                Some(
+                    crate::workspace::models::EngineType::Jyotish
+                        | crate::workspace::models::EngineType::Custom
+                )
+            );
+            !matches!(
+                select_chart_compute_route(backend, backend_available, force_python),
+                Ok(ComputeRoute::Rust)
+            )
+        };
+        let computations = crate::application::workspace_charts::compute_workspace_charts(
+            Path::new(&workspace_path),
+            &defer,
+        )?;
+        Ok(computations
+            .into_iter()
+            .map(|entry| {
+                use crate::application::workspace_charts::ChartComputeOutcome;
+                let (computed, compute_error, compute_individually) = match entry.outcome {
+                    ChartComputeOutcome::Computed(value) => (Some(value), None, false),
+                    ChartComputeOutcome::Failed(error) => (None, Some(error), false),
+                    ChartComputeOutcome::Deferred => (None, None, true),
+                };
+                WorkspaceChartLoad {
+                    chart_id: entry.chart.id.clone(),
+                    details: crate::commands::charts::chart_details_json(&entry.chart),
+                    computed,
+                    compute_error,
+                    compute_individually,
+                }
+            })
+            .collect())
+    })
+    .await
+    .map_err(|error| format!("Workspace chart loading failed: {error}"))?
 }
 
 fn compute_chart_rust(

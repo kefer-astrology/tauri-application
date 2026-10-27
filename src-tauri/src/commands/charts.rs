@@ -176,8 +176,6 @@ pub async fn get_chart_details(
     workspace_path: String,
     chart_id: String,
 ) -> Result<serde_json::Value, String> {
-    use serde_json::json;
-
     let workspace_dir = Path::new(&workspace_path);
 
     let manifest = load_workspace_manifest(workspace_dir)?;
@@ -187,7 +185,15 @@ pub async fn get_chart_details(
         .find(|ch| ch.id == chart_id)
         .ok_or_else(|| format!("Chart {} not found in workspace", chart_id))?;
 
-    // Serialize to JSON
+    Ok(chart_details_json(&chart))
+}
+
+/// Frontend-facing JSON for one chart (labels instead of enum variants), shared by
+/// `get_chart_details` and the batch `load_workspace_charts`.
+pub(crate) fn chart_details_json(
+    chart: &crate::workspace::models::ChartInstance,
+) -> serde_json::Value {
+    use serde_json::json;
 
     let house_system_str = chart.config.house_system.as_ref().map(|h| match h {
         crate::workspace::models::HouseSystem::Placidus => "Placidus",
@@ -232,7 +238,7 @@ pub async fn get_chart_details(
         crate::workspace::models::TimeSystem::CompactDate => "compact_date",
     });
 
-    Ok(json!({
+    json!({
         "id": chart.id,
         "subject": {
             "id": chart.subject.id,
@@ -266,7 +272,7 @@ pub async fn get_chart_details(
         "tags": chart.tags,
         "tag_colors": chart.tag_colors,
         "roden_rating": chart.roden_rating,
-    }))
+    })
 }
 
 fn read_importable_chart_yaml(

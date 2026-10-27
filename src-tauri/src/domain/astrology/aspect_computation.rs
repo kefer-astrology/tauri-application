@@ -21,8 +21,18 @@ pub struct ComputedAspect {
     /// `detect_aspect` matched against) — lets consumers express "closeness to exact" as a
     /// fraction of the boundary that was actually used, rather than re-resolving orb settings.
     pub allowed_orb: f64,
+    /// Orb is closing (filled from body speeds by `annotate_aspect_dynamics`; `false` when
+    /// either speed is unknown or the aspect is `exact`).
     pub applying: bool,
+    /// Orb is widening (same rules as `applying`).
     pub separating: bool,
+    /// Within [`EXACT_ASPECT_TOLERANCE_DEG`] (1 arc minute) of the exact angle.
+    #[serde(default)]
+    pub exact: bool,
+    /// Half of the pair's synodic cycle: `waxing` (faster body 0°→180° ahead of the slower one)
+    /// or `waning` (180°→360°). `None` when either side has no mean-motion rank (axes, points).
+    #[serde(default)]
+    pub phase: Option<String>,
 }
 
 /// Point pairs whose separation is fixed at exactly 180° by definition (the second point is
@@ -102,6 +112,8 @@ pub fn compute_chart_aspects(
                     allowed_orb,
                     applying: false,
                     separating: false,
+                    exact: false,
+                    phase: None,
                 });
             }
         }
@@ -154,6 +166,8 @@ pub fn compute_cross_aspects(
                     allowed_orb,
                     applying: false,
                     separating: false,
+                    exact: false,
+                    phase: None,
                 });
             }
         }

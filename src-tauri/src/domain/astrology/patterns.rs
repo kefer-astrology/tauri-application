@@ -13,7 +13,8 @@ const SEARCH_PLANET_IDS: [&str; 10] = [
     "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto",
 ];
 
-/// Bundle/bowl/bucket/seesaw/splash/stellium distribution shapes for the 10 classical bodies.
+/// Bundle/bowl/bucket/seesaw/splash distribution shapes for the 10 classical bodies. Stelliums
+/// are chart facts (`facts::Stellium`), not shapes.
 pub fn detect_chart_shapes(positions: &HashMap<String, f64>, house_cusps: &[f64]) -> Vec<String> {
     let mut result: HashSet<String> = HashSet::new();
     let entries: Vec<(&str, f64)> = SEARCH_PLANET_IDS
@@ -107,14 +108,6 @@ pub fn detect_chart_shapes(positions: &HashMap<String, f64>, house_cusps: &[f64]
         });
     if sum_x.hypot(sum_y) / entries.len() as f64 >= 0.35 {
         result.insert("shifted_center".to_string());
-    }
-
-    let mut sign_counts: HashMap<usize, usize> = HashMap::new();
-    for (_, lon) in entries.iter().copied() {
-        *sign_counts.entry(sign_index(lon)).or_insert(0) += 1;
-    }
-    if sign_counts.values().any(|count| *count >= 3) {
-        result.insert("stellium".to_string());
     }
 
     result.into_iter().collect()
