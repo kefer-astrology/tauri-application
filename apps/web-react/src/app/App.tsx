@@ -900,7 +900,6 @@ export default function App() {
 												handleSelectChartId(id);
 												setActiveView('horoskop');
 											}}
-											appShellIconSet={appShellIconSet}
 										/>
 									) : activeView === 'export' ? (
 										<ExportWorkspaceView />

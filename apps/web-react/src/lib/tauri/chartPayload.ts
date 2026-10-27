@@ -5,6 +5,7 @@ import type {
 	ChartDetails,
 	ChartDefinitionDto,
 	ModelOverridesDto,
+	ChartFacts,
 	MoonDetails,
 	ObjectTypeId
 } from './types';
@@ -102,6 +103,7 @@ export interface AppChart {
 		shapes?: string[];
 		configurations?: string[];
 		moonDetails?: MoonDetails | null;
+		facts?: ChartFacts | null;
 	};
 }
 
@@ -142,6 +144,7 @@ export interface ComputedChartPayload {
 	shapes?: string[];
 	configurations?: string[];
 	moon_details?: MoonDetails | null;
+	facts?: ChartFacts | null;
 }
 
 export function normalizeComputedChartPayload(
@@ -175,6 +178,7 @@ export function normalizeComputedChartPayload(
 		houseCusps,
 		shapes: payload.shapes ?? [],
 		configurations: payload.configurations ?? [],
+		facts: payload.facts ?? null,
 		...(moonDetails !== undefined ? { moonDetails } : {})
 	};
 }
@@ -227,7 +231,9 @@ export function aspectLineTierStyleFromDto(
 		widthMedium: num(dto.width_medium, base.widthMedium),
 		widthLoose: num(dto.width_loose, base.widthLoose),
 		widthOuter: num(dto.width_outer, base.widthOuter),
-		outerLineStyle: isAspectLineStyleId(dto.outer_line_style) ? dto.outer_line_style : base.outerLineStyle
+		outerLineStyle: isAspectLineStyleId(dto.outer_line_style)
+			? dto.outer_line_style
+			: base.outerLineStyle
 	};
 }
 
@@ -398,7 +404,7 @@ export function analysisToAppChart(analysis: AnalysisDto): AppChart {
 		name: analysis.name,
 		entityKind: 'analysis',
 		entityPersisted: true,
-		chartType: 'ANALYSIS',
+		chartType: analysis.method === 'synastry' ? 'SYNASTRY' : 'ANALYSIS',
 		dateTime: '',
 		location: '',
 		tags: analysis.tags,
@@ -494,25 +500,19 @@ export function chartDataToComputePayload(
 		({
 			kind: 'base',
 			purpose: (chart.chartType || 'NATAL').toLowerCase() as
-				| 'natal'
-				| 'event'
-				| 'horary'
-				| 'electional'
-				| 'moment'
+				'natal' | 'event' | 'horary' | 'electional' | 'moment'
 		} satisfies ChartDefinitionDto);
 	const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);
 	const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
 	const model = asNonEmpty(chart.model);
-	const observableObjects =
-		Array.isArray(chart.observableObjects)
-			? chart.observableObjects
-			: defaults.defaultBodies.length > 0
-				? defaults.defaultBodies
-				: undefined;
-	const selectedAspects =
-		Array.isArray(chart.selectedAspects)
-			? chart.selectedAspects
-			: [...defaults.defaultAspects];
+	const observableObjects = Array.isArray(chart.observableObjects)
+		? chart.observableObjects
+		: defaults.defaultBodies.length > 0
+			? defaults.defaultBodies
+			: undefined;
+	const selectedAspects = Array.isArray(chart.selectedAspects)
+		? chart.selectedAspects
+		: [...defaults.defaultAspects];
 	const aspectOrbs =
 		chart.aspectOrbs && Object.keys(chart.aspectOrbs).length > 0
 			? chart.aspectOrbs

@@ -1,14 +1,19 @@
 import type { ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from 'lucide-react';
 import {
 	flexRender,
 	getCoreRowModel,
+	getExpandedRowModel,
 	getSortedRowModel,
 	useReactTable,
 	type ColumnDef,
+	type ExpandedState,
 	type OnChangeFn,
+	type Row,
+	type RowModel,
 	type RowSelectionState,
-	type SortingState
+	type SortingState,
+	type Table as TanstackTable
 } from '@tanstack/react-table';
 import { Button } from '@/app/components/ui/button';
 import {
@@ -34,8 +39,16 @@ export interface DataTableProps<T> {
 	/** Controlled checkbox selection, for a `select` column built from the row/table context. */
 	rowSelection?: RowSelectionState;
 	onRowSelectionChange?: OnChangeFn<RowSelectionState>;
-	/** Row drawn with the selected-state background. */
-	selectedRowId?: string | null;
+	/** Rows drawn with the selected-state background. */
+	isRowSelected?: (row: T) => boolean;
+	/** Tree rows: children of a row, rendered under it when expanded (see `DataTableExpander`). */
+	getSubRows?: (row: T) => T[] | undefined;
+	/** Controlled expansion, keyed by row id. */
+	expanded?: ExpandedState;
+	onExpandedChange?: OnChangeFn<ExpandedState>;
+	/** `false` keeps children in the order `getSubRows` returns them, so header sorting reorders
+	 *  only top-level rows. */
+	sortSubRows?: boolean;
 	/** Makes rows interactive (pointer cursor, strong hover). */
 	onRowClick?: (row: T) => void;
 	onRowDoubleClick?: (row: T) => void;
@@ -71,7 +84,11 @@ export function DataTable<T>({
 	initialSorting,
 	rowSelection,
 	onRowSelectionChange,
-	selectedRowId,
+	isRowSelected,
+	getSubRows,
+	expanded,
+	onExpandedChange,
+	sortSubRows = true,
 	onRowClick,
 	onRowDoubleClick,
 	empty,
@@ -85,12 +102,17 @@ export function DataTable<T>({
 		initialState: initialSorting ? { sorting: initialSorting } : undefined,
 		state: {
 			...(sorting ? { sorting } : {}),
-			...(rowSelection ? { rowSelection } : {})
+			...(rowSelection ? { rowSelection } : {}),
+			...(expanded ? { expanded } : {})
 		},
 		onSortingChange,
 		onRowSelectionChange,
+		onExpandedChange,
+		getSubRows,
+		enableSubRowSelection: false,
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel()
+		getSortedRowModel: sortSubRows ? getSortedRowModel() : topLevelSortedRowModel<T>(),
+		getExpandedRowModel: getSubRows ? getExpandedRowModel() : undefined
 	});
 
 	if (data.length === 0 && empty !== undefined) return <>{empty}</>;
@@ -151,7 +173,7 @@ export function DataTable<T>({
 			</TableHeader>
 			<TableBody>
 				{table.getRowModel().rows.map((row) => {
-					const selected = selectedRowId != null && row.id === selectedRowId;
+					const selected = isRowSelected?.(row.original) ?? false;
 					return (
 						<TableRow
 							key={row.id}
@@ -177,5 +199,56 @@ export function DataTable<T>({
 				})}
 			</TableBody>
 		</Table>
+	);
+}
+
+/** Sorted row model that leaves every row's children in their original order. */
+function topLevelSortedRowModel<T>(): (table: TanstackTable<T>) => () => RowModel<T> {
+	return (table) => {
+		const sorted = getSortedRowModel<T>()(table);
+		return () => {
+			const model = sorted();
+			for (const row of model.rows) {
+				if (row.subRows.length > 1)
+					row.subRows = [...row.subRows].sort((a, b) => a.index - b.index);
+			}
+			return model;
+		};
+	};
+}
+
+/** First-column cell for tree rows: indentation with a guide line for children, and a chevron
+ *  that toggles expansion (without triggering the row's own click). */
+export function DataTableExpander<T>({ row, children }: { row: Row<T>; children: ReactNode }) {
+	const canExpand = row.getCanExpand();
+	return (
+		<div
+			className={cn(
+				'flex min-w-0 items-center gap-1',
+				row.depth > 0 && 'ml-3 border-l border-[color:var(--theme-panel-border)] pl-4'
+			)}
+		>
+			{canExpand ? (
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					className="size-6 shrink-0"
+					aria-expanded={row.getIsExpanded()}
+					onClick={(event) => {
+						event.stopPropagation();
+						row.toggleExpanded();
+					}}
+					onDoubleClick={(event) => event.stopPropagation()}
+				>
+					<ChevronRight
+						className={cn('size-4 transition-transform', row.getIsExpanded() && 'rotate-90')}
+					/>
+				</Button>
+			) : (
+				row.depth === 0 && <span className="size-6 shrink-0" />
+			)}
+			{children}
+		</div>
 	);
 }

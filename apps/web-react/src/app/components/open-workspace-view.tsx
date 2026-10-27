@@ -8,9 +8,15 @@ import {
 	type ReactNode
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FolderOpen, PanelRightOpen, Plus, Star, Upload, X } from 'lucide-react';
+import { FolderOpen, PanelRightOpen, Pencil, Plus, Star, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
-import type { ColumnDef, OnChangeFn, RowSelectionState, SortingState } from '@tanstack/react-table';
+import type {
+	ColumnDef,
+	ExpandedState,
+	OnChangeFn,
+	RowSelectionState,
+	SortingState
+} from '@tanstack/react-table';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
@@ -20,27 +26,32 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
-import { DataTable } from '../views/data/data-table';
+import { DataTable, DataTableExpander } from '../views/data/data-table';
+import { buildChartForest, isBaseChart } from '@/lib/chartHierarchy';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { tagColor } from '@/lib/chartTags';
-import { AppShellIcon } from '@/ui/app-shell-icon';
-import type { AppShellIconSetId } from '@/lib/app-shell';
 import { DetailSidePanel } from './detail-side-panel';
 import {
 	persistChartFavorites,
 	persistChartListSort,
-	persistVisibleFilterGroups,
+	persistHiddenFilterGroups,
 	readStoredChartFavorites,
 	readStoredChartListSort,
-	readStoredVisibleFilterGroups
+	readStoredHiddenFilterGroups
 } from '@/lib/chartListPreferences';
+import {
+	emptyFactFilters,
+	factFiltersActive,
+	factFiltersMatch,
+	type FactFilters
+} from '@/lib/astrology/factFilters';
+import { FACT_FILTER_GROUP_LABEL_KEYS, FactFilterSections } from './open-fact-filters';
 import type { AppChart } from '@/lib/tauri/chartPayload';
 import { ASPECT_ROWS } from '@/lib/astrology/aspects';
 import {
 	chartSearchMetadata,
 	degreeInSign,
-	houseForLongitude,
 	SEARCH_PLANET_IDS,
 	signIndex,
 	type ChartSearchMetadata,
@@ -53,12 +64,17 @@ type OpenMode = 'my_radixes' | 'database';
 type PlanetFilter = { sign: string; degree: string; house: string; motion: string };
 type HouseFilter = { sign: string; degree: string };
 type AspectFilter = { id: number; left: string; aspect: string; right: string };
+/** One row of the chart tree: a base chart with its derived charts/analyses, or one of those
+ *  children (keyed by parent, since a two-parent analysis appears under both). */
+type ChartRow = { key: string; chart: AppChart; children?: ChartRow[] };
+
+/** Base chart types; every other type id is a derived chart or analysis. */
+const BASE_TYPE_IDS = new Set(['natal', 'event', 'horary']);
 
 export type OpenWorkspaceViewProps = {
 	workspacePath: string | null;
 	onOpenWorkspace: () => void | Promise<void>;
 	onActivateChart: (chartId: string) => void;
-	appShellIconSet: AppShellIconSetId;
 };
 
 /** The 2nd-level menu's 9 expandable filter groups, in display order — each already labeled via
@@ -73,7 +89,9 @@ const FILTER_GROUP_LABEL_KEYS: Record<string, string> = {
 	aspects: 'open_filter_aspects',
 	houses: 'open_filter_houses',
 	shapes: 'open_filter_chart_shape',
-	configurations: 'info_planetary_configuration'
+	stellium: FACT_FILTER_GROUP_LABEL_KEYS.stellium!,
+	configurations: 'info_planetary_configuration',
+	...FACT_FILTER_GROUP_LABEL_KEYS
 };
 const ALL_FILTER_GROUP_IDS = Object.keys(FILTER_GROUP_LABEL_KEYS);
 
@@ -87,9 +105,11 @@ const CHART_TYPE_OPTIONS: Array<{
 	indent?: number;
 	group?: boolean;
 }> = [
+	{ id: 'base_group', values: [], labelKey: 'open_type_group_base', group: true },
 	{ id: 'natal', values: ['NATAL'], labelKey: 'new_type_radix' },
 	{ id: 'event', values: ['EVENT'], labelKey: 'new_type_event' },
 	{ id: 'horary', values: ['HORARY'], labelKey: 'new_type_horary' },
+	{ id: 'derived_group', values: [], labelKey: 'open_type_group_derived', group: true },
 	{ id: 'transit', values: ['TRANSIT'], labelKey: 'open_type_transit' },
 	{
 		id: 'primary_direction',
@@ -238,8 +258,7 @@ function FieldLabel({ children, className }: { children: ReactNode; className?: 
 export function OpenWorkspaceView({
 	workspacePath,
 	onOpenWorkspace,
-	onActivateChart,
-	appShellIconSet
+	onActivateChart
 }: OpenWorkspaceViewProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme();
@@ -251,18 +270,22 @@ export function OpenWorkspaceView({
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [favoriteIds, setFavoriteIds] = useState<string[]>(readStoredChartFavorites);
 	const [sorting, setSorting] = useState<SortingState>(readStoredChartListSort);
-	const [visibleFilterGroups, setVisibleFilterGroups] = useState<string[]>(
-		() => readStoredVisibleFilterGroups() ?? ALL_FILTER_GROUP_IDS
+	const [hiddenFilterGroups, setHiddenFilterGroups] = useState<string[]>(() =>
+		readStoredHiddenFilterGroups()
+	);
+	const visibleFilterGroups = useMemo(
+		() => ALL_FILTER_GROUP_IDS.filter((id) => !hiddenFilterGroups.includes(id)),
+		[hiddenFilterGroups]
 	);
 	const [filterSettingsOpen, setFilterSettingsOpen] = useState(false);
 
 	useEffect(() => {
-		persistVisibleFilterGroups(visibleFilterGroups);
-	}, [visibleFilterGroups]);
+		persistHiddenFilterGroups(hiddenFilterGroups);
+	}, [hiddenFilterGroups]);
 
 	function toggleFilterGroupVisibility(id: string, visible: boolean) {
-		setVisibleFilterGroups((prev) =>
-			visible ? Array.from(new Set([...prev, id])) : prev.filter((existing) => existing !== id)
+		setHiddenFilterGroups((prev) =>
+			visible ? prev.filter((existing) => existing !== id) : Array.from(new Set([...prev, id]))
 		);
 	}
 	const [focusedChartId, setFocusedChartId] = useState<string | null>(selectedChartId);
@@ -288,6 +311,7 @@ export function OpenWorkspaceView({
 		useState<Record<number, HouseFilter>>(initialHouseFilters);
 	const [selectedShapes, setSelectedShapes] = useState<string[]>([]);
 	const [selectedConfigurations, setSelectedConfigurations] = useState<string[]>([]);
+	const [factFilters, setFactFilters] = useState<FactFilters>(emptyFactFilters);
 	const [isImporting, setIsImporting] = useState(false);
 
 	const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
@@ -303,14 +327,17 @@ export function OpenWorkspaceView({
 		[charts]
 	);
 
-	const filtered = useMemo(() => {
-		if (openMode === 'database') return [] as AppChart[];
+	const forest = useMemo(() => buildChartForest(charts), [charts]);
+
+	const { treeRows, autoExpanded } = useMemo(() => {
+		if (openMode === 'database') return { treeRows: [] as ChartRow[], autoExpanded: {} };
 		const normalizedTagQuery = tagQuery.trim().toLocaleLowerCase();
 		const normalizedContentQuery = contentQuery.trim().toLocaleLowerCase();
 		const normalizedLocationQuery = locationQuery.trim().toLocaleLowerCase();
-		return charts.filter((chart) => {
-			if (selectedTypes.length > 0 && !selectedTypes.includes(chartTypeId(chart) ?? ''))
-				return false;
+		const dateActive = Object.values(dateParts).some(Boolean);
+
+		/** Archive metadata (tags, location, full text, date): applies to every chart. */
+		const metadataOk = (chart: AppChart) => {
 			if (
 				normalizedTagQuery &&
 				!(chart.tags ?? []).some((tag) => tag.toLocaleLowerCase().includes(normalizedTagQuery))
@@ -330,9 +357,8 @@ export function OpenWorkspaceView({
 					.toLocaleLowerCase();
 				if (!searchable.includes(normalizedContentQuery)) return false;
 			}
-
-			const date = parsedChartDate(chart.dateTime);
-			if (Object.values(dateParts).some(Boolean)) {
+			if (dateActive) {
+				const date = parsedChartDate(chart.dateTime);
 				if (!date) return false;
 				const actual = {
 					day: date.getDate(),
@@ -349,32 +375,26 @@ export function OpenWorkspaceView({
 				)
 					return false;
 			}
+			return true;
+		};
 
+		/** Astrological filters: evaluated only on base charts, within that one chart. */
+		const astrologyOk = (chart: AppChart) => {
 			const metadata = metadataByChart.get(chart.id)!;
 			for (const planet of SEARCH_PLANET_IDS) {
 				const filter = planetFilters[planet];
 				if (Object.values(filter).every((value) => value === 'any')) continue;
-				const longitude = metadata.positions[planet];
-				if (longitude === undefined) return false;
-				if (filter.sign !== 'any' && signIndex(longitude) !== Number(filter.sign)) return false;
-				if (filter.degree !== 'any' && degreeInSign(longitude) !== Number(filter.degree))
-					return false;
+				const body = chart.computed?.facts?.bodies[planet];
+				if (!body) return false;
+				if (filter.sign !== 'any' && body.sign !== Number(filter.sign)) return false;
+				// Degree options are 1-based (1st … 30th degree of the sign).
 				if (
-					filter.house !== 'any' &&
-					houseForLongitude(longitude, metadata.houseCusps) !== Number(filter.house)
+					filter.degree !== 'any' &&
+					Math.floor(body.degree_in_sign) + 1 !== Number(filter.degree)
 				)
 					return false;
-				if (filter.motion !== 'any') {
-					const motion = chart.computed?.motion?.[planet];
-					if (!motion) return false;
-					const actualMotion =
-						Math.abs(motion.speed) < 0.0001
-							? 'stationary'
-							: motion.retrograde
-								? 'retrograde'
-								: 'direct';
-					if (actualMotion !== filter.motion) return false;
-				}
+				if (filter.house !== 'any' && body.house !== Number(filter.house)) return false;
+				if (filter.motion !== 'any' && body.motion !== filter.motion) return false;
 			}
 			if (!aspectFilters.every((filter) => aspectFilterMatches(metadata, filter))) return false;
 			for (let house = 1; house <= 12; house += 1) {
@@ -392,13 +412,65 @@ export function OpenWorkspaceView({
 				!selectedConfigurations.some((configuration) => metadata.configurations.has(configuration))
 			)
 				return false;
-			return true;
-		});
+			return factFiltersMatch(chart.computed?.facts, factFilters);
+		};
+		const astrologyActive =
+			SEARCH_PLANET_IDS.some((planet) =>
+				Object.values(planetFilters[planet]).some((value) => value !== 'any')
+			) ||
+			aspectFilters.some(
+				(filter) => filter.left !== 'any' || filter.aspect !== 'any' || filter.right !== 'any'
+			) ||
+			Object.values(houseFilters).some(
+				(filter) => filter.sign !== 'any' || filter.degree !== 'any'
+			) ||
+			selectedShapes.length > 0 ||
+			selectedConfigurations.length > 0 ||
+			factFiltersActive(factFilters);
+
+		const baseTypes = selectedTypes.filter((id) => BASE_TYPE_IDS.has(id));
+		const derivedTypes = selectedTypes.filter((id) => !BASE_TYPE_IDS.has(id));
+		const metadataActive =
+			Boolean(normalizedTagQuery || normalizedContentQuery || normalizedLocationQuery) ||
+			dateActive;
+		const childMatches = (child: AppChart) =>
+			(derivedTypes.length === 0 || derivedTypes.includes(chartTypeId(child) ?? '')) &&
+			metadataOk(child);
+		const childRows = (parent: AppChart, children: AppChart[]) =>
+			children.map((child) => ({ key: `${parent.id}/${child.id}`, chart: child }));
+
+		const rows: ChartRow[] = [];
+		const expandedKeys: Record<string, boolean> = {};
+		for (const root of forest.roots) {
+			if (!isBaseChart(root)) {
+				// Derived chart/analysis whose parents are not in this workspace.
+				if (!astrologyActive && baseTypes.length === 0 && childMatches(root))
+					rows.push({ key: root.id, chart: root });
+				continue;
+			}
+			if (baseTypes.length > 0 && !baseTypes.includes(chartTypeId(root) ?? '')) continue;
+			if (!astrologyOk(root)) continue;
+			const children = forest.childrenByParent.get(root.id) ?? [];
+			if (derivedTypes.length === 0 && !metadataActive) {
+				rows.push({ key: root.id, chart: root, children: childRows(root, children) });
+				continue;
+			}
+			// Child-level filters: show only matching children and open the parent's folder.
+			const matching = children.filter(childMatches);
+			if (matching.length > 0) {
+				rows.push({ key: root.id, chart: root, children: childRows(root, matching) });
+				expandedKeys[root.id] = true;
+			} else if (derivedTypes.length === 0 && metadataOk(root)) {
+				rows.push({ key: root.id, chart: root, children: childRows(root, children) });
+			}
+		}
+		return { treeRows: rows, autoExpanded: expandedKeys };
 	}, [
 		aspectFilters,
-		charts,
 		contentQuery,
 		dateParts,
+		factFilters,
+		forest,
 		houseFilters,
 		locationQuery,
 		metadataByChart,
@@ -411,14 +483,21 @@ export function OpenWorkspaceView({
 		tagQuery
 	]);
 
+	const [expanded, setExpanded] = useState<ExpandedState>({});
+	useEffect(() => setExpanded(autoExpanded), [autoExpanded]);
+	const visibleChartIds = useMemo(
+		() => treeRows.flatMap((row) => [row.chart.id, ...(row.children ?? []).map((c) => c.chart.id)]),
+		[treeRows]
+	);
+
 	useEffect(() => {
 		if (selectedChartId) setFocusedChartId(selectedChartId);
 	}, [selectedChartId]);
 
 	useEffect(() => {
-		if (focusedChartId && filtered.some((chart) => chart.id === focusedChartId)) return;
-		setFocusedChartId(filtered[0]?.id ?? null);
-	}, [filtered, focusedChartId]);
+		if (focusedChartId && visibleChartIds.includes(focusedChartId)) return;
+		setFocusedChartId(visibleChartIds[0] ?? null);
+	}, [visibleChartIds, focusedChartId]);
 
 	const toggleListValue = (setter: React.Dispatch<React.SetStateAction<string[]>>, id: string) =>
 		setter((current) =>
@@ -453,6 +532,7 @@ export function OpenWorkspaceView({
 		setHouseFilters(initialHouseFilters());
 		setSelectedShapes([]);
 		setSelectedConfigurations([]);
+		setFactFilters(emptyFactFilters());
 	};
 
 	const importHoroscope = async () => {
@@ -483,7 +563,7 @@ export function OpenWorkspaceView({
 		label: t(PLANET_LABEL_KEYS[planet])
 	}));
 
-	const columns = useMemo<ColumnDef<AppChart>[]>(
+	const columns = useMemo<ColumnDef<ChartRow>[]>(
 		() => [
 			{
 				id: 'select',
@@ -510,7 +590,7 @@ export function OpenWorkspaceView({
 			},
 			{
 				id: 'favorite',
-				accessorFn: (chart) => favorites.has(chart.id),
+				accessorFn: ({ chart }) => favorites.has(chart.id),
 				header: '',
 				cell: ({ row }) => (
 					<div onClick={(event) => event.stopPropagation()}>
@@ -519,13 +599,13 @@ export function OpenWorkspaceView({
 							variant="ghost"
 							size="icon"
 							className="size-7"
-							onClick={() => toggleFavorite(row.original.id)}
+							onClick={() => toggleFavorite(row.original.chart.id)}
 							aria-label={t('favorite')}
 						>
 							<Star
 								className={cn(
 									'size-4',
-									favorites.has(row.original.id)
+									favorites.has(row.original.chart.id)
 										? 'fill-[color:var(--theme-accent)] text-[color:var(--theme-accent)]'
 										: ft.muted
 								)}
@@ -538,15 +618,25 @@ export function OpenWorkspaceView({
 			},
 			{
 				id: 'name',
-				accessorKey: 'name',
+				accessorFn: ({ chart }) => chart.name,
 				header: t('table_name'),
-				cell: ({ getValue }) => (
-					<div className={cn('min-w-0 truncate', ft.bodyText)}>{getValue<string>()}</div>
-				)
+				cell: ({ row, getValue }) => {
+					const childCount = forest.childrenByParent.get(row.original.chart.id)?.length ?? 0;
+					return (
+						<DataTableExpander row={row}>
+							<span className={cn('min-w-0 truncate', ft.bodyText)}>{getValue<string>()}</span>
+							{row.depth === 0 && childCount > 0 && (
+								<Badge variant="secondary" className="px-1.5 py-0 text-[10px] tabular-nums">
+									{childCount}
+								</Badge>
+							)}
+						</DataTableExpander>
+					);
+				}
 			},
 			{
 				id: 'type',
-				accessorFn: (chart) => chartTypeLabel(chart, t),
+				accessorFn: ({ chart }) => chartTypeLabel(chart, t),
 				header: t('table_chart_type'),
 				cell: ({ getValue }) => (
 					<div className={cn('min-w-0 truncate', ft.muted)}>{getValue<string>()}</div>
@@ -554,20 +644,20 @@ export function OpenWorkspaceView({
 			},
 			{
 				id: 'tags',
-				accessorFn: (chart) => chart.tags ?? [],
+				accessorFn: ({ chart }) => chart.tags ?? [],
 				header: t('table_tags'),
 				enableSorting: false,
 				cell: ({ row }) => (
 					<div className="flex min-w-0 flex-wrap gap-1">
-						{(row.original.tags ?? []).map((tag, index) => (
+						{(row.original.chart.tags ?? []).map((tag, index) => (
 							<Badge
-								key={`${row.original.id}-${tag}`}
+								key={`${row.original.chart.id}-${tag}`}
 								variant="outline"
 								className="gap-1.5 px-2 py-0.5 text-xs"
 							>
 								<span
 									className="size-2 rounded-full"
-									style={{ backgroundColor: tagColor(row.original.tagColors, tag, index) }}
+									style={{ backgroundColor: tagColor(row.original.chart.tagColors, tag, index) }}
 								/>
 								{tag}
 							</Badge>
@@ -577,27 +667,27 @@ export function OpenWorkspaceView({
 			},
 			{
 				id: 'date',
-				accessorFn: (chart) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
+				accessorFn: ({ chart }) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
 				header: t('new_date'),
 				cell: ({ row }) => (
 					<div className={cn('truncate', ft.muted)}>
-						{splitDateTime(row.original.dateTime).date}
+						{splitDateTime(row.original.chart.dateTime).date}
 					</div>
 				)
 			},
 			{
 				id: 'time',
-				accessorFn: (chart) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
+				accessorFn: ({ chart }) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
 				header: t('new_time'),
 				cell: ({ row }) => (
 					<div className={cn('truncate', ft.muted)}>
-						{splitDateTime(row.original.dateTime).time}
+						{splitDateTime(row.original.chart.dateTime).time}
 					</div>
 				)
 			},
 			{
 				id: 'location',
-				accessorKey: 'location',
+				accessorFn: ({ chart }) => chart.location,
 				header: t('table_place'),
 				cell: ({ getValue }) => (
 					<div className={cn('min-w-0 truncate', ft.muted)}>{getValue<string>()}</div>
@@ -605,7 +695,7 @@ export function OpenWorkspaceView({
 			}
 		],
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[favorites, t]
+		[favorites, forest, t]
 	);
 
 	const handleSortingChange: OnChangeFn<SortingState> = (updater) =>
@@ -718,7 +808,7 @@ export function OpenWorkspaceView({
 								onClick={() => setFilterSettingsOpen(true)}
 								aria-label={t('open_filter_visibility_title', { defaultValue: 'Visible filters' })}
 							>
-								<AppShellIcon iconId="settings" iconSet={appShellIconSet} size={24} />
+								<Pencil className={cn('size-4 shrink-0', ft.muted)} />
 							</Button>
 						</div>
 						<div className="min-h-0 flex-1 overflow-y-auto pb-28">
@@ -1219,6 +1309,12 @@ export function OpenWorkspaceView({
 									</AccordionItem>
 								)}
 
+								<FactFilterSections
+									filters={factFilters}
+									onChange={setFactFilters}
+									visibleGroups={visibleFilterGroups.filter((id) => id === 'stellium')}
+								/>
+
 								{visibleFilterGroups.includes('configurations') && (
 									<AccordionItem value="configurations" className="border-none">
 										<AccordionTrigger className="px-4 py-3 hover:no-underline sm:px-6">
@@ -1249,6 +1345,12 @@ export function OpenWorkspaceView({
 										</AccordionContent>
 									</AccordionItem>
 								)}
+
+								<FactFilterSections
+									filters={factFilters}
+									onChange={setFactFilters}
+									visibleGroups={visibleFilterGroups.filter((id) => id !== 'stellium')}
+								/>
 							</Accordion>
 						</div>
 						<div
@@ -1317,15 +1419,19 @@ export function OpenWorkspaceView({
 							) : (
 								<DataTable
 									columns={columns}
-									data={filtered}
-									getRowId={(chart) => chart.id}
+									data={treeRows}
+									getRowId={(row) => row.key}
+									getSubRows={(row) => row.children}
+									expanded={expanded}
+									onExpandedChange={setExpanded}
+									sortSubRows={false}
 									sorting={sorting}
 									onSortingChange={handleSortingChange}
 									rowSelection={rowSelection}
 									onRowSelectionChange={setRowSelection}
-									selectedRowId={focusedChartId}
-									onRowClick={(chart) => setFocusedChartId(chart.id)}
-									onRowDoubleClick={(chart) => onActivateChart(chart.id)}
+									isRowSelected={(row) => row.chart.id === focusedChartId}
+									onRowClick={(row) => setFocusedChartId(row.chart.id)}
+									onRowDoubleClick={(row) => onActivateChart(row.chart.id)}
 									empty={
 										<div className="flex min-h-full items-center justify-center p-8 text-center">
 											<p className={cn('max-w-md text-sm', ft.muted)}>
