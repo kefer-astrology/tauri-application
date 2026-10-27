@@ -149,6 +149,7 @@ Focus/selected-state classes are explicitly out of scope for this helper — see
 ## Related docs
 
 - **[frontend-react](../frontend-react/)** — Commands, folder layout, Tauri bridge, glyphs.
+- **[frontend-components](../frontend-components/)** — React component categories and shared views.
 - **[frontend-svelte](../frontend-svelte/)** — Svelte-specific structure and bridge.
 - **[frontend workflow baseline](../frontend-workflow-baseline/)** — shared workflow behavior and parity.
 - **[architecture](../architecture/)** — Workspace and storage (backend-oriented).

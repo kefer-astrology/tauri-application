@@ -82,6 +82,7 @@ Do not duplicate theme, glyph, translation, or shared-component policy here;
 
 ## Related contracts
 
+- [React component catalog](../frontend-components/)
 - [Tauri command contracts](../tauri-command-contracts/)
 - [Radix render contract](../radix-render-contract/)
 - [Transit series contract](../transit-series-contract/)
