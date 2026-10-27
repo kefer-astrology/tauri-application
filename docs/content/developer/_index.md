@@ -60,6 +60,8 @@ For domain-specific work, use **[house systems](./house-systems/)**,
   both shells must support; use the React or Svelte reference for shell details.
 - **[React frontend](./frontend-react/)** / **[Svelte frontend](./frontend-svelte/)** —
   supported implementation differences and current limitations.
+- **[React component catalog](./frontend-components/)** — component categories,
+  dependency rules, and shared table, list, and time-series views.
 - **[Transit series contract](./transit-series-contract/)**,
   **[radix render contract](./radix-render-contract/)**, and
   **[import chart contract](./import-chart-contract/)** — feature-level payload
