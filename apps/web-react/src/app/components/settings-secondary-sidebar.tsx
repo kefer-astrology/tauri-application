@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { SecondaryNavPanel } from './secondary-nav-panel';
-import { sidebarNavMenuRowClassName, sidebarThemeStyles, type Theme } from './astrology-sidebar';
+import { sidebarNavMenuRowClassName, sidebarThemeStyles } from './astrology-sidebar';
 import { cn } from './ui/utils';
+import { useAppTheme } from '../providers/app-theme';
 
 export type SettingsSectionId =
 	| 'jazyk_lokace'
@@ -21,15 +22,14 @@ const SUPPORT_US_URL = 'https://keferastrology.com/donate';
 export interface SettingsSecondarySidebarProps {
 	activeSection: SettingsSectionId;
 	onSectionChange: (section: SettingsSectionId) => void;
-	theme: Theme;
 }
 
 export function SettingsSecondarySidebar({
 	activeSection,
-	onSectionChange,
-	theme
+	onSectionChange
 }: SettingsSecondarySidebarProps) {
 	const { t } = useTranslation();
+	const { theme } = useAppTheme();
 	const st = sidebarThemeStyles[theme];
 
 	const items = useMemo(
@@ -54,7 +54,6 @@ export function SettingsSecondarySidebar({
 
 	return (
 		<SecondaryNavPanel
-			theme={theme}
 			title={t('app_settings')}
 			items={items}
 			activeId={activeSection}

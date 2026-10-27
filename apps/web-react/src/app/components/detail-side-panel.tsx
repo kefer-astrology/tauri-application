@@ -3,10 +3,9 @@ import { cn } from './ui/utils';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
 import { Separator } from './ui/separator';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
+import { useAppTheme } from '../providers/app-theme';
 
 type DetailSidePanelProps = {
-	theme: Theme;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	title: string;
@@ -17,7 +16,6 @@ type DetailSidePanelProps = {
 };
 
 export function DetailSidePanel({
-	theme,
 	open,
 	onOpenChange,
 	title,
@@ -26,7 +24,8 @@ export function DetailSidePanel({
 	bodyClassName,
 	children
 }: DetailSidePanelProps) {
-	const ft = useAppFormFieldTheme(theme);
+	const { theme } = useAppTheme();
+	const ft = useAppFormFieldTheme();
 	const surfaceClassName =
 		theme === 'twilight' || theme === 'midnight' ? 'backdrop-blur-xl' : 'backdrop-blur-sm';
 

@@ -14,7 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import { Theme } from './astrology-sidebar';
 import { DetailSidePanel } from './detail-side-panel';
 import { chartDataToComputePayload, type WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import { computeMidpointContactsFromData, computeMidpointsFromData } from '@/lib/tauri/workspace';
@@ -29,17 +28,19 @@ import {
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ENABLED_ASPECT_IDS
 } from '@/lib/astrology/aspects';
-import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { signIndexToZodiacId } from '@/lib/astrology/glyphs';
 import { normalizeLongitude } from '@/lib/astrology/chartSearch';
 import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
 import { parseComputedAspect, type ParsedAspect } from '@/lib/astrology/aspectParsing';
 import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
 import { AspectDetailPanel } from './aspect-detail-panel';
-import { MIDPOINT_CONTACT_ASPECT_IDS, type Midpoint, type MidpointContact } from '@/lib/astrology/midpoints';
+import {
+	MIDPOINT_CONTACT_ASPECT_IDS,
+	type Midpoint,
+	type MidpointContact
+} from '@/lib/astrology/midpoints';
 
 interface AspectariumProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	workspaceDefaults: WorkspaceDefaultsState;
 	enabledSymbolSetIds: readonly string[];
 }
@@ -116,13 +117,11 @@ function positionParts(longitude: number | null) {
 
 function BodyGlyph({
 	bodyId,
-	glyphSet,
 	className,
 	size = 20,
 	color
 }: {
 	bodyId: string;
-	glyphSet: AstrologyGlyphSetId;
 	className?: string;
 	size?: number;
 	color?: string;
@@ -132,7 +131,6 @@ function BodyGlyph({
 	return (
 		<AstrologyGlyph
 			glyphId={bodyId}
-			glyphSet={glyphSet}
 			fallback={fallback}
 			size={size}
 			className={className}
@@ -142,13 +140,7 @@ function BodyGlyph({
 	);
 }
 
-function PositionValue({
-	longitude,
-	glyphSet
-}: {
-	longitude: number | null;
-	glyphSet: AstrologyGlyphSetId;
-}) {
+function PositionValue({ longitude }: { longitude: number | null }) {
 	const position = positionParts(longitude);
 	if (!position) return null;
 
@@ -156,7 +148,6 @@ function PositionValue({
 		<span className="inline-flex items-center justify-end gap-1.5">
 			<AstrologyGlyph
 				glyphId={position.zodiacId}
-				glyphSet={glyphSet}
 				domain="zodiac"
 				fallback={position.fallback}
 				size={13}
@@ -168,13 +159,11 @@ function PositionValue({
 
 function AspectCellButton({
 	aspect,
-	glyphSet,
 	isSelected,
 	onSelect,
 	color
 }: {
 	aspect: ParsedAspect;
-	glyphSet: AstrologyGlyphSetId;
 	isSelected: boolean;
 	onSelect: () => void;
 	color: string;
@@ -195,7 +184,6 @@ function AspectCellButton({
 			<span className="text-lg leading-none" style={{ color }}>
 				<AstrologyGlyph
 					glyphId={aspect.type}
-					glyphSet={glyphSet}
 					domain="aspect"
 					fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
 					size={18}
@@ -319,14 +307,9 @@ function MultiSelectFilter({
 	);
 }
 
-export function Aspectarium({
-	theme,
-	glyphSet,
-	workspaceDefaults,
-	enabledSymbolSetIds
-}: AspectariumProps) {
+export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: AspectariumProps) {
 	const { t, i18n } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const { selectedChart, transitOverlay } = useWorkspaceCharts();
 	const [selectedAspectId, setSelectedAspectId] = useState<string | null>(null);
 	const [view, setView] = useState<AspectariumView>('table');
@@ -539,7 +522,6 @@ export function Aspectarium({
 		icon: (
 			<BodyGlyph
 				bodyId={id}
-				glyphSet={glyphSet}
 				size={18}
 				color={workspaceDefaults.bodyColors[id] ?? getDefaultBodyColor(id)}
 			/>
@@ -551,7 +533,6 @@ export function Aspectarium({
 		icon: (
 			<AstrologyGlyph
 				glyphId={aspect.id}
-				glyphSet={glyphSet}
 				domain="aspect"
 				fallback={ASPECT_GLYPHS[aspect.id] ?? '•'}
 				size={16}
@@ -576,7 +557,6 @@ export function Aspectarium({
 		>
 			<BodyGlyph
 				bodyId={bodyId}
-				glyphSet={glyphSet}
 				size={compact ? 18 : 22}
 				color={workspaceDefaults.bodyColors[bodyId] ?? getDefaultBodyColor(bodyId)}
 			/>
@@ -586,10 +566,7 @@ export function Aspectarium({
 					{normalizeLongitude(positionsForLayer(layer)[bodyId]) === null ? (
 						t('loading_positions')
 					) : (
-						<PositionValue
-							longitude={normalizeLongitude(positionsForLayer(layer)[bodyId])}
-							glyphSet={glyphSet}
-						/>
+						<PositionValue longitude={normalizeLongitude(positionsForLayer(layer)[bodyId])} />
 					)}
 				</p>
 			</div>
@@ -599,7 +576,6 @@ export function Aspectarium({
 	const renderMatrix = () => (
 		<Card
 			variant="themed"
-			theme={theme}
 			className="flex h-full min-h-0 gap-0 overflow-hidden border-0 shadow-none ring-0"
 		>
 			<CardContent className="flex min-h-0 flex-1 flex-col p-0">
@@ -702,8 +678,12 @@ export function Aspectarium({
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}</TableHead>
-											<TableHead>{t('aspectarium_position', { defaultValue: 'Position' })}</TableHead>
+											<TableHead>
+												{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}
+											</TableHead>
+											<TableHead>
+												{t('aspectarium_position', { defaultValue: 'Position' })}
+											</TableHead>
 											<TableHead>
 												{t('aspectarium_midpoint_opposite', { defaultValue: 'Opposite' })}
 											</TableHead>
@@ -717,10 +697,10 @@ export function Aspectarium({
 													{objectLabel(midpoint.object_a, t)} / {objectLabel(midpoint.object_b, t)}
 												</TableCell>
 												<TableCell>
-													<PositionValue longitude={midpoint.position} glyphSet={glyphSet} />
+													<PositionValue longitude={midpoint.position} />
 												</TableCell>
 												<TableCell>
-													<PositionValue longitude={midpoint.opposite} glyphSet={glyphSet} />
+													<PositionValue longitude={midpoint.opposite} />
 												</TableCell>
 												<TableCell>
 													{midpoint.ambiguous && (
@@ -759,7 +739,9 @@ export function Aspectarium({
 											<TableHead>
 												{t('aspectarium_midpoint_contact_object', { defaultValue: 'Object' })}
 											</TableHead>
-											<TableHead>{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}</TableHead>
+											<TableHead>
+												{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}
+											</TableHead>
 											<TableHead>{t('aspectarium_aspect', { defaultValue: 'Aspect' })}</TableHead>
 											<TableHead>{t('label_orb')}</TableHead>
 										</TableRow>
@@ -777,7 +759,6 @@ export function Aspectarium({
 													<span className="inline-flex items-center gap-1.5">
 														<AstrologyGlyph
 															glyphId={contact.aspect_type}
-															glyphSet={glyphSet}
 															domain="aspect"
 															fallback={ASPECT_GLYPHS[contact.aspect_type] ?? '•'}
 															size={16}
@@ -785,7 +766,9 @@ export function Aspectarium({
 														{aspectLabel(contact.aspect_type, t)}
 													</span>
 												</TableCell>
-												<TableCell className="font-mono text-xs">{formatOrb(contact.orb)}</TableCell>
+												<TableCell className="font-mono text-xs">
+													{formatOrb(contact.orb)}
+												</TableCell>
 											</TableRow>
 										))}
 									</TableBody>
@@ -840,10 +823,11 @@ export function Aspectarium({
 														>
 															<BodyGlyph
 																bodyId={rowId}
-																glyphSet={glyphSet}
 																size={22}
 																className="mx-auto opacity-80"
-																color={workspaceDefaults.bodyColors[rowId] ?? getDefaultBodyColor(rowId)}
+																color={
+																	workspaceDefaults.bodyColors[rowId] ?? getDefaultBodyColor(rowId)
+																}
 															/>
 														</TableCell>
 													);
@@ -873,7 +857,6 @@ export function Aspectarium({
 													>
 														<AspectCellButton
 															aspect={entry.aspect}
-															glyphSet={glyphSet}
 															isSelected={selectedAspectId === entry.id}
 															onSelect={() => setSelectedAspectId(entry.id)}
 															color={aspectColor}
@@ -921,7 +904,6 @@ export function Aspectarium({
 											>
 												<AstrologyGlyph
 													glyphId={entry.aspect.type}
-													glyphSet={glyphSet}
 													domain="aspect"
 													fallback={ASPECT_GLYPHS[entry.aspect.type] ?? '•'}
 													size={22}
@@ -1021,8 +1003,6 @@ export function Aspectarium({
 		selectedAspectDetail ? (
 			<div className="h-full min-h-0 overflow-y-auto rounded-2xl bg-[color:var(--theme-soft-bg)]/42 p-4 pr-2">
 				<AspectDetailPanel
-					theme={theme}
-					glyphSet={glyphSet}
 					aspect={selectedAspectDetail.aspect}
 					fromObject={selectedAspectDetail.fromObject}
 					toObject={selectedAspectDetail.toObject}
@@ -1035,7 +1015,6 @@ export function Aspectarium({
 			<div className="flex h-full min-h-0 flex-col p-4 md:p-6">{renderMatrix()}</div>
 
 			<DetailSidePanel
-				theme={theme}
 				open={selectedAspect !== null}
 				onOpenChange={(open) => {
 					if (!open) setSelectedAspectId(null);

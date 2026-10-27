@@ -8,13 +8,8 @@ import { Label } from './ui/label';
 import { Card, CardContent } from './ui/card';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
 
 export type ExportKind = 'print' | 'pdf' | 'png';
-
-export type ExportWorkspaceViewProps = {
-	theme: Theme;
-};
 
 const EXPORT_TYPES: { id: ExportKind; labelKey: string }[] = [
 	{ id: 'print', labelKey: 'export_type_print' },
@@ -25,9 +20,9 @@ const EXPORT_TYPES: { id: ExportKind; labelKey: string }[] = [
 /**
  * **Export** options (print / PDF / PNG); file pipeline still TBD.
  */
-export function ExportWorkspaceView({ theme }: ExportWorkspaceViewProps) {
+export function ExportWorkspaceView() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 
 	const [exportKind, setExportKind] = useState<ExportKind>('print');
 	const [includeLocation, setIncludeLocation] = useState(true);
@@ -60,9 +55,9 @@ export function ExportWorkspaceView({ theme }: ExportWorkspaceViewProps) {
 									variant={exportKind === id ? 'default' : 'outline'}
 									size="sm"
 									className={cn(
-									'min-w-0 flex-1',
-									exportKind === id ? '' : cn(ft.footerCancel, 'rounded-lg px-3 py-0')
-								)}
+										'min-w-0 flex-1',
+										exportKind === id ? '' : cn(ft.footerCancel, 'rounded-lg px-3 py-0')
+									)}
 									onClick={() => setExportKind(id)}
 								>
 									{t(labelKey)}

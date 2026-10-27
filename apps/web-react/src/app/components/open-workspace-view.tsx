@@ -8,27 +8,9 @@ import {
 	type ReactNode
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-	ArrowDown,
-	ArrowUp,
-	ArrowUpDown,
-	FolderOpen,
-	PanelRightOpen,
-	Plus,
-	Star,
-	Upload,
-	X
-} from 'lucide-react';
+import { FolderOpen, PanelRightOpen, Plus, Star, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-	flexRender,
-	getCoreRowModel,
-	getSortedRowModel,
-	useReactTable,
-	type ColumnDef,
-	type RowSelectionState,
-	type SortingState
-} from '@tanstack/react-table';
+import type { ColumnDef, OnChangeFn, RowSelectionState, SortingState } from '@tanstack/react-table';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
@@ -37,10 +19,9 @@ import { Checkbox } from './ui/checkbox';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { cn } from './ui/utils';
+import { DataTable } from '../views/data/data-table';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { tagColor } from '@/lib/chartTags';
 import { AppShellIcon } from '@/ui/app-shell-icon';
@@ -74,7 +55,6 @@ type HouseFilter = { sign: string; degree: string };
 type AspectFilter = { id: number; left: string; aspect: string; right: string };
 
 export type OpenWorkspaceViewProps = {
-	theme: Theme;
 	workspacePath: string | null;
 	onOpenWorkspace: () => void | Promise<void>;
 	onActivateChart: (chartId: string) => void;
@@ -167,17 +147,19 @@ const PLANET_LABEL_KEYS: Record<SearchPlanetId, string> = {
 
 const ZODIAC_KEYS = (DOMAIN_CATALOG?.model.signs ?? []).map((sign) => `open_sign_${sign.id}`);
 
-const shapeOptions = () => (DOMAIN_CATALOG?.shapes ?? []).map((definition) => ({
-	id: definition.id,
-	labelKey: definition.translation_key,
-	indent: definition.parent_id ? 1 : undefined,
-	group: definition.id === 'bowl_leader' || definition.id === 'locomotive_leader'
-}));
-const configurationOptions = () => (DOMAIN_CATALOG?.configurations ?? []).map((definition) => ({
-	id: definition.id,
-	labelKey: definition.translation_key,
-	indent: definition.parent_id ? 1 : undefined
-}));
+const shapeOptions = () =>
+	(DOMAIN_CATALOG?.shapes ?? []).map((definition) => ({
+		id: definition.id,
+		labelKey: definition.translation_key,
+		indent: definition.parent_id ? 1 : undefined,
+		group: definition.id === 'bowl_leader' || definition.id === 'locomotive_leader'
+	}));
+const configurationOptions = () =>
+	(DOMAIN_CATALOG?.configurations ?? []).map((definition) => ({
+		id: definition.id,
+		labelKey: definition.translation_key,
+		indent: definition.parent_id ? 1 : undefined
+	}));
 
 const emptyPlanetFilter = (): PlanetFilter => ({
 	sign: 'any',
@@ -254,14 +236,13 @@ function FieldLabel({ children, className }: { children: ReactNode; className?: 
 }
 
 export function OpenWorkspaceView({
-	theme,
 	workspacePath,
 	onOpenWorkspace,
 	onActivateChart,
 	appShellIconSet
 }: OpenWorkspaceViewProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const { charts, selectedChartId, addChart } = useWorkspaceCharts();
 	const [openMode, setOpenMode] = useState<OpenMode>('my_radixes');
 	const splitPaneRef = useRef<HTMLDivElement>(null);
@@ -627,21 +608,12 @@ export function OpenWorkspaceView({
 		[favorites, t]
 	);
 
-	const table = useReactTable({
-		data: filtered,
-		columns,
-		getRowId: (chart) => chart.id,
-		state: { sorting, rowSelection },
-		onSortingChange: (updater) =>
-			setSorting((current) => {
-				const next = typeof updater === 'function' ? updater(current) : updater;
-				persistChartListSort(next);
-				return next;
-			}),
-		onRowSelectionChange: setRowSelection,
-		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel()
-	});
+	const handleSortingChange: OnChangeFn<SortingState> = (updater) =>
+		setSorting((current) => {
+			const next = typeof updater === 'function' ? updater(current) : updater;
+			persistChartListSort(next);
+			return next;
+		});
 
 	const resizeFilterPane = (event: ReactPointerEvent<HTMLButtonElement>) => {
 		if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
@@ -830,23 +802,36 @@ export function OpenWorkspaceView({
 											{t('new_date')}
 										</AccordionTrigger>
 										<AccordionContent className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-6">
-											{(['day', 'month', 'year', 'hour', 'minute', 'second'] as const).map((part) => (
-												<div key={part}>
-													<FieldLabel>{t(`open_date_${part}`)}</FieldLabel>
-													<Input
-														type="number"
-														value={dateParts[part]}
-														onChange={(event) =>
-															setDateParts((current) => ({ ...current, [part]: event.target.value }))
-														}
-														min={part === 'second' || part === 'minute' || part === 'hour' ? 0 : 1}
-														max={
-															part === 'month' ? 12 : part === 'day' ? 31 : part === 'hour' ? 23 : 59
-														}
-														className={cn(ft.inputCompact, 'mt-1.5')}
-													/>
-												</div>
-											))}
+											{(['day', 'month', 'year', 'hour', 'minute', 'second'] as const).map(
+												(part) => (
+													<div key={part}>
+														<FieldLabel>{t(`open_date_${part}`)}</FieldLabel>
+														<Input
+															type="number"
+															value={dateParts[part]}
+															onChange={(event) =>
+																setDateParts((current) => ({
+																	...current,
+																	[part]: event.target.value
+																}))
+															}
+															min={
+																part === 'second' || part === 'minute' || part === 'hour' ? 0 : 1
+															}
+															max={
+																part === 'month'
+																	? 12
+																	: part === 'day'
+																		? 31
+																		: part === 'hour'
+																			? 23
+																			: 59
+															}
+															className={cn(ft.inputCompact, 'mt-1.5')}
+														/>
+													</div>
+												)
+											)}
 										</AccordionContent>
 									</AccordionItem>
 								)}
@@ -899,7 +884,9 @@ export function OpenWorkspaceView({
 																	<div className={cn('truncate', ft.bodyText)}>{label}</div>
 																	<Select
 																		value={filter.sign}
-																		onValueChange={(value) => updatePlanetFilter(id, { sign: value })}
+																		onValueChange={(value) =>
+																			updatePlanetFilter(id, { sign: value })
+																		}
 																	>
 																		<SelectTrigger
 																			className={cn(ft.inputCompact, 'w-full px-2 text-xs')}
@@ -1035,7 +1022,9 @@ export function OpenWorkspaceView({
 																updateAspectFilter(filter.id, { [field]: value })
 															}
 														>
-															<SelectTrigger className={cn(ft.inputCompact, 'min-w-0 px-2 text-xs')}>
+															<SelectTrigger
+																className={cn(ft.inputCompact, 'min-w-0 px-2 text-xs')}
+															>
 																<SelectValue />
 															</SelectTrigger>
 															<SelectContent className={ft.selectContent}>
@@ -1138,7 +1127,9 @@ export function OpenWorkspaceView({
 																</span>
 																<Select
 																	value={filter.sign}
-																	onValueChange={(value) => updateHouseFilter(house, { sign: value })}
+																	onValueChange={(value) =>
+																		updateHouseFilter(house, { sign: value })
+																	}
 																>
 																	<SelectTrigger className={cn(ft.inputCompact, 'px-2 text-xs')}>
 																		<SelectValue />
@@ -1234,7 +1225,7 @@ export function OpenWorkspaceView({
 											{t('info_planetary_configuration')}
 										</AccordionTrigger>
 										<AccordionContent className="space-y-2 px-4 sm:px-6">
-									{configurationOptions().map((option) => (
+											{configurationOptions().map((option) => (
 												<div
 													key={option.id}
 													className="flex items-center gap-2"
@@ -1291,7 +1282,6 @@ export function OpenWorkspaceView({
 					</aside>
 
 					<DetailSidePanel
-						theme={theme}
 						open={filterSettingsOpen}
 						onOpenChange={setFilterSettingsOpen}
 						title={t('open_filter_visibility_title', { defaultValue: 'Visible filters' })}
@@ -1324,93 +1314,26 @@ export function OpenWorkspaceView({
 									<p className={cn('text-lg font-medium', ft.title)}>{t('open_mode_database')}</p>
 									<p className={cn('max-w-md text-sm', ft.muted)}>{t('database_placeholder')}</p>
 								</div>
-							) : filtered.length === 0 ? (
-								<div className="flex min-h-full items-center justify-center p-8 text-center">
-									<p className={cn('max-w-md text-sm', ft.muted)}>
-										{charts.length === 0 ? t('open_table_empty') : t('open_search_no_results')}
-									</p>
-								</div>
 							) : (
-								<Table>
-									<TableHeader>
-										{table.getHeaderGroups().map((headerGroup) => (
-											<TableRow
-												key={headerGroup.id}
-												className={cn(
-													'border-[color:var(--theme-panel-border)] hover:bg-transparent'
-												)}
-											>
-												{headerGroup.headers.map((header) => {
-													const sortState = header.column.getIsSorted();
-													const SortIcon =
-														sortState === 'asc'
-															? ArrowUp
-															: sortState === 'desc'
-																? ArrowDown
-																: ArrowUpDown;
-													return (
-														<TableHead
-															key={header.id}
-															className={cn(
-																'sticky top-0 z-10 bg-[color:var(--theme-panel-bg-solid)] px-4 sm:px-6',
-																ft.label
-															)}
-															style={
-																header.column.columnDef.size
-																	? { width: header.column.columnDef.size }
-																	: undefined
-															}
-														>
-															<div className="flex flex-col gap-1.5 py-1.5">
-																{header.isPlaceholder ? null : header.column.getCanSort() ? (
-																	<button
-																		type="button"
-																		className="inline-flex items-center gap-1 font-medium"
-																		onClick={header.column.getToggleSortingHandler()}
-																	>
-																		{flexRender(
-																			header.column.columnDef.header,
-																			header.getContext()
-																		)}
-																		<SortIcon
-																			className={cn(
-																				'size-3.5',
-																				sortState ? 'opacity-100' : 'opacity-40'
-																			)}
-																		/>
-																	</button>
-																) : (
-																	flexRender(header.column.columnDef.header, header.getContext())
-																)}
-															</div>
-														</TableHead>
-													);
-												})}
-											</TableRow>
-										))}
-									</TableHeader>
-									<TableBody>
-										{table.getRowModel().rows.map((row) => (
-											<TableRow
-												key={row.id}
-												className={cn(
-													'cursor-pointer border-[color:var(--theme-panel-border)]',
-													focusedChartId === row.original.id
-														? 'bg-[color:var(--theme-selected-bg)] hover:bg-[color:var(--theme-selected-bg)]'
-														: 'hover:bg-[color:var(--token-hover-strong)]'
-												)}
-												onClick={() => setFocusedChartId(row.original.id)}
-												onDoubleClick={() => onActivateChart(row.original.id)}
-											>
-												{row.getVisibleCells().map((cell) => (
-													<TableCell key={cell.id} className="px-4 text-sm sm:px-6">
-														{flexRender(cell.column.columnDef.cell, cell.getContext())}
-													</TableCell>
-												))}
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
+								<DataTable
+									columns={columns}
+									data={filtered}
+									getRowId={(chart) => chart.id}
+									sorting={sorting}
+									onSortingChange={handleSortingChange}
+									rowSelection={rowSelection}
+									onRowSelectionChange={setRowSelection}
+									selectedRowId={focusedChartId}
+									onRowClick={(chart) => setFocusedChartId(chart.id)}
+									onRowDoubleClick={(chart) => onActivateChart(chart.id)}
+									empty={
+										<div className="flex min-h-full items-center justify-center p-8 text-center">
+											<p className={cn('max-w-md text-sm', ft.muted)}>
+												{charts.length === 0 ? t('open_table_empty') : t('open_search_no_results')}
+											</p>
+										</div>
+									}
+								/>
 							)}
 						</div>
 						<div className="absolute right-3 bottom-3 z-20 flex gap-1.5 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] p-1.5 shadow-lg">

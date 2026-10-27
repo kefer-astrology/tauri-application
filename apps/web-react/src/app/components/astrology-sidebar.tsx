@@ -5,8 +5,7 @@ import { Button } from './ui/button';
 import { cn } from './ui/utils';
 import { AppShellIcon, AppShellLogoFull, AppShellLogoMark } from '@/ui/app-shell-icon';
 import type { AppShellIconId, AppShellIconSetId } from '@/lib/app-shell';
-
-export type Theme = 'sunrise' | 'noon' | 'twilight' | 'midnight';
+import { THEME_ORDER, type Theme } from '@/lib/theme';
 
 interface SidebarProps {
 	onThemeChange?: (theme: Theme) => void;
@@ -41,8 +40,6 @@ const appSectionDefs = [
 const settingsNavDefs = [
 	{ id: 'nastaveni', labelKey: 'settings', iconId: 'settings' as const }
 ] as const;
-
-const themeOrder: Theme[] = ['sunrise', 'noon', 'twilight', 'midnight'];
 
 export type SidebarThemeBlock = {
 	bg: string;
@@ -173,9 +170,8 @@ export function AstrologySidebar({
 	};
 
 	const cycleTheme = () => {
-		const themes: Theme[] = ['sunrise', 'noon', 'twilight', 'midnight'];
-		const currentIndex = themes.indexOf(currentTheme);
-		const nextTheme = themes[(currentIndex + 1) % themes.length];
+		const currentIndex = THEME_ORDER.indexOf(currentTheme);
+		const nextTheme = THEME_ORDER[(currentIndex + 1) % THEME_ORDER.length];
 		handleThemeClick(nextTheme);
 	};
 
@@ -346,7 +342,7 @@ export function AstrologySidebar({
 								backgroundColor: 'var(--theme-soft-bg)'
 							}}
 						>
-							{themeOrder.map((themeKey) => {
+							{THEME_ORDER.map((themeKey) => {
 								const isSelected = currentTheme === themeKey;
 								const themeIconId = `theme-${themeKey}` as AppShellIconId;
 

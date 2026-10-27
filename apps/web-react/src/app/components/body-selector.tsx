@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Sparkles, X } from 'lucide-react';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import {
 	OBSERVABLE_OBJECTS,
 	OBSERVABLE_OBJECT_CATEGORY_LABELS,
@@ -27,7 +26,6 @@ import { DetailSidePanel } from './detail-side-panel';
 import { HighlightText } from './highlight-text';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
 
 const PLANET_GLYPH_FALLBACK: Record<string, string> = {
 	sun: '☉',
@@ -49,10 +47,24 @@ const CATEGORY_ORDER = Object.keys(OBSERVABLE_OBJECT_CATEGORY_LABELS) as Observa
  *  with a workspace's actual sign presentation. */
 const ZODIAC_SIGN_IDS = Object.keys(ZODIAC_ID_ELEMENT);
 const ZODIAC_SIGN_GLYPHS: Record<string, string> = {
-	aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
-	libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+	aries: '♈',
+	taurus: '♉',
+	gemini: '♊',
+	cancer: '♋',
+	leo: '♌',
+	virgo: '♍',
+	libra: '♎',
+	scorpio: '♏',
+	sagittarius: '♐',
+	capricorn: '♑',
+	aquarius: '♒',
+	pisces: '♓'
 };
-const STAR_SIGNIFICANCE_FILTERS: readonly FixedStarSignificance[] = ['royal', 'behenian', 'notable'];
+const STAR_SIGNIFICANCE_FILTERS: readonly FixedStarSignificance[] = [
+	'royal',
+	'behenian',
+	'notable'
+];
 
 /** Categories collapsed by default — exotic/aspirational groups, mirroring the reference design. */
 const COLLAPSED_BY_DEFAULT = new Set<ObservableObjectCategory>([
@@ -65,8 +77,6 @@ const COLLAPSED_BY_DEFAULT = new Set<ObservableObjectCategory>([
 ]);
 
 type BodySelectorProps = {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	subtitleKey: string;
 	selectedBodyIds: string[];
 	onSelectedBodyIdsChange: (ids: string[]) => void;
@@ -88,8 +98,6 @@ function matchesQuery(item: ObservableObjectDefinition, label: string, query: st
 }
 
 export function BodySelector({
-	theme,
-	glyphSet,
 	subtitleKey,
 	selectedBodyIds,
 	onSelectedBodyIdsChange,
@@ -97,13 +105,15 @@ export function BodySelector({
 	onColorChange
 }: BodySelectorProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const [query, setQuery] = useState('');
 	const [manualOpen, setManualOpen] = useState<string[]>(
 		CATEGORY_ORDER.filter((category) => !COLLAPSED_BY_DEFAULT.has(category))
 	);
 	const [starHemisphereFilter, setStarHemisphereFilter] = useState<StarHemisphere | 'all'>('all');
-	const [starSignificanceFilter, setStarSignificanceFilter] = useState<FixedStarSignificance | 'all'>('all');
+	const [starSignificanceFilter, setStarSignificanceFilter] = useState<
+		FixedStarSignificance | 'all'
+	>('all');
 	const [starSignFilter, setStarSignFilter] = useState<string | 'all'>('all');
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [panelQuery, setPanelQuery] = useState('');
@@ -327,7 +337,10 @@ export function BodySelector({
 															{t(labelKey, { defaultValue: fallback })}
 														</button>
 													))}
-													<Select value={starSignFilter} onValueChange={(value) => setStarSignFilter(value)}>
+													<Select
+														value={starSignFilter}
+														onValueChange={(value) => setStarSignFilter(value)}
+													>
 														<SelectTrigger
 															size="sm"
 															className="h-auto w-auto gap-1 rounded-full border-[color:var(--theme-panel-border)] px-2.5 py-1 text-xs font-medium"
@@ -343,7 +356,8 @@ export function BodySelector({
 															</SelectItem>
 															{ZODIAC_SIGN_IDS.map((signId) => (
 																<SelectItem key={signId} value={signId}>
-																	{ZODIAC_SIGN_GLYPHS[signId]} {t(`open_sign_${signId}`, { defaultValue: signId })}
+																	{ZODIAC_SIGN_GLYPHS[signId]}{' '}
+																	{t(`open_sign_${signId}`, { defaultValue: signId })}
 																</SelectItem>
 															))}
 														</SelectContent>
@@ -407,7 +421,10 @@ export function BodySelector({
 																)}
 																{item.significance && item.significance !== 'notable' && (
 																	<span className={cn('ml-1 text-xs italic', ft.muted)}>
-																		&middot; {t(`settings_stars_filter_${item.significance}`, { defaultValue: item.significance })}
+																		&middot;{' '}
+																		{t(`settings_stars_filter_${item.significance}`, {
+																			defaultValue: item.significance
+																		})}
 																	</span>
 																)}
 															</span>
@@ -449,7 +466,6 @@ export function BodySelector({
 																/>
 																<AstrologyGlyph
 																	glyphId={item.id}
-																	glyphSet={glyphSet}
 																	fallback={PLANET_GLYPH_FALLBACK[item.id] ?? item.icon}
 																	size={16}
 																	className={cn('shrink-0', ft.iconColor)}
@@ -489,7 +505,6 @@ export function BodySelector({
 			</CardContent>
 
 			<DetailSidePanel
-				theme={theme}
 				open={panelOpen}
 				onOpenChange={setPanelOpen}
 				title={t('dashboard_positions_picker_title')}

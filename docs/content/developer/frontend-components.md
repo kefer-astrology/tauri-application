@@ -15,13 +15,13 @@ wiring stays in the [React frontend](../frontend-react/) reference.
 
 ## Categories and layout
 
-| Category     | Folder                      | Knows about                                     |
-| ------------ | --------------------------- | ----------------------------------------------- |
-| Primitives   | `app/components/ui/`        | Nothing domain-specific                         |
-| Data views   | `app/views/data/`           | Generic data shapes (rows, series, time)        |
-| Domain views | `app/views/domain/`         | Astrology catalogs, glyphs, positions, aspects  |
-| Features     | `app/features/<feature>/`   | One workflow, its provider, and Tauri commands  |
-| Shell        | `app/shell/`                | Navigation, layout chrome, and feature routing  |
+| Category     | Folder                    | Knows about                                    |
+| ------------ | ------------------------- | ---------------------------------------------- |
+| Primitives   | `app/components/ui/`      | Nothing domain-specific                        |
+| Data views   | `app/views/data/`         | Generic data shapes (rows, series, time)       |
+| Domain views | `app/views/domain/`       | Astrology catalogs, glyphs, positions, aspects |
+| Features     | `app/features/<feature>/` | One workflow, its provider, and Tauri commands |
+| Shell        | `app/shell/`              | Navigation, layout chrome, and feature routing |
 
 Non-visual code (catalogs, calculations, formatting, the Tauri bridge) stays in
 `src/lib/`.
@@ -44,10 +44,17 @@ Each category may import only from the categories above it in this list, plus
 
 ### Shared context
 
-- `Theme` and related types live in `src/lib/theme.ts`, not in a component
-  file.
-- An app-level provider exposes `useAppTheme()` → `{ theme, glyphSet }`. Views
-  read it from there instead of taking `theme` and `glyphSet` props.
+- `Theme` and `THEME_ORDER` live in `src/lib/theme.ts`.
+- `AppThemeProvider` (`app/providers/app-theme.tsx`) wraps the app and exposes
+  `useAppTheme()` → `{ theme, glyphSet }`. Components read these from the hook
+  and never take them as props.
+- `useAppFormFieldTheme()` and `AstrologyGlyph` read the same context.
+  `AstrologyGlyph` still accepts an explicit `glyphSet` for one-off overrides.
+- To preview a different value for a subtree, nest a second
+  `AppThemeProvider` (Settings does this for the unsaved glyph-set choice).
+- The component that owns theme or glyph-set state (`App`) and controls that
+  change it (`AstrologySidebar`, `SettingsView`) keep explicit value/`onChange`
+  props.
 
 ## Primitives
 
@@ -62,56 +69,66 @@ are the only place native control tags may appear
 
 ### `DataTable`
 
-Sortable table built on `@tanstack/react-table` and the `Table` primitive.
-Every tabular view uses it; features supply only column definitions and rows.
+`app/views/data/data-table.tsx` — sortable table built on
+`@tanstack/react-table` and the `Table` primitive. Every tabular view uses it;
+features supply only column definitions, rows, and callbacks.
 
-| Prop                         | Purpose                                                     |
-| ---------------------------- | ----------------------------------------------------------- |
-| `columns: ColumnDef<T>[]`    | Column definitions, including cell renderers and `size`.    |
-| `data: T[]`                  | Rows.                                                       |
-| `getRowId(row)`              | Stable row key.                                             |
-| `sorting`, `onSortingChange` | Optional controlled sorting (e.g. for persisted sort).      |
-| `selectedRowId`              | Row drawn with the selected-state background.               |
-| `onRowClick(row)`            | Makes rows interactive (pointer cursor, hover state).       |
-| `empty`                      | Node rendered when `data` is empty.                         |
-| `density`                    | `'comfortable'` (default) or `'compact'` for dense data.    |
-| `maxHeight`                  | Scrolls the body under a sticky header.                     |
+| Prop                                       | Purpose                                                  |
+| ------------------------------------------ | -------------------------------------------------------- |
+| `columns: ColumnDef<T>[]`                  | Column definitions, including cell renderers and `size`. |
+| `data: T[]`                                | Rows.                                                    |
+| `getRowId(row)`                            | Stable row key; also the key matched by `selectedRowId`. |
+| `sorting`, `onSortingChange`               | Controlled sorting (e.g. persisted sort order).          |
+| `initialSorting`                           | Starting sort order for an uncontrolled table.           |
+| `rowSelection`, `onRowSelectionChange`     | Controlled checkbox selection for a `select` column.     |
+| `selectedRowId`                            | Row drawn with the selected-state background.            |
+| `onRowClick(row)`, `onRowDoubleClick(row)` | Make rows interactive (pointer cursor, strong hover).    |
+| `empty`                                    | Node rendered instead of the table when `data` is empty. |
+| `density`                                  | `'comfortable'` (default) or `'compact'` for dense data. |
+| `className`                                | Classes on the table element.                            |
 
-The table owns sticky headers, the sort toggle and its icon, header/row theme
-tokens, and hover/selected states.
+The table owns the sticky header, the sort toggle and its icon, header and row
+theme tokens, and hover and selected states. Scrolling is the caller's
+container.
 
-Used by: the workspace chart list, the transit hits table, the aspectarium
-aspect and midpoint tables, and the folded-angle sample table.
+Used by: the workspace chart list and the transit hits table. Planned: the
+aspectarium aspect and midpoint tables and the folded-angle sample table.
 
 ### `TimeSeriesChart`
 
-SVG line chart over a shared, ascending time axis (epoch milliseconds).
+`app/views/data/time-series-chart.tsx` — SVG line chart over a shared,
+ascending time axis (epoch milliseconds).
 
 Base props:
 
-| Prop                        | Purpose                                                          |
-| --------------------------- | ---------------------------------------------------------------- |
-| `categories: number[]`      | Shared X values.                                                 |
-| `series`                    | `{ id, label, color }[]`, colors assigned in fixed order.        |
-| `values`                    | `series.id → (number \| null)[]`; `null` breaks the line.        |
-| `markers`                   | `{ seriesId, index, kind: 'hit' \| 'entry' \| 'exit' }[]`.       |
-| `tooltipExtra`              | Extra tooltip line per hovered point.                            |
-| `area`, `invertY`           | Area fill to baseline; flip the Y mapping.                       |
-| `yDomain`, `yTicks`         | Y scale.                                                         |
-| `formatX`, `formatY`        | Axis and tooltip formatting (default: shared time formatters).   |
-| `height`                    | Fixed height, or fill the sized parent when omitted.             |
+| Prop                          | Purpose                                                     |
+| ----------------------------- | ----------------------------------------------------------- |
+| `categories: number[]`        | Shared X values.                                            |
+| `series: TimeSeriesDef[]`     | `{ id, label, color }`, colors assigned in fixed order.     |
+| `values`                      | `series.id → (number \| null)[]`; `null` breaks the line.   |
+| `markers: TimeSeriesMarker[]` | `{ seriesId, index, kind: 'hit' \| 'entry' \| 'exit' }`.    |
+| `tooltipExtra`                | Extra tooltip line per hovered point.                       |
+| `area`, `invertY`             | Area fill to baseline; flip the Y mapping.                  |
+| `yDomain`, `yTicks`           | Y scale; computed from the data when omitted.               |
+| `clipToYDomain`               | Values outside `yDomain` break the line instead of drawing. |
+| `formatX`, `formatY`          | Axis and tooltip formatting.                                |
+| `xLabel`, `yLabel`            | Axis captions.                                              |
+| `emptyLabel`                  | Text shown when `categories` is empty.                      |
+| `height`                      | Fixed height, or fill the sized parent when omitted.        |
 
-Optional interaction props, all opt-in:
+Optional interaction props; each feature turns on when its callback is passed:
 
-| Prop                                       | Purpose                                         |
-| ------------------------------------------ | ----------------------------------------------- |
-| `visibleRange`, `onVisibleRangeChange`     | Zoom and pan over the X window.                 |
-| `highlightedSeriesId`, `onHighlightChange` | Emphasize one series, dim the rest.             |
-| `onActivate(seriesId)`                     | Click on the highlighted series (open details). |
+| Prop                                       | Purpose                                                  |
+| ------------------------------------------ | -------------------------------------------------------- |
+| `visibleRange`, `onVisibleRangeChange`     | Wheel zoom and drag pan over the X window.               |
+| `minVisibleSamples`                        | Zoom limit in samples (default 12).                      |
+| `highlightedSeriesId`, `onHighlightChange` | Click a series to emphasize it; background click clears. |
+| `onActivate(seriesId)`                     | Click on the highlighted series (open details).          |
 
-Domain-specific charts (for example the transit resonance chart) are thin
-wrappers that map their data to these props; they do not reimplement scales,
-paths, or tooltips.
+Domain-specific charts are thin wrappers that set these props; they do not
+reimplement scales, paths, or tooltips. `TransitResonanceChart` is the
+reference wrapper: a degrees-from-exact scale with 0° at the top, area fill,
+clipping to the orb window, and degree gridlines.
 
 Used by: the folded-angle view and the transit resonance chart.
 
@@ -191,14 +208,14 @@ Used by: the horoscope dashboard and the information view.
 Each feature folder contains its screens, its provider, and any components no
 other feature uses.
 
-| Feature    | Screens                                                       |
-| ---------- | ------------------------------------------------------------- |
-| Horoscope  | Horoscope dashboard, new horoscope, aspectarium, information  |
+| Feature    | Screens                                                                      |
+| ---------- | ---------------------------------------------------------------------------- |
+| Horoscope  | Horoscope dashboard, new horoscope, aspectarium, information                 |
 | Transits   | Transit setup, transit results, transit layers, cycle analysis, folded angle |
-| Synastry   | Synastry view                                                 |
-| Revolution | Revolution view                                               |
-| Workspace  | Open workspace, export workspace                              |
-| Settings   | Settings view, glyph manager                                  |
+| Synastry   | Synastry view                                                                |
+| Revolution | Revolution view                                                              |
+| Workspace  | Open workspace, export workspace                                             |
+| Settings   | Settings view, glyph manager                                                 |
 
 Inputs shared by several features are not feature components: the date picker
 and time roller are primitives, and the location selector is a domain view.

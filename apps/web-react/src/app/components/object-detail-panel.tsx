@@ -9,16 +9,12 @@ import {
 	shapeLabel
 } from '@/lib/astrology/objectLabels';
 import type { ObjectDetailViewModel } from '@/lib/astrology/objectDetail';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import type { Theme } from './astrology-sidebar';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
 import { cn } from './ui/utils';
 
 interface ObjectDetailSectionsProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	data: ObjectDetailViewModel;
 }
 
@@ -27,9 +23,9 @@ interface ObjectDetailSectionsProps {
  *  sections: position facts, symbolic-degree systems (Sabian today, room for more), the chart's
  *  shapes/configurations, and the aspects touching this body. Only position facts are expanded
  *  by default; the rest start collapsed. */
-export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSectionsProps) {
+export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 	const { t, i18n } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const textColor = ft.title;
 	const mutedColor = ft.muted;
 	const exists = (key: string) => i18n.exists(key);
@@ -51,7 +47,6 @@ export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSect
 								{data.degrees}°
 								<AstrologyGlyph
 									glyphId={data.signZodiacId}
-									glyphSet={glyphSet}
 									domain="zodiac"
 									fallback={data.signGlyphFallback}
 									size={18}
@@ -64,7 +59,6 @@ export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSect
 							<span className={cn('flex items-center gap-1.5', textColor)}>
 								<AstrologyGlyph
 									glyphId={data.signZodiacId}
-									glyphSet={glyphSet}
 									domain="zodiac"
 									fallback={data.signGlyphFallback}
 									size={16}
@@ -213,7 +207,6 @@ export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSect
 												{objectLabel(otherId, t)}
 												<AstrologyGlyph
 													glyphId={otherId}
-													glyphSet={glyphSet}
 													fallback={objectIcon(otherId)}
 													size={16}
 												/>
@@ -221,7 +214,6 @@ export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSect
 											<span className={cn('flex items-center gap-1.5', mutedColor)}>
 												<AstrologyGlyph
 													glyphId={aspect.type}
-													glyphSet={glyphSet}
 													domain="aspect"
 													fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
 													size={16}
@@ -229,7 +221,9 @@ export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSect
 												{aspectLabel(aspect.type, t)}
 											</span>
 										</div>
-										<div className={cn('mt-1 text-right font-mono text-xs tabular-nums', mutedColor)}>
+										<div
+											className={cn('mt-1 text-right font-mono text-xs tabular-nums', mutedColor)}
+										>
 											{t('label_orb')}: {aspect.orb.toFixed(2)}°
 										</div>
 									</div>
@@ -246,30 +240,22 @@ export function ObjectDetailSections({ theme, glyphSet, data }: ObjectDetailSect
 }
 
 interface ObjectDetailPanelProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	data: ObjectDetailViewModel;
 }
 
 /** Standalone use (the radix wheel's own planet-click panel): a glyph header above the shared
  *  `ObjectDetailSections`. When nesting this body's details inside an aspect's own panel instead,
  *  use `ObjectDetailSections` directly — the accordion item that holds it is already the header. */
-export function ObjectDetailPanel({ theme, glyphSet, data }: ObjectDetailPanelProps) {
-	const ft = useAppFormFieldTheme(theme);
+export function ObjectDetailPanel({ data }: ObjectDetailPanelProps) {
+	const ft = useAppFormFieldTheme();
 
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center gap-3">
-				<AstrologyGlyph
-					glyphId={data.bodyId}
-					glyphSet={glyphSet}
-					fallback={data.icon}
-					size={28}
-					title={data.label}
-				/>
+				<AstrologyGlyph glyphId={data.bodyId} fallback={data.icon} size={28} title={data.label} />
 				<div className={cn('text-base font-semibold', ft.title)}>{data.label}</div>
 			</div>
-			<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={data} />
+			<ObjectDetailSections data={data} />
 		</div>
 	);
 }

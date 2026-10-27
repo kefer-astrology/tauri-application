@@ -9,16 +9,18 @@ import {
 	type ObservableObjectDefinition
 } from '@/lib/astrology/observableObjects';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import { CATEGORICAL_PALETTE_SIZE, categoricalPaletteForTheme } from '@/lib/dataviz/categoricalPalette';
+import {
+	CATEGORICAL_PALETTE_SIZE,
+	categoricalPaletteForTheme
+} from '@/lib/dataviz/categoricalPalette';
 import { Card, CardContent } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
-import { LineChart } from './ui/line-chart';
+import { TimeSeriesChart } from '../views/data/time-series-chart';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
+import { useAppTheme } from '../providers/app-theme';
 
 const MAX_VISIBLE_SERIES = CATEGORICAL_PALETTE_SIZE;
 
@@ -49,8 +51,6 @@ const PREFERRED_DEFAULT_ORDER = [
 ];
 
 interface FoldedAngleViewProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	transitSeries: TransitSeriesEntry[];
 	availableBodyIds: string[];
 	loading: boolean;
@@ -61,14 +61,13 @@ function bodyDefinition(id: string): ObservableObjectDefinition | undefined {
 }
 
 export function FoldedAngleView({
-	theme,
-	glyphSet,
 	transitSeries,
 	availableBodyIds,
 	loading
 }: FoldedAngleViewProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const { theme } = useAppTheme();
+	const ft = useAppFormFieldTheme();
 	const palette = categoricalPaletteForTheme(theme);
 
 	const orderedBodyIds = useMemo(() => {
@@ -183,7 +182,6 @@ export function FoldedAngleView({
 										{def && (
 											<AstrologyGlyph
 												glyphId={id}
-												glyphSet={glyphSet}
 												fallback={PLANET_GLYPH_FALLBACK[id] ?? def.icon}
 												size={13}
 												className={cn('shrink-0', ft.iconColor)}
@@ -234,7 +232,7 @@ export function FoldedAngleView({
 									})}
 						</p>
 					) : viewMode === 'chart' ? (
-						<LineChart
+						<TimeSeriesChart
 							categories={categories}
 							series={selectedIds.map((id) => ({
 								id,

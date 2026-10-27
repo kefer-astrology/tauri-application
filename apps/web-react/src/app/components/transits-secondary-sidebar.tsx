@@ -1,21 +1,18 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SecondaryNavPanel } from './secondary-nav-panel';
-import type { Theme } from './astrology-sidebar';
 
 export type TransitSection = 'general' | 'transiting-bodies' | 'transited-bodies' | 'aspects';
 
 export interface TransitsSecondarySidebarProps {
 	activeSection: TransitSection;
 	onSectionChange: (section: TransitSection) => void;
-	theme: Theme;
 	dynamic?: boolean;
 }
 
 export function TransitsSecondarySidebar({
 	activeSection,
 	onSectionChange,
-	theme,
 	dynamic = false
 }: TransitsSecondarySidebarProps) {
 	const { t } = useTranslation();
@@ -32,7 +29,6 @@ export function TransitsSecondarySidebar({
 
 	return (
 		<SecondaryNavPanel
-			theme={theme}
 			title={dynamic ? t('dynamic_transits') : t('transits_2')}
 			items={items}
 			activeId={activeSection}

@@ -4,14 +4,10 @@ import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { cn } from './ui/utils';
 import { sidebarThemeStyles } from './astrology-sidebar';
-import type { Theme } from './astrology-sidebar';
 import { objectLabel } from '@/lib/astrology/objectLabels';
 import type { AspectTimelineSeries } from '@/lib/astrology/aspectTimeline';
 import { useTransitsWorkspace } from '../providers/transits-workspace';
-
-interface TransitLayersPanelProps {
-	theme: Theme;
-}
+import { useAppTheme } from '../providers/app-theme';
 
 interface TransitedGroup {
 	to: string;
@@ -25,10 +21,12 @@ interface TransitedGroup {
  *  resonance chart. There is deliberately no further breakdown by aspect or transiting body here
  *  — those dimensions can be large/arbitrary, while this list mirrors exactly what was selected
  *  as "Transited Bodies" in setup. */
-export function TransitLayersPanel({ theme }: TransitLayersPanelProps) {
+export function TransitLayersPanel() {
 	const { t } = useTranslation();
+	const { theme } = useAppTheme();
 	const st = sidebarThemeStyles[theme];
-	const { aspectTimelineSeries, hiddenSeriesKeys, setSeriesGroupVisibility } = useTransitsWorkspace();
+	const { aspectTimelineSeries, hiddenSeriesKeys, setSeriesGroupVisibility } =
+		useTransitsWorkspace();
 
 	const groups = useMemo<TransitedGroup[]>(() => {
 		const byTo = new Map<string, string[]>();
@@ -72,7 +70,12 @@ export function TransitLayersPanel({ theme }: TransitLayersPanelProps) {
 				) : (
 					groups.map((group) => {
 						const hiddenCount = group.keys.filter((key) => hiddenSeriesKeys.has(key)).length;
-						const checked = hiddenCount === 0 ? true : hiddenCount === group.keys.length ? false : 'indeterminate';
+						const checked =
+							hiddenCount === 0
+								? true
+								: hiddenCount === group.keys.length
+									? false
+									: 'indeterminate';
 						return (
 							<Label
 								key={group.to}

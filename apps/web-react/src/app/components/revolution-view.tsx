@@ -3,7 +3,6 @@ import { cs, enUS, es, fr } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
-import type { Theme } from './astrology-sidebar';
 import { DatePickerInput } from './date-picker-input';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { Button } from './ui/button';
@@ -21,9 +20,9 @@ type RevolutionScope = 'return' | 'quarters' | 'fraction';
 const REVOLUTION_KINDS: RevolutionKind[] = ['solar', 'lunar', 'relative'];
 const REVOLUTION_SCOPES: RevolutionScope[] = ['return', 'quarters', 'fraction'];
 
-export function RevolutionView({ theme }: { theme: Theme }) {
+export function RevolutionView() {
 	const { t, i18n } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const [kind, setKind] = useState<RevolutionKind>('solar');
 	const [includeTransReturn, setIncludeTransReturn] = useState(false);
 	const [scope, setScope] = useState<RevolutionScope>('return');

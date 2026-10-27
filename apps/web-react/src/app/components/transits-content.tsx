@@ -26,13 +26,9 @@ import type { TransitSection } from './transits-secondary-sidebar';
 import { AspectSelector } from './aspect-selector';
 import { BodySelector } from './body-selector';
 import { ConfigurationSelector } from './configuration-selector';
-import type { Theme } from './astrology-sidebar';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 
 interface TransitsContentProps {
 	section: TransitSection;
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 }
 
 type DropdownOption = { id: string; label: string };
@@ -41,7 +37,9 @@ type DropdownOption = { id: string; label: string };
  *  respectively, in `handleComputeTransits`) — every other id computes a fixed `[from, to]` range
  *  from "now" at selection time, shown (but not editable) in the always-visible calendar area
  *  below; only `custom` allows editing it. */
-const PERIOD_PRESET_RANGES: Partial<Record<(typeof PERIOD_PRESET_IDS)[number], (now: Date) => [Date, Date]>> = {
+const PERIOD_PRESET_RANGES: Partial<
+	Record<(typeof PERIOD_PRESET_IDS)[number], (now: Date) => [Date, Date]>
+> = {
 	next_3_months: (now) => [now, addMonths(now, 3)],
 	next_6_months: (now) => [now, addMonths(now, 6)],
 	previous_3_months: (now) => [addMonths(now, -3), now],
@@ -53,9 +51,9 @@ const PERIOD_PRESET_RANGES: Partial<Record<(typeof PERIOD_PRESET_IDS)[number], (
 /** The setup screen for a transit/dynamic-transit computation — shown until a series has been
  *  computed, at which point the results dashboard takes over both this area and the secondary
  *  sidebar (see `TransitsWorkspaceProvider`'s `mode`). */
-export function TransitsContent({ section, theme, glyphSet }: TransitsContentProps) {
+export function TransitsContent({ section }: TransitsContentProps) {
 	const { t, i18n } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const dateFnsLocale = useMemo(() => {
 		const base = i18n.language.split('-')[0]?.toLowerCase() ?? 'en';
 		if (base === 'cs') return cs;
@@ -311,7 +309,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 
 							<div className="grid grid-cols-2 gap-4">
 								<div className="space-y-1.5">
-									<Label className={cn('flex items-start gap-3 cursor-pointer')}>
+									<Label className={cn('flex cursor-pointer items-start gap-3')}>
 										<Checkbox
 											checked={exactHits}
 											onCheckedChange={(checked) => setExactHits(checked === true)}
@@ -321,12 +319,10 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											{t('transits_exact_hits_label')}
 										</span>
 									</Label>
-									<p className={cn('text-xs pl-7', ft.muted)}>
-										{t('transits_exact_hits_hint')}
-									</p>
+									<p className={cn('pl-7 text-xs', ft.muted)}>{t('transits_exact_hits_hint')}</p>
 								</div>
 								<div className="space-y-1.5">
-									<Label className={cn('flex items-start gap-3 cursor-pointer')}>
+									<Label className={cn('flex cursor-pointer items-start gap-3')}>
 										<Checkbox
 											checked={stationEvents}
 											onCheckedChange={(checked) => setStationEvents(checked === true)}
@@ -336,7 +332,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 											{t('transits_station_events_label')}
 										</span>
 									</Label>
-									<p className={cn('text-xs pl-7', ft.muted)}>
+									<p className={cn('pl-7 text-xs', ft.muted)}>
 										{t('transits_station_events_hint')}
 									</p>
 								</div>
@@ -345,7 +341,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 							<Separator className="bg-[color:var(--theme-panel-border)]" />
 
 							<div className="space-y-1.5">
-								<Label className={cn('flex items-start gap-3 cursor-pointer')}>
+								<Label className={cn('flex cursor-pointer items-start gap-3')}>
 									<Checkbox
 										checked={sampledGraphOutput}
 										onCheckedChange={(checked) => setSampledGraphOutput(checked === true)}
@@ -357,7 +353,7 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 										})}
 									</span>
 								</Label>
-								<p className={cn('text-xs pl-7', ft.muted)}>
+								<p className={cn('pl-7 text-xs', ft.muted)}>
 									{t('transits_sampled_graph_output_hint', {
 										defaultValue:
 											'Plots the chart/table view below. Turn off if you only want exact events, stations, or configurations.'
@@ -378,16 +374,12 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 									})}
 								</p>
 								<ConfigurationSelector
-									theme={theme}
 									searches={configurationSearches}
 									onSearchesChange={setConfigurationSearches}
 								/>
 							</div>
 
-							<ModeSwitcherDetails
-								open
-								contentClassName={cn('space-y-4', ft.advancedPanel)}
-							>
+							<ModeSwitcherDetails open contentClassName={cn('space-y-4', ft.advancedPanel)}>
 								<div>
 									<Label className={cn('mb-2 block', ft.label)}>{t('transits_period_from')}:</Label>
 									<div className="grid grid-cols-3 gap-3">
@@ -473,62 +465,62 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 								</div>
 
 								{periodModeId !== 'current' && sampledGraphOutput && (
-								<div>
-									<Label className={cn('mb-2 block', ft.label)}>
-										{t('transits_label_graph_sampling_interval', {
-											defaultValue: 'Graph sampling interval'
-										})}
-									</Label>
-									<div className="flex items-center gap-3">
-										<Input
-											type="number"
-											min={1}
-											step={1}
-											value={timeStepValue}
-											onChange={(event) => {
-												const next = Number.parseInt(event.target.value, 10);
-												setTimeStepValue(Number.isFinite(next) && next > 0 ? next : 1);
-											}}
-											className={cn(ft.input, 'h-10 w-24 py-2 text-sm shadow-inner')}
-										/>
-										<Select
-											value={timeStepUnit}
-											onValueChange={(value) => setTimeStepUnit(value as TimeStepUnit)}
-										>
-											<SelectTrigger className={cn(ft.selectTrigger, 'w-40 shadow-inner')}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent className={ft.selectContent}>
-												<SelectItem value="seconds" className={ft.selectItem}>
-													{t('transits_granularity_seconds', { defaultValue: 'Seconds' })}
-												</SelectItem>
-												<SelectItem value="minutes" className={ft.selectItem}>
-													{t('transits_granularity_minutes', { defaultValue: 'Minutes' })}
-												</SelectItem>
-												<SelectItem value="hours" className={ft.selectItem}>
-													{t('transits_granularity_hours', { defaultValue: 'Hours' })}
-												</SelectItem>
-												<SelectItem value="days" className={ft.selectItem}>
-													{t('transits_granularity_days', { defaultValue: 'Days' })}
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-									<p className={cn('mt-2 text-xs', ft.muted)}>
-										{t('transits_granularity_estimate', {
-											count: estimatedSampleCount,
-											defaultValue: `~${estimatedSampleCount} samples over the selected period`
-										})}
-									</p>
-									{estimatedSampleCount > 20000 && (
-										<p className="text-destructive mt-1 text-xs">
-											{t('transits_granularity_warning', {
-												defaultValue:
-													'That many samples may take a while to compute and render. Consider a coarser step.'
+									<div>
+										<Label className={cn('mb-2 block', ft.label)}>
+											{t('transits_label_graph_sampling_interval', {
+												defaultValue: 'Graph sampling interval'
+											})}
+										</Label>
+										<div className="flex items-center gap-3">
+											<Input
+												type="number"
+												min={1}
+												step={1}
+												value={timeStepValue}
+												onChange={(event) => {
+													const next = Number.parseInt(event.target.value, 10);
+													setTimeStepValue(Number.isFinite(next) && next > 0 ? next : 1);
+												}}
+												className={cn(ft.input, 'h-10 w-24 py-2 text-sm shadow-inner')}
+											/>
+											<Select
+												value={timeStepUnit}
+												onValueChange={(value) => setTimeStepUnit(value as TimeStepUnit)}
+											>
+												<SelectTrigger className={cn(ft.selectTrigger, 'w-40 shadow-inner')}>
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent className={ft.selectContent}>
+													<SelectItem value="seconds" className={ft.selectItem}>
+														{t('transits_granularity_seconds', { defaultValue: 'Seconds' })}
+													</SelectItem>
+													<SelectItem value="minutes" className={ft.selectItem}>
+														{t('transits_granularity_minutes', { defaultValue: 'Minutes' })}
+													</SelectItem>
+													<SelectItem value="hours" className={ft.selectItem}>
+														{t('transits_granularity_hours', { defaultValue: 'Hours' })}
+													</SelectItem>
+													<SelectItem value="days" className={ft.selectItem}>
+														{t('transits_granularity_days', { defaultValue: 'Days' })}
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+										<p className={cn('mt-2 text-xs', ft.muted)}>
+											{t('transits_granularity_estimate', {
+												count: estimatedSampleCount,
+												defaultValue: `~${estimatedSampleCount} samples over the selected period`
 											})}
 										</p>
-									)}
-								</div>
+										{estimatedSampleCount > 20000 && (
+											<p className="text-destructive mt-1 text-xs">
+												{t('transits_granularity_warning', {
+													defaultValue:
+														'That many samples may take a while to compute and render. Consider a coarser step.'
+												})}
+											</p>
+										)}
+									</div>
 								)}
 							</ModeSwitcherDetails>
 
@@ -557,8 +549,6 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 			case 'transiting-bodies':
 				return (
 					<BodySelector
-						theme={theme}
-						glyphSet={glyphSet}
 						subtitleKey="transits_subtitle_transiting"
 						selectedBodyIds={transitingBodies}
 						onSelectedBodyIdsChange={setTransitingBodies}
@@ -568,8 +558,6 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 			case 'transited-bodies':
 				return (
 					<BodySelector
-						theme={theme}
-						glyphSet={glyphSet}
 						subtitleKey="transits_subtitle_transited"
 						selectedBodyIds={transitedBodies}
 						onSelectedBodyIdsChange={setTransitedBodies}
@@ -581,7 +569,6 @@ export function TransitsContent({ section, theme, glyphSet }: TransitsContentPro
 					<div className="space-y-6">
 						<p className={cn('text-sm', ft.muted)}>{t('transits_aspects_subtitle')}</p>
 						<AspectSelector
-							theme={theme}
 							selectedAspectIds={selectedAspects}
 							onSelectedAspectIdsChange={setSelectedAspects}
 						/>

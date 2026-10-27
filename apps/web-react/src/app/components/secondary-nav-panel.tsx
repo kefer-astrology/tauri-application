@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Button } from './ui/button';
 import { cn } from './ui/utils';
-import type { Theme } from './astrology-sidebar';
 import { sidebarNavMenuRowClassName, sidebarThemeStyles } from './astrology-sidebar';
+import { useAppTheme } from '../providers/app-theme';
 
 export type SecondaryNavItem = {
 	id: string;
@@ -10,7 +10,6 @@ export type SecondaryNavItem = {
 };
 
 type SecondaryNavPanelProps = {
-	theme: Theme;
 	title?: string;
 	items: SecondaryNavItem[];
 	activeId: string;
@@ -23,7 +22,6 @@ type SecondaryNavPanelProps = {
 };
 
 export function SecondaryNavPanel({
-	theme,
 	title,
 	items,
 	activeId,
@@ -32,6 +30,7 @@ export function SecondaryNavPanel({
 	className,
 	footer
 }: SecondaryNavPanelProps) {
+	const { theme } = useAppTheme();
 	const st = sidebarThemeStyles[theme];
 
 	const asideStyle: CSSProperties | undefined = {

@@ -17,7 +17,6 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import {
 	HoroscopeWheel,
@@ -41,7 +40,7 @@ import {
 	type ParsedAspect
 } from '@/lib/astrology/aspectParsing';
 import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
-import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { signIndexToZodiacId } from '@/lib/astrology/glyphs';
 import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { BodySelector } from './body-selector';
@@ -50,9 +49,7 @@ import { ObjectDetailPanel } from './object-detail-panel';
 import { AspectDetailPanel } from './aspect-detail-panel';
 
 interface HoroscopeDashboardProps {
-	theme: Theme;
 	workspaceDefaults: WorkspaceDefaultsState;
-	glyphSet: AstrologyGlyphSetId;
 	wheelStyle?: WheelStyleId;
 	wheelOrientation?: WheelOrientationId;
 	elementColors: ElementColors;
@@ -144,9 +141,7 @@ function formatCoords(latitude?: number, longitude?: number) {
 }
 
 export function HoroscopeDashboard({
-	theme,
 	workspaceDefaults,
-	glyphSet,
 	wheelStyle,
 	wheelOrientation = 'ascendant',
 	elementColors,
@@ -158,7 +153,7 @@ export function HoroscopeDashboard({
 	const { t, i18n } = useTranslation();
 	const { selectedChart, shiftSelectedChartTime, transitOverlay, clearTransitOverlay } =
 		useWorkspaceCharts();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const [profileCollapsed, setProfileCollapsed] = useState(false);
 	const [astrolabeCollapsed, setAstrolabeCollapsed] = useState(false);
 	const [positionsCollapsed, setPositionsCollapsed] = useState(false);
@@ -471,7 +466,7 @@ export function HoroscopeDashboard({
 				{/* Left Column */}
 				<div className="flex min-h-0 min-w-0 flex-col gap-4">
 					{/* Profile Panel */}
-					<Card variant="themed" theme={theme} className={panelCardClass} data-tour="radix-profile">
+					<Card variant="themed" className={panelCardClass} data-tour="radix-profile">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setProfileCollapsed(!profileCollapsed)}
@@ -562,12 +557,7 @@ export function HoroscopeDashboard({
 					</Card>
 
 					{/* Astrolabe Panel */}
-					<Card
-						variant="themed"
-						theme={theme}
-						className={panelCardClass}
-						data-tour="radix-astrolabe"
-					>
+					<Card variant="themed" className={panelCardClass} data-tour="radix-astrolabe">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
@@ -702,8 +692,6 @@ export function HoroscopeDashboard({
 				>
 					<div className="aspect-square h-full max-h-full w-full max-w-full">
 						<HoroscopeWheel
-							theme={theme}
-							glyphSet={glyphSet}
 							wheelStyle={wheelStyle}
 							elementColors={elementColors}
 							lightPlanetFill={lightPlanetFill}
@@ -720,7 +708,7 @@ export function HoroscopeDashboard({
 							radixAspects={radixAspects}
 							aspectOrbsForRadix={workspaceDefaults.defaultAspectOrbs}
 							aspectColorsForRadix={workspaceDefaults.defaultAspectColors}
-						bodyColors={workspaceDefaults.bodyColors}
+							bodyColors={workspaceDefaults.bodyColors}
 							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
 							selectedObject={selectedWheelObject}
 							selectedAspectIndex={selectedWheelAspect?.index}
@@ -748,7 +736,6 @@ export function HoroscopeDashboard({
 					<Card
 						data-tour="radix-positions"
 						variant="themed"
-						theme={theme}
 						className={cn(panelCardClass, positionsCollapsed ? '' : 'flex h-full flex-col')}
 					>
 						<div
@@ -807,7 +794,6 @@ export function HoroscopeDashboard({
 													>
 														<AstrologyGlyph
 															glyphId={pos.id}
-															glyphSet={glyphSet}
 															fallback={pos.icon}
 															size={18}
 															title={pos.label}
@@ -818,7 +804,6 @@ export function HoroscopeDashboard({
 													<span className="inline-flex h-[1.125rem] w-8 shrink-0 items-center justify-center">
 														<AstrologyGlyph
 															glyphId={pos.signZodiacId}
-															glyphSet={glyphSet}
 															domain="zodiac"
 															fallback={pos.signGlyphFallback}
 															size={18}
@@ -851,7 +836,6 @@ export function HoroscopeDashboard({
 			    floating details popup here; the second click opens the full detail side panel below. */}
 
 			<DetailSidePanel
-				theme={theme}
 				open={wheelDetailKind !== null}
 				onOpenChange={(open) => {
 					if (!open) setWheelDetailKind(null);
@@ -869,11 +853,9 @@ export function HoroscopeDashboard({
 				bodyClassName="overflow-y-auto"
 			>
 				{wheelDetailKind === 'object' && selectedObjectDetail ? (
-					<ObjectDetailPanel theme={theme} glyphSet={glyphSet} data={selectedObjectDetail} />
+					<ObjectDetailPanel data={selectedObjectDetail} />
 				) : wheelDetailKind === 'aspect' && selectedAspectDetail ? (
 					<AspectDetailPanel
-						theme={theme}
-						glyphSet={glyphSet}
 						aspect={selectedAspectDetail.aspect}
 						fromObject={selectedAspectDetail.fromObject}
 						toObject={selectedAspectDetail.toObject}
@@ -882,7 +864,6 @@ export function HoroscopeDashboard({
 			</DetailSidePanel>
 
 			<DetailSidePanel
-				theme={theme}
 				open={showPositionModal}
 				onOpenChange={setShowPositionModal}
 				title={t('dashboard_positions_picker_title')}
@@ -893,8 +874,6 @@ export function HoroscopeDashboard({
 				<div className="flex h-full min-h-0 flex-col">
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<BodySelector
-							theme={theme}
-							glyphSet={glyphSet}
 							subtitleKey="dashboard_positions_picker_hint"
 							selectedBodyIds={pickerBodies}
 							onSelectedBodyIdsChange={setPickerBodies}

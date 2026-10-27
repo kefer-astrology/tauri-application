@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { cn } from './ui/utils';
-import type { Theme } from './astrology-sidebar';
+import type { Theme } from '@/lib/theme';
+import { useAppTheme } from '../providers/app-theme';
 
 /**
  * Shared field styling aligned with **New Horoscope** (`new-horoscope.tsx`) so settings and
@@ -166,6 +167,8 @@ export function getAppFormFieldTheme(theme: Theme) {
 
 export type AppFormFieldTheme = ReturnType<typeof getAppFormFieldTheme>;
 
-export function useAppFormFieldTheme(theme: Theme): AppFormFieldTheme {
+/** Form surface classes for the theme from `AppThemeProvider`. */
+export function useAppFormFieldTheme(): AppFormFieldTheme {
+	const { theme } = useAppTheme();
 	return useMemo(() => getAppFormFieldTheme(theme), [theme]);
 }

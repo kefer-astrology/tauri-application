@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
-import { normalizeGlyphId, zodiacIds, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { normalizeGlyphId, zodiacIds } from '@/lib/astrology/glyphs';
 import {
 	OBSERVABLE_OBJECTS,
 	OBSERVABLE_OBJECT_CATEGORY_LABELS,
@@ -10,7 +10,11 @@ import {
 	type ObservableObjectCategory
 } from '@/lib/astrology/observableObjects';
 import { ASPECT_ROWS, ASPECT_GLYPHS } from '@/lib/astrology/aspects';
-import { resetCustomGlyph, setCustomGlyph, useCustomGlyphOverrides } from '@/lib/astrology/customGlyphs';
+import {
+	resetCustomGlyph,
+	setCustomGlyph,
+	useCustomGlyphOverrides
+} from '@/lib/astrology/customGlyphs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Button } from './ui/button';
 
@@ -38,8 +42,18 @@ function titleCase(id: string): string {
 }
 
 const ZODIAC_PRESENTATION_GLYPHS: Record<string, string> = {
-	aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
-	libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+	aries: '♈',
+	taurus: '♉',
+	gemini: '♊',
+	cancer: '♋',
+	leo: '♌',
+	virgo: '♍',
+	libra: '♎',
+	scorpio: '♏',
+	sagittarius: '♐',
+	capricorn: '♑',
+	aquarius: '♒',
+	pisces: '♓'
 };
 
 function useGlyphManagerGroups(): GlyphManagerGroup[] {
@@ -56,7 +70,9 @@ function useGlyphManagerGroups(): GlyphManagerGroup[] {
 		}))
 	};
 
-	const bodyCategories = Object.keys(OBSERVABLE_OBJECT_CATEGORY_LABELS) as ObservableObjectCategory[];
+	const bodyCategories = Object.keys(
+		OBSERVABLE_OBJECT_CATEGORY_LABELS
+	) as ObservableObjectCategory[];
 	const bodyGroups: GlyphManagerGroup[] = bodyCategories.map((category) => ({
 		key: category,
 		label: getObservableCategoryLabel(category, t),
@@ -82,15 +98,7 @@ function useGlyphManagerGroups(): GlyphManagerGroup[] {
 	return [zodiacGroup, ...bodyGroups, aspectGroup].filter((group) => group.rows.length > 0);
 }
 
-function GlyphManagerRow({
-	row,
-	glyphSet,
-	isCustom
-}: {
-	row: GlyphManagerRowData;
-	glyphSet: AstrologyGlyphSetId;
-	isCustom: boolean;
-}) {
+function GlyphManagerRow({ row, isCustom }: { row: GlyphManagerRowData; isCustom: boolean }) {
 	const { t } = useTranslation();
 	const [error, setError] = useState<string | null>(null);
 
@@ -117,32 +125,28 @@ function GlyphManagerRow({
 	return (
 		<div className="flex min-w-[240px] grow basis-[260px] items-center justify-between gap-2 rounded-lg border border-[color:var(--theme-panel-border)] p-2">
 			<div className="flex min-w-0 items-center gap-2">
-				<AstrologyGlyph
-					glyphId={row.id}
-					glyphSet={glyphSet}
-					domain={row.domain}
-					fallback={row.fallback}
-					size={22}
-				/>
+				<AstrologyGlyph glyphId={row.id} domain={row.domain} fallback={row.fallback} size={22} />
 				<span className="truncate text-sm">{row.label}</span>
 				{isCustom ? (
-				<span className="text-xs text-[color:var(--theme-content-muted)]">({t('glyph_custom')})</span>
+					<span className="text-xs text-[color:var(--theme-content-muted)]">
+						({t('glyph_custom')})
+					</span>
 				) : null}
 			</div>
 			<div className="flex shrink-0 items-center gap-1">
 				<label className="cursor-pointer">
-					<input type="file" accept=".svg,image/svg+xml" className="hidden" onChange={handleUpload} />
+					<input
+						type="file"
+						accept=".svg,image/svg+xml"
+						className="hidden"
+						onChange={handleUpload}
+					/>
 					<Button variant="ghost" size="sm" type="button" asChild>
 						<span>{t('glyph_upload')}</span>
 					</Button>
 				</label>
 				{isCustom ? (
-					<Button
-						variant="ghost"
-						size="sm"
-						type="button"
-						onClick={() => resetCustomGlyph(row.id)}
-					>
+					<Button variant="ghost" size="sm" type="button" onClick={() => resetCustomGlyph(row.id)}>
 						{t('glyph_reset')}
 					</Button>
 				) : null}
@@ -152,7 +156,7 @@ function GlyphManagerRow({
 	);
 }
 
-export function GlyphManager({ glyphSet }: { glyphSet: AstrologyGlyphSetId }) {
+export function GlyphManager() {
 	const { t } = useTranslation();
 	const groups = useGlyphManagerGroups();
 	const overrides = useCustomGlyphOverrides();
@@ -173,7 +177,6 @@ export function GlyphManager({ glyphSet }: { glyphSet: AstrologyGlyphSetId }) {
 									<GlyphManagerRow
 										key={row.id}
 										row={row}
-										glyphSet={glyphSet}
 										isCustom={Boolean(overrides[normalizeGlyphId(row.id)])}
 									/>
 								))}

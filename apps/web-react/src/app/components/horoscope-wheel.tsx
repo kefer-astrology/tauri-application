@@ -12,16 +12,12 @@ import {
 import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, DEFAULT_ASPECT_ORBS } from '@/lib/astrology/aspects';
 import { OBSERVABLE_OBJECTS } from '@/lib/astrology/observableObjects';
 import { catalogSigns } from '@/lib/astrology/domainCatalog';
-import {
-	getAstrologyGlyphSrc,
-	getZodiacGlyphSrc,
-	type AstrologyGlyphSetId
-} from '@/lib/astrology/glyphs';
+import { getAstrologyGlyphSrc, getZodiacGlyphSrc } from '@/lib/astrology/glyphs';
 import type { WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { resolveCustomGlyphSrc, useCustomGlyphOverrides } from '@/lib/astrology/customGlyphs';
 import type { AspectLineStyleId, AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
-import type { Theme } from './astrology-sidebar';
+import { useAppTheme } from '../providers/app-theme';
 
 /** Dark themes: planet SVGs (no per-color filter assets). */
 function WheelPlanetImageDark({
@@ -103,15 +99,21 @@ const OBSERVABLE_OBJECT_META = new Map(
 );
 
 export type HemisphereOverlayKind =
-	| 'off'
-	| 'asc-dsc-east'
-	| 'asc-dsc-west'
-	| 'mc-ic-north'
-	| 'mc-ic-south';
+	'off' | 'asc-dsc-east' | 'asc-dsc-west' | 'mc-ic-north' | 'mc-ic-south';
 
 const ZODIAC_PRESENTATION_GLYPHS: Record<string, string> = {
-	aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
-	libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓'
+	aries: '♈',
+	taurus: '♉',
+	gemini: '♊',
+	cancer: '♋',
+	leo: '♌',
+	virgo: '♍',
+	libra: '♎',
+	scorpio: '♏',
+	sagittarius: '♐',
+	capricorn: '♑',
+	aquarius: '♒',
+	pisces: '♓'
 };
 
 const zodiacSigns = () =>
@@ -346,12 +348,10 @@ export interface HoroscopeWheelAspectInteraction {
 }
 
 export interface HoroscopeWheelProps {
-	theme: Theme;
 	/**
 	 * When set, planet and zodiac marks use `static/glyphs/.../planets/*.svg` and `.../zodiac/*.svg`
 	 * as native `<image>` with per-tint SVG filters (`elementColors` for signs; primary for light planets).
 	 */
-	glyphSet?: AstrologyGlyphSetId;
 	/** Outer ring rendering: `minimalist` is sign dividers only, `technical` adds a 360° degree scale. */
 	wheelStyle?: WheelStyleId;
 	/** Fire / earth / air / water colors for zodiac ring on the wheel. */
@@ -399,8 +399,6 @@ export interface HoroscopeWheelProps {
 }
 
 export function HoroscopeWheel({
-	theme,
-	glyphSet,
 	wheelStyle = 'technical',
 	bodyLongitudes,
 	bodyOrder,
@@ -430,6 +428,7 @@ export function HoroscopeWheel({
 	onWheelBackgroundClick,
 	className
 }: HoroscopeWheelProps) {
+	const { theme, glyphSet } = useAppTheme();
 	const isDark = theme === 'midnight' || theme === 'twilight';
 	const customGlyphOverrides = useCustomGlyphOverrides();
 	const astrologyGlyphSrc = (id: string) =>
@@ -538,7 +537,11 @@ export function HoroscopeWheel({
 	);
 	const planetGlyphColor = isDark ? 'var(--token-wheel-glyph)' : lightPlanetFill;
 	const bodyGlyphFilterId = (id: string) =>
-		bodyColors?.[id] ? `${wheelFilterUid}-b-${id}` : isDark ? planetDarkFilterId : planetLightFilterId;
+		bodyColors?.[id]
+			? `${wheelFilterUid}-b-${id}`
+			: isDark
+				? planetDarkFilterId
+				: planetLightFilterId;
 	const bodyGlyphFillColor = (id: string) => bodyColors?.[id] ?? planetGlyphColor;
 	/** Transit-ring counterpart to the two above — same per-body filter/color override,
 	 *  falling back to the ring's own uniform accent tint (`transitFilterId`) rather than the
@@ -681,25 +684,25 @@ export function HoroscopeWheel({
 							);
 						})
 					: null}
-					{glyphSet && bodyColors
-						? Object.entries(bodyColors).map(([id, color]) => (
-								<filter
-									key={`bf-${id}`}
-									id={`${wheelFilterUid}-b-${id}`}
-									colorInterpolationFilters="sRGB"
-									x="-50%"
-									y="-50%"
-									width="200%"
-									height="200%"
-								>
-									<feFlood floodColor={color} floodOpacity="1" result="bc" />
-									<feComposite in="bc" in2="SourceGraphic" operator="in" result="br" />
-									<feMerge>
-										<feMergeNode in="br" />
-									</feMerge>
-								</filter>
-							))
-						: null}
+				{glyphSet && bodyColors
+					? Object.entries(bodyColors).map(([id, color]) => (
+							<filter
+								key={`bf-${id}`}
+								id={`${wheelFilterUid}-b-${id}`}
+								colorInterpolationFilters="sRGB"
+								x="-50%"
+								y="-50%"
+								width="200%"
+								height="200%"
+							>
+								<feFlood floodColor={color} floodOpacity="1" result="bc" />
+								<feComposite in="bc" in2="SourceGraphic" operator="in" result="br" />
+								<feMerge>
+									<feMergeNode in="br" />
+								</feMerge>
+							</filter>
+						))
+					: null}
 				<filter
 					id={transitFilterId}
 					colorInterpolationFilters="sRGB"

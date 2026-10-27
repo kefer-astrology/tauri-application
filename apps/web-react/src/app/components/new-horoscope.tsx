@@ -30,7 +30,7 @@ import {
 } from './app-main-content';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
+import { useAppTheme } from '../providers/app-theme';
 import { tagColor, tagDefaultColor } from '@/lib/chartTags';
 import {
 	appChartFromNewHoroscopeInput,
@@ -391,7 +391,7 @@ function TagInput({
 		<div
 			className={cn(
 				'relative flex min-h-10 w-full items-stretch rounded-xl border text-base shadow-inner transition-all md:text-sm',
-				'focus-within:z-[80] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
+				'focus-within:border-ring focus-within:ring-ring/50 focus-within:z-[80] focus-within:ring-[3px]',
 				panelBg,
 				panelBorder
 			)}
@@ -463,8 +463,7 @@ function AdvancedTagSheet({
 	suggestions,
 	onChange,
 	onRename,
-	onColorChange,
-	theme
+	onColorChange
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -474,10 +473,9 @@ function AdvancedTagSheet({
 	onChange: (tags: string[]) => void;
 	onRename: (tag: string, nextName: string) => void;
 	onColorChange: (tag: string, color: string) => void;
-	theme: Theme;
 }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const [draft, setDraft] = useState('');
 	const [draftNames, setDraftNames] = useState<Record<string, string>>({});
 
@@ -707,7 +705,6 @@ function TimezoneSelect({
 }
 
 interface NewHoroscopeProps {
-	theme?: Theme;
 	presentation?: 'page' | 'panel';
 	pageWidth?: AppMainContentWidth;
 	/** Return to main horoscope view (sidebar **Horoskop**). */
@@ -724,7 +721,6 @@ interface NewHoroscopeProps {
 }
 
 export function NewHoroscope({
-	theme = 'noon',
 	presentation = 'page',
 	pageWidth = 'standard',
 	onBack,
@@ -736,7 +732,8 @@ export function NewHoroscope({
 	onSaved
 }: NewHoroscopeProps) {
 	const { t, i18n } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const { theme } = useAppTheme();
+	const ft = useAppFormFieldTheme();
 
 	const isEditMode = initialValues != null;
 	const initialTimezone = initialValues?.timezone ?? workspaceDefaults.timezone;
@@ -1475,7 +1472,6 @@ export function NewHoroscope({
 					onChange={applyTags}
 					onRename={applyTagRename}
 					onColorChange={applyTagColor}
-					theme={theme}
 				/>
 			</AppMainContentContainer>
 		</AppMainContentRoot>

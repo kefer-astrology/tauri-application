@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import {
-	flexRender,
-	getCoreRowModel,
-	getSortedRowModel,
-	useReactTable,
-	type ColumnDef,
-	type SortingState
-} from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { AspectExactHit, AspectTimelineSeries } from '@/lib/astrology/aspectTimeline';
 import type { ConfigurationMatch, TransitEvent } from '@/lib/tauri/types';
 import { positionWithinSign } from '@/lib/astrology/objectDetail';
@@ -22,13 +14,10 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ModeSwitcher } from './ui/mode-switcher';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import {
-	TransitResonanceChart,
-	type TransitResonanceMarker
-} from './transit-resonance-chart';
+import { TransitResonanceChart, type TransitResonanceMarker } from './transit-resonance-chart';
 import { TransitMicroTicker } from './transit-micro-ticker';
 import { cn } from './ui/utils';
+import { DataTable } from '../views/data/data-table';
 import { useAppFormFieldTheme, type AppFormFieldTheme } from './form-field-theme';
 import {
 	humanizePeriodPresetId,
@@ -37,14 +26,14 @@ import {
 } from '../providers/transits-workspace';
 import { CycleAnalysisPanel } from './cycle-analysis-panel';
 import { DetailSidePanel } from './detail-side-panel';
-import type { Theme } from './astrology-sidebar';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
+import { useAppTheme } from '../providers/app-theme';
 
 interface TransitsResultsDashboardProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	workspaceDefaults: WorkspaceDefaultsState;
 }
+
+const HIT_TABLE_INITIAL_SORTING: SortingState = [{ id: 'date', desc: false }];
 
 /** Preset X-axis window spans (TR-02) — approximate months/years as fixed day counts, matching
  *  how a "zoom level" button is meant to read (a round window), not a calendar-exact span. */
@@ -111,15 +100,14 @@ function buildHitColumns(
 				const { series: s, hit } = row.original;
 				return (
 					<span className="inline-flex items-center gap-1">
-						<AstrologyGlyph glyphId={s.from} glyphSet={glyphSet} fallback={objectIcon(s.from)} size={14} />
+						<AstrologyGlyph glyphId={s.from} fallback={objectIcon(s.from)} size={14} />
 						<AstrologyGlyph
 							glyphId={s.aspectType}
-							glyphSet={glyphSet}
 							domain="aspect"
 							fallback={ASPECT_GLYPHS[s.aspectType] ?? '•'}
 							size={14}
 						/>
-						<AstrologyGlyph glyphId={s.to} glyphSet={glyphSet} fallback={objectIcon(s.to)} size={14} />
+						<AstrologyGlyph glyphId={s.to} fallback={objectIcon(s.to)} size={14} />
 						{hit.hitCount > 1 && (
 							<span className={cn('tabular-nums', ft.muted)}>
 								({hit.hitNumber}/{hit.hitCount})
@@ -136,11 +124,15 @@ function buildHitColumns(
 			cell: ({ row }) => {
 				const pos = positionWithinSign(row.original.hit.fromLongitude);
 				return (
-					<span className={cn('inline-flex items-center gap-1 tabular-nums whitespace-nowrap', ft.bodyText)}>
+					<span
+						className={cn(
+							'inline-flex items-center gap-1 whitespace-nowrap tabular-nums',
+							ft.bodyText
+						)}
+					>
 						{pos.degrees}
 						<AstrologyGlyph
 							glyphId={pos.signZodiacId}
-							glyphSet={glyphSet}
 							domain="zodiac"
 							fallback={pos.signGlyphFallback}
 							size={13}
@@ -157,11 +149,15 @@ function buildHitColumns(
 			cell: ({ row }) => {
 				const pos = positionWithinSign(row.original.hit.toLongitude);
 				return (
-					<span className={cn('inline-flex items-center gap-1 tabular-nums whitespace-nowrap', ft.bodyText)}>
+					<span
+						className={cn(
+							'inline-flex items-center gap-1 whitespace-nowrap tabular-nums',
+							ft.bodyText
+						)}
+					>
 						{pos.degrees}
 						<AstrologyGlyph
 							glyphId={pos.signZodiacId}
-							glyphSet={glyphSet}
 							domain="zodiac"
 							fallback={pos.signGlyphFallback}
 							size={13}
@@ -178,7 +174,7 @@ function buildHitColumns(
 			cell: ({ row }) => {
 				const { hit } = row.original;
 				return (
-					<span className={cn('tabular-nums whitespace-nowrap', ft.bodyText)}>
+					<span className={cn('whitespace-nowrap tabular-nums', ft.bodyText)}>
 						{hit.fromSpeed === undefined ? '—' : formatSignedDms(hit.fromSpeed)}
 						{hit.fromRetrograde && (
 							<span className={cn('ml-1 text-[10px]', ft.muted)}>
@@ -198,11 +194,9 @@ function buildHitColumns(
  *  an exact time from the nearest graph sample rather than solving for it. */
 function EventSearchPanel({
 	ft,
-	glyphSet,
 	t
 }: {
 	ft: AppFormFieldTheme;
-	glyphSet: AstrologyGlyphSetId;
 	t: (key: string, options?: Record<string, unknown>) => string;
 }) {
 	const { transitEventSearch, openChartAtInstant } = useTransitsWorkspace();
@@ -212,7 +206,7 @@ function EventSearchPanel({
 
 	return (
 		<div className="shrink-0 border-t border-[color:var(--theme-panel-border)] p-4">
-			<h3 className={cn('mb-2 text-xs font-semibold uppercase tracking-wide', ft.bodyText)}>
+			<h3 className={cn('mb-2 text-xs font-semibold tracking-wide uppercase', ft.bodyText)}>
 				{t('transits_event_search_title', { defaultValue: 'Exact events' })}
 			</h3>
 
@@ -273,28 +267,28 @@ function EventSearchPanel({
 						return (
 							<li
 								key={index}
-								className={cn('flex flex-wrap items-center gap-2 rounded px-2 py-1 text-xs', ft.bodyText)}
+								className={cn(
+									'flex flex-wrap items-center gap-2 rounded px-2 py-1 text-xs',
+									ft.bodyText
+								)}
 							>
-								<span className="tabular-nums whitespace-nowrap">{whenLabel}</span>
+								<span className="whitespace-nowrap tabular-nums">{whenLabel}</span>
 								{event.kind === 'aspect_hit' ? (
 									<>
 										<span className="inline-flex items-center gap-1">
 											<AstrologyGlyph
 												glyphId={event.from}
-												glyphSet={glyphSet}
 												fallback={objectIcon(event.from)}
 												size={14}
 											/>
 											<AstrologyGlyph
 												glyphId={event.type}
-												glyphSet={glyphSet}
 												domain="aspect"
 												fallback={ASPECT_GLYPHS[event.type] ?? '•'}
 												size={14}
 											/>
 											<AstrologyGlyph
 												glyphId={event.to}
-												glyphSet={glyphSet}
 												fallback={objectIcon(event.to)}
 												size={14}
 											/>
@@ -313,7 +307,6 @@ function EventSearchPanel({
 										<span className="inline-flex items-center gap-1">
 											<AstrologyGlyph
 												glyphId={event.body}
-												glyphSet={glyphSet}
 												fallback={objectIcon(event.body)}
 												size={14}
 											/>
@@ -332,7 +325,7 @@ function EventSearchPanel({
 										className="rounded px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
 										title={t('transits_event_search_unconfirmed_hint', {
 											defaultValue:
-												'Refinement did not converge within tolerance -- a heuristic candidate, not a verified event.',
+												'Refinement did not converge within tolerance -- a heuristic candidate, not a verified event.'
 										})}
 									>
 										{t('transits_event_search_unconfirmed', { defaultValue: 'unconfirmed' })}
@@ -360,11 +353,9 @@ function EventSearchPanel({
  *  with clipped-boundary labels, kept separate from the exact-event list above. */
 function ConfigurationMatchesPanel({
 	ft,
-	glyphSet,
 	t
 }: {
 	ft: AppFormFieldTheme;
-	glyphSet: AstrologyGlyphSetId;
 	t: (key: string, options?: Record<string, unknown>) => string;
 }) {
 	const { transitEventSearch, openChartAtInstant } = useTransitsWorkspace();
@@ -375,15 +366,21 @@ function ConfigurationMatchesPanel({
 	const formatInstant = (iso: string | null): string => {
 		if (!iso) return '—';
 		const when = new Date(iso);
-		return Number.isNaN(when.getTime()) ? iso : `${when.toLocaleDateString()} ${when.toLocaleTimeString()}`;
+		return Number.isNaN(when.getTime())
+			? iso
+			: `${when.toLocaleDateString()} ${when.toLocaleTimeString()}`;
 	};
 
 	const clippedLabel = (reason: string | null): string | null => {
 		if (reason === 'period_start') {
-			return t('transits_configuration_clipped_period_start', { defaultValue: 'clipped: period start' });
+			return t('transits_configuration_clipped_period_start', {
+				defaultValue: 'clipped: period start'
+			});
 		}
 		if (reason === 'period_end') {
-			return t('transits_configuration_clipped_period_end', { defaultValue: 'clipped: period end' });
+			return t('transits_configuration_clipped_period_end', {
+				defaultValue: 'clipped: period end'
+			});
 		}
 		if (reason === 'missing_coverage') {
 			return t('transits_configuration_clipped_missing_coverage', {
@@ -395,7 +392,7 @@ function ConfigurationMatchesPanel({
 
 	return (
 		<div className="shrink-0 border-t border-[color:var(--theme-panel-border)] p-4">
-			<h3 className={cn('mb-2 text-xs font-semibold uppercase tracking-wide', ft.bodyText)}>
+			<h3 className={cn('mb-2 text-xs font-semibold tracking-wide uppercase', ft.bodyText)}>
 				{t('transits_configuration_matches_title', { defaultValue: 'Multi-body configurations' })}
 			</h3>
 			<ul className="max-h-64 space-y-2 overflow-auto">
@@ -418,7 +415,6 @@ function ConfigurationMatchesPanel({
 										<AstrologyGlyph
 											key={participant.role}
 											glyphId={participant.body_id}
-											glyphSet={glyphSet}
 											fallback={objectIcon(participant.body_id)}
 											size={14}
 										/>
@@ -426,15 +422,19 @@ function ConfigurationMatchesPanel({
 								</span>
 								<span className={cn('text-[10px]', ft.muted)}>
 									{match.participants
-										.map((p) => `${p.role}=${objectLabel(p.body_id, t)}${p.is_fixed ? ' (fixed)' : ''}`)
+										.map(
+											(p) => `${p.role}=${objectLabel(p.body_id, t)}${p.is_fixed ? ' (fixed)' : ''}`
+										)
 										.join(', ')}
 								</span>
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
-								<span className="tabular-nums whitespace-nowrap">
+								<span className="whitespace-nowrap tabular-nums">
 									{t('transits_configuration_entry', { defaultValue: 'Entry' })}:{' '}
 									{formatInstant(match.entry)}
-									{entryClipped && <span className={cn('ml-1 text-[10px]', ft.muted)}>({entryClipped})</span>}
+									{entryClipped && (
+										<span className={cn('ml-1 text-[10px]', ft.muted)}>({entryClipped})</span>
+									)}
 								</span>
 								{match.entry && (
 									<Button
@@ -449,7 +449,7 @@ function ConfigurationMatchesPanel({
 							</div>
 							{match.best_fit && (
 								<div className="flex flex-wrap items-center gap-2">
-									<span className="tabular-nums whitespace-nowrap">
+									<span className="whitespace-nowrap tabular-nums">
 										{t('transits_configuration_best_fit', { defaultValue: 'Best fit' })}:{' '}
 										{formatInstant(match.best_fit.datetime)}
 									</span>
@@ -464,10 +464,12 @@ function ConfigurationMatchesPanel({
 								</div>
 							)}
 							<div className="flex flex-wrap items-center gap-2">
-								<span className="tabular-nums whitespace-nowrap">
+								<span className="whitespace-nowrap tabular-nums">
 									{t('transits_configuration_exit', { defaultValue: 'Exit' })}:{' '}
 									{formatInstant(match.exit)}
-									{exitClipped && <span className={cn('ml-1 text-[10px]', ft.muted)}>({exitClipped})</span>}
+									{exitClipped && (
+										<span className={cn('ml-1 text-[10px]', ft.muted)}>({exitClipped})</span>
+									)}
 								</span>
 								{match.exit && (
 									<Button
@@ -488,13 +490,9 @@ function ConfigurationMatchesPanel({
 	);
 }
 
-export function TransitsResultsDashboard({
-	theme,
-	glyphSet,
-	workspaceDefaults
-}: TransitsResultsDashboardProps) {
+export function TransitsResultsDashboard({ workspaceDefaults }: TransitsResultsDashboardProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const {
 		transitSeries,
 		aspectTimelineCategories: categories,
@@ -573,7 +571,10 @@ export function TransitsResultsDashboard({
 	 *  end, before any pan/zoom has happened) and clamped to the real computed range. */
 	function applyXZoomPreset(preset: keyof typeof X_ZOOM_PRESET_MS) {
 		if (dataMinMs === undefined || dataMaxMs === undefined) return;
-		const span = Math.min(X_ZOOM_PRESET_MS[preset], dataMaxMs - dataMinMs || X_ZOOM_PRESET_MS[preset]);
+		const span = Math.min(
+			X_ZOOM_PRESET_MS[preset],
+			dataMaxMs - dataMinMs || X_ZOOM_PRESET_MS[preset]
+		);
 		const center = chartVisibleRange
 			? (chartVisibleRange[0] + chartVisibleRange[1]) / 2
 			: dataMaxMs;
@@ -655,8 +656,10 @@ export function TransitsResultsDashboard({
 			}
 			for (const run of runBoundaries(clipped)) {
 				if (run.start !== run.end) {
-					if (!seen.has(`${s.key}-${run.start}`)) list.push({ seriesId: s.key, index: run.start, kind: 'entry' });
-					if (!seen.has(`${s.key}-${run.end}`)) list.push({ seriesId: s.key, index: run.end, kind: 'exit' });
+					if (!seen.has(`${s.key}-${run.start}`))
+						list.push({ seriesId: s.key, index: run.start, kind: 'entry' });
+					if (!seen.has(`${s.key}-${run.end}`))
+						list.push({ seriesId: s.key, index: run.end, kind: 'exit' });
 				}
 			}
 		}
@@ -677,16 +680,8 @@ export function TransitsResultsDashboard({
 		return rows;
 	}, [visibleSeries]);
 
-	const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: false }]);
+	const { glyphSet } = useAppTheme();
 	const columns = useMemo(() => buildHitColumns(glyphSet, ft, t), [glyphSet, ft, t]);
-	const table = useReactTable({
-		data: hitRows,
-		columns,
-		state: { sorting },
-		onSortingChange: setSorting,
-		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel()
-	});
 
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col">
@@ -702,25 +697,30 @@ export function TransitsResultsDashboard({
 					ariaLabel={t('aspect_timeline_axis_closeness', { defaultValue: 'Orb to exact' })}
 					options={[
 						{ value: 'chart', label: t('transits_resonance_view', { defaultValue: 'Resonance' }) },
-						{ value: 'table', label: t('aspect_timeline_hits_view', { defaultValue: 'Exact hits' }) }
+						{
+							value: 'table',
+							label: t('aspect_timeline_hits_view', { defaultValue: 'Exact hits' })
+						}
 					]}
 				/>
 
 				{resultsViewMode === 'chart' && (
 					<div className="flex items-center gap-1">
-						{(Object.keys(X_ZOOM_PRESET_MS) as Array<keyof typeof X_ZOOM_PRESET_MS>).map((preset) => (
-							<Button
-								key={preset}
-								type="button"
-								variant="ghost"
-								className={cn('h-8 px-2.5 text-xs', ft.bodyText)}
-								onClick={() => applyXZoomPreset(preset)}
-							>
-								{t(`transits_zoom_${preset}`, {
-									defaultValue: preset.charAt(0).toUpperCase() + preset.slice(1)
-								})}
-							</Button>
-						))}
+						{(Object.keys(X_ZOOM_PRESET_MS) as Array<keyof typeof X_ZOOM_PRESET_MS>).map(
+							(preset) => (
+								<Button
+									key={preset}
+									type="button"
+									variant="ghost"
+									className={cn('h-8 px-2.5 text-xs', ft.bodyText)}
+									onClick={() => applyXZoomPreset(preset)}
+								>
+									{t(`transits_zoom_${preset}`, {
+										defaultValue: preset.charAt(0).toUpperCase() + preset.slice(1)
+									})}
+								</Button>
+							)
+						)}
 						{chartVisibleRange && (
 							<Button
 								type="button"
@@ -776,7 +776,9 @@ export function TransitsResultsDashboard({
 
 				<div className="flex items-center gap-2">
 					<span className={cn('text-xs', ft.muted)}>
-						{t('transits_label_graph_sampling_interval', { defaultValue: 'Graph sampling interval' })}
+						{t('transits_label_graph_sampling_interval', {
+							defaultValue: 'Graph sampling interval'
+						})}
 					</span>
 					<Input
 						type="number"
@@ -835,7 +837,12 @@ export function TransitsResultsDashboard({
 					>
 						{t('transits_edit_setup', { defaultValue: 'Edit setup' })}
 					</Button>
-					<Button type="button" variant="ghost" className={cn('h-8 px-3 text-xs', ft.bodyText)} onClick={reset}>
+					<Button
+						type="button"
+						variant="ghost"
+						className={cn('h-8 px-3 text-xs', ft.bodyText)}
+						onClick={reset}
+					>
 						{t('transits_reset', { defaultValue: 'Reset' })}
 					</Button>
 				</div>
@@ -864,7 +871,7 @@ export function TransitsResultsDashboard({
 						>
 							{t('aspect_timeline_mapping_note', {
 								defaultValue:
-									'Display mapping: the y-axis is the raw angular deviation from exact, in degrees, capped at a {{degrees}}° window — 0° at exact alignment, {{degrees}}° at the edge of what\'s shown. A wider configured orb only becomes visible once it closes to within range. Scroll to zoom, drag to pan.',
+									"Display mapping: the y-axis is the raw angular deviation from exact, in degrees, capped at a {{degrees}}° window — 0° at exact alignment, {{degrees}}° at the edge of what's shown. A wider configured orb only becomes visible once it closes to within range. Scroll to zoom, drag to pan.",
 								degrees: chartYZoomDegrees
 							})}
 						</p>
@@ -918,82 +925,34 @@ export function TransitsResultsDashboard({
 						</div>
 					) : (
 						<div className="max-h-[32rem] overflow-auto rounded-md border">
-							<Table>
-								<TableHeader>
-									{table.getHeaderGroups().map((headerGroup) => (
-										<TableRow
-											key={headerGroup.id}
-											className="border-[color:var(--theme-panel-border)] hover:bg-transparent"
-										>
-											{headerGroup.headers.map((header) => {
-												const sortState = header.column.getIsSorted();
-												const SortIcon =
-													sortState === 'asc' ? ArrowUp : sortState === 'desc' ? ArrowDown : ArrowUpDown;
-												return (
-													<TableHead
-														key={header.id}
-														className={cn(
-															'bg-background sticky top-0 z-10 text-xs font-semibold',
-															ft.bodyText
-														)}
-													>
-														{header.isPlaceholder ? null : header.column.getCanSort() ? (
-															<button
-																type="button"
-																className="inline-flex items-center gap-1"
-																onClick={header.column.getToggleSortingHandler()}
-															>
-																{flexRender(header.column.columnDef.header, header.getContext())}
-																<SortIcon
-																	className={cn('size-3', sortState ? 'opacity-100' : 'opacity-40')}
-																/>
-															</button>
-														) : (
-															flexRender(header.column.columnDef.header, header.getContext())
-														)}
-													</TableHead>
-												);
-											})}
-										</TableRow>
-									))}
-								</TableHeader>
-								<TableBody>
-									{table.getRowModel().rows.map((row) => (
-										<TableRow key={row.id} className="border-b-0 hover:bg-accent/50">
-											{row.getVisibleCells().map((cell) => (
-												<TableCell key={cell.id} className="text-xs">
-													{flexRender(cell.column.columnDef.cell, cell.getContext())}
-												</TableCell>
-											))}
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-							{hitRows.length === 0 && (
-								<p className={cn('p-4 text-center text-xs', ft.muted)}>
-									{t('aspect_timeline_no_hits', {
-										defaultValue: 'No exact hits within this period for the selected pairs.'
-									})}
-								</p>
-							)}
+							<DataTable
+								columns={columns}
+								data={hitRows}
+								initialSorting={HIT_TABLE_INITIAL_SORTING}
+								density="compact"
+								empty={
+									<p className={cn('p-4 text-center text-xs', ft.muted)}>
+										{t('aspect_timeline_no_hits', {
+											defaultValue: 'No exact hits within this period for the selected pairs.'
+										})}
+									</p>
+								}
+							/>
 						</div>
 					)}
 				</div>
 
 				<CycleAnalysisPanel
-					theme={theme}
-					glyphSet={glyphSet}
 					series={visibleSeries}
 					entries={transitSeries}
 					colorByKey={colorByKey}
 				/>
 			</div>
 
-			<EventSearchPanel ft={ft} glyphSet={glyphSet} t={t} />
-			<ConfigurationMatchesPanel ft={ft} glyphSet={glyphSet} t={t} />
+			<EventSearchPanel ft={ft} t={t} />
+			<ConfigurationMatchesPanel ft={ft} t={t} />
 
 			<DetailSidePanel
-				theme={theme}
 				open={detailSeriesKey !== null}
 				onOpenChange={(open) => {
 					if (!open) closeDetailPanel();
@@ -1022,7 +981,9 @@ export function TransitsResultsDashboard({
 									<li key={hit.timestampMs}>
 										<button
 											type="button"
-											onClick={() => void openChartAtInstant(new Date(hit.timestampMs).toISOString())}
+											onClick={() =>
+												void openChartAtInstant(new Date(hit.timestampMs).toISOString())
+											}
 											className={cn(
 												'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
 												'hover:bg-[color:var(--theme-soft-bg)]',
@@ -1032,7 +993,9 @@ export function TransitsResultsDashboard({
 											<span>{new Date(hit.timestampMs).toLocaleString()}</span>
 											<span className={cn('tabular-nums', ft.muted)}>
 												{hit.hitNumber}/{hit.hitCount}
-												{hit.fromRetrograde ? ` · ${t('transits_event_search_retrograde', { defaultValue: 'retrograde' })}` : ''}
+												{hit.fromRetrograde
+													? ` · ${t('transits_event_search_retrograde', { defaultValue: 'retrograde' })}`
+													: ''}
 											</span>
 										</button>
 									</li>

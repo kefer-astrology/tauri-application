@@ -10,10 +10,8 @@ import { DetailSidePanel } from './detail-side-panel';
 import { HighlightText } from './highlight-text';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
 
 type AspectSelectorProps = {
-	theme: Theme;
 	selectedAspectIds: string[];
 	onSelectedAspectIdsChange: (ids: string[]) => void;
 };
@@ -56,12 +54,11 @@ function formatDegree(angle: number): string {
 }
 
 export function AspectSelector({
-	theme,
 	selectedAspectIds,
 	onSelectedAspectIdsChange
 }: AspectSelectorProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const [query, setQuery] = useState('');
 	const [viewMode, setViewMode] = useState<ViewMode>('type');
 	const [openHarmonics, setOpenHarmonics] = useState<string[]>(() =>
@@ -402,7 +399,6 @@ export function AspectSelector({
 			</CardContent>
 
 			<DetailSidePanel
-				theme={theme}
 				open={panelOpen}
 				onOpenChange={setPanelOpen}
 				title={t('transits_aspects_panel_title')}

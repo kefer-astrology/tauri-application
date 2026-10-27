@@ -5,14 +5,10 @@ import { motionStateFromSpeed } from '@/lib/astrology/objectDetail';
 import { objectIcon, objectLabel, aspectLabel } from '@/lib/astrology/objectLabels';
 import { ASPECT_GLYPHS } from '@/lib/astrology/aspects';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
 
 interface CycleAnalysisPanelProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	series: AspectTimelineSeries[];
 	entries: readonly TransitSeriesEntry[];
 	colorByKey: Map<string, string>;
@@ -27,15 +23,9 @@ function lastNonNullIndex(values: Array<number | null>): number | null {
 	return null;
 }
 
-export function CycleAnalysisPanel({
-	theme,
-	glyphSet,
-	series,
-	entries,
-	colorByKey
-}: CycleAnalysisPanelProps) {
+export function CycleAnalysisPanel({ series, entries, colorByKey }: CycleAnalysisPanelProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 
 	const ranked = [...series]
 		.sort((a, b) => b.hits.length - a.hits.length || a.key.localeCompare(b.key))
@@ -64,7 +54,8 @@ export function CycleAnalysisPanel({
 						const lastIndex = lastNonNullIndex(s.closeness);
 						const closeness = lastIndex !== null ? s.closeness[lastIndex] : null;
 						const phase = lastIndex !== null ? s.phase[lastIndex] : null;
-						const speed = lastIndex !== null ? entries[lastIndex]?.motion?.[s.from]?.speed : undefined;
+						const speed =
+							lastIndex !== null ? entries[lastIndex]?.motion?.[s.from]?.speed : undefined;
 						const retrograde =
 							lastIndex !== null ? entries[lastIndex]?.motion?.[s.from]?.retrograde : undefined;
 						const motionState = motionStateFromSpeed(speed);
@@ -85,25 +76,14 @@ export function CycleAnalysisPanel({
 											style={{ backgroundColor: color }}
 										/>
 									)}
-									<AstrologyGlyph
-										glyphId={s.from}
-										glyphSet={glyphSet}
-										fallback={objectIcon(s.from)}
-										size={14}
-									/>
+									<AstrologyGlyph glyphId={s.from} fallback={objectIcon(s.from)} size={14} />
 									<AstrologyGlyph
 										glyphId={s.aspectType}
-										glyphSet={glyphSet}
 										domain="aspect"
 										fallback={ASPECT_GLYPHS[s.aspectType] ?? '•'}
 										size={14}
 									/>
-									<AstrologyGlyph
-										glyphId={s.to}
-										glyphSet={glyphSet}
-										fallback={objectIcon(s.to)}
-										size={14}
-									/>
+									<AstrologyGlyph glyphId={s.to} fallback={objectIcon(s.to)} size={14} />
 									<span className={cn('font-medium', ft.bodyText)}>
 										{objectLabel(s.from, t)} {aspectLabel(s.aspectType, t)} {objectLabel(s.to, t)}
 									</span>
@@ -194,7 +174,8 @@ export function CycleAnalysisPanel({
 				</p>
 				<p>
 					{t('cycle_analysis_glossary_orb', {
-						defaultValue: "Orb — the maximum deviation from an aspect's exact angle still counted as that aspect."
+						defaultValue:
+							"Orb — the maximum deviation from an aspect's exact angle still counted as that aspect."
 					})}
 				</p>
 			</div>

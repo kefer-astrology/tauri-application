@@ -90,7 +90,7 @@ The product uses exactly four named themes (no ad‑hoc palettes in feature code
 | `twilight` | Dark blue glass (photo background in main area) |
 | `midnight` | Dark radial / slate glass                       |
 
-**Type:** `Theme` in `src/app/components/astrology-sidebar.tsx`.
+**Type:** `Theme` in `apps/web-react/src/lib/theme.ts`; the active value is read with `useAppTheme()`.
 
 **Current source of truth**
 
@@ -140,7 +140,7 @@ Transits-related keys use the `transits_*` prefix where grouped; shared labels r
 
 ## Form fields (shared theme helper)
 
-**`src/app/components/form-field-theme.ts`** exports `getAppFormFieldTheme(theme)` — labels, inputs, selects, date-picker surfaces, advanced panel, switches, and footer actions using shared `--theme-*` and `--token-*` variables.
+**`src/app/components/form-field-theme.ts`** exports `useAppFormFieldTheme()` (active theme from `useAppTheme()`) and `getAppFormFieldTheme(theme)` — labels, inputs, selects, date-picker surfaces, advanced panel, switches, and footer actions using shared `--theme-*` and `--token-*` variables.
 
 **Create new chart** (`new-horoscope.tsx`) and **Settings** both use this helper on top of shadcn **`Card`**, **`Input`**, **`Label`**, **`Select`**, **`Switch`**, and **`Button`** primitives.
 

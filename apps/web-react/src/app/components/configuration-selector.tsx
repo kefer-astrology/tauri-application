@@ -5,7 +5,6 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme, type AppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
 import {
 	CONFIGURATION_PATTERNS,
 	configurationPattern,
@@ -14,7 +13,6 @@ import {
 import type { ConfigurationSearchRequest } from '@/lib/tauri/types';
 
 interface ConfigurationSelectorProps {
-	theme: Theme;
 	searches: ConfigurationSearchRequest[];
 	onSearchesChange: (value: ConfigurationSearchRequest[]) => void;
 }
@@ -47,7 +45,7 @@ function RoleToggle({
 	const { t } = useTranslation();
 	const fixed = roleIsFixed(entry, role);
 	return (
-		<Label className="flex items-center gap-2 cursor-pointer">
+		<Label className="flex cursor-pointer items-center gap-2">
 			<Checkbox
 				checked={fixed}
 				onCheckedChange={(checked) => onChange(toggleFixedRole(entry, role, checked === true))}
@@ -68,9 +66,9 @@ function RoleToggle({
  *  Role *candidates* are not narrowed here — every role defaults to the full transiting/transited
  *  selection from the Transiting/Transited Bodies tabs, per role's fixed/moving choice; narrowing
  *  an individual role to a smaller candidate set is a documented follow-up, not implemented here. */
-export function ConfigurationSelector({ theme, searches, onSearchesChange }: ConfigurationSelectorProps) {
+export function ConfigurationSelector({ searches, onSearchesChange }: ConfigurationSelectorProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 
 	const addSearch = () => {
 		onSearchesChange([...searches, { configurationId: 'grand_trine', fixedRoles: [] }]);
@@ -87,10 +85,7 @@ export function ConfigurationSelector({ theme, searches, onSearchesChange }: Con
 			{searches.map((entry, index) => {
 				const pattern = configurationPattern(entry.configurationId);
 				return (
-					<div
-						key={index}
-						className={cn('rounded-lg border p-3 space-y-2', ft.advancedPanel)}
-					>
+					<div key={index} className={cn('space-y-2 rounded-lg border p-3', ft.advancedPanel)}>
 						<div className="flex items-center justify-between gap-2">
 							<Select
 								value={entry.configurationId}
@@ -106,11 +101,7 @@ export function ConfigurationSelector({ theme, searches, onSearchesChange }: Con
 								</SelectTrigger>
 								<SelectContent className={ft.selectContent}>
 									{CONFIGURATION_PATTERNS.map((candidate) => (
-										<SelectItem
-											key={candidate.id}
-											value={candidate.id}
-											className={ft.selectItem}
-										>
+										<SelectItem key={candidate.id} value={candidate.id} className={ft.selectItem}>
 											{t(candidate.labelKey, { defaultValue: candidate.id })}
 										</SelectItem>
 									))}

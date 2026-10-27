@@ -4,7 +4,6 @@ import { ArrowLeftRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AppMainContentContainer, AppMainContentRoot } from './app-main-content';
-import type { Theme } from './astrology-sidebar';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -116,17 +115,15 @@ function personDateTime(person: Person): Date {
 function PersonFields({
 	person,
 	onChange,
-	theme,
 	personLabel
 }: {
 	person: Person;
 	onChange: (person: Person) => void;
-	theme: Theme;
 	personLabel: string;
 }) {
 	const { t, i18n } = useTranslation();
 	const { charts } = useWorkspaceCharts();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const manual = person.mode === 'manual';
 	const dateTime = useMemo(() => personDateTime(person), [person.date, person.time]);
 	const dateFnsLocale = useMemo(() => {
@@ -261,16 +258,10 @@ function isPersonReady(person: Person): boolean {
 			);
 }
 
-export function SynastryView({
-	theme,
-	onCreated
-}: {
-	theme: Theme;
-	onCreated?: (chart: AppChart) => void;
-}) {
+export function SynastryView({ onCreated }: { onCreated?: (chart: AppChart) => void }) {
 	const { t } = useTranslation();
 	const { charts, selectedChartId } = useWorkspaceCharts();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const [name, setName] = useState('');
 	const [personA, setPersonA] = useState<Person>(() => ({
 		...emptyPerson(),
@@ -406,12 +397,7 @@ export function SynastryView({
 								<span>{t('synastry_person_a')}</span>
 							</AccordionTrigger>
 							<AccordionContent className="pb-5">
-								<PersonFields
-									person={personA}
-									onChange={setPersonA}
-									theme={theme}
-									personLabel="person-a"
-								/>
+								<PersonFields person={personA} onChange={setPersonA} personLabel="person-a" />
 							</AccordionContent>
 						</AccordionItem>
 					</Accordion>
@@ -440,12 +426,7 @@ export function SynastryView({
 								<span>{t('synastry_person_b')}</span>
 							</AccordionTrigger>
 							<AccordionContent className="pb-5">
-								<PersonFields
-									person={personB}
-									onChange={setPersonB}
-									theme={theme}
-									personLabel="person-b"
-								/>
+								<PersonFields person={personB} onChange={setPersonB} personLabel="person-b" />
 							</AccordionContent>
 						</AccordionItem>
 					</Accordion>

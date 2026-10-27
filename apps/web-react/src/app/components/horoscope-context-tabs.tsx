@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment } from 'react';
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -10,20 +10,20 @@ import {
 import { Button } from './ui/button';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import type { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
-
-type HoroscopeContextTabsProps = {
-	theme: Theme;
-};
 
 /**
  * Bottom workspace chart strip — chart switching only; **New** is via the left sidebar (`novy`).
  */
-export function HoroscopeContextTabs({ theme }: HoroscopeContextTabsProps) {
-	const { charts, selectedChartId, setSelectedChartId, isSelectedChartPreview, resetSelectedChartPreview } =
-		useWorkspaceCharts();
-	const ft = useAppFormFieldTheme(theme);
+export function HoroscopeContextTabs() {
+	const {
+		charts,
+		selectedChartId,
+		setSelectedChartId,
+		isSelectedChartPreview,
+		resetSelectedChartPreview
+	} = useWorkspaceCharts();
+	const ft = useAppFormFieldTheme();
 
 	return (
 		<div className={ft.contextRail} data-tour="radix-chart-tabs">

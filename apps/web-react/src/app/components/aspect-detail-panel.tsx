@@ -4,8 +4,6 @@ import { ASPECT_GLYPHS } from '@/lib/astrology/aspects';
 import { aspectLabel } from '@/lib/astrology/objectLabels';
 import type { ParsedAspect } from '@/lib/astrology/aspectParsing';
 import type { ObjectDetailViewModel } from '@/lib/astrology/objectDetail';
-import type { AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import type { Theme } from './astrology-sidebar';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { ObjectDetailSections } from './object-detail-panel';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -16,8 +14,6 @@ function formatDegrees(value: number | undefined, digits = 2) {
 }
 
 interface AspectDetailPanelProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	aspect: ParsedAspect;
 	fromObject: ObjectDetailViewModel;
 	toObject: ObjectDetailViewModel;
@@ -27,15 +23,9 @@ interface AspectDetailPanelProps {
  *  aspect's own facts, followed by each side's full body detail — the exact same
  *  `ObjectDetailSections` the radix wheel's own planet-click panel uses — each collapsed inside
  *  its own accordion item so the panel doesn't open already fighting three sections for space. */
-export function AspectDetailPanel({
-	theme,
-	glyphSet,
-	aspect,
-	fromObject,
-	toObject
-}: AspectDetailPanelProps) {
+export function AspectDetailPanel({ aspect, fromObject, toObject }: AspectDetailPanelProps) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const textColor = ft.title;
 	const mutedColor = ft.muted;
 
@@ -43,30 +33,19 @@ export function AspectDetailPanel({
 		<div className="space-y-4">
 			<div className="flex items-center gap-3">
 				<div className="flex items-center gap-2">
-					<AstrologyGlyph
-						glyphId={fromObject.bodyId}
-						glyphSet={glyphSet}
-						fallback={fromObject.icon}
-						size={20}
-					/>
+					<AstrologyGlyph glyphId={fromObject.bodyId} fallback={fromObject.icon} size={20} />
 					<span className={cn('text-sm font-medium', textColor)}>{fromObject.label}</span>
 				</div>
 				<span className="flex items-center justify-center text-xl leading-none">
 					<AstrologyGlyph
 						glyphId={aspect.type}
-						glyphSet={glyphSet}
 						domain="aspect"
 						fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
 						size={22}
 					/>
 				</span>
 				<div className="flex items-center gap-2">
-					<AstrologyGlyph
-						glyphId={toObject.bodyId}
-						glyphSet={glyphSet}
-						fallback={toObject.icon}
-						size={20}
-					/>
+					<AstrologyGlyph glyphId={toObject.bodyId} fallback={toObject.icon} size={20} />
 					<span className={cn('text-sm font-medium', textColor)}>{toObject.label}</span>
 				</div>
 			</div>
@@ -123,36 +102,26 @@ export function AspectDetailPanel({
 				<AccordionItem value="from-object" className="border-0">
 					<AccordionTrigger className="py-2 hover:no-underline">
 						<div className="flex items-center gap-2">
-							<AstrologyGlyph
-								glyphId={fromObject.bodyId}
-								glyphSet={glyphSet}
-								fallback={fromObject.icon}
-								size={18}
-							/>
+							<AstrologyGlyph glyphId={fromObject.bodyId} fallback={fromObject.icon} size={18} />
 							<h4 className={cn('text-sm font-semibold', textColor)}>{fromObject.label}</h4>
 							<span className={cn('text-xs', mutedColor)}>{fromObject.layerLabel}</span>
 						</div>
 					</AccordionTrigger>
 					<AccordionContent className="pt-1">
-						<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={fromObject} />
+						<ObjectDetailSections data={fromObject} />
 					</AccordionContent>
 				</AccordionItem>
 
 				<AccordionItem value="to-object" className="border-0">
 					<AccordionTrigger className="py-2 hover:no-underline">
 						<div className="flex items-center gap-2">
-							<AstrologyGlyph
-								glyphId={toObject.bodyId}
-								glyphSet={glyphSet}
-								fallback={toObject.icon}
-								size={18}
-							/>
+							<AstrologyGlyph glyphId={toObject.bodyId} fallback={toObject.icon} size={18} />
 							<h4 className={cn('text-sm font-semibold', textColor)}>{toObject.label}</h4>
 							<span className={cn('text-xs', mutedColor)}>{toObject.layerLabel}</span>
 						</div>
 					</AccordionTrigger>
 					<AccordionContent className="pt-1">
-						<ObjectDetailSections theme={theme} glyphSet={glyphSet} data={toObject} />
+						<ObjectDetailSections data={toObject} />
 					</AccordionContent>
 				</AccordionItem>
 			</Accordion>
