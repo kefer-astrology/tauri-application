@@ -6,3 +6,6 @@ src-tauri/gen
 backend-python
 .codex
 *.lock
+# Hugo build output and Go templates (not parseable by Prettier)
+docs/public
+docs/layouts
