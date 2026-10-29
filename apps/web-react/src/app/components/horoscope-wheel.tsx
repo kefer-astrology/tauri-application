@@ -19,35 +19,6 @@ import type { AspectLineStyleId, AspectLineTierStyleState } from '@/lib/tauri/ch
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
 import { useAppTheme } from '../providers/app-theme';
 
-/** Dark themes: planet SVGs (no per-color filter assets). */
-function WheelPlanetImageDark({
-	href,
-	x,
-	y,
-	size
-}: {
-	href: string;
-	x: number;
-	y: number;
-	size: number;
-}) {
-	const half = size / 2;
-	return (
-		<image
-			href={href}
-			x={x - half}
-			y={y - half}
-			width={size}
-			height={size}
-			preserveAspectRatio="xMidYMid meet"
-			style={{
-				pointerEvents: 'none',
-				filter: 'grayscale(1) invert(1) brightness(0.9) contrast(1.1)'
-			}}
-		/>
-	);
-}
-
 /** Tint a raster SVG glyph to a solid color via `url(#filterId)` (`feFlood` + `feComposite` in defs). */
 function WheelTintedGlyphImage({
 	href,

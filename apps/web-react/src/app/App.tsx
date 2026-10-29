@@ -24,7 +24,7 @@ import { InformationView } from './components/information-view';
 import { RevolutionView } from './components/revolution-view';
 import { SynastryView } from './components/synastry-view';
 import SettingsView from './components/settings-view';
-import { OpenWorkspaceView } from './components/open-workspace-view';
+import { OpenWorkspaceView } from './features/open/open-workspace-view';
 import { ExportWorkspaceView } from './components/export-workspace-view';
 import { GuidedTour } from './components/guided-tour';
 import { Toaster } from './components/ui/sonner';
@@ -378,7 +378,6 @@ export default function App() {
 		...DEFAULT_WORKSPACE_DEFAULTS
 	}));
 	const [workspaceTags, setWorkspaceTags] = useState<WorkspaceTagDefinition[]>([]);
-	const [currentModelReport, setCurrentModelReport] = useState<CurrentModelReport | null>(null);
 	const [appBootLoading, setAppBootLoading] = useState(true);
 	const computingChartIdsRef = useRef<Set<string>>(new Set());
 	const bootstrapComputeAttemptedRef = useRef(false);
@@ -711,7 +710,6 @@ export default function App() {
 					setWorkspaceDefaults((w) => mergeWorkspaceDefaults(w, dto));
 				},
 				(report) => {
-					setCurrentModelReport(report);
 					setWorkspaceDefaults((w) => mergeModelReportDefaults(w, report));
 					if (report.warnings.length > 0) {
 						toast.message(t('toast_model_report_warnings'), {

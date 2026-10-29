@@ -71,6 +71,11 @@ interface PlanetPosition {
 	retrograde: boolean;
 }
 
+/** Stable fallbacks, so memo dependencies don't change on every render while a chart has no data. */
+const NO_POSITIONS: Record<string, unknown> = {};
+const NO_MOTION: Record<string, { speed: number; retrograde: boolean }> = {};
+const NO_IDS: string[] = [];
+
 const ZODIAC_UNICODE_FALLBACK = [
 	'♈',
 	'♉',
@@ -225,8 +230,11 @@ export function HoroscopeDashboard({
 		[selectedChart?.zodiacType, selectedChart?.houseSystem].filter(Boolean).join(' / ') ||
 		t('demo_chart_house_system');
 	const chartTags = selectedChart?.tags?.filter(Boolean) ?? [];
-	const computedPositions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
-	const computedMotion = selectedChart?.computed?.motion ?? {};
+	const computedPositions = (selectedChart?.computed?.positions ?? NO_POSITIONS) as Record<
+		string,
+		unknown
+	>;
+	const computedMotion = selectedChart?.computed?.motion ?? NO_MOTION;
 	const computedAxes = selectedChart?.computed?.axes;
 	const positionOrder = Array.isArray(selectedChart?.observableObjects)
 		? selectedChart.observableObjects
@@ -276,12 +284,10 @@ export function HoroscopeDashboard({
 	// Chart-wide only: Rust records which shapes/configurations the whole chart has, not which
 	// bodies belong to each one, so the detail panel shows them as informational context rather
 	// than filtering them to the selected planet.
-	const chartShapeIds = selectedChart?.computed?.shapes ?? [];
-	const chartConfigurationIds = selectedChart?.computed?.configurations ?? [];
-	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
-		string,
-		unknown
-	>;
+	const chartShapeIds = selectedChart?.computed?.shapes ?? NO_IDS;
+	const chartConfigurationIds = selectedChart?.computed?.configurations ?? NO_IDS;
+	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ??
+		NO_POSITIONS) as Record<string, unknown>;
 	const transitWheelBodyOrder: HoroscopeWheelBody[] = activeTransitOverlay?.transitingBodies ?? [];
 	const transitWheelBodyLongitudes = Object.fromEntries(
 		transitWheelBodyOrder

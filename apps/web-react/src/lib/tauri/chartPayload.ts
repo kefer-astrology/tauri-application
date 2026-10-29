@@ -867,7 +867,7 @@ export function wallTimeToUtcIso(value: Date, timezone: string, utcOffset?: stri
 	if (fixedOffset !== null) return new Date(wallTimeUtc - fixedOffset).toISOString();
 
 	let candidate = new Date(wallTimeUtc);
-	let offset = ianaOffsetMilliseconds(normalizedTimezone, candidate);
+	const offset = ianaOffsetMilliseconds(normalizedTimezone, candidate);
 	candidate = new Date(wallTimeUtc - offset);
 	const correctedOffset = ianaOffsetMilliseconds(normalizedTimezone, candidate);
 	if (correctedOffset !== offset) candidate = new Date(wallTimeUtc - correctedOffset);

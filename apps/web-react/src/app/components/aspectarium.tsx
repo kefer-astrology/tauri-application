@@ -56,6 +56,11 @@ interface AspectEntry {
 	toLayer: AspectLayer;
 }
 
+/** Stable fallbacks, so memo dependencies don't change on every render while a chart has no data. */
+const NO_POSITIONS: Record<string, unknown> = {};
+const NO_MOTION: Record<string, { speed: number; retrograde: boolean }> = {};
+const NO_IDS: string[] = [];
+
 const ZODIAC_UNICODE_FALLBACK = [
 	'♈',
 	'♉',
@@ -351,19 +356,17 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 		);
 	}, [workspaceDefaults.defaultAspects]);
 
-	const positions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
-	const motion = selectedChart?.computed?.motion ?? {};
+	const positions = (selectedChart?.computed?.positions ?? NO_POSITIONS) as Record<string, unknown>;
+	const motion = selectedChart?.computed?.motion ?? NO_MOTION;
 	// Chart-wide only: Rust records which shapes/configurations the whole chart has, not which
 	// bodies belong to each one (see the radix wheel's own object-detail panel for the same note).
-	const chartShapeIds = selectedChart?.computed?.shapes ?? [];
-	const chartConfigurationIds = selectedChart?.computed?.configurations ?? [];
+	const chartShapeIds = selectedChart?.computed?.shapes ?? NO_IDS;
+	const chartConfigurationIds = selectedChart?.computed?.configurations ?? NO_IDS;
 	const activeTransitOverlay =
 		transitOverlay && transitOverlay.sourceChartId === selectedChart?.id ? transitOverlay : null;
-	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
-		string,
-		unknown
-	>;
-	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? {};
+	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ??
+		NO_POSITIONS) as Record<string, unknown>;
+	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? NO_MOTION;
 
 	const [midpoints, setMidpoints] = useState<Midpoint[]>([]);
 	const [midpointContacts, setMidpointContacts] = useState<MidpointContact[]>([]);
@@ -398,8 +401,7 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [view, selectedChart, selectedBodyIds, midpointAspectTypes]);
+	}, [view, selectedChart, positions, selectedBodyIds, midpointAspectTypes, workspaceDefaults]);
 
 	// Unfiltered (not narrowed by the current orb/body/aspect-type filters): an object's own
 	// detail view should list every aspect it actually has, matching the radix wheel's own

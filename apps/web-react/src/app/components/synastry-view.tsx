@@ -98,9 +98,9 @@ function localTimeValue(value: Date): string {
 	return `${hours}:${minutes}:${seconds}`;
 }
 
-function personDateTime(person: Person): Date {
-	const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(person.date);
-	const timeMatch = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(person.time);
+function personDateTime(date: string, time: string): Date {
+	const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+	const timeMatch = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(time);
 	if (!dateMatch || !timeMatch) return new Date();
 	return new Date(
 		Number(dateMatch[1]),
@@ -125,7 +125,10 @@ function PersonFields({
 	const { charts } = useWorkspaceCharts();
 	const ft = useAppFormFieldTheme();
 	const manual = person.mode === 'manual';
-	const dateTime = useMemo(() => personDateTime(person), [person.date, person.time]);
+	const dateTime = useMemo(
+		() => personDateTime(person.date, person.time),
+		[person.date, person.time]
+	);
 	const dateFnsLocale = useMemo(() => {
 		const language = i18n.language.split('-')[0]?.toLowerCase() ?? 'en';
 		if (language === 'cs') return cs;

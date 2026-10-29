@@ -15,6 +15,7 @@ export const FACT_PLANET_IDS = [
 	'neptune',
 	'pluto'
 ] as const;
+export type FactPlanetId = (typeof FACT_PLANET_IDS)[number];
 export const TRADITIONAL_PLANET_IDS = FACT_PLANET_IDS.slice(0, 7);
 export const MODALITY_IDS = ['cardinal', 'fixed', 'mutable'] as const;
 export const ELEMENT_IDS = ['fire', 'earth', 'air', 'water'] as const;

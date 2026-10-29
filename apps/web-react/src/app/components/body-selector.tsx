@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Sparkles, X } from 'lucide-react';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
@@ -19,7 +19,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { Card, CardContent } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import { ColorInput } from './ui/color-input';
-import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { DetailSidePanel } from './detail-side-panel';
@@ -121,7 +120,10 @@ export function BodySelector({
 	const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
 	const selected = useMemo(() => new Set(selectedBodyIds), [selectedBodyIds]);
-	const labelFor = (item: ObservableObjectDefinition) => getObservableObjectLabel(item, t);
+	const labelFor = useCallback(
+		(item: ObservableObjectDefinition) => getObservableObjectLabel(item, t),
+		[t]
+	);
 
 	const byCategory = useMemo(() => {
 		const map = new Map<ObservableObjectCategory, ObservableObjectDefinition[]>();
@@ -147,8 +149,7 @@ export function BodySelector({
 				const selectedCount = availableIds.filter((id) => selected.has(id)).length;
 				return { category, items, filtered, availableIds, selectedCount };
 			}).filter((group) => group.filtered.length > 0),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[byCategory, trimmedQuery, selected, t]
+		[byCategory, trimmedQuery, selected, labelFor]
 	);
 
 	const openValues = trimmedQuery ? groups.map((group) => group.category) : manualOpen;
@@ -200,8 +201,7 @@ export function BodySelector({
 		return CATEGORY_ORDER.map((category) => ({ category, items: map.get(category) ?? [] })).filter(
 			(group) => group.items.length > 0
 		);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedItems, panelQuery, t]);
+	}, [selectedItems, panelQuery, labelFor]);
 
 	return (
 		<Card variant="ghost" className="w-full rounded-xl">

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Sparkles, X } from 'lucide-react';
 import { ASPECT_GLYPHS, ASPECT_ROWS, type AspectRowId } from '@/lib/astrology/aspects';
@@ -72,28 +72,31 @@ export function AspectSelector({
 	const selected = useMemo(() => new Set(selectedAspectIds), [selectedAspectIds]);
 	const trimmedQuery = query.trim();
 
-	const labelFor = (row: (typeof ASPECT_ROWS)[number]) =>
-		t(row.labelKey, { defaultValue: row.fallbackLabel });
+	const labelFor = useCallback(
+		(row: (typeof ASPECT_ROWS)[number]) => t(row.labelKey, { defaultValue: row.fallbackLabel }),
+		[t]
+	);
 
-	const matchesQuery = (row: (typeof ASPECT_ROWS)[number]) => {
-		if (!trimmedQuery) return true;
-		const q = trimmedQuery.toLowerCase();
-		return (
-			labelFor(row).toLowerCase().includes(q) ||
-			formatDegree(row.angle).toLowerCase().includes(q) ||
-			t('transits_aspects_harmonic_series', { n: row.harmonic }).toLowerCase().includes(q)
-		);
-	};
+	const matchesQuery = useCallback(
+		(row: (typeof ASPECT_ROWS)[number]) => {
+			if (!trimmedQuery) return true;
+			const q = trimmedQuery.toLowerCase();
+			return (
+				labelFor(row).toLowerCase().includes(q) ||
+				formatDegree(row.angle).toLowerCase().includes(q) ||
+				t('transits_aspects_harmonic_series', { n: row.harmonic }).toLowerCase().includes(q)
+			);
+		},
+		[labelFor, t, trimmedQuery]
+	);
 
 	const majorRows = useMemo(
 		() => ASPECT_ROWS.filter((row) => row.type === 'major' && matchesQuery(row)),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[trimmedQuery, t]
+		[matchesQuery]
 	);
 	const minorRows = useMemo(
 		() => ASPECT_ROWS.filter((row) => row.type === 'minor' && matchesQuery(row)),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[trimmedQuery, t]
+		[matchesQuery]
 	);
 
 	const harmonicGroups = useMemo(() => {
@@ -110,8 +113,7 @@ export function AspectSelector({
 				rows: rows.filter(matchesQuery)
 			}))
 			.filter((group) => group.rows.length > 0);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [trimmedQuery, t]);
+	}, [matchesQuery]);
 
 	const harmonicOpenValues = trimmedQuery
 		? harmonicGroups.map((group) => group.value)
@@ -199,8 +201,7 @@ export function AspectSelector({
 				rows: filtered.filter((r) => r.type === 'minor')
 			}
 		].filter((group) => group.rows.length > 0);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedRows, panelQuery, t]);
+	}, [selectedRows, panelQuery, labelFor]);
 
 	return (
 		<Card variant="ghost" className="w-full rounded-xl">

@@ -634,7 +634,7 @@ export function TransitsResultsDashboard({ workspaceDefaults }: TransitsResultsD
 			);
 		}
 		return result;
-	}, [waveSeries]);
+	}, [waveSeries, chartYZoomDegrees]);
 
 	const markers = useMemo<TransitResonanceMarker[]>(() => {
 		const list: TransitResonanceMarker[] = [];

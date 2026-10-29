@@ -1,25 +1,8 @@
 import type { AppChart } from '@/lib/tauri/chartPayload';
 
-// Chart-search filter helpers. Distribution shapes and aspect-pattern configurations
-// (bundle/bowl/t-square/grand-trine/etc.) are computed in Rust (`astrology.rs`) and
-// arrive pre-populated on `chart.computed.shapes`/`chart.computed.configurations`;
-// this module only reads them. Per-planet sign/degree/house filtering below is still
-// derived client-side from already-computed positions/house cusps.
-
-export const SEARCH_PLANET_IDS = [
-	'sun',
-	'moon',
-	'mercury',
-	'venus',
-	'mars',
-	'jupiter',
-	'saturn',
-	'uranus',
-	'neptune',
-	'pluto'
-] as const;
-
-export type SearchPlanetId = (typeof SEARCH_PLANET_IDS)[number];
+// Longitude helpers and the aspect / house-cusp / shape / configuration view of a computed
+// chart used by Open-view filters. Shapes and configurations are computed in Rust and only read
+// here; per-body classifications come from `chart.computed.facts` (see `factFilters.ts`).
 
 export interface SearchAspect {
 	from: string;
@@ -28,7 +11,6 @@ export interface SearchAspect {
 }
 
 export interface ChartSearchMetadata {
-	positions: Partial<Record<SearchPlanetId, number>>;
 	aspects: SearchAspect[];
 	houseCusps: number[];
 	shapes: Set<string>;
@@ -84,12 +66,6 @@ function parseAspect(raw: unknown): SearchAspect | null {
 
 export function chartSearchMetadata(chart: AppChart): ChartSearchMetadata {
 	const rawPositions = chart.computed?.positions ?? {};
-	const positions = Object.fromEntries(
-		SEARCH_PLANET_IDS.flatMap((id) => {
-			const longitude = normalizeLongitude(rawPositions[id]);
-			return longitude === null ? [] : [[id, longitude]];
-		})
-	) as Partial<Record<SearchPlanetId, number>>;
 	const aspects = (chart.computed?.aspects ?? [])
 		.map(parseAspect)
 		.filter((aspect): aspect is SearchAspect => aspect !== null);
@@ -98,7 +74,6 @@ export function chartSearchMetadata(chart: AppChart): ChartSearchMetadata {
 		Array.from({ length: 12 }, (_, index) => normalizeLongitude(rawPositions[`house_${index + 1}`]))
 	).filter((cusp): cusp is number => typeof cusp === 'number' && Number.isFinite(cusp));
 	return {
-		positions,
 		aspects,
 		houseCusps,
 		shapes: new Set(chart.computed?.shapes ?? []),
