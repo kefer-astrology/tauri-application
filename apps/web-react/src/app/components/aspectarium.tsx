@@ -1,18 +1,20 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Grid3X3, List, Search, Target } from 'lucide-react';
+import { Grid3X3, List, Target } from 'lucide-react';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { cn } from './ui/utils';
+import {
+	MultiSelectPopover,
+	type MultiSelectPopoverItem
+} from '../views/data/multi-select-popover';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { DetailSidePanel } from './detail-side-panel';
 import { chartDataToComputePayload, type WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
@@ -178,117 +180,6 @@ function AspectCellButton({
 				{formatOrb(aspect.orb)}
 			</span>
 		</Button>
-	);
-}
-
-type FilterItem = { id: string; label: string; icon: ReactNode; color?: string };
-
-function MultiSelectFilter({
-	items,
-	selected,
-	label,
-	noneLabel,
-	selectedLabel,
-	searchPlaceholder,
-	selectAllLabel,
-	clearAllLabel,
-	noResultsLabel,
-	inputClassName,
-	onChange
-}: {
-	items: FilterItem[];
-	selected: Set<string>;
-	label: string;
-	noneLabel: string;
-	selectedLabel: (count: number) => string;
-	searchPlaceholder: string;
-	selectAllLabel: string;
-	clearAllLabel: string;
-	noResultsLabel: string;
-	inputClassName: string;
-	onChange: (next: Set<string>) => void;
-}) {
-	const [query, setQuery] = useState('');
-	const filteredItems = items.filter((item) =>
-		item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
-	);
-	const selectedCount = items.filter((item) => selected.has(item.id)).length;
-	const triggerLabel =
-		selectedCount === 0
-			? noneLabel
-			: selectedCount === items.length
-				? label
-				: selectedLabel(selectedCount);
-
-	return (
-		<Popover onOpenChange={(open) => !open && setQuery('')}>
-			<PopoverTrigger asChild>
-				<Button type="button" variant="outline" size="sm" className="h-9 gap-1.5 rounded-xl">
-					<span className="max-w-40 truncate">{triggerLabel}</span>
-					<ChevronDown className="size-3.5 opacity-60" />
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-72 p-0">
-				<div className="relative border-b border-[color:var(--theme-panel-border)] p-2">
-					<Search className="absolute top-1/2 left-5 size-3.5 -translate-y-1/2 text-[color:var(--theme-content-muted)]" />
-					<Input
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-						placeholder={searchPlaceholder}
-						className={cn(inputClassName, 'h-8 pl-8')}
-					/>
-				</div>
-				<div className="grid grid-cols-2 border-b border-[color:var(--theme-panel-border)]">
-					<Button
-						type="button"
-						variant="ghost"
-						className="h-8 rounded-none text-xs"
-						onClick={() => onChange(new Set(items.map((item) => item.id)))}
-					>
-						{selectAllLabel}
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						className="h-8 rounded-none border-l border-[color:var(--theme-panel-border)] text-xs"
-						onClick={() => onChange(new Set())}
-					>
-						{clearAllLabel}
-					</Button>
-				</div>
-				<div className="max-h-64 overflow-y-auto p-1">
-					{filteredItems.length === 0 ? (
-						<p className="px-3 py-5 text-center text-xs text-[color:var(--theme-content-muted)]">
-							{noResultsLabel}
-						</p>
-					) : (
-						filteredItems.map((item) => (
-							<Label
-								key={item.id}
-								className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm hover:bg-[color:var(--theme-soft-bg)]"
-							>
-								<Checkbox
-									checked={selected.has(item.id)}
-									onCheckedChange={() => {
-										const next = new Set(selected);
-										if (next.has(item.id)) next.delete(item.id);
-										else next.add(item.id);
-										onChange(next);
-									}}
-								/>
-								<span
-									className="flex size-5 items-center justify-center text-base"
-									style={{ color: item.color }}
-								>
-									{item.icon}
-								</span>
-								<span className="min-w-0 truncate">{item.label}</span>
-							</Label>
-						))
-					)}
-				</div>
-			</PopoverContent>
-		</Popover>
 	);
 }
 
@@ -498,7 +389,7 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 	const availableSelectorBodyIds = Array.from(
 		new Set([...availableBodyOrder, ...availableTransitBodyOrder])
 	);
-	const bodyFilterItems: FilterItem[] = availableSelectorBodyIds.map((id) => ({
+	const bodyFilterItems: MultiSelectPopoverItem[] = availableSelectorBodyIds.map((id) => ({
 		id,
 		label: objectLabel(id, t),
 		icon: (
@@ -509,7 +400,7 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 			/>
 		)
 	}));
-	const aspectFilterItems: FilterItem[] = ASPECT_ROWS.map((aspect) => ({
+	const aspectFilterItems: MultiSelectPopoverItem[] = ASPECT_ROWS.map((aspect) => ({
 		id: aspect.id,
 		label: t(aspect.labelKey),
 		icon: (
@@ -562,31 +453,35 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 		>
 			<CardContent className="flex min-h-0 flex-1 flex-col p-0">
 				<div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--theme-panel-border)] px-4 py-3 md:px-5">
-					<MultiSelectFilter
+					<MultiSelectPopover
 						items={bodyFilterItems}
 						selected={selectedBodyIds}
-						label={t('aspectarium_all_planets')}
-						noneLabel={t('aspectarium_none_selected')}
-						selectedLabel={(count) => t('aspectarium_selected_count', { count })}
-						searchPlaceholder={t('aspectarium_search_planets')}
-						selectAllLabel={t('aspectarium_select_all')}
-						clearAllLabel={t('aspectarium_clear_all')}
-						noResultsLabel={t('open_search_no_results')}
-						inputClassName={ft.inputCompact}
-						onChange={setSelectedBodyIds}
+						onSelectedChange={setSelectedBodyIds}
+						labels={{
+							all: t('aspectarium_all_planets'),
+							none: t('aspectarium_none_selected'),
+							selectedCount: (count) => t('aspectarium_selected_count', { count }),
+							search: t('aspectarium_search_planets'),
+							clearSearch: t('clear'),
+							selectAll: t('aspectarium_select_all'),
+							clearAll: t('aspectarium_clear_all'),
+							noResults: t('open_search_no_results')
+						}}
 					/>
-					<MultiSelectFilter
+					<MultiSelectPopover
 						items={aspectFilterItems}
 						selected={selectedAspectTypes}
-						label={t('aspectarium_all_aspects')}
-						noneLabel={t('aspectarium_none_selected')}
-						selectedLabel={(count) => t('aspectarium_selected_count', { count })}
-						searchPlaceholder={t('aspectarium_search_aspects')}
-						selectAllLabel={t('aspectarium_select_all')}
-						clearAllLabel={t('aspectarium_clear_all')}
-						noResultsLabel={t('open_search_no_results')}
-						inputClassName={ft.inputCompact}
-						onChange={setSelectedAspectTypes}
+						onSelectedChange={setSelectedAspectTypes}
+						labels={{
+							all: t('aspectarium_all_aspects'),
+							none: t('aspectarium_none_selected'),
+							selectedCount: (count) => t('aspectarium_selected_count', { count }),
+							search: t('aspectarium_search_aspects'),
+							clearSearch: t('clear'),
+							selectAll: t('aspectarium_select_all'),
+							clearAll: t('aspectarium_clear_all'),
+							noResults: t('open_search_no_results')
+						}}
 					/>
 					<Select value={orbPreset} onValueChange={(value) => setOrbPreset(value as OrbPreset)}>
 						<SelectTrigger className={cn(ft.selectTrigger, 'h-9 min-h-9 w-auto min-w-36 py-1')}>

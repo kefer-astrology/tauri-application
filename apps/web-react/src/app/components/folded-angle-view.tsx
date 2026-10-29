@@ -8,34 +8,21 @@ import {
 	getObservableObjectLabel,
 	type ObservableObjectDefinition
 } from '@/lib/astrology/observableObjects';
-import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import {
 	CATEGORICAL_PALETTE_SIZE,
 	categoricalPaletteForTheme
 } from '@/lib/dataviz/categoricalPalette';
 import { Card, CardContent } from './ui/card';
-import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { TimeSeriesChart } from '../views/data/time-series-chart';
 import { cn } from './ui/utils';
+import { CheckChips } from '../views/data/check-chips';
+import { ObjectGlyph } from '../views/domain/object-glyph';
 import { useAppFormFieldTheme } from './form-field-theme';
 import { useAppTheme } from '../providers/app-theme';
 
 const MAX_VISIBLE_SERIES = CATEGORICAL_PALETTE_SIZE;
-
-const PLANET_GLYPH_FALLBACK: Record<string, string> = {
-	sun: '☉',
-	moon: '☽',
-	mercury: '☿',
-	venus: '♀',
-	mars: '♂',
-	jupiter: '♃',
-	saturn: '♄',
-	uranus: '♅',
-	neptune: '♆',
-	pluto: '♇'
-};
 
 const PREFERRED_DEFAULT_ORDER = [
 	'sun',
@@ -149,49 +136,32 @@ export function FoldedAngleView({
 						<Label className={cn('mb-2 block', ft.label)}>
 							{t('transits_folded_bodies_label', { defaultValue: 'Bodies shown' })}
 						</Label>
-						<div className="flex flex-wrap gap-2">
-							{orderedBodyIds.map((id) => {
-								const checked = selectedIds.includes(id);
-								const def = bodyDefinition(id);
+						<CheckChips
+							idPrefix="folded-body"
+							items={orderedBodyIds.map((id) => {
 								const color = colorById.get(id);
-								const disabled = !checked && atCap;
-								return (
-									<Label
-										key={id}
-										htmlFor={`folded-body-${id}`}
-										className={cn(
-											'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
-											'border-[color:var(--theme-panel-border)]',
-											disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-											checked && 'bg-[color:var(--theme-soft-bg)]'
-										)}
-									>
-										<Checkbox
-											id={`folded-body-${id}`}
-											checked={checked}
-											disabled={disabled}
-											onCheckedChange={(value) => toggleBody(id, value === true)}
-											className="h-3.5 w-3.5 shrink-0 rounded"
-										/>
-										{checked && color && (
-											<span
-												className="inline-block h-0.5 w-2.5 shrink-0 rounded-full"
-												style={{ backgroundColor: color }}
-											/>
-										)}
-										{def && (
-											<AstrologyGlyph
-												glyphId={id}
-												fallback={PLANET_GLYPH_FALLBACK[id] ?? def.icon}
-												size={13}
-												className={cn('shrink-0', ft.iconColor)}
-											/>
-										)}
-										<span className={ft.bodyText}>{labelFor(id)}</span>
-									</Label>
-								);
+								return {
+									id,
+									label: labelFor(id),
+									disabled: !selectedIds.includes(id) && atCap,
+									leading: (
+										<>
+											{selectedIds.includes(id) && color && (
+												<span
+													className="inline-block h-0.5 w-2.5 shrink-0 rounded-full"
+													style={{ backgroundColor: color }}
+												/>
+											)}
+											{bodyDefinition(id) && (
+												<ObjectGlyph id={id} size={13} className={cn('shrink-0', ft.iconColor)} />
+											)}
+										</>
+									)
+								};
 							})}
-						</div>
+							selected={selectedIds}
+							onToggle={toggleBody}
+						/>
 						{atCap && (
 							<p className={cn('mt-2 text-xs', ft.muted)}>
 								{t('transits_folded_max_bodies_hint', {

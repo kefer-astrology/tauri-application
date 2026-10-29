@@ -63,7 +63,7 @@ import {
 import { catalogHouseSystems } from '@/lib/astrology/domainCatalog';
 import { searchLocations } from '@/lib/tauri/workspace';
 import type { AstrologicalTraditionId, ObjectTypeId } from '@/lib/tauri/types';
-import { BodySelector } from './body-selector';
+import { ObservableObjectList } from '../views/domain/observable-object-list';
 import { GlyphManager } from './glyph-manager';
 
 const ASTROLOGY_TRADITION_OPTIONS: { id: AstrologicalTraditionId; labelKey: string }[] = [
@@ -808,10 +808,10 @@ function SettingsView({
 								)}
 
 								{section === 'pozorovane_objekty' && (
-									<BodySelector
-										subtitleKey="settings_observable_objects_hint"
-										selectedBodyIds={selectedBodies}
-										onSelectedBodyIdsChange={applyObservableObjectSelection}
+									<ObservableObjectList
+										subtitle={t('settings_observable_objects_hint')}
+										selectedIds={selectedBodies}
+										onSelectedIdsChange={applyObservableObjectSelection}
 										colors={bodyColors}
 										onColorChange={applyBodyColorChange}
 									/>

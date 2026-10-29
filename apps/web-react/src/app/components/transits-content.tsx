@@ -23,8 +23,8 @@ import {
 	type TimeStepUnit
 } from '../providers/transits-workspace';
 import type { TransitSection } from './transits-secondary-sidebar';
-import { AspectSelector } from './aspect-selector';
-import { BodySelector } from './body-selector';
+import { AspectList } from '../views/domain/aspect-list';
+import { ObservableObjectList } from '../views/domain/observable-object-list';
 import { ConfigurationSelector } from './configuration-selector';
 
 interface TransitsContentProps {
@@ -548,19 +548,19 @@ export function TransitsContent({ section }: TransitsContentProps) {
 			// correct in both languages — see the note in transits-workspace.tsx.
 			case 'transiting-bodies':
 				return (
-					<BodySelector
-						subtitleKey="transits_subtitle_transiting"
-						selectedBodyIds={transitingBodies}
-						onSelectedBodyIdsChange={setTransitingBodies}
+					<ObservableObjectList
+						subtitle={t('transits_subtitle_transiting')}
+						selectedIds={transitingBodies}
+						onSelectedIdsChange={setTransitingBodies}
 					/>
 				);
 
 			case 'transited-bodies':
 				return (
-					<BodySelector
-						subtitleKey="transits_subtitle_transited"
-						selectedBodyIds={transitedBodies}
-						onSelectedBodyIdsChange={setTransitedBodies}
+					<ObservableObjectList
+						subtitle={t('transits_subtitle_transited')}
+						selectedIds={transitedBodies}
+						onSelectedIdsChange={setTransitedBodies}
 					/>
 				);
 
@@ -568,10 +568,7 @@ export function TransitsContent({ section }: TransitsContentProps) {
 				return (
 					<div className="space-y-6">
 						<p className={cn('text-sm', ft.muted)}>{t('transits_aspects_subtitle')}</p>
-						<AspectSelector
-							selectedAspectIds={selectedAspects}
-							onSelectedAspectIdsChange={setSelectedAspects}
-						/>
+						<AspectList selectedIds={selectedAspects} onSelectedIdsChange={setSelectedAspects} />
 					</div>
 				);
 		}
