@@ -7,7 +7,7 @@ export default mergeConfig(
 		test: {
 			// `happy-dom` provides `window`/`localStorage`, which the i18n module reads on load.
 			environment: 'happy-dom',
-			include: ['src/**/*.test.ts']
+			include: ['src/**/*.test.ts', 'src/**/*.test.tsx']
 		}
 	})
 );
