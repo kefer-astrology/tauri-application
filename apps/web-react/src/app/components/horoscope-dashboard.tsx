@@ -43,6 +43,7 @@ import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
 import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { ObservableObjectList } from '../views/domain/observable-object-list';
 import { PositionsList, type BodyPosition } from '../views/domain/positions-list';
+import { parseChartDateTime } from '@/lib/chartDateTime';
 import { DetailSidePanel } from './detail-side-panel';
 import { ObjectDetailPanel } from './object-detail-panel';
 import { AspectDetailPanel } from './aspect-detail-panel';
@@ -67,26 +68,6 @@ const NO_IDS: string[] = [];
 const ANGLE_POSITION_IDS = new Set(
 	OBSERVABLE_OBJECTS.filter((item) => item.category === 'angles').map((item) => item.id)
 );
-
-function parseChartDateTime(value?: string): Date | null {
-	if (!value?.trim()) return null;
-	const direct = new Date(value);
-	if (!Number.isNaN(direct.getTime())) return direct;
-
-	const normalized = value.includes('T')
-		? value
-		: /^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)$/.test(value)
-			? value.replace(' ', 'T') + 'Z'
-			: value;
-	const normalizedDate = new Date(normalized);
-	if (!Number.isNaN(normalizedDate.getTime())) return normalizedDate;
-
-	const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
-	if (!match) return null;
-
-	const [, dd, mm, yyyy, hh = '00', min = '00', ss = '00'] = match;
-	return new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(ss));
-}
 
 function formatCoords(latitude?: number, longitude?: number) {
 	if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;

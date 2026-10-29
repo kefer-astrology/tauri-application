@@ -16,7 +16,7 @@ import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { DataTable, DataTableExpander } from '@/app/views/data/data-table';
 import type { ChartTreeRow } from '@/lib/astrology/chartQuery';
 import { tagColor } from '@/lib/chartTags';
-import { parsedChartDate, splitChartDateTime } from '@/lib/chartDateTime';
+import { parseChartDateTime, splitChartDateTime } from '@/lib/chartDateTime';
 import { chartTypeLabel } from '@/lib/chartTypes';
 
 /**
@@ -174,7 +174,7 @@ export function ChartTreeTable({
 			},
 			{
 				id: 'date',
-				accessorFn: ({ chart }) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
+				accessorFn: ({ chart }) => parseChartDateTime(chart.dateTime)?.getTime() ?? 0,
 				header: t('new_date'),
 				cell: ({ row }) => (
 					<div className={cn('truncate', ft.muted)}>
@@ -184,7 +184,7 @@ export function ChartTreeTable({
 			},
 			{
 				id: 'time',
-				accessorFn: ({ chart }) => parsedChartDate(chart.dateTime)?.getTime() ?? 0,
+				accessorFn: ({ chart }) => parseChartDateTime(chart.dateTime)?.getTime() ?? 0,
 				header: t('new_time'),
 				cell: ({ row }) => (
 					<div className={cn('truncate', ft.muted)}>

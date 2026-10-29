@@ -1,7 +1,7 @@
 import type { AppChart } from '@/lib/tauri/chartPayload';
 import { isBaseChart, type ChartForest } from '@/lib/chartHierarchy';
 import { BASE_CHART_TYPE_IDS, chartTypeId } from '@/lib/chartTypes';
-import { parsedChartDate } from '@/lib/chartDateTime';
+import { parseChartDateTime } from '@/lib/chartDateTime';
 import type { ChartSearchMetadata } from './chartSearch';
 import { degreeOrdinalInSign, signIndexOf } from './zodiac';
 import {
@@ -119,7 +119,7 @@ export function chartMetadataMatches(
 		if (!searchable.includes(text)) return false;
 	}
 	if (!isAnyRecord(query.date)) {
-		const date = parsedChartDate(chart.dateTime);
+		const date = parseChartDateTime(chart.dateTime);
 		if (!date) return false;
 		const actual: Record<DatePartId, number> = {
 			day: date.getDate(),
