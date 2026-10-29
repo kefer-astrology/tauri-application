@@ -22,7 +22,9 @@ export function objectIcon(id: string): string {
 /** Human label for an aspect type id (`trine`, `square`, ...). */
 export function aspectLabel(type: string, t: Translate): string {
 	const definition = ASPECT_ROWS.find((aspect) => aspect.id === type);
-	return definition ? t(definition.labelKey, { defaultValue: definition.fallbackLabel }) : humanizeId(type);
+	return definition
+		? t(definition.labelKey, { defaultValue: definition.fallbackLabel })
+		: humanizeId(type);
 }
 
 function humanizeId(id: string): string {

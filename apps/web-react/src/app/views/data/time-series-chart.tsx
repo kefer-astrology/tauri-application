@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/app/components/ui/utils';
+import { formatDateTime } from '@/lib/time/format';
 
 export interface TimeSeriesDef {
 	id: string;
@@ -166,7 +167,7 @@ export function TimeSeriesChart({
 	height: fixedHeight,
 	yDomain,
 	yTicks,
-	formatX = (x) => new Date(x).toLocaleString(),
+	formatX = (x) => formatDateTime(x),
 	formatY = (y) => String(Math.round(y * 10) / 10),
 	xLabel,
 	yLabel,

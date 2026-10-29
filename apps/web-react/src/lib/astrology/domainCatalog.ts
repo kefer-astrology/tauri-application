@@ -12,9 +12,11 @@ export function domainIds(kind: 'shapes' | 'configurations'): string[] {
 }
 
 export function catalogHouseSystems(): string[] {
-	return DOMAIN_CATALOG?.house_systems
-		.filter((system) => system.computation_supported)
-		.map((system) => system.id) ?? [];
+	return (
+		DOMAIN_CATALOG?.house_systems
+			.filter((system) => system.computation_supported)
+			.map((system) => system.id) ?? []
+	);
 }
 
 export function catalogSigns() {

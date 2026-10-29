@@ -28,14 +28,6 @@ export function normalizeLongitude(value: unknown): number | null {
 	return null;
 }
 
-export function signIndex(longitude: number): number {
-	return Math.floor(normalizeLongitude(longitude)! / 30) % 12;
-}
-
-export function degreeInSign(longitude: number): number {
-	return Math.floor(normalizeLongitude(longitude)! % 30) + 1;
-}
-
 function forwardArc(from: number, to: number): number {
 	return (((to - from) % 360) + 360) % 360;
 }

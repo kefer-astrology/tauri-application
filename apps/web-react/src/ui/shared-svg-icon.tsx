@@ -40,9 +40,7 @@ export function SharedSvgIcon({
 			aria-hidden={title ? undefined : true}
 			role={title ? 'img' : 'presentation'}
 			style={{
-				...(hasExplicitPixelBox
-					? { width: resolvedWidth, height: resolvedHeight }
-					: {}),
+				...(hasExplicitPixelBox ? { width: resolvedWidth, height: resolvedHeight } : {}),
 				...style,
 				display: 'block',
 				flexShrink: 0,

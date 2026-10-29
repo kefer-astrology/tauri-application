@@ -40,13 +40,14 @@ import {
 	type ParsedAspect
 } from '@/lib/astrology/aspectParsing';
 import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
-import { signIndexToZodiacId } from '@/lib/astrology/glyphs';
+import { signPosition } from '@/lib/astrology/zodiac';
 import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { BodySelector } from './body-selector';
 import { DetailSidePanel } from './detail-side-panel';
 import { ObjectDetailPanel } from './object-detail-panel';
 import { AspectDetailPanel } from './aspect-detail-panel';
+import { formatDate, formatDateTime, formatTime } from '@/lib/time/format';
 
 interface HoroscopeDashboardProps {
 	workspaceDefaults: WorkspaceDefaultsState;
@@ -76,21 +77,6 @@ const NO_POSITIONS: Record<string, unknown> = {};
 const NO_MOTION: Record<string, { speed: number; retrograde: boolean }> = {};
 const NO_IDS: string[] = [];
 
-const ZODIAC_UNICODE_FALLBACK = [
-	'♈',
-	'♉',
-	'♊',
-	'♋',
-	'♌',
-	'♍',
-	'♎',
-	'♏',
-	'♐',
-	'♑',
-	'♒',
-	'♓'
-] as const;
-
 const ANGLE_POSITION_IDS = new Set(
 	OBSERVABLE_OBJECTS.filter((item) => item.category === 'angles').map((item) => item.id)
 );
@@ -101,19 +87,14 @@ function longitudeToPosition(
 	retrograde: boolean,
 	t: (key: string, options?: Record<string, unknown>) => string
 ): PlanetPosition {
-	const withinSign = longitude % 30;
-	const totalSeconds = Math.round(withinSign * 3600);
-	const degrees = Math.floor(totalSeconds / 3600) % 30;
-	const minutes = Math.floor((totalSeconds % 3600) / 60);
-	const seconds = totalSeconds % 60;
-	const signIndex = Math.floor(longitude / 30) % 12;
+	const { degrees, minutes, seconds, signZodiacId, signGlyphFallback } = signPosition(longitude);
 	return {
 		id,
 		label: objectLabel(id, t),
 		icon: objectIcon(id),
 		degrees,
-		signZodiacId: signIndexToZodiacId(signIndex),
-		signGlyphFallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
+		signZodiacId,
+		signGlyphFallback,
 		minutes,
 		seconds,
 		retrograde
@@ -198,29 +179,23 @@ export function HoroscopeDashboard({
 				? t('new_type_horary')
 				: t('new_type_radix');
 	const chartDateLabel =
-		parsedChartDateTime?.toLocaleDateString(i18n.language, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		}) ??
+		(parsedChartDateTime &&
+			formatDate(parsedChartDateTime, { day: 'numeric', month: 'short', year: 'numeric' })) ??
 		selectedChart?.dateTime?.split(' ')[0] ??
 		t('demo_chart_date_line');
 	const chartTimeLabel =
-		parsedChartDateTime?.toLocaleTimeString(i18n.language, {
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit'
-		}) ??
+		(parsedChartDateTime && formatTime(parsedChartDateTime)) ??
 		selectedChart?.dateTime?.split(' ').slice(1).join(' ') ??
 		t('demo_chart_time_line');
 	const transitDateTimeLabel =
-		parsedTransitDateTime?.toLocaleString(i18n.language, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		}) ??
+		(parsedTransitDateTime &&
+			formatDateTime(parsedTransitDateTime, {
+				day: 'numeric',
+				month: 'short',
+				year: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			})) ??
 		activeTransitOverlay?.dateTime ??
 		'';
 	const chartLocationLabel = selectedChart?.location || t('demo_chart_location');

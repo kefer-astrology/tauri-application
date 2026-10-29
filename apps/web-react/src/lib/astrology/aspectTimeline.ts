@@ -105,7 +105,13 @@ export function buildAspectTimelines(
 	const transitingSet = new Set(transitingBodyIds);
 	const seriesByKey = new Map<
 		string,
-		{ from: string; to: string; aspectType: string; closeness: Array<number | null>; orb: Array<number | null> }
+		{
+			from: string;
+			to: string;
+			aspectType: string;
+			closeness: Array<number | null>;
+			orb: Array<number | null>;
+		}
 	>();
 
 	entries.forEach((entry, index) => {
@@ -194,7 +200,10 @@ export function buildAspectTimelines(
 			from: data.from,
 			to: data.to,
 			aspectType: data.aspectType,
-			kind: transitingSet.has(data.from) && transitingSet.has(data.to) ? 'moving-moving' : 'moving-fixed',
+			kind:
+				transitingSet.has(data.from) && transitingSet.has(data.to)
+					? 'moving-moving'
+					: 'moving-fixed',
 			closeness: data.closeness,
 			orb: data.orb,
 			phase,

@@ -389,7 +389,8 @@ export function TransitsWorkspaceProvider({
 				setSampledGraphOutput(setup.sampled_series ?? true);
 				setConfigurationSearches(
 					(setup.configuration_requests ?? []).map((entry) => ({
-						configurationId: entry.configuration_id as ConfigurationSearchRequest['configurationId'],
+						configurationId:
+							entry.configuration_id as ConfigurationSearchRequest['configurationId'],
 						fixedRoles: entry.fixed_roles,
 						roleCandidates: entry.role_candidates
 					}))
@@ -420,7 +421,11 @@ export function TransitsWorkspaceProvider({
 	);
 
 	const { categories: aspectTimelineCategories, series: aspectTimelineSeries } = useMemo(() => {
-		const result = buildAspectTimelines(transitSeries, transitingBodyIdsInSeries, fixedChartPositions);
+		const result = buildAspectTimelines(
+			transitSeries,
+			transitingBodyIdsInSeries,
+			fixedChartPositions
+		);
 		// The resonance chart/layers panel model is "transiting body vs. my selected Transited
 		// Bodies" — `compute_chart_aspects` (Rust) also returns mutual aspects *among* the
 		// transiting bodies themselves, a different signal (used by exact event search/

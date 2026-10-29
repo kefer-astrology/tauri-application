@@ -28,7 +28,7 @@ import {
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ENABLED_ASPECT_IDS
 } from '@/lib/astrology/aspects';
-import { signIndexToZodiacId } from '@/lib/astrology/glyphs';
+import { signPosition } from '@/lib/astrology/zodiac';
 import { normalizeLongitude } from '@/lib/astrology/chartSearch';
 import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
 import { parseComputedAspect, type ParsedAspect } from '@/lib/astrology/aspectParsing';
@@ -61,21 +61,6 @@ const NO_POSITIONS: Record<string, unknown> = {};
 const NO_MOTION: Record<string, { speed: number; retrograde: boolean }> = {};
 const NO_IDS: string[] = [];
 
-const ZODIAC_UNICODE_FALLBACK = [
-	'♈',
-	'♉',
-	'♊',
-	'♋',
-	'♌',
-	'♍',
-	'♎',
-	'♏',
-	'♐',
-	'♑',
-	'♒',
-	'♓'
-] as const;
-
 const ORB_PRESETS: Array<{ id: OrbPreset; labelKey: string; maxOrb: number }> = [
 	{ id: 'default', labelKey: 'aspectarium_orb_default', maxOrb: 5 },
 	{ id: 'tight', labelKey: 'aspectarium_orb_tight', maxOrb: 1 },
@@ -107,15 +92,10 @@ function formatOrb(orb: number | undefined) {
 
 function positionParts(longitude: number | null) {
 	if (longitude === null) return null;
-	const normalized = ((longitude % 360) + 360) % 360;
-	const signIndex = Math.floor(normalized / 30) % 12;
-	const withinSign = normalized % 30;
-	const totalMinutes = Math.round(withinSign * 60);
-	const degrees = Math.floor(totalMinutes / 60);
-	const minutes = totalMinutes % 60;
+	const { degrees, minutes, signZodiacId, signGlyphFallback } = signPosition(longitude, 'minutes');
 	return {
-		zodiacId: signIndexToZodiacId(signIndex),
-		fallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
+		zodiacId: signZodiacId,
+		fallback: signGlyphFallback,
 		text: `${degrees}°${String(minutes).padStart(2, '0')}′`
 	};
 }

@@ -2,7 +2,8 @@ import type { AppChart } from '@/lib/tauri/chartPayload';
 import { isBaseChart, type ChartForest } from '@/lib/chartHierarchy';
 import { BASE_CHART_TYPE_IDS, chartTypeId } from '@/lib/chartTypes';
 import { parsedChartDate } from '@/lib/chartDateTime';
-import { degreeInSign, signIndex, type ChartSearchMetadata } from './chartSearch';
+import type { ChartSearchMetadata } from './chartSearch';
+import { degreeOrdinalInSign, signIndexOf } from './zodiac';
 import {
 	emptyFactFilters,
 	factFiltersActive,
@@ -172,8 +173,8 @@ export function chartAstrologyMatches(
 		if (!filter || isAnyRecord(filter)) continue;
 		const cusp = metadata.houseCusps[house - 1];
 		if (cusp === undefined) return false;
-		if (filter.sign && signIndex(cusp) !== Number(filter.sign)) return false;
-		if (filter.degree && degreeInSign(cusp) !== Number(filter.degree)) return false;
+		if (filter.sign && signIndexOf(cusp) !== Number(filter.sign)) return false;
+		if (filter.degree && degreeOrdinalInSign(cusp) !== Number(filter.degree)) return false;
 	}
 	if (query.shapes.length > 0 && !query.shapes.some((shape) => metadata.shapes.has(shape)))
 		return false;

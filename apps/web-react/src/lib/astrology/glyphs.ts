@@ -75,19 +75,13 @@ export function normalizeGlyphId(id: string): string {
 	return glyphAliasMap[normalized] ?? normalized;
 }
 
-export function getAstrologyGlyphSrc(
-	setId: AstrologyGlyphSetId,
-	id: string
-): string | null {
+export function getAstrologyGlyphSrc(setId: AstrologyGlyphSetId, id: string): string | null {
 	const normalizedId = normalizeGlyphId(id);
 	if (!OBSERVABLE_OBJECTS.some((item) => item.id === normalizedId)) return null;
 	return assetUrl(`glyphs/${setId}/planets/${planetAssetId(normalizedId)}.svg`);
 }
 
-export function getAspectGlyphSrc(
-	setId: AstrologyGlyphSetId,
-	aspectId: string
-): string | null {
+export function getAspectGlyphSrc(setId: AstrologyGlyphSetId, aspectId: string): string | null {
 	const normalized = String(aspectId ?? '')
 		.trim()
 		.toLowerCase()
@@ -96,10 +90,7 @@ export function getAspectGlyphSrc(
 	return assetUrl(`glyphs/${setId}/aspects/${normalized}.svg`);
 }
 
-export function getZodiacGlyphSrc(
-	setId: AstrologyGlyphSetId,
-	zodiacId: string
-): string | null {
+export function getZodiacGlyphSrc(setId: AstrologyGlyphSetId, zodiacId: string): string | null {
 	const normalized = String(zodiacId ?? '')
 		.trim()
 		.toLowerCase()

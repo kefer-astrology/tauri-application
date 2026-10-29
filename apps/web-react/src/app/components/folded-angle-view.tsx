@@ -244,7 +244,6 @@ export function FoldedAngleView({
 							yDomain={[0, 180]}
 							yTicks={[0, 45, 90, 135, 180]}
 							formatY={(y) => `${Math.round(y)}°`}
-							formatX={(x) => new Date(x).toLocaleString()}
 							xLabel={t('column_time')}
 							ariaLabel={t('transits_folded_subtitle')}
 						/>

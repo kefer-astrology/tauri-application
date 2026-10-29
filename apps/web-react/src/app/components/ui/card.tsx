@@ -8,8 +8,7 @@ export type CardTheme = 'sunrise' | 'noon' | 'twilight' | 'midnight';
 const themedCardClasses: Record<CardTheme, string> = {
 	sunrise:
 		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-sm',
-	noon:
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-sm',
+	noon: 'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-sm',
 	twilight:
 		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-sm backdrop-blur-md',
 	midnight:
@@ -50,11 +49,7 @@ function Card({
 	...props
 }: React.ComponentProps<'div'> & VariantProps<typeof cardVariants>) {
 	return (
-		<div
-			data-slot="card"
-			className={cn(cardVariants({ variant, theme }), className)}
-			{...props}
-		/>
+		<div data-slot="card" className={cn(cardVariants({ variant, theme }), className)} {...props} />
 	);
 }
 

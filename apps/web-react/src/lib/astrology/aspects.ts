@@ -19,7 +19,10 @@ export type AspectRow = {
 /** Runtime projection of the Rust model catalog. */
 export const ASPECT_ROWS: AspectRow[] = [];
 
-export function setAspectDefinitions(definitions: AspectDefinitionDto[], defaultAspectIds?: string[]): void {
+export function setAspectDefinitions(
+	definitions: AspectDefinitionDto[],
+	defaultAspectIds?: string[]
+): void {
 	ASPECT_ROWS.splice(
 		0,
 		ASPECT_ROWS.length,
@@ -27,7 +30,8 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[], default
 			id: definition.id,
 			labelKey: `aspect_${definition.id}`,
 			fallbackLabel: definition.i18n.en ?? humanizeId(definition.id),
-			glyph: definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3),
+			glyph:
+				definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3),
 			color: definition.color || DEFAULT_ASPECT_COLORS[definition.id] || colorForId(definition.id),
 			angle: definition.angle,
 			harmonic: definition.harmonic,
@@ -41,8 +45,10 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[], default
 	for (const key of Object.keys(DEFAULT_ASPECT_ORBS)) delete DEFAULT_ASPECT_ORBS[key];
 	for (const row of ASPECT_ROWS) DEFAULT_ASPECT_ORBS[row.id] = row.defaultOrb;
 	for (const definition of definitions) {
-		ASPECT_GLYPHS[definition.id] = definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3);
-		DEFAULT_ASPECT_COLORS[definition.id] = definition.color || DEFAULT_ASPECT_COLORS[definition.id] || colorForId(definition.id);
+		ASPECT_GLYPHS[definition.id] =
+			definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3);
+		DEFAULT_ASPECT_COLORS[definition.id] =
+			definition.color || DEFAULT_ASPECT_COLORS[definition.id] || colorForId(definition.id);
 	}
 	if (defaultAspectIds) {
 		DEFAULT_ENABLED_ASPECT_IDS.splice(0, DEFAULT_ENABLED_ASPECT_IDS.length, ...defaultAspectIds);
@@ -50,9 +56,7 @@ export function setAspectDefinitions(definitions: AspectDefinitionDto[], default
 }
 
 function humanizeId(id: string): string {
-	return id
-		.replace(/[_-]+/g, ' ')
-		.replace(/\b\w/g, (letter) => letter.toUpperCase());
+	return id.replace(/[_-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function colorForId(id: string): string {
@@ -166,9 +170,18 @@ export function normalizeAspectLineTierStyle(value: unknown): AspectLineTierStyl
 		return typeof candidate === 'number' && Number.isFinite(candidate) ? candidate : fallback;
 	};
 	return {
-		tightThresholdPct: numberOr('tightThresholdPct', DEFAULT_ASPECT_LINE_TIER_STYLE.tightThresholdPct),
-		mediumThresholdPct: numberOr('mediumThresholdPct', DEFAULT_ASPECT_LINE_TIER_STYLE.mediumThresholdPct),
-		looseThresholdPct: numberOr('looseThresholdPct', DEFAULT_ASPECT_LINE_TIER_STYLE.looseThresholdPct),
+		tightThresholdPct: numberOr(
+			'tightThresholdPct',
+			DEFAULT_ASPECT_LINE_TIER_STYLE.tightThresholdPct
+		),
+		mediumThresholdPct: numberOr(
+			'mediumThresholdPct',
+			DEFAULT_ASPECT_LINE_TIER_STYLE.mediumThresholdPct
+		),
+		looseThresholdPct: numberOr(
+			'looseThresholdPct',
+			DEFAULT_ASPECT_LINE_TIER_STYLE.looseThresholdPct
+		),
 		widthTight: numberOr('widthTight', DEFAULT_ASPECT_LINE_TIER_STYLE.widthTight),
 		widthMedium: numberOr('widthMedium', DEFAULT_ASPECT_LINE_TIER_STYLE.widthMedium),
 		widthLoose: numberOr('widthLoose', DEFAULT_ASPECT_LINE_TIER_STYLE.widthLoose),

@@ -117,10 +117,7 @@ export function getAppShellIconSrc(iconSet: AppShellIconSetId, iconId: AppShellI
 	return assetUrl(`app-shell/icons/${appShellAssetSet(iconSet)}/${iconFileNames[iconId]}`);
 }
 
-export function getAppShellLogoSrc(
-	iconSet: AppShellIconSetId,
-	variant: 'full' | 'mark'
-): string {
+export function getAppShellLogoSrc(iconSet: AppShellIconSetId, variant: 'full' | 'mark'): string {
 	return assetUrl(`app-shell/logo-${variant}-${appShellAssetSet(iconSet)}.svg`);
 }
 

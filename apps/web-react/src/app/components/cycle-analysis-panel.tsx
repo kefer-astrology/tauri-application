@@ -7,6 +7,7 @@ import { ASPECT_GLYPHS } from '@/lib/astrology/aspects';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
+import { formatDate } from '@/lib/time/format';
 
 interface CycleAnalysisPanelProps {
 	series: AspectTimelineSeries[];
@@ -126,7 +127,7 @@ export function CycleAnalysisPanel({ series, entries, colorByKey }: CycleAnalysi
 										{s.hits
 											.map(
 												(hit) =>
-													new Date(hit.timestampMs).toLocaleDateString() +
+													formatDate(hit.timestampMs) +
 													(hit.fromRetrograde
 														? ` (${t('aspect_timeline_retrograde_tag', { defaultValue: 'R' })})`
 														: '')

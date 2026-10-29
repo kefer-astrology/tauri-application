@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from './ui/utils';
 import { objectLabel, aspectLabel } from '@/lib/astrology/objectLabels';
 import type { AspectExactHit, AspectTimelineSeries } from '@/lib/astrology/aspectTimeline';
+import { formatDateTime } from '@/lib/time/format';
 
 export interface TransitMicroTickerProps {
 	/** X values shared with the main resonance chart (epoch ms), ascending. */
@@ -30,7 +31,7 @@ function formatTickTitle(
 	hit: AspectExactHit,
 	t: (key: string, options?: Record<string, unknown>) => string
 ): string {
-	const when = new Date(hit.timestampMs).toLocaleString();
+	const when = formatDateTime(hit.timestampMs);
 	return `${objectLabel(series.from, t)} ${aspectLabel(series.aspectType, t)} ${objectLabel(series.to, t)} — ${when}`;
 }
 
@@ -90,7 +91,10 @@ export function TransitMicroTicker({
 					height={BAR_HEIGHT}
 					viewBox={`0 0 ${width} ${BAR_HEIGHT}`}
 					role="img"
-					aria-label={ariaLabel ?? t('transit_micro_ticker_title', { defaultValue: 'Micro ticker (personal planets)' })}
+					aria-label={
+						ariaLabel ??
+						t('transit_micro_ticker_title', { defaultValue: 'Micro ticker (personal planets)' })
+					}
 					className="block"
 				>
 					{ticks.map(({ series: s, hit }) => {

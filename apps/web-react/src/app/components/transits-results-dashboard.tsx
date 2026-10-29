@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { AspectExactHit, AspectTimelineSeries } from '@/lib/astrology/aspectTimeline';
 import type { ConfigurationMatch, TransitEvent } from '@/lib/tauri/types';
-import { positionWithinSign } from '@/lib/astrology/objectDetail';
+import { signPosition } from '@/lib/astrology/zodiac';
 import { objectIcon, objectLabel, aspectLabel } from '@/lib/astrology/objectLabels';
 import { isPersonalPlanetId } from '@/lib/astrology/observableObjects';
 import { ASPECT_GLYPHS, DEFAULT_ASPECT_COLORS } from '@/lib/astrology/aspects';
@@ -28,6 +28,7 @@ import { CycleAnalysisPanel } from './cycle-analysis-panel';
 import { DetailSidePanel } from './detail-side-panel';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import { useAppTheme } from '../providers/app-theme';
+import { formatDate, formatDateTime, formatDateTimeRange, formatTime } from '@/lib/time/format';
 
 interface TransitsResultsDashboardProps {
 	workspaceDefaults: WorkspaceDefaultsState;
@@ -77,9 +78,7 @@ function buildHitColumns(
 			accessorFn: (row) => row.hit.timestampMs,
 			header: t('aspect_timeline_col_date', { defaultValue: 'Date' }),
 			cell: ({ getValue }) => (
-				<div className={cn('whitespace-nowrap', ft.bodyText)}>
-					{new Date(getValue<number>()).toLocaleDateString()}
-				</div>
+				<div className={cn('whitespace-nowrap', ft.bodyText)}>{formatDate(getValue<number>())}</div>
 			)
 		},
 		{
@@ -87,9 +86,7 @@ function buildHitColumns(
 			accessorFn: (row) => row.hit.timestampMs,
 			header: t('aspect_timeline_col_time', { defaultValue: 'Time' }),
 			cell: ({ getValue }) => (
-				<div className={cn('whitespace-nowrap', ft.bodyText)}>
-					{new Date(getValue<number>()).toLocaleTimeString()}
-				</div>
+				<div className={cn('whitespace-nowrap', ft.bodyText)}>{formatTime(getValue<number>())}</div>
 			)
 		},
 		{
@@ -122,7 +119,7 @@ function buildHitColumns(
 			enableSorting: false,
 			header: t('aspect_timeline_col_transiting', { defaultValue: 'Transiting' }),
 			cell: ({ row }) => {
-				const pos = positionWithinSign(row.original.hit.fromLongitude);
+				const pos = signPosition(row.original.hit.fromLongitude);
 				return (
 					<span
 						className={cn(
@@ -147,7 +144,7 @@ function buildHitColumns(
 			enableSorting: false,
 			header: t('aspect_timeline_col_natal', { defaultValue: 'Natal' }),
 			cell: ({ row }) => {
-				const pos = positionWithinSign(row.original.hit.toLongitude);
+				const pos = signPosition(row.original.hit.toLongitude);
 				return (
 					<span
 						className={cn(
@@ -235,10 +232,7 @@ function EventSearchPanel({
 			) : (
 				<ul className="max-h-48 space-y-1 overflow-auto">
 					{events.map((event: TransitEvent, index) => {
-						const when = new Date(event.datetime);
-						const whenLabel = Number.isNaN(when.getTime())
-							? event.datetime
-							: `${when.toLocaleDateString()} ${when.toLocaleTimeString()}`;
+						const whenLabel = formatDateTime(event.datetime);
 						const motionBadge = (bodyId: string) => {
 							const motion = event.motion?.[bodyId];
 							if (!motion) return null;
@@ -365,10 +359,7 @@ function ConfigurationMatchesPanel({
 
 	const formatInstant = (iso: string | null): string => {
 		if (!iso) return '—';
-		const when = new Date(iso);
-		return Number.isNaN(when.getTime())
-			? iso
-			: `${when.toLocaleDateString()} ${when.toLocaleTimeString()}`;
+		return formatDateTime(iso);
 	};
 
 	const clippedLabel = (reason: string | null): string | null => {
@@ -544,7 +535,7 @@ export function TransitsResultsDashboard({ workspaceDefaults }: TransitsResultsD
 	const periodSummary =
 		periodModeId === 'current'
 			? periodLabel
-			: `${periodLabel}: ${fromDateTime.toLocaleString()} → ${toDateTime.toLocaleString()}`;
+			: `${periodLabel}: ${formatDateTimeRange(fromDateTime, toDateTime)}`;
 
 	const [pendingTimeStepValue, setPendingTimeStepValue] = useState(String(timeStepValue));
 	useEffect(() => setPendingTimeStepValue(String(timeStepValue)), [timeStepValue]);
@@ -909,7 +900,6 @@ export function TransitsResultsDashboard({ workspaceDefaults }: TransitsResultsD
 									highlightedKey={highlightedSeriesKey}
 									onHighlightChange={setHighlightedSeriesKey}
 									onActivate={setDetailSeriesKey}
-									formatX={(x) => new Date(x).toLocaleString()}
 									ariaLabel={t('aspect_timeline_subtitle', { defaultValue: 'Aspect timeline' })}
 								/>
 							</div>
@@ -990,7 +980,7 @@ export function TransitsResultsDashboard({ workspaceDefaults }: TransitsResultsD
 												ft.bodyText
 											)}
 										>
-											<span>{new Date(hit.timestampMs).toLocaleString()}</span>
+											<span>{formatDateTime(hit.timestampMs)}</span>
 											<span className={cn('tabular-nums', ft.muted)}>
 												{hit.hitNumber}/{hit.hitCount}
 												{hit.fromRetrograde

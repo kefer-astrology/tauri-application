@@ -1,6 +1,7 @@
 import { houseForLongitude, normalizeLongitude } from './chartSearch';
 import { elementForZodiacId, type ElementId } from './elementColors';
-import { signIndexToZodiacId, type ZodiacId } from './glyphs';
+import type { ZodiacId } from './glyphs';
+import { signPosition } from './zodiac';
 import { objectIcon, objectLabel, type Translate } from './objectLabels';
 import { symbolEntriesForLongitude, type SymbolEntry } from './symbolSystems';
 import { aspectsTouchingBody, type ParsedAspect } from './aspectParsing';
@@ -15,38 +16,6 @@ export function motionStateFromSpeed(speed: number | undefined): MotionState {
 	if (typeof speed !== 'number' || !Number.isFinite(speed)) return 'direct';
 	if (Math.abs(speed) < STATIONARY_SPEED_THRESHOLD_DEG_PER_DAY) return 'stationary';
 	return speed < 0 ? 'retrograde' : 'direct';
-}
-
-const ZODIAC_UNICODE_FALLBACK = [
-	'♈',
-	'♉',
-	'♊',
-	'♋',
-	'♌',
-	'♍',
-	'♎',
-	'♏',
-	'♐',
-	'♑',
-	'♒',
-	'♓'
-] as const;
-
-/** Sign-relative degrees/minutes/seconds and zodiac sign for an absolute ecliptic longitude. */
-export function positionWithinSign(longitude: number) {
-	const withinSign = longitude % 30;
-	const totalSeconds = Math.round(withinSign * 3600);
-	const degrees = Math.floor(totalSeconds / 3600) % 30;
-	const minutes = Math.floor((totalSeconds % 3600) / 60);
-	const seconds = totalSeconds % 60;
-	const signIndex = Math.floor(longitude / 30) % 12;
-	return {
-		degrees,
-		minutes,
-		seconds,
-		signZodiacId: signIndexToZodiacId(signIndex),
-		signGlyphFallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈'
-	};
 }
 
 /** Declination/RA/altitude/azimuth arrive one of two ways depending on compute route: nested
@@ -124,8 +93,7 @@ export function buildObjectDetailViewModel(
 ): ObjectDetailViewModel | null {
 	const longitude = normalizeLongitude(source.rawPosition);
 	if (longitude === null) return null;
-	const { degrees, minutes, seconds, signZodiacId, signGlyphFallback } =
-		positionWithinSign(longitude);
+	const { degrees, minutes, seconds, signZodiacId, signGlyphFallback } = signPosition(longitude);
 	return {
 		bodyId: source.bodyId,
 		label: objectLabel(source.bodyId, t),

@@ -12,10 +12,7 @@ interface WindowTitlebarProps {
 	showSecondarySidebar: boolean;
 }
 
-export function WindowTitlebar({
-	isSidebarExpanded,
-	showSecondarySidebar
-}: WindowTitlebarProps) {
+export function WindowTitlebar({ isSidebarExpanded, showSecondarySidebar }: WindowTitlebarProps) {
 	const [secondarySidebarWidth, setSecondarySidebarWidth] = useState(0);
 
 	useLayoutEffect(() => {
