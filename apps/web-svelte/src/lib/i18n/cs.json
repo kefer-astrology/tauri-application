@@ -349,6 +349,7 @@
 	"open_type_synastry": "Synastrie",
 	"open_type_group_base": "Základní",
 	"open_type_group_derived": "Odvozené",
+	"remove_item": "Odebrat {{label}}",
 	"open_type_transit": "Tranzit",
 	"open_filter_mercury_venus": "Merkur a Venuše",
 	"open_filter_final_dispositor_traditional": "Tradiční finální dispozitor",

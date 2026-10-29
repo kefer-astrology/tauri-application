@@ -351,6 +351,7 @@ internal_name,czech,english,french,spanish
 "open_type_synastry","Synastrie","Synastry","Synastrie","Sinastría"
 "open_type_group_base","Základní","Base","De base","Base"
 "open_type_group_derived","Odvozené","Derived","Dérivés","Derivadas"
+"remove_item","Odebrat {{label}}","Remove {{label}}","Supprimer {{label}}","Eliminar {{label}}"
 "open_type_transit","Tranzit","Transit","Transit","Tránsito"
 "open_filter_mercury_venus","Merkur a Venuše","Mercury and Venus","Mercure et Vénus","Mercurio y Venus"
 "open_filter_final_dispositor_traditional","Tradiční finální dispozitor","Traditional final dispositor","Dispositeur final traditionnel","Dispositor final tradicional"

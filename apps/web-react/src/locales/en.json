@@ -349,6 +349,7 @@
 	"open_type_synastry": "Synastry",
 	"open_type_group_base": "Base",
 	"open_type_group_derived": "Derived",
+	"remove_item": "Remove {{label}}",
 	"open_type_transit": "Transit",
 	"open_filter_mercury_venus": "Mercury and Venus",
 	"open_filter_final_dispositor_traditional": "Traditional final dispositor",
