@@ -220,7 +220,7 @@ fn resolve_allowed_orb(
 /// this pair," independent of any particular instantaneous separation (no
 /// orb is applied or returned). This is the same eligibility logic
 /// `compute_chart_aspects`/`compute_cross_aspects` use via `selected_aspects`
-/// + `pair_allowed` internally, exposed so exact-event-time discovery (which
+/// and `pair_allowed` internally, exposed so exact-event-time discovery (which
 /// has no "current separation" to test an orb against) can determine exactly
 /// the same set of (aspect, exact_angle) combinations the sampled path would
 /// ever report for this pair, rather than re-deriving selection rules

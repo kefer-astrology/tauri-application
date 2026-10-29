@@ -180,6 +180,7 @@ pub fn domain_catalog_for_model(model: models::AstroModel) -> DomainCatalog {
         configurations,
     }
 }
+pub use validation::WorkspaceValidationReport;
 
 #[cfg(test)]
 mod catalog_tests {
@@ -249,4 +250,3 @@ mod catalog_tests {
             .any(|aspect| aspect.id == "conjunction"));
     }
 }
-pub use validation::WorkspaceValidationReport;

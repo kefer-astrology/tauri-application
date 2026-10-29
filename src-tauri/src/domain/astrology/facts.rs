@@ -369,7 +369,7 @@ fn distribution(input: &ChartFactsInput, planets: &[(&str, f64)]) -> Distributio
 fn orientation(planets: &[(&str, f64)]) -> Orientation {
     let extroverted = planets
         .iter()
-        .filter(|(_, lon)| sign_index(*lon) % 2 == 0)
+        .filter(|(_, lon)| sign_index(*lon).is_multiple_of(2))
         .count();
     let introverted = planets.len() - extroverted;
     let balance = match extroverted.cmp(&introverted) {

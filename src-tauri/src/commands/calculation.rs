@@ -434,7 +434,7 @@ mod tests {
             ))
         );
         assert_eq!(result.get("fallback_used"), Some(&serde_json::json!(false)));
-        assert!(result.get("ephemeris_source").is_some());
+        assert!(result.contains_key("ephemeris_source"));
 
         let warnings = result
             .get("warnings")

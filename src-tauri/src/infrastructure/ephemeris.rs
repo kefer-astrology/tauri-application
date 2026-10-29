@@ -1246,10 +1246,13 @@ fn validate_small_body_artifact(
         .chain(existing.iter().map(|path| file_fingerprint(path)))
         .collect::<Vec<_>>()
         .join("|");
-    if let Ok(cache) = artifact_probe_cache().lock() {
-        if let Some(result) = cache.get(&cache_key) {
-            return result.clone();
-        }
+    // Held for the whole validation so concurrent callers wait for one result instead of each
+    // checksumming and probing the same artifact.
+    let mut cache = artifact_probe_cache()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(result) = cache.get(&cache_key) {
+        return result.clone();
     }
 
     let result = (|| {
@@ -1265,7 +1268,9 @@ fn validate_small_body_artifact(
         }
         let mut probe_paths = existing.to_vec();
         probe_paths.push(bsp_path.to_path_buf());
-        let almanac = load_almanac_from_paths(&probe_paths)?;
+        // Shared with chart computation: when the probe set equals the computation set (the
+        // usual single-small-body case) the kernels are loaded once.
+        let almanac = crate::infrastructure::jpl_backend::shared_almanac(&probe_paths)?;
         let epoch = Epoch::from_tdb_seconds(manifest.validation.probe_et_seconds);
         let state = almanac
             .transform(
@@ -1289,9 +1294,7 @@ fn validate_small_body_artifact(
         Ok(())
     })();
 
-    if let Ok(mut cache) = artifact_probe_cache().lock() {
-        cache.insert(cache_key, result.clone());
-    }
+    cache.insert(cache_key, result.clone());
     result
 }
 

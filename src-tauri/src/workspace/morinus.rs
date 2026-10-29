@@ -309,6 +309,7 @@ fn signed_dms(
     Ok(if positive { value } else { -value })
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_event_time(
     year: i64,
     month: i64,
@@ -411,7 +412,7 @@ fn julian_to_gregorian(year: i64, month: i64, day: i64) -> Result<(i64, i64, i64
     let day = e - (153 * m + 2).div_euclid(5) + 1;
     let month = m + 3 - 12 * (m.div_euclid(10));
     let year = 100 * b + d - 4800 + m.div_euclid(10);
-    if !(1..=12).contains(&month) || day < 1 || day > 31 {
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
         return Err("Invalid Morinus Julian date".to_string());
     }
     Ok((year, month, day))
@@ -443,7 +444,7 @@ mod tests {
             "", "1", "0", "1", "591", "2", "17", "12", "0", "0", "1", "0", "1", "3", "0", "0",
             "Baghdad", "44", "24", "0", "1", "33", "20", "0", "1", "45", "",
         ] {
-            if value == "" || value == "Baghdad" {
+            if value.is_empty() || value == "Baghdad" {
                 bytes.extend_from_slice(format!("V{value}\np0\n.\n").as_bytes());
             } else {
                 bytes.extend_from_slice(format!("I{value}\n.\n").as_bytes());

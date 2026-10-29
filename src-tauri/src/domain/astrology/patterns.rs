@@ -46,10 +46,7 @@ pub fn detect_chart_shapes(positions: &HashMap<String, f64>, house_cusps: &[f64]
             {
                 result.insert("bowl_east".to_string());
             }
-            if houses
-                .iter()
-                .all(|house| matches!(house, 4 | 5 | 6 | 7 | 8 | 9))
-            {
+            if houses.iter().all(|house| matches!(house, 4..=9)) {
                 result.insert("bowl_west".to_string());
             }
             if houses.iter().all(|house| *house >= 7) {
@@ -216,7 +213,7 @@ pub fn detect_chart_configurations(
         for body in bodies.iter().copied().filter(|b| !trine.contains(b)) {
             for &opposed in trine {
                 let others: Vec<&str> = trine.iter().copied().filter(|c| *c != opposed).collect();
-                if is(body, opposed, "opposition") && others.iter().all(|c| is(body, *c, "sextile"))
+                if is(body, opposed, "opposition") && others.iter().all(|c| is(body, c, "sextile"))
                 {
                     result.insert("kite".to_string());
                     result.insert(format!(

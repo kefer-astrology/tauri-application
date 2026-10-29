@@ -43,6 +43,7 @@ pub fn run() {
         .expect("failed to initialize backend state");
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(backend_state)
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -78,6 +79,12 @@ pub fn run() {
                     log::warn!("Python backend was not ready during startup: {err}");
                 }
             });
+
+            // The window is created hidden (`visible: false`) so GTK applies the undecorated
+            // titlebar before the window is realized; show it once setup is done.
+            if let Some(window) = app.get_webview_window("main") {
+                window.show()?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
