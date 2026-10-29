@@ -19,6 +19,7 @@
 		"preview": "npm run preview -w web-react",
 		"preview:svelte": "npm run preview -w web-svelte",
 		"check": "npm run check -w web-react",
+		"test": "npm run test -w web-react",
 		"check:svelte": "npm run check -w web-svelte",
 		"docs:prepare": "npm run build:frontends:docs && node scripts/prepare-docs.mjs",
 		"docs:dev": "npm run docs:prepare && hugo server --source docs",
