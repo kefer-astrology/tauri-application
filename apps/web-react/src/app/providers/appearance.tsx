@@ -10,16 +10,28 @@ import {
 	type ReactNode
 } from 'react';
 import type { Theme } from '@/lib/theme';
-import { readStoredAppShellIconSet, type AppShellIconSetId } from '@/lib/app-shell';
+import {
+	persistAppShellIconSet,
+	readStoredAppShellIconSet,
+	type AppShellIconSetId
+} from '@/lib/app-shell';
 import {
 	persistElementColors,
 	readStoredElementColors,
 	type ElementColors
 } from '@/lib/astrology/elementColors';
-import { readStoredGlyphSet, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
-import { readStoredEnabledSymbolSetIds } from '@/lib/astrology/symbolSystems';
+import {
+	persistGlyphSet,
+	readStoredGlyphSet,
+	type AstrologyGlyphSetId
+} from '@/lib/astrology/glyphs';
+import {
+	persistEnabledSymbolSetIds,
+	readStoredEnabledSymbolSetIds
+} from '@/lib/astrology/symbolSystems';
 import {
 	persistWheelOrientation,
+	persistWheelStyle,
 	readStoredWheelOrientation,
 	readStoredWheelStyle,
 	type WheelOrientationId,
@@ -71,13 +83,13 @@ const AppearanceContext = createContext<AppearanceValue | null>(null);
 export function AppearanceProvider({ children }: { children: ReactNode }) {
 	const [theme, setTheme] = useState<Theme>('noon');
 	const [themePalettes, setThemePalettes] = useState(readStoredThemePalettes);
-	const [appShellIconSet, setAppShellIconSet] =
+	const [appShellIconSet, setAppShellIconSetState] =
 		useState<AppShellIconSetId>(readStoredAppShellIconSet);
-	const [glyphSet, setGlyphSet] = useState<AstrologyGlyphSetId>(readStoredGlyphSet);
-	const [enabledSymbolSetIds, setEnabledSymbolSetIds] = useState<string[]>(
+	const [glyphSet, setGlyphSetState] = useState<AstrologyGlyphSetId>(readStoredGlyphSet);
+	const [enabledSymbolSetIds, setEnabledSymbolSetIdsState] = useState<string[]>(
 		readStoredEnabledSymbolSetIds
 	);
-	const [wheelStyle, setWheelStyle] = useState<WheelStyleId>(readStoredWheelStyle);
+	const [wheelStyle, setWheelStyleState] = useState<WheelStyleId>(readStoredWheelStyle);
 	const [wheelOrientation, setWheelOrientationState] = useState<WheelOrientationId>(
 		readStoredWheelOrientation
 	);
@@ -96,6 +108,23 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 			}),
 		[theme]
 	);
+	// Every setter persists its preference, so callers never write storage themselves.
+	const setAppShellIconSet = useCallback((value: AppShellIconSetId) => {
+		setAppShellIconSetState(value);
+		persistAppShellIconSet(value);
+	}, []);
+	const setGlyphSet = useCallback((value: AstrologyGlyphSetId) => {
+		setGlyphSetState(value);
+		persistGlyphSet(value);
+	}, []);
+	const setEnabledSymbolSetIds = useCallback((value: string[]) => {
+		setEnabledSymbolSetIdsState(value);
+		persistEnabledSymbolSetIds(value);
+	}, []);
+	const setWheelStyle = useCallback((value: WheelStyleId) => {
+		setWheelStyleState(value);
+		persistWheelStyle(value);
+	}, []);
 	const setWheelOrientation = useCallback((value: WheelOrientationId) => {
 		setWheelOrientationState(value);
 		persistWheelOrientation(value);
@@ -159,9 +188,13 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 			themePalette,
 			commitThemePalette,
 			appShellIconSet,
+			setAppShellIconSet,
 			glyphSet,
+			setGlyphSet,
 			enabledSymbolSetIds,
+			setEnabledSymbolSetIds,
 			wheelStyle,
+			setWheelStyle,
 			wheelOrientation,
 			setWheelOrientation,
 			elementColors,

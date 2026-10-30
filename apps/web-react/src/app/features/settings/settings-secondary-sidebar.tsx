@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { SecondaryNavPanel } from './secondary-nav-panel';
-import { sidebarNavMenuRowClassName, sidebarThemeStyles } from './astrology-sidebar';
-import { cn } from './ui/utils';
-import { useAppTheme } from '../providers/app-theme';
+import { SecondaryNavPanel } from '@/app/components/secondary-nav-panel';
+import { sidebarNavMenuRowClassName, sidebarThemeStyles } from '@/app/components/astrology-sidebar';
+import { cn } from '@/app/components/ui/utils';
+import { useAppTheme } from '@/app/providers/app-theme';
 
 export type SettingsSectionId =
 	| 'jazyk_lokace'

@@ -132,6 +132,14 @@ export function getAppShellLogoFullWidth(iconSet: AppShellIconSetId, height: num
 	return Math.round(height * APP_SHELL_FULL_LOGO_ASPECT_RATIO[appShellAssetSet(iconSet)]);
 }
 
+export function persistAppShellIconSet(value: AppShellIconSetId) {
+	try {
+		localStorage.setItem(APP_SHELL_ICON_SET_KEY, value);
+	} catch {
+		/* ignore */
+	}
+}
+
 export function readStoredAppShellIconSet(): AppShellIconSetId {
 	try {
 		if (localStorage.getItem(APP_SHELL_ICON_SET_SWAP_MIGRATION_KEY)) {

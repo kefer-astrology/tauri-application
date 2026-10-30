@@ -15,8 +15,13 @@ import {
 	setCustomGlyph,
 	useCustomGlyphOverrides
 } from '@/lib/astrology/customGlyphs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Button } from './ui/button';
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger
+} from '@/app/components/ui/accordion';
+import { Button } from '@/app/components/ui/button';
 
 type GlyphDomain = 'planet' | 'zodiac' | 'aspect';
 

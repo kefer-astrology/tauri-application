@@ -9,7 +9,7 @@ import { NewHoroscope } from '@/app/components/new-horoscope';
 import {
 	SettingsSecondarySidebar,
 	type SettingsSectionId
-} from '@/app/components/settings-secondary-sidebar';
+} from '@/app/features/settings/settings-secondary-sidebar';
 import {
 	TransitsSecondarySidebar,
 	type TransitSection
@@ -22,7 +22,7 @@ import { HoroscopeDashboard } from '@/app/components/horoscope-dashboard';
 import { InformationView } from '@/app/components/information-view';
 import { RevolutionView } from '@/app/components/revolution-view';
 import { SynastryView } from '@/app/components/synastry-view';
-import SettingsView from '@/app/components/settings-view';
+import { SettingsView } from '@/app/features/settings/settings-view';
 import { ExportWorkspaceView } from '@/app/components/export-workspace-view';
 import { GuidedTour } from '@/app/components/guided-tour';
 import { Toaster } from '@/app/components/ui/sonner';
@@ -201,30 +201,7 @@ export function AppShell() {
 			case 'dynamika':
 				return <TransitsMainContentSlot section={activeTransitSection} />;
 			case 'nastaveni':
-				return (
-					<SettingsView
-						section={activeSettingsSection}
-						appShellIconSet={appearance.appShellIconSet}
-						onAppShellIconSetChange={appearance.setAppShellIconSet}
-						astrologyGlyphSet={appearance.glyphSet}
-						onAstrologyGlyphSetChange={appearance.setGlyphSet}
-						enabledSymbolSetIds={appearance.enabledSymbolSetIds}
-						onEnabledSymbolSetIdsChange={appearance.setEnabledSymbolSetIds}
-						wheelStyle={appearance.wheelStyle}
-						onWheelStyleChange={appearance.setWheelStyle}
-						wheelOrientation={appearance.wheelOrientation}
-						onWheelOrientationChange={appearance.setWheelOrientation}
-						onThemeChange={appearance.setTheme}
-						elementColors={appearance.elementColors}
-						onElementColorsCommit={appearance.commitElementColors}
-						themePalette={appearance.themePalette}
-						onThemePaletteCommit={appearance.commitThemePalette}
-						workspaceDefaults={workspace.workspaceDefaults}
-						onWorkspaceDefaultsChange={workspace.applyDefaultsPatch}
-						monochrome={appearance.monochrome}
-						onMonochromeChange={appearance.setMonochrome}
-					/>
-				);
+				return <SettingsView section={activeSettingsSection} />;
 			default:
 				return <PlaceholderView />;
 		}
