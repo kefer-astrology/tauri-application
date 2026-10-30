@@ -1,7 +1,7 @@
 import type { AppChart } from '@/lib/tauri/chartPayload';
 import { isBaseChart, type ChartForest } from '@/lib/chartHierarchy';
 import { BASE_CHART_TYPE_IDS, chartTypeId } from '@/lib/chartTypes';
-import { parseChartDateTime } from '@/lib/chartDateTime';
+import { chartLocalParts, chartTimeZone } from '@/lib/chartDateTime';
 import type { ChartSearchMetadata } from './chartSearch';
 import { degreeOrdinalInSign, signIndexOf } from './zodiac';
 import {
@@ -119,15 +119,16 @@ export function chartMetadataMatches(
 		if (!searchable.includes(text)) return false;
 	}
 	if (!isAnyRecord(query.date)) {
-		const date = parseChartDateTime(chart.dateTime);
-		if (!date) return false;
+		// Compared as local time at the event's place.
+		const local = chartLocalParts(chart.dateTime, chartTimeZone(chart));
+		if (!local) return false;
 		const actual: Record<DatePartId, number> = {
-			day: date.getDate(),
-			month: date.getMonth() + 1,
-			year: date.getFullYear(),
-			hour: date.getHours(),
-			minute: date.getMinutes(),
-			second: date.getSeconds()
+			day: local.day,
+			month: local.month + 1,
+			year: local.year,
+			hour: local.hour,
+			minute: local.minute,
+			second: local.second
 		};
 		if (DATE_PART_IDS.some((id) => query.date[id] && actual[id] !== Number(query.date[id])))
 			return false;

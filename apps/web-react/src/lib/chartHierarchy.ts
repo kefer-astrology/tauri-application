@@ -1,5 +1,5 @@
 import type { AppChart } from '@/lib/tauri/chartPayload';
-import { parseChartDateTime } from '@/lib/chartDateTime';
+import { chartTimeZone, parseChartDateTime } from '@/lib/chartDateTime';
 
 /** Charts a derived chart or an analysis was built from: `definition.inputs` for derived charts
  *  (returns, progressions, composites…), the participant charts for synastry. */
@@ -20,7 +20,9 @@ export function isBaseChart(chart: AppChart): boolean {
 }
 
 function chartTime(chart: AppChart): number {
-	return parseChartDateTime(chart.dateTime)?.getTime() ?? Number.POSITIVE_INFINITY;
+	return (
+		parseChartDateTime(chart.dateTime, chartTimeZone(chart))?.getTime() ?? Number.POSITIVE_INFINITY
+	);
 }
 
 export interface ChartForest {

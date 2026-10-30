@@ -36,6 +36,7 @@ import type { TransitOverlay } from '@/lib/astrology/transits';
 import {
 	addUtcStep,
 	formatChartDateTimeUtc,
+	chartTimeZone,
 	parseChartDateTime,
 	type TimeStep
 } from '@/lib/chartDateTime';
@@ -134,7 +135,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 					? selectedChartPreview
 					: persistedChart;
 			if (!selectedChart) return;
-			const baseTime = parseChartDateTime(selectedChart.dateTime) ?? new Date();
+			const baseTime =
+				parseChartDateTime(selectedChart.dateTime, chartTimeZone(selectedChart)) ?? new Date();
 			const shiftedChart: AppChart = {
 				...selectedChart,
 				dateTime: formatChartDateTimeUtc(addUtcStep(baseTime, step))

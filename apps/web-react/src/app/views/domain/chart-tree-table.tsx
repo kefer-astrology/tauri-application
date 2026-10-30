@@ -16,7 +16,7 @@ import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { DataTable, DataTableExpander } from '@/app/views/data/data-table';
 import type { ChartTreeRow } from '@/lib/astrology/chartQuery';
 import { tagColor } from '@/lib/chartTags';
-import { parseChartDateTime, splitChartDateTime } from '@/lib/chartDateTime';
+import { chartTimeZone, parseChartDateTime, splitChartDateTime } from '@/lib/chartDateTime';
 import { chartTypeLabel } from '@/lib/chartTypes';
 
 /**
@@ -174,21 +174,29 @@ export function ChartTreeTable({
 			},
 			{
 				id: 'date',
-				accessorFn: ({ chart }) => parseChartDateTime(chart.dateTime)?.getTime() ?? 0,
+				accessorFn: ({ chart }) =>
+					parseChartDateTime(chart.dateTime, chartTimeZone(chart))?.getTime() ?? 0,
 				header: t('new_date'),
 				cell: ({ row }) => (
 					<div className={cn('truncate', ft.muted)}>
-						{splitChartDateTime(row.original.chart.dateTime).date}
+						{
+							splitChartDateTime(row.original.chart.dateTime, chartTimeZone(row.original.chart))
+								.date
+						}
 					</div>
 				)
 			},
 			{
 				id: 'time',
-				accessorFn: ({ chart }) => parseChartDateTime(chart.dateTime)?.getTime() ?? 0,
+				accessorFn: ({ chart }) =>
+					parseChartDateTime(chart.dateTime, chartTimeZone(chart))?.getTime() ?? 0,
 				header: t('new_time'),
 				cell: ({ row }) => (
 					<div className={cn('truncate', ft.muted)}>
-						{splitChartDateTime(row.original.chart.dateTime).time}
+						{
+							splitChartDateTime(row.original.chart.dateTime, chartTimeZone(row.original.chart))
+								.time
+						}
 					</div>
 				)
 			},

@@ -43,11 +43,10 @@ import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
 import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
 import { ObservableObjectList } from '../views/domain/observable-object-list';
 import { PositionsList, type BodyPosition } from '../views/domain/positions-list';
-import { parseChartDateTime } from '@/lib/chartDateTime';
+import { chartTimeZone, formatChartLocal } from '@/lib/chartDateTime';
 import { DetailSidePanel } from './detail-side-panel';
 import { ObjectDetailPanel } from './object-detail-panel';
 import { AspectDetailPanel } from './aspect-detail-panel';
-import { formatDate, formatDateTime, formatTime } from '@/lib/time/format';
 
 interface HoroscopeDashboardProps {
 	workspaceDefaults: WorkspaceDefaultsState;
@@ -116,10 +115,10 @@ export function HoroscopeDashboard({
 		'h-9 w-full min-w-0 flex-1 text-sm rounded-xl [color-scheme:inherit]'
 	);
 	const panelCardClass = 'gap-0 overflow-hidden transition-all duration-300';
-	const parsedChartDateTime = parseChartDateTime(selectedChart?.dateTime);
+	// Times read and shown as local time at the chart's place; the transit moment in the same zone.
+	const chartZone = selectedChart ? chartTimeZone(selectedChart) : undefined;
 	const activeTransitOverlay =
 		transitOverlay && transitOverlay.sourceChartId === selectedChart?.id ? transitOverlay : null;
-	const parsedTransitDateTime = parseChartDateTime(activeTransitOverlay?.dateTime);
 	const chartTypeLabel =
 		selectedChart?.chartType === 'EVENT'
 			? t('new_type_event')
@@ -127,23 +126,29 @@ export function HoroscopeDashboard({
 				? t('new_type_horary')
 				: t('new_type_radix');
 	const chartDateLabel =
-		(parsedChartDateTime &&
-			formatDate(parsedChartDateTime, { day: 'numeric', month: 'short', year: 'numeric' })) ??
+		formatChartLocal(selectedChart?.dateTime, chartZone, {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric'
+		}) ??
 		selectedChart?.dateTime?.split(' ')[0] ??
 		t('demo_chart_date_line');
 	const chartTimeLabel =
-		(parsedChartDateTime && formatTime(parsedChartDateTime)) ??
+		formatChartLocal(selectedChart?.dateTime, chartZone, {
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
+		}) ??
 		selectedChart?.dateTime?.split(' ').slice(1).join(' ') ??
 		t('demo_chart_time_line');
 	const transitDateTimeLabel =
-		(parsedTransitDateTime &&
-			formatDateTime(parsedTransitDateTime, {
-				day: 'numeric',
-				month: 'short',
-				year: 'numeric',
-				hour: '2-digit',
-				minute: '2-digit'
-			})) ??
+		formatChartLocal(activeTransitOverlay?.dateTime, chartZone, {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		}) ??
 		activeTransitOverlay?.dateTime ??
 		'';
 	const chartLocationLabel = selectedChart?.location || t('demo_chart_location');

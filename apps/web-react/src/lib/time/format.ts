@@ -25,15 +25,20 @@ export function formatDate(
 	return format(value, options, locale);
 }
 
-/** Time of day; seconds are shown unless `seconds: false`. */
+/** Time of day; seconds are shown unless `seconds: false`. `timeZone` defaults to the platform's. */
 export function formatTime(
 	value: DateInput,
-	{ seconds = true }: { seconds?: boolean } = {},
+	{ seconds = true, timeZone }: { seconds?: boolean; timeZone?: string } = {},
 	locale?: string
 ): string {
 	return format(
 		value,
-		{ hour: '2-digit', minute: '2-digit', ...(seconds ? { second: '2-digit' } : {}) },
+		{
+			hour: '2-digit',
+			minute: '2-digit',
+			...(seconds ? { second: '2-digit' } : {}),
+			...(timeZone ? { timeZone } : {})
+		},
 		locale
 	);
 }
