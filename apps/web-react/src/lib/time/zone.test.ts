@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { instantToZonedParts, wallTimeToInstant, zoneOffsetMs } from './zone';
+import {
+	instantToWallDate,
+	instantToZonedParts,
+	localDateToWallTime,
+	wallTimeToInstant,
+	wallTimeToLocalDate,
+	zoneOffsetMs
+} from './zone';
 
 const wall = (y: number, m: number, d: number, h: number, mi = 0, s = 0) => ({
 	year: y,
@@ -34,5 +41,28 @@ describe('zone', () => {
 		// 02:30 does not exist in Prague on 2024-03-31; 02:30 on 2024-10-27 occurs twice.
 		expect(wallTimeToInstant(wall(2024, 3, 31, 2, 30), 'Europe/Prague')).not.toBeNull();
 		expect(wallTimeToInstant(wall(2024, 10, 27, 2, 30), 'Europe/Prague')).not.toBeNull();
+	});
+
+	it('carries wall time in a picker Date, whatever the machine zone', () => {
+		const date = wallTimeToLocalDate(wall(1984, 7, 14, 15, 30, 5));
+		expect([date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()]).toEqual([
+			1984, 6, 14, 15
+		]);
+		expect(localDateToWallTime(date)).toEqual(wall(1984, 7, 14, 15, 30, 5));
+		// Two-digit years are real years, not 19xx.
+		expect(localDateToWallTime(wallTimeToLocalDate(wall(45, 3, 15, 12)))).toEqual(
+			wall(45, 3, 15, 12)
+		);
+	});
+
+	it('shows an instant as a picker Date in the zone', () => {
+		const instant = new Date('1984-07-14T13:30:00Z');
+		expect(localDateToWallTime(instantToWallDate(instant, 'Europe/Prague')!)).toEqual(
+			wall(1984, 7, 14, 15, 30)
+		);
+		expect(localDateToWallTime(instantToWallDate(instant, 'UTC-03:00')!)).toEqual(
+			wall(1984, 7, 14, 10, 30)
+		);
+		expect(instantToWallDate(instant, 'Not/AZone')).toBeNull();
 	});
 });

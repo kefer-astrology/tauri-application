@@ -4,7 +4,7 @@ import type { Theme } from '@/lib/theme';
 import { useAppTheme } from '../providers/app-theme';
 
 /**
- * Shared field styling aligned with **New Horoscope** (`new-horoscope.tsx`) so settings and
+ * Shared field styling aligned with **New Horoscope** (`features/horoscope/new-horoscope/`) so settings and
  * other forms match the same glass / border / focus treatment across `sunrise` | `noon` | `twilight` | `midnight`.
  * `sunrise` uses a dark-nav / bright-canvas palette with blue accents.
  */

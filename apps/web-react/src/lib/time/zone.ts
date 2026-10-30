@@ -88,3 +88,31 @@ export function wallTimeToInstant(wall: WallTime, zone: string): Date | null {
 	const corrected = zoneOffsetMs(zone, new Date(asUtc - first)) ?? first;
 	return new Date(asUtc - corrected);
 }
+
+/** A `Date` whose local fields show `wall` — how the date and time pickers carry a wall-clock
+ *  time. Years 0–99 stay as given (the `Date` constructor would move them to 19xx). */
+export function wallTimeToLocalDate(wall: WallTime): Date {
+	const date = new Date(2000, 0, 1);
+	date.setFullYear(wall.year, wall.month, wall.day);
+	date.setHours(wall.hour, wall.minute, wall.second, 0);
+	return date;
+}
+
+/** The wall-clock fields a picker `Date` shows (its local fields). */
+export function localDateToWallTime(date: Date): WallTime {
+	return {
+		year: date.getFullYear(),
+		month: date.getMonth(),
+		day: date.getDate(),
+		hour: date.getHours(),
+		minute: date.getMinutes(),
+		second: date.getSeconds()
+	};
+}
+
+/** `instant` as a picker `Date` showing the wall-clock time in `zone`, or `null` for an unknown
+ *  zone. */
+export function instantToWallDate(instant: Date, zone: string): Date | null {
+	const parts = instantToZonedParts(instant, zone);
+	return parts ? wallTimeToLocalDate(parts) : null;
+}

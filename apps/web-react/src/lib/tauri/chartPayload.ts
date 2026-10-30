@@ -1,6 +1,7 @@
 import {
 	fixedUtcOffsetMilliseconds,
 	instantToZonedParts,
+	localDateToWallTime,
 	wallTimeToInstant,
 	type WallTime
 } from '@/lib/time/zone';
@@ -798,14 +799,7 @@ export function wallTimeToUtcIso(value: Date, timezone: string, utcOffset?: stri
 	const normalizedTimezone = timezone.trim();
 	if (!normalizedTimezone) throw new Error('Timezone is required.');
 
-	const wall: WallTime = {
-		year: value.getFullYear(),
-		month: value.getMonth(),
-		day: value.getDate(),
-		hour: value.getHours(),
-		minute: value.getMinutes(),
-		second: value.getSeconds()
-	};
+	const wall = localDateToWallTime(value);
 	const explicitOffset = utcOffset?.trim();
 	if (explicitOffset && fixedUtcOffsetMilliseconds(explicitOffset) === null) {
 		throw new Error(`Invalid UTC offset: ${explicitOffset}`);

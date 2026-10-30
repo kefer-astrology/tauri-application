@@ -5,7 +5,7 @@ import { AstrologySidebar } from '@/app/components/astrology-sidebar';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
-import { NewHoroscope } from '@/app/components/new-horoscope';
+import { NewHoroscope } from '@/app/features/horoscope/new-horoscope/new-horoscope';
 import {
 	SettingsSecondarySidebar,
 	type SettingsSectionId
