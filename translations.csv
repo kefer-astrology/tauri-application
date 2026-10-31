@@ -318,6 +318,7 @@ internal_name,czech,english,french,spanish
 "open_motion_stationary","Stacionární","Stationary","Stationnaire","Estacionario"
 "open_search_no_results","Žádná shoda s vyhledáváním.","No matches for your search.","Aucun résultat pour cette recherche.","Sin resultados para su búsqueda."
 "open_select_all","Vybrat vše","Select all","Tout sélectionner","Seleccionar todo"
+"open_select_favorites","Vybrat oblíbené","Select favorites","Sélectionner les favoris","Seleccionar favoritos"
 "open_shape_bowl","Miska","Bowl","Bol","Cuenco"
 "open_shape_bowl_day","Denní miska","Day bowl","Bol diurne","Cuenco diurno"
 "open_shape_bowl_east","Východní miska","Eastern bowl","Bol oriental","Cuenco oriental"

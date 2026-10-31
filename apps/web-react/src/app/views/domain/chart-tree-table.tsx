@@ -94,7 +94,48 @@ export function ChartTreeTable({
 			list.push({
 				id: 'favorite',
 				accessorFn: ({ chart }) => favorites!.has(chart.id),
-				header: '',
+				// With selection on, the header star selects every favorite row (children included,
+				// even when collapsed) and replaces sorting; pressed again, it deselects them.
+				header: ({ table }) => {
+					if (!selectable) return '';
+					const favoriteRowIds = table
+						.getCoreRowModel()
+						.flatRows.filter((row) => favorites!.has(row.original.chart.id))
+						.map((row) => row.id);
+					const allSelected =
+						favoriteRowIds.length > 0 && favoriteRowIds.every((id) => rowSelection![id]);
+					return (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="size-7"
+							disabled={favoriteRowIds.length === 0}
+							onClick={() =>
+								table.setRowSelection((current) => {
+									const next = { ...current };
+									for (const id of favoriteRowIds) {
+										if (allSelected) delete next[id];
+										else next[id] = true;
+									}
+									return next;
+								})
+							}
+							aria-label={t('open_select_favorites')}
+							title={t('open_select_favorites')}
+						>
+							<Star
+								className={cn(
+									'size-4',
+									allSelected
+										? 'fill-[color:var(--theme-accent)] text-[color:var(--theme-accent)]'
+										: ft.muted
+								)}
+							/>
+						</Button>
+					);
+				},
+				enableSorting: !selectable,
 				cell: ({ row }) => (
 					<div onClick={(event) => event.stopPropagation()}>
 						<Button
@@ -210,7 +251,7 @@ export function ChartTreeTable({
 			}
 		);
 		return list;
-	}, [childCount, favorites, ft, onToggleFavorite, selectable, t, withFavorites]);
+	}, [childCount, favorites, ft, onToggleFavorite, rowSelection, selectable, t, withFavorites]);
 
 	return (
 		<DataTable
