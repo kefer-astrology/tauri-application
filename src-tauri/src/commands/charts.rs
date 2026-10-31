@@ -45,29 +45,7 @@ pub async fn create_chart(
 pub async fn import_chart(workspace_path: String, source_path: String) -> Result<String, String> {
     let base = Path::new(&workspace_path);
     let mut manifest = load_workspace_manifest(base)?;
-    let source = Path::new(&source_path);
-
-    let extension = source
-        .extension()
-        .and_then(|value| value.to_str())
-        .map(|value| value.trim().to_ascii_lowercase());
-
-    let chart = match extension.as_deref() {
-        Some("yml" | "yaml") => read_importable_chart_yaml(source)?,
-        Some("sfs") => crate::workspace::sfs::read_sfs_chart(source)?,
-        Some("hor") => crate::workspace::morinus::read_morinus_chart(source)?,
-        Some("sfcht" | "cht" | "chm" | "se1" | "ald" | "cst") => {
-            crate::workspace::solar_fire::read_solar_fire_chart(source)?
-        }
-        Some(other) => {
-            return Err(format!(
-                "Unsupported chart import format: .{other}. Supported formats: .yml, .yaml, .sfs, .hor, .SFcht, .cht"
-            ))
-        }
-        None => {
-            return Err("Imported chart file must have a supported extension (.yml, .yaml, .sfs, .hor, .SFcht, .cht)".to_string())
-        }
-    };
+    let chart = read_chart_import_file(Path::new(&source_path))?;
 
     let chart_id = chart.id.clone();
     validate_chart_instance(&chart)?;
@@ -188,6 +166,15 @@ pub async fn get_chart_details(
     Ok(chart_details_json(&chart))
 }
 
+/// Parse an external chart file without persisting it, returning the same shape as
+/// `get_chart_details`. Used to import charts before a workspace is opened.
+#[tauri::command]
+pub async fn read_chart_file(source_path: String) -> Result<serde_json::Value, String> {
+    let chart = read_chart_import_file(Path::new(&source_path))?;
+    validate_chart_instance(&chart)?;
+    Ok(chart_details_json(&chart))
+}
+
 /// Frontend-facing JSON for one chart (labels instead of enum variants), shared by
 /// `get_chart_details` and the batch `load_workspace_charts`.
 pub(crate) fn chart_details_json(
@@ -273,6 +260,28 @@ pub(crate) fn chart_details_json(
         "tag_colors": chart.tag_colors,
         "roden_rating": chart.roden_rating,
     })
+}
+
+fn read_chart_import_file(
+    source: &Path,
+) -> Result<crate::workspace::models::ChartInstance, String> {
+    let extension = source
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| value.trim().to_ascii_lowercase());
+
+    match extension.as_deref() {
+        Some("yml" | "yaml") => read_importable_chart_yaml(source),
+        Some("sfs") => crate::workspace::sfs::read_sfs_chart(source),
+        Some("hor") => crate::workspace::morinus::read_morinus_chart(source),
+        Some("sfcht" | "cht" | "chm" | "se1" | "ald" | "cst") => {
+            crate::workspace::solar_fire::read_solar_fire_chart(source)
+        }
+        Some(other) => Err(format!(
+            "Unsupported chart import format: .{other}. Supported formats: .yml, .yaml, .sfs, .hor, .SFcht, .cht"
+        )),
+        None => Err("Imported chart file must have a supported extension (.yml, .yaml, .sfs, .hor, .SFcht, .cht)".to_string()),
+    }
 }
 
 fn read_importable_chart_yaml(
@@ -442,6 +451,15 @@ mod tests {
         .expect("workspace should load after import");
         assert_eq!(info.charts.len(), 1);
         assert_eq!(info.charts[0].id, "Base Chart");
+    }
+
+    #[test]
+    fn read_chart_file_parses_without_workspace() {
+        let details = tauri::async_runtime::block_on(read_chart_file(sample_chart_source_path()))
+            .expect("yaml chart should parse");
+
+        assert_eq!(details["id"], "Base Chart");
+        assert!(details["subject"]["location"]["latitude"].is_number());
     }
 
     #[test]

@@ -13,7 +13,9 @@ use commands::calculation::{
     compute_chart, compute_chart_from_data, compute_cross_aspects_from_data,
     compute_midpoint_contacts_from_data, compute_midpoints_from_data, load_workspace_charts,
 };
-use commands::charts::{create_chart, delete_chart, get_chart_details, import_chart, update_chart};
+use commands::charts::{
+    create_chart, delete_chart, get_chart_details, import_chart, read_chart_file, update_chart,
+};
 use commands::default::{read, write};
 use commands::dialogs::{open_chart_file_dialog, open_folder_dialog};
 use commands::ephemeris::{
@@ -113,6 +115,7 @@ pub fn run() {
             create_chart,
             create_analysis,
             import_chart,
+            read_chart_file,
             update_chart,
             delete_chart,
             get_workspace_defaults,
