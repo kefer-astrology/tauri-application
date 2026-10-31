@@ -147,7 +147,6 @@ export function AppShell() {
 			case 'otevrit':
 				return (
 					<OpenWorkspaceView
-						workspacePath={workspace.workspacePath}
 						onOpenWorkspace={async () => {
 							if (await workspace.openWorkspace()) setActiveView('horoskop');
 						}}

@@ -25,6 +25,7 @@ import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { DetailSidePanel } from '@/app/components/detail-side-panel';
 import { useWorkspaceCharts } from '@/app/providers/workspace-charts';
+import { useWorkspace } from '@/app/providers/workspace';
 import {
 	CHART_FILTER_GROUPS,
 	ChartFilterPanel
@@ -37,7 +38,7 @@ import {
 	readStoredChartFavorites,
 	readStoredChartListSort
 } from '@/lib/chartListPreferences';
-import { importChartFile, openChartFileDialog } from '@/lib/tauri/workspace';
+import { openChartFileDialog } from '@/lib/tauri/workspace';
 import { useChartQuery, useFilterGroupVisibility } from './use-chart-query';
 
 type OpenMode = 'my_radixes' | 'database';
@@ -46,20 +47,16 @@ const FILTER_GROUP_IDS = CHART_FILTER_GROUPS.map((group) => group.id);
 const NO_ROWS: ChartTreeRow[] = [];
 
 export type OpenWorkspaceViewProps = {
-	workspacePath: string | null;
 	onOpenWorkspace: () => void | Promise<void>;
 	onActivateChart: (chartId: string) => void;
 };
 
 /** Open: the workspace chart archive — filter panel, chart tree, import and open actions. */
-export function OpenWorkspaceView({
-	workspacePath,
-	onOpenWorkspace,
-	onActivateChart
-}: OpenWorkspaceViewProps) {
+export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWorkspaceViewProps) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme();
-	const { charts, selectedChartId, addChart } = useWorkspaceCharts();
+	const { charts, selectedChartId } = useWorkspaceCharts();
+	const { importChart } = useWorkspace();
 	const { query, setQuery, resetQuery, forest, rows, autoExpanded } = useChartQuery(charts);
 	const { visible: visibleFilterGroups, setGroupVisible } =
 		useFilterGroupVisibility(FILTER_GROUP_IDS);
@@ -121,13 +118,12 @@ export function OpenWorkspaceView({
 		});
 
 	const importHoroscope = async () => {
-		if (!workspacePath || isImporting) return;
+		if (isImporting) return;
 		try {
 			const sourcePath = await openChartFileDialog();
 			if (!sourcePath) return;
 			setIsImporting(true);
-			const chart = await importChartFile(workspacePath, sourcePath);
-			addChart(chart);
+			const chart = await importChart(sourcePath);
 			toast.success(t('toast_chart_imported'), { description: chart.name });
 		} catch (error) {
 			toast.error(t('toast_chart_import_failed'), {
@@ -277,7 +273,7 @@ export function OpenWorkspaceView({
 								size="sm"
 								className={cn('h-9 w-full text-xs', ft.footerPrimary)}
 								onClick={() => void importHoroscope()}
-								disabled={!workspacePath || isImporting}
+								disabled={isImporting}
 							>
 								<Upload />
 								{t('open_import_horoscope')}

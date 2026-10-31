@@ -24,9 +24,11 @@ import {
 import {
 	computeChart,
 	computeChartFromData,
+	importChartFile,
 	initStorage,
 	openFolderDialog,
 	openWorkspaceFolder,
+	readChartFile,
 	saveWorkspace as saveWorkspaceFiles,
 	saveWorkspaceDefaults,
 	saveWorkspaceTags
@@ -63,6 +65,8 @@ export interface WorkspaceValue {
 	createChart: (chart: AppChart) => Promise<boolean>;
 	/** Synastry is persisted as an analysis; `AppChart` is only its list-row facade. */
 	createSynastry: (chart: AppChart) => Promise<boolean>;
+	/** Import a chart file; without a workspace it stays in memory until saved. Throws on failure. */
+	importChart: (sourcePath: string) => Promise<AppChart>;
 	saveChart: (chart: AppChart) => Promise<boolean>;
 	setObservableObjects: (chartId: string, bodies: string[]) => Promise<void>;
 	applyDefaultsPatch: (patch: Partial<WorkspaceDefaultsState>) => Promise<void>;
@@ -332,6 +336,24 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		[workspacePath, addChart, t]
 	);
 
+	const importChart = useCallback(
+		async (sourcePath: string) => {
+			if (workspacePath) {
+				const chart = await importChartFile(workspacePath, sourcePath);
+				addChart(chart);
+				return chart;
+			}
+			const chart = await readChartFile(sourcePath);
+			if (charts.some((c) => c.id === chart.id)) {
+				throw new Error(`Chart ${chart.id} already exists`);
+			}
+			addChart(chart);
+			void computeChartInBackground(chart, null);
+			return chart;
+		},
+		[workspacePath, charts, addChart, computeChartInBackground]
+	);
+
 	const setObservableObjects = useCallback(
 		async (chartId: string, bodies: string[]) => {
 			const chart = charts.find((c) => c.id === chartId);
@@ -474,6 +496,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			saveWorkspace,
 			createChart,
 			createSynastry,
+			importChart,
 			saveChart,
 			setObservableObjects,
 			applyDefaultsPatch
@@ -487,6 +510,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			saveWorkspace,
 			createChart,
 			createSynastry,
+			importChart,
 			saveChart,
 			setObservableObjects,
 			applyDefaultsPatch

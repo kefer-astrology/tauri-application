@@ -115,6 +115,12 @@ export async function importChartFile(
 	return chart;
 }
 
+/** Parse a chart file without a workspace; the caller keeps it in memory until saved. */
+export async function readChartFile(sourcePath: string): Promise<AppChart> {
+	const details = await invoke<ChartDetails>('read_chart_file', { sourcePath });
+	return chartDetailsToAppChart(details);
+}
+
 export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
 	return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
 }
