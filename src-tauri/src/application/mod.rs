@@ -11,3 +11,4 @@ pub mod evaluation_context;
 pub mod event_search;
 pub mod location;
 pub mod transit;
+pub mod workspace_charts;

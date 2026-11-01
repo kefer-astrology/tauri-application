@@ -56,11 +56,12 @@ Optional request fields:
   [Multi-body configuration search](#multi-body-configuration-search-configurationrequests)
   below
 
-All four flags/fields are optional specifically so a caller that predates
-them (neither frontend bridge sends `configurationRequests`, and only React
-sends `exactHits`/`stationEvents`, as of this writing) keeps working
-unchanged — a missing field deserializes as "not requested," not as a
-command error.
+These fields are optional for compatibility with older callers. Missing
+`exactHits`, `stationEvents`, and `configurationRequests` default to `false`,
+`false`, and `[]`; missing `sampledSeries` defaults to `true`.
+
+React sends all four options. Svelte currently exposes sampled series only
+and omits these fields; see [Current parity scope](#current-parity-scope).
 
 Response fields:
 
@@ -108,8 +109,8 @@ arbitrarily within the same instant); each entry has:
     or `"tangential_no_change"` (speed grazed zero without actually
     switching direction — same heuristic as `contact: "tangential"`)
   - `confirmed`: independent of `contact`/`direction_change` — those
-    describe the contact's *geometry*, `confirmed` describes detection
-    *confidence*. Always `true` for `contact: "crossing"` and for a genuine
+    describe the contact's _geometry_, `confirmed` describes detection
+    _confidence_. Always `true` for `contact: "crossing"` and for a genuine
     direction change (sign-change-based, never ambiguous). For
     `contact: "tangential"`/`direction_change: "tangential_no_change"`,
     `false` means the refined residual did not actually converge within
@@ -154,9 +155,9 @@ Each entry in `configurationRequests` is:
 
 ```json
 {
-  "configurationId": "grand_trine",
-  "fixedRoles": [],
-  "roleCandidates": {}
+	"configurationId": "grand_trine",
+	"fixedRoles": [],
+	"roleCandidates": {}
 }
 ```
 
@@ -256,12 +257,37 @@ The parity target for the current implementation is:
 - loading and error state
 - a summary table for returned result count, transit body count, and aspect count
 
-Known follow-up work:
+### Implemented selectors
 
-- ~~share one canonical observable-object selector across both shells~~ — done: React's `transiting-bodies`/`transited-bodies` (Transits) and the "Observable objects" section (Settings) all render the same `body-selector.tsx` component, backed by the shared `OBSERVABLE_OBJECTS` catalog (`lib/astrology/observableObjects.ts`); Svelte's `BodySelector.svelte` reads the mirrored `lib/astrology/observableObjects.ts` catalog and is used inline in `App.svelte` for both the transiting- and transited-bodies pages. Aspectarium's own React selector reads the same catalog too, through its own lighter-weight `MultiSelectFilter` UI rather than `body-selector.tsx`.
-- **Svelte has a working, but minimal, inline Transits flow — not a dedicated Transits view.** `App.svelte` renders source-chart selection, the shared `BodySelector` for transiting/transited bodies, inline aspect-type checkboxes, a Calculate button that calls `computeTransitSeries`, and a capped results table (first 50 rows) — all inline in one large component rather than factored into dedicated components the way React's `transits-content.tsx`/`transits-workspace.tsx`/`transits-results-dashboard.tsx` are. Svelte does **not** have: transit-setup persistence (no `saveTransitSetup`/`loadTransitSetup` calls — every Svelte transit computation is ad hoc, nothing survives a reload), the `computeTransitSeriesFromData` in-memory variant, or any `exactHits`/`stationEvents`/`configurationRequests`/`sampledSeries` control — its `TransitSeriesRequest`/`TransitSeriesEntry`/`TransitSeriesResult` types (`lib/tauri/types.ts`) have no `exactHits`, `stationEvents`, `configurationRequests`, `sampledSeries`, `motion`, or `event_search` fields at all, so exact-event search and multi-body configuration search are reachable only from React today. Acceptance criteria for closing this gap: factor Svelte's inline flow into dedicated components, add transit-setup persistence, and bring its typed bridge fields up to the current contract (`motion`, `exactHits`, `stationEvents`, `configurationRequests`, `sampledSeries`, `event_search`).
-- share one canonical transit time-step model across both shells
-- expose backend provenance in the transit results UI instead of only carrying it in the typed response
+React's Transits and Settings use `body-selector.tsx`, backed by
+`lib/astrology/observableObjects.ts`. Its Aspectarium uses the same catalog
+through `MultiSelectFilter`. Svelte uses `BodySelector.svelte` and a mirrored
+observable-object catalog for both transit body lists.
+
+### Svelte gaps
+
+Svelte implements its transit flow inline in `App.svelte`: source-chart
+selection, transiting/transited body selectors, aspect checkboxes, a Calculate
+button calling `computeTransitSeries`, and a table capped at 50 rows.
+
+The following React capabilities are still missing in Svelte:
+
+- Transit-setup persistence: no `saveTransitSetup` or `loadTransitSetup` calls;
+  requests are ad hoc and do not survive a reload.
+- The `computeTransitSeriesFromData` in-memory variant.
+- Controls and request types for `exactHits`, `stationEvents`,
+  `configurationRequests`, and `sampledSeries`.
+- Result fields for `motion` and `event_search` in `lib/tauri/types.ts`.
+
+Closing this gap requires dedicated transit components, setup persistence,
+and typed request/result fields aligned with this contract. Exact-event and
+configuration search are currently reachable from React only.
+
+### Shared follow-up work
+
+- Share one canonical transit time-step model across both shells.
+- Expose backend provenance in the transit results UI rather than only carrying
+  it in the typed response.
 
 ## Acceptance checks
 
@@ -272,6 +298,6 @@ Known follow-up work:
 - A missing workspace, missing source chart, invalid time range, or unavailable Tauri runtime surfaces as a clear error or disabled action.
 - A valid command returns ordered entries with `datetime`, `transit_positions`, `motion`, and `aspects`, plus a top-level `event_search` field.
 - `event_search.complete` is `false`, with a matching entry in `event_search.warnings`, whenever any individual exact-event, station, or configuration search fails or exhausts its work-limit — never presented as a successful empty result.
-- Omitting `exactHits`/`stationEvents`/`configurationRequests`/`sampledSeries` entirely (as every current frontend bridge does for at least some of them) behaves identically to passing `false`/`false`/`[]`/`true` respectively.
+- Omitting `exactHits`/`stationEvents`/`configurationRequests`/`sampledSeries` entirely (as the current Svelte bridge does) behaves identically to passing `false`/`false`/`[]`/`true` respectively.
 - Setting `sampledSeries: false` returns `results: []` and `time_step: "n/a"` without requiring `timeStepSeconds`, while still populating backend provenance fields and `event_search`.
 - A `configurationRequests` entry for `grand_trine`, `t_square`, `yod`, or `grand_cross` returns matches in `event_search.configuration_matches` with the documented shape; an unrecognized id surfaces as a warning, not a command error.

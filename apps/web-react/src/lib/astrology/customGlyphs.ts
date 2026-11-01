@@ -20,7 +20,9 @@ function readStoredOverrides(): Record<string, CustomGlyphOverride> {
 		const raw = localStorage.getItem(CUSTOM_GLYPHS_STORAGE_KEY);
 		if (!raw) return {};
 		const parsed = JSON.parse(raw);
-		return parsed && typeof parsed === 'object' ? (parsed as Record<string, CustomGlyphOverride>) : {};
+		return parsed && typeof parsed === 'object'
+			? (parsed as Record<string, CustomGlyphOverride>)
+			: {};
 	} catch {
 		return {};
 	}

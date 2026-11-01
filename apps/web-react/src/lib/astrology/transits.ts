@@ -34,4 +34,3 @@ export function normalizeLongitude(value: unknown): number | null {
 	}
 	return null;
 }
-

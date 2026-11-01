@@ -387,8 +387,7 @@ fn great_circle_ecliptic_intersection_q1(
 /// IAU 1980 formula, accurate to ~0.1" over a few centuries.
 pub fn mean_node_lon(jd_ut: f64) -> f64 {
     let t = j2000_centuries(jd_ut);
-    let omega =
-        125.044_555_01 - 1934.136_261_97 * t + 0.002_075_81 * t * t + 0.000_002_15 * t * t * t;
+    let omega = 125.04455501 - 1934.13626197 * t + 0.00207581 * t * t + 0.00000215 * t * t * t;
     normalize_deg(omega)
 }
 

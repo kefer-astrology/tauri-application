@@ -1,4 +1,4 @@
-import type { Theme } from '@/app/components/astrology-sidebar';
+import type { Theme } from '@/lib/theme';
 
 /**
  * Generic series colors come from the active app theme. These are deliberately not the aspect

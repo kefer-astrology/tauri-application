@@ -17,14 +17,13 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { cn } from './ui/utils';
 import { useAppFormFieldTheme } from './form-field-theme';
-import { Theme } from './astrology-sidebar';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import {
 	HoroscopeWheel,
 	type HoroscopeWheelAspectInteraction,
 	type HoroscopeWheelBody,
 	type HoroscopeWheelObjectInteraction
-} from './horoscope-wheel';
+} from '@/app/views/domain/horoscope-wheel/horoscope-wheel';
 import { toast } from 'sonner';
 import {
 	DEFAULT_OBSERVABLE_OBJECT_IDS,
@@ -34,25 +33,23 @@ import { tagColor } from '@/lib/chartTags';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import { normalizeLongitude } from '@/lib/astrology/chartSearch';
-import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
+import { aspectLabel } from '@/lib/astrology/objectLabels';
 import {
 	normalizePointId,
 	parseComputedAspect,
 	type ParsedAspect
 } from '@/lib/astrology/aspectParsing';
 import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
-import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
 import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyle';
-import { AstrologyGlyph } from '@/ui/astrology-glyph';
-import { BodySelector } from './body-selector';
-import { DetailSidePanel } from './detail-side-panel';
-import { ObjectDetailPanel } from './object-detail-panel';
-import { AspectDetailPanel } from './aspect-detail-panel';
+import { ObservableObjectList } from '../views/domain/observable-object-list';
+import { PositionsList, type BodyPosition } from '../views/domain/positions-list';
+import { chartTimeZone, formatChartLocal } from '@/lib/chartDateTime';
+import { DetailSidePanel } from '@/app/views/data/detail-side-panel';
+import { ObjectDetailPanel } from '@/app/views/domain/object-detail-panel';
+import { AspectDetailPanel } from '@/app/views/domain/aspect-detail-panel';
 
 interface HoroscopeDashboardProps {
-	theme: Theme;
 	workspaceDefaults: WorkspaceDefaultsState;
-	glyphSet: AstrologyGlyphSetId;
 	wheelStyle?: WheelStyleId;
 	wheelOrientation?: WheelOrientationId;
 	elementColors: ElementColors;
@@ -62,81 +59,14 @@ interface HoroscopeDashboardProps {
 	onObservableObjectsChange?: (chartId: string, bodies: string[]) => void;
 }
 
-interface PlanetPosition {
-	id: string;
-	label: string;
-	icon: string;
-	degrees: number;
-	signZodiacId: string;
-	signGlyphFallback: string;
-	minutes: number;
-	seconds: number;
-	retrograde: boolean;
-}
-
-const ZODIAC_UNICODE_FALLBACK = [
-	'♈',
-	'♉',
-	'♊',
-	'♋',
-	'♌',
-	'♍',
-	'♎',
-	'♏',
-	'♐',
-	'♑',
-	'♒',
-	'♓'
-] as const;
+/** Stable fallbacks, so memo dependencies don't change on every render while a chart has no data. */
+const NO_POSITIONS: Record<string, unknown> = {};
+const NO_MOTION: Record<string, { speed: number; retrograde: boolean }> = {};
+const NO_IDS: string[] = [];
 
 const ANGLE_POSITION_IDS = new Set(
 	OBSERVABLE_OBJECTS.filter((item) => item.category === 'angles').map((item) => item.id)
 );
-
-function longitudeToPosition(
-	id: string,
-	longitude: number,
-	retrograde: boolean,
-	t: (key: string, options?: Record<string, unknown>) => string
-): PlanetPosition {
-	const withinSign = longitude % 30;
-	const totalSeconds = Math.round(withinSign * 3600);
-	const degrees = Math.floor(totalSeconds / 3600) % 30;
-	const minutes = Math.floor((totalSeconds % 3600) / 60);
-	const seconds = totalSeconds % 60;
-	const signIndex = Math.floor(longitude / 30) % 12;
-	return {
-		id,
-		label: objectLabel(id, t),
-		icon: objectIcon(id),
-		degrees,
-		signZodiacId: signIndexToZodiacId(signIndex),
-		signGlyphFallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
-		minutes,
-		seconds,
-		retrograde
-	};
-}
-
-function parseChartDateTime(value?: string): Date | null {
-	if (!value?.trim()) return null;
-	const direct = new Date(value);
-	if (!Number.isNaN(direct.getTime())) return direct;
-
-	const normalized = value.includes('T')
-		? value
-		: /^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)$/.test(value)
-			? value.replace(' ', 'T') + 'Z'
-			: value;
-	const normalizedDate = new Date(normalized);
-	if (!Number.isNaN(normalizedDate.getTime())) return normalizedDate;
-
-	const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
-	if (!match) return null;
-
-	const [, dd, mm, yyyy, hh = '00', min = '00', ss = '00'] = match;
-	return new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(ss));
-}
 
 function formatCoords(latitude?: number, longitude?: number) {
 	if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
@@ -144,9 +74,7 @@ function formatCoords(latitude?: number, longitude?: number) {
 }
 
 export function HoroscopeDashboard({
-	theme,
 	workspaceDefaults,
-	glyphSet,
 	wheelStyle,
 	wheelOrientation = 'ascendant',
 	elementColors,
@@ -158,7 +86,7 @@ export function HoroscopeDashboard({
 	const { t, i18n } = useTranslation();
 	const { selectedChart, shiftSelectedChartTime, transitOverlay, clearTransitOverlay } =
 		useWorkspaceCharts();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const [profileCollapsed, setProfileCollapsed] = useState(false);
 	const [astrolabeCollapsed, setAstrolabeCollapsed] = useState(false);
 	const [positionsCollapsed, setPositionsCollapsed] = useState(false);
@@ -187,10 +115,10 @@ export function HoroscopeDashboard({
 		'h-9 w-full min-w-0 flex-1 text-sm rounded-xl [color-scheme:inherit]'
 	);
 	const panelCardClass = 'gap-0 overflow-hidden transition-all duration-300';
-	const parsedChartDateTime = parseChartDateTime(selectedChart?.dateTime);
+	// Times read and shown as local time at the chart's place; the transit moment in the same zone.
+	const chartZone = selectedChart ? chartTimeZone(selectedChart) : undefined;
 	const activeTransitOverlay =
 		transitOverlay && transitOverlay.sourceChartId === selectedChart?.id ? transitOverlay : null;
-	const parsedTransitDateTime = parseChartDateTime(activeTransitOverlay?.dateTime);
 	const chartTypeLabel =
 		selectedChart?.chartType === 'EVENT'
 			? t('new_type_event')
@@ -198,7 +126,7 @@ export function HoroscopeDashboard({
 				? t('new_type_horary')
 				: t('new_type_radix');
 	const chartDateLabel =
-		parsedChartDateTime?.toLocaleDateString(i18n.language, {
+		formatChartLocal(selectedChart?.dateTime, chartZone, {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric'
@@ -206,7 +134,7 @@ export function HoroscopeDashboard({
 		selectedChart?.dateTime?.split(' ')[0] ??
 		t('demo_chart_date_line');
 	const chartTimeLabel =
-		parsedChartDateTime?.toLocaleTimeString(i18n.language, {
+		formatChartLocal(selectedChart?.dateTime, chartZone, {
 			hour: '2-digit',
 			minute: '2-digit',
 			second: '2-digit'
@@ -214,7 +142,7 @@ export function HoroscopeDashboard({
 		selectedChart?.dateTime?.split(' ').slice(1).join(' ') ??
 		t('demo_chart_time_line');
 	const transitDateTimeLabel =
-		parsedTransitDateTime?.toLocaleString(i18n.language, {
+		formatChartLocal(activeTransitOverlay?.dateTime, chartZone, {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric',
@@ -230,8 +158,11 @@ export function HoroscopeDashboard({
 		[selectedChart?.zodiacType, selectedChart?.houseSystem].filter(Boolean).join(' / ') ||
 		t('demo_chart_house_system');
 	const chartTags = selectedChart?.tags?.filter(Boolean) ?? [];
-	const computedPositions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
-	const computedMotion = selectedChart?.computed?.motion ?? {};
+	const computedPositions = (selectedChart?.computed?.positions ?? NO_POSITIONS) as Record<
+		string,
+		unknown
+	>;
+	const computedMotion = selectedChart?.computed?.motion ?? NO_MOTION;
 	const computedAxes = selectedChart?.computed?.axes;
 	const positionOrder = Array.isArray(selectedChart?.observableObjects)
 		? selectedChart.observableObjects
@@ -268,10 +199,10 @@ export function HoroscopeDashboard({
 			})
 			.filter((entry): entry is [HoroscopeWheelBody, number] => entry[1] !== null)
 	) as Partial<Record<string, number>>;
-	const positionRows: PlanetPosition[] = positionOrder.flatMap((id) => {
+	const positionRows: BodyPosition[] = positionOrder.flatMap((id) => {
 		const longitude = normalizeLongitude(computedPositions[id]);
 		const retrograde = computedMotion[id]?.retrograde ?? false;
-		return longitude === null ? [] : [longitudeToPosition(id, longitude, retrograde, t)];
+		return longitude === null ? [] : [{ id, longitude, retrograde }];
 	});
 	const showAxisLines = showAsc || showDsc || showMc || showIc;
 
@@ -281,12 +212,10 @@ export function HoroscopeDashboard({
 	// Chart-wide only: Rust records which shapes/configurations the whole chart has, not which
 	// bodies belong to each one, so the detail panel shows them as informational context rather
 	// than filtering them to the selected planet.
-	const chartShapeIds = selectedChart?.computed?.shapes ?? [];
-	const chartConfigurationIds = selectedChart?.computed?.configurations ?? [];
-	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
-		string,
-		unknown
-	>;
+	const chartShapeIds = selectedChart?.computed?.shapes ?? NO_IDS;
+	const chartConfigurationIds = selectedChart?.computed?.configurations ?? NO_IDS;
+	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ??
+		NO_POSITIONS) as Record<string, unknown>;
 	const transitWheelBodyOrder: HoroscopeWheelBody[] = activeTransitOverlay?.transitingBodies ?? [];
 	const transitWheelBodyLongitudes = Object.fromEntries(
 		transitWheelBodyOrder
@@ -471,7 +400,7 @@ export function HoroscopeDashboard({
 				{/* Left Column */}
 				<div className="flex min-h-0 min-w-0 flex-col gap-4">
 					{/* Profile Panel */}
-					<Card variant="themed" theme={theme} className={panelCardClass} data-tour="radix-profile">
+					<Card variant="themed" className={panelCardClass} data-tour="radix-profile">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setProfileCollapsed(!profileCollapsed)}
@@ -562,12 +491,7 @@ export function HoroscopeDashboard({
 					</Card>
 
 					{/* Astrolabe Panel */}
-					<Card
-						variant="themed"
-						theme={theme}
-						className={panelCardClass}
-						data-tour="radix-astrolabe"
-					>
+					<Card variant="themed" className={panelCardClass} data-tour="radix-astrolabe">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
@@ -702,8 +626,6 @@ export function HoroscopeDashboard({
 				>
 					<div className="aspect-square h-full max-h-full w-full max-w-full">
 						<HoroscopeWheel
-							theme={theme}
-							glyphSet={glyphSet}
 							wheelStyle={wheelStyle}
 							elementColors={elementColors}
 							lightPlanetFill={lightPlanetFill}
@@ -720,7 +642,7 @@ export function HoroscopeDashboard({
 							radixAspects={radixAspects}
 							aspectOrbsForRadix={workspaceDefaults.defaultAspectOrbs}
 							aspectColorsForRadix={workspaceDefaults.defaultAspectColors}
-						bodyColors={workspaceDefaults.bodyColors}
+							bodyColors={workspaceDefaults.bodyColors}
 							aspectLineTierStyle={workspaceDefaults.aspectLineTierStyle}
 							selectedObject={selectedWheelObject}
 							selectedAspectIndex={selectedWheelAspect?.index}
@@ -748,7 +670,6 @@ export function HoroscopeDashboard({
 					<Card
 						data-tour="radix-positions"
 						variant="themed"
-						theme={theme}
 						className={cn(panelCardClass, positionsCollapsed ? '' : 'flex h-full flex-col')}
 					>
 						<div
@@ -781,65 +702,14 @@ export function HoroscopeDashboard({
 
 						{!positionsCollapsed && (
 							<div className="flex-1 overflow-y-auto px-4 pb-4">
-								{positionRows.length > 0 ? (
-									<>
-										<div className="space-y-1.5">
-											{positionRows.map((pos) => (
-												<div
-													key={pos.id}
-													className={cn(
-														'flex cursor-pointer items-center gap-0.5 rounded-md px-1 py-0.5 transition-colors',
-														textColor,
-														'font-mono text-sm leading-none tabular-nums',
-														selectedWheelObject?.layer === 'radix' &&
-															selectedWheelObject.bodyId === pos.id
-															? 'bg-[color:var(--theme-selected-bg)]'
-															: hoverBg
-													)}
-													title={pos.label}
-													onClick={() => handleObjectSelect({ bodyId: pos.id, layer: 'radix' })}
-												>
-													<span
-														className={cn(
-															'inline-flex h-[1.125rem] w-8 shrink-0 items-center justify-center',
-															pos.icon.length > 2 ? 'text-[10px] font-semibold' : ''
-														)}
-													>
-														<AstrologyGlyph
-															glyphId={pos.id}
-															glyphSet={glyphSet}
-															fallback={pos.icon}
-															size={18}
-															title={pos.label}
-															className="leading-none"
-														/>
-													</span>
-													<span className="w-12 text-right">{pos.degrees}°</span>
-													<span className="inline-flex h-[1.125rem] w-8 shrink-0 items-center justify-center">
-														<AstrologyGlyph
-															glyphId={pos.signZodiacId}
-															glyphSet={glyphSet}
-															domain="zodiac"
-															fallback={pos.signGlyphFallback}
-															size={18}
-															title={pos.signZodiacId}
-															className="leading-none"
-														/>
-													</span>
-													<span className="w-10 text-right">{pos.minutes}'</span>
-													<span className="w-10 text-right">{pos.seconds}"</span>
-													<span className="w-6 text-center text-[10px] font-semibold text-[color:var(--theme-accent)] uppercase">
-														{pos.retrograde ? 'R' : ''}
-													</span>
-												</div>
-											))}
-										</div>
-									</>
-								) : (
-									<div className={cn('py-6 text-sm', mutedColor)}>
-										{t('dashboard_no_positions')}
-									</div>
-								)}
+								<PositionsList
+									positions={positionRows}
+									selectedId={
+										selectedWheelObject?.layer === 'radix' ? selectedWheelObject.bodyId : null
+									}
+									onSelect={(bodyId) => handleObjectSelect({ bodyId, layer: 'radix' })}
+									emptyText={t('dashboard_no_positions')}
+								/>
 							</div>
 						)}
 					</Card>
@@ -851,7 +721,6 @@ export function HoroscopeDashboard({
 			    floating details popup here; the second click opens the full detail side panel below. */}
 
 			<DetailSidePanel
-				theme={theme}
 				open={wheelDetailKind !== null}
 				onOpenChange={(open) => {
 					if (!open) setWheelDetailKind(null);
@@ -869,11 +738,9 @@ export function HoroscopeDashboard({
 				bodyClassName="overflow-y-auto"
 			>
 				{wheelDetailKind === 'object' && selectedObjectDetail ? (
-					<ObjectDetailPanel theme={theme} glyphSet={glyphSet} data={selectedObjectDetail} />
+					<ObjectDetailPanel data={selectedObjectDetail} />
 				) : wheelDetailKind === 'aspect' && selectedAspectDetail ? (
 					<AspectDetailPanel
-						theme={theme}
-						glyphSet={glyphSet}
 						aspect={selectedAspectDetail.aspect}
 						fromObject={selectedAspectDetail.fromObject}
 						toObject={selectedAspectDetail.toObject}
@@ -882,7 +749,6 @@ export function HoroscopeDashboard({
 			</DetailSidePanel>
 
 			<DetailSidePanel
-				theme={theme}
 				open={showPositionModal}
 				onOpenChange={setShowPositionModal}
 				title={t('dashboard_positions_picker_title')}
@@ -892,12 +758,10 @@ export function HoroscopeDashboard({
 			>
 				<div className="flex h-full min-h-0 flex-col">
 					<div className="min-h-0 flex-1 overflow-y-auto">
-						<BodySelector
-							theme={theme}
-							glyphSet={glyphSet}
-							subtitleKey="dashboard_positions_picker_hint"
-							selectedBodyIds={pickerBodies}
-							onSelectedBodyIdsChange={setPickerBodies}
+						<ObservableObjectList
+							subtitle={t('dashboard_positions_picker_hint')}
+							selectedIds={pickerBodies}
+							onSelectedIdsChange={setPickerBodies}
 						/>
 					</div>
 					<div

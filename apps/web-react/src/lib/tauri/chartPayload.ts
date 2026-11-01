@@ -1,3 +1,10 @@
+import {
+	fixedUtcOffsetMilliseconds,
+	instantToZonedParts,
+	localDateToWallTime,
+	wallTimeToInstant,
+	type WallTime
+} from '@/lib/time/zone';
 import type {
 	AnalysisDto,
 	AnalysisInputDto,
@@ -5,6 +12,7 @@ import type {
 	ChartDetails,
 	ChartDefinitionDto,
 	ModelOverridesDto,
+	ChartFacts,
 	MoonDetails,
 	ObjectTypeId
 } from './types';
@@ -19,6 +27,7 @@ import {
 	DEFAULT_ENABLED_ASPECT_IDS
 } from '@/lib/astrology/aspects';
 import type { AspectLineTierStyleDto } from './types';
+import { chartTimeZone, toEventTimeIso } from '@/lib/chartDateTime';
 
 /** One side of a synastry relation (see `AppChart.synastry`): either a reference to an existing
  *  saved chart (`chartId`), or a standalone birth-data snapshot entered directly. */
@@ -102,6 +111,7 @@ export interface AppChart {
 		shapes?: string[];
 		configurations?: string[];
 		moonDetails?: MoonDetails | null;
+		facts?: ChartFacts | null;
 	};
 }
 
@@ -142,6 +152,7 @@ export interface ComputedChartPayload {
 	shapes?: string[];
 	configurations?: string[];
 	moon_details?: MoonDetails | null;
+	facts?: ChartFacts | null;
 }
 
 export function normalizeComputedChartPayload(
@@ -175,6 +186,7 @@ export function normalizeComputedChartPayload(
 		houseCusps,
 		shapes: payload.shapes ?? [],
 		configurations: payload.configurations ?? [],
+		facts: payload.facts ?? null,
 		...(moonDetails !== undefined ? { moonDetails } : {})
 	};
 }
@@ -227,7 +239,9 @@ export function aspectLineTierStyleFromDto(
 		widthMedium: num(dto.width_medium, base.widthMedium),
 		widthLoose: num(dto.width_loose, base.widthLoose),
 		widthOuter: num(dto.width_outer, base.widthOuter),
-		outerLineStyle: isAspectLineStyleId(dto.outer_line_style) ? dto.outer_line_style : base.outerLineStyle
+		outerLineStyle: isAspectLineStyleId(dto.outer_line_style)
+			? dto.outer_line_style
+			: base.outerLineStyle
 	};
 }
 
@@ -398,7 +412,7 @@ export function analysisToAppChart(analysis: AnalysisDto): AppChart {
 		name: analysis.name,
 		entityKind: 'analysis',
 		entityPersisted: true,
-		chartType: 'ANALYSIS',
+		chartType: analysis.method === 'synastry' ? 'SYNASTRY' : 'ANALYSIS',
 		dateTime: '',
 		location: '',
 		tags: analysis.tags,
@@ -446,7 +460,7 @@ export function synastryDataToAnalysisPayload(chart: AppChart): Record<string, u
 			inline_subject: {
 				id: `${chart.id}-${role}`,
 				name: participant?.name || (role === 'person_a' ? 'Person A' : 'Person B'),
-				event_time: participant?.dateTime || null,
+				event_time: toEventTimeIso(participant?.dateTime, participant?.timezone),
 				location: {
 					name: participant?.location || '',
 					latitude: participant?.latitude,
@@ -494,25 +508,19 @@ export function chartDataToComputePayload(
 		({
 			kind: 'base',
 			purpose: (chart.chartType || 'NATAL').toLowerCase() as
-				| 'natal'
-				| 'event'
-				| 'horary'
-				| 'electional'
-				| 'moment'
+				'natal' | 'event' | 'horary' | 'electional' | 'moment'
 		} satisfies ChartDefinitionDto);
 	const engine = asNonEmpty(chart.engine) ?? asNonEmpty(defaults.engine);
 	const overrideEphemeris = asNonEmpty(chart.overrideEphemeris);
 	const model = asNonEmpty(chart.model);
-	const observableObjects =
-		Array.isArray(chart.observableObjects)
-			? chart.observableObjects
-			: defaults.defaultBodies.length > 0
-				? defaults.defaultBodies
-				: undefined;
-	const selectedAspects =
-		Array.isArray(chart.selectedAspects)
-			? chart.selectedAspects
-			: [...defaults.defaultAspects];
+	const observableObjects = Array.isArray(chart.observableObjects)
+		? chart.observableObjects
+		: defaults.defaultBodies.length > 0
+			? defaults.defaultBodies
+			: undefined;
+	const selectedAspects = Array.isArray(chart.selectedAspects)
+		? chart.selectedAspects
+		: [...defaults.defaultAspects];
 	const aspectOrbs =
 		chart.aspectOrbs && Object.keys(chart.aspectOrbs).length > 0
 			? chart.aspectOrbs
@@ -525,7 +533,7 @@ export function chartDataToComputePayload(
 		subject: {
 			id: chart.id,
 			name: chart.name,
-			event_time: dateTime,
+			event_time: toEventTimeIso(dateTime, chartTimeZone({ ...chart, timezone })),
 			location: {
 				name: locationName,
 				latitude: chart.latitude ?? defaults.locationLatitude,
@@ -784,103 +792,35 @@ export function gregorianWallDateToJulianCalendarDate(value: Date): string {
 	return `${String(julianYear).padStart(4, '0')}-${String(julianMonth).padStart(2, '0')}-${String(julianDay).padStart(2, '0')}`;
 }
 
-function fixedUtcOffsetMilliseconds(timezone: string): number | null {
-	if (/^(UTC|GMT)$/i.test(timezone)) return 0;
-	const match = /^(?:UTC|GMT)([+-])(\d{1,2})(?::?(\d{2}))?$/i.exec(timezone);
-	if (!match) return null;
-	const hours = Number(match[2]);
-	const minutes = Number(match[3] ?? 0);
-	if (hours > 14 || minutes > 59 || (hours === 14 && minutes !== 0)) return null;
-	const milliseconds = (hours * 60 + minutes) * 60_000;
-	return match[1] === '+' ? milliseconds : -milliseconds;
-}
-
-function ianaWallTimeParts(timezone: string, instant: Date): number[] {
-	const parts = new Intl.DateTimeFormat('en-US', {
-		timeZone: timezone,
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit',
-		hour: '2-digit',
-		minute: '2-digit',
-		second: '2-digit',
-		hourCycle: 'h23'
-	}).formatToParts(instant);
-	const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-	return [
-		Number(values.year),
-		Number(values.month) - 1,
-		Number(values.day),
-		Number(values.hour),
-		Number(values.minute),
-		Number(values.second)
-	];
-}
-
-function ianaOffsetMilliseconds(timezone: string, instant: Date): number {
-	const values = ianaWallTimeParts(timezone, instant);
-	const representedAsUtc = Date.UTC(
-		values[0]!,
-		values[1]!,
-		values[2]!,
-		values[3]!,
-		values[4]!,
-		values[5]!
-	);
-	return representedAsUtc - instant.getTime();
-}
-
-function wallTimeParts(value: Date): number[] {
-	return [
-		value.getFullYear(),
-		value.getMonth(),
-		value.getDate(),
-		value.getHours(),
-		value.getMinutes(),
-		value.getSeconds()
-	];
-}
-
-function sameWallTime(left: number[], right: number[]): boolean {
-	return left.every((value, index) => value === right[index]);
-}
-
-/** Convert the form's wall-clock fields in `timezone` into one unambiguous UTC instant. */
+/** Convert the form's wall-clock fields in `timezone` into one unambiguous UTC instant; rejects
+ *  times that do not exist (DST gap) or occur twice (DST overlap) there. */
 export function wallTimeToUtcIso(value: Date, timezone: string, utcOffset?: string): string {
 	if (!Number.isFinite(value.getTime())) throw new Error('Invalid date or time.');
 	const normalizedTimezone = timezone.trim();
 	if (!normalizedTimezone) throw new Error('Timezone is required.');
 
-	const wallTimeUtc = Date.UTC(
-		value.getFullYear(),
-		value.getMonth(),
-		value.getDate(),
-		value.getHours(),
-		value.getMinutes(),
-		value.getSeconds()
-	);
+	const wall = localDateToWallTime(value);
 	const explicitOffset = utcOffset?.trim();
-	const fixedOffset = fixedUtcOffsetMilliseconds(explicitOffset ?? normalizedTimezone);
-	if (explicitOffset && fixedOffset === null) {
+	if (explicitOffset && fixedUtcOffsetMilliseconds(explicitOffset) === null) {
 		throw new Error(`Invalid UTC offset: ${explicitOffset}`);
 	}
-	if (fixedOffset !== null) return new Date(wallTimeUtc - fixedOffset).toISOString();
+	const zone = explicitOffset ?? normalizedTimezone;
+	const candidate = wallTimeToInstant(wall, zone);
+	if (!candidate) throw new Error(`Unknown timezone: ${zone}`);
+	if (fixedUtcOffsetMilliseconds(zone) !== null) return candidate.toISOString();
 
-	let candidate = new Date(wallTimeUtc);
-	let offset = ianaOffsetMilliseconds(normalizedTimezone, candidate);
-	candidate = new Date(wallTimeUtc - offset);
-	const correctedOffset = ianaOffsetMilliseconds(normalizedTimezone, candidate);
-	if (correctedOffset !== offset) candidate = new Date(wallTimeUtc - correctedOffset);
-
-	const expectedWallTime = wallTimeParts(value);
-	if (!sameWallTime(ianaWallTimeParts(normalizedTimezone, candidate), expectedWallTime)) {
+	const sameWall = (instant: Date) => {
+		const parts = instantToZonedParts(instant, zone);
+		return (
+			parts !== null && (Object.keys(wall) as (keyof WallTime)[]).every((k) => parts[k] === wall[k])
+		);
+	};
+	if (!sameWall(candidate)) {
 		throw new Error(`The selected local time does not exist in ${normalizedTimezone}.`);
 	}
-
 	for (let deltaMinutes = -180; deltaMinutes <= 180; deltaMinutes += 15) {
 		if (deltaMinutes === 0) continue;
-		const alternative = new Date(candidate.getTime() + deltaMinutes * 60_000);
-		if (sameWallTime(ianaWallTimeParts(normalizedTimezone, alternative), expectedWallTime)) {
+		if (sameWall(new Date(candidate.getTime() + deltaMinutes * 60_000))) {
 			throw new Error(
 				`The selected local time occurs twice in ${normalizedTimezone}; choose a UTC offset.`
 			);

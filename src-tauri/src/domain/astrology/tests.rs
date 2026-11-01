@@ -117,7 +117,7 @@ fn midpoint_contact_respects_the_orb_boundary() {
     let aspect_types = vec!["conjunction".to_string()];
 
     let just_inside = compute_midpoint_contacts(
-        &[midpoint.clone()],
+        std::slice::from_ref(&midpoint),
         &HashMap::from([("mars".to_string(), 2.0)]),
         &definitions,
         &HashMap::new(),
@@ -274,6 +274,8 @@ fn model_definition_and_effective_orb_control_detection() {
             allowed_orb: 1.0,
             applying: false,
             separating: false,
+            exact: false,
+            phase: None,
         }]
     );
 }
@@ -620,7 +622,7 @@ fn body_selection_is_canonical_deduplicated_and_engine_aware() {
 }
 
 #[test]
-fn detect_chart_shapes_flags_bundle_and_stellium() {
+fn detect_chart_shapes_flags_bundle() {
     let positions = HashMap::from([
         ("sun".to_string(), 0.0),
         ("moon".to_string(), 10.0),
@@ -637,7 +639,6 @@ fn detect_chart_shapes_flags_bundle_and_stellium() {
     let shapes = detect_chart_shapes(&positions, &[]);
 
     assert!(shapes.contains(&"bundle".to_string()));
-    assert!(shapes.contains(&"stellium".to_string()));
 }
 
 #[test]
@@ -657,6 +658,8 @@ fn detect_chart_configurations_flags_grand_trine() {
         allowed_orb: 8.0,
         applying: false,
         separating: false,
+        exact: false,
+        phase: None,
     };
     let aspects = vec![
         aspect("sun", "moon"),

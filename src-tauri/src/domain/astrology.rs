@@ -21,7 +21,9 @@
 #![allow(unused_imports)]
 
 mod aspect_computation;
+mod aspect_dynamics;
 mod body_selection;
+mod facts;
 mod geometry;
 mod midpoint_contacts;
 mod parts;
@@ -34,7 +36,9 @@ pub use aspect_computation::{
     compute_chart_aspects, compute_cross_aspects, eligible_aspect_angle_and_orb,
     eligible_aspects_for_pair, is_structurally_locked_aspect_pair, ComputedAspect,
 };
+pub use aspect_dynamics::annotate_aspect_dynamics;
 pub use body_selection::{object_type_map, resolve_body_selection, BodySelection};
+pub use facts::{compute_chart_facts, ChartFacts, ChartFactsInput, CHART_FACTS_VERSION};
 pub use midpoint_contacts::{
     compute_midpoint_contacts, MidpointContact, MidpointContactPoint, MIDPOINT_CONTACT_ASPECT_IDS,
 };

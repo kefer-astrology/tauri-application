@@ -1,3 +1,4 @@
+pub mod compute_cache;
 pub mod dialogs;
 pub mod ephemeris;
 pub mod geocoding;

@@ -45,7 +45,7 @@ changes.
 ## Starting a task
 
 1. Inspect current uncommitted changes and preserve unrelated work.
-2. Read this guide and the [Developer Manual index](/developer/).
+2. Read this guide and the [Developer Manual index](../).
 3. Read the task-specific current contract.
 4. Read architecture and implementation references needed to understand the
    affected boundary.
@@ -81,11 +81,10 @@ navigation metadata, not an authority source.
 
 | Page | Owns | Does not repeat |
 | --- | --- | --- |
-| [Architecture](../architecture/) | Current system boundaries, runtime flows, implementation debt | YAML fields or source map |
+| [Architecture](../architecture/) | Runtime boundaries, result lifecycle, persistence/provenance ownership, and implementation debt | YAML fields or command-by-command source map |
 | [Domain model](../domain-model/) | Semantic concepts and runtime catalog/presentation ownership | Workspace lifecycle |
 | [Rust code structure](../rust-code-structure/) | Current module map and mixed command responsibilities | Target-layer promises |
 | [Workspace YAML contract](../workspace-yaml/) | Portable format, lifecycle, loaders, resolution, and catalog propagation | Framework-specific UI behavior |
-| [Architecture](../architecture/) | Runtime boundaries, result lifecycle, persistence/provenance ownership | Command-by-command source map |
 | [Configuration reference](../configuration-reference/) | Implemented user-visible settings, values, and scope semantics | Catalog architecture |
 | [Testing strategy](../testing-strategy/) | Existing test layers, commands, fixtures, and named gaps | Architecture design |
 | This guide | Documentation taxonomy, authority, contribution orientation | Runtime behavior |
@@ -142,6 +141,19 @@ Use the exact commands and coverage inventory in the
 
 ## Documentation publishing
 
+Use Node.js 22 (as in CI) and install Hugo Extended 0.165.0 to match
+`.github/workflows/docs-pages.yml`. After `npm ci`:
+
+| Task | Command |
+| --- | --- |
+| Build and stage both browser previews | `npm run docs:prepare` |
+| Prepare previews and serve the site | `npm run docs:dev` |
+| Prepare previews and build `dist-docs/` | `npm run docs:build` |
+| Serve content edits using already prepared previews | `hugo server --source docs` |
+
+The last command does not rebuild embedded frontends. Run `docs:prepare`
+again after changing their source or shared assets.
+
 - Hugo source lives under `docs/`.
 - Frontend artifacts embedded in docs are generated under
   `docs/static/apps/<app>/`.
@@ -151,8 +163,7 @@ Use the exact commands and coverage inventory in the
 ## Reliable entry points
 
 - [Domain model and extensibility](../domain-model/) — schools, models, providers, and extension points.
-- [System architecture](../architecture/) — cross-layer runtime flow.
-- [Architecture](../architecture/) — Rust/Python ownership, persistence, and migration boundaries.
+- [Architecture](../architecture/) — runtime flows, Rust/Python ownership, persistence, and migration boundaries.
 - [Workspace YAML contract](../workspace-yaml/) — portable persistence.
 - [Tauri command contracts](../tauri-command-contracts/) — frontend-visible API.
 - [Frontend workflow baseline](../frontend-workflow-baseline/) — shared user-facing workflows.

@@ -59,7 +59,6 @@ pub fn domain_catalog_for_model(model: models::AstroModel) -> DomainCatalog {
         ("splash", "open_shape_splash"),
         ("splay", "open_shape_splay"),
         ("shifted_center", "open_shape_shifted_center"),
-        ("stellium", "info_stellium"),
     ]
     .into_iter()
     .map(|(id, translation_key)| DomainDefinition {
@@ -181,6 +180,7 @@ pub fn domain_catalog_for_model(model: models::AstroModel) -> DomainCatalog {
         configurations,
     }
 }
+pub use validation::WorkspaceValidationReport;
 
 #[cfg(test)]
 mod catalog_tests {
@@ -209,7 +209,6 @@ mod catalog_tests {
             "splash",
             "splay",
             "shifted_center",
-            "stellium",
         ] {
             assert!(shapes.contains(id), "missing emitted shape {id}");
         }
@@ -251,4 +250,3 @@ mod catalog_tests {
             .any(|aspect| aspect.id == "conjunction"));
     }
 }
-pub use validation::WorkspaceValidationReport;

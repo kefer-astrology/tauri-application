@@ -33,9 +33,17 @@ This page focuses on what the frontend can rely on today, including current no-o
 
 ### `open_folder_dialog() -> Result<Option<String>, String>`
 
-- Opens a native folder chooser.
+- Opens the platform folder chooser through `tauri-plugin-dialog` (GTK / XDG
+  desktop portal on Linux, system dialogs on macOS and Windows).
 - Returns `Ok(Some(path))` when the user selects a folder.
-- Returns `Ok(None)` when the user cancels or no supported chooser succeeds.
+- Returns `Ok(None)` when the user cancels.
+
+### `open_chart_file_dialog() -> Result<Option<String>, String>`
+
+- Opens the platform file chooser filtered to the formats `import_chart`
+  accepts (`.yml`, `.yaml`, `.sfs`, `.hor`, `.SFcht`, `.cht`, `.chm`, `.se1`,
+  `.ald`, `.cst`).
+- Returns `Ok(Some(path))` for the chosen file, `Ok(None)` when cancelled.
 
 ### `save_workspace(workspace_path, owner, charts, defaults?) -> Result<String, String>`
 
@@ -192,6 +200,22 @@ Acceptance criteria:
 - Also returns top-level `tags`, `tag_colors`, and `roden_rating`.
 - Returns an error when the chart id is not found.
 
+### `load_workspace_charts(workspace_path) -> Result<Vec<WorkspaceChartLoad>, String>`
+
+- Batch form of `get_chart_details` + `compute_chart` for every chart in the
+  workspace, in manifest order. Reads the manifest and chart files once and
+  computes charts in parallel.
+- Each entry has `chart_id`, `details` (same shape as `get_chart_details`),
+  `computed` (same shape as a Rust `compute_chart` result, or `null`),
+  `compute_error`, and `compute_individually`.
+- Only charts on the Rust compute route are computed. Charts that backend
+  selection routes to Python (`compute_individually: true`) must be computed
+  with `compute_chart`.
+- Rust results are cached by a SHA-256 key over the chart, model, effective
+  settings, installed ephemerides and format versions — in memory and in the
+  app cache directory (`chart-computations/`). A changed input misses the
+  cache; nothing is invalidated explicitly.
+
 ## Compute commands
 
 ## Backend selection
@@ -239,7 +263,7 @@ Acceptance criteria:
 - A valid chart payload returns `positions`, `aspects`, and `chart_id`.
 - Rust-supported radix output should also include `axes` and `house_cusps`.
 - Rust-supported radix output should include `motion` when the selected backend can derive it.
-- Rust-supported radix output should also include `shapes` (bundle/bowl/bucket/seesaw/splash/stellium/etc. distribution shapes) and `configurations` (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed `house_cusps`, and the computed `aspects`. See `detect_chart_shapes`/`detect_chart_configurations` in `domain/astrology.rs`.
+- Rust-supported radix output should also include `shapes` (bundle/bowl/bucket/seesaw/splash/etc. distribution shapes; stelliums are in `facts`) and `configurations` (t-square/grand-trine/grand-cross/kite/mystic-rectangle/hexagram/pentagram aspect patterns), derived from the 10 classical bodies (Sun through Pluto), the computed `house_cusps`, and the computed `aspects`. See `detect_chart_shapes`/`detect_chart_configurations` in `domain/astrology.rs`.
 - When `positions.sun` and `positions.moon` exist, `moon_details` should describe lunar phase (elongation, illuminated fraction, waxing flag, and phase label). See [lunar-phase](../lunar-phase/).
 - When fallback occurs, the response should expose that fact instead of failing silently.
 
@@ -248,14 +272,16 @@ Acceptance criteria:
 - Detects cross-chart aspects (e.g. a transit overlay) between two already-computed position maps (`transiting_positions`, `transited_positions`, both `Map<String, f64>`), without requiring a persisted workspace chart id.
 - Resolves the aspect catalog and effective orb overrides the same way `compute_chart_from_data` resolves them: `chart_json` is deserialized into a `ChartInstance` and passed through the same settings service (`standalone_model_report_with_operation`).
 - `aspect_types` filters which aspect ids to detect, same semantics as `compute_transit_series`'s `aspect_types`.
-- Returns a list of `ComputedAspect` objects: `from`, `to`, `type`, `angle`, `orb`, `exact_angle`, `applying`, `separating` — the same shape used by `compute_chart`/`compute_chart_from_data`'s `aspects` field and by `compute_transit_series`'s per-entry `aspects`.
+- Returns a list of `ComputedAspect` objects: `from`, `to`, `type`, `angle`, `orb`, `exact_angle`, `allowed_orb`, `applying`, `separating`, `exact`, `phase` — the same shape used by `compute_chart`/`compute_chart_from_data`'s `aspects` field and by `compute_transit_series`'s per-entry `aspects`. `applying`, `separating`, `exact` and `phase` are filled only for single-chart aspects (`compute_chart`, `compute_chart_from_data`); here they are always `false` / `null`.
 - Rust-only; no Python route exists for this command.
 - This is the command any frontend code computing an "instant" (non-persisted) transit overlay should call instead of re-implementing aspect-detection geometry client-side.
 
 ### `compute_chart(workspace_path, chart_id, preset_id?, settings_overrides?) -> Result<Map<String, Value>, String>`
 
 - Loads a chart from workspace storage and computes positions and aspects.
-- Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `shapes`, `configurations`, `moon_details` (when Sun and Moon are present), `chart_id`, and backend provenance fields when available.
+- Returns `positions`, `motion`, `aspects`, `axes`, `house_cusps`, `shapes`, `configurations`, `moon_details` (when Sun and Moon are present), `facts`, `chart_id`, and backend provenance fields when available.
+- Each aspect carries `applying`, `separating`, `exact` (within 1′) and `phase` (`waxing` / `waning`, planets only); see the [Chart facts contract](../chart-facts-contract/).
+- `facts` holds the search classifications defined in the [Chart facts contract](../chart-facts-contract/). On the Python route Rust derives them from the returned positions with the same settings.
 - Rust aspect detection uses the resolved workspace/chart model definitions and effective orb overrides.
 - `preset_id` may identify a referenced workspace preset by its name or manifest
   path. The chart layer overrides the preset layer.

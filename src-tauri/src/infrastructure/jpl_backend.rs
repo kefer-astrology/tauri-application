@@ -31,7 +31,7 @@
 /// not a parallax-corrected apparent place.
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Arc, OnceLock, RwLock};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 
 use anise::constants::frames::{
     EARTH_MOD_FRAME, JUPITER_BARYCENTER_J2000, MARS_BARYCENTER_J2000, MERCURY_J2000, MOON_J2000,
@@ -139,6 +139,43 @@ type AlmanacCache = HashMap<String, Arc<Almanac>>;
 fn almanac_cache() -> &'static RwLock<AlmanacCache> {
     static CACHE: OnceLock<RwLock<AlmanacCache>> = OnceLock::new();
     CACHE.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+/// Serializes almanac loads so concurrent callers (parallel workspace computation, small-body
+/// validation) wait for one load of a kernel set instead of each loading it.
+fn almanac_load_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+fn cached_almanac(cache_key: &str) -> Result<Option<Arc<Almanac>>, String> {
+    Ok(almanac_cache()
+        .read()
+        .map_err(|_| "Almanac cache lock poisoned".to_string())?
+        .get(cache_key)
+        .cloned())
+}
+
+/// The almanac for exactly this kernel set, loaded at most once per set (and per file
+/// fingerprint) for the process lifetime.
+pub(crate) fn shared_almanac(paths: &[PathBuf]) -> Result<Arc<Almanac>, String> {
+    let cache_key = almanac_cache_key(paths);
+    if let Some(cached) = cached_almanac(&cache_key)? {
+        return Ok(cached);
+    }
+    let _loading = almanac_load_lock()
+        .lock()
+        .map_err(|_| "Almanac load lock poisoned".to_string())?;
+    // Another caller may have finished loading this set while we waited.
+    if let Some(cached) = cached_almanac(&cache_key)? {
+        return Ok(cached);
+    }
+    let shared = Arc::new(load_almanac_from_paths(paths)?);
+    almanac_cache()
+        .write()
+        .map_err(|_| "Almanac cache lock poisoned".to_string())?
+        .insert(cache_key, Arc::clone(&shared));
+    Ok(shared)
 }
 
 fn almanac_cache_key(paths: &[PathBuf]) -> String {
@@ -360,22 +397,7 @@ impl JplAstronomyBackend {
             return Err("No BSP ephemeris files available.".to_string());
         }
 
-        let cache_key = almanac_cache_key(&self.bsp_paths);
-        if let Some(cached) = almanac_cache()
-            .read()
-            .map_err(|_| "Almanac cache lock poisoned".to_string())?
-            .get(&cache_key)
-            .cloned()
-        {
-            return Ok(cached);
-        }
-
-        let shared = Arc::new(load_almanac_from_paths(&self.bsp_paths)?);
-        almanac_cache()
-            .write()
-            .map_err(|_| "Almanac cache lock poisoned".to_string())?
-            .insert(cache_key, Arc::clone(&shared));
-        Ok(shared)
+        shared_almanac(&self.bsp_paths)
     }
 }
 
@@ -771,7 +793,7 @@ pub fn jpl_backend_for_chart(chart: &ChartInstance) -> Result<JplAstronomyBacken
     // Per-chart override takes priority
     if let Some(path) = chart.config.override_ephemeris.as_deref() {
         let p = PathBuf::from(path);
-        if p.exists() && p.extension().map_or(false, |e| e == "bsp") {
+        if p.exists() && p.extension().is_some_and(|e| e == "bsp") {
             return Ok(JplAstronomyBackend::new(vec![p]));
         }
     }
@@ -896,6 +918,25 @@ mod tests {
         );
 
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn concurrent_callers_share_one_almanac_load() {
+        let bsp = dev_bsp_path("de440s.bsp").expect("no BSP found");
+        let paths = vec![bsp];
+        almanac_cache()
+            .write()
+            .expect("cache lock")
+            .remove(&almanac_cache_key(&paths));
+        let almanacs: Vec<Arc<Almanac>> = std::thread::scope(|scope| {
+            let handles: Vec<_> = (0..8)
+                .map(|_| scope.spawn(|| shared_almanac(&paths).expect("almanac should load")))
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        assert!(almanacs
+            .iter()
+            .all(|almanac| Arc::ptr_eq(almanac, &almanacs[0])));
     }
 
     #[test]

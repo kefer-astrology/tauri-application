@@ -10,6 +10,7 @@ import type {
 	TransitSeriesFromDataRequest,
 	TransitSeriesResult,
 	WorkspaceDefaultsDto,
+	WorkspaceChartLoad,
 	WorkspaceInfo,
 	WorkspaceTagDefinition
 } from './types';
@@ -114,6 +115,12 @@ export async function importChartFile(
 	return chart;
 }
 
+/** Parse a chart file without a workspace; the caller keeps it in memory until saved. */
+export async function readChartFile(sourcePath: string): Promise<AppChart> {
+	const details = await invoke<ChartDetails>('read_chart_file', { sourcePath });
+	return chartDetailsToAppChart(details);
+}
+
 export async function loadWorkspace(workspacePath: string): Promise<WorkspaceInfo> {
 	return invoke<WorkspaceInfo>('load_workspace', { workspacePath });
 }
@@ -152,6 +159,11 @@ export async function getChartDetails(
 	chartId: string
 ): Promise<ChartDetails> {
 	return invoke<ChartDetails>('get_chart_details', { workspacePath, chartId });
+}
+
+/** Every chart's details plus its Rust calculation in one parallel, cached backend call. */
+export async function loadWorkspaceCharts(workspacePath: string): Promise<WorkspaceChartLoad[]> {
+	return invoke<WorkspaceChartLoad[]>('load_workspace_charts', { workspacePath });
 }
 
 export async function computeChart(
@@ -389,21 +401,25 @@ export async function openWorkspaceFolder(
 		console.warn('get_workspace_defaults failed:', e);
 	}
 
-	const charts: AppChart[] = [];
-	for (const ch of workspace.charts) {
-		try {
-			const full = await getChartDetails(folderPath, ch.id);
-			charts.push(chartDetailsToAppChart(full));
-		} catch (err) {
-			console.error(`get_chart_details failed for ${ch.id}:`, err);
-			charts.push(summaryToAppChart(ch));
-		}
-	}
+	const loaded = new Map(
+		(await loadWorkspaceCharts(workspace.path)).map((entry) => [entry.chart_id, entry])
+	);
+	const charts: AppChart[] = workspace.charts.map((summary) => {
+		const entry = loaded.get(summary.id);
+		if (!entry) return summaryToAppChart(summary);
+		const chart = chartDetailsToAppChart(entry.details);
+		if (entry.computed) chart.computed = normalizeComputedChartPayload(entry.computed);
+		if (entry.compute_error)
+			console.error(`compute failed for ${summary.id}:`, entry.compute_error);
+		return chart;
+	});
 	charts.push(...workspace.analyses.map(analysisToAppChart));
 
 	await initStorage(workspace.path);
 
-	for (const chart of charts.filter((entry) => entry.entityKind === 'chart')) {
+	// Charts routed to the Python backend are still computed one by one.
+	for (const chart of charts) {
+		if (!loaded.get(chart.id)?.compute_individually) continue;
 		try {
 			const result = await computeChart(workspace.path, chart.id);
 			chart.computed = normalizeComputedChartPayload(result);

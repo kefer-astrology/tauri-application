@@ -117,10 +117,7 @@ export function getAppShellIconSrc(iconSet: AppShellIconSetId, iconId: AppShellI
 	return assetUrl(`app-shell/icons/${appShellAssetSet(iconSet)}/${iconFileNames[iconId]}`);
 }
 
-export function getAppShellLogoSrc(
-	iconSet: AppShellIconSetId,
-	variant: 'full' | 'mark'
-): string {
+export function getAppShellLogoSrc(iconSet: AppShellIconSetId, variant: 'full' | 'mark'): string {
 	return assetUrl(`app-shell/logo-${variant}-${appShellAssetSet(iconSet)}.svg`);
 }
 
@@ -133,6 +130,14 @@ export function getAppShellIconMaskScale(
 
 export function getAppShellLogoFullWidth(iconSet: AppShellIconSetId, height: number): number {
 	return Math.round(height * APP_SHELL_FULL_LOGO_ASPECT_RATIO[appShellAssetSet(iconSet)]);
+}
+
+export function persistAppShellIconSet(value: AppShellIconSetId) {
+	try {
+		localStorage.setItem(APP_SHELL_ICON_SET_KEY, value);
+	} catch {
+		/* ignore */
+	}
 }
 
 export function readStoredAppShellIconSet(): AppShellIconSetId {

@@ -11,9 +11,11 @@ mod workspace;
 use commands::analyses::create_analysis;
 use commands::calculation::{
     compute_chart, compute_chart_from_data, compute_cross_aspects_from_data,
-    compute_midpoint_contacts_from_data, compute_midpoints_from_data,
+    compute_midpoint_contacts_from_data, compute_midpoints_from_data, load_workspace_charts,
 };
-use commands::charts::{create_chart, delete_chart, get_chart_details, import_chart, update_chart};
+use commands::charts::{
+    create_chart, delete_chart, get_chart_details, import_chart, read_chart_file, update_chart,
+};
 use commands::default::{read, write};
 use commands::dialogs::{open_chart_file_dialog, open_folder_dialog};
 use commands::ephemeris::{
@@ -43,6 +45,7 @@ pub fn run() {
         .expect("failed to initialize backend state");
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(backend_state)
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -56,6 +59,11 @@ pub fn run() {
             // Initialise the ephemeris cache dir from the platform app-data directory.
             if let Ok(data_dir) = app.path().app_data_dir() {
                 infrastructure::ephemeris::init_cache_dir(data_dir.join("ephemeris"));
+            }
+            if let Ok(cache_dir) = app.path().app_cache_dir() {
+                infrastructure::compute_cache::init_compute_cache_dir(
+                    cache_dir.join("chart-computations"),
+                );
             }
             if let Ok(resource_dir) = app.path().resource_dir() {
                 infrastructure::ephemeris::init_resource_dir(resource_dir);
@@ -73,6 +81,12 @@ pub fn run() {
                     log::warn!("Python backend was not ready during startup: {err}");
                 }
             });
+
+            // The window is created hidden (`visible: false`) so GTK applies the undecorated
+            // titlebar before the window is realized; show it once setup is done.
+            if let Some(window) = app.get_webview_window("main") {
+                window.show()?;
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -101,12 +115,14 @@ pub fn run() {
             create_chart,
             create_analysis,
             import_chart,
+            read_chart_file,
             update_chart,
             delete_chart,
             get_workspace_defaults,
             load_transit_setup,
             save_transit_setup,
             compute_chart,
+            load_workspace_charts,
             compute_chart_from_data,
             compute_cross_aspects_from_data,
             compute_midpoints_from_data,

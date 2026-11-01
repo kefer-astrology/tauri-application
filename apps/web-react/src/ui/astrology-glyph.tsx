@@ -8,6 +8,7 @@ import {
 } from '@/lib/astrology/glyphs';
 import { resolveCustomGlyphSrc, useCustomGlyphOverrides } from '@/lib/astrology/customGlyphs';
 import { cn } from '@/app/components/ui/utils';
+import { useAppTheme } from '@/app/providers/app-theme';
 
 /** Glyphs were reading smaller than intended at their nominal pixel box; mirrors the
  *  boost applied via `SVELTE_GLYPH_SCALE` in the Svelte app's glyph store. */
@@ -15,7 +16,7 @@ const GLYPH_SIZE_SCALE = 1.2;
 
 export function AstrologyGlyph({
 	glyphId,
-	glyphSet,
+	glyphSet: glyphSetOverride,
 	domain = 'planet',
 	fallback,
 	className,
@@ -24,7 +25,8 @@ export function AstrologyGlyph({
 	style
 }: {
 	glyphId: string;
-	glyphSet: AstrologyGlyphSetId;
+	/** Defaults to the glyph set from `AppThemeProvider`. */
+	glyphSet?: AstrologyGlyphSetId;
 	/** `planet` → `static/glyphs/.../planets/`; `zodiac` → `.../zodiac/`; `aspect` → `.../aspects/`. */
 	domain?: 'planet' | 'zodiac' | 'aspect';
 	fallback: string;
@@ -35,6 +37,8 @@ export function AstrologyGlyph({
 	 *  path (`currentColor`) and the plain-text fallback span pick up. */
 	style?: CSSProperties;
 }) {
+	const { glyphSet: contextGlyphSet } = useAppTheme();
+	const glyphSet = glyphSetOverride ?? contextGlyphSet;
 	const overrides = useCustomGlyphOverrides();
 	const src =
 		resolveCustomGlyphSrc(overrides, glyphId) ??
@@ -46,7 +50,13 @@ export function AstrologyGlyph({
 	const scaledSize = Math.round(size * GLYPH_SIZE_SCALE);
 	if (src) {
 		return (
-			<SharedSvgIcon src={src} className={className} size={scaledSize} title={title} style={style} />
+			<SharedSvgIcon
+				src={src}
+				className={className}
+				size={scaledSize}
+				title={title}
+				style={style}
+			/>
 		);
 	}
 

@@ -254,8 +254,8 @@ fn discover_roots(
 
         if current_value == 0.0 {
             roots.push(current_time);
-        } else if previous_value != 0.0 {
-            if !resolve_window(
+        } else if previous_value != 0.0
+            && !resolve_window(
                 f,
                 &is_continuous_pair,
                 previous_time,
@@ -266,10 +266,10 @@ fn discover_roots(
                 limits.speculative_subdivision_budget,
                 &mut budget,
                 &mut roots,
-            )? {
-                complete = false;
-                break;
-            }
+            )?
+        {
+            complete = false;
+            break;
         }
 
         previous_time = current_time;
@@ -2735,8 +2735,8 @@ mod tests {
 
         for &exact_time in &exact.roots {
             let contained = orb.intervals.iter().any(|(enter, exit)| {
-                let after_enter = enter.map_or(true, |e| e <= exact_time);
-                let before_exit = exit.map_or(true, |x| exact_time <= x);
+                let after_enter = enter.is_none_or(|e| e <= exact_time);
+                let before_exit = exit.is_none_or(|x| exact_time <= x);
                 after_enter && before_exit
             });
             assert!(
@@ -2903,7 +2903,7 @@ mod tests {
 
         for &exact_time in &exact.roots {
             let contained = orb.intervals.iter().any(|(enter, exit)| {
-                enter.map_or(true, |e| e <= exact_time) && exit.map_or(true, |x| exact_time <= x)
+                enter.is_none_or(|e| e <= exact_time) && exit.is_none_or(|x| exact_time <= x)
             });
             assert!(
                 contained,

@@ -13,6 +13,15 @@ Source: [src-tauri/src/infrastructure/ephemeris.rs](https://github.com/kefer-ast
 
 ---
 
+## Find the relevant reference
+
+- [BSP catalog](#bsp-catalog): downloadable files and supported bodies.
+- [File resolution](#file-resolution): selection order and supplementary kernels.
+- [Per-chart override](#per-chart-override): use a specific kernel for one chart.
+- [Cache directory](#cache-directory) and [downloads](#download-mechanism): installation and storage.
+- [Tauri commands](#tauri-commands): catalog, download, and coverage APIs.
+- [Remaining gaps](#remaining-gaps): current limitations.
+
 ## Why it exists
 
 The original `JplAstronomyBackend` held a single `bsp_path: PathBuf` and loaded one BSP file per compute call. That approach had three problems:
@@ -39,7 +48,7 @@ infrastructure/ephemeris.rs
     └── *.bsp.json discovery          → checksummed and probe-tested small-body SPKs
 ```
 
-`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then chains them with `load_almanac_from_paths()` in `infrastructure/jpl_backend.rs` on each compute call.
+`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then obtains a cached or newly constructed `Almanac` through `load_almanac_from_paths()` in `infrastructure/jpl_backend.rs`.
 
 A global `OnceLock<PathBuf>` stores the cache directory. It is initialised once during Tauri app setup from `app.path().app_data_dir()`:
 
@@ -58,11 +67,11 @@ Anywhere else in the Rust backend: `EphemerisManager::from_global()` returns a m
 of constructed `Almanac`s (`almanac_cache` in `infrastructure/jpl_backend.rs`),
 keyed by joining every resolved path's `length:modified-time` fingerprint
 (`almanac_cache_key`). This avoids re-parsing the PCK and every chained BSP
-file on each compute call — it is a **kernel-load** cache, not a cache of
-computed positions; every body query still evaluates its SPK Chebyshev record
-fresh for the requested epoch (see the
-[this page](#almanac-reuse-and-cache-invalidation)
-for that distinction).
+file on each compute call. This cache stores loaded kernels, rather than
+computed positions. Event and configuration searches separately use
+`application::evaluation_context::EvaluationContext` to cache body positions
+and motion within a single request; see
+[TRANSIT-005](../testing-strategy/#transit-005-shared-evaluation-cache).
 
 Limitations of fingerprint-based invalidation:
 

@@ -39,9 +39,11 @@ function isHexColor(s: string): boolean {
 function mergeWithDefaults(partial: Partial<ElementColors> | null | undefined): ElementColors {
 	return {
 		fire: partial?.fire && isHexColor(partial.fire) ? partial.fire : DEFAULT_ELEMENT_COLORS.fire,
-		earth: partial?.earth && isHexColor(partial.earth) ? partial.earth : DEFAULT_ELEMENT_COLORS.earth,
+		earth:
+			partial?.earth && isHexColor(partial.earth) ? partial.earth : DEFAULT_ELEMENT_COLORS.earth,
 		air: partial?.air && isHexColor(partial.air) ? partial.air : DEFAULT_ELEMENT_COLORS.air,
-		water: partial?.water && isHexColor(partial.water) ? partial.water : DEFAULT_ELEMENT_COLORS.water
+		water:
+			partial?.water && isHexColor(partial.water) ? partial.water : DEFAULT_ELEMENT_COLORS.water
 	};
 }
 

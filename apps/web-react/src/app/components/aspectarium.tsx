@@ -1,21 +1,22 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Grid3X3, List, Search, Target } from 'lucide-react';
+import { Grid3X3, List, Target } from 'lucide-react';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { cn } from './ui/utils';
+import {
+	MultiSelectPopover,
+	type MultiSelectPopoverItem
+} from '../views/data/multi-select-popover';
 import { useAppFormFieldTheme } from './form-field-theme';
-import { Theme } from './astrology-sidebar';
-import { DetailSidePanel } from './detail-side-panel';
+import { DetailSidePanel } from '@/app/views/data/detail-side-panel';
 import { chartDataToComputePayload, type WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import { computeMidpointContactsFromData, computeMidpointsFromData } from '@/lib/tauri/workspace';
 import {
@@ -29,17 +30,19 @@ import {
 	DEFAULT_ASPECT_COLORS,
 	DEFAULT_ENABLED_ASPECT_IDS
 } from '@/lib/astrology/aspects';
-import { signIndexToZodiacId, type AstrologyGlyphSetId } from '@/lib/astrology/glyphs';
+import { signPosition } from '@/lib/astrology/zodiac';
 import { normalizeLongitude } from '@/lib/astrology/chartSearch';
 import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
 import { parseComputedAspect, type ParsedAspect } from '@/lib/astrology/aspectParsing';
 import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
-import { AspectDetailPanel } from './aspect-detail-panel';
-import { MIDPOINT_CONTACT_ASPECT_IDS, type Midpoint, type MidpointContact } from '@/lib/astrology/midpoints';
+import { AspectDetailPanel } from '@/app/views/domain/aspect-detail-panel';
+import {
+	MIDPOINT_CONTACT_ASPECT_IDS,
+	type Midpoint,
+	type MidpointContact
+} from '@/lib/astrology/midpoints';
 
 interface AspectariumProps {
-	theme: Theme;
-	glyphSet: AstrologyGlyphSetId;
 	workspaceDefaults: WorkspaceDefaultsState;
 	enabledSymbolSetIds: readonly string[];
 }
@@ -55,20 +58,10 @@ interface AspectEntry {
 	toLayer: AspectLayer;
 }
 
-const ZODIAC_UNICODE_FALLBACK = [
-	'♈',
-	'♉',
-	'♊',
-	'♋',
-	'♌',
-	'♍',
-	'♎',
-	'♏',
-	'♐',
-	'♑',
-	'♒',
-	'♓'
-] as const;
+/** Stable fallbacks, so memo dependencies don't change on every render while a chart has no data. */
+const NO_POSITIONS: Record<string, unknown> = {};
+const NO_MOTION: Record<string, { speed: number; retrograde: boolean }> = {};
+const NO_IDS: string[] = [];
 
 const ORB_PRESETS: Array<{ id: OrbPreset; labelKey: string; maxOrb: number }> = [
 	{ id: 'default', labelKey: 'aspectarium_orb_default', maxOrb: 5 },
@@ -101,28 +94,21 @@ function formatOrb(orb: number | undefined) {
 
 function positionParts(longitude: number | null) {
 	if (longitude === null) return null;
-	const normalized = ((longitude % 360) + 360) % 360;
-	const signIndex = Math.floor(normalized / 30) % 12;
-	const withinSign = normalized % 30;
-	const totalMinutes = Math.round(withinSign * 60);
-	const degrees = Math.floor(totalMinutes / 60);
-	const minutes = totalMinutes % 60;
+	const { degrees, minutes, signZodiacId, signGlyphFallback } = signPosition(longitude, 'minutes');
 	return {
-		zodiacId: signIndexToZodiacId(signIndex),
-		fallback: ZODIAC_UNICODE_FALLBACK[signIndex] ?? '♈',
+		zodiacId: signZodiacId,
+		fallback: signGlyphFallback,
 		text: `${degrees}°${String(minutes).padStart(2, '0')}′`
 	};
 }
 
 function BodyGlyph({
 	bodyId,
-	glyphSet,
 	className,
 	size = 20,
 	color
 }: {
 	bodyId: string;
-	glyphSet: AstrologyGlyphSetId;
 	className?: string;
 	size?: number;
 	color?: string;
@@ -132,7 +118,6 @@ function BodyGlyph({
 	return (
 		<AstrologyGlyph
 			glyphId={bodyId}
-			glyphSet={glyphSet}
 			fallback={fallback}
 			size={size}
 			className={className}
@@ -142,13 +127,7 @@ function BodyGlyph({
 	);
 }
 
-function PositionValue({
-	longitude,
-	glyphSet
-}: {
-	longitude: number | null;
-	glyphSet: AstrologyGlyphSetId;
-}) {
+function PositionValue({ longitude }: { longitude: number | null }) {
 	const position = positionParts(longitude);
 	if (!position) return null;
 
@@ -156,7 +135,6 @@ function PositionValue({
 		<span className="inline-flex items-center justify-end gap-1.5">
 			<AstrologyGlyph
 				glyphId={position.zodiacId}
-				glyphSet={glyphSet}
 				domain="zodiac"
 				fallback={position.fallback}
 				size={13}
@@ -168,13 +146,11 @@ function PositionValue({
 
 function AspectCellButton({
 	aspect,
-	glyphSet,
 	isSelected,
 	onSelect,
 	color
 }: {
 	aspect: ParsedAspect;
-	glyphSet: AstrologyGlyphSetId;
 	isSelected: boolean;
 	onSelect: () => void;
 	color: string;
@@ -195,7 +171,6 @@ function AspectCellButton({
 			<span className="text-lg leading-none" style={{ color }}>
 				<AstrologyGlyph
 					glyphId={aspect.type}
-					glyphSet={glyphSet}
 					domain="aspect"
 					fallback={ASPECT_GLYPHS[aspect.type] ?? '•'}
 					size={18}
@@ -208,125 +183,9 @@ function AspectCellButton({
 	);
 }
 
-type FilterItem = { id: string; label: string; icon: ReactNode; color?: string };
-
-function MultiSelectFilter({
-	items,
-	selected,
-	label,
-	noneLabel,
-	selectedLabel,
-	searchPlaceholder,
-	selectAllLabel,
-	clearAllLabel,
-	noResultsLabel,
-	inputClassName,
-	onChange
-}: {
-	items: FilterItem[];
-	selected: Set<string>;
-	label: string;
-	noneLabel: string;
-	selectedLabel: (count: number) => string;
-	searchPlaceholder: string;
-	selectAllLabel: string;
-	clearAllLabel: string;
-	noResultsLabel: string;
-	inputClassName: string;
-	onChange: (next: Set<string>) => void;
-}) {
-	const [query, setQuery] = useState('');
-	const filteredItems = items.filter((item) =>
-		item.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
-	);
-	const selectedCount = items.filter((item) => selected.has(item.id)).length;
-	const triggerLabel =
-		selectedCount === 0
-			? noneLabel
-			: selectedCount === items.length
-				? label
-				: selectedLabel(selectedCount);
-
-	return (
-		<Popover onOpenChange={(open) => !open && setQuery('')}>
-			<PopoverTrigger asChild>
-				<Button type="button" variant="outline" size="sm" className="h-9 gap-1.5 rounded-xl">
-					<span className="max-w-40 truncate">{triggerLabel}</span>
-					<ChevronDown className="size-3.5 opacity-60" />
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent align="start" className="w-72 p-0">
-				<div className="relative border-b border-[color:var(--theme-panel-border)] p-2">
-					<Search className="absolute top-1/2 left-5 size-3.5 -translate-y-1/2 text-[color:var(--theme-content-muted)]" />
-					<Input
-						value={query}
-						onChange={(event) => setQuery(event.target.value)}
-						placeholder={searchPlaceholder}
-						className={cn(inputClassName, 'h-8 pl-8')}
-					/>
-				</div>
-				<div className="grid grid-cols-2 border-b border-[color:var(--theme-panel-border)]">
-					<Button
-						type="button"
-						variant="ghost"
-						className="h-8 rounded-none text-xs"
-						onClick={() => onChange(new Set(items.map((item) => item.id)))}
-					>
-						{selectAllLabel}
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						className="h-8 rounded-none border-l border-[color:var(--theme-panel-border)] text-xs"
-						onClick={() => onChange(new Set())}
-					>
-						{clearAllLabel}
-					</Button>
-				</div>
-				<div className="max-h-64 overflow-y-auto p-1">
-					{filteredItems.length === 0 ? (
-						<p className="px-3 py-5 text-center text-xs text-[color:var(--theme-content-muted)]">
-							{noResultsLabel}
-						</p>
-					) : (
-						filteredItems.map((item) => (
-							<Label
-								key={item.id}
-								className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm hover:bg-[color:var(--theme-soft-bg)]"
-							>
-								<Checkbox
-									checked={selected.has(item.id)}
-									onCheckedChange={() => {
-										const next = new Set(selected);
-										if (next.has(item.id)) next.delete(item.id);
-										else next.add(item.id);
-										onChange(next);
-									}}
-								/>
-								<span
-									className="flex size-5 items-center justify-center text-base"
-									style={{ color: item.color }}
-								>
-									{item.icon}
-								</span>
-								<span className="min-w-0 truncate">{item.label}</span>
-							</Label>
-						))
-					)}
-				</div>
-			</PopoverContent>
-		</Popover>
-	);
-}
-
-export function Aspectarium({
-	theme,
-	glyphSet,
-	workspaceDefaults,
-	enabledSymbolSetIds
-}: AspectariumProps) {
+export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: AspectariumProps) {
 	const { t, i18n } = useTranslation();
-	const ft = useAppFormFieldTheme(theme);
+	const ft = useAppFormFieldTheme();
 	const { selectedChart, transitOverlay } = useWorkspaceCharts();
 	const [selectedAspectId, setSelectedAspectId] = useState<string | null>(null);
 	const [view, setView] = useState<AspectariumView>('table');
@@ -368,19 +227,17 @@ export function Aspectarium({
 		);
 	}, [workspaceDefaults.defaultAspects]);
 
-	const positions = (selectedChart?.computed?.positions ?? {}) as Record<string, unknown>;
-	const motion = selectedChart?.computed?.motion ?? {};
+	const positions = (selectedChart?.computed?.positions ?? NO_POSITIONS) as Record<string, unknown>;
+	const motion = selectedChart?.computed?.motion ?? NO_MOTION;
 	// Chart-wide only: Rust records which shapes/configurations the whole chart has, not which
 	// bodies belong to each one (see the radix wheel's own object-detail panel for the same note).
-	const chartShapeIds = selectedChart?.computed?.shapes ?? [];
-	const chartConfigurationIds = selectedChart?.computed?.configurations ?? [];
+	const chartShapeIds = selectedChart?.computed?.shapes ?? NO_IDS;
+	const chartConfigurationIds = selectedChart?.computed?.configurations ?? NO_IDS;
 	const activeTransitOverlay =
 		transitOverlay && transitOverlay.sourceChartId === selectedChart?.id ? transitOverlay : null;
-	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ?? {}) as Record<
-		string,
-		unknown
-	>;
-	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? {};
+	const transitPositions = (activeTransitOverlay?.transitChart.computed?.positions ??
+		NO_POSITIONS) as Record<string, unknown>;
+	const transitMotion = activeTransitOverlay?.transitChart.computed?.motion ?? NO_MOTION;
 
 	const [midpoints, setMidpoints] = useState<Midpoint[]>([]);
 	const [midpointContacts, setMidpointContacts] = useState<MidpointContact[]>([]);
@@ -415,8 +272,7 @@ export function Aspectarium({
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [view, selectedChart, selectedBodyIds, midpointAspectTypes]);
+	}, [view, selectedChart, positions, selectedBodyIds, midpointAspectTypes, workspaceDefaults]);
 
 	// Unfiltered (not narrowed by the current orb/body/aspect-type filters): an object's own
 	// detail view should list every aspect it actually has, matching the radix wheel's own
@@ -533,25 +389,23 @@ export function Aspectarium({
 	const availableSelectorBodyIds = Array.from(
 		new Set([...availableBodyOrder, ...availableTransitBodyOrder])
 	);
-	const bodyFilterItems: FilterItem[] = availableSelectorBodyIds.map((id) => ({
+	const bodyFilterItems: MultiSelectPopoverItem[] = availableSelectorBodyIds.map((id) => ({
 		id,
 		label: objectLabel(id, t),
 		icon: (
 			<BodyGlyph
 				bodyId={id}
-				glyphSet={glyphSet}
 				size={18}
 				color={workspaceDefaults.bodyColors[id] ?? getDefaultBodyColor(id)}
 			/>
 		)
 	}));
-	const aspectFilterItems: FilterItem[] = ASPECT_ROWS.map((aspect) => ({
+	const aspectFilterItems: MultiSelectPopoverItem[] = ASPECT_ROWS.map((aspect) => ({
 		id: aspect.id,
 		label: t(aspect.labelKey),
 		icon: (
 			<AstrologyGlyph
 				glyphId={aspect.id}
-				glyphSet={glyphSet}
 				domain="aspect"
 				fallback={ASPECT_GLYPHS[aspect.id] ?? '•'}
 				size={16}
@@ -576,7 +430,6 @@ export function Aspectarium({
 		>
 			<BodyGlyph
 				bodyId={bodyId}
-				glyphSet={glyphSet}
 				size={compact ? 18 : 22}
 				color={workspaceDefaults.bodyColors[bodyId] ?? getDefaultBodyColor(bodyId)}
 			/>
@@ -586,10 +439,7 @@ export function Aspectarium({
 					{normalizeLongitude(positionsForLayer(layer)[bodyId]) === null ? (
 						t('loading_positions')
 					) : (
-						<PositionValue
-							longitude={normalizeLongitude(positionsForLayer(layer)[bodyId])}
-							glyphSet={glyphSet}
-						/>
+						<PositionValue longitude={normalizeLongitude(positionsForLayer(layer)[bodyId])} />
 					)}
 				</p>
 			</div>
@@ -599,36 +449,39 @@ export function Aspectarium({
 	const renderMatrix = () => (
 		<Card
 			variant="themed"
-			theme={theme}
 			className="flex h-full min-h-0 gap-0 overflow-hidden border-0 shadow-none ring-0"
 		>
 			<CardContent className="flex min-h-0 flex-1 flex-col p-0">
 				<div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--theme-panel-border)] px-4 py-3 md:px-5">
-					<MultiSelectFilter
+					<MultiSelectPopover
 						items={bodyFilterItems}
 						selected={selectedBodyIds}
-						label={t('aspectarium_all_planets')}
-						noneLabel={t('aspectarium_none_selected')}
-						selectedLabel={(count) => t('aspectarium_selected_count', { count })}
-						searchPlaceholder={t('aspectarium_search_planets')}
-						selectAllLabel={t('aspectarium_select_all')}
-						clearAllLabel={t('aspectarium_clear_all')}
-						noResultsLabel={t('open_search_no_results')}
-						inputClassName={ft.inputCompact}
-						onChange={setSelectedBodyIds}
+						onSelectedChange={setSelectedBodyIds}
+						labels={{
+							all: t('aspectarium_all_planets'),
+							none: t('aspectarium_none_selected'),
+							selectedCount: (count) => t('aspectarium_selected_count', { count }),
+							search: t('aspectarium_search_planets'),
+							clearSearch: t('clear'),
+							selectAll: t('aspectarium_select_all'),
+							clearAll: t('aspectarium_clear_all'),
+							noResults: t('open_search_no_results')
+						}}
 					/>
-					<MultiSelectFilter
+					<MultiSelectPopover
 						items={aspectFilterItems}
 						selected={selectedAspectTypes}
-						label={t('aspectarium_all_aspects')}
-						noneLabel={t('aspectarium_none_selected')}
-						selectedLabel={(count) => t('aspectarium_selected_count', { count })}
-						searchPlaceholder={t('aspectarium_search_aspects')}
-						selectAllLabel={t('aspectarium_select_all')}
-						clearAllLabel={t('aspectarium_clear_all')}
-						noResultsLabel={t('open_search_no_results')}
-						inputClassName={ft.inputCompact}
-						onChange={setSelectedAspectTypes}
+						onSelectedChange={setSelectedAspectTypes}
+						labels={{
+							all: t('aspectarium_all_aspects'),
+							none: t('aspectarium_none_selected'),
+							selectedCount: (count) => t('aspectarium_selected_count', { count }),
+							search: t('aspectarium_search_aspects'),
+							clearSearch: t('clear'),
+							selectAll: t('aspectarium_select_all'),
+							clearAll: t('aspectarium_clear_all'),
+							noResults: t('open_search_no_results')
+						}}
 					/>
 					<Select value={orbPreset} onValueChange={(value) => setOrbPreset(value as OrbPreset)}>
 						<SelectTrigger className={cn(ft.selectTrigger, 'h-9 min-h-9 w-auto min-w-36 py-1')}>
@@ -702,8 +555,12 @@ export function Aspectarium({
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}</TableHead>
-											<TableHead>{t('aspectarium_position', { defaultValue: 'Position' })}</TableHead>
+											<TableHead>
+												{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}
+											</TableHead>
+											<TableHead>
+												{t('aspectarium_position', { defaultValue: 'Position' })}
+											</TableHead>
 											<TableHead>
 												{t('aspectarium_midpoint_opposite', { defaultValue: 'Opposite' })}
 											</TableHead>
@@ -717,10 +574,10 @@ export function Aspectarium({
 													{objectLabel(midpoint.object_a, t)} / {objectLabel(midpoint.object_b, t)}
 												</TableCell>
 												<TableCell>
-													<PositionValue longitude={midpoint.position} glyphSet={glyphSet} />
+													<PositionValue longitude={midpoint.position} />
 												</TableCell>
 												<TableCell>
-													<PositionValue longitude={midpoint.opposite} glyphSet={glyphSet} />
+													<PositionValue longitude={midpoint.opposite} />
 												</TableCell>
 												<TableCell>
 													{midpoint.ambiguous && (
@@ -759,7 +616,9 @@ export function Aspectarium({
 											<TableHead>
 												{t('aspectarium_midpoint_contact_object', { defaultValue: 'Object' })}
 											</TableHead>
-											<TableHead>{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}</TableHead>
+											<TableHead>
+												{t('aspectarium_midpoint_pair', { defaultValue: 'Pair' })}
+											</TableHead>
 											<TableHead>{t('aspectarium_aspect', { defaultValue: 'Aspect' })}</TableHead>
 											<TableHead>{t('label_orb')}</TableHead>
 										</TableRow>
@@ -777,7 +636,6 @@ export function Aspectarium({
 													<span className="inline-flex items-center gap-1.5">
 														<AstrologyGlyph
 															glyphId={contact.aspect_type}
-															glyphSet={glyphSet}
 															domain="aspect"
 															fallback={ASPECT_GLYPHS[contact.aspect_type] ?? '•'}
 															size={16}
@@ -785,7 +643,9 @@ export function Aspectarium({
 														{aspectLabel(contact.aspect_type, t)}
 													</span>
 												</TableCell>
-												<TableCell className="font-mono text-xs">{formatOrb(contact.orb)}</TableCell>
+												<TableCell className="font-mono text-xs">
+													{formatOrb(contact.orb)}
+												</TableCell>
 											</TableRow>
 										))}
 									</TableBody>
@@ -840,10 +700,11 @@ export function Aspectarium({
 														>
 															<BodyGlyph
 																bodyId={rowId}
-																glyphSet={glyphSet}
 																size={22}
 																className="mx-auto opacity-80"
-																color={workspaceDefaults.bodyColors[rowId] ?? getDefaultBodyColor(rowId)}
+																color={
+																	workspaceDefaults.bodyColors[rowId] ?? getDefaultBodyColor(rowId)
+																}
 															/>
 														</TableCell>
 													);
@@ -873,7 +734,6 @@ export function Aspectarium({
 													>
 														<AspectCellButton
 															aspect={entry.aspect}
-															glyphSet={glyphSet}
 															isSelected={selectedAspectId === entry.id}
 															onSelect={() => setSelectedAspectId(entry.id)}
 															color={aspectColor}
@@ -921,7 +781,6 @@ export function Aspectarium({
 											>
 												<AstrologyGlyph
 													glyphId={entry.aspect.type}
-													glyphSet={glyphSet}
 													domain="aspect"
 													fallback={ASPECT_GLYPHS[entry.aspect.type] ?? '•'}
 													size={22}
@@ -1021,8 +880,6 @@ export function Aspectarium({
 		selectedAspectDetail ? (
 			<div className="h-full min-h-0 overflow-y-auto rounded-2xl bg-[color:var(--theme-soft-bg)]/42 p-4 pr-2">
 				<AspectDetailPanel
-					theme={theme}
-					glyphSet={glyphSet}
 					aspect={selectedAspectDetail.aspect}
 					fromObject={selectedAspectDetail.fromObject}
 					toObject={selectedAspectDetail.toObject}
@@ -1035,7 +892,6 @@ export function Aspectarium({
 			<div className="flex h-full min-h-0 flex-col p-4 md:p-6">{renderMatrix()}</div>
 
 			<DetailSidePanel
-				theme={theme}
 				open={selectedAspect !== null}
 				onOpenChange={(open) => {
 					if (!open) setSelectedAspectId(null);

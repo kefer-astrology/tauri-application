@@ -18,7 +18,7 @@ remove or narrow the item here.
 
 ## Frontend architecture
 
-- Lazy-load React feature views from `App.tsx`.
+- Lazy-load React feature views from `AppShell` (`app/shell/app-shell.tsx`).
 - Lazy-load Svelte feature views as its main shell continues to shrink.
 - Add manual chunks only after measuring the effect of feature-level lazy loading.
 - Keep static/docs mode on the normal application shell with unavailable native

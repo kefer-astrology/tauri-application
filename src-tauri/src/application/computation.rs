@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::domain::astrology::ComputedAspect;
+use crate::domain::astrology::{ChartFacts, ComputedAspect};
 use crate::infrastructure::position_provider::AstronomyMotion;
 use crate::lunar_phase::LunarPhaseDetails;
 use crate::workspace::models::{AstroModel, ChartInstance};
@@ -75,6 +75,8 @@ pub struct ChartCalculation {
     pub shapes: Vec<String>,
     pub configurations: Vec<String>,
     pub moon_details: Option<LunarPhaseDetails>,
+    /// Search-oriented classifications (see `domain::astrology::facts`).
+    pub facts: ChartFacts,
     pub chart_id: String,
     pub backend_used: String,
     pub fallback_used: bool,
@@ -99,7 +101,7 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         &resolved.warnings,
     )?;
     let object_types = crate::domain::astrology::object_type_map(&resolved.model.body_definitions);
-    let aspects = crate::domain::astrology::compute_chart_aspects(
+    let mut aspects = crate::domain::astrology::compute_chart_aspects(
         &computed.positions,
         &resolved.model.aspect_definitions,
         &resolved.settings.aspect_orbs,
@@ -107,6 +109,24 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         &object_types,
         &resolved.settings.object_orbs,
     );
+    let speeds: HashMap<String, f64> = computed
+        .motion
+        .iter()
+        .map(|(id, motion)| (id.clone(), motion.speed))
+        .collect();
+    crate::domain::astrology::annotate_aspect_dynamics(&mut aspects, &computed.positions, &speeds);
+    let facts =
+        crate::domain::astrology::compute_chart_facts(&crate::domain::astrology::ChartFactsInput {
+            positions: &computed.positions,
+            speeds: &speeds,
+            house_cusps: &computed.house_cusps,
+            asc: computed.axes.asc,
+            mc: computed.axes.mc,
+            aspect_definitions: &resolved.model.aspect_definitions,
+            aspect_orbs: &resolved.settings.aspect_orbs,
+            object_types: &object_types,
+            object_orbs: &resolved.settings.object_orbs,
+        });
     let moon_details = crate::lunar_phase::from_position_map(&computed.positions);
     let shapes =
         crate::domain::astrology::detect_chart_shapes(&computed.positions, &computed.house_cusps);
@@ -126,12 +146,76 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         shapes,
         configurations,
         moon_details,
+        facts,
         chart_id: resolved.chart.id,
         backend_used: computed.backend_used,
         fallback_used: false,
         ephemeris_source: computed.ephemeris_source,
         warnings: computed.warnings,
     })
+}
+
+/// Fill `facts` on a calculation that came from another engine (the Python sidecar), from its
+/// own positions, speeds, cusps and axes and this chart's effective orb settings. No-op when
+/// facts are already present or the axes are missing.
+pub fn inject_chart_facts(
+    result: &mut HashMap<String, serde_json::Value>,
+    resolved: &ResolvedChart,
+) {
+    if result.get("facts").is_some_and(|facts| !facts.is_null()) {
+        return;
+    }
+    let number_map = |key: &str, field: Option<&str>| -> HashMap<String, f64> {
+        result
+            .get(key)
+            .and_then(serde_json::Value::as_object)
+            .map(|entries| {
+                entries
+                    .iter()
+                    .filter_map(|(id, value)| {
+                        let value = match field {
+                            Some(field) => value.get(field)?,
+                            None => value,
+                        };
+                        value.as_f64().map(|number| (id.clone(), number))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let positions = number_map("positions", None);
+    let speeds = number_map("motion", Some("speed"));
+    let axes = number_map("axes", None);
+    let axis = |id: &str| axes.get(id).or_else(|| positions.get(id)).copied();
+    let (Some(asc), Some(mc)) = (axis("asc"), axis("mc")) else {
+        return;
+    };
+    let house_cusps: Vec<f64> = result
+        .get("house_cusps")
+        .and_then(serde_json::Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(serde_json::Value::as_f64)
+                .collect()
+        })
+        .unwrap_or_default();
+    let object_types = crate::domain::astrology::object_type_map(&resolved.model.body_definitions);
+    let facts =
+        crate::domain::astrology::compute_chart_facts(&crate::domain::astrology::ChartFactsInput {
+            positions: &positions,
+            speeds: &speeds,
+            house_cusps: &house_cusps,
+            asc,
+            mc,
+            aspect_definitions: &resolved.model.aspect_definitions,
+            aspect_orbs: &resolved.settings.aspect_orbs,
+            object_types: &object_types,
+            object_orbs: &resolved.settings.object_orbs,
+        });
+    if let Ok(value) = serde_json::to_value(facts) {
+        result.insert("facts".to_string(), value);
+    }
 }
 
 pub(super) struct PositionCalculation {

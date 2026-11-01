@@ -15,9 +15,11 @@ src-tauri/src/
 │   ├── chart_resolution.rs validate/resolve persisted or in-memory chart input
 │   ├── computation.rs     resolved Rust chart computation
 │   ├── compute_router.rs  backend selection/fallback and response annotation
-│   ├── event_search.rs    stationary-point/exact-aspect-time root-finding; not yet command-exposed
+│   ├── configuration_search.rs multi-body within-orb interval search
+│   ├── evaluation_context.rs request-scoped provider and bounded position cache
+│   ├── event_search.rs    station/exact-aspect root-finding used by transit commands
 │   ├── location.rs        location use case
-│   └── transit.rs         typed Rust transit-series computation
+│   └── transit.rs         sampled series and event/configuration search orchestration
 ├── commands/              Tauri entry points; mixed adapters/orchestration
 │   ├── analyses.rs        analysis persistence
 │   ├── calculation.rs     radix/cross-aspect routing, loading, sidecar calls
@@ -47,6 +49,7 @@ src-tauri/src/
 │   ├── settings.rs        model selection, layers, source provenance
 │   ├── sfs.rs             StarFisher EventData import
 │   ├── solar_fire.rs      Solar Fire import classification
+│   ├── tradition.rs       school/tradition profiles and default model mapping
 │   ├── validation.rs      diagnostics and aggregate validation
 │   └── writer.rs          YAML writers
 ├── event_time.rs          canonical timestamp parsing
@@ -71,7 +74,10 @@ owns the persistence representation and YAML services.
 
 `application::computation` and `application::transit` are reusable Rust
 calculation cores. They receive resolved charts/settings and return typed
-results. `compute_router` centralizes route selection/fallback helpers, but
+results. Transit commands reach `event_search` and `configuration_search`
+through `transit::compute_transit_events`; these searches share a request-scoped
+`evaluation_context`. Pattern roles and symmetries live in
+`domain::configuration_topology`. `compute_router` centralizes route selection/fallback helpers, but
 commands still execute much of that policy and sidecar communication.
 
 `domain` groups the application's astrology rules, but it is not yet an

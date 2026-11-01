@@ -90,12 +90,12 @@ The product uses exactly four named themes (no ad‑hoc palettes in feature code
 | `twilight` | Dark blue glass (photo background in main area) |
 | `midnight` | Dark radial / slate glass                       |
 
-**Type:** `Theme` in `src/app/components/astrology-sidebar.tsx`.
+**Type:** `Theme` in `apps/web-react/src/lib/theme.ts`; the active value is read with `useAppTheme()`.
 
 **Current source of truth**
 
 - Shared palette model: `apps/web-react/src/lib/themePalettes.ts`
-- App shell / CSS variable application: `apps/web-react/src/app/App.tsx`
+- App shell / CSS variable application: `apps/web-react/src/app/providers/appearance.tsx`
 - Shared themed form/control classes: `apps/web-react/src/app/components/form-field-theme.ts`
 - Main sidebar theme adapter: `apps/web-react/src/app/components/astrology-sidebar.tsx`
 - Secondary rail theme adapter: `apps/web-react/src/app/components/secondary-nav-panel.tsx`
@@ -104,7 +104,7 @@ The product uses exactly four named themes (no ad‑hoc palettes in feature code
 **Where they apply**
 
 1. **Palette values** live in `themePalettes.ts` and are persisted from Settings → Appearance.
-2. **App shell** applies the active palette as CSS variables in `App.tsx`.
+2. **App shell** applies the active palette as CSS variables in `AppearanceProvider` (`app/providers/appearance.tsx`).
 3. **Chrome (sidebars and rails)** adapts those variables through `sidebarThemeStyles` and `SecondaryNavPanel`.
 4. **Content surfaces** (inputs, selects, labels, footer actions, context rails) read the same active palette through `useAppFormFieldTheme()`.
 
@@ -140,15 +140,16 @@ Transits-related keys use the `transits_*` prefix where grouped; shared labels r
 
 ## Form fields (shared theme helper)
 
-**`src/app/components/form-field-theme.ts`** exports `getAppFormFieldTheme(theme)` — labels, inputs, selects, date-picker surfaces, advanced panel, switches, and footer actions using shared `--theme-*` and `--token-*` variables.
+**`src/app/components/form-field-theme.ts`** exports `useAppFormFieldTheme()` (active theme from `useAppTheme()`) and `getAppFormFieldTheme(theme)` — labels, inputs, selects, date-picker surfaces, advanced panel, switches, and footer actions using shared `--theme-*` and `--token-*` variables.
 
-**Create new chart** (`new-horoscope.tsx`) and **Settings** both use this helper on top of shadcn **`Card`**, **`Input`**, **`Label`**, **`Select`**, **`Switch`**, and **`Button`** primitives.
+**Create new chart** (`features/horoscope/new-horoscope/`) and **Settings** both use this helper on top of shadcn **`Card`**, **`Input`**, **`Label`**, **`Select`**, **`Switch`**, and **`Button`** primitives.
 
 Focus/selected-state classes are explicitly out of scope for this helper — see [Focus and selected state](#focus-and-selected-state).
 
 ## Related docs
 
 - **[frontend-react](../frontend-react/)** — Commands, folder layout, Tauri bridge, glyphs.
+- **[frontend-components](../frontend-components/)** — React component categories and shared views.
 - **[frontend-svelte](../frontend-svelte/)** — Svelte-specific structure and bridge.
 - **[frontend workflow baseline](../frontend-workflow-baseline/)** — shared workflow behavior and parity.
 - **[architecture](../architecture/)** — Workspace and storage (backend-oriented).

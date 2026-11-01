@@ -6,7 +6,7 @@ authors = ["Alysonhower Veras Vieira"]
 license = "MIT"
 repository = "https://github.com/kefer-astrology/tauri-application"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.90"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -31,6 +31,7 @@ anise = { version = "=0.10.6", default-features = false }
 hifitime = "4"
 sha2 = "0.10"
 tzf-rs = { version = "2.1.2", default-features = false, features = ["bundled"] }
+tauri-plugin-dialog = "2.8.3"
 
 [dev-dependencies]
 # Already pulled in transitively by `anise`; declared directly so test code

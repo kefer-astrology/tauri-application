@@ -12,13 +12,11 @@ export interface SymbolSystemDefinition {
 
 export const SYMBOL_SYSTEMS: readonly SymbolSystemDefinition[] = DEGREE_SYMBOL_SET_CATALOG.filter(
 	(entry) => entry.available
-).map(
-	(entry): SymbolSystemDefinition => ({
-		id: entry.id,
-		labelKey: entry.labelKey,
-		textForLongitude: (longitude, language) => degreeSymbolText(entry.id, longitude, language)
-	})
-);
+).map((entry): SymbolSystemDefinition => ({
+	id: entry.id,
+	labelKey: entry.labelKey,
+	textForLongitude: (longitude, language) => degreeSymbolText(entry.id, longitude, language)
+}));
 
 export interface SymbolEntry {
 	systemId: string;

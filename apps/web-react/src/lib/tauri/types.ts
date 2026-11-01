@@ -176,8 +176,7 @@ export type ObjectTypeId =
  * to `types`; `only_between` requires both sides to belong to `types`.
  */
 export type ObjectTypeRuleDto =
-	| { mode: 'exclude'; types: ObjectTypeId[] }
-	| { mode: 'only_between'; types: ObjectTypeId[] };
+	{ mode: 'exclude'; types: ObjectTypeId[] } | { mode: 'only_between'; types: ObjectTypeId[] };
 
 export interface ModelOverrideEntryDto {
 	id: string;
@@ -217,9 +216,9 @@ export interface BodyDefinitionDto {
 }
 
 export interface AspectDefinitionDto {
-  id: string;
-  type: 'major' | 'minor';
-  enabled: boolean;
+	id: string;
+	type: 'major' | 'minor';
+	enabled: boolean;
 	glyph: string;
 	angle: number;
 	harmonic: number;
@@ -306,12 +305,7 @@ export interface ComputeSettingsOverrides {
 }
 
 export type SettingSource =
-	| 'application'
-	| 'model'
-	| 'workspace'
-	| 'preset'
-	| 'chart'
-	| 'operation';
+	'application' | 'model' | 'workspace' | 'preset' | 'chart' | 'operation';
 
 export interface EffectiveSettingsSourcesDto {
 	default_house_system?: SettingSource | null;
@@ -405,6 +399,74 @@ export interface MoonDetails {
 	phase_label: string;
 }
 
+/** Search-oriented per-chart classifications computed in Rust (`domain::astrology::facts`).
+ *  Orb-based fields follow the workspace/model orb settings. */
+export interface ChartFacts {
+	version: number;
+	bodies: Record<
+		string,
+		{
+			/** 0 = Aries … 11 = Pisces. */
+			sign: number;
+			degree_in_sign: number;
+			element: 'fire' | 'earth' | 'air' | 'water';
+			modality: 'cardinal' | 'fixed' | 'mutable';
+			house: number | null;
+			house_group: 'active' | 'reactive' | 'resulting' | null;
+			motion: 'direct' | 'retrograde' | 'stationary' | null;
+		}
+	>;
+	element_counts: Record<string, number>;
+	modality_counts: Record<string, number>;
+	/** Planets in angular (active), succedent (reactive) and cadent (resulting) houses. */
+	house_group_counts: Record<'active' | 'reactive' | 'resulting', number>;
+	distribution: {
+		east: number;
+		west: number;
+		upper: number;
+		lower: number;
+		/** Quadrants I–IV (houses 1–3, 4–6, 7–9, 10–12). */
+		quadrants: [number, number, number, number];
+		placed: number;
+	};
+	orientation: {
+		extroverted: number;
+		introverted: number;
+		balance: 'extroversion' | 'introversion' | 'balanced';
+	};
+	aspect_counts: Record<string, number>;
+	unaspected: string[];
+	stelliums: Array<{
+		kind: 'chain' | 'sign' | 'house';
+		members: string[];
+		sign?: number;
+		house?: number;
+	}>;
+	angular_planets: Array<{ body: string; axis: string; orb: number }>;
+	lunar_cycle_phase: string | null;
+	mercury_phase: 'prometheus' | 'epimetheus' | null;
+	venus_phase: 'morning_star' | 'evening_star' | null;
+	sun_horizon: 'above' | 'below' | null;
+	moon_horizon: 'above' | 'below' | null;
+	chart_ruler: { traditional: string; modern: string };
+	final_dispositors: {
+		traditional: FinalDispositorDto | null;
+		modern: FinalDispositorDto | null;
+	};
+}
+
+export type FinalDispositorDto = { status: 'single'; body: string } | { status: 'none' };
+
+/** One chart of `load_workspace_charts`. */
+export interface WorkspaceChartLoad {
+	chart_id: string;
+	details: ChartDetails;
+	computed: ComputeChartResult | null;
+	compute_error: string | null;
+	/** Routed to the Python backend: compute with `compute_chart` instead. */
+	compute_individually: boolean;
+}
+
 export interface ComputeChartResult {
 	positions: Record<string, unknown>;
 	motion?: Record<
@@ -430,6 +492,7 @@ export interface ComputeChartResult {
 	};
 	house_cusps?: number[];
 	moon_details?: MoonDetails | null;
+	facts?: ChartFacts | null;
 	chart_id: string;
 }
 
