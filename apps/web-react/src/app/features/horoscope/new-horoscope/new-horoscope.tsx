@@ -5,7 +5,7 @@ import {
 	AppMainContentContainer,
 	AppMainContentRoot,
 	type AppMainContentWidth
-} from '@/app/components/app-main-content';
+} from '@/app/components/ui/app-main-content';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { useAppTheme } from '@/app/providers/app-theme';
 import { ChartBasicsSection } from './sections/chart-basics-section';

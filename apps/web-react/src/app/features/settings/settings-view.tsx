@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/app-main-content';
+import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
 import { cn } from '@/app/components/ui/utils';

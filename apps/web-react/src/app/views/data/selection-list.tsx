@@ -14,7 +14,7 @@ import { Label } from '@/app/components/ui/label';
 import { SearchField } from '@/app/components/ui/search-field';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
-import { DetailSidePanel } from '@/app/components/detail-side-panel';
+import { DetailSidePanel } from '@/app/views/data/detail-side-panel';
 
 /**
  * Grouped multi-select list: search, per-group select-all (accordion layout), a count chip that

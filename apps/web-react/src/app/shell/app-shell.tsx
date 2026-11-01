@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/app-main-content';
-import { AstrologySidebar } from '@/app/components/astrology-sidebar';
+import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
+import { AstrologySidebar } from '@/app/shell/astrology-sidebar';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
@@ -10,34 +10,29 @@ import {
 	SettingsSecondarySidebar,
 	type SettingsSectionId
 } from '@/app/features/settings/settings-secondary-sidebar';
+import { TransitsProvider } from '@/app/features/transits/transits-provider';
 import {
-	TransitsSecondarySidebar,
+	TransitsSidebar,
+	TransitsView,
 	type TransitSection
-} from '@/app/components/transits-secondary-sidebar';
-import { TransitsContent } from '@/app/components/transits-content';
-import { TransitLayersPanel } from '@/app/components/transit-layers-panel';
-import { TransitsResultsDashboard } from '@/app/components/transits-results-dashboard';
+} from '@/app/features/transits/transits-view';
 import { Aspectarium } from '@/app/components/aspectarium';
 import { HoroscopeDashboard } from '@/app/components/horoscope-dashboard';
 import { InformationView } from '@/app/components/information-view';
-import { RevolutionView } from '@/app/components/revolution-view';
-import { SynastryView } from '@/app/components/synastry-view';
+import { RevolutionView } from '@/app/features/revolution/revolution-view';
+import { SynastryView } from '@/app/features/synastry/synastry-view';
 import { SettingsView } from '@/app/features/settings/settings-view';
-import { ExportWorkspaceView } from '@/app/components/export-workspace-view';
-import { GuidedTour } from '@/app/components/guided-tour';
+import { ExportView } from '@/app/features/export/export-view';
+import { GuidedTour } from '@/app/shell/guided-tour';
 import { Toaster } from '@/app/components/ui/sonner';
 import { KeferLoaderOverlay } from '@/app/components/ui/kefer-loader';
-import { WindowTitlebar } from '@/app/components/window-titlebar';
-import { HoroscopeContextTabs } from '@/app/components/horoscope-context-tabs';
-import { DetailSidePanel } from '@/app/components/detail-side-panel';
+import { WindowTitlebar } from '@/app/shell/window-titlebar';
+import { HoroscopeContextTabs } from '@/app/shell/horoscope-context-tabs';
+import { DetailSidePanel } from '@/app/views/data/detail-side-panel';
 import { OpenWorkspaceView } from '@/app/features/open/open-workspace-view';
 import { useAppearance } from '@/app/providers/appearance';
 import { useWorkspace } from '@/app/providers/workspace';
 import { useWorkspaceCharts } from '@/app/providers/workspace-charts';
-import {
-	TransitsWorkspaceProvider,
-	useTransitsWorkspace
-} from '@/app/providers/transits-workspace';
 import type { AppChart } from '@/lib/tauri/chartPayload';
 
 /** Views that show the workspace chart tabs under their content. */
@@ -53,36 +48,6 @@ const CHART_CONTEXT_VIEWS = new Set([
 
 /** Views with a secondary sidebar (the titlebar reserves room for it). */
 const SECONDARY_SIDEBAR_VIEWS = new Set(['otevrit', 'tranzity', 'dynamika', 'nastaveni']);
-
-/** Transits secondary sidebar: setup sections until a series is computed, then the transited
- *  objects of the results (`TransitsWorkspaceProvider` owns which). */
-function TransitsSecondarySidebarSlot({
-	dynamic,
-	activeSection,
-	onSectionChange
-}: {
-	dynamic: boolean;
-	activeSection: TransitSection;
-	onSectionChange: (section: TransitSection) => void;
-}) {
-	const { mode } = useTransitsWorkspace();
-	if (mode === 'results') return <TransitLayersPanel />;
-	return (
-		<TransitsSecondarySidebar
-			activeSection={activeSection}
-			onSectionChange={onSectionChange}
-			dynamic={dynamic}
-		/>
-	);
-}
-
-/** Transits main content: setup or results, same switch as the sidebar slot. */
-function TransitsMainContentSlot({ section }: { section: TransitSection }) {
-	const { mode } = useTransitsWorkspace();
-	const { workspaceDefaults } = useWorkspace();
-	if (mode === 'results') return <TransitsResultsDashboard workspaceDefaults={workspaceDefaults} />;
-	return <TransitsContent section={section} />;
-}
 
 function PlaceholderView() {
 	const { t } = useTranslation();
@@ -157,7 +122,7 @@ export function AppShell() {
 					/>
 				);
 			case 'export':
-				return <ExportWorkspaceView />;
+				return <ExportView />;
 			case 'informace':
 				return (
 					<InformationView
@@ -198,7 +163,7 @@ export function AppShell() {
 				);
 			case 'tranzity':
 			case 'dynamika':
-				return <TransitsMainContentSlot section={activeTransitSection} />;
+				return <TransitsView section={activeTransitSection} />;
 			case 'nastaveni':
 				return <SettingsView section={activeSettingsSection} />;
 			default:
@@ -207,10 +172,7 @@ export function AppShell() {
 	};
 
 	return (
-		<TransitsWorkspaceProvider
-			workspacePath={workspace.workspacePath}
-			workspaceDefaults={workspace.workspaceDefaults}
-		>
+		<TransitsProvider>
 			<div className="flex h-screen flex-col overflow-hidden" style={appearance.canvasStyle}>
 				<WindowTitlebar
 					isSidebarExpanded={isSidebarExpanded}
@@ -228,7 +190,7 @@ export function AppShell() {
 					/>
 
 					{(activeView === 'tranzity' || activeView === 'dynamika') && (
-						<TransitsSecondarySidebarSlot
+						<TransitsSidebar
 							activeSection={activeTransitSection}
 							onSectionChange={setActiveTransitSection}
 							dynamic={activeView === 'dynamika'}
@@ -282,6 +244,6 @@ export function AppShell() {
 			<Toaster theme={appearance.dark ? 'dark' : 'light'} />
 			<GuidedTour />
 			<KeferLoaderOverlay active={workspace.bootLoading} />
-		</TransitsWorkspaceProvider>
+		</TransitsProvider>
 	);
 }

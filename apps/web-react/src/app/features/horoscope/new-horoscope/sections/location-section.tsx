@@ -5,7 +5,7 @@ import { Label } from '@/app/components/ui/label';
 import { ModeSwitcher, ModeSwitcherDetails } from '@/app/components/ui/mode-switcher';
 import { Tabs, TabsContent } from '@/app/components/ui/tabs';
 import { cn } from '@/app/components/ui/utils';
-import { LocationSelector } from '@/app/components/location-selector';
+import { LocationSelector } from '@/app/views/domain/location-selector';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import type { EntryRegime } from '@/lib/newHoroscopeForm';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';

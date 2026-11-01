@@ -23,7 +23,7 @@ import {
 	type HoroscopeWheelAspectInteraction,
 	type HoroscopeWheelBody,
 	type HoroscopeWheelObjectInteraction
-} from './horoscope-wheel';
+} from '@/app/views/domain/horoscope-wheel/horoscope-wheel';
 import { toast } from 'sonner';
 import {
 	DEFAULT_OBSERVABLE_OBJECT_IDS,
@@ -44,9 +44,9 @@ import type { WheelOrientationId, WheelStyleId } from '@/lib/astrology/wheelStyl
 import { ObservableObjectList } from '../views/domain/observable-object-list';
 import { PositionsList, type BodyPosition } from '../views/domain/positions-list';
 import { chartTimeZone, formatChartLocal } from '@/lib/chartDateTime';
-import { DetailSidePanel } from './detail-side-panel';
-import { ObjectDetailPanel } from './object-detail-panel';
-import { AspectDetailPanel } from './aspect-detail-panel';
+import { DetailSidePanel } from '@/app/views/data/detail-side-panel';
+import { ObjectDetailPanel } from '@/app/views/domain/object-detail-panel';
+import { AspectDetailPanel } from '@/app/views/domain/aspect-detail-panel';
 
 interface HoroscopeDashboardProps {
 	workspaceDefaults: WorkspaceDefaultsState;

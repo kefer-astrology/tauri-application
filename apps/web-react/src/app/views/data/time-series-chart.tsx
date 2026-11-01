@@ -1,6 +1,7 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/app/components/ui/utils';
 import { formatDateTime } from '@/lib/time/format';
+import { evenTicks, TIME_CHART_MARGIN, timeAxisTicks, timeWindow } from './time-axis';
 
 export interface TimeSeriesDef {
 	id: string;
@@ -67,7 +68,7 @@ export interface TimeSeriesChartProps {
 	onActivate?: (seriesId: string) => void;
 }
 
-const MARGIN = { top: 12, right: 16, bottom: 34, left: 40 };
+const MARGIN = TIME_CHART_MARGIN;
 
 function isMissing(value: number | null | undefined): value is null | undefined {
 	return value === null || value === undefined || Number.isNaN(value);
@@ -126,12 +127,6 @@ function areaPathForSeries(
 	}
 	flush();
 	return runs.join(' ');
-}
-
-function evenTicks(min: number, max: number, count: number): number[] {
-	if (max <= min) return [min];
-	const step = (max - min) / Math.max(1, count - 1);
-	return Array.from({ length: count }, (_, i) => min + step * i);
 }
 
 function clampRange(
@@ -209,7 +204,7 @@ export function TimeSeriesChart({
 
 	const dataMin = categories[0] ?? 0;
 	const dataMax = categories[categories.length - 1] ?? 1;
-	const [xMin, xMax] = visibleRange ?? [dataMin, dataMax];
+	const [xMin, xMax] = timeWindow(categories, visibleRange);
 
 	const [yMin, yMax] = useMemo<[number, number]>(() => {
 		if (yDomain) return yDomain;
@@ -246,8 +241,7 @@ export function TimeSeriesChart({
 	};
 
 	const resolvedYTicks = yTicks ?? evenTicks(yMin, yMax, 5);
-	const xTicks =
-		categories.length <= 1 ? [dataMin] : evenTicks(xMin, xMax, Math.min(6, categories.length));
+	const xTicks = timeAxisTicks(categories, [xMin, xMax]);
 
 	function ratioFromEvent(
 		event: React.PointerEvent<SVGRectElement> | React.WheelEvent<SVGRectElement>

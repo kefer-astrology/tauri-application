@@ -16,7 +16,7 @@ import {
 	type MultiSelectPopoverItem
 } from '../views/data/multi-select-popover';
 import { useAppFormFieldTheme } from './form-field-theme';
-import { DetailSidePanel } from './detail-side-panel';
+import { DetailSidePanel } from '@/app/views/data/detail-side-panel';
 import { chartDataToComputePayload, type WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';
 import { computeMidpointContactsFromData, computeMidpointsFromData } from '@/lib/tauri/workspace';
 import {
@@ -35,7 +35,7 @@ import { normalizeLongitude } from '@/lib/astrology/chartSearch';
 import { aspectLabel, objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
 import { parseComputedAspect, type ParsedAspect } from '@/lib/astrology/aspectParsing';
 import { buildObjectDetailViewModel } from '@/lib/astrology/objectDetail';
-import { AspectDetailPanel } from './aspect-detail-panel';
+import { AspectDetailPanel } from '@/app/views/domain/aspect-detail-panel';
 import {
 	MIDPOINT_CONTACT_ASPECT_IDS,
 	type Midpoint,

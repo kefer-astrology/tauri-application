@@ -5,7 +5,7 @@ import { Label } from '@/app/components/ui/label';
 import { Separator } from '@/app/components/ui/separator';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
-import { LocationSelector } from '@/app/components/location-selector';
+import { LocationSelector } from '@/app/views/domain/location-selector';
 import { useWorkspace } from '@/app/providers/workspace';
 import type { AppLanguage } from '@/lib/i18n';
 import type { WorkspaceDefaultsState } from '@/lib/tauri/chartPayload';

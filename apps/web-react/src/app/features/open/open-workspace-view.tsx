@@ -16,14 +16,14 @@ import type {
 	RowSelectionState,
 	SortingState
 } from '@tanstack/react-table';
-import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/app-main-content';
+import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { Button } from '@/app/components/ui/button';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
-import { DetailSidePanel } from '@/app/components/detail-side-panel';
+import { DetailSidePanel } from '@/app/views/data/detail-side-panel';
 import { useWorkspaceCharts } from '@/app/providers/workspace-charts';
 import { useWorkspace } from '@/app/providers/workspace';
 import {

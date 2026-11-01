@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { SecondaryNavPanel } from '@/app/components/secondary-nav-panel';
-import { sidebarNavMenuRowClassName, sidebarThemeStyles } from '@/app/components/astrology-sidebar';
+import { SecondaryNavPanel } from '@/app/views/data/secondary-nav-panel';
+import { sidebarNavMenuRowClassName, sidebarThemeStyles } from '@/app/components/ui/sidebar-theme';
 import { cn } from '@/app/components/ui/utils';
 import { useAppTheme } from '@/app/providers/app-theme';
 

@@ -18,7 +18,7 @@ import {
 	HoroscopeWheel,
 	type HemisphereOverlayKind,
 	type HoroscopeWheelBody
-} from './horoscope-wheel';
+} from '@/app/views/domain/horoscope-wheel/horoscope-wheel';
 
 interface InformationViewProps {
 	wheelStyle?: WheelStyleId;
