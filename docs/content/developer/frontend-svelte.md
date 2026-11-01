@@ -46,12 +46,16 @@ Cross-frontend lint, translation, and documentation commands are defined in the
 - `LocationSelector.svelte` uses the location search and resolution commands.
 - `App.svelte` coordinates transit-series requests and application result state.
 - `layout.svelte.ts` owns the canonical Svelte-side context, defaults, mode, and payload mapping.
-- `stores/data.svelte.ts` consumes bridge queries and may use in-memory computed
-  positions when persisted query rows are unavailable.
+- `stores/data.svelte.ts` consumes compatibility query commands and falls back
+  to in-memory computed positions. Rust returns empty rows from those queries;
+  it does not persist computed results in a database.
 - Chart-level calculation settings override workspace defaults through the same
   payload precedence used by React.
 - `main.ts` loads the built-in Rust domain catalog before mounting Svelte;
-  `tauri/workspace.ts` refreshes it for the effective workspace/chart model.
+  `tauri/workspace.ts` refreshes it when `getCurrentModelReport()` is called.
+  Workspace opening calls this helper without a chart ID; chart selection
+  does not currently refresh the catalog. See
+  [Architecture](../architecture/#bootstrap-and-catalog-lifecycle) for the gap.
 - `astrology/domainCatalog.ts` and `observableObjects.ts` project catalog IDs
   into UI state. Translation strings, glyph assets, colors, and visual grouping
   remain Svelte presentation concerns.
@@ -74,8 +78,11 @@ Do not duplicate theme, glyph, translation, or shared-component policy here;
 
 - `App.svelte` still owns broad orchestration and mode branching.
 - Some secondary views remain intentionally spec-gated or presentational.
-- In-memory fallback rendering remains for static mode and workspaces without
-  persisted computed-query rows.
+- Position rendering uses available in-memory calculation results when the
+  compatibility queries return no rows. A static preview has no native calculation service.
+- Transit controls support sampled series only. Event/configuration search and
+  transit-setup persistence remain React-only; see the
+  [transit parity scope](../transit-series-contract/#current-parity-scope).
 - Frontend behavioral test automation remains a documented gap in
   [Testing strategy](../testing-strategy/).
 

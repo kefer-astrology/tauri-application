@@ -1,112 +1,117 @@
-# Kefer Astrology (desktop)
+# Kefer Astrology
 
-Astrology desktop app: **Tauri 2**, **React** and **Svelte** frontend workspaces (both Vite-based), and optional **Python** computation sidecar support. This repo is an **npm workspace** monorepo: the main frontend workspaces are **`apps/web-react/`** and **`apps/web-svelte/`**; native integration is in **`src-tauri/`**; Python sidecar source is expected under **`backend-python/`** when that optional backend is present.
+Kefer is a desktop astrology application built with Tauri 2 and Rust. React is
+the default frontend; Svelte is an alternate shell in the same npm workspace.
+Supported calculations run in Rust without a Python sidecar. The optional
+Python backend source is not included in this checkout.
 
 ## Documentation
 
-Project documentation lives in **[`docs/`](docs/)** as a Hugo site source. The main entrypoints are **[`docs/content/_index.md`](docs/content/_index.md)** for Kefer Astrology, **[`docs/content/manual/_index.md`](docs/content/manual/_index.md)** for user help, **[`docs/content/developer/_index.md`](docs/content/developer/_index.md)** for shared technical contracts and development guidance, and **[`docs/content/guides/_index.md`](docs/content/guides/_index.md)** for the free-form previews and React-backed Guided Tours.
+| I want to… | Start here |
+| --- | --- |
+| Use the application | [Manual](docs/content/manual/_index.md) |
+| Explore the browser previews and Guided Tours | [Guides](docs/content/guides/_index.md) |
+| Contribute or find the right contract | [Developer Manual](docs/content/developer/_index.md) |
+| Understand runtime boundaries and backend routing | [Architecture](docs/content/developer/architecture.md) |
+| Work on a frontend | [React](docs/content/developer/frontend-react.md) · [Svelte](docs/content/developer/frontend-svelte.md) |
 
-| Guide                                                        | Topic                                                                     |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| [frontend-react](docs/content/developer/frontend-react.md)   | Commands, `apps/web-react/` layout, Tauri bridge, i18n, assets            |
-| [frontend-svelte](docs/content/developer/frontend-svelte.md) | Commands, `apps/web-svelte/` layout, shared assets, site-build behavior   |
-| [ui-conventions](docs/content/developer/ui-conventions.md)   | Themes, sidebar, i18n workflow (`translations.csv` → `npm run i18n:sync`) |
-| [architecture](docs/content/developer/architecture.md)       | Workspace layout, storage, Rust ↔ Python flow                             |
-| [python-package](docs/content/developer/python-package.md)   | Python module and CLI used by the app                                     |
+Browser previews demonstrate the interface. Native dialogs, workspace
+persistence, and backend calculations require the desktop application.
 
-## Stack
+## Run locally
 
-| Layer                                                                         | Role                                                                                   |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **React frontend** (`apps/web-react/src/app/`, `apps/web-react/src/main.tsx`) | Current primary desktop UI shell using Radix/shadcn-style primitives                   |
-| **Svelte frontend** (`apps/web-svelte/src/`)                                  | Alternate richer frontend workspace, also built by Vite and staged into docs builds    |
-| **Tauri** (`src-tauri/`)                                                      | Native window, `invoke` commands, Python sidecar lifecycle                             |
-| **Python** (`backend-python/`)                                                | Optional sidecar source when present; staged binaries live under `src-tauri/binaries/` |
-| **Static assets** (`static/`, repo root)                                      | Shared glyphs, app-shell icons/logos, favicon; copied into each frontend build         |
+Install Node.js and npm, Rust, and the platform dependencies required by Tauri.
+The repository's CI uses **Node.js 22** and **stable Rust**. Windows builds need
+MSVC's “Desktop development with C++” workload; Linux builds need the packages
+listed in [Tauri's prerequisites](https://tauri.app/start/prerequisites/).
 
-## Architecture Direction
-
-### Motivation / Background
-
-Kefer is moving from a Swiss-centered implementation toward a backend-pluggable astrology application. Astronomy computation should be swappable behind stable contracts, while astrology semantics such as zodiac system, house system, aspect rules, and tradition defaults stay above the astronomy backend.
-
-JPL / SPICE is the preferred long-term runtime direction. Swiss Ephemeris remains useful as compatibility and validation infrastructure, but it should not define frontend payloads, workspace shape, or product behavior.
-
-### Current State
-
-- Rust/no-sidecar support is the baseline for supported desktop flows; the Python backend remains optional when provisioned.
-- React and Svelte share the UI standard and are driven by contracts in `docs/content/developer/` before new behavior is implemented.
-- Structured chart payloads, provenance fields, workspace defaults, and static/docs rendering are part of the current frontend/backend contract.
-
-### Planned State
-
-- Keep astronomy backend-pluggable, with JPL / SPICE as the preferred runtime path and Swiss Ephemeris as compatibility/validation infrastructure.
-- Make backend routing clear in docs and user/debug-facing provenance: Rust-backed, Python-backed, or auto-routed.
-- Remove or clearly label prototype surfaces that appear to expose computed astrology data without backend-backed provenance.
-
-## Repo Shape
-
-At a high level, the repo is split by responsibility:
-
-The full subsystem, persistence, and delivery map is maintained separately in
-[`docs/diagrams/application-structure.mmd`](docs/diagrams/application-structure.mmd).
-For the primary components, modules, DTOs, traits, structs, and public
-functions, use [`docs/diagrams/code-navigation.mmd`](docs/diagrams/code-navigation.mmd).
-For a Rust-only view of Tauri commands, workspace contracts, application use
-cases, domain functions, and infrastructure traits, use
-[`docs/diagrams/rust-code-map.mmd`](docs/diagrams/rust-code-map.mmd).
-They are Mermaid source, so GitHub and Mermaid-capable editors can render them
-without making the Hugo site depend on an external diagram runtime.
-
-- `apps/web-react/` contains the desktop UI. Inside `src/`, `app/` is app composition and feature wiring, `app/components/` holds feature-facing UI, `ui/` holds shared presentational React primitives, and `lib/` holds non-visual logic such as Tauri helpers, i18n setup, and app-shell metadata.
-- `apps/web-svelte/` contains the alternate frontend workspace. Inside `src/`, `lib/components/` holds feature and shared Svelte UI, `lib/components/ui/` holds shared primitives, and `lib/stores/` resolves shared app-shell and glyph assets from repo-root `static/`.
-- `static/` is the shared source of truth for public assets used by frontends, especially app-shell icons, logos, and glyph families.
-- `src-tauri/` contains the native shell, command handlers, packaging config, and sidecar integration.
-- `backend-python/`, when present, contains the optional astrology computation package and CLI that get built into the desktop sidecar.
-- `docs/` is the Hugo site source for the user Manual, Developer Manual, and Guided Tour.
-
-If you need more than this overview, start with [frontend-react](docs/content/developer/frontend-react.md) or [frontend-svelte](docs/content/developer/frontend-svelte.md) for workspace structure, then use [architecture](docs/content/developer/architecture.md) for the Rust/Python flow.
-
-## Requirements
-
-- **Node.js** (current LTS is fine; align with your team’s version policy).
-- **Rust** toolchain for `cargo tauri dev` / `cargo tauri build` — [Install Rust](https://www.rust-lang.org/tools/install).
-- **Python sidecar**: optional for the current baseline. If a staged binary exists at **`src-tauri/binaries/kefer-backend`** or **`src-tauri/binaries/kefer-backend.exe`**, Tauri can bundle and launch it. If it is missing, supported flows should still work through the Rust/no-sidecar path.
-
-On **Windows**, install **MSVC** (“Desktop development with C++”) before Rust/Node if you build natively. On **Linux**, follow [Tauri’s Linux dependencies](https://tauri.app/start/prerequisites/) for your distro.
-
-## Setup
+From a checkout of this repository:
 
 ```bash
-git clone https://github.com/kefer-astrology/tauri-application.git
-cd tauri-application
-npm install
+npm ci
+npm run tauri:dev
 ```
 
-## Command Flows
+To develop the interface in a browser, use `npm run dev`. Backend-dependent
+features need the Tauri desktop runtime.
 
-React is the main app flow. Svelte is a separate alternate frontend flow with its own Vite and Tauri commands.
+## Common commands
 
-| Flow           | Command                                   | Purpose                                                                       |
-| -------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
-| React app      | `npm run dev`                             | Run the React Vite dev server.                                                |
-| React app      | `npm run tauri:dev`                       | Run the React-backed desktop app with Tauri hot reload.                       |
-| React app      | `npm run build`                           | Build `apps/web-react/dist/`.                                                 |
-| React app      | `npm run tauri:build`                     | Build the React-backed desktop bundle.                                        |
-| React app      | `npm run check`                           | Type-check the React workspace.                                               |
-| Svelte app     | `npm run dev:svelte`                      | Run the Svelte Vite dev server.                                               |
-| Svelte app     | `npm run tauri:dev:svelte`                | Run the Svelte-backed desktop app with Tauri hot reload.                      |
-| Svelte app     | `npm run build:svelte`                    | Build `apps/web-svelte/dist/`.                                                |
-| Svelte app     | `npm run tauri:build:svelte`              | Build the Svelte-backed desktop bundle.                                       |
-| Svelte app     | `npm run check:svelte`                    | Type-check the Svelte workspace.                                              |
-| Site           | `npm run docs:prepare`                    | Build both frontends for browser-safe mode and stage them into the Hugo site. |
-| Site           | `npm run docs:dev`                        | Prepare site assets, then run the Hugo development server.                    |
-| Site           | `npm run docs:build`                      | Prepare site assets, then build the production site into `dist-docs/`.        |
-| i18n           | `npm run i18n:prune:dry`                  | Show unused `translations.csv` rows not referenced by either frontend.        |
-| i18n           | `npm run i18n:prune`                      | Remove unused `translations.csv` rows.                                        |
-| i18n           | `npm run i18n:sync`                       | Regenerate locale JSON for both frontend workspaces from `translations.csv`.  |
-| Shared         | `npm run lint`                            | Run Prettier check and ESLint.                                                |
-| Python sidecar | `python scripts/build-backend-sidecar.py` | Optional: build and stage `kefer-backend` into `src-tauri/binaries/`.         |
+Run these from the repository root:
+
+| Task | React (default) | Svelte |
+| --- | --- | --- |
+| Browser dev server | `npm run dev` | `npm run dev:svelte` |
+| Desktop app with hot reload | `npm run tauri:dev` | `npm run tauri:dev:svelte` |
+| Frontend build | `npm run build` | `npm run build:svelte` |
+| Desktop bundle | `npm run tauri:build` | `npm run tauri:build:svelte` |
+| Type check | `npm run check` | `npm run check:svelte` |
+
+Other shared commands:
+
+```bash
+# React tests (Vitest)
+npm test
+
+# Rust tests
+cargo test --manifest-path src-tauri/Cargo.toml --lib
+
+# Formatting and ESLint
+npm run lint
+
+# Regenerate both frontends' locales after editing translations.csv
+npm run i18n:sync
+```
+
+See [Testing strategy](docs/content/developer/testing-strategy.md) for coverage,
+optional resource requirements, and known automation gaps. React and Svelte
+have different feature coverage; see the frontend references before assuming
+parity.
+
+## Work on the documentation
+
+Markdown source lives in `docs/content/`. Install Hugo to preview or build the
+site; the documentation workflow pins **Hugo Extended 0.165.0**.
+
+```bash
+npm run docs:dev
+npm run docs:build
+```
+
+Both commands first build the React and Svelte browser previews and stage them
+under `docs/static/apps/`. The production site is written to `dist-docs/`.
+After preparing the previews once, content-only edits can use Hugo directly
+without rebuilding the frontends:
+
+```bash
+hugo server --source docs
+```
+
+Edit source Markdown and shared assets rather than generated copies under
+`docs/public/`, `docs/static/apps/`, or `docs/data/generated/`. See the
+[contribution guide](docs/content/developer/project-context.md) for ownership
+and publishing rules.
+
+## Repository map
+
+| Path | Responsibility |
+| --- | --- |
+| `apps/web-react/` | Default React + Vite desktop frontend |
+| `apps/web-svelte/` | Alternate Svelte + Vite frontend |
+| `src-tauri/` | Native shell, commands, workspace persistence, and Rust calculation |
+| `contracts/` | Shared contract fixtures |
+| `static/` | Shared glyphs, shell icons, logos, and favicon |
+| `docs/` | Hugo source, templates, and documentation assets |
+| `scripts/` | Asset, translation, fixture, and build tooling |
+
+The optional Python source belongs under `backend-python/` when provisioned.
+`python scripts/build-backend-sidecar.py` builds and stages that sidecar; it
+requires the missing Python source and is not part of normal Rust-only setup.
+
+For more detail, see the Mermaid maps for
+[application structure](docs/diagrams/application-structure.mmd),
+[code navigation](docs/diagrams/code-navigation.mmd), and
+[Rust modules](docs/diagrams/rust-code-map.mmd).
 
 ## Troubleshooting
 

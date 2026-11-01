@@ -50,7 +50,7 @@ automation:
 Tests may live beside the code they exercise. This document owns the inventory
 and traceability, not the physical test files.
 
-## Initial traceability matrix
+## Traceability matrix
 
 | ID | Required behavior | Level | Current automation |
 | --- | --- | --- | --- |
@@ -63,23 +63,112 @@ and traceability, not the physical test files.
 | CATALOG-001 | Built-in and effective runtime catalogs cover model entries and emitted shapes/configurations | Domain/bridge | Rust catalog tests; frontend type/build coverage; **GAP-CATALOG-001:** automated React/Svelte refresh and fallback behavior |
 | COMPUTE-001 | A radix result exposes the required backend-neutral fields | Command contract | Rust command/application tests; optional Python contract parity when provisioned |
 | TRANSIT-001 | Transit ranges reject invalid order and non-positive step | Command contract | Rust transit command tests; optional Python parity when provisioned |
-| TRANSIT-002 | `exact_hits`/`station_events` return real root-found events (moving-vs-radix and moving-vs-moving), independent of and never rounded to `time_step_seconds`; stations/aspect hits are tagged with direction-change/contact-kind (crossing vs. tangential) and an independent `confirmed` field (always `true` for a crossing; for a tangential contact, `true` only when refinement actually converged within tolerance without regressing relative to the coarse sample that triggered it, *and* its computed, exposed `bracket_width_seconds` is at or below an explicit 1-second time-precision tolerance — checked, not assumed from a fixed iteration count); an unconfirmed candidate is never silently dropped, and the React event list visibly distinguishes it (an "unconfirmed" badge, independent of the "tangential" geometry badge); an incomplete or failed sub-search is reported honestly, never as a silent empty success | Domain/command contract | `application::transit::tests` (flag combinations, structurally-locked-pair exclusion, missing-coverage error propagation, probe-allocation formula, direction-change alternation) and `application::event_search::tests` (repeated/retrograde crossings, 0° wrapping, interval boundaries, budget exhaustion, tangential-contact detection on synthetic functions including a refinement-regression case that must come back `confirmed: false`, a minimum sitting strictly between two coarse samples with a sub-10-microsecond time-convergence assertion against an analytically exact minimum, a real graze near an unrelated branch-cut artifact, direct bracket-width measurements at two different initial widths matching the theoretical `0.618^40` narrowing factor, a too-few-iterations case demonstrating an under-converged bracket, and an end-to-end case where a 10-year discovery step produces a well-within-tolerance residual but `confirmed: false` because the resulting bracket exceeds the explicit time-precision tolerance) in Rust; `commands::transits::tests` for the Tauri-level `event_search` response field and backward-compatible omission of both flags; no automated frontend test for the "unconfirmed" badge (manual/visual only, consistent with this component's existing test coverage); no Python parity (the Python sidecar has no event-search endpoint) |
-| TRANSIT-003 | `configuration_requests` finds the time interval(s) during which a role-assignment of bodies simultaneously satisfies a configuration pattern (Grand Trine/T-square/Yod/Grand Cross), without requiring any constituent aspect to become exact; deduplication respects each pattern's actual geometric symmetries; role-assignment and best-fit-refinement combinatorial growth are both bounded and reported, never silently truncated | Domain/command contract | `domain::configurations::tests` (per-pattern automorphism validity, including a deliberately-wrong-permutation rejection case) and `application::configuration_search::tests` (orb-interval union/intersection on synthetic data, enumeration-cap and best-fit-cap behavior, dedup of symmetric vs. genuinely-distinct role assignments, a real Grand Trine found against real ephemeris and independently cross-checked against `domain::astrology::detect_chart_configurations` at an interior and a boundary-adjacent time, and a 6x-finer-discovery-step stability check) in Rust; `commands::transits::tests` for the Tauri-level `configuration_requests`/`configuration_matches` wiring; no Python parity (no configuration-search endpoint exists there) |
-| TRANSIT-004 | `sampled_series: false` makes the sampled `results` graph series itself opt-in, independent of `time_step_seconds`/any event or configuration search, while keeping the response shape (backend provenance, `event_search`) uniform with the `sampled_series: true` case | Command contract | `commands::transits::tests` (`compute_transit_events_only_response_skips_sampled_series_but_computes_events`, backward-compatible default via `TransitSetup`'s `#[serde(default = "default_true")]`) |
-| TRANSIT-005 | `EvaluationContext` shares one position-provider backend and a bounded, FIFO-evicting `(body id, exact epoch)` cache (capacity configurable for tests; 2,000,000 in production) across every exact-aspect, station, and configuration search one `compute_transit_events` call performs, without changing any result — a minimal backend path also skips RA/Dec/Alt/Az/axes/house cusps for a longitude-only or longitude+motion probe, matching the unchanged full path's values exactly for whatever it does compute; the cache is request-scoped only (never shared across requests or between concurrent ones) | Performance/correctness (no API surface) | `infrastructure::jpl_backend::tests::minimal_path_agrees_with_full_path_for_representative_objects_epochs_and_modes` (longitude/motion equality between the full and minimal paths across several bodies, two epochs, both position modes, both `RequiredQuantities` tiers); `application::transit::tests::combined_exact_hits_station_events_and_configuration_request_in_one_call` (all three search kinds sharing one context in one call); `application::evaluation_context::tests` (`eviction_is_bounded_and_drops_the_oldest_entry_first`, `eviction_never_grows_past_capacity_across_many_inserts` — direct, deterministic, small-capacity proof of the FIFO eviction mechanism itself, not just its end-to-end effect; `measures_real_per_entry_memory_cost`, `#[ignore]`, a real `/proc/self/status` RSS-delta measurement checked against the documented `APPROX_BYTES_PER_ENTRY` estimate rather than trusting a hand count); the full existing event-search/configuration-search suite re-passing unchanged after the refactor is itself the regression guard; `application::configuration_search::tests::configuration_search_benchmark` (`#[ignore]`) reports real p50/p95, repetition count and percentile method, and `cache_stats()` (hit/miss/upgrade counts, entry count, measured approximate bytes) against the pre-optimization baseline recorded in `ephemeris-validation.md`, which also documents the distinction between total accesses, true unique working set, and a misleadingly-inflated miss count observed once under an undersized cache |
+| TRANSIT-002 | Exact aspects and stations are independent of sampling; confirmation and incomplete searches remain explicit. | Domain/command | [Evidence and gaps](#transit-002-event-and-station-search) |
+| TRANSIT-003 | Configuration intervals respect orbs, pattern symmetries, and reported search limits. | Domain/command | [Evidence and gaps](#transit-003-configuration-search) |
+| TRANSIT-004 | Disabling sampled output preserves events, provenance, and response shape. | Command | [Evidence and gaps](#transit-004-events-only-responses) |
+| TRANSIT-005 | Searches share a bounded request-scoped cache without changing numerical results. | Performance/correctness | [Evidence and gaps](#transit-005-shared-evaluation-cache) |
 | ROUTE-001 | Auto routing uses Rust when Python is unavailable | Integration | Rust route-selection tests |
 | ROUTE-002 | Forced Python fails clearly when unavailable | Integration | Rust route-selection tests |
 | ROUTE-003 | A per-chart `override_ephemeris` JPL kernel does not force Python; only Jyotish/Custom engines do | Integration | `application::compute_router::tests` (Rust-only mode, auto mode with/without Python) and `infrastructure::jpl_backend::tests` (invalid override path, missing auxiliary kernel, partial body coverage) |
-| PROVIDER-002 | Chart, transit-series, event-search, and configuration-search computation execute with no network access | Provider/integration | Full `cargo test --lib` (209 tests) re-run inside a Linux network namespace with no interfaces up, plus `compute_transit_events_benchmark` (re-run this pass); the other six release benchmarks were verified the same way in earlier passes and not re-run here — see [ephemeris validation](../ephemeris-validation/#offline-execution-verified-not-just-read-from-source) for the exact mechanism and what it does not cover (the optional Python sidecar, absent in this checkout) |
+| PROVIDER-002 | Chart, series, event, and configuration computation work offline | Provider/integration | Recorded network-isolated runs and scope limits: [offline evidence](../ephemeris-validation/#offline-execution-verified-not-just-read-from-source). Python is not covered. |
 | COVERAGE-001 | Usable-coverage chain discovery and precedence match the pinned ANISE evaluator's actual behavior, including cases real kernels cannot exhibit | Provider | `infrastructure::ephemeris::usable_coverage_tests` (synthetic-SPK missing link, alternate chain, depth-limit, and different-center-overlap-narrows-coverage cases, alongside real-kernel complete-chain/overlap cases) — see [ephemeris validation](../ephemeris-validation/#usable-coverage-raw-vs-chain-aware) |
 | PROVIDER-001 | Provider numerical output matches a named reference within tolerance | Provider | Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources — see [ephemeris validation](../ephemeris-validation/) for the current per-test reference list and known gaps |
-| FRONTEND-001 | Both bridges serialize the same chart calculation intent | Frontend bridge/parity | Type/build coverage; **GAP-FRONTEND-001:** dedicated bridge test runner |
+| FRONTEND-001 | Both bridges serialize the same chart calculation intent | Frontend bridge/parity | React helper tests and type/build coverage; **GAP-FRONTEND-001:** shared React/Svelte payload parity cases |
 | FRONTEND-002 | Both shells open the same workspace and apply the same effective defaults | Workflow/parity | Manual/structural coverage; **GAP-FRONTEND-002:** automated workflow coverage |
 | STATIC-001 | Static documentation mode renders the normal shell without native services | Smoke/workflow | Build coverage; automated behavior coverage is a current gap |
 
 When a gap is filled, replace the gap ID and description with the test file and
 test name. Do not remove the row; the matrix is also an inventory of deliberate
 automation debt.
+
+## Transit test evidence
+
+The matrix above is an overview. The following entries retain the detailed
+acceptance conditions, test locations, and automation gaps. Observable payload
+and behavior requirements belong to the [Transit series contract](../transit-series-contract/).
+
+### TRANSIT-002: Event and station search
+
+Exact aspects and stations are root-found independently of `time_step_seconds`.
+Moving-to-radix and moving-to-moving aspect searches are both covered.
+
+`confirmed` is independent of crossing/tangential geometry. Crossings are
+confirmed; tangential contacts require a converged residual, no regression
+from the triggering coarse sample, and a measured `bracket_width_seconds` of
+at most one second. Unconfirmed candidates remain in the response. Incomplete
+or failed sub-searches must be reported rather than returned as empty success.
+
+Automation:
+
+- `application::transit::tests`: flag combinations, structurally locked pairs,
+  missing coverage, probe allocation, and alternating direction changes.
+- `application::event_search::tests`: retrograde/repeated crossings, 0° wrapping,
+  boundaries, budgets, tangencies, refinement regression, and branch-cut artifacts.
+  Synthetic minima verify sub-10-microsecond time convergence; bracket tests
+  check measured narrowing against `0.618^40`. An under-converged bracket and a
+  ten-year discovery step verify that a small residual alone cannot confirm a contact.
+- `commands::transits::tests`: the `event_search` response and compatibility
+  when both search flags are omitted.
+
+Gap: React's independent “unconfirmed” and “tangential” badges have manual/visual
+coverage only. Python has no event-search endpoint, so no parity is claimed.
+
+### TRANSIT-003: Configuration search
+
+Configuration matches are within-orb intervals for Grand Trine, T-square, Yod,
+and Grand Cross; constituent aspects need not become exact. Deduplication must
+respect each pattern's symmetries. Enumeration and best-fit refinement limits
+must be reported rather than silently truncating results.
+
+Automation:
+
+- `domain::configuration_topology::tests`: automorphisms preserve pattern edges;
+  a deliberately invalid permutation is rejected.
+- `application::configuration_search::tests`: interval union/intersection,
+  enumeration/refinement caps, symmetric and distinct role assignments, and a
+  real Grand Trine cross-checked against `detect_chart_configurations` at an
+  interior and boundary-adjacent time. A discovery step six times finer checks stability.
+- `commands::transits::tests`: `configuration_requests`/`configuration_matches`
+  transport wiring.
+
+Python has no configuration-search endpoint, so no parity is claimed.
+
+### TRANSIT-004: Events-only responses
+
+`sampled_series: false` skips graph samples independently of event and
+configuration searches. Provenance and `event_search` retain the normal response
+shape. Omitting the option preserves the default sampled behavior.
+
+Automation: `commands::transits::tests::compute_transit_events_only_response_skips_sampled_series_but_computes_events`
+and the backward-compatible `TransitSetup` default (`#[serde(default = "default_true")]`).
+
+### TRANSIT-005: Shared evaluation cache
+
+One `EvaluationContext` shares its provider and bounded FIFO cache across the
+exact-aspect, station, and configuration searches in one request. The cache key
+is `(body id, exact epoch)`; production capacity is 2,000,000 entries, with a
+configurable capacity for tests. Requests never share cached positions.
+
+Minimal longitude or longitude-plus-motion probes skip unrelated coordinates,
+axes, and house cusps while preserving the full path's computed values.
+
+Automation:
+
+- `infrastructure::jpl_backend::tests::minimal_path_agrees_with_full_path_for_representative_objects_epochs_and_modes`:
+  equality across bodies, epochs, position modes, and both `RequiredQuantities` tiers.
+- `application::transit::tests::combined_exact_hits_station_events_and_configuration_request_in_one_call`:
+  all three search kinds use one context.
+- `application::evaluation_context::tests`: `eviction_is_bounded_and_drops_the_oldest_entry_first`
+  and `eviction_never_grows_past_capacity_across_many_inserts` directly check FIFO
+  eviction with small capacities. The ignored `measures_real_per_entry_memory_cost`
+  compares `/proc/self/status` RSS growth with `APPROX_BYTES_PER_ENTRY`.
+- The event/configuration regression suites check unchanged results.
+  The ignored `application::configuration_search::tests::configuration_search_benchmark`
+  reports p50/p95, repetition count, percentile method, and cache statistics.
+
+See [Validation and performance](../ephemeris-validation/#multi-body-configuration-search)
+for the recorded baseline, memory estimates, and the distinction between total
+accesses, unique working set, and repeat misses caused by an undersized cache.
 
 ## Shared fixtures
 
@@ -135,9 +224,11 @@ At minimum, test:
 - backend diagnostics and unavailable-provider states are visible
 - empty, loading, error, and static-mode states do not fabricate results
 
-The current frontend packages provide type checks but no dedicated behavioral
-test command. Adding a runner and a root `test:frontends` script is therefore a
-documented implementation gap, not an already satisfied check.
+React provides a Vitest runner through `npm test` (or `npm run test -w web-react`),
+using `happy-dom`. Tests cover time and settings helpers, chart payload time
+conversion, shell composition, and feature rendering. These do not establish
+full desktop workflow or React/Svelte parity coverage. Svelte currently provides
+a type check but no dedicated behavioral test command.
 
 ## Commands available today
 
@@ -146,6 +237,7 @@ From the repository root:
 ```bash
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 npm run check
+npm test
 npm run check:svelte
 npm run docs:build
 ```

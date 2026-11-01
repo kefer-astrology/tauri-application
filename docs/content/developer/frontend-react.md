@@ -22,6 +22,7 @@ npm run tauri:dev
 npm run build
 npm run tauri:build
 npm run check
+npm test
 npm run build:react:docs
 ```
 
@@ -31,7 +32,11 @@ Cross-frontend lint, translation, and documentation commands are defined in the
 ## Source structure
 
 - `apps/web-react/src/main.tsx` — React root and global providers.
-- `apps/web-react/src/app/` — application composition, shell state, and feature wiring.
+- `apps/web-react/src/app/` — application composition.
+- `apps/web-react/src/app/providers/` — appearance, workspace state, and chart actions.
+- `apps/web-react/src/app/shell/` — navigation and application shell.
+- `apps/web-react/src/app/features/` — feature screens and their components.
+- `apps/web-react/src/app/views/domain/` — shared chart/domain views.
 - `apps/web-react/src/app/components/` — feature-facing UI.
 - `apps/web-react/src/app/components/ui/` — React primitive layer.
 - `apps/web-react/src/ui/` — cross-feature presentational wrappers.
@@ -40,7 +45,8 @@ Cross-frontend lint, translation, and documentation commands are defined in the
 
 ## Runtime ownership
 
-- `App.tsx` owns the main shell state and sidebar-driven flows.
+- `App.tsx` composes `AppearanceProvider`, `WorkspaceProvider`, and `AppShell`.
+  Providers own shared state and actions; the shell owns navigation.
 - `openWorkspaceFolder()` chooses a folder, loads its workspace and model
   report, merges defaults, computes charts, and updates UI state.
 - Workspace and chart persistence use the typed bridge under `src/lib/tauri/`.
@@ -51,7 +57,10 @@ Cross-frontend lint, translation, and documentation commands are defined in the
 - Real chart and transit views consume Tauri calculation results. Static docs
   mode may demonstrate interface structure but must not fabricate backend data.
 - `main.tsx` loads the built-in Rust domain catalog before mounting React;
-  `tauri/workspace.ts` refreshes it for the effective workspace/chart model.
+  `tauri/workspace.ts` refreshes it when `getCurrentModelReport()` is called.
+  Workspace opening calls this helper without a chart ID; chart selection
+  does not currently refresh the catalog. See
+  [Architecture](../architecture/#bootstrap-and-catalog-lifecycle) for the gap.
 - `astrology/domainCatalog.ts` and `observableObjects.ts` project catalog IDs
   into UI state. Translation keys, glyph assets, colors, and visual grouping
   remain React presentation concerns.
@@ -77,7 +86,8 @@ Do not duplicate theme, glyph, translation, or shared-component policy here;
 
 - Some secondary views remain presentational or prototype-oriented.
 - `InformationView` is not yet a complete chart-backed analysis surface.
-- Frontend behavioral test automation remains a documented gap in
+- React has Vitest tests for helpers, shell, and feature rendering. Automated
+  React/Svelte parity and full desktop workflows remain gaps in
   [Testing strategy](../testing-strategy/).
 
 ## Related contracts

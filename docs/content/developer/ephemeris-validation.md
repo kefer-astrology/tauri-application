@@ -14,6 +14,18 @@ normative behavior rather than measurements, see the
 [Astronomy coordinate contract](../astronomy-coordinate-contract/) and
 [SPICE backend](../spice-backend/) instead.
 
+## Find the relevant evidence
+
+- [Reproduce the checks](#reproducing-the-checks) and [identify each reference](#what-each-test-validates-and-against-what-reference).
+- [Exact events and stations](#event-search-stationary-points-and-exact-aspect-times) and [configuration intervals](#multi-body-configuration-search).
+- [Usable coverage](#usable-coverage-raw-vs-chain-aware) and [output conventions](#output-conventions).
+- [Performance results](#performance-results) and [offline execution](#offline-execution-verified-not-just-read-from-source).
+- [Known validation gaps](#known-validation-gaps) and [claim limits](#what-this-page-does-not-claim).
+
+Measurements below are recorded evidence, not results from every new checkout.
+Re-run the relevant commands when changing the implementation or making new
+accuracy or performance claims.
+
 ## Reproducing the checks
 
 From `src-tauri/`:
@@ -38,10 +50,10 @@ cargo test --release --lib compute_transit_events_benchmark -- --ignored --nocap
 cargo test --release --lib configuration_search_benchmark -- --ignored --nocapture
 ```
 
-`cargo test --lib` without filters also runs everything above except the
-seven `--ignored` benchmarks, which are intentionally excluded from that
-default run because they need a release build (and, for the first, bundled
-resources) to be meaningful rather than to measure debug-build overhead.
+`cargo test --lib` without filters runs non-ignored tests. It excludes the
+Horizons-gated test and all seven diagnostic benchmarks above. Run ignored
+checks explicitly with the resources they require; use release builds for
+benchmarks so they measure runtime performance rather than debug-build overhead.
 
 ## What each test validates, and against what reference
 
@@ -244,7 +256,7 @@ an explicit regression test
 finds the time *interval* during which a role-assignment of bodies
 simultaneously satisfies a configuration pattern's required pairwise
 aspects (Grand Trine, T-square, Yod, Grand Cross — see
-`domain::configurations` for the four data-driven definitions and the
+`domain::configuration_topology` for the four data-driven definitions and the
 `yod`/`double_quincunx` naming correspondence), wired to `compute_transit_series`
 via the persisted `configuration_requests` field. This is genuinely new
 engineering on top of the event-search primitives above, not a
