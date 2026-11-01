@@ -13,17 +13,17 @@ substitute for that traceability.
 
 ## Test levels
 
-| Level | Verifies | Typical owner |
-| --- | --- | --- |
-| Domain unit | Pure astrology, time, validation, and resolution rules | Rust; optional Python peer |
-| Contract fixture | The same versioned input has the required output | `contracts/` plus each implementation that is provisioned |
-| Provider | Astronomy-provider correctness, capabilities, and failures | Rust/Python provider adapter |
-| Command integration | Tauri request, routing, serialization, and errors | Rust command/application layer |
-| Frontend bridge | Payload construction and result normalization | React and Svelte Tauri bridges |
-| Component | Interaction and rendering states | Owning frontend |
-| Workflow | A user-visible flow across UI and backend | Desktop/browser integration suite |
+| Level                 | Verifies                                                   | Typical owner                                                   |
+| --------------------- | ---------------------------------------------------------- | --------------------------------------------------------------- |
+| Domain unit           | Pure astrology, time, validation, and resolution rules     | Rust; optional Python peer                                      |
+| Contract fixture      | The same versioned input has the required output           | `contracts/` plus each implementation that is provisioned       |
+| Provider              | Astronomy-provider correctness, capabilities, and failures | Rust/Python provider adapter                                    |
+| Command integration   | Tauri request, routing, serialization, and errors          | Rust command/application layer                                  |
+| Frontend bridge       | Payload construction and result normalization              | React and Svelte Tauri bridges                                  |
+| Component             | Interaction and rendering states                           | Owning frontend                                                 |
+| Workflow              | A user-visible flow across UI and backend                  | Desktop/browser integration suite                               |
 | Cross-language parity | Rust and an optional Python peer preserve shared semantics | Shared fixture runner when both implementations are provisioned |
-| Smoke/build | Supported app configuration starts and builds | Root scripts and CI |
+| Smoke/build           | Supported app configuration starts and builds              | Root scripts and CI                                             |
 
 Type checking and compilation are necessary checks, but they are not behavioral
 frontend tests.
@@ -241,6 +241,11 @@ npm test
 npm run check:svelte
 npm run docs:build
 ```
+
+`npm run test` runs the React unit tests (Vitest, `apps/web-react/src/**/*.test.ts`,
+`happy-dom` environment). They cover the pure `lib` modules — chart query and
+tree filtering, fact filters, zodiac positions, date formatting. Component
+rendering and interaction are not covered yet.
 
 If the optional Python sidecar source is present in the checkout:
 

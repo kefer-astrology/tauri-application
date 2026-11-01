@@ -48,7 +48,7 @@ Cross-frontend lint, translation, and documentation commands are defined in the
 - `App.tsx` composes `AppearanceProvider`, `WorkspaceProvider`, and `AppShell`.
   Providers own shared state and actions; the shell owns navigation.
 - `openWorkspaceFolder()` chooses a folder, loads its workspace and model
-  report, merges defaults, computes charts, and updates UI state.
+  report, merges defaults, and returns the computed charts (one batch call).
 - Workspace and chart persistence use the typed bridge under `src/lib/tauri/`.
 - `chartPayload.ts` maps `AppChart` and workspace defaults into backend-neutral
   calculation payloads.
@@ -67,7 +67,7 @@ Cross-frontend lint, translation, and documentation commands are defined in the
 
 ## React-specific conventions
 
-- Keep `App.tsx` focused on composition; feature behavior belongs in focused
+- Keep `App.tsx` and `AppShell` focused on composition; feature behavior belongs in focused
   components or non-visual helpers.
 - Begin interactive controls with the primitives in
   `src/app/components/ui/`.

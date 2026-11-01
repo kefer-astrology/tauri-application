@@ -109,8 +109,8 @@ arbitrarily within the same instant); each entry has:
     or `"tangential_no_change"` (speed grazed zero without actually
     switching direction — same heuristic as `contact: "tangential"`)
   - `confirmed`: independent of `contact`/`direction_change` — those
-    describe the contact's *geometry*, `confirmed` describes detection
-    *confidence*. Always `true` for `contact: "crossing"` and for a genuine
+    describe the contact's _geometry_, `confirmed` describes detection
+    _confidence_. Always `true` for `contact: "crossing"` and for a genuine
     direction change (sign-change-based, never ambiguous). For
     `contact: "tangential"`/`direction_change: "tangential_no_change"`,
     `false` means the refined residual did not actually converge within
@@ -155,9 +155,9 @@ Each entry in `configurationRequests` is:
 
 ```json
 {
-  "configurationId": "grand_trine",
-  "fixedRoles": [],
-  "roleCandidates": {}
+	"configurationId": "grand_trine",
+	"fixedRoles": [],
+	"roleCandidates": {}
 }
 ```
 

@@ -41,6 +41,30 @@ This page defines the canonical chart datetime format shared by the frontends an
   - RFC3339
   - `YYYY-MM-DD`
 
+## Frontend parsing and display
+
+- A chart's time is **local time at the event's place**. The place's zone is
+  the chart's manual UTC offset when its time regime is manual, otherwise its
+  IANA timezone (`chartTimeZone`).
+- Frontends parse stored chart datetimes without relying on the JS engine's
+  `Date` parsing, which reads naive strings as local _machine_ time on some
+  engines and rejects them on others:
+  - RFC3339 keeps its offset;
+  - the naive forms (`YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DDTHH:mm:ss`,
+    `YYYY-MM-DD HH:mm`, `YYYY-MM-DD`) are wall-clock time in the place's zone,
+    or UTC (the backend's reading) when no zone is known;
+  - everything else, including impossible dates, is rejected.
+- Before a time is sent to the backend (compute, persist, analysis inline
+  subjects), frontends convert it to an exact UTC instant (`…Z`), so the
+  backend never has to interpret a naive time.
+- Lists, headers and date filters show and compare chart times in the place's
+  zone, not the machine's.
+- React implements this in `lib/chartDateTime.ts` (`parseChartDateTime`,
+  `toEventTimeIso`, `chartLocalParts`, `formatChartLocal`) on top of
+  `lib/time/zone.ts`. The shared fixture `contracts/event-time.json` tests the
+  zone-less rules in both the Rust and the React parser; extend it when the
+  accepted formats change.
+
 ## Migration rule
 
 - Legacy localized timestamps may still be tolerated when reading existing in-memory/UI state.
