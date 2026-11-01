@@ -669,6 +669,7 @@
 	"transit_layers_panel_empty": "No aspects in this series.",
 	"transit_loading": "Computing transits…",
 	"transit_micro_ticker_title": "Micro ticker (personal planets)",
+	"transit_micro_ticker_empty": "No fast transited bodies (Sun–Mars) selected.",
 	"transit_overlay_aspectarium_hint": "Transit → radix",
 	"transit_overlay_clear": "Clear transit overlay",
 	"transit_overlay_label": "Transit overlay",

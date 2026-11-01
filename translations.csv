@@ -671,6 +671,7 @@ internal_name,czech,english,french,spanish
 "transit_layers_panel_empty","V této sérii nejsou žádné aspekty.","No aspects in this series.","Aucun aspect dans cette série.","No hay aspectos en esta serie."
 "transit_loading","Počítám tranzity…","Computing transits…","Calcul des transits…","Calculando tránsitos…"
 "transit_micro_ticker_title","Mikro ticker (osobní planety)","Micro ticker (personal planets)","Ticker micro (planètes personnelles)","Ticker micro (planetas personales)"
+"transit_micro_ticker_empty","Nejsou vybrána rychlá tranzitovaná tělesa (Slunce–Mars).","No fast transited bodies (Sun–Mars) selected.","Aucun corps transité rapide (Soleil–Mars) sélectionné.","No hay cuerpos transitados rápidos (Sol–Marte) seleccionados."
 "transit_overlay_aspectarium_hint","Tranzit → radix","Transit → radix","Transit → radix","Tránsito → radix"
 "transit_overlay_clear","Vymazat tranzitní vrstvu","Clear transit overlay","Effacer la couche de transit","Borrar capa de tránsito"
 "transit_overlay_label","Tranzitní vrstva","Transit overlay","Couche de transit","Capa de tránsito"

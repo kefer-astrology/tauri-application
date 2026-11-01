@@ -669,6 +669,7 @@
 	"transit_layers_panel_empty": "V této sérii nejsou žádné aspekty.",
 	"transit_loading": "Počítám tranzity…",
 	"transit_micro_ticker_title": "Mikro ticker (osobní planety)",
+	"transit_micro_ticker_empty": "Nejsou vybrána rychlá tranzitovaná tělesa (Slunce–Mars).",
 	"transit_overlay_aspectarium_hint": "Tranzit → radix",
 	"transit_overlay_clear": "Vymazat tranzitní vrstvu",
 	"transit_overlay_label": "Tranzitní vrstva",

@@ -669,6 +669,7 @@
 	"transit_layers_panel_empty": "No hay aspectos en esta serie.",
 	"transit_loading": "Calculando tránsitos…",
 	"transit_micro_ticker_title": "Ticker micro (planetas personales)",
+	"transit_micro_ticker_empty": "No hay cuerpos transitados rápidos (Sol–Marte) seleccionados.",
 	"transit_overlay_aspectarium_hint": "Tránsito → radix",
 	"transit_overlay_clear": "Borrar capa de tránsito",
 	"transit_overlay_label": "Capa de tránsito",

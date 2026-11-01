@@ -669,6 +669,7 @@
 	"transit_layers_panel_empty": "Aucun aspect dans cette série.",
 	"transit_loading": "Calcul des transits…",
 	"transit_micro_ticker_title": "Ticker micro (planètes personnelles)",
+	"transit_micro_ticker_empty": "Aucun corps transité rapide (Soleil–Mars) sélectionné.",
 	"transit_overlay_aspectarium_hint": "Transit → radix",
 	"transit_overlay_clear": "Effacer la couche de transit",
 	"transit_overlay_label": "Couche de transit",
