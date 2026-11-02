@@ -40,7 +40,7 @@ function chipStateClass(locked: boolean, hover: boolean, base: string): string {
 		return cn(base, 'border-[color:var(--theme-accent)]/50 bg-[color:var(--theme-soft-bg)]');
 	return cn(
 		base,
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] hover:bg-[color:var(--theme-soft-bg)]'
+		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] hover:bg-[color:var(--theme-hover-bg)]'
 	);
 }
 
@@ -557,8 +557,8 @@ export function InformationView({
 												className={cn(
 													'h-auto justify-start rounded-lg px-2 py-1 text-left text-[11px] transition-colors',
 													selectedConfig === c.id
-														? 'bg-primary/15 text-foreground font-medium'
-														: 'hover:bg-[color:var(--theme-soft-bg)]'
+														? 'bg-accent text-accent-foreground font-medium'
+														: 'hover:bg-[color:var(--theme-hover-bg)]'
 												)}
 												onClick={() => setSelectedConfig(c.id)}
 											>
@@ -667,7 +667,7 @@ export function InformationView({
 										<Badge
 											key={label}
 											variant="outline"
-											className="cursor-default px-1.5 py-0 text-[9px] hover:bg-[color:var(--theme-soft-bg)]"
+											className="cursor-default px-1.5 py-0 text-[9px] hover:bg-[color:var(--theme-hover-bg)]"
 											onMouseEnter={() =>
 												setFocalFilterHover(label === 'Neaspektovaná' ? 'una' : null)
 											}
@@ -943,7 +943,7 @@ function FocalRow({
 }) {
 	return (
 		<li
-			className="flex items-start justify-between rounded-lg border border-transparent px-1 py-1 hover:bg-[color:var(--theme-soft-bg)]"
+			className="flex items-start justify-between rounded-lg border border-transparent px-1 py-1 hover:bg-[color:var(--theme-hover-bg)]"
 			onMouseEnter={() => onRowHover?.(true)}
 			onMouseLeave={() => onRowHover?.(false)}
 		>

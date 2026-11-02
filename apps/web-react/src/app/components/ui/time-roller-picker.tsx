@@ -134,7 +134,7 @@ export function TimeRollerPicker({
 							type="button"
 							variant="ghost"
 							disabled={disabled}
-							className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+							className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-hover-bg)]"
 							aria-label={label}
 						>
 							<Clock className={cn('h-4 w-4 shrink-0', iconClassName)} />

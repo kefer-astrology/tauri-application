@@ -156,7 +156,7 @@ function GlyphManagerRow({ row, isCustom }: { row: GlyphManagerRowData; isCustom
 					</Button>
 				) : null}
 			</div>
-			{error ? <p className="w-full text-xs text-red-500">{error}</p> : null}
+			{error ? <p className="text-destructive w-full text-xs">{error}</p> : null}
 		</div>
 	);
 }

@@ -30,10 +30,9 @@ export function DetailSidePanel({
 	bodyClassName,
 	children
 }: DetailSidePanelProps) {
-	const { theme } = useAppTheme();
+	const { dark } = useAppTheme();
 	const ft = useAppFormFieldTheme();
-	const surfaceClassName =
-		theme === 'twilight' || theme === 'midnight' ? 'backdrop-blur-xl' : 'backdrop-blur-sm';
+	const surfaceClassName = dark ? 'backdrop-blur-xl' : 'backdrop-blur-sm';
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>

@@ -164,7 +164,7 @@ function AspectCellButton({
 				'flex aspect-square min-h-14 w-full min-w-14 flex-col items-center justify-center rounded-none px-1.5 py-1 transition-colors',
 				isSelected
 					? 'bg-[color:var(--theme-selected-bg)] ring-1 ring-[color:var(--theme-accent)] ring-inset'
-					: 'bg-transparent hover:bg-[color:var(--theme-soft-bg)]'
+					: 'bg-transparent hover:bg-[color:var(--theme-hover-bg)]'
 			)}
 			aria-pressed={isSelected}
 		>

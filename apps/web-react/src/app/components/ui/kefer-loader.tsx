@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAppearance } from '@/app/providers/appearance';
+import type { ThemePalette } from '@/lib/themePalettes';
 
 /** Geometry ratios from the reference "Kefer Solilunar Loader" design — a circular card with a
  *  Sun fixed at 12 o'clock and a Moon sweeping clockwise around the same orbit, proportional to
- *  progress, with a fading blue trail arc between them. */
+ *  progress, with a fading accent-colored trail arc between them. */
 const CONTAINER_RATIO = 0.38;
 const ORBIT_RATIO = 0.72;
 const SUN_RATIO = 0.11;
@@ -18,7 +20,13 @@ const COMPLETE_RATE = 0.3;
 const HOLD_AT_100_MS = 300;
 const FADE_OUT_MS = 300;
 
-function drawLoader(ctx: CanvasRenderingContext2D, size: number, progress: number) {
+function drawLoader(
+	ctx: CanvasRenderingContext2D,
+	size: number,
+	progress: number,
+	palette: ThemePalette,
+	shadowColor: string
+) {
 	const width = size;
 	const height = size;
 	const cx = width / 2;
@@ -32,13 +40,13 @@ function drawLoader(ctx: CanvasRenderingContext2D, size: number, progress: numbe
 	const moonR = sunR * MOON_RATIO;
 
 	ctx.save();
-	ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+	ctx.shadowColor = shadowColor;
 	ctx.shadowBlur = 24;
 	ctx.shadowOffsetX = 0;
 	ctx.shadowOffsetY = 8;
 	const cardGrad = ctx.createLinearGradient(cx, cy - containerR, cx, cy + containerR);
-	cardGrad.addColorStop(0, '#FFFFFF');
-	cardGrad.addColorStop(1, '#F8FAFD');
+	cardGrad.addColorStop(0, palette.canvasStart);
+	cardGrad.addColorStop(1, palette.canvasEnd);
 	ctx.fillStyle = cardGrad;
 	ctx.beginPath();
 	ctx.arc(cx, cy, containerR, 0, Math.PI * 2);
@@ -53,21 +61,24 @@ function drawLoader(ctx: CanvasRenderingContext2D, size: number, progress: numbe
 		const stepAngle = sweepAngle / steps;
 		ctx.lineWidth = 3.5;
 		ctx.lineCap = 'round';
+		ctx.save();
+		ctx.strokeStyle = palette.accent;
 		for (let i = 0; i < steps; i += 1) {
 			const a1 = START_ANGLE + i * stepAngle;
 			const a2 = START_ANGLE + (i + 1) * stepAngle;
 			const alpha = (i + 1) / steps;
-			ctx.strokeStyle = `rgba(26, 115, 232, ${alpha})`;
+			ctx.globalAlpha = alpha;
 			ctx.beginPath();
 			ctx.arc(cx, cy, orbitR, a1, a2);
 			ctx.stroke();
 		}
+		ctx.restore();
 	}
 
 	const sunX = cx;
 	const sunY = cy - orbitR;
-	ctx.fillStyle = '#FFFFFF';
-	ctx.strokeStyle = '#000000';
+	ctx.fillStyle = palette.canvasEnd;
+	ctx.strokeStyle = palette.contentTextPrimary;
 	ctx.lineWidth = 1.5;
 	ctx.beginPath();
 	ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
@@ -76,14 +87,14 @@ function drawLoader(ctx: CanvasRenderingContext2D, size: number, progress: numbe
 
 	const moonX = cx + orbitR * Math.cos(moonAngle);
 	const moonY = cy + orbitR * Math.sin(moonAngle);
-	ctx.fillStyle = '#000000';
+	ctx.fillStyle = palette.contentTextPrimary;
 	ctx.beginPath();
 	ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
 	ctx.fill();
 
 	const fontSize = Math.max(24, Math.round(containerR * 0.32));
 	ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`;
-	ctx.fillStyle = '#1F1F1F';
+	ctx.fillStyle = palette.contentTextPrimary;
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 	ctx.fillText(`${Math.round(progress)}%`, cx, cy);
@@ -95,6 +106,7 @@ function drawLoader(ctx: CanvasRenderingContext2D, size: number, progress: numbe
  *  for either caller (initial app boot, transit computation are single opaque async calls), so
  *  this is a deliberate "feels alive" animation, not a literal work-done percentage. */
 export function KeferLoaderOverlay({ active }: { active: boolean }) {
+	const { themePalette } = useAppearance();
 	const [mounted, setMounted] = useState(active);
 	const [fadeOut, setFadeOut] = useState(false);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -124,6 +136,7 @@ export function KeferLoaderOverlay({ active }: { active: boolean }) {
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
 
+		const shadowColor = getComputedStyle(canvas).getPropertyValue('--theme-loader-shadow').trim();
 		const size = 260;
 		const dpr = window.devicePixelRatio || 1;
 		canvas.width = size * dpr;
@@ -145,7 +158,7 @@ export function KeferLoaderOverlay({ active }: { active: boolean }) {
 					}, HOLD_AT_100_MS);
 				}
 			}
-			drawLoader(ctx, size, progressRef.current);
+			drawLoader(ctx, size, progressRef.current, themePalette, shadowColor);
 			rafRef.current = requestAnimationFrame(tick);
 		};
 		rafRef.current = requestAnimationFrame(tick);
@@ -153,7 +166,7 @@ export function KeferLoaderOverlay({ active }: { active: boolean }) {
 		return () => {
 			if (rafRef.current) cancelAnimationFrame(rafRef.current);
 		};
-	}, [mounted]);
+	}, [mounted, themePalette]);
 
 	useEffect(
 		() => () => {
@@ -166,7 +179,7 @@ export function KeferLoaderOverlay({ active }: { active: boolean }) {
 
 	return (
 		<div
-			className="fixed inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-sm transition-opacity duration-300"
+			className="fixed inset-0 z-[100] flex items-center justify-center bg-[color:var(--theme-overlay-bg)] backdrop-blur-sm transition-opacity duration-300"
 			style={{ opacity: fadeOut ? 0 : 1 }}
 			role="status"
 			aria-live="polite"

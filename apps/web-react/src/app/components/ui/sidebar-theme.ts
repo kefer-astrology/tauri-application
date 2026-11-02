@@ -19,7 +19,7 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
 		hover:
-			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+			'hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',
@@ -34,7 +34,7 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
 		hover:
-			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+			'hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',
@@ -49,7 +49,7 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
 		hover:
-			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+			'hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',
@@ -64,7 +64,7 @@ export const sidebarThemeStyles: Record<Theme, SidebarThemeBlock> = {
 		border: 'border-[color:var(--theme-sidebar-border)]',
 		text: 'text-[color:var(--theme-nav-text-secondary)]',
 		hover:
-			'hover:bg-[color:var(--token-hover-strong)] hover:text-[color:var(--theme-nav-text-primary)]',
+			'hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-nav-text-primary)]',
 		active: 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-nav-text-primary)]',
 		separator: 'bg-[color:var(--theme-separator)]',
 		themeIconColor: 'var(--theme-nav-text-primary)',

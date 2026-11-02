@@ -149,7 +149,7 @@ function AspectRowEditor({
 				</AccordionTrigger>
 			</div>
 			<AccordionContent className="pt-0 pb-4">
-				<div className="space-y-3 rounded-lg bg-black/10 p-3 dark:bg-white/5">
+				<div className="space-y-3 rounded-lg bg-[color:var(--theme-soft-bg)] p-3">
 					<div className="grid grid-cols-[1fr_auto] items-center gap-3">
 						<Label className={cn('text-xs', ft.muted)} htmlFor={`${aspect.id}-orb`}>
 							{t('label_orb')}

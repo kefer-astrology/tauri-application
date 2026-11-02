@@ -101,7 +101,7 @@ export function MultiSelectPopover({
 						visible.map((item) => (
 							<Label
 								key={item.id}
-								className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm hover:bg-[color:var(--theme-soft-bg)]"
+								className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm hover:bg-[color:var(--theme-hover-bg)]"
 							>
 								<Checkbox checked={selected.has(item.id)} onCheckedChange={() => toggle(item.id)} />
 								{item.icon !== undefined && (

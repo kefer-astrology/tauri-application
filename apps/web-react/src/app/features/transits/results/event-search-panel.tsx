@@ -134,7 +134,7 @@ function EventRow({
 			)}
 			{unconfirmed && (
 				<span
-					className="rounded px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+					className="text-warning rounded px-1 py-0.5 text-[10px] font-medium"
 					title={t('transits_event_search_unconfirmed_hint', {
 						defaultValue:
 							'Refinement did not converge within tolerance -- a heuristic candidate, not a verified event.'

@@ -96,7 +96,7 @@ export function TagField({
 				type="button"
 				variant="ghost"
 				onClick={onOpenEditor}
-				className="h-auto min-h-10 self-stretch rounded-l-none rounded-r-xl border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+				className="h-auto min-h-10 self-stretch rounded-l-none rounded-r-xl border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-hover-bg)]"
 				aria-label={editorLabel}
 			>
 				<Pencil className={cn('h-4 w-4 shrink-0', iconClassName)} />

@@ -80,7 +80,7 @@ export function Combobox({
 									setSearch('');
 								}}
 								className={cn(
-									'data-[selected=true]:bg-[color:var(--theme-soft-bg)] data-[selected=true]:text-[color:var(--theme-content-primary)]',
+									'data-[selected=true]:bg-[color:var(--theme-selected-bg)] data-[selected=true]:text-[color:var(--theme-content-primary)]',
 									itemClassName
 								)}
 							>

@@ -51,7 +51,7 @@ export function SeriesDetailPanel({
 										onClick={() => onOpenInstant(new Date(hit.timestampMs).toISOString())}
 										className={cn(
 											'h-auto w-full justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-normal transition-colors',
-											'hover:bg-[color:var(--theme-soft-bg)] hover:text-[color:var(--theme-content-primary)]',
+											'hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-content-primary)]',
 											ft.bodyText
 										)}
 									>

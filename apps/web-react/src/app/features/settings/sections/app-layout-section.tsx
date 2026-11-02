@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Accordion } from '@/app/components/ui/accordion';
 import { Button } from '@/app/components/ui/button';
@@ -44,8 +45,12 @@ export function AppLayoutSection() {
 	const ft = useAppFormFieldTheme();
 	const appearance = useAppearance();
 	const { markChanged, paletteDraft, setPaletteDraft } = useSettingsDraft();
+	// Keep each theme's custom alpha while its color is temporarily opaque.
+	const translucentAlphas = useRef<Record<string, number>>({});
 
 	const setColor = (key: PaletteColorKey, value: string) => {
+		const { alpha } = parseThemeColor(value);
+		if (alpha < 1) translucentAlphas.current[`${appearance.theme}:${key}`] = alpha;
 		setPaletteDraft((draft) => ({ ...draft, [key]: value }));
 		markChanged();
 	};
@@ -152,9 +157,14 @@ export function AppLayoutSection() {
 									<Switch
 										id={transparencyId}
 										checked={parsed.alpha < 1}
-										onCheckedChange={(checked) =>
-											setColor(key, formatThemeColor(parsed.hex, checked ? defaultAlpha : 1))
-										}
+										onCheckedChange={(checked) => {
+											const alphaKey = `${appearance.theme}:${key}`;
+											if (parsed.alpha < 1) translucentAlphas.current[alphaKey] = parsed.alpha;
+											const alpha =
+												translucentAlphas.current[alphaKey] ??
+												(defaultAlpha < 1 ? defaultAlpha : 0.16);
+											setColor(key, formatThemeColor(parsed.hex, checked ? alpha : 1));
+										}}
 									/>
 									<Label
 										htmlFor={transparencyId}
@@ -173,6 +183,9 @@ export function AppLayoutSection() {
 						variant="outline"
 						className={cn(ft.footerCancel, 'max-w-xs')}
 						onClick={() => {
+							for (const [key] of TRANSLUCENT_PALETTE_FIELDS) {
+								delete translucentAlphas.current[`${appearance.theme}:${key}`];
+							}
 							setPaletteDraft(() => DEFAULT_THEME_PALETTES[appearance.theme]);
 							markChanged();
 						}}

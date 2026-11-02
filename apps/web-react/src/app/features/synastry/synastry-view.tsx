@@ -167,7 +167,7 @@ export function SynastryView({ onCreated }: { onCreated?: (chart: AppChart) => v
 							}}
 							className={cn(
 								ft.muted,
-								'hover:bg-[color:var(--theme-soft-bg)] hover:text-[color:var(--theme-accent)]'
+								'hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-accent)]'
 							)}
 						>
 							<ArrowLeftRight /> {t('synastry_swap')}
@@ -208,7 +208,7 @@ export function SynastryView({ onCreated }: { onCreated?: (chart: AppChart) => v
 									onClick={() => setProgressionDate(todayInputValue())}
 									className={cn(
 										ft.iconColor,
-										'justify-start hover:bg-[color:var(--theme-soft-bg)]'
+										'justify-start hover:bg-[color:var(--theme-hover-bg)]'
 									)}
 								>
 									{t('synastry_today')}

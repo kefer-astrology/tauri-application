@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button';
 import { cn } from '@/app/components/ui/utils';
 
 const windowButtonClassName =
-	'h-8 w-11 rounded-none text-[color:var(--theme-content-primary)] opacity-70 transition-colors hover:bg-[color:var(--theme-soft-bg)] hover:text-[color:var(--theme-content-primary)] hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--theme-accent)]/45';
+	'h-8 w-11 rounded-none text-[color:var(--theme-content-primary)] opacity-70 transition-colors hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-content-primary)] hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--theme-accent)]/45';
 
 interface WindowTitlebarProps {
 	isSidebarExpanded: boolean;
@@ -93,7 +93,10 @@ export function WindowTitlebar({ isSidebarExpanded, showSecondarySidebar }: Wind
 				<Button
 					type="button"
 					variant="ghost"
-					className={cn(windowButtonClassName, 'hover:bg-red-500 hover:text-white')}
+					className={cn(
+						windowButtonClassName,
+						'hover:bg-destructive hover:text-destructive-foreground'
+					)}
 					onClick={() => void appWindow.close()}
 					aria-label="Close window"
 				>

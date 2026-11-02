@@ -102,7 +102,7 @@ export function TagSuggestionInput({
 				<div
 					role="listbox"
 					className={cn(
-						'absolute top-full right-0 left-0 z-[90] mt-1 max-h-52 overflow-y-auto rounded-xl border p-1 opacity-100 shadow-2xl ring-1 ring-black/10',
+						'absolute top-full right-0 left-0 z-[90] mt-1 max-h-52 overflow-y-auto rounded-xl border p-1 opacity-100 shadow-2xl ring-1 ring-[color:var(--theme-panel-border)]',
 						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]'
 					)}
 				>
@@ -121,7 +121,7 @@ export function TagSuggestionInput({
 								'hover:text-[color:var(--theme-content-primary)]',
 								index === activeIndex
 									? 'bg-[color:var(--theme-selected-bg)] hover:bg-[color:var(--theme-selected-bg)]'
-									: 'hover:bg-[color:var(--theme-soft-bg)]'
+									: 'hover:bg-[color:var(--theme-hover-bg)]'
 							)}
 						>
 							<span
