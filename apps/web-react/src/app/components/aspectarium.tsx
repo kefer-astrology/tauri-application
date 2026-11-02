@@ -499,17 +499,21 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 						</SelectContent>
 					</Select>
 					<div className="min-w-2 flex-1" />
-					<Tabs value={view} onValueChange={(value) => setView(value as AspectariumView)}>
-						<TabsList>
-							<TabsTrigger value="table">
+					<Tabs
+						value={view}
+						onValueChange={(value) => setView(value as AspectariumView)}
+						className="max-w-full min-w-0"
+					>
+						<TabsList className="h-auto max-w-full flex-wrap">
+							<TabsTrigger value="table" className="h-8">
 								<Grid3X3 />
 								{t('aspectarium_view_table')}
 							</TabsTrigger>
-							<TabsTrigger value="list">
+							<TabsTrigger value="list" className="h-8">
 								<List />
 								{t('aspectarium_view_list')}
 							</TabsTrigger>
-							<TabsTrigger value="midpoints">
+							<TabsTrigger value="midpoints" className="h-8">
 								<Target />
 								{t('aspectarium_view_midpoints', { defaultValue: 'Midpoints' })}
 							</TabsTrigger>

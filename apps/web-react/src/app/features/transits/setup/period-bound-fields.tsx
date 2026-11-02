@@ -28,7 +28,7 @@ export function PeriodBoundFields({
 	return (
 		<div>
 			<Label className="mb-2 block">{label}:</Label>
-			<div className="grid grid-cols-3 gap-3">
+			<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3">
 				<DatePickerInput
 					label={t('transits_general_item_date')}
 					value={value}

@@ -1,6 +1,6 @@
 import { ChoiceButton } from '@/app/components/ui/choice';
 import { Text } from './typography';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -167,6 +167,11 @@ function TimeColumn({
 	selected: number;
 	onSelect: (value: number) => void;
 }) {
+	const selectedRef = useRef<HTMLButtonElement>(null);
+	useEffect(() => {
+		selectedRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+	}, [selected]);
+
 	return (
 		<div className="space-y-2">
 			<Text variant="eyebrow" tone="muted" className="text-center">
@@ -178,6 +183,7 @@ function TimeColumn({
 						const isSelected = value === selected;
 						return (
 							<ChoiceButton
+								ref={isSelected ? selectedRef : undefined}
 								selected={isSelected}
 								key={value}
 								type="button"

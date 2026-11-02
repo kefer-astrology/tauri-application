@@ -57,7 +57,7 @@ export function GeneralSection() {
 
 	return (
 		<Card variant="ghost" className="w-full rounded-xl">
-			<CardContent className="flex flex-col space-y-6 p-6 md:p-8">
+			<CardContent density="compact" className="flex flex-col space-y-6 py-6 sm:px-6 md:p-8">
 				<Text variant="body" tone="muted">
 					{t('transits_subtitle_general')}
 				</Text>
@@ -99,7 +99,7 @@ export function GeneralSection() {
 					}
 				/>
 
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
 					{PLANNED_OPTIONS.map((column, index) => (
 						<div key={index} className="space-y-3">
 							{column.map((option) => (
@@ -119,7 +119,7 @@ export function GeneralSection() {
 
 				{separator}
 
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
 					<CheckOption
 						label={t('transits_exact_hits_label')}
 						hint={t('transits_exact_hits_hint')}

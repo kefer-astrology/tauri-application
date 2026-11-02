@@ -195,31 +195,33 @@ export function AppShell() {
 						onExpandedChange={setIsSidebarExpanded}
 					/>
 
-					{(activeView === 'tranzity' || activeView === 'dynamika') && (
-						<TransitsSidebar
-							activeSection={activeTransitSection}
-							onSectionChange={setActiveTransitSection}
-							dynamic={activeView === 'dynamika'}
-						/>
-					)}
-					{activeView === 'nastaveni' && (
-						<SettingsSecondarySidebar
-							activeSection={activeSettingsSection}
-							onSectionChange={setActiveSettingsSection}
-						/>
-					)}
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col xl:flex-row">
+						{(activeView === 'tranzity' || activeView === 'dynamika') && (
+							<TransitsSidebar
+								activeSection={activeTransitSection}
+								onSectionChange={setActiveTransitSection}
+								dynamic={activeView === 'dynamika'}
+							/>
+						)}
+						{activeView === 'nastaveni' && (
+							<SettingsSecondarySidebar
+								activeSection={activeSettingsSection}
+								onSectionChange={setActiveSettingsSection}
+							/>
+						)}
 
-					<main className="flex min-h-0 flex-1 flex-col overflow-hidden text-[color:var(--theme-content-primary)] transition-colors duration-500">
-						<div
-							className={cn(
-								'min-h-0 flex-1',
-								activeView === 'horoskop' ? 'overflow-hidden' : 'overflow-auto'
-							)}
-						>
-							{renderView()}
-						</div>
-						{CHART_CONTEXT_VIEWS.has(activeView) && <HoroscopeContextTabs />}
-					</main>
+						<main className="flex min-h-0 flex-1 flex-col overflow-hidden text-[color:var(--theme-content-primary)] transition-colors duration-500">
+							<div
+								className={cn(
+									'min-h-0 flex-1',
+									activeView === 'horoskop' ? 'overflow-hidden' : 'overflow-auto'
+								)}
+							>
+								{renderView()}
+							</div>
+							{CHART_CONTEXT_VIEWS.has(activeView) && <HoroscopeContextTabs />}
+						</main>
+					</div>
 				</div>
 				<DetailSidePanel
 					open={editingChart !== null}

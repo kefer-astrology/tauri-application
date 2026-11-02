@@ -100,7 +100,9 @@ function CaptionedGrid({ caption, children }: { caption: string; children: React
 			<Text variant="eyebrow" tone="muted">
 				{caption}
 			</Text>
-			<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">{children}</div>
+			<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-x-3 gap-y-1.5">
+				{children}
+			</div>
 		</div>
 	);
 }
@@ -375,7 +377,7 @@ export function AspectSettingsSection() {
 				<Text variant="caption" tone="muted">
 					{t('settings_aspect_scope_extended_shared_hint')}
 				</Text>
-				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
 					{EXTENDED_OBJECT_TYPE_OPTIONS.map((option) => (
 						<Label
 							variant="default"
