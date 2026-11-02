@@ -1,3 +1,4 @@
+import { Toolbar, Surface } from '@/app/components/ui/container';
 import { Text, Heading } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -451,11 +452,13 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 
 	const renderMatrix = () => (
 		<Card
+			spacing="flush"
+			clip={true}
 			variant="default"
-			className="flex h-full min-h-0 gap-0 overflow-hidden border-0 shadow-none ring-0"
+			className="flex h-full min-h-0 border-0 shadow-none ring-0"
 		>
-			<CardContent className="flex min-h-0 flex-1 flex-col p-0">
-				<div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--theme-panel-border)] px-4 py-3 md:px-5">
+			<CardContent density="none" className="flex min-h-0 flex-1 flex-col">
+				<Toolbar padding="default" align="start" wrap="wrap" className="gap-2 md:px-5">
 					<MultiSelectPopover
 						items={bodyFilterItems}
 						selected={selectedBodyIds}
@@ -515,7 +518,7 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 							</TabsTrigger>
 						</TabsList>
 					</Tabs>
-				</div>
+				</Toolbar>
 
 				{view === 'midpoints' ? (
 					<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4">
@@ -886,13 +889,17 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 
 	const renderDetailContent = () =>
 		selectedAspectDetail ? (
-			<div className="h-full min-h-0 overflow-y-auto rounded-2xl bg-[color:var(--theme-soft-bg)]/42 p-4 pr-2">
+			<Surface
+				variant="soft"
+				padding="default"
+				className="h-full min-h-0 overflow-y-auto bg-[color:var(--theme-soft-bg)]/42 pr-2"
+			>
 				<AspectDetailPanel
 					aspect={selectedAspectDetail.aspect}
 					fromObject={selectedAspectDetail.fromObject}
 					toObject={selectedAspectDetail.toObject}
 				/>
-			</div>
+			</Surface>
 		) : null;
 
 	return (

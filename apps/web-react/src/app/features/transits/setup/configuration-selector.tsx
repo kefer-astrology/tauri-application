@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
@@ -92,7 +93,7 @@ export function ConfigurationSelector({ searches, onSearchesChange }: Configurat
 			{searches.map((entry, index) => {
 				const pattern = configurationPattern(entry.configurationId);
 				return (
-					<div key={index} className={cn('space-y-2 rounded-lg border p-3', ft.advancedPanel)}>
+					<Surface variant="soft" padding="default" key={index} className="space-y-2">
 						<div className="flex items-center justify-between gap-2">
 							<Select
 								value={entry.configurationId}
@@ -136,7 +137,7 @@ export function ConfigurationSelector({ searches, onSearchesChange }: Configurat
 								))}
 							</div>
 						)}
-					</div>
+					</Surface>
 				);
 			})}
 			<Button

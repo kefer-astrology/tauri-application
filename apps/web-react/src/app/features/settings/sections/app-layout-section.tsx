@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -81,7 +82,7 @@ export function AppLayoutSection() {
 				<Text variant="caption" tone="muted">
 					{t('settings_theme_palette_blurb', { theme: t(`sidebar_theme_${appearance.theme}`) })}
 				</Text>
-				<div className="space-y-2 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] p-4">
+				<Surface variant="soft" padding="default" className="space-y-2">
 					<div className="flex items-center justify-between gap-4">
 						<Label htmlFor="settings-popup-fuzziness">{t('settings_popup_fuzziness')}</Label>
 						<output
@@ -106,7 +107,7 @@ export function AppLayoutSection() {
 					<Text variant="caption" tone="muted">
 						{t('settings_popup_fuzziness_hint')}
 					</Text>
-				</div>
+				</Surface>
 				<div className="grid gap-4 sm:grid-cols-2">
 					{OPAQUE_PALETTE_FIELDS.map(([key, labelKey]) => (
 						<div key={key} className="flex items-center gap-3">

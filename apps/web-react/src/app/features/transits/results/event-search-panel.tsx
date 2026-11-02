@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { Heading, Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
@@ -26,7 +27,7 @@ export function EventSearchPanel({
 	if (events.length === 0 && complete && warnings.length === 0) return null;
 
 	return (
-		<div className="shrink-0 border-t border-[color:var(--theme-panel-border)] p-4">
+		<Surface variant="plain" divider="top" padding="default" className="shrink-0">
 			<Heading variant="eyebrow" level={3} tone="secondary" className="mb-2">
 				{t('transits_event_search_title', { defaultValue: 'Exact events' })}
 			</Heading>
@@ -60,7 +61,7 @@ export function EventSearchPanel({
 					))}
 				</ul>
 			)}
-		</div>
+		</Surface>
 	);
 }
 

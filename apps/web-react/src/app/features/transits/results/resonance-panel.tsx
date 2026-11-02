@@ -1,8 +1,9 @@
-import { Text } from '@/app/components/ui/typography';
+import { typographyVariants } from '@/app/components/ui/typography';
+import { Surface } from '@/app/components/ui/container';
+
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import type { AspectTimelineSeries } from '@/lib/astrology/aspectTimeline';
 import {
 	clippedOrbValues,
@@ -97,18 +98,20 @@ export function ResonancePanel({
 /** How the chart maps orbs, shown above it in chart mode. */
 export function ResonanceMappingNote({ degrees }: { degrees: number }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	return (
-		<Text
-			variant="caption"
-			tone="muted"
-			className={cn('mb-4 shrink-0 rounded-lg border p-3', ft.footerBorder)}
+		<Surface
+			padding="compact"
+			as="p"
+			variant="soft"
+
+			className={cn(typographyVariants({ variant: 'caption', tone: 'muted' }), 'mb-4 shrink-0')}
 		>
 			{t('aspect_timeline_mapping_note', {
 				defaultValue:
 					"Display mapping: the y-axis is the raw angular deviation from exact, in degrees, capped at a {{degrees}}° window — 0° at exact alignment, {{degrees}}° at the edge of what's shown. A wider configured orb only becomes visible once it closes to within range. Scroll to zoom, drag to pan.",
 				degrees
 			})}
-		</Text>
+		</Surface>
 	);
 }

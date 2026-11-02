@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Switch } from './switch';
 import { cn } from './utils';
+import { Surface } from './container';
 
 export type ModeSwitcherOption<T extends string> = {
 	value: T;
@@ -20,6 +21,7 @@ type ModeSwitcherDetailsProps = {
 	children: ReactNode;
 	className?: string;
 	contentClassName?: string;
+	surface?: 'plain' | 'soft';
 };
 
 export function ModeSwitcher<T extends string>({
@@ -85,7 +87,8 @@ export function ModeSwitcherDetails({
 	open,
 	children,
 	className,
-	contentClassName
+	contentClassName,
+	surface = 'plain'
 }: ModeSwitcherDetailsProps) {
 	return (
 		<div
@@ -100,7 +103,13 @@ export function ModeSwitcherDetails({
 			{...(!open ? { inert: '' } : {})}
 		>
 			<div className="min-h-0 overflow-hidden p-1">
-				<div className={contentClassName}>{children}</div>
+				<Surface
+					variant={surface}
+					padding={surface === 'soft' ? 'default' : 'none'}
+					className={contentClassName}
+				>
+					{children}
+				</Surface>
 			</div>
 		</div>
 	);

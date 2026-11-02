@@ -1,3 +1,5 @@
+import { typographyVariants } from '@/app/components/ui/typography';
+import { Surface } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -126,16 +128,18 @@ export function FoldedAngleView({
 								'Observer-relative planetary angular positions over time, folded onto a 0°–180° scale.'
 						})}
 					</Text>
-					<Text
-						variant="caption"
-						tone="muted"
-						className={cn('rounded-lg border p-3', ft.footerBorder)}
+					<Surface
+						padding="compact"
+						as="p"
+						variant="soft"
+
+						className={cn(typographyVariants({ variant: 'caption', tone: 'muted' }), '')}
 					>
 						{t('transits_folded_coordinate_note', {
 							defaultValue:
 								'Coordinate system: geocentric ecliptic longitude (tropical zodiac), θ measured eastward from 0° Aries (the vernal equinox). Folded as f(θ) = min(θ, 360° − θ), so each revolution reads 0° → 180° → 0°. Actual planetary motion is preserved — the curve is not forced sinusoidal.'
 						})}
-					</Text>
+					</Surface>
 
 					<div>
 						<Label className="mb-2 block">

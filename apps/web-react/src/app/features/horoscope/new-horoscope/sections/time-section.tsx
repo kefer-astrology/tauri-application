@@ -119,8 +119,9 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 			</div>
 
 			<ModeSwitcherDetails
+				surface="soft"
 				open={state.timeRegime === 'manual'}
-				contentClassName={cn('space-y-3', ft.advancedPanel)}
+				contentClassName={'space-y-3'}
 			>
 				<FormField label={t('new_timezone_region')}>
 					<FormSelect

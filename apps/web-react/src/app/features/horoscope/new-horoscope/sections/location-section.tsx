@@ -4,7 +4,7 @@ import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { ModeSwitcher, ModeSwitcherDetails } from '@/app/components/ui/mode-switcher';
 import { Tabs, TabsContent } from '@/app/components/ui/tabs';
-import { cn } from '@/app/components/ui/utils';
+
 import { LocationSelector } from '@/app/views/domain/location-selector';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import type { EntryRegime } from '@/lib/newHoroscopeForm';
@@ -96,8 +96,9 @@ export function LocationSection({
 			</div>
 
 			<ModeSwitcherDetails
+				surface="soft"
 				open={state.locationRegime === 'manual'}
-				contentClassName={cn('space-y-3', ft.advancedPanel)}
+				contentClassName={'space-y-3'}
 			>
 				<FormField label={t('current_info_latitude')} htmlFor="latitude">
 					<div className="flex gap-2">

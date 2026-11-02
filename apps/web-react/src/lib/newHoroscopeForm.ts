@@ -114,7 +114,8 @@ export function initialNewHoroscopeState({
 	workspaceTags: readonly WorkspaceTagDefinition[];
 	now?: Date;
 }): NewHoroscopeFormState {
-	const timezone = chart?.timezone ?? defaults.timezone ?? '';
+	const storedTimezone = chart?.timezone ?? defaults.timezone ?? '';
+	const timezone = storedTimezone === 'UCT' ? 'UTC' : storedTimezone;
 	const timeRegime = chart?.timeRegime ?? (chart?.timezone ? 'manual' : 'auto');
 	const utcOffset = chart?.utcOffset ?? 'auto';
 	const zone = chartTimeZone({ timezone, utcOffset, timeRegime });

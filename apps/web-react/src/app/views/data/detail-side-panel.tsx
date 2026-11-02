@@ -9,7 +9,7 @@ import {
 } from '@/app/components/ui/sheet';
 import { Separator } from '@/app/components/ui/separator';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
-import { useAppTheme } from '@/app/providers/app-theme';
+import { Surface } from '@/app/components/ui/container';
 
 type DetailSidePanelProps = {
 	open: boolean;
@@ -30,31 +30,29 @@ export function DetailSidePanel({
 	bodyClassName,
 	children
 }: DetailSidePanelProps) {
-	const { dark } = useAppTheme();
 	const ft = useAppFormFieldTheme();
-	const surfaceClassName = dark ? 'backdrop-blur-xl' : 'backdrop-blur-sm';
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent
 				side="right"
-				className={cn(
-					'w-full gap-0 p-0 sm:max-w-md lg:w-[min(28rem,22vw)]',
-					'border-[color:var(--theme-panel-border)] shadow-2xl',
-					'bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]',
-					surfaceClassName,
-					contentClassName
-				)}
+				className={cn('w-full gap-0 p-0 sm:max-w-md lg:w-[min(28rem,22vw)]', contentClassName)}
 			>
 				<div className="flex h-full min-h-0 flex-col">
-					<SheetHeader className="shrink-0 px-5 py-4">
+					<SheetHeader className="shrink-0">
 						<SheetTitle className={cn('text-lg font-semibold', ft.title)}>{title}</SheetTitle>
 						{description ? (
 							<SheetDescription className={cn('text-sm', ft.muted)}>{description}</SheetDescription>
 						) : null}
 					</SheetHeader>
-					<Separator className="bg-[color:var(--theme-panel-border)]" />
-					<div className={cn('min-h-0 flex-1 px-5 py-4', bodyClassName)}>{children}</div>
+					<Separator />
+					<Surface
+						variant="plain"
+						padding="default"
+						className={cn('min-h-0 flex-1', bodyClassName)}
+					>
+						{children}
+					</Surface>
 				</div>
 			</SheetContent>
 		</Sheet>

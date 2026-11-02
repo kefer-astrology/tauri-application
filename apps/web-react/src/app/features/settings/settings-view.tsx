@@ -1,8 +1,9 @@
+import { ActionBar } from '@/app/components/ui/container';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { Button } from '@/app/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
+import { Card, CardContent } from '@/app/components/ui/card';
 import { useAppearance } from '@/app/providers/appearance';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import type { ThemePalette } from '@/lib/themePalettes';
@@ -76,13 +77,14 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 				<AppMainContentContainer width="wide">
 					<div className="flex min-h-0 w-full min-w-0 flex-col space-y-6">
 						<Card
+							spacing="flush"
 							variant="ghost"
-							className="flex min-h-[min(70vh,520px)] min-w-0 flex-col gap-0 rounded-xl p-0 shadow-none"
+							className="flex min-h-[min(70vh,520px)] min-w-0 flex-col rounded-xl p-0 shadow-none"
 						>
 							<CardContent className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
 								<Section key={`${section}-${resetToken}`} />
 							</CardContent>
-							<CardFooter className="shrink-0 flex-col gap-2 border-0 bg-transparent px-6 py-4 sm:flex-row md:px-8">
+							<ActionBar border="none" layout="responsive" className="md:px-8">
 								<Button
 									type="button"
 									variant="form-secondary"
@@ -102,7 +104,7 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 								>
 									{t('confirm')}
 								</Button>
-							</CardFooter>
+							</ActionBar>
 						</Card>
 					</div>
 				</AppMainContentContainer>

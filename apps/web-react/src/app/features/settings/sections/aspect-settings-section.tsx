@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -155,7 +156,7 @@ function AspectRowEditor({
 				</AccordionTrigger>
 			</div>
 			<AccordionContent className="pt-0 pb-4">
-				<div className="space-y-3 rounded-lg bg-[color:var(--theme-soft-bg)] p-3">
+				<Surface variant="soft" padding="compact" className="space-y-3">
 					<div className="grid grid-cols-[1fr_auto] items-center gap-3">
 						<Label variant="compact" tone="muted" htmlFor={`${aspect.id}-orb`}>
 							{t('label_orb')}
@@ -218,7 +219,7 @@ function AspectRowEditor({
 							})}
 						</div>
 					)}
-				</div>
+				</Surface>
 			</AccordionContent>
 		</AccordionItem>
 	);
@@ -239,7 +240,11 @@ function AspectLineTiersEditor({
 
 	const { markChanged } = useSettingsDraft();
 	return (
-		<div className="space-y-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+		<Surface
+			variant="soft"
+			padding="none"
+			className="space-y-3 bg-[color:var(--theme-soft-bg)]/45 px-4 py-4"
+		>
 			<Text variant="label" tone="secondary">
 				{t('settings_radix_aspect_lines_title')}
 			</Text>
@@ -288,7 +293,7 @@ function AspectLineTiersEditor({
 					/>
 				</div>
 			</div>
-		</div>
+		</Surface>
 	);
 }
 
@@ -338,7 +343,11 @@ export function AspectSettingsSection() {
 
 	return (
 		<div className="space-y-4">
-			<div className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+			<Surface
+				variant="soft"
+				padding="none"
+				className="bg-[color:var(--theme-soft-bg)]/45 px-4 py-4"
+			>
 				<SettingSelect
 					label={t('settings_astrology_tradition_label')}
 					hint={t('settings_astrology_tradition_hint')}
@@ -354,8 +363,12 @@ export function AspectSettingsSection() {
 						void applyDefaultsPatch({ astrologyTradition: next });
 					}}
 				/>
-			</div>
-			<div className="space-y-2 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+			</Surface>
+			<Surface
+				variant="soft"
+				padding="none"
+				className="space-y-2 bg-[color:var(--theme-soft-bg)]/45 px-4 py-4"
+			>
 				<Text variant="label" tone="secondary">
 					{t('settings_aspect_scope_extended_categories')}
 				</Text>
@@ -387,7 +400,7 @@ export function AspectSettingsSection() {
 						</Label>
 					))}
 				</div>
-			</div>
+			</Surface>
 			<div className="space-y-2">
 				<Text variant="label" tone="secondary">
 					{t('default_aspects')}

@@ -1,3 +1,4 @@
+import { Toolbar, Surface, ActionBar } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState, type ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,7 +111,12 @@ export function InformationView({
 
 	const smallTitle = cn('text-xs font-semibold uppercase tracking-wide', ft.muted);
 	const RailCard = ({ className, ...props }: ComponentProps<typeof Card>) => (
-		<Card variant="default" className={cn('gap-2 py-3 shadow-sm', className)} {...props} />
+		<Card
+			spacing="compact"
+			variant="default"
+			className={cn('py-3 shadow-sm', className)}
+			{...props}
+		/>
 	);
 
 	const bottomChips: { id: string; label: string }[] = [
@@ -142,9 +148,13 @@ export function InformationView({
 	return (
 		<div data-handoff="View_InformationDashboard" className={pageShell}>
 			{/* TopBar — app PrimarySidebar is outside this view */}
-			<header
+			<Toolbar
+				as="header"
+				padding="none"
+				align="start"
+				wrap="nowrap"
 				data-handoff="TopBar"
-				className="flex h-9 flex-shrink-0 items-center border-b border-[color:var(--theme-panel-border)] px-4"
+				className="h-9 px-4"
 			>
 				<Text variant="label" as="span" tone="primary">
 					{t('sidebar_information')}
@@ -152,7 +162,7 @@ export function InformationView({
 				<Text variant="caption" as="span" tone="muted" className="ml-2">
 					— syntéza & struktura
 				</Text>
-			</header>
+			</Toolbar>
 
 			<div className="flex min-h-0 flex-1 gap-2 overflow-hidden p-2 pt-1">
 				{/* LEFT RAIL — Struktura */}
@@ -162,11 +172,11 @@ export function InformationView({
 				>
 					<div className="flex flex-col gap-2 pb-2">
 						<RailCard data-handoff="Card_ElementDominance">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Převaha živlu</CardTitle>
 								<CardDescription className="text-xs">Legenda: počet planet · podíl</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-2 px-3">
+							<CardContent density="compact" className="space-y-2">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-7 w-full">
 										<TabsTrigger value="pos" className="text-xs">
@@ -187,11 +197,11 @@ export function InformationView({
 						</RailCard>
 
 						<RailCard data-handoff="Card_ModalityDominance">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Převaha modu</CardTitle>
 								<CardDescription className="text-xs">Kardinální / Fixní / Mutuální</CardDescription>
 							</CardHeader>
-							<CardContent className="px-3">
+							<CardContent density="compact">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-7 w-full">
 										<TabsTrigger value="pos" className="text-xs">
@@ -229,13 +239,13 @@ export function InformationView({
 						</RailCard>
 
 						<RailCard data-handoff="Card_HouseTypeDominance">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Převaha v domech</CardTitle>
 								<CardDescription className="text-xs">
 									Aktivní / Reaktivní / Výsledné + heatmap I–XII
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-2 px-3">
+							<CardContent density="compact" className="space-y-2">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-7 w-full">
 										<TabsTrigger value="pos" className="text-xs">
@@ -274,23 +284,23 @@ export function InformationView({
 						</RailCard>
 
 						<RailCard data-handoff="Card_Quadrants">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Kvadranty</CardTitle>
 								<CardDescription className="text-xs">Q1–Q4 · podíl</CardDescription>
 							</CardHeader>
-							<CardContent className="px-3">
+							<CardContent density="compact">
 								<QuadrantDonut />
 							</CardContent>
 						</RailCard>
 
 						<RailCard data-handoff="Card_Hemispheres">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Hemisféry</CardTitle>
 								<CardDescription className="text-xs">
 									Pouze planety (osy se nepočítají). Náhled overlay v centru při hoveru.
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-3 px-3">
+							<CardContent density="compact" className="space-y-3">
 								<div>
 									<p className={smallTitle}>Východ (ASC) vs Západ (DSC)</p>
 									<div className="mt-1 flex gap-2">
@@ -356,14 +366,18 @@ export function InformationView({
 						</RailCard>
 
 						<RailCard data-handoff="Card_ExtroIntro">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Extroverze / Introverze</CardTitle>
 								<CardDescription className="text-xs">
 									Dummy balance · orientace hemisfér
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="px-3">
-								<div className="relative h-8 w-full overflow-hidden rounded-full border bg-[color:var(--theme-soft-bg)]">
+							<CardContent density="compact">
+								<Surface
+									variant="soft"
+									padding="none"
+									className="relative h-8 w-full overflow-hidden"
+								>
 									<div
 										className="absolute top-0 left-0 h-full w-1/2"
 										style={{ width: '58%', backgroundColor: 'var(--token-viz-1)' }}
@@ -371,7 +385,7 @@ export function InformationView({
 									<div className="absolute inset-0 flex items-center justify-center text-xs font-medium">
 										58 % extro · 42 % intro
 									</div>
-								</div>
+								</Surface>
 								<Text variant="caption" tone="muted" className="mt-1">
 									Východní hemisféra + horní · dummy váha
 								</Text>
@@ -381,10 +395,12 @@ export function InformationView({
 				</ScrollArea>
 
 				{/* CENTER */}
-				<div
+				<Surface
+					variant="panel"
+					padding="none"
 					data-handoff="Center_Horoscope"
 					data-hemisphere-overlay={hemisphereOverlay}
-					className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)]"
+					className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 				>
 					<div className="flex flex-shrink-0 flex-wrap items-start justify-end gap-1.5 px-2 pt-2">
 						<Badge
@@ -474,7 +490,10 @@ export function InformationView({
 
 					<div className="flex-shrink-0 px-2 pb-2">
 						<RailCard data-handoff="Card_ShapeDiagram" className="gap-1 py-2">
-							<CardContent className="flex items-center justify-between gap-3 px-3 py-2">
+							<CardContent
+								density="compact"
+								className="flex items-center justify-between gap-3 py-2"
+							>
 								<div>
 									<Text variant="compactLabel" tone="primary">
 										Tvarový diagram horoskopu
@@ -495,7 +514,7 @@ export function InformationView({
 							</CardContent>
 						</RailCard>
 					</div>
-				</div>
+				</Surface>
 
 				{/* RIGHT RAIL */}
 				<ScrollArea
@@ -504,7 +523,7 @@ export function InformationView({
 				>
 					<div className="flex flex-col gap-2 pb-2">
 						<RailCard data-handoff="Card_Aspects" className="gap-1">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<div className="flex items-center justify-between gap-2">
 									<CardTitle className={cn('text-sm', ft.title)}>Aspekty</CardTitle>
 									<div className="flex items-center gap-2">
@@ -522,7 +541,7 @@ export function InformationView({
 									Přepínání histogramu · náhled v kruhu
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="px-3">
+							<CardContent density="compact">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-8 w-full">
 										<TabsTrigger value="pos" className="text-xs">
@@ -545,10 +564,10 @@ export function InformationView({
 						</RailCard>
 
 						<RailCard data-handoff="Card_Configurations">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Konfigurace</CardTitle>
 							</CardHeader>
-							<CardContent className="px-3">
+							<CardContent density="compact">
 								<ScrollArea className="h-[100px] w-full rounded-lg border">
 									<div className="flex flex-col gap-1 p-2">
 										{configs.map((c) => (
@@ -571,20 +590,22 @@ export function InformationView({
 										))}
 									</div>
 								</ScrollArea>
-								<div
+								<Surface
+									variant="soft"
+									padding="none"
 									data-handoff="ConfigPreview_MiniDiagram"
-									className="mt-2 flex h-16 items-center justify-center rounded-lg border border-dashed bg-[color:var(--theme-soft-bg)] text-xs text-[color:var(--theme-content-muted)]"
+									className="mt-2 flex h-16 items-center justify-center border-dashed text-xs text-[color:var(--theme-content-muted)]"
 								>
 									Preview: {configs.find((c) => c.id === selectedConfig)?.label ?? '—'}
-								</div>
+								</Surface>
 							</CardContent>
 						</RailCard>
 
 						<RailCard data-handoff="Card_Stellium">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Stellium</CardTitle>
 							</CardHeader>
-							<CardContent className="space-y-1 px-3">
+							<CardContent density="compact" className="space-y-1">
 								<Text variant="label">Stellium: 10. dům (3 planety)</Text>
 								<Text variant="caption" tone="muted" className="flex items-center gap-1">
 									<AstrologyGlyph glyphId="sun" fallback="☉" size={14} />
@@ -599,10 +620,10 @@ export function InformationView({
 							onMouseEnter={() => setSingletonHover(true)}
 							onMouseLeave={() => setSingletonHover(false)}
 						>
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Singleton v hemisféře</CardTitle>
 							</CardHeader>
-							<CardContent className="px-3">
+							<CardContent density="compact">
 								<p className="text-[12px] leading-snug">
 									Singleton: <span className="font-medium">Saturn</span> – Východní hemisféra
 								</p>
@@ -613,10 +634,10 @@ export function InformationView({
 						</RailCard>
 
 						<RailCard data-handoff="Card_Retrograde">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Retrogradita</CardTitle>
 							</CardHeader>
-							<CardContent className="space-y-2 px-3">
+							<CardContent density="compact" className="space-y-2">
 								<div className="flex flex-wrap items-center gap-2">
 									<Text variant="body" as="span">
 										Retrográdní planety: 5/10
@@ -650,13 +671,13 @@ export function InformationView({
 						</RailCard>
 
 						<RailCard data-handoff="Card_FocalPlanets">
-							<CardHeader className="px-3 pt-3 pb-0">
+							<CardHeader density="compact">
 								<CardTitle className={cn('text-sm', ft.title)}>Ohniskové planety</CardTitle>
 								<CardDescription className="text-xs">
 									Unified focus panel · filtry (multi)
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="space-y-2 px-3">
+							<CardContent density="compact" className="space-y-2">
 								<div className="flex flex-wrap gap-1">
 									{[
 										'Finální dispozitor',
@@ -704,9 +725,13 @@ export function InformationView({
 			</div>
 
 			{/* BOTTOM HIGHLIGHTS */}
-			<div
+			<ActionBar
+				padding="none"
+				align="start"
+				wrap="nowrap"
+				surface="soft"
 				data-handoff="BottomHighlights"
-				className="flex h-11 flex-shrink-0 items-center gap-1.5 overflow-x-auto border-t border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] px-2"
+				className="h-11 gap-1.5 overflow-x-auto px-2"
 			>
 				{bottomChips.map((c) => {
 					const locked = lockedChipId === c.id;
@@ -731,7 +756,7 @@ export function InformationView({
 						</Button>
 					);
 				})}
-			</div>
+			</ActionBar>
 		</div>
 	);
 }
@@ -794,7 +819,7 @@ function StackedBar({
 }) {
 	return (
 		<div>
-			<div className="flex h-3 w-full overflow-hidden rounded-full border bg-[color:var(--theme-soft-bg)]">
+			<Surface variant="soft" padding="none" className="flex h-3 w-full overflow-hidden">
 				{segments.map((s) => (
 					<div
 						key={s.label}
@@ -809,7 +834,7 @@ function StackedBar({
 						title={s.label}
 					/>
 				))}
-			</div>
+			</Surface>
 			<div className="mt-1 flex justify-between text-xs text-[color:var(--theme-content-muted)]">
 				{segments.map((s) => (
 					<span key={s.label}>
@@ -874,12 +899,12 @@ function QuadrantDonut() {
 
 function HemiBalanceBar({ leftPct }: { leftPct: number }) {
 	return (
-		<div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[color:var(--theme-soft-bg)]">
+		<Surface variant="soft" padding="none" className="mt-1 h-2 w-full overflow-hidden">
 			<div
 				className="bg-primary/70 h-full rounded-l-full transition-all"
 				style={{ width: `${leftPct}%` }}
 			/>
-		</div>
+		</Surface>
 	);
 }
 
@@ -899,12 +924,12 @@ function AspectHistogram({ positive: _positive }: { positive: boolean }) {
 					<Text variant="caption" as="span" tone="muted" className="w-20">
 						{r.k}
 					</Text>
-					<div className="h-5 flex-1 overflow-hidden rounded-md bg-[color:var(--theme-soft-bg)]">
+					<Surface variant="soft" padding="none" className="h-5 flex-1 overflow-hidden">
 						<div
 							className="bg-primary/80 h-full rounded-r"
 							style={{ width: `${(r.n / max) * 100}%` }}
 						/>
-					</div>
+					</Surface>
 					<Text variant="caption" as="span" className="w-4 tabular-nums">
 						{r.n}
 					</Text>
@@ -933,7 +958,7 @@ function AspectNegativeAbsence() {
 					<Text variant="caption" as="span" tone="muted" className="w-28">
 						{r.k}
 					</Text>
-					<div className="h-4 flex-1 rounded-lg border border-dashed bg-[color:var(--theme-soft-bg)]" />
+					<Surface variant="soft" padding="none" className="h-4 flex-1 border-dashed" />
 					<Text variant="caption" as="span" tone="muted" className="w-6">
 						0
 					</Text>

@@ -6,6 +6,7 @@ import { XIcon } from 'lucide-react';
 
 import { cn } from './utils';
 import { typographyVariants } from './typography';
+import { containerBarVariants, containerPaddingClassNames } from './container';
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
 	return <SheetPrimitive.Root data-slot="sheet" {...props} />;
@@ -74,21 +75,42 @@ const SheetContent = React.forwardRef<
 ));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
-function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
+function SheetHeader({
+	className,
+	padding = 'default',
+	...props
+}: React.ComponentProps<'div'> & { padding?: keyof typeof containerPaddingClassNames }) {
 	return (
 		<div
 			data-slot="sheet-header"
-			className={cn('flex flex-col gap-1.5 p-4', className)}
+			className={cn('flex flex-col gap-1.5', containerPaddingClassNames[padding], className)}
 			{...props}
 		/>
 	);
 }
 
-function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
+function SheetFooter({
+	className,
+	variant = 'default',
+	...props
+}: React.ComponentProps<'div'> & { variant?: 'default' | 'actions' }) {
 	return (
 		<div
 			data-slot="sheet-footer"
-			className={cn('mt-auto flex flex-col gap-2 p-4', className)}
+			className={cn(
+				variant === 'actions'
+					? cn(
+							containerBarVariants({
+								border: 'top',
+								padding: 'relaxed',
+								align: 'end',
+								layout: 'responsive'
+							}),
+							'mt-auto'
+						)
+					: 'mt-auto flex flex-col gap-2 p-4',
+				className
+			)}
 			{...props}
 		/>
 	);

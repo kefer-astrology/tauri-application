@@ -10,7 +10,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '@/app/components/ui/select';
-import { cn } from '@/app/components/ui/utils';
+
 import { DatePickerInput } from '@/app/components/ui/date-picker-input';
 import { LocationSelector } from '@/app/views/domain/location-selector';
 import { TimeRollerPicker } from '@/app/components/ui/time-roller-picker';
@@ -102,7 +102,7 @@ export function PersonFields({
 				/>
 			</div>
 
-			<ModeSwitcherDetails open={manual} contentClassName={cn('space-y-3', ft.advancedPanel)}>
+			<ModeSwitcherDetails surface="soft" open={manual} contentClassName={'space-y-3'}>
 				<div className="grid gap-3 sm:grid-cols-2">
 					<DatePickerInput
 						id={`${personLabel}-date`}

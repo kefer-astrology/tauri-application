@@ -69,6 +69,32 @@ describe('initialNewHoroscopeState', () => {
 		});
 	});
 
+	it('shows previously imported UCT charts with the UTC zone and region', () => {
+		const state = editState({
+			timezone: 'UCT',
+			timeRegime: 'manual',
+			utcOffset: 'UTC+00:00',
+			dateTime: '1949-06-22T12:05:00Z'
+		});
+		expect(state).toMatchObject({ timezone: 'UTC', timezoneRegion: 'UTC' });
+		expect(shown(state.dateTime)).toEqual([1949, 6, 22, 12, 5]);
+	});
+
+	it('shows Meryl’s GMT import at 08:05 in New Jersey', () => {
+		const state = editState({
+			timezone: 'America/New_York',
+			timeRegime: 'manual',
+			utcOffset: 'UTC-04:00',
+			dateTime: '1949-06-22T12:05:00Z'
+		});
+		expect(state).toMatchObject({
+			timezone: 'America/New_York',
+			timezoneRegion: 'America',
+			utcOffset: 'UTC-04:00'
+		});
+		expect(shown(state.dateTime)).toEqual([1949, 6, 22, 8, 5]);
+	});
+
 	it('uses the manual UTC offset as the chart zone', () => {
 		const state = editState({ timeRegime: 'manual', utcOffset: 'UTC+03:00' });
 		expect(shown(state.dateTime)).toEqual([1984, 7, 14, 16, 30]);

@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +54,7 @@ export function TransitsResultsView() {
 			<ResultsToolbar />
 
 			{(error || warnings.length > 0) && (
-				<div className="space-y-1 border-b border-[color:var(--theme-panel-border)] px-4 py-2">
+				<Surface variant="plain" divider="bottom" className="space-y-1 px-4 py-2">
 					{error && (
 						<Text variant="caption" className="text-destructive">
 							{error}
@@ -64,7 +65,7 @@ export function TransitsResultsView() {
 							{warning}
 						</Text>
 					))}
-				</div>
+				</Surface>
 			)}
 
 			<div className="flex min-h-0 flex-1">

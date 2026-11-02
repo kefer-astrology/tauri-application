@@ -12,18 +12,35 @@ type CardProps = React.ComponentProps<'div'> & {
 	clip?: boolean;
 };
 
-function Card({ className, variant = 'default', spacing = 'default', elevation = 'flat', clip = false, ...props }: CardProps) {
+function Card({
+	className,
+	variant = 'default',
+	spacing = 'default',
+	elevation = 'flat',
+	clip = false,
+	...props
+}: CardProps) {
 	const surface = variant === 'default' ? 'panel' : variant === 'ghost' ? 'plain' : variant;
 	return (
-		<div data-slot="card" className={cn(
-			'flex flex-col', surfaceVariants({ variant: surface, elevation }),
-			spacing === 'flush' ? 'gap-0' : spacing === 'compact' ? 'gap-2' : 'gap-6',
-			clip && 'overflow-hidden', className
-		)} {...props} />
+		<div
+			data-slot="card"
+			className={cn(
+				'flex flex-col',
+				surfaceVariants({ variant: surface, elevation }),
+				spacing === 'flush' ? 'gap-0' : spacing === 'compact' ? 'gap-2' : 'gap-6',
+				clip && 'overflow-hidden',
+				className
+			)}
+			{...props}
+		/>
 	);
 }
 
-function CardHeader({ className, density = 'default', ...props }: React.ComponentProps<'div'> & { density?: CardSectionDensity }) {
+function CardHeader({
+	className,
+	density = 'default',
+	...props
+}: React.ComponentProps<'div'> & { density?: CardSectionDensity }) {
 	return (
 		<div
 			data-slot="card-header"
@@ -67,7 +84,11 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
 	);
 }
 
-function CardContent({ className, density = 'default', ...props }: React.ComponentProps<'div'> & { density?: CardSectionDensity }) {
+function CardContent({
+	className,
+	density = 'default',
+	...props
+}: React.ComponentProps<'div'> & { density?: CardSectionDensity }) {
 	return (
 		<div
 			data-slot="card-content"
@@ -77,7 +98,11 @@ function CardContent({ className, density = 'default', ...props }: React.Compone
 	);
 }
 
-function CardFooter({ className, density = 'default', ...props }: React.ComponentProps<'div'> & { density?: CardSectionDensity }) {
+function CardFooter({
+	className,
+	density = 'default',
+	...props
+}: React.ComponentProps<'div'> & { density?: CardSectionDensity }) {
 	return (
 		<div
 			data-slot="card-footer"

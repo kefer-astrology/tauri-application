@@ -1,3 +1,4 @@
+import { Toolbar } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -55,12 +56,7 @@ export function ResultsToolbar() {
 	const toolButton = cn('h-8 px-2.5 text-xs', ft.bodyText);
 
 	return (
-		<div
-			className={cn(
-				'flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3',
-				'border-[color:var(--theme-panel-border)]'
-			)}
-		>
+		<Toolbar padding="default" align="between" wrap="wrap" className="gap-3">
 			<ModeSwitcher
 				value={view.viewMode}
 				onValueChange={(mode: TransitsResultsViewMode) => view.setViewMode(mode)}
@@ -188,6 +184,6 @@ export function ResultsToolbar() {
 					{t('transits_reset', { defaultValue: 'Reset' })}
 				</Button>
 			</div>
-		</div>
+		</Toolbar>
 	);
 }

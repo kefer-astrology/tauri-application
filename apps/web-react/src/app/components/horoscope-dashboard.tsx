@@ -1,3 +1,4 @@
+import { Surface, ActionBar } from '@/app/components/ui/container';
 import { Heading } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -106,13 +107,7 @@ export function HoroscopeDashboard({
 	const textColor = ft.title;
 	const mutedColor = ft.muted;
 	const hoverBg = 'hover:bg-[color:var(--token-hover-subtle)]';
-	const controlRow = cn(
-		'flex items-center gap-2 rounded-xl border px-3 py-2',
-		borderColor,
-		'bg-[color:var(--token-surface-subtle)]'
-	);
 	const timeStepSelectLayout = 'w-full min-w-0 flex-1 [color-scheme:inherit]';
-	const panelCardClass = 'gap-0 overflow-hidden transition-all duration-300';
 	// Times read and shown as local time at the chart's place; the transit moment in the same zone.
 	const chartZone = selectedChart ? chartTimeZone(selectedChart) : undefined;
 	const activeTransitOverlay =
@@ -398,7 +393,13 @@ export function HoroscopeDashboard({
 				{/* Left Column */}
 				<div className="flex min-h-0 min-w-0 flex-col gap-4">
 					{/* Profile Panel */}
-					<Card variant="default" className={panelCardClass} data-tour="radix-profile">
+					<Card
+						variant="default"
+						spacing="flush"
+						clip
+						className="transition-all duration-300"
+						data-tour="radix-profile"
+					>
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setProfileCollapsed(!profileCollapsed)}
@@ -454,9 +455,11 @@ export function HoroscopeDashboard({
 									</div>
 								) : null}
 								{activeTransitOverlay ? (
-									<div
+									<Surface
+										variant="soft"
+										padding="none"
 										className={cn(
-											'mt-3 flex items-center justify-between gap-3 rounded-xl border px-3 py-2',
+											'mt-3 flex items-center justify-between gap-3 px-3 py-2',
 											borderColor,
 											'bg-[color:var(--theme-soft-bg)]/50'
 										)}
@@ -482,14 +485,20 @@ export function HoroscopeDashboard({
 										>
 											<X className={cn('h-3.5 w-3.5', mutedColor)} />
 										</Button>
-									</div>
+									</Surface>
 								) : null}
 							</div>
 						)}
 					</Card>
 
 					{/* Astrolabe Panel */}
-					<Card variant="default" className={panelCardClass} data-tour="radix-astrolabe">
+					<Card
+						variant="default"
+						spacing="flush"
+						clip
+						className="transition-all duration-300"
+						data-tour="radix-astrolabe"
+					>
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
@@ -587,7 +596,7 @@ export function HoroscopeDashboard({
 								</div>
 
 								{/* Date Input */}
-								<div className={controlRow}>
+								<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
 									<Input
 										variant="form"
 										readOnly
@@ -595,9 +604,9 @@ export function HoroscopeDashboard({
 										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
 									/>
 									<Calendar className={cn('h-4 w-4 shrink-0', mutedColor)} />
-								</div>
+								</Surface>
 
-								<div className={controlRow}>
+								<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
 									<Input
 										variant="form"
 										readOnly
@@ -605,9 +614,9 @@ export function HoroscopeDashboard({
 										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
 									/>
 									<Clock className={cn('h-4 w-4 shrink-0', mutedColor)} />
-								</div>
+								</Surface>
 
-								<div className={controlRow}>
+								<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
 									<Input
 										variant="form"
 										readOnly
@@ -615,7 +624,7 @@ export function HoroscopeDashboard({
 										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
 									/>
 									<MapPin className={cn('h-4 w-4 shrink-0', mutedColor)} />
-								</div>
+								</Surface>
 							</div>
 						)}
 					</Card>
@@ -672,7 +681,9 @@ export function HoroscopeDashboard({
 					<Card
 						data-tour="radix-positions"
 						variant="default"
-						className={cn(panelCardClass, positionsCollapsed ? '' : 'flex h-full flex-col')}
+						spacing="flush"
+						clip
+						className={cn('transition-all duration-300', !positionsCollapsed && 'h-full')}
 					>
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} flex-shrink-0 cursor-pointer`}
@@ -768,9 +779,7 @@ export function HoroscopeDashboard({
 							onSelectedIdsChange={setPickerBodies}
 						/>
 					</div>
-					<div
-						className={cn('flex shrink-0 justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}
-					>
+					<ActionBar padding="relaxed" align="end" wrap="nowrap" className="gap-3">
 						<Button
 							size="form"
 							type="button"
@@ -794,7 +803,7 @@ export function HoroscopeDashboard({
 						>
 							{t('sidebar_save')}
 						</Button>
-					</div>
+					</ActionBar>
 				</div>
 			</DetailSidePanel>
 		</div>

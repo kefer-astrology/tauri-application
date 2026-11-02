@@ -55,7 +55,7 @@ function PlaceholderView() {
 	return (
 		<AppMainContentRoot>
 			<AppMainContentContainer width="standard">
-				<Card variant="ghost" className="gap-0 p-0">
+				<Card spacing="flush" variant="ghost" className="p-0">
 					<CardContent className="space-y-3 p-6 md:p-8">
 						<Heading variant="pageTitle" level={1}>
 							{t('placeholder_view_title')}

@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import {
 	useCallback,
@@ -195,7 +196,7 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 							aria-label={t('open_resize_filters')}
 							title={t('open_resize_filters')}
 						/>
-						<div className={cn('shrink-0 border-b px-4 sm:px-6', ft.footerBorder)}>
+						<Surface variant="plain" divider="bottom" className="shrink-0 px-4 sm:px-6">
 							<div className="flex min-h-16 items-center">
 								{[
 									{ id: 'my_radixes', label: t('open_mode_my_radixes') },
@@ -221,7 +222,7 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 									</Button>
 								))}
 							</div>
-						</div>
+						</Surface>
 						<div className="flex items-center gap-2 px-4 pt-3 pb-1 sm:px-6">
 							<Input
 								variant="form"

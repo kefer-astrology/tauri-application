@@ -1,7 +1,8 @@
+import { typographyVariants } from '@/app/components/ui/typography';
+import { Surface } from '@/app/components/ui/container';
 import { Text, Heading } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
 import type { ConfigurationMatch } from '@/lib/tauri/types';
 import { formatDateTime } from '@/lib/time/format';
@@ -30,7 +31,6 @@ export function ConfigurationMatchesPanel({
 	onOpenInstant: (datetime: string) => void;
 }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
 
 	if (matches.length === 0) return null;
 
@@ -55,15 +55,18 @@ export function ConfigurationMatchesPanel({
 	);
 
 	return (
-		<div className="shrink-0 border-t border-[color:var(--theme-panel-border)] p-4">
+		<Surface variant="plain" divider="top" padding="default" className="shrink-0">
 			<Heading variant="eyebrow" level={3} tone="secondary" className="mb-2">
 				{t('transits_configuration_matches_title', { defaultValue: 'Multi-body configurations' })}
 			</Heading>
 			<ul className="max-h-64 space-y-2 overflow-auto">
 				{matches.map((match, index) => (
-					<li
+					<Surface
+						padding="compact"
+						variant="inset"
+						as="li"
 						key={index}
-						className={cn('rounded border p-2 text-xs', ft.bodyText, ft.footerBorder)}
+						className={cn(typographyVariants({ variant: 'caption', tone: 'secondary' }), '')}
 					>
 						<div className="mb-1 flex flex-wrap items-center gap-2">
 							<span className="font-medium">
@@ -104,9 +107,9 @@ export function ConfigurationMatchesPanel({
 							match.exit,
 							clippedLabel(match.exit_clipped)
 						)}
-					</li>
+					</Surface>
 				))}
 			</ul>
-		</div>
+		</Surface>
 	);
 }

@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { useEffect, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -119,12 +120,11 @@ export function TagSheet({
 							{tags.length > 0 ? (
 								<div className="space-y-2">
 									{tags.map((tag, index) => (
-										<div
+										<Surface
+											variant="soft"
+											padding="none"
 											key={tag}
-											className={cn(
-												'flex items-center gap-2 rounded-xl border px-3 py-2',
-												'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)]'
-											)}
+											className="flex items-center gap-2 px-3 py-2"
 										>
 											<ColorInput
 												value={tagColor(tagColors, tag, index)}
@@ -161,7 +161,7 @@ export function TagSheet({
 											>
 												<X className="h-4 w-4" />
 											</Button>
-										</div>
+										</Surface>
 									))}
 								</div>
 							) : (
@@ -172,7 +172,7 @@ export function TagSheet({
 						</div>
 					</div>
 
-					<SheetFooter className="shrink-0 border-t border-[color:var(--theme-panel-border)] px-5 py-4">
+					<SheetFooter variant="actions" className="shrink-0 px-5">
 						<Button
 							size="form"
 							type="button"

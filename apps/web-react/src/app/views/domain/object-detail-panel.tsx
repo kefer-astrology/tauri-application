@@ -1,3 +1,4 @@
+import { Surface } from '@/app/components/ui/container';
 import { Heading, Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
@@ -212,9 +213,11 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 							{data.aspects.map((aspect, index) => {
 								const otherId = aspect.from === data.bodyId ? aspect.to : aspect.from;
 								return (
-									<div
+									<Surface
+										variant="soft"
+										padding="none"
 										key={`${aspect.from}-${aspect.to}-${aspect.type}-${index}`}
-										className="rounded-lg bg-[color:var(--theme-soft-bg)] px-3 py-2"
+										className="px-3 py-2"
 									>
 										<div className="flex items-center justify-between gap-3 text-sm">
 											<span className={cn('flex items-center gap-1.5', textColor)}>
@@ -240,7 +243,7 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 										>
 											{t('label_orb')}: {aspect.orb.toFixed(2)}°
 										</div>
-									</div>
+									</Surface>
 								);
 							})}
 						</div>

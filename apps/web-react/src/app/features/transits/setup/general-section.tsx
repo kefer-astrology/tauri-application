@@ -6,8 +6,7 @@ import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { ModeSwitcherDetails } from '@/app/components/ui/mode-switcher';
 import { Separator } from '@/app/components/ui/separator';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { useWorkspaceCharts } from '@/app/providers/workspace-charts';
 import {
 	humanizePeriodPresetId,
@@ -44,7 +43,7 @@ const separator = <Separator className="bg-[color:var(--theme-panel-border)]" />
 /** What to compute: type, period, chart, options, event searches, configurations, sampling. */
 export function GeneralSection() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { charts } = useWorkspaceCharts();
 	const { setup, updateSetup, sourceChartId, setSourceChartId, loading, error, compute } =
 		useTransits();
@@ -163,7 +162,7 @@ export function GeneralSection() {
 					/>
 				</div>
 
-				<ModeSwitcherDetails open contentClassName={cn('space-y-4', ft.advancedPanel)}>
+				<ModeSwitcherDetails surface="soft" open contentClassName={'space-y-4'}>
 					<PeriodBoundFields
 						label={t('transits_period_from')}
 						value={setup.fromDateTime}

@@ -20,14 +20,10 @@ export function getAppFormFieldTheme(
 	const title = 'text-[color:var(--theme-content-primary)]';
 	const muted = 'text-[color:var(--theme-content-muted)]';
 
-	const footerBorder = 'border-[color:var(--theme-panel-border)]';
-
 	const langBubbleActive =
 		'border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)] text-primary-foreground ring-2 ring-[color:var(--theme-accent)] shadow-sm';
 	const langBubbleIdle =
 		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-secondary)] hover:bg-[color:var(--theme-hover-bg)]';
-
-	const advancedPanel = 'rounded-xl border-0 bg-[color:var(--theme-soft-bg)] p-4 backdrop-blur-sm';
 
 	const iconColor = 'text-[color:var(--theme-accent)]';
 
@@ -40,13 +36,6 @@ export function getAppFormFieldTheme(
 	const textDisabled = 'text-[color:var(--theme-content-muted)]';
 
 	const bodyText = 'text-[color:var(--theme-content-secondary)]';
-
-	/** Bottom horoscope strip: workspace chart “tabs” — shadcn surfaces + app glass (matches settings cards). */
-	const contextRail = cn(
-		'flex min-h-11 w-full items-center justify-center gap-2 overflow-x-auto overflow-y-hidden border-t px-3 py-1.5',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
-		'backdrop-blur-md supports-[backdrop-filter]:bg-[color:var(--theme-panel-bg-strong)]'
-	);
 
 	const contextTabGhost = cn(
 		'h-8 min-h-8 max-w-[min(12rem,40vw)] justify-start truncate px-2 font-normal shadow-none',
@@ -68,8 +57,6 @@ export function getAppFormFieldTheme(
 		sectionTitle: typographyVariants({ variant: 'sectionTitle', tone: 'primary' }),
 		label: typographyVariants({ variant: 'label', tone: 'secondary' }),
 		muted,
-		footerBorder,
-		advancedPanel,
 		iconColor,
 		formPageBg,
 		textDisabled,
@@ -80,7 +67,6 @@ export function getAppFormFieldTheme(
 				'min-h-12 min-w-[3.25rem] rounded-full border-2 px-5 py-2.5 text-base font-semibold transition-colors',
 				active ? langBubbleActive : langBubbleIdle
 			),
-		contextRail,
 		contextTabGhost,
 		contextTabActive,
 		contextSeparator
