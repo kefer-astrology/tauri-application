@@ -27,7 +27,26 @@ pub fn parse_sfs_bytes(bytes: &[u8], source_name: Option<&str>) -> Result<ChartI
 
     let latitude = parse_dms(latitude_text, CoordinateAxis::Latitude)?;
     let longitude = parse_dms(longitude_text, CoordinateAxis::Longitude)?;
+    let zone = fields
+        .get("zone")
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .map(|zone| if zone == "UCT" { "UTC" } else { zone });
     let (event_time, utc_offset) = parse_event_date(date_text)?;
+    let (timezone, utc_offset) = if let Some(offset) = utc_offset {
+        (zone.unwrap_or(&offset).to_string(), Some(offset))
+    } else {
+        // Plain GMT is already UTC. Resolve the local display zone separately;
+        // StarFisher's UTC/UCT labels describe the timestamp, not the place.
+        let timezone = match zone {
+            Some(zone) if !matches!(zone, "UTC" | "GMT" | "Etc/UTC" | "Etc/GMT") => {
+                zone.to_string()
+            }
+            _ => crate::infrastructure::geocoding::timezone_for_coordinates(latitude, longitude)?,
+        };
+        let offset = zone_offset_at_instant(event_time, &timezone)?;
+        (timezone, format_utc_offset(offset))
+    };
 
     let caption = fields
         .get("caption")
@@ -45,14 +64,6 @@ pub fn parse_sfs_bytes(bytes: &[u8], source_name: Option<&str>) -> Result<ChartI
         .map(str::trim)
         .map(str::to_owned)
         .unwrap_or_else(|| format!("{latitude:.6}, {longitude:.6}"));
-    let timezone = fields
-        .get("zone")
-        .map(String::as_str)
-        .filter(|value| !value.trim().is_empty())
-        .map(str::trim)
-        .map(str::to_owned)
-        .unwrap_or_else(|| utc_offset.clone());
-
     let tags = fields
         .get("keywords")
         .map(|keywords| split_tags(keywords))
@@ -69,7 +80,7 @@ pub fn parse_sfs_bytes(bytes: &[u8], source_name: Option<&str>) -> Result<ChartI
                 latitude,
                 longitude,
                 timezone,
-                utc_offset: Some(utc_offset),
+                utc_offset,
                 location_mode: Some(InputMode::Manual),
                 timezone_mode: Some(InputMode::Manual),
             },
@@ -332,7 +343,7 @@ fn parse_coordinate_part(
     Ok(value)
 }
 
-fn parse_event_date(input: &str) -> Result<(DateTime<Utc>, String), String> {
+fn parse_event_date(input: &str) -> Result<(DateTime<Utc>, Option<String>), String> {
     let (local_text, zone_text) = input
         .trim()
         .rsplit_once(" GMT")
@@ -341,12 +352,11 @@ fn parse_event_date(input: &str) -> Result<(DateTime<Utc>, String), String> {
         .map_err(|error| format!("Invalid SFS Date '{input}': {error}"))?;
 
     let mut zone_parts = zone_text.split_whitespace();
-    let standard_offset = parse_gmt_offset(
-        zone_parts
-            .next()
-            .ok_or_else(|| format!("Invalid SFS Date '{input}': missing GMT offset"))?,
-        input,
-    )?;
+    let explicit_offset = zone_parts.next();
+    let standard_offset = match explicit_offset {
+        None => 0,
+        Some(offset) => parse_gmt_offset(offset, input)?,
+    };
     let daylight_saving = match zone_parts.next() {
         None => false,
         Some("DST") => true,
@@ -372,15 +382,41 @@ fn parse_event_date(input: &str) -> Result<(DateTime<Utc>, String), String> {
         .checked_sub_signed(Duration::seconds(i64::from(effective_offset)))
         .ok_or_else(|| format!("Invalid SFS Date '{input}': UTC conversion overflow"))?;
     let utc = DateTime::from_naive_utc_and_offset(utc_naive, Utc);
-    let sign = if effective_offset < 0 { '-' } else { '+' };
-    let absolute = effective_offset.abs();
-    let offset = format!(
-        "UTC{sign}{:02}:{:02}",
-        absolute / 3600,
-        absolute % 3600 / 60
-    );
+    let offset = explicit_offset.and_then(|_| format_utc_offset(effective_offset));
 
     Ok((utc, offset))
+}
+
+fn format_utc_offset(seconds: i32) -> Option<String> {
+    let sign = if seconds < 0 { '-' } else { '+' };
+    let absolute = seconds.abs();
+    // Historical zones can have offsets with seconds. Keep the named zone in
+    // that case instead of storing a rounded, minute-only offset override.
+    (absolute % 60 == 0).then(|| {
+        format!(
+            "UTC{sign}{:02}:{:02}",
+            absolute / 3600,
+            absolute % 3600 / 60
+        )
+    })
+}
+
+fn zone_offset_at_instant(utc: DateTime<Utc>, zone: &str) -> Result<i32, String> {
+    if matches!(zone, "UTC" | "GMT") {
+        return Ok(0);
+    }
+    if let Some(offset) = zone
+        .strip_prefix("UTC")
+        .or_else(|| zone.strip_prefix("GMT"))
+    {
+        return parse_gmt_offset(offset, zone);
+    }
+    let timezone = jiff::tz::TimeZone::get(zone)
+        .map_err(|error| format!("Invalid SFS Zone '{zone}': {error}"))?;
+    let instant = jiff::Timestamp::from_second(utc.timestamp())
+        .map_err(|error| format!("Invalid SFS UTC timestamp '{utc}': {error}"))?;
+    let zoned = instant.to_zoned(timezone);
+    Ok(zoned.offset().seconds())
 }
 
 fn parse_gmt_offset(input: &str, full_date: &str) -> Result<i32, String> {
@@ -500,6 +536,151 @@ _eventData.Keywords = "mission, public; night";
     }
 
     #[test]
+    fn plain_gmt_preserves_meryl_utc_and_resolves_new_jersey_local_time() {
+        for zone in ["UCT", "UTC", ""] {
+            let input = document("1949-6-22 12:05:00 GMT", "40N43'00", "74W22'00")
+                .replace("Europe/Prague", zone);
+            let chart = parse_sfs_bytes(&utf16_bytes(&input, true), None).unwrap();
+            assert_eq!(
+                chart.subject.event_time,
+                Some(Utc.with_ymd_and_hms(1949, 6, 22, 12, 5, 0).unwrap())
+            );
+            assert_eq!(chart.subject.location.timezone, "America/New_York");
+            assert_eq!(
+                chart.subject.location.utc_offset.as_deref(),
+                Some("UTC-04:00")
+            );
+            let instant =
+                jiff::Timestamp::from_second(chart.subject.event_time.unwrap().timestamp())
+                    .unwrap();
+            let local = instant
+                .to_zoned(jiff::tz::TimeZone::get(&chart.subject.location.timezone).unwrap());
+            assert_eq!((local.hour(), local.minute()), (8, 5));
+        }
+    }
+
+    #[test]
+    fn plain_gmt_keeps_utc_and_uses_zone_only_for_local_display() {
+        for (date, zone, utc, offset) in [
+            (
+                "2019-7-30 13:27:00 GMT",
+                "Europe/Prague",
+                "2019-07-30T13:27:00Z",
+                "UTC+02:00",
+            ),
+            (
+                "2019-1-30 13:27:00 GMT",
+                "Europe/Prague",
+                "2019-01-30T13:27:00Z",
+                "UTC+01:00",
+            ),
+            (
+                "1949-6-22 12:05:00 GMT",
+                "America/New_York",
+                "1949-06-22T12:05:00Z",
+                "UTC-04:00",
+            ),
+            (
+                "2019-7-30 13:27:00 GMT",
+                "Asia/Kathmandu",
+                "2019-07-30T13:27:00Z",
+                "UTC+05:45",
+            ),
+            (
+                "2019-7-30 13:27:00 GMT",
+                "Australia/Sydney",
+                "2019-07-30T13:27:00Z",
+                "UTC+10:00",
+            ),
+            (
+                "2019-7-30 13:27:00 GMT",
+                "UTC+05:45",
+                "2019-07-30T13:27:00Z",
+                "UTC+05:45",
+            ),
+            (
+                "2019-3-31 02:30:00 GMT",
+                "Europe/Prague",
+                "2019-03-31T02:30:00Z",
+                "UTC+02:00",
+            ),
+            (
+                "2019-10-27 02:30:00 GMT",
+                "Europe/Prague",
+                "2019-10-27T02:30:00Z",
+                "UTC+01:00",
+            ),
+        ] {
+            let input = document(date, "49N13'35", "16E35'20").replace("Europe/Prague", zone);
+            let chart = parse_sfs_bytes(input.as_bytes(), None).unwrap();
+            assert_eq!(
+                chart
+                    .subject
+                    .event_time
+                    .unwrap()
+                    .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                utc
+            );
+            assert_eq!(chart.subject.location.utc_offset.as_deref(), Some(offset));
+            assert_eq!(chart.subject.location.timezone, zone);
+        }
+    }
+
+    #[test]
+    fn plain_gmt_resolves_regions_from_coordinates() {
+        for (latitude, longitude, zone, offset) in [
+            ("50N05'00", "14E25'00", "Europe/Prague", "UTC+02:00"),
+            ("34N03'00", "118W15'00", "America/Los_Angeles", "UTC-07:00"),
+            ("35N42'00", "139E46'00", "Asia/Tokyo", "UTC+09:00"),
+            ("33S52'00", "151E12'00", "Australia/Sydney", "UTC+10:00"),
+        ] {
+            let input = document("2019-7-30 13:27:00 GMT", latitude, longitude)
+                .replace("Europe/Prague", "UCT");
+            let chart = parse_sfs_bytes(input.as_bytes(), None).unwrap();
+            assert_eq!(chart.subject.location.timezone, zone);
+            assert_eq!(chart.subject.location.utc_offset.as_deref(), Some(offset));
+            assert_eq!(
+                chart.subject.event_time,
+                Some(Utc.with_ymd_and_hms(2019, 7, 30, 13, 27, 0).unwrap())
+            );
+        }
+    }
+
+    #[test]
+    fn plain_gmt_preserves_historical_instant_without_rounded_offset() {
+        let input = document("1850-3-7 9:19:13 GMT", "49N13'35", "16E35'20");
+        let chart = parse_sfs_bytes(input.as_bytes(), None).unwrap();
+        assert_eq!(
+            chart.subject.event_time,
+            Some(Utc.with_ymd_and_hms(1850, 3, 7, 9, 19, 13).unwrap())
+        );
+        assert_eq!(chart.subject.location.timezone, "Europe/Prague");
+        assert_eq!(chart.subject.location.utc_offset, None);
+    }
+
+    #[test]
+    fn rejects_plain_gmt_with_unknown_named_zone() {
+        let input = document("2019-7-30 13:27:00 GMT", "49N13'35", "16E35'20")
+            .replace("Europe/Prague", "Unknown/Zone");
+        let error = parse_sfs_bytes(input.as_bytes(), None).unwrap_err();
+        assert!(error.contains("Invalid SFS Zone"), "{error}");
+    }
+
+    #[test]
+    fn explicit_gmt_offset_takes_precedence_over_zone_rules() {
+        let input = document("2019-7-30 13:27:00 GMT+0:00", "49N13'35", "16E35'20");
+        let chart = parse_sfs_bytes(input.as_bytes(), None).unwrap();
+        assert_eq!(
+            chart.subject.event_time,
+            Some(Utc.with_ymd_and_hms(2019, 7, 30, 13, 27, 0).unwrap())
+        );
+        assert_eq!(
+            chart.subject.location.utc_offset.as_deref(),
+            Some("UTC+00:00")
+        );
+    }
+
+    #[test]
     fn applies_dst_to_utc_conversion() {
         let dst = parse_sfs_bytes(
             document("2019-7-30 13:27:00 GMT+1:00 DST", "49N13'35", "16E35'20").as_bytes(),
@@ -567,6 +748,9 @@ _eventData.Keywords = "mission, public; night";
     fn rejects_malformed_dates() {
         for date in [
             "2019-13-30 13:27:00 GMT+1:00",
+            "2019-7-30 13:27:00",
+            "2019-7-30 13:27:00 GMT+",
+            "2019-7-30 13:27:00 GMT DST",
             "2019-7-30 13:27:00 UTC+1:00",
             "2019-7-30 13:27:00 GMT+1:99",
             "2019-7-30 13:27:00 GMT+1:00 SUMMER",
