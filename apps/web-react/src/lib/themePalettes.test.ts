@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { parseThemeColor } from './themeColors';
 
 import {
 	contrastingTextColor,
@@ -46,6 +47,23 @@ describe('theme connections', () => {
 			4.5
 		);
 	});
+
+	it.each(Object.entries(DEFAULT_THEME_PALETTES))(
+		'keeps %s surfaces opaque and applies CSV transparency only to interaction states',
+		(theme, palette) => {
+			const vars = themePaletteVars(palette) as Record<string, string>;
+			for (const token of [
+				'--theme-panel-bg',
+				'--theme-panel-bg-strong',
+				'--theme-panel-bg-solid'
+			]) {
+				expect(vars[token]).toBe(palette.canvasEnd);
+				expect(parseThemeColor(vars[token]).alpha).toBe(1);
+			}
+			expect(parseThemeColor(palette.hoverBackground).alpha).toBeLessThan(1);
+			expect(parseThemeColor(palette.selectedBackground).alpha < 1).toBe(theme === 'sunrise');
+		}
+	);
 
 	it('uses canvas brightness for custom light and dark palettes, including rgb colors', () => {
 		expect(isLightPalette({ ...DEFAULT_THEME_PALETTES.noon, canvasStart: 'rgb(15, 20, 25)' })).toBe(

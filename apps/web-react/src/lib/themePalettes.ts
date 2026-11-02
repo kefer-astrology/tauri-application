@@ -42,7 +42,7 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 		accent: '#1A73E8',
 		popupBackgroundFuzziness: 0,
 		hoverBackground: 'rgba(26,115,232,0.08)',
-		selectedBackground: '#d3e3fd'
+		selectedBackground: 'rgba(140,127,114,0.16)'
 	},
 	noon: {
 		mainSidebarStart: '#FFFFFF',
@@ -59,7 +59,7 @@ export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 		accent: '#785dff',
 		popupBackgroundFuzziness: 0,
 		hoverBackground: 'rgba(140,127,114,0.1)',
-		selectedBackground: 'rgba(140,127,114,0.16)'
+		selectedBackground: '#d3e3fd'
 	},
 	twilight: {
 		mainSidebarStart: '#1E1F20',
@@ -209,7 +209,8 @@ export function isLightPalette(palette: ThemePalette): boolean {
 
 export function themePaletteVars(palette: ThemePalette): CSSProperties {
 	const light = isLightPalette(palette);
-	// Content surfaces follow the canvas, independently of the navigation colors.
+	// Content surfaces are opaque. Transparency belongs to the configured hover/selected states.
+	// Their color follows the canvas, independently of navigation colors.
 	const panel = palette.canvasEnd;
 	const panelBorder = alpha(palette.contentTextSecondary, 0.18);
 	const vizOne = alpha(palette.accent, 0.85);
@@ -238,8 +239,8 @@ export function themePaletteVars(palette: ThemePalette): CSSProperties {
 		['--theme-selected-bg' as string]: palette.selectedBackground,
 		['--theme-sidebar-border' as string]: alpha(palette.navTextPrimary, 0.08),
 		['--theme-separator' as string]: alpha(palette.navTextPrimary, 0.1),
-		['--theme-panel-bg' as string]: alpha(panel, light ? 0.95 : 0.82),
-		['--theme-panel-bg-strong' as string]: alpha(panel, 0.92),
+		['--theme-panel-bg' as string]: panel,
+		['--theme-panel-bg-strong' as string]: panel,
 		['--theme-panel-bg-solid' as string]: panel,
 		['--theme-panel-border' as string]: panelBorder,
 		['--theme-soft-bg' as string]: alpha(palette.contentTextPrimary, light ? 0.04 : 0.06),
