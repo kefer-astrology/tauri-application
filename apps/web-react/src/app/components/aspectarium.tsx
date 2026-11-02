@@ -1,3 +1,4 @@
+import { Text, Heading } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Grid3X3, List, Target } from 'lucide-react';
@@ -176,9 +177,9 @@ function AspectCellButton({
 					size={18}
 				/>
 			</span>
-			<span className="mt-1 text-[11px] text-[color:var(--theme-content-muted)]">
+			<Text variant="caption" as="span" tone="muted" className="mt-1">
 				{formatOrb(aspect.orb)}
-			</span>
+			</Text>
 		</Button>
 	);
 }
@@ -434,21 +435,23 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 				color={workspaceDefaults.bodyColors[bodyId] ?? getDefaultBodyColor(bodyId)}
 			/>
 			<div className="min-w-0">
-				<p className={cn('truncate text-sm font-medium', ft.title)}>{objectLabel(bodyId, t)}</p>
-				<p className={cn('truncate text-xs', ft.muted)}>
+				<Text variant="label" tone="primary" className="truncate">
+					{objectLabel(bodyId, t)}
+				</Text>
+				<Text variant="caption" tone="muted" className="truncate">
 					{normalizeLongitude(positionsForLayer(layer)[bodyId]) === null ? (
 						t('loading_positions')
 					) : (
 						<PositionValue longitude={normalizeLongitude(positionsForLayer(layer)[bodyId])} />
 					)}
-				</p>
+				</Text>
 			</div>
 		</div>
 	);
 
 	const renderMatrix = () => (
 		<Card
-			variant="themed"
+			variant="default"
 			className="flex h-full min-h-0 gap-0 overflow-hidden border-0 shadow-none ring-0"
 		>
 			<CardContent className="flex min-h-0 flex-1 flex-col p-0">
@@ -484,12 +487,12 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 						}}
 					/>
 					<Select value={orbPreset} onValueChange={(value) => setOrbPreset(value as OrbPreset)}>
-						<SelectTrigger className={cn(ft.selectTrigger, 'h-9 min-h-9 w-auto min-w-36 py-1')}>
+						<SelectTrigger variant="form" className="h-9 min-h-9 w-auto min-w-36 py-1">
 							<SelectValue />
 						</SelectTrigger>
-						<SelectContent className={ft.selectContent}>
+						<SelectContent variant="form">
 							{ORB_PRESETS.map((preset) => (
-								<SelectItem key={preset.id} value={preset.id} className={ft.selectItem}>
+								<SelectItem variant="form" key={preset.id} value={preset.id}>
 									{t('label_orb')}: {t(preset.labelKey)}
 								</SelectItem>
 							))}
@@ -517,13 +520,15 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 				{view === 'midpoints' ? (
 					<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4">
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-							<span className={cn('text-xs font-semibold tracking-wide uppercase', ft.muted)}>
+							<Text variant="eyebrow" as="span" tone="muted" className="font-semibold">
 								{t('aspectarium_midpoint_contact_aspects', { defaultValue: 'Contact aspects' })}
-							</span>
+							</Text>
 							{MIDPOINT_CONTACT_ASPECT_IDS.map((aspectId) => (
 								<Label
+									variant="compact"
+									tone="secondary"
 									key={aspectId}
-									className={cn('flex cursor-pointer items-center gap-1.5 text-xs', ft.bodyText)}
+									className="flex cursor-pointer items-center gap-1.5"
 								>
 									<Checkbox
 										checked={midpointAspectTypes.has(aspectId)}
@@ -542,15 +547,15 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 						</div>
 
 						<div>
-							<h3 className={cn('mb-2 text-sm font-semibold', ft.title)}>
+							<Heading variant="panelTitle" level={3} className="mb-2">
 								{t('aspectarium_view_midpoints', { defaultValue: 'Midpoints' })}
-							</h3>
+							</Heading>
 							{midpoints.length === 0 ? (
-								<p className={cn('text-sm', ft.muted)}>
+								<Text variant="body" tone="muted">
 									{t('aspectarium_no_midpoints', {
 										defaultValue: 'Select at least two objects to see their midpoints.'
 									})}
-								</p>
+								</Text>
 							) : (
 								<Table>
 									<TableHeader>
@@ -581,15 +586,18 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 												</TableCell>
 												<TableCell>
 													{midpoint.ambiguous && (
-														<span
-															className={cn('text-xs italic', ft.muted)}
+														<Text
+															variant="caption"
+															as="span"
+															tone="muted"
+															className="italic"
 															title={t('aspectarium_midpoint_ambiguous_hint', {
 																defaultValue:
 																	'These objects are ~180° apart — both positions are equally valid.'
 															})}
 														>
 															{t('aspectarium_midpoint_ambiguous', { defaultValue: 'ambiguous' })}
-														</span>
+														</Text>
 													)}
 												</TableCell>
 											</TableRow>
@@ -600,15 +608,15 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 						</div>
 
 						<div>
-							<h3 className={cn('mb-2 text-sm font-semibold', ft.title)}>
+							<Heading variant="panelTitle" level={3} className="mb-2">
 								{t('aspectarium_midpoint_contacts_title', { defaultValue: 'Contacts' })}
-							</h3>
+							</Heading>
 							{midpointContacts.length === 0 ? (
-								<p className={cn('text-sm', ft.muted)}>
+								<Text variant="body" tone="muted">
 									{t('aspectarium_no_midpoint_contacts', {
 										defaultValue: 'No contacts found within orb.'
 									})}
-								</p>
+								</Text>
 							) : (
 								<Table>
 									<TableHeader>
@@ -751,11 +759,11 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<div className="mx-auto max-w-3xl">
 							{aspectEntries.length === 0 ? (
-								<p className={cn('px-6 py-16 text-center text-sm', ft.muted)}>
+								<Text variant="body" tone="muted" className="px-6 py-16 text-center">
 									{activeTransitOverlay
 										? t('transit_overlay_no_aspects')
 										: t('aspectarium_no_aspects')}
-								</p>
+								</Text>
 							) : (
 								aspectEntries.map((entry) => {
 									const color =
@@ -787,16 +795,16 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 												/>
 											</span>
 											<span className="min-w-0 flex-1">
-												<span className={cn('block truncate text-sm font-medium', ft.title)}>
+												<Text variant="label" as="span" tone="primary" className="block truncate">
 													{objectLabel(entry.aspect.from, t)} — {objectLabel(entry.aspect.to, t)}
-												</span>
-												<span className={cn('block text-xs', ft.muted)}>
+												</Text>
+												<Text variant="caption" as="span" tone="muted" className="block">
 													{aspectLabel(entry.aspect.type, t)}
-												</span>
+												</Text>
 											</span>
-											<span className={cn('shrink-0 font-mono text-sm', ft.muted)}>
+											<Text variant="body" as="span" tone="muted" className="shrink-0 font-mono">
 												{formatOrb(entry.aspect.orb)}
-											</span>
+											</Text>
 										</Button>
 									);
 								})

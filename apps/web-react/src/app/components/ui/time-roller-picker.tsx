@@ -1,8 +1,9 @@
+import { Text } from './typography';
 import { useEffect, useMemo, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
+import { InputGroup, InputGroupInput, InputGroupButton } from './input-group';
 import { Label } from '@/app/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
@@ -103,15 +104,8 @@ export function TimeRollerPicker({
 				</Label>
 			) : null}
 			<Popover open={open && !disabled} onOpenChange={(next) => setOpen(disabled ? false : next)}>
-				<div
-					className={cn(
-						'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
-						'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
-						disabled && 'cursor-not-allowed opacity-50'
-					)}
-				>
-					<Input
+				<InputGroup disabled={disabled}>
+					<InputGroupInput
 						id={id}
 						type="text"
 						inputMode="numeric"
@@ -124,24 +118,17 @@ export function TimeRollerPicker({
 								setOpen(false);
 							}
 						}}
-						disabled={disabled}
-						className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 tabular-nums shadow-none focus:ring-0 disabled:cursor-not-allowed"
+						className="tabular-nums"
 						placeholder="HH:MM:SS"
 						aria-label={label}
 					/>
 					<PopoverTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							disabled={disabled}
-							className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-hover-bg)]"
-							aria-label={label}
-						>
+						<InputGroupButton type="button" aria-label={label}>
 							<Clock className={cn('h-4 w-4 shrink-0', iconClassName)} />
-						</Button>
+						</InputGroupButton>
 					</PopoverTrigger>
-				</div>
-				<PopoverContent align="end" className={cn('w-[280px] p-3', panelClassName)}>
+				</InputGroup>
+				<PopoverContent variant="form" align="end" className={cn('w-[280px] p-3', panelClassName)}>
 					<div className="grid grid-cols-3 gap-3">
 						<TimeColumn
 							label={t('open_date_hour')}
@@ -181,9 +168,9 @@ function TimeColumn({
 }) {
 	return (
 		<div className="space-y-2">
-			<div className="text-center text-xs font-medium tracking-[0.14em] text-[color:var(--theme-content-muted)] uppercase">
+			<Text variant="eyebrow" tone="muted" className="text-center">
 				{label}
-			</div>
+			</Text>
 			<ScrollArea className="h-56 rounded-lg border">
 				<div className="space-y-1 p-1">
 					{values.map((value) => {

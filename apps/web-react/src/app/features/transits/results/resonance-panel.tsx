@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
@@ -98,12 +99,16 @@ export function ResonanceMappingNote({ degrees }: { degrees: number }) {
 	const { t } = useTranslation();
 	const ft = useAppFormFieldTheme();
 	return (
-		<p className={cn('mb-4 shrink-0 rounded-lg border p-3 text-xs', ft.muted, ft.footerBorder)}>
+		<Text
+			variant="caption"
+			tone="muted"
+			className={cn('mb-4 shrink-0 rounded-lg border p-3', ft.footerBorder)}
+		>
 			{t('aspect_timeline_mapping_note', {
 				defaultValue:
 					"Display mapping: the y-axis is the raw angular deviation from exact, in degrees, capped at a {{degrees}}° window — 0° at exact alignment, {{degrees}}° at the edge of what's shown. A wider configured orb only becomes visible once it closes to within range. Scroll to zoom, drag to pan.",
 				degrees
 			})}
-		</p>
+		</Text>
 	);
 }

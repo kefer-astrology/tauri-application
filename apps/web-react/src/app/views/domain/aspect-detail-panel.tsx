@@ -1,3 +1,4 @@
+import { Text, Heading } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { ASPECT_GLYPHS } from '@/lib/astrology/aspects';
@@ -39,7 +40,9 @@ export function AspectDetailPanel({ aspect, fromObject, toObject }: AspectDetail
 			<div className="flex items-center gap-3">
 				<div className="flex items-center gap-2">
 					<AstrologyGlyph glyphId={fromObject.bodyId} fallback={fromObject.icon} size={20} />
-					<span className={cn('text-sm font-medium', textColor)}>{fromObject.label}</span>
+					<Text variant="label" as="span" className={textColor}>
+						{fromObject.label}
+					</Text>
 				</div>
 				<span className="flex items-center justify-center text-xl leading-none">
 					<AstrologyGlyph
@@ -51,14 +54,18 @@ export function AspectDetailPanel({ aspect, fromObject, toObject }: AspectDetail
 				</span>
 				<div className="flex items-center gap-2">
 					<AstrologyGlyph glyphId={toObject.bodyId} fallback={toObject.icon} size={20} />
-					<span className={cn('text-sm font-medium', textColor)}>{toObject.label}</span>
+					<Text variant="label" as="span" className={textColor}>
+						{toObject.label}
+					</Text>
 				</div>
 			</div>
 
 			<Accordion type="multiple" defaultValue={['aspect-details']}>
 				<AccordionItem value="aspect-details" className="border-0">
 					<AccordionTrigger className="py-2 hover:no-underline">
-						<h4 className={cn('text-sm font-semibold', textColor)}>{t('details')}</h4>
+						<Heading variant="panelTitle" level={4} className={textColor}>
+							{t('details')}
+						</Heading>
 					</AccordionTrigger>
 					<AccordionContent className="pt-1">
 						<div className="space-y-2 text-sm">
@@ -108,8 +115,12 @@ export function AspectDetailPanel({ aspect, fromObject, toObject }: AspectDetail
 					<AccordionTrigger className="py-2 hover:no-underline">
 						<div className="flex items-center gap-2">
 							<AstrologyGlyph glyphId={fromObject.bodyId} fallback={fromObject.icon} size={18} />
-							<h4 className={cn('text-sm font-semibold', textColor)}>{fromObject.label}</h4>
-							<span className={cn('text-xs', mutedColor)}>{fromObject.layerLabel}</span>
+							<Heading variant="panelTitle" level={4} className={textColor}>
+								{fromObject.label}
+							</Heading>
+							<Text variant="caption" as="span" className={mutedColor}>
+								{fromObject.layerLabel}
+							</Text>
 						</div>
 					</AccordionTrigger>
 					<AccordionContent className="pt-1">
@@ -121,8 +132,12 @@ export function AspectDetailPanel({ aspect, fromObject, toObject }: AspectDetail
 					<AccordionTrigger className="py-2 hover:no-underline">
 						<div className="flex items-center gap-2">
 							<AstrologyGlyph glyphId={toObject.bodyId} fallback={toObject.icon} size={18} />
-							<h4 className={cn('text-sm font-semibold', textColor)}>{toObject.label}</h4>
-							<span className={cn('text-xs', mutedColor)}>{toObject.layerLabel}</span>
+							<Heading variant="panelTitle" level={4} className={textColor}>
+								{toObject.label}
+							</Heading>
+							<Text variant="caption" as="span" className={mutedColor}>
+								{toObject.layerLabel}
+							</Text>
 						</div>
 					</AccordionTrigger>
 					<AccordionContent className="pt-1">

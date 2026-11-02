@@ -1,3 +1,4 @@
+import { Heading } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import {
 	ChevronDown,
@@ -110,10 +111,7 @@ export function HoroscopeDashboard({
 		borderColor,
 		'bg-[color:var(--token-surface-subtle)]'
 	);
-	const nativeSelect = cn(
-		ft.inputCompact,
-		'h-9 w-full min-w-0 flex-1 text-sm rounded-xl [color-scheme:inherit]'
-	);
+	const timeStepSelectLayout = 'w-full min-w-0 flex-1 [color-scheme:inherit]';
 	const panelCardClass = 'gap-0 overflow-hidden transition-all duration-300';
 	// Times read and shown as local time at the chart's place; the transit moment in the same zone.
 	const chartZone = selectedChart ? chartTimeZone(selectedChart) : undefined;
@@ -400,7 +398,7 @@ export function HoroscopeDashboard({
 				{/* Left Column */}
 				<div className="flex min-h-0 min-w-0 flex-col gap-4">
 					{/* Profile Panel */}
-					<Card variant="themed" className={panelCardClass} data-tour="radix-profile">
+					<Card variant="default" className={panelCardClass} data-tour="radix-profile">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setProfileCollapsed(!profileCollapsed)}
@@ -411,9 +409,9 @@ export function HoroscopeDashboard({
 								) : (
 									<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
 								)}
-								<h3 className={cn('font-medium', textColor)}>
+								<Heading variant="sectionTitle" level={3} className={textColor}>
 									{selectedChart?.name ?? t('demo_chart_name')}
-								</h3>
+								</Heading>
 							</div>
 							<Button
 								variant="ghost"
@@ -491,7 +489,7 @@ export function HoroscopeDashboard({
 					</Card>
 
 					{/* Astrolabe Panel */}
-					<Card variant="themed" className={panelCardClass} data-tour="radix-astrolabe">
+					<Card variant="default" className={panelCardClass} data-tour="radix-astrolabe">
 						<div
 							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
 							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
@@ -502,7 +500,9 @@ export function HoroscopeDashboard({
 								) : (
 									<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
 								)}
-								<h3 className={`font-medium ${textColor}`}>{t('astrolabe')}</h3>
+								<Heading variant="sectionTitle" level={3} className={textColor}>
+									{t('astrolabe')}
+								</Heading>
 							</div>
 						</div>
 
@@ -524,12 +524,16 @@ export function HoroscopeDashboard({
 										value={String(timeAmount)}
 										onValueChange={(value) => setTimeAmount(Number(value))}
 									>
-										<SelectTrigger className={nativeSelect}>
+										<SelectTrigger
+											variant="form"
+											density="compact"
+											className={timeStepSelectLayout}
+										>
 											<SelectValue />
 										</SelectTrigger>
-										<SelectContent className={ft.selectContent}>
+										<SelectContent variant="form">
 											{Array.from({ length: getMaxAmount() }, (_, i) => i + 1).map((n) => (
-												<SelectItem key={n} value={String(n)} className={ft.selectItem}>
+												<SelectItem variant="form" key={n} value={String(n)}>
 													{n}
 												</SelectItem>
 											))}
@@ -542,26 +546,30 @@ export function HoroscopeDashboard({
 											setTimeUnit(value as 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr')
 										}
 									>
-										<SelectTrigger className={nativeSelect}>
+										<SelectTrigger
+											variant="form"
+											density="compact"
+											className={timeStepSelectLayout}
+										>
 											<SelectValue />
 										</SelectTrigger>
-										<SelectContent className={ft.selectContent}>
-											<SelectItem value="sec" className={ft.selectItem}>
+										<SelectContent variant="form">
+											<SelectItem variant="form" value="sec">
 												{t('astrolabe_unit_sec')}
 											</SelectItem>
-											<SelectItem value="min" className={ft.selectItem}>
+											<SelectItem variant="form" value="min">
 												{t('astrolabe_unit_min')}
 											</SelectItem>
-											<SelectItem value="hr" className={ft.selectItem}>
+											<SelectItem variant="form" value="hr">
 												{t('astrolabe_unit_hr')}
 											</SelectItem>
-											<SelectItem value="day" className={ft.selectItem}>
+											<SelectItem variant="form" value="day">
 												{t('astrolabe_unit_day')}
 											</SelectItem>
-											<SelectItem value="month" className={ft.selectItem}>
+											<SelectItem variant="form" value="month">
 												{t('astrolabe_unit_month')}
 											</SelectItem>
-											<SelectItem value="yr" className={ft.selectItem}>
+											<SelectItem variant="form" value="yr">
 												{t('astrolabe_unit_yr')}
 											</SelectItem>
 										</SelectContent>
@@ -581,36 +589,30 @@ export function HoroscopeDashboard({
 								{/* Date Input */}
 								<div className={controlRow}>
 									<Input
+										variant="form"
 										readOnly
 										value={chartDateLabel}
-										className={cn(
-											ft.input,
-											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0'
-										)}
+										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
 									/>
 									<Calendar className={cn('h-4 w-4 shrink-0', mutedColor)} />
 								</div>
 
 								<div className={controlRow}>
 									<Input
+										variant="form"
 										readOnly
 										value={chartTimeLabel}
-										className={cn(
-											ft.input,
-											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0'
-										)}
+										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
 									/>
 									<Clock className={cn('h-4 w-4 shrink-0', mutedColor)} />
 								</div>
 
 								<div className={controlRow}>
 									<Input
+										variant="form"
 										readOnly
 										value={chartLocationLabel}
-										className={cn(
-											ft.input,
-											'flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0'
-										)}
+										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
 									/>
 									<MapPin className={cn('h-4 w-4 shrink-0', mutedColor)} />
 								</div>
@@ -669,7 +671,7 @@ export function HoroscopeDashboard({
 				<div className="min-h-0 min-w-0">
 					<Card
 						data-tour="radix-positions"
-						variant="themed"
+						variant="default"
 						className={cn(panelCardClass, positionsCollapsed ? '' : 'flex h-full flex-col')}
 					>
 						<div
@@ -682,7 +684,9 @@ export function HoroscopeDashboard({
 								) : (
 									<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
 								)}
-								<h3 className={`font-medium ${textColor}`}>{t('right_panel')}</h3>
+								<Heading variant="sectionTitle" level={3} className={textColor}>
+									{t('right_panel')}
+								</Heading>
 							</div>
 							<Button
 								variant="ghost"
@@ -768,16 +772,19 @@ export function HoroscopeDashboard({
 						className={cn('flex shrink-0 justify-end gap-3 border-t px-6 py-4', ft.footerBorder)}
 					>
 						<Button
+							size="form"
 							type="button"
-							variant="outline"
+							variant="form-secondary"
 							onClick={() => setShowPositionModal(false)}
-							className={cn(ft.footerCancel, '!flex-none')}
+							className="flex-none"
 						>
 							{t('cancel')}
 						</Button>
 						<Button
+							variant="form-primary"
+							size="form"
 							type="button"
-							className={cn(ft.footerPrimary, '!flex-none')}
+							className="flex-none"
 							onClick={() => {
 								if (selectedChart) {
 									onObservableObjectsChange?.(selectedChart.id, pickerBodies);

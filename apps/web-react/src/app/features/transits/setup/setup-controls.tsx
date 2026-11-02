@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import type { ReactNode } from 'react';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Label } from '@/app/components/ui/label';
@@ -25,20 +26,20 @@ export function SetupSelect({
 	options: readonly { value: string; label: ReactNode; disabled?: boolean }[];
 	dataTour?: string;
 }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<div data-tour={dataTour}>
-			<Label className={cn('mb-2 block', ft.label)}>{label}</Label>
+			<Label className="mb-2 block">{label}</Label>
 			<Select value={value} onValueChange={onValueChange}>
-				<SelectTrigger className={cn(ft.selectTrigger, 'shadow-inner')}>
+				<SelectTrigger variant="form" className="shadow-inner">
 					<SelectValue />
 				</SelectTrigger>
-				<SelectContent className={ft.selectContent}>
+				<SelectContent variant="form">
 					{options.map((option) => (
 						<SelectItem
+							variant="form"
 							key={option.value}
 							value={option.value}
-							className={ft.selectItem}
+
 							disabled={option.disabled}
 						>
 							{option.label}
@@ -75,14 +76,23 @@ export function CheckOption({
 				className={cn('mt-0.5', disabled && 'disabled:cursor-not-allowed', ft.checkboxAccent)}
 				disabled={disabled}
 			/>
-			<span className={cn('text-sm', disabled ? ft.textDisabled : ft.bodyText)}>{label}</span>
+			<Text
+				variant="body"
+				as="span"
+				tone="secondary"
+				className={disabled ? ft.textDisabled : ft.bodyText}
+			>
+				{label}
+			</Text>
 		</Label>
 	);
 	if (!hint) return option;
 	return (
 		<div className="space-y-1.5">
 			{option}
-			<p className={cn('pl-7 text-xs', ft.muted)}>{hint}</p>
+			<Text variant="caption" tone="muted" className="pl-7">
+				{hint}
+			</Text>
 		</div>
 	);
 }

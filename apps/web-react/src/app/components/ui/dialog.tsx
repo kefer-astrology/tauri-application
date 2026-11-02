@@ -5,6 +5,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
 
 import { cn } from './utils';
+import { typographyVariants } from './typography';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
 	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -88,7 +89,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
 	return (
 		<DialogPrimitive.Title
 			data-slot="dialog-title"
-			className={cn('text-lg leading-none font-semibold', className)}
+			className={cn(typographyVariants({ variant: 'sectionTitle', tone: 'primary' }), className)}
 			{...props}
 		/>
 	);
@@ -101,7 +102,7 @@ function DialogDescription({
 	return (
 		<DialogPrimitive.Description
 			data-slot="dialog-description"
-			className={cn('text-muted-foreground text-sm', className)}
+			className={cn(typographyVariants({ variant: 'body', tone: 'muted' }), className)}
 			{...props}
 		/>
 	);

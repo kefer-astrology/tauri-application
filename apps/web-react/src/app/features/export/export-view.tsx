@@ -1,3 +1,4 @@
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -5,7 +6,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Label } from '@/app/components/ui/label';
-import { cn } from '@/app/components/ui/utils';
+
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 
@@ -45,25 +46,28 @@ export function ExportView() {
 		<AppMainContentRoot className={ft.formPageBg}>
 			<AppMainContentContainer width="standard" className="space-y-6">
 				<div>
-					<h1 className={cn('text-xl font-semibold', ft.title)}>{t('export')}</h1>
-					<p className={cn('mt-1 text-sm', ft.muted)}>{t('export_include')}</p>
+					<Heading variant="pageTitle" level={1}>
+						{t('export')}
+					</Heading>
+					<Text variant="body" tone="muted" className="mt-1">
+						{t('export_include')}
+					</Text>
 				</div>
 
 				<Card variant="ghost" className="rounded-xl">
 					<CardContent className="space-y-6 p-6">
-						<p className={cn('text-sm font-medium', ft.label)}>{t('export_include')}</p>
+						<Text variant="label" tone="secondary">
+							{t('export_include')}
+						</Text>
 
 						<div className="flex gap-2">
 							{EXPORT_TYPES.map(({ id, labelKey }) => (
 								<Button
 									key={id}
 									type="button"
-									variant={exportKind === id ? 'default' : 'outline'}
+									variant={exportKind === id ? 'default' : 'form-secondary'}
 									size="sm"
-									className={cn(
-										'min-w-0 flex-1',
-										exportKind === id ? '' : cn(ft.footerCancel, 'rounded-lg px-3 py-0')
-									)}
+									className="min-w-0 flex-1 rounded-lg py-0"
 									onClick={() => setExportKind(id)}
 								>
 									{t(labelKey)}
@@ -82,8 +86,10 @@ export function ExportView() {
 										}
 									/>
 									<Label
+										variant="default"
+										tone="secondary"
 										htmlFor={part.inputId}
-										className={cn('cursor-pointer text-sm font-normal', ft.bodyText)}
+										className="cursor-pointer font-normal"
 									>
 										{t(part.labelKey)}
 									</Label>
@@ -92,7 +98,13 @@ export function ExportView() {
 						</div>
 
 						<div className="pt-2">
-							<Button type="button" className={ft.footerPrimary} onClick={handleExport}>
+							<Button
+								variant="form-primary"
+								size="form"
+								type="button"
+								className="flex-1"
+								onClick={handleExport}
+							>
 								{t('export')}
 							</Button>
 						</div>

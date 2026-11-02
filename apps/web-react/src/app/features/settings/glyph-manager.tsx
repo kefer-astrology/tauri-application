@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
@@ -131,11 +132,13 @@ function GlyphManagerRow({ row, isCustom }: { row: GlyphManagerRowData; isCustom
 		<div className="flex min-w-[240px] grow basis-[260px] items-center justify-between gap-2 rounded-lg border border-[color:var(--theme-panel-border)] p-2">
 			<div className="flex min-w-0 items-center gap-2">
 				<AstrologyGlyph glyphId={row.id} domain={row.domain} fallback={row.fallback} size={22} />
-				<span className="truncate text-sm">{row.label}</span>
+				<Text variant="body" as="span" className="truncate">
+					{row.label}
+				</Text>
 				{isCustom ? (
-					<span className="text-xs text-[color:var(--theme-content-muted)]">
+					<Text variant="caption" as="span" tone="muted">
 						({t('glyph_custom')})
-					</span>
+					</Text>
 				) : null}
 			</div>
 			<div className="flex shrink-0 items-center gap-1">
@@ -156,7 +159,11 @@ function GlyphManagerRow({ row, isCustom }: { row: GlyphManagerRowData; isCustom
 					</Button>
 				) : null}
 			</div>
-			{error ? <p className="text-destructive w-full text-xs">{error}</p> : null}
+			{error ? (
+				<Text variant="caption" className="text-destructive w-full">
+					{error}
+				</Text>
+			) : null}
 		</div>
 	);
 }
@@ -169,9 +176,9 @@ export function GlyphManager() {
 
 	return (
 		<div className="space-y-2">
-			<p className="text-xs text-[color:var(--theme-content-muted)]">
+			<Text variant="caption" tone="muted">
 				{t('glyph_upload_svg_hint')}
-			</p>
+			</Text>
 			<Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
 				{groups.map((group) => (
 					<AccordionItem key={group.key} value={group.key}>

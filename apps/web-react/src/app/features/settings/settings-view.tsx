@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { useAppearance } from '@/app/providers/appearance';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import type { ThemePalette } from '@/lib/themePalettes';
@@ -36,7 +34,6 @@ const SECTIONS: Record<SettingsSectionId, () => React.ReactNode> = {
  */
 export function SettingsView({ section }: { section: SettingsSectionId }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
 	const { elementColors, commitElementColors, themePalette, commitThemePalette } = useAppearance();
 	const [changed, setChanged] = useState(false);
 	const [elementDraft, setElementDraftState] = useState<ElementColors>(elementColors);
@@ -88,15 +85,18 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 							<CardFooter className="shrink-0 flex-col gap-2 border-0 bg-transparent px-6 py-4 sm:flex-row md:px-8">
 								<Button
 									type="button"
-									variant="outline"
-									className={ft.footerCancel}
+									variant="form-secondary"
+									size="form"
+									className="flex-1"
 									onClick={cancel}
 								>
 									{t('cancel')}
 								</Button>
 								<Button
+									variant="form-primary"
+									size="form"
 									type="button"
-									className={cn(ft.footerPrimary)}
+									className="flex-1"
 									onClick={confirm}
 									disabled={!changed}
 								>

@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Label } from '@/app/components/ui/label';
@@ -55,7 +56,7 @@ export function PersonFields({
 	return (
 		<div className="space-y-4">
 			<div>
-				<Label className={cn('mb-2 text-xs tracking-[0.08em] uppercase', ft.muted)}>
+				<Label variant="eyebrow" tone="muted" className="mb-2">
 					{t('synastry_chart')}
 				</Label>
 				<Select
@@ -63,21 +64,21 @@ export function PersonFields({
 					onValueChange={(value) => set('chartId', value)}
 					disabled={manual || charts.length === 0}
 				>
-					<SelectTrigger className={ft.selectTrigger} aria-label={personLabel}>
+					<SelectTrigger variant="form" aria-label={personLabel}>
 						<SelectValue
 							placeholder={charts.length ? t('synastry_choose_chart') : t('synastry_no_charts')}
 						/>
 					</SelectTrigger>
-					<SelectContent className={ft.selectContent}>
+					<SelectContent variant="form">
 						{charts.map((chart) => {
 							const { date, time } = splitChartDateTime(chart.dateTime, chartTimeZone(chart));
 							return (
-								<SelectItem key={chart.id} value={chart.id} className={ft.selectItem}>
+								<SelectItem variant="form" key={chart.id} value={chart.id}>
 									<span className="flex min-w-0 flex-col">
 										<span className="truncate">{chart.name}</span>
-										<span className={cn('truncate text-xs', ft.muted)}>
+										<Text variant="caption" as="span" tone="muted" className="truncate">
 											{date} {time} · {chart.location}
-										</span>
+										</Text>
 									</span>
 								</SelectItem>
 							);
@@ -87,7 +88,9 @@ export function PersonFields({
 			</div>
 
 			<div className="flex items-center justify-between gap-3">
-				<Label className={ft.label}>{t('synastry_input_mode')}</Label>
+				<Label variant="default" tone="secondary">
+					{t('synastry_input_mode')}
+				</Label>
 				<ModeSwitcher
 					value={person.mode}
 					onValueChange={(value) => set('mode', value)}
@@ -109,7 +112,6 @@ export function PersonFields({
 						locale={locale}
 						labelClassName={ft.label}
 						iconClassName={ft.iconColor}
-						panelClassName={ft.datePicker}
 					/>
 					<TimeRollerPicker
 						id={`${personLabel}-time`}
@@ -118,11 +120,15 @@ export function PersonFields({
 						onValueChange={(value) => set('time', localTimeValue(value))}
 						labelClassName={ft.label}
 						iconClassName={ft.iconColor}
-						panelClassName={ft.selectContent}
 					/>
 				</div>
 				<div>
-					<Label className={cn('mb-1.5 block', ft.label)} htmlFor={`${personLabel}-location`}>
+					<Label
+						variant="default"
+						tone="secondary"
+						className="mb-1.5 block"
+						htmlFor={`${personLabel}-location`}
+					>
 						{t('synastry_location')}
 					</Label>
 					<LocationSelector
@@ -142,7 +148,7 @@ export function PersonFields({
 						emptyLabel={t('synastry_location_placeholder')}
 						loadingLabel={t('new_resolving_location')}
 						searchLocations={searchLocations}
-						className={ft.input}
+
 						iconClassName={ft.iconColor}
 						onResolvedLocationSelect={(result) =>
 							onChange({

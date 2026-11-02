@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState, type ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star } from 'lucide-react';
@@ -109,7 +110,7 @@ export function InformationView({
 
 	const smallTitle = cn('text-xs font-semibold uppercase tracking-wide', ft.muted);
 	const RailCard = ({ className, ...props }: ComponentProps<typeof Card>) => (
-		<Card variant="themed" className={cn('gap-2 py-3 shadow-sm', className)} {...props} />
+		<Card variant="default" className={cn('gap-2 py-3 shadow-sm', className)} {...props} />
 	);
 
 	const bottomChips: { id: string; label: string }[] = [
@@ -145,8 +146,12 @@ export function InformationView({
 				data-handoff="TopBar"
 				className="flex h-9 flex-shrink-0 items-center border-b border-[color:var(--theme-panel-border)] px-4"
 			>
-				<span className={cn('text-sm font-medium', ft.title)}>{t('sidebar_information')}</span>
-				<span className={cn('ml-2 text-xs', ft.muted)}>— syntéza & struktura</span>
+				<Text variant="label" as="span" tone="primary">
+					{t('sidebar_information')}
+				</Text>
+				<Text variant="caption" as="span" tone="muted" className="ml-2">
+					— syntéza & struktura
+				</Text>
 			</header>
 
 			<div className="flex min-h-0 flex-1 gap-2 overflow-hidden p-2 pt-1">
@@ -164,10 +169,10 @@ export function InformationView({
 							<CardContent className="space-y-2 px-3">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-7 w-full">
-										<TabsTrigger value="pos" className="text-[10px]">
+										<TabsTrigger value="pos" className="text-xs">
 											Pozitivní
 										</TabsTrigger>
-										<TabsTrigger value="neg" className="text-[10px]">
+										<TabsTrigger value="neg" className="text-xs">
 											Negativní (neobsazeno)
 										</TabsTrigger>
 									</TabsList>
@@ -189,10 +194,10 @@ export function InformationView({
 							<CardContent className="px-3">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-7 w-full">
-										<TabsTrigger value="pos" className="text-[10px]">
+										<TabsTrigger value="pos" className="text-xs">
 											Pozitivní
 										</TabsTrigger>
-										<TabsTrigger value="neg" className="text-[10px]">
+										<TabsTrigger value="neg" className="text-xs">
 											Negativní
 										</TabsTrigger>
 									</TabsList>
@@ -215,9 +220,9 @@ export function InformationView({
 											]}
 											positive={false}
 										/>
-										<p className="mt-1 text-[10px] text-[color:var(--theme-content-muted)]">
+										<Text variant="caption" tone="muted" className="mt-1">
 											neobsazeno (outline)
-										</p>
+										</Text>
 									</TabsContent>
 								</Tabs>
 							</CardContent>
@@ -233,10 +238,10 @@ export function InformationView({
 							<CardContent className="space-y-2 px-3">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-7 w-full">
-										<TabsTrigger value="pos" className="text-[10px]">
+										<TabsTrigger value="pos" className="text-xs">
 											Pozitivní
 										</TabsTrigger>
-										<TabsTrigger value="neg" className="text-[10px]">
+										<TabsTrigger value="neg" className="text-xs">
 											Negativní
 										</TabsTrigger>
 									</TabsList>
@@ -260,9 +265,9 @@ export function InformationView({
 											]}
 											positive={false}
 										/>
-										<p className="text-[10px] text-[color:var(--theme-content-muted)]">
+										<Text variant="caption" tone="muted">
 											neobsazeno
-										</p>
+										</Text>
 									</TabsContent>
 								</Tabs>
 							</CardContent>
@@ -294,7 +299,7 @@ export function InformationView({
 											data-state={hemiGaugeHover === 'ew-east' ? 'hover-preview' : 'default'}
 											variant="ghost"
 											size="sm"
-											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-xs"
 											onMouseEnter={() => setHemiGaugeHover('ew-east')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
@@ -306,7 +311,7 @@ export function InformationView({
 											data-state={hemiGaugeHover === 'ew-west' ? 'hover-preview' : 'default'}
 											variant="ghost"
 											size="sm"
-											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-xs"
 											onMouseEnter={() => setHemiGaugeHover('ew-west')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
@@ -325,7 +330,7 @@ export function InformationView({
 											data-state={hemiGaugeHover === 'ns-north' ? 'hover-preview' : 'default'}
 											variant="ghost"
 											size="sm"
-											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-xs"
 											onMouseEnter={() => setHemiGaugeHover('ns-north')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
@@ -337,7 +342,7 @@ export function InformationView({
 											data-state={hemiGaugeHover === 'ns-south' ? 'hover-preview' : 'default'}
 											variant="ghost"
 											size="sm"
-											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
+											className="h-auto flex-1 justify-start rounded-lg px-2 py-1.5 text-left text-xs"
 											onMouseEnter={() => setHemiGaugeHover('ns-south')}
 											onMouseLeave={() => setHemiGaugeHover(null)}
 										>
@@ -363,13 +368,13 @@ export function InformationView({
 										className="absolute top-0 left-0 h-full w-1/2"
 										style={{ width: '58%', backgroundColor: 'var(--token-viz-1)' }}
 									/>
-									<div className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
+									<div className="absolute inset-0 flex items-center justify-center text-xs font-medium">
 										58 % extro · 42 % intro
 									</div>
 								</div>
-								<p className="mt-1 text-[10px] text-[color:var(--theme-content-muted)]">
+								<Text variant="caption" tone="muted" className="mt-1">
 									Východní hemisféra + horní · dummy váha
-								</p>
+								</Text>
 							</CardContent>
 						</RailCard>
 					</div>
@@ -386,7 +391,7 @@ export function InformationView({
 							data-handoff="MicroBadge_LunarPhase"
 							variant="outline"
 							className={cn(
-								'h-auto max-w-[200px] cursor-default px-2 py-1 text-[10px] leading-tight font-normal',
+								'h-auto max-w-[200px] cursor-default px-2 py-1 text-xs leading-tight font-normal',
 								microHover === 'lunar' && 'ring-primary/30 ring-2'
 							)}
 							onMouseEnter={() => setMicroHover('lunar')}
@@ -398,7 +403,7 @@ export function InformationView({
 							data-handoff="MicroBadge_LightsHorizon"
 							variant="outline"
 							className={cn(
-								'h-auto max-w-[200px] cursor-default px-2 py-1 text-[10px] leading-tight font-normal',
+								'h-auto max-w-[200px] cursor-default px-2 py-1 text-xs leading-tight font-normal',
 								microHover === 'lights' && 'ring-primary/30 ring-2'
 							)}
 							onMouseEnter={() => setMicroHover('lights')}
@@ -426,7 +431,7 @@ export function InformationView({
 							data-handoff="MicroBadge_SynodicRoles"
 							variant="outline"
 							className={cn(
-								'h-auto max-w-[210px] cursor-default px-2 py-1 text-[10px] leading-tight font-normal',
+								'h-auto max-w-[210px] cursor-default px-2 py-1 text-xs leading-tight font-normal',
 								microHover === 'synodic' && 'ring-primary/30 ring-2'
 							)}
 							onMouseEnter={() => setMicroHover('synodic')}
@@ -471,10 +476,12 @@ export function InformationView({
 						<RailCard data-handoff="Card_ShapeDiagram" className="gap-1 py-2">
 							<CardContent className="flex items-center justify-between gap-3 px-3 py-2">
 								<div>
-									<p className={cn('text-xs font-medium', ft.title)}>Tvarový diagram horoskopu</p>
-									<p className="text-[11px] text-[color:var(--theme-content-muted)]">
+									<Text variant="compactLabel" tone="primary">
+										Tvarový diagram horoskopu
+									</Text>
+									<Text variant="caption" tone="muted">
 										Pattern: Bucket
-									</p>
+									</Text>
 								</div>
 								<div
 									className="flex h-10 w-14 items-end justify-center gap-0.5 rounded-lg border border-dashed p-1 text-[color:var(--theme-content-muted)]"
@@ -506,10 +513,7 @@ export function InformationView({
 											checked={dynamicsMode}
 											onCheckedChange={setDynamicsMode}
 										/>
-										<Label
-											htmlFor="dynamics-mode"
-											className="text-[10px] text-[color:var(--theme-content-muted)]"
-										>
+										<Label variant="compact" tone="muted" htmlFor="dynamics-mode">
 											Dynamika v kruhu
 										</Label>
 									</div>
@@ -521,10 +525,10 @@ export function InformationView({
 							<CardContent className="px-3">
 								<Tabs defaultValue="pos" className="w-full">
 									<TabsList className="h-8 w-full">
-										<TabsTrigger value="pos" className="text-[11px]">
+										<TabsTrigger value="pos" className="text-xs">
 											Pozitivní převaha
 										</TabsTrigger>
-										<TabsTrigger value="neg" className="text-[11px]">
+										<TabsTrigger value="neg" className="text-xs">
 											Negativní dynamika
 										</TabsTrigger>
 									</TabsList>
@@ -555,7 +559,7 @@ export function InformationView({
 												size="sm"
 												data-state={selectedConfig === c.id ? 'active' : 'default'}
 												className={cn(
-													'h-auto justify-start rounded-lg px-2 py-1 text-left text-[11px] transition-colors',
+													'h-auto justify-start rounded-lg px-2 py-1 text-left text-xs transition-colors',
 													selectedConfig === c.id
 														? 'bg-accent text-accent-foreground font-medium'
 														: 'hover:bg-[color:var(--theme-hover-bg)]'
@@ -569,7 +573,7 @@ export function InformationView({
 								</ScrollArea>
 								<div
 									data-handoff="ConfigPreview_MiniDiagram"
-									className="mt-2 flex h-16 items-center justify-center rounded-lg border border-dashed bg-[color:var(--theme-soft-bg)] text-[10px] text-[color:var(--theme-content-muted)]"
+									className="mt-2 flex h-16 items-center justify-center rounded-lg border border-dashed bg-[color:var(--theme-soft-bg)] text-xs text-[color:var(--theme-content-muted)]"
 								>
 									Preview: {configs.find((c) => c.id === selectedConfig)?.label ?? '—'}
 								</div>
@@ -581,12 +585,12 @@ export function InformationView({
 								<CardTitle className={cn('text-sm', ft.title)}>Stellium</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-1 px-3">
-								<p className="text-sm font-medium">Stellium: 10. dům (3 planety)</p>
-								<p className="flex items-center gap-1 text-[11px] text-[color:var(--theme-content-muted)]">
+								<Text variant="label">Stellium: 10. dům (3 planety)</Text>
+								<Text variant="caption" tone="muted" className="flex items-center gap-1">
 									<AstrologyGlyph glyphId="sun" fallback="☉" size={14} />
 									<AstrologyGlyph glyphId="venus" fallback="♀" size={14} />
 									<AstrologyGlyph glyphId="jupiter" fallback="♃" size={14} />
-								</p>
+								</Text>
 							</CardContent>
 						</RailCard>
 
@@ -602,9 +606,9 @@ export function InformationView({
 								<p className="text-[12px] leading-snug">
 									Singleton: <span className="font-medium">Saturn</span> – Východní hemisféra
 								</p>
-								<p className="mt-1 text-[10px] text-[color:var(--theme-content-muted)]">
+								<Text variant="caption" tone="muted" className="mt-1">
 									Hover: halo planety + hemisférický overlay (ASC–DSC)
-								</p>
+								</Text>
 							</CardContent>
 						</RailCard>
 
@@ -614,8 +618,10 @@ export function InformationView({
 							</CardHeader>
 							<CardContent className="space-y-2 px-3">
 								<div className="flex flex-wrap items-center gap-2">
-									<span className="text-sm">Retrográdní planety: 5/10</span>
-									<Badge variant="secondary" className="text-[10px]">
+									<Text variant="body" as="span">
+										Retrográdní planety: 5/10
+									</Text>
+									<Badge variant="secondary" className="text-xs">
 										výrazná
 									</Badge>
 								</div>
@@ -624,7 +630,7 @@ export function InformationView({
 									type="button"
 									variant="ghost"
 									size="sm"
-									className="h-auto w-full justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
+									className="h-auto w-full justify-start rounded-lg px-2 py-1.5 text-left text-xs"
 									onMouseEnter={() => setRetroPatternHover('all-upper')}
 									onMouseLeave={() => setRetroPatternHover(null)}
 								>
@@ -634,7 +640,7 @@ export function InformationView({
 									type="button"
 									variant="ghost"
 									size="sm"
-									className="h-auto w-full justify-start rounded-lg px-2 py-1.5 text-left text-[11px]"
+									className="h-auto w-full justify-start rounded-lg px-2 py-1.5 text-left text-xs"
 									onMouseEnter={() => setRetroPatternHover('all-east')}
 									onMouseLeave={() => setRetroPatternHover(null)}
 								>
@@ -667,7 +673,7 @@ export function InformationView({
 										<Badge
 											key={label}
 											variant="outline"
-											className="cursor-default px-1.5 py-0 text-[9px] hover:bg-[color:var(--theme-hover-bg)]"
+											className="cursor-default px-1.5 py-0 text-xs hover:bg-[color:var(--theme-hover-bg)]"
 											onMouseEnter={() =>
 												setFocalFilterHover(label === 'Neaspektovaná' ? 'una' : null)
 											}
@@ -677,7 +683,7 @@ export function InformationView({
 										</Badge>
 									))}
 								</div>
-								<ul className="space-y-2 text-[11px]">
+								<ul className="space-y-2 text-xs">
 									<FocalRow rank={1} name="Saturn" score={92} badges={['FD', 'Ruler', 'Lead']} />
 									<FocalRow rank={2} name="Mars" score={84} badges={['Angular', 'Trigger']} />
 									<FocalRow
@@ -688,9 +694,9 @@ export function InformationView({
 										onRowHover={(h) => setFocalFilterHover(h ? 'una' : null)}
 									/>
 								</ul>
-								<p className="text-[10px] text-[color:var(--theme-content-muted)]">
+								<Text variant="caption" tone="muted">
 									Una: při aktivaci zvýraznit planetu bez hlavních aspektů v kruhu (koncept).
-								</p>
+								</Text>
 							</CardContent>
 						</RailCard>
 					</div>
@@ -715,7 +721,7 @@ export function InformationView({
 							className={chipStateClass(
 								locked,
 								hover,
-								'h-auto shrink-0 rounded-full border px-2.5 py-1 text-[10px] transition-colors'
+								'h-auto shrink-0 rounded-full border px-2.5 py-1 text-xs transition-colors'
 							)}
 							onMouseEnter={() => setHoverChipId(c.id)}
 							onMouseLeave={() => setHoverChipId(null)}
@@ -748,8 +754,12 @@ function ElementBars({ positive }: { positive: boolean }) {
 								r.n === 0 ? 'h-[72%]' : 'h-[8%]'
 							)}
 						/>
-						<span className="text-[9px] text-[color:var(--theme-content-muted)]">0</span>
-						<span className="text-[9px]">{r.label}</span>
+						<Text variant="caption" as="span" tone="muted">
+							0
+						</Text>
+						<Text variant="caption" as="span">
+							{r.label}
+						</Text>
 					</div>
 				))}
 			</div>
@@ -763,10 +773,12 @@ function ElementBars({ positive }: { positive: boolean }) {
 						className="w-full rounded-t-lg"
 						style={{ height: `${r.pct}%`, backgroundColor: r.color }}
 					/>
-					<span className="text-[10px] font-medium">
+					<Text variant="compactLabel" as="span">
 						{r.n} · {r.pct}%
-					</span>
-					<span className="text-[9px] text-[color:var(--theme-content-muted)]">{r.label}</span>
+					</Text>
+					<Text variant="caption" as="span" tone="muted">
+						{r.label}
+					</Text>
 				</div>
 			))}
 		</div>
@@ -798,7 +810,7 @@ function StackedBar({
 					/>
 				))}
 			</div>
-			<div className="mt-1 flex justify-between text-[9px] text-[color:var(--theme-content-muted)]">
+			<div className="mt-1 flex justify-between text-xs text-[color:var(--theme-content-muted)]">
 				{segments.map((s) => (
 					<span key={s.label}>
 						{s.label} {positive ? `${s.count} (${s.pct}%)` : s.pct === 100 ? 'neobsazeno' : '0'}
@@ -817,7 +829,7 @@ function HouseHeatmap() {
 			{intensities.map((v, i) => (
 				<div
 					key={labels[i]}
-					className="flex aspect-square items-center justify-center rounded-lg border text-[8px]"
+					className="flex aspect-square items-center justify-center rounded-lg border text-xs"
 					style={{
 						backgroundColor: `color-mix(in srgb, var(--token-viz-1) ${20 + Math.round(v * 50)}%, transparent)`
 					}}
@@ -845,7 +857,7 @@ function QuadrantDonut() {
 						'conic-gradient(var(--token-viz-1) 0% 28%, var(--token-viz-2) 28% 52%, var(--token-viz-3) 52% 74%, var(--token-viz-4) 74% 100%)'
 				}}
 			/>
-			<div className="grid flex-1 grid-cols-2 gap-1 text-[10px]">
+			<div className="grid flex-1 grid-cols-2 gap-1 text-xs">
 				{parts.map((p) => (
 					<div
 						key={p.q}
@@ -884,14 +896,18 @@ function AspectHistogram({ positive: _positive }: { positive: boolean }) {
 		<div className="space-y-1">
 			{rows.map((r) => (
 				<div key={r.k} className="flex items-center gap-2">
-					<span className="w-20 text-[10px] text-[color:var(--theme-content-muted)]">{r.k}</span>
+					<Text variant="caption" as="span" tone="muted" className="w-20">
+						{r.k}
+					</Text>
 					<div className="h-5 flex-1 overflow-hidden rounded-md bg-[color:var(--theme-soft-bg)]">
 						<div
 							className="bg-primary/80 h-full rounded-r"
 							style={{ width: `${(r.n / max) * 100}%` }}
 						/>
 					</div>
-					<span className="w-4 text-[10px] tabular-nums">{r.n}</span>
+					<Text variant="caption" as="span" className="w-4 tabular-nums">
+						{r.n}
+					</Text>
 					{r.star && (
 						<Star
 							className="h-3 w-3"
@@ -914,16 +930,18 @@ function AspectNegativeAbsence() {
 		<div className="space-y-2">
 			{rows.map((r) => (
 				<div key={r.k} className="flex items-center gap-2">
-					<span className="w-28 text-[10px] leading-tight text-[color:var(--theme-content-muted)]">
+					<Text variant="caption" as="span" tone="muted" className="w-28">
 						{r.k}
-					</span>
+					</Text>
 					<div className="h-4 flex-1 rounded-lg border border-dashed bg-[color:var(--theme-soft-bg)]" />
-					<span className="w-6 text-[10px] text-[color:var(--theme-content-muted)]">0</span>
+					<Text variant="caption" as="span" tone="muted" className="w-6">
+						0
+					</Text>
 				</div>
 			))}
-			<p className="text-[10px] text-[color:var(--theme-content-muted)]">
+			<Text variant="caption" tone="muted">
 				Neobsazenost · neutrální styl
-			</p>
+			</Text>
 		</div>
 	);
 }
@@ -948,19 +966,21 @@ function FocalRow({
 			onMouseLeave={() => onRowHover?.(false)}
 		>
 			<div>
-				<span className="text-[10px] text-[color:var(--theme-content-muted)]">#{rank}</span>{' '}
+				<Text variant="caption" as="span" tone="muted">
+					#{rank}
+				</Text>{' '}
 				<span className="font-medium">{name}</span>
 				<div className="mt-0.5 flex flex-wrap gap-0.5">
 					{badges.map((b) => (
-						<Badge key={b} variant="secondary" className="px-1 py-0 text-[8px]">
+						<Badge key={b} variant="secondary" className="px-1 py-0 text-xs">
 							{b}
 						</Badge>
 					))}
 				</div>
 			</div>
-			<span className="text-[10px] text-[color:var(--theme-content-muted)] tabular-nums">
+			<Text variant="caption" as="span" tone="muted" className="tabular-nums">
 				{score}
-			</span>
+			</Text>
 		</li>
 	);
 }

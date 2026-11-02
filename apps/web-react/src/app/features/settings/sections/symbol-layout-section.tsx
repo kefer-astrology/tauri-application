@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { Accordion } from '@/app/components/ui/accordion';
 import { Checkbox } from '@/app/components/ui/checkbox';
@@ -79,9 +80,9 @@ export function SymbolLayoutSection() {
 				title={t('settings_degree_symbol_sets')}
 				className="space-y-3"
 			>
-				<p className={cn('text-xs leading-relaxed', ft.muted)}>
+				<Text variant="caption" tone="muted">
 					{t('settings_degree_symbol_sets_blurb')}
-				</p>
+				</Text>
 				{DEGREE_SYMBOL_SET_CATALOG.map((entry) => (
 					<div key={entry.id} className="flex items-center gap-2">
 						<Checkbox
@@ -99,18 +100,17 @@ export function SymbolLayoutSection() {
 							}}
 						/>
 						<Label
+							variant="default"
+							tone="muted"
 							htmlFor={`symbol-set-${entry.id}`}
-							className={cn(
-								'text-sm',
-								entry.available ? cn('cursor-pointer', ft.bodyText) : ft.muted
-							)}
+							className={entry.available ? cn('cursor-pointer', ft.bodyText) : ft.muted}
 						>
 							{t(entry.labelKey)}
 						</Label>
 						{!entry.available && (
-							<span className={cn('text-xs italic', ft.muted)}>
+							<Text variant="caption" as="span" tone="muted" className="italic">
 								{t('settings_degree_symbol_set_unavailable')}
-							</span>
+							</Text>
 						)}
 					</div>
 				))}
@@ -150,14 +150,12 @@ export function SymbolLayoutSection() {
 				title={t('settings_element_colors')}
 				className="space-y-4"
 			>
-				<p className={cn('text-xs leading-relaxed', ft.muted)}>
+				<Text variant="caption" tone="muted">
 					{t('settings_element_wheel_blurb')}
-				</p>
+				</Text>
 				{ELEMENTS.map((element) => (
 					<div key={element} className="flex flex-wrap items-center gap-3">
-						<Label className={cn(ft.label, 'min-w-[8rem] shrink-0')}>
-							{t(`settings_element_${element}`)}
-						</Label>
+						<Label className="min-w-[8rem] shrink-0">{t(`settings_element_${element}`)}</Label>
 						<ColorInput
 							className="w-14"
 							value={elementDraft[element]}
@@ -168,7 +166,9 @@ export function SymbolLayoutSection() {
 							}}
 							aria-label={t(`settings_element_${element}`)}
 						/>
-						<span className={cn('font-mono text-xs', ft.muted)}>{elementDraft[element]}</span>
+						<Text variant="caption" as="span" tone="muted" className="font-mono">
+							{elementDraft[element]}
+						</Text>
 					</div>
 				))}
 			</SettingsGroup>

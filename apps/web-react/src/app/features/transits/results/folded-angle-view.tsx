@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TransitSeriesEntry } from '@/lib/tauri/types';
@@ -119,21 +120,25 @@ export function FoldedAngleView({
 		<div className="space-y-6">
 			<Card variant="ghost" className="w-full rounded-xl">
 				<CardContent className="space-y-4 p-6 md:p-8">
-					<p className={cn('text-sm', ft.muted)}>
+					<Text variant="body" tone="muted">
 						{t('transits_folded_subtitle', {
 							defaultValue:
 								'Observer-relative planetary angular positions over time, folded onto a 0°–180° scale.'
 						})}
-					</p>
-					<p className={cn('rounded-lg border p-3 text-xs', ft.muted, ft.footerBorder)}>
+					</Text>
+					<Text
+						variant="caption"
+						tone="muted"
+						className={cn('rounded-lg border p-3', ft.footerBorder)}
+					>
 						{t('transits_folded_coordinate_note', {
 							defaultValue:
 								'Coordinate system: geocentric ecliptic longitude (tropical zodiac), θ measured eastward from 0° Aries (the vernal equinox). Folded as f(θ) = min(θ, 360° − θ), so each revolution reads 0° → 180° → 0°. Actual planetary motion is preserved — the curve is not forced sinusoidal.'
 						})}
-					</p>
+					</Text>
 
 					<div>
-						<Label className={cn('mb-2 block', ft.label)}>
+						<Label className="mb-2 block">
 							{t('transits_folded_bodies_label', { defaultValue: 'Bodies shown' })}
 						</Label>
 						<CheckChips
@@ -163,12 +168,12 @@ export function FoldedAngleView({
 							onToggle={toggleBody}
 						/>
 						{atCap && (
-							<p className={cn('mt-2 text-xs', ft.muted)}>
+							<Text variant="caption" tone="muted" className="mt-2">
 								{t('transits_folded_max_bodies_hint', {
 									count: MAX_VISIBLE_SERIES,
 									defaultValue: `Showing the first ${MAX_VISIBLE_SERIES} selected bodies to keep lines distinguishable. Deselect one to add another.`
 								})}
-							</p>
+							</Text>
 						)}
 					</div>
 				</CardContent>
@@ -177,9 +182,9 @@ export function FoldedAngleView({
 			<Card variant="ghost" className="w-full rounded-xl">
 				<CardContent className="p-6 md:p-8">
 					<div className="mb-4 flex items-center justify-between gap-3">
-						<span className={cn('text-xs font-medium', ft.muted)}>
+						<Text variant="compactLabel" as="span" tone="muted">
 							{t('transits_folded_axis_angle', { defaultValue: 'Folded angle (°)' })}
-						</span>
+						</Text>
 						<Button
 							type="button"
 							variant="ghost"
@@ -194,13 +199,13 @@ export function FoldedAngleView({
 					</div>
 
 					{categories.length === 0 ? (
-						<p className={cn('py-10 text-center text-sm', ft.muted)}>
+						<Text variant="body" tone="muted" className="py-10 text-center">
 							{loading
 								? t('transit_loading')
 								: t('transits_folded_empty', {
 										defaultValue: 'Compute a transit series to see folded trajectories here.'
 									})}
-						</p>
+						</Text>
 					) : viewMode === 'chart' ? (
 						<TimeSeriesChart
 							categories={categories}

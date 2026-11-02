@@ -1,3 +1,4 @@
+import { Text, Heading } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
@@ -43,7 +44,11 @@ export function ConfigurationMatchesPanel({
 		<div className="flex flex-wrap items-center gap-2">
 			<span className="whitespace-nowrap tabular-nums">
 				{label}: {iso ? formatDateTime(iso) : '—'}
-				{clipped && <span className={cn('ml-1 text-[10px]', ft.muted)}>({clipped})</span>}
+				{clipped && (
+					<Text variant="caption" as="span" tone="muted" className="ml-1">
+						({clipped})
+					</Text>
+				)}
 			</span>
 			{iso && <OpenChartButton onClick={() => onOpenInstant(iso)} />}
 		</div>
@@ -51,9 +56,9 @@ export function ConfigurationMatchesPanel({
 
 	return (
 		<div className="shrink-0 border-t border-[color:var(--theme-panel-border)] p-4">
-			<h3 className={cn('mb-2 text-xs font-semibold tracking-wide uppercase', ft.bodyText)}>
+			<Heading variant="eyebrow" level={3} tone="secondary" className="mb-2">
 				{t('transits_configuration_matches_title', { defaultValue: 'Multi-body configurations' })}
-			</h3>
+			</Heading>
 			<ul className="max-h-64 space-y-2 overflow-auto">
 				{matches.map((match, index) => (
 					<li
@@ -76,13 +81,13 @@ export function ConfigurationMatchesPanel({
 									/>
 								))}
 							</span>
-							<span className={cn('text-[10px]', ft.muted)}>
+							<Text variant="caption" as="span" tone="muted">
 								{match.participants
 									.map(
 										(p) => `${p.role}=${objectLabel(p.body_id, t)}${p.is_fixed ? ' (fixed)' : ''}`
 									)
 									.join(', ')}
-							</span>
+							</Text>
 						</div>
 						{instantRow(
 							t('transits_configuration_entry', { defaultValue: 'Entry' }),

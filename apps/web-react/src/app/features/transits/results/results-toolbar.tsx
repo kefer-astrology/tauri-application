@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
@@ -103,9 +104,9 @@ export function ResultsToolbar() {
 
 			{chartMode && (
 				<div className="flex items-center gap-1.5">
-					<span className={cn('text-xs', ft.muted)}>
+					<Text variant="caption" as="span" tone="muted">
 						{t('transits_y_zoom_label', { defaultValue: 'Orb scale' })}
-					</span>
+					</Text>
 					<Button
 						type="button"
 						variant="ghost"
@@ -115,6 +116,8 @@ export function ResultsToolbar() {
 						−
 					</Button>
 					<Input
+						variant="form"
+						density="compact"
 						type="number"
 						min={0.5}
 						max={6}
@@ -124,7 +127,7 @@ export function ResultsToolbar() {
 							const n = Number(event.target.value);
 							if (Number.isFinite(n)) view.setYZoomDegrees(n);
 						}}
-						className={cn(ft.inputCompact, 'h-8 w-16 text-xs shadow-inner')}
+						className="h-8 w-16 text-xs shadow-inner"
 					/>
 					<Button
 						type="button"
@@ -137,15 +140,16 @@ export function ResultsToolbar() {
 				</div>
 			)}
 
-			<span className={cn('text-xs tabular-nums', ft.muted)}>
+			<Text variant="caption" as="span" tone="muted" className="tabular-nums">
 				{t('transit_results_count').replace('{count}', String(series.length))} · {periodSummary}
-			</span>
+			</Text>
 
 			<div className="flex items-center gap-2">
-				<span className={cn('text-xs', ft.muted)}>
+				<Text variant="caption" as="span" tone="muted">
 					{t('transits_label_graph_sampling_interval', { defaultValue: 'Graph sampling interval' })}
-				</span>
+				</Text>
 				<Input
+					variant="form"
 					type="number"
 					min={1}
 					step={1}
@@ -156,20 +160,13 @@ export function ResultsToolbar() {
 						if (event.key === 'Enter') commitStep();
 					}}
 					disabled={!setup.sampledGraphOutput}
-					className={cn(
-						ft.input,
-						'h-8 w-16 py-1 text-xs shadow-inner',
-						!setup.sampledGraphOutput && ft.inputDisabled
-					)}
+					className="h-8 w-16 py-1 text-xs shadow-inner"
 				/>
 				<TimeStepUnitSelect
 					value={setup.timeStepUnit}
 					onValueChange={changeUnit}
 					disabled={!setup.sampledGraphOutput}
-					triggerClassName={cn(
-						'h-8 w-28 text-xs shadow-inner',
-						!setup.sampledGraphOutput && ft.inputDisabled
-					)}
+					triggerClassName="h-8 w-28 text-xs shadow-inner"
 				/>
 			</div>
 

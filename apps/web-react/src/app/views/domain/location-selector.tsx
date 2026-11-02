@@ -118,6 +118,7 @@ export function LocationSelector({
 						)}
 					/>
 					<Input
+						variant="form"
 						id={id}
 						value={value}
 						onChange={(event) => onValueChange(event.target.value)}
@@ -136,7 +137,8 @@ export function LocationSelector({
 				</div>
 			</PopoverAnchor>
 			<PopoverContent
-				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] p-2 text-[color:var(--theme-content-primary)] backdrop-blur-sm"
+				variant="form"
+				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] p-2"
 				align="start"
 				sideOffset={6}
 				onOpenAutoFocus={(event) => event.preventDefault()}

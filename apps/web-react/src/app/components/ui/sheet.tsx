@@ -5,6 +5,7 @@ import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
 
 import { cn } from './utils';
+import { typographyVariants } from './typography';
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
 	return <SheetPrimitive.Root data-slot="sheet" {...props} />;
@@ -97,7 +98,7 @@ function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPr
 	return (
 		<SheetPrimitive.Title
 			data-slot="sheet-title"
-			className={cn('text-foreground font-semibold', className)}
+			className={cn(typographyVariants({ variant: 'sectionTitle', tone: 'primary' }), className)}
 			{...props}
 		/>
 	);
@@ -110,7 +111,7 @@ function SheetDescription({
 	return (
 		<SheetPrimitive.Description
 			data-slot="sheet-description"
-			className={cn('text-muted-foreground text-sm', className)}
+			className={cn(typographyVariants({ variant: 'body', tone: 'muted' }), className)}
 			{...props}
 		/>
 	);

@@ -1,3 +1,4 @@
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/app/components/ui/button';
 
@@ -293,8 +294,12 @@ export function GuidedTour() {
 						{stepIndex + 1} / {steps.length}
 					</span>
 				</div>
-				<h2 className="mb-2 text-lg font-semibold">{step.title}</h2>
-				<p className="text-sm leading-6 text-[color:var(--theme-content-secondary)]">{step.body}</p>
+				<Heading variant="sectionTitle" level={2} className="mb-2">
+					{step.title}
+				</Heading>
+				<Text variant="body" tone="secondary">
+					{step.body}
+				</Text>
 				<div className="mt-5 flex items-center justify-between gap-3">
 					<Button
 						variant="ghost"

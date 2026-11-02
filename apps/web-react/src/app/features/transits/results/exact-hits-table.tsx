@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
@@ -100,9 +101,9 @@ function hitColumns(ft: AppFormFieldTheme, t: Translate): ColumnDef<HitRow>[] {
 					<span className={cn('whitespace-nowrap tabular-nums', ft.bodyText)}>
 						{hit.fromSpeed === undefined ? '—' : formatSignedDms(hit.fromSpeed)}
 						{hit.fromRetrograde && (
-							<span className={cn('ml-1 text-[10px]', ft.muted)}>
+							<Text variant="caption" as="span" tone="muted" className="ml-1">
 								{t('aspect_timeline_retrograde_tag', { defaultValue: 'R' })}
-							</span>
+							</Text>
 						)}
 					</span>
 				);
@@ -125,11 +126,11 @@ export function ExactHitsTable({ rows }: { rows: HitRow[] }) {
 				initialSorting={INITIAL_SORTING}
 				density="compact"
 				empty={
-					<p className={cn('p-4 text-center text-xs', ft.muted)}>
+					<Text variant="caption" tone="muted" className="p-4 text-center">
 						{t('aspect_timeline_no_hits', {
 							defaultValue: 'No exact hits within this period for the selected pairs.'
 						})}
-					</p>
+					</Text>
 				}
 			/>
 		</div>

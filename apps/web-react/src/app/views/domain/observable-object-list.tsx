@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ColorInput } from '@/app/components/ui/color-input';
@@ -94,7 +95,13 @@ export function ObservableObjectList({
 			selectedIds={selectedIds}
 			onSelectedIdsChange={onSelectedIdsChange}
 			collapsedGroupIds={COLLAPSED_CATEGORIES}
-			headerStart={subtitle && <p className={cn('text-sm', ft.muted)}>{subtitle}</p>}
+			headerStart={
+				subtitle && (
+					<Text variant="body" tone="muted">
+						{subtitle}
+					</Text>
+				)
+			}
 			labels={{
 				search: t('aspectarium_search_planets'),
 				clearSearch: t('clear'),
@@ -108,16 +115,18 @@ export function ObservableObjectList({
 			renderItem={(item, { highlight }) => (
 				<>
 					<ObjectGlyph id={item.id} className={cn('shrink-0', ft.iconColor)} />
-					<span className={cn('text-sm', ft.bodyText)}>{highlight(item.label)}</span>
+					<Text variant="body" as="span" tone="secondary">
+						{highlight(item.label)}
+					</Text>
 					{item.definition.altName && (
-						<span className={cn('truncate text-xs italic', ft.muted)}>
+						<Text variant="caption" as="span" tone="muted" className="truncate italic">
 							{highlight(item.definition.altName)}
-						</span>
+						</Text>
 					)}
 					{item.disabled && (
-						<span className={cn('text-xs italic', ft.muted)}>
+						<Text variant="caption" as="span" tone="muted" className="italic">
 							({t('transits_body_unsupported_hint')})
-						</span>
+						</Text>
 					)}
 				</>
 			)}
@@ -188,10 +197,13 @@ export function ObservableObjectList({
 						/>
 						<div className="grid grid-cols-2 gap-x-8 gap-y-1.5 sm:grid-cols-3">
 							{stars.map(({ id, label, definition }) => (
-								<span
+								<Text
+									variant="body"
+									as="span"
+									tone="secondary"
 									key={id}
 									title={t('transits_body_unsupported_hint')}
-									className={cn('cursor-not-allowed truncate text-sm opacity-50', ft.bodyText)}
+									className="cursor-not-allowed truncate opacity-50"
 								>
 									{definition.zodiacSign && (
 										<span className="mr-1" aria-hidden="true">
@@ -200,19 +212,19 @@ export function ObservableObjectList({
 									)}
 									{highlight(label)}
 									{definition.altName && (
-										<span className={cn('ml-1 text-xs italic', ft.muted)}>
+										<Text variant="caption" as="span" tone="muted" className="ml-1 italic">
 											({definition.altName})
-										</span>
+										</Text>
 									)}
 									{definition.significance && definition.significance !== 'notable' && (
-										<span className={cn('ml-1 text-xs italic', ft.muted)}>
+										<Text variant="caption" as="span" tone="muted" className="ml-1 italic">
 											&middot;{' '}
 											{t(`settings_stars_filter_${definition.significance}`, {
 												defaultValue: definition.significance
 											})}
-										</span>
+										</Text>
 									)}
-								</span>
+								</Text>
 							))}
 						</div>
 					</div>

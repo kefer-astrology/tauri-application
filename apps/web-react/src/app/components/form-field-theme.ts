@@ -3,10 +3,11 @@ import { cn } from './ui/utils';
 import type { Theme } from '@/lib/theme';
 import { DEFAULT_THEME_PALETTES, isLightPalette } from '@/lib/themePalettes';
 import { useAppTheme } from '../providers/app-theme';
+import { typographyVariants } from './ui/typography';
 
 /**
- * Shared field styling aligned with **New Horoscope** (`features/horoscope/new-horoscope/`) so settings and
- * other forms match the same glass / border / focus treatment across `sunrise` | `noon` | `twilight` | `midnight`.
+ * Typography, page layout and chart-context styling. Form controls own their appearance through
+ * component variants in `ui/form-variants.ts`.
  */
 export function getAppFormFieldTheme(
 	theme: Theme,
@@ -17,82 +18,18 @@ export function getAppFormFieldTheme(
 	const isDark = dark;
 
 	const title = 'text-[color:var(--theme-content-primary)]';
-	const label = 'text-[color:var(--theme-content-secondary)]';
 	const muted = 'text-[color:var(--theme-content-muted)]';
 
-	const input = cn(
-		'w-full rounded-xl border px-4 py-2.5 text-base transition-all md:text-sm',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
-		'placeholder:text-[color:var(--theme-content-muted)] shadow-inner backdrop-blur-sm'
-	);
-
-	const inputCompact = cn(
-		'h-9 rounded-xl border px-3 py-1 text-sm transition-all',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]',
-		'backdrop-blur-sm'
-	);
-
-	const selectTrigger = cn(
-		'flex h-auto min-h-10 w-full items-center justify-between rounded-xl border px-4 py-2.5 text-base transition-all md:text-sm [&>svg]:opacity-70',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] shadow-inner backdrop-blur-sm'
-	);
-
-	const selectContent = cn(
-		'rounded-xl border shadow-lg backdrop-blur-sm',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)]'
-	);
-
-	const selectItem =
-		'focus:bg-[color:var(--theme-hover-bg)] focus:text-[color:var(--theme-content-primary)] data-[highlighted]:bg-[color:var(--theme-hover-bg)] data-[highlighted]:text-[color:var(--theme-content-primary)]';
-
 	const footerBorder = 'border-[color:var(--theme-panel-border)]';
-
-	const footerCancel = cn(
-		'flex-1 rounded-xl border px-6 py-2.5 font-medium transition-all focus:ring-2 focus:ring-offset-2 focus:outline-none',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-secondary)] backdrop-blur-sm shadow-inner',
-		'hover:bg-[color:var(--theme-hover-bg)] focus:ring-[var(--theme-accent)]'
-	);
-
-	const footerPrimary = cn(
-		'flex-1 rounded-xl px-6 py-2.5 font-medium text-primary-foreground shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50',
-		'bg-[color:var(--theme-accent)] hover:brightness-95 focus:ring-[var(--theme-accent)] shadow-lg shadow-[color:var(--theme-shadow-color)]/20'
-	);
 
 	const langBubbleActive =
 		'border-[color:var(--theme-accent)] bg-[color:var(--theme-accent)] text-primary-foreground ring-2 ring-[color:var(--theme-accent)] shadow-sm';
 	const langBubbleIdle =
 		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-secondary)] hover:bg-[color:var(--theme-hover-bg)]';
 
-	const inputDisabled = cn(
-		'cursor-not-allowed border text-base md:text-sm',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] text-[color:var(--theme-content-muted)] backdrop-blur-sm'
-	);
-
-	const dropdown = selectContent;
-
-	const dropdownHover = 'hover:bg-[color:var(--theme-hover-bg)]';
-
-	const dropdownActive =
-		'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]';
-
 	const advancedPanel = 'rounded-xl border-0 bg-[color:var(--theme-soft-bg)] p-4 backdrop-blur-sm';
 
 	const iconColor = 'text-[color:var(--theme-accent)]';
-
-	const datePicker = cn(
-		'w-80 rounded-xl border p-4 shadow-xl ring-1 ring-[color:var(--theme-panel-border)]',
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm'
-	);
-
-	const datePickerHeader = 'text-[color:var(--theme-content-primary)]';
-
-	const datePickerButton = 'hover:bg-[color:var(--theme-hover-bg)]';
-
-	const datePickerDay =
-		'hover:bg-[color:var(--theme-hover-bg)] text-[color:var(--theme-content-primary)]';
-
-	const datePickerDayActive =
-		'bg-[color:var(--theme-accent)] text-primary-foreground hover:brightness-95';
 
 	/** Native checkbox accent color (Tailwind `text-*` tints the checkmark). Focus ring comes from the shared `Checkbox` primitive. */
 	const checkboxAccent = 'text-[color:var(--theme-accent)]';
@@ -128,29 +65,12 @@ export function getAppFormFieldTheme(
 		isTwilight,
 		isSunrise,
 		title,
-		sectionTitle: cn('text-lg font-semibold tracking-tight', title),
-		label: cn('text-sm font-medium', label),
+		sectionTitle: typographyVariants({ variant: 'sectionTitle', tone: 'primary' }),
+		label: typographyVariants({ variant: 'label', tone: 'secondary' }),
 		muted,
-		input,
-		inputCompact,
-		inputDisabled,
-		selectTrigger,
-		selectContent,
-		selectItem,
 		footerBorder,
-		footerCancel,
-		footerPrimary,
-		/** Popover / menu surface (same palette as `selectContent`). */
-		dropdown,
-		dropdownHover,
-		dropdownActive,
 		advancedPanel,
 		iconColor,
-		datePicker,
-		datePickerHeader,
-		datePickerButton,
-		datePickerDay,
-		datePickerDayActive,
 		formPageBg,
 		textDisabled,
 		bodyText,

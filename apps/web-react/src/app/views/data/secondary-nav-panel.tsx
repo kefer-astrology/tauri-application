@@ -1,3 +1,4 @@
+import { Heading } from '@/app/components/ui/typography';
 import type { CSSProperties, ReactNode } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { cn } from '@/app/components/ui/utils';
@@ -53,7 +54,9 @@ export function SecondaryNavPanel({
 		>
 			{title ? (
 				<div className="shrink-0 px-3 py-4">
-					<h2 className={cn('text-sm font-semibold tracking-wide uppercase', st.text)}>{title}</h2>
+					<Heading variant="eyebrow" level={2} className={st.text}>
+						{title}
+					</Heading>
 				</div>
 			) : null}
 

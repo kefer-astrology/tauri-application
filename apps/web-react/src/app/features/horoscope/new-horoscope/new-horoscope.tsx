@@ -51,8 +51,9 @@ export function NewHoroscope({
 						{isEditMode && (
 							<Button
 								type="button"
-								variant="ghost"
-								className={ft.footerCancel}
+								variant="form-secondary"
+								size="form"
+								className="flex-1"
 								onClick={() => onBack?.()}
 							>
 								{t('new_back')}
@@ -60,8 +61,9 @@ export function NewHoroscope({
 						)}
 						<Button
 							type="button"
-							variant="ghost"
-							className={cn(ft.footerPrimary, !isEditMode && 'flex-1')}
+							variant="form-primary"
+							size="form"
+							className="flex-1"
 							disabled={isResolvingLocation}
 							onClick={() => void form.submit()}
 						>

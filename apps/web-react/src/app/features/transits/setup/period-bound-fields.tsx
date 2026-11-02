@@ -27,7 +27,7 @@ export function PeriodBoundFields({
 
 	return (
 		<div>
-			<Label className={cn('mb-2 block', ft.label)}>{label}:</Label>
+			<Label className="mb-2 block">{label}:</Label>
 			<div className="grid grid-cols-3 gap-3">
 				<DatePickerInput
 					label={t('transits_general_item_date')}
@@ -38,7 +38,6 @@ export function PeriodBoundFields({
 					disabled={disabled}
 					labelClassName={smallLabel}
 					iconClassName={ft.iconColor}
-					panelClassName={ft.datePicker}
 				/>
 				<TimeRollerPicker
 					label={t('transits_general_item_time')}
@@ -48,15 +47,15 @@ export function PeriodBoundFields({
 					disabled={disabled}
 					labelClassName={smallLabel}
 					iconClassName={ft.iconColor}
-					panelClassName={ft.datePicker}
 				/>
 				<div>
 					<Label className={smallLabel}>{t('transits_general_item_timezone')}</Label>
 					<Input
+						variant="form"
 						type="text"
 						placeholder={t('transits_timezone_placeholder')}
 						disabled
-						className={cn(ft.input, 'h-10 py-2 text-sm shadow-inner', ft.inputDisabled)}
+						className="h-10 py-2 text-sm shadow-inner"
 					/>
 				</div>
 			</div>

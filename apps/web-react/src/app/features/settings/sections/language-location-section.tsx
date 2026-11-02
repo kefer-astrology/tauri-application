@@ -1,9 +1,10 @@
+import { Text } from '@/app/components/ui/typography';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Separator } from '@/app/components/ui/separator';
-import { cn } from '@/app/components/ui/utils';
+
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { LocationSelector } from '@/app/views/domain/location-selector';
 import { useWorkspace } from '@/app/providers/workspace';
@@ -63,8 +64,11 @@ export function LanguageLocationSection() {
 		placeholder: string
 	) => (
 		<div className="space-y-2">
-			<Label className={ft.label}>{label}</Label>
+			<Label variant="default" tone="secondary">
+				{label}
+			</Label>
 			<Input
+				variant="form"
 				value={value}
 				onChange={(event) => {
 					setValue(event.target.value);
@@ -72,7 +76,6 @@ export function LanguageLocationSection() {
 				}}
 				onBlur={() => persistLocation()}
 				placeholder={placeholder}
-				className={cn(ft.input, 'shadow-inner')}
 			/>
 		</div>
 	);
@@ -100,7 +103,9 @@ export function LanguageLocationSection() {
 			<Separator className="bg-[color:var(--theme-panel-border)]" />
 
 			<div className="space-y-2">
-				<Label className={ft.label}>{t('default_location')}</Label>
+				<Label variant="default" tone="secondary">
+					{t('default_location')}
+				</Label>
 				<LocationSelector
 					value={locationName}
 					onValueChange={(next) => {
@@ -122,15 +127,15 @@ export function LanguageLocationSection() {
 					placeholder={t('placeholder_default_location')}
 					emptyLabel={t('open_search_no_results')}
 					loadingLabel={t('new_resolving_location')}
-					className={cn(ft.selectTrigger, 'shadow-inner')}
+					className="shadow-inner"
 					iconClassName={ft.muted}
 				/>
-				<p className={cn('text-xs', ft.muted)}>
+				<Text variant="caption" tone="muted">
 					{t('settings_default_location_hint', {
 						defaultValue:
 							'Choose a searched location to sync its coordinates, or adjust latitude and longitude manually below.'
 					})}
-				</p>
+				</Text>
 			</div>
 			<div className="grid gap-4 sm:grid-cols-2">
 				{textField(t('current_info_latitude'), latitude, setLatitude, t('placeholder_latitude'))}

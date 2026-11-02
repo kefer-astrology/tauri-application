@@ -1,7 +1,7 @@
+import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { useWorkspace } from '@/app/providers/workspace';
 import { aspectColorByKey, exactHitRows, fastBodies } from '@/lib/astrology/transitResults';
 import { useTransits } from '../transits-provider';
@@ -17,7 +17,7 @@ import { SeriesDetailPanel } from './series-detail-panel';
  *  then exact events and configuration matches. */
 export function TransitsResultsView() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { workspaceDefaults } = useWorkspace();
 	const {
 		series,
@@ -54,11 +54,15 @@ export function TransitsResultsView() {
 
 			{(error || warnings.length > 0) && (
 				<div className="space-y-1 border-b border-[color:var(--theme-panel-border)] px-4 py-2">
-					{error && <p className="text-destructive text-xs">{error}</p>}
+					{error && (
+						<Text variant="caption" className="text-destructive">
+							{error}
+						</Text>
+					)}
 					{warnings.map((warning, index) => (
-						<p key={index} className={cn('text-xs', ft.muted)}>
+						<Text variant="caption" tone="muted" key={index}>
 							{warning}
-						</p>
+						</Text>
 					))}
 				</div>
 			)}
@@ -68,7 +72,7 @@ export function TransitsResultsView() {
 					{chartMode && <ResonanceMappingNote degrees={view.yZoomDegrees} />}
 
 					{visibleSeries.length === 0 ? (
-						<p className={cn('py-10 text-center text-sm', ft.muted)}>
+						<Text variant="body" tone="muted" className="py-10 text-center">
 							{loading
 								? t('transit_loading')
 								: !setup.sampledGraphOutput
@@ -79,7 +83,7 @@ export function TransitsResultsView() {
 									: t('aspect_timeline_no_pairs', {
 											defaultValue: 'No aspects were detected within orb across this series.'
 										})}
-						</p>
+						</Text>
 					) : chartMode ? (
 						<ResonancePanel
 							categories={timelineCategories}

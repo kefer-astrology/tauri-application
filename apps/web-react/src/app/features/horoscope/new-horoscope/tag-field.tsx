@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useState } from 'react';
 import { Pencil, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -47,11 +48,14 @@ export function TagField({
 		>
 			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 px-3 py-2">
 				{tags.map((tag, index) => (
-					<span
+					<Text
+						variant="label"
+						as="span"
+						tone="primary"
 						key={tag}
 						className={cn(
-							'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium',
-							'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]'
+							'flex items-center gap-1 rounded-full px-2.5 py-0.5',
+							'bg-[color:var(--theme-selected-bg)]'
 						)}
 					>
 						<span
@@ -72,7 +76,7 @@ export function TagField({
 						>
 							<X className="size-3" />
 						</Button>
-					</span>
+					</Text>
 				))}
 				<TagSuggestionInput
 					value={input}

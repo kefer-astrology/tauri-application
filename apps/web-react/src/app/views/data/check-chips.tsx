@@ -25,10 +25,11 @@ export function CheckChips({
 				const checked = selected.includes(item.id);
 				return (
 					<Label
+						variant="compact"
 						key={item.id}
 						htmlFor={`${idPrefix}-${item.id}`}
 						className={cn(
-							'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
+							'flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors',
 							'border-[color:var(--theme-panel-border)]',
 							item.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
 							checked && 'bg-[color:var(--theme-soft-bg)]'

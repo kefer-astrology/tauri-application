@@ -174,7 +174,7 @@ export function ChartTreeTable({
 						<DataTableExpander row={row}>
 							<span className={cn('min-w-0 truncate', ft.bodyText)}>{getValue<string>()}</span>
 							{row.depth === 0 && count > 0 && (
-								<Badge variant="secondary" className="px-1.5 py-0 text-[10px] tabular-nums">
+								<Badge variant="secondary" className="px-1.5 py-0 text-xs tabular-nums">
 									{count}
 								</Badge>
 							)}

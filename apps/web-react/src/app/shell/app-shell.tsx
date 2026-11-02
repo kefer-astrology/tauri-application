@@ -1,10 +1,10 @@
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { AstrologySidebar } from '@/app/shell/astrology-sidebar';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { NewHoroscope } from '@/app/features/horoscope/new-horoscope/new-horoscope';
 import {
 	SettingsSecondarySidebar,
@@ -51,15 +51,21 @@ const SECONDARY_SIDEBAR_VIEWS = new Set(['otevrit', 'tranzity', 'dynamika', 'nas
 
 function PlaceholderView() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	return (
 		<AppMainContentRoot>
 			<AppMainContentContainer width="standard">
 				<Card variant="ghost" className="gap-0 p-0">
 					<CardContent className="space-y-3 p-6 md:p-8">
-						<h1 className={cn('text-xl font-semibold', ft.title)}>{t('placeholder_view_title')}</h1>
-						<p className={cn('text-sm', ft.muted)}>{t('placeholder_view_subtitle')}</p>
-						<p className={cn('text-sm leading-relaxed', ft.muted)}>{t('placeholder_view_body')}</p>
+						<Heading variant="pageTitle" level={1}>
+							{t('placeholder_view_title')}
+						</Heading>
+						<Text variant="body" tone="muted">
+							{t('placeholder_view_subtitle')}
+						</Text>
+						<Text variant="body" tone="muted">
+							{t('placeholder_view_body')}
+						</Text>
 					</CardContent>
 				</Card>
 			</AppMainContentContainer>

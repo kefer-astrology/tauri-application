@@ -505,7 +505,7 @@ export function TimeSeriesChart({
 
 			{yLabel && (
 				<div
-					className="pointer-events-none absolute top-1 left-1 text-[10px]"
+					className="pointer-events-none absolute top-1 left-1 text-xs"
 					style={{ color: 'var(--theme-content-muted)' }}
 				>
 					{yLabel}
@@ -540,7 +540,7 @@ export function TimeSeriesChart({
 									<span className="font-medium tabular-nums">{formatY(entry.value as number)}</span>
 								</div>
 								{extra && (
-									<div className="pl-4 text-[10px]" style={{ color: 'var(--theme-content-muted)' }}>
+									<div className="pl-4 text-xs" style={{ color: 'var(--theme-content-muted)' }}>
 										{extra}
 									</div>
 								)}
@@ -552,7 +552,7 @@ export function TimeSeriesChart({
 
 			{xLabel && (
 				<div
-					className="pointer-events-none absolute right-2 bottom-0 text-[10px]"
+					className="pointer-events-none absolute right-2 bottom-0 text-xs"
 					style={{ color: 'var(--theme-content-muted)' }}
 				>
 					{xLabel}

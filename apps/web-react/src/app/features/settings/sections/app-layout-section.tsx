@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Accordion } from '@/app/components/ui/accordion';
@@ -77,14 +78,12 @@ export function AppLayoutSection() {
 				title={t('settings_theme_palette_title')}
 				className="space-y-4"
 			>
-				<p className={cn('text-xs leading-relaxed', ft.muted)}>
+				<Text variant="caption" tone="muted">
 					{t('settings_theme_palette_blurb', { theme: t(`sidebar_theme_${appearance.theme}`) })}
-				</p>
+				</Text>
 				<div className="space-y-2 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] p-4">
 					<div className="flex items-center justify-between gap-4">
-						<Label htmlFor="settings-popup-fuzziness" className={ft.label}>
-							{t('settings_popup_fuzziness')}
-						</Label>
+						<Label htmlFor="settings-popup-fuzziness">{t('settings_popup_fuzziness')}</Label>
 						<output
 							htmlFor="settings-popup-fuzziness"
 							className={cn('min-w-12 text-right text-sm tabular-nums', ft.title)}
@@ -104,17 +103,18 @@ export function AppLayoutSection() {
 							markChanged();
 						}}
 					/>
-					<p className={cn('text-xs leading-relaxed', ft.muted)}>
+					<Text variant="caption" tone="muted">
 						{t('settings_popup_fuzziness_hint')}
-					</p>
+					</Text>
 				</div>
 				<div className="grid gap-4 sm:grid-cols-2">
 					{OPAQUE_PALETTE_FIELDS.map(([key, labelKey]) => (
 						<div key={key} className="flex items-center gap-3">
 							<div className="min-w-0 flex-1">
-								<Label className={cn(ft.label, 'mb-1 block')}>{t(labelKey)}</Label>
+								<Label className="mb-1 block">{t(labelKey)}</Label>
 								<Input
-									className={ft.inputCompact}
+									variant="form"
+									density="compact"
 									value={paletteDraft[key]}
 									onChange={(event) => setColor(key, event.target.value)}
 								/>
@@ -137,10 +137,14 @@ export function AppLayoutSection() {
 						const transparencyId = `settings-${key}-transparency`;
 						return (
 							<div key={key} className="space-y-2">
-								<Label className={ft.label}>{t(labelKey)}</Label>
+								<Label variant="default" tone="secondary">
+									{t(labelKey)}
+								</Label>
 								<div className="flex items-center gap-3">
 									<Input
-										className={cn(ft.inputCompact, 'min-w-0 flex-1')}
+										variant="form"
+										density="compact"
+										className="min-w-0 flex-1"
 										value={paletteDraft[key]}
 										onChange={(event) => setColor(key, event.target.value)}
 									/>
@@ -167,8 +171,10 @@ export function AppLayoutSection() {
 										}}
 									/>
 									<Label
+										variant="compact"
+										tone="muted"
 										htmlFor={transparencyId}
-										className={cn('cursor-pointer text-xs', ft.muted)}
+										className="cursor-pointer"
 									>
 										{t('settings_theme_transparency')}
 									</Label>
@@ -180,8 +186,9 @@ export function AppLayoutSection() {
 				<div className="pt-1">
 					<Button
 						type="button"
-						variant="outline"
-						className={cn(ft.footerCancel, 'max-w-xs')}
+						variant="form-secondary"
+						size="form"
+						className="max-w-xs flex-1"
 						onClick={() => {
 							for (const [key] of TRANSLUCENT_PALETTE_FIELDS) {
 								delete translucentAlphas.current[`${appearance.theme}:${key}`];
@@ -209,18 +216,23 @@ export function AppLayoutSection() {
 							markChanged();
 						}}
 					/>
-					<Label htmlFor="settings-monochrome" className={cn('cursor-pointer', ft.label)}>
+					<Label
+						variant="default"
+						tone="secondary"
+						htmlFor="settings-monochrome"
+						className="cursor-pointer"
+					>
 						{t('settings_monochrome_label', {
 							defaultValue: 'Use a monochromatic (grayscale) app appearance'
 						})}
 					</Label>
 				</div>
-				<p className={cn('text-xs leading-relaxed', ft.muted)}>
+				<Text variant="caption" tone="muted">
 					{t('settings_monochrome_hint', {
 						defaultValue:
 							'Desaturates the whole app on top of any theme or palette. Your theme and palette colors stay as-is underneath.'
 					})}
-				</p>
+				</Text>
 			</SettingsGroup>
 		</Accordion>
 	);

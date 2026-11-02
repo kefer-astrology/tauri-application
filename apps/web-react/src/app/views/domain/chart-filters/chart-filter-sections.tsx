@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
@@ -46,17 +47,19 @@ export function TagFilter({
 	availableTags
 }: SliceProps<string> & { availableTags: readonly string[] }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	return (
 		<>
 			<div>
 				<FieldLabel>{t('open_filter_tag_fulltext')}</FieldLabel>
 				<Input
+					variant="form"
+					density="compact"
 					type="search"
 					value={value}
 					onChange={(event) => onChange(event.target.value)}
 					placeholder={t('open_filter_tag_fulltext')}
-					className={cn(ft.inputCompact, 'mt-1.5')}
+					className="mt-1.5"
 				/>
 			</div>
 			<div className="flex flex-wrap gap-1.5">
@@ -88,19 +91,21 @@ const DATE_PART_RANGE: Record<(typeof DATE_PART_IDS)[number], [number, number | 
 
 export function DateFilter({ value, onChange }: SliceProps<ChartQuery['date']>) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	return (
 		<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 			{DATE_PART_IDS.map((part) => (
 				<div key={part}>
 					<FieldLabel>{t(`open_date_${part}`)}</FieldLabel>
 					<Input
+						variant="form"
+						density="compact"
 						type="number"
 						value={value[part]}
 						onChange={(event) => onChange({ ...value, [part]: event.target.value })}
 						min={DATE_PART_RANGE[part][0]}
 						max={DATE_PART_RANGE[part][1]}
-						className={cn(ft.inputCompact, 'mt-1.5')}
+						className="mt-1.5"
 					/>
 				</div>
 			))}
@@ -110,14 +115,15 @@ export function DateFilter({ value, onChange }: SliceProps<ChartQuery['date']>) 
 
 export function LocationFilter({ value, onChange }: SliceProps<string>) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	return (
 		<Input
+			variant="form"
+			density="compact"
 			type="search"
 			value={value}
 			onChange={(event) => onChange(event.target.value)}
 			placeholder={t('open_filter_location_fulltext')}
-			className={ft.inputCompact}
 		/>
 	);
 }
@@ -220,9 +226,9 @@ export function AspectFilters({ value, onChange }: SliceProps<AspectFilter[]>) {
 			))}
 			<Button
 				type="button"
-				variant="outline"
+				variant="form-secondary"
 				size="sm"
-				className={cn('h-8 text-xs', ft.footerCancel)}
+				className="h-8 flex-1 text-xs"
 				onClick={() =>
 					onChange([...value, emptyAspectFilter(Math.max(0, ...value.map((f) => f.id)) + 1)])
 				}
@@ -257,9 +263,9 @@ export function HouseFilters({ value, onChange }: SliceProps<Record<number, Hous
 			<div className="space-y-2">
 				{Array.from({ length: 12 }, (_, index) => index + 1).map((house) => (
 					<div key={house} className={cn(grid, 'items-center')}>
-						<span className={cn('text-sm', ft.bodyText)}>
+						<Text variant="body" as="span" tone="secondary">
 							{house}. {ANGLE_HOUSE_LABELS[house] ?? ''}
-						</span>
+						</Text>
 						<OptionSelect
 							value={value[house]?.sign ?? ''}
 							options={signOptions(t)}

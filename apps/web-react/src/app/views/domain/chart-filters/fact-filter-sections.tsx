@@ -3,7 +3,6 @@ import { Plus, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { SegmentedControl } from '@/app/components/ui/segmented-control';
 import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import {
 	CheckList,
 	CheckRow,
@@ -46,7 +45,7 @@ const AXIS_LABEL_KEYS: Record<string, string> = {
 
 export function StelliumFilters({ value, onChange }: SliceProps<StelliumFilter[]>) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const update = (id: number, patch: Partial<StelliumFilter>) =>
 		onChange(value.map((stellium) => (stellium.id === id ? { ...stellium, ...patch } : stellium)));
 	return (
@@ -124,9 +123,9 @@ export function StelliumFilters({ value, onChange }: SliceProps<StelliumFilter[]
 			))}
 			<Button
 				type="button"
-				variant="outline"
+				variant="form-secondary"
 				size="sm"
-				className={cn('gap-1.5', ft.footerCancel)}
+				className="flex-1 gap-1.5"
 				onClick={() =>
 					onChange([...value, emptyStelliumFilter(Math.max(0, ...value.map((s) => s.id)) + 1)])
 				}

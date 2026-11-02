@@ -88,9 +88,7 @@ export function TagSheet({
 
 					<div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
 						<div className="space-y-2">
-							<Label htmlFor="advanced-tags" className={ft.label}>
-								{t('new_tags')}
-							</Label>
+							<Label htmlFor="advanced-tags">{t('new_tags')}</Label>
 							<div className="flex items-start gap-2">
 								<TagSuggestionInput
 									id="advanced-tags"
@@ -101,12 +99,13 @@ export function TagSheet({
 									selectedTags={tags}
 									placeholder={t('placeholder_tags_example')}
 									className="flex-1"
-									inputClassName={cn(ft.input, 'h-auto shadow-inner')}
+									inputClassName="h-auto shadow-inner"
 								/>
 								<Button
+									variant="form-primary"
 									type="button"
 									size="icon"
-									className={cn(ft.footerPrimary, 'h-10 w-10 flex-none rounded-xl')}
+									className="h-10 w-10 flex-none rounded-xl"
 									onClick={() => addDraftTags()}
 									aria-label={t('new_tags')}
 								>
@@ -134,6 +133,7 @@ export function TagSheet({
 												aria-label={`${t('new_tags')} ${tag}`}
 											/>
 											<Input
+												variant="form"
 												value={draftNames[tag] ?? tag}
 												onChange={(event) =>
 													setDraftNames((prev) => ({ ...prev, [tag]: event.target.value }))
@@ -148,7 +148,7 @@ export function TagSheet({
 														setDraftNames((prev) => ({ ...prev, [tag]: tag }));
 													}
 												}}
-												className={cn(ft.input, 'h-8 min-w-0 flex-1 rounded-lg shadow-inner')}
+												className="h-8 min-w-0 flex-1 rounded-lg shadow-inner"
 												aria-label={`${t('new_tags')} ${tag}`}
 											/>
 											<Button
@@ -174,9 +174,10 @@ export function TagSheet({
 
 					<SheetFooter className="shrink-0 border-t border-[color:var(--theme-panel-border)] px-5 py-4">
 						<Button
+							size="form"
 							type="button"
-							variant="outline"
-							className={cn(ft.footerCancel, '!flex-none')}
+							variant="form-secondary"
+							className="flex-none"
 							onClick={() => onOpenChange(false)}
 						>
 							{t('button_close')}

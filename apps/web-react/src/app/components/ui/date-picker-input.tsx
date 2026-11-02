@@ -4,7 +4,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-reac
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
 import { Calendar } from '@/app/components/ui/calendar';
-import { Input } from '@/app/components/ui/input';
+import { InputGroup, InputGroupInput, InputGroupButton } from './input-group';
 import { Label } from '@/app/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
 import {
@@ -104,15 +104,8 @@ export function DatePickerInput({
 				</Label>
 			) : null}
 			<Popover open={open && !disabled} onOpenChange={(next) => setOpen(disabled ? false : next)}>
-				<div
-					className={cn(
-						'flex min-h-10 w-full items-stretch overflow-hidden rounded-xl border text-base shadow-inner transition-all md:text-sm',
-						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] text-[color:var(--theme-content-primary)] backdrop-blur-sm',
-						'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
-						disabled && 'cursor-not-allowed opacity-50'
-					)}
-				>
-					<Input
+				<InputGroup disabled={disabled}>
+					<InputGroupInput
 						id={id}
 						type="text"
 						inputMode="numeric"
@@ -125,24 +118,17 @@ export function DatePickerInput({
 								setOpen(false);
 							}
 						}}
-						disabled={disabled}
-						className="h-full flex-1 rounded-none border-0 bg-transparent px-4 py-2.5 shadow-none focus:ring-0 disabled:cursor-not-allowed"
 						placeholder={format(new Date(), 'P', { locale })}
 						aria-label={label}
 					/>
 					<PopoverTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							disabled={disabled}
-							className="h-full rounded-none border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-hover-bg)]"
-							aria-label={label}
-						>
+						<InputGroupButton type="button" aria-label={label}>
 							<CalendarIcon className={cn('h-4 w-4 shrink-0', iconClassName)} />
-						</Button>
+						</InputGroupButton>
 					</PopoverTrigger>
-				</div>
+				</InputGroup>
 				<PopoverContent
+					variant="form"
 					className={cn(panelClassName, 'w-[22rem] max-w-[calc(100vw-2rem)] p-0')}
 					align="end"
 				>
@@ -163,17 +149,17 @@ export function DatePickerInput({
 								<ChevronLeft className="size-4" />
 							</Button>
 							<div className="min-w-0 space-y-1">
-								<Label className="text-xs">{t('open_date_month')}</Label>
+								<Label variant="compact">{t('open_date_month')}</Label>
 								<Select
 									value={String(displayMonth.getMonth())}
 									onValueChange={(nextMonth) => changeDisplayedMonth(Number(nextMonth))}
 								>
-									<SelectTrigger size="sm">
+									<SelectTrigger variant="form" size="sm">
 										<SelectValue />
 									</SelectTrigger>
-									<SelectContent>
+									<SelectContent variant="form">
 										{months.map((month) => (
-											<SelectItem key={month.value} value={String(month.value)}>
+											<SelectItem variant="form" key={month.value} value={String(month.value)}>
 												{month.label}
 											</SelectItem>
 										))}
@@ -181,17 +167,17 @@ export function DatePickerInput({
 								</Select>
 							</div>
 							<div className="min-w-0 space-y-1">
-								<Label className="text-xs">{t('open_date_year')}</Label>
+								<Label variant="compact">{t('open_date_year')}</Label>
 								<Select
 									value={String(displayMonth.getFullYear())}
 									onValueChange={(nextYear) => changeDisplayedYear(Number(nextYear))}
 								>
-									<SelectTrigger size="sm">
+									<SelectTrigger variant="form" size="sm">
 										<SelectValue />
 									</SelectTrigger>
-									<SelectContent>
+									<SelectContent variant="form">
 										{years.map((year) => (
-											<SelectItem key={year} value={String(year)}>
+											<SelectItem variant="form" key={year} value={String(year)}>
 												{year}
 											</SelectItem>
 										))}

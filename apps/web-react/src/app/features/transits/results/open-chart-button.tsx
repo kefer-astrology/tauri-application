@@ -17,7 +17,7 @@ export function OpenChartButton({
 		<Button
 			type="button"
 			variant="ghost"
-			className={cn('h-6 px-2 text-[10px]', ft.bodyText, className)}
+			className={cn('h-6 px-2 text-xs', ft.bodyText, className)}
 			onClick={onClick}
 		>
 			{t('transits_open_chart_action', { defaultValue: 'Open chart' })}

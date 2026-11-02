@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { cn } from '@/app/components/ui/utils';
+import { formSelectContentClassName } from '@/app/components/ui/form-variants';
 import { tagDefaultColor } from '@/lib/chartTags';
 import type { WorkspaceTagDefinition } from '@/lib/tauri/types';
 
@@ -52,6 +53,7 @@ export function TagSuggestionInput({
 	return (
 		<div className={cn('relative min-w-0', focused && 'z-[80]', className)}>
 			<Input
+				variant="form"
 				id={id}
 				value={value}
 				onChange={(event) => {
@@ -102,8 +104,8 @@ export function TagSuggestionInput({
 				<div
 					role="listbox"
 					className={cn(
-						'absolute top-full right-0 left-0 z-[90] mt-1 max-h-52 overflow-y-auto rounded-xl border p-1 opacity-100 shadow-2xl ring-1 ring-[color:var(--theme-panel-border)]',
-						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]'
+						formSelectContentClassName,
+						'absolute top-full right-0 left-0 z-[90] mt-1 max-h-52 overflow-y-auto p-1 opacity-100'
 					)}
 				>
 					{options.map((suggestion, index) => (
