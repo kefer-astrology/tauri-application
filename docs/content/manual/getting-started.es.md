@@ -8,7 +8,8 @@ Kefer Astrology se abre en el espacio de trabajo de carta natal. La barra latera
 
 ## Áreas principales
 
-- **Nuevo, Abrir, Guardar y Exportar** gestionan el trabajo que conserva en un espacio de trabajo.
+- **Nuevo, Abrir y Guardar** gestionan las cartas y su espacio de trabajo.
+- **Exportar** abre las opciones sobre la vista actual; la generación del archivo aún no está implementada.
 - **Carta natal** es el panel principal de la carta.
 - **Aspectos** presenta las relaciones entre los objetos de carta seleccionados.
 - **Información** (incluido Espectro) es un prototipo visual de un futuro resumen calculado; todavía no muestra los valores reales de la carta seleccionada.

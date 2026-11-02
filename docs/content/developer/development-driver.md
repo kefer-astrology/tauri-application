@@ -24,6 +24,82 @@ remove or narrow the item here.
 - Keep static/docs mode on the normal application shell with unavailable native
   actions disabled or represented honestly.
 
+## React styling consolidation
+
+The current styling rules and text scale live in
+[UI conventions](../ui-conventions/#react-typography). This table separates the
+implemented shared APIs from the remaining design and visual work.
+
+| Category            | Current status                                                                                                                                                  | Remaining work                                                                        |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Form controls       | Shared variants migrated; date/time inputs share `InputGroup`. Browser review fixed transit field clipping and made the time picker reveal its selected values. | Check remaining native workflows and custom palettes.                                 |
+| Typography          | Shared text roles implemented; HTML captions below 12px moved to the rem scale. Narrow aspect-category labels now wrap without overlapping.                     | Complete localization, heading hierarchy and populated chart-label review.            |
+| Containers          | Shared surface/bar/Card APIs migrated. Settings and transit navigation now moves above content below 1280px.                                                    | Verify native titlebar alignment and populated/resizable chart panes.                 |
+| Custom controls     | Shared choices migrated. Aspectarium tabs wrap at narrow widths; sampled focus, disabled and keyboard states reviewed in Firefox.                               | Audit remaining custom keyboard interactions, touch targets and SVG/glyph geometry.   |
+| Visual verification | Initial Firefox review completed across four themes, narrow windows and 200% zoom; scope recorded below.                                                        | Native webview, populated charts, touch devices and full accessibility review remain. |
+
+### Browser review — 2026-11-02
+
+Reviewed the running React app in an isolated Firefox 159 profile using the
+default palettes. This was a rendered-browser review with screenshots and DOM
+geometry checks, followed by targeted rechecks after fixes.
+
+| Coverage                                          | Result                                                                                                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| All four themes at 1440px                         | Reviewed New horoscope, language/location settings, transit setup and the empty Aspectarium.                                                                                                          |
+| Settings at 1024px, 768px and 500px in all themes | Secondary navigation no longer consumes a second fixed 220px column below 1280px; the section strip scrolls horizontally and content scrolls independently.                                           |
+| Actual 200% Firefox page zoom                     | Reviewed New horoscope and language/location settings in all themes at an effective 720×457 CSS viewport.                                                                                             |
+| Focus, disabled and selected states               | Tab focus ring on form selects and disabled settings confirmation checked in all themes. Space toggles an aspect-category checkbox; time-picker selected values are visible on opening in all themes. |
+| Narrow layout regressions                         | Rechecked aspect categories, transit options/date-time fields and wrapped Aspectarium tabs at 500px, 768px, 1024px and 1440px. Grid tracks now use available width rather than fixed column counts.   |
+
+Firefox's outer-window minimum produced a 500px viewport for a requested 480px
+window; the native 480px minimum still needs verification. Browser mode has no
+calculated positions/aspects in this session, so populated wheel labels, matrix
+cells, transit curves and native window chrome are not accepted by this review.
+Custom palettes and physical touch interaction were not exercised. The dashboard
+still has clickable `div` collapse headers; include these in the remaining
+keyboard/accessibility pass. The chart-panel toolbar uses keyboard-accessible
+buttons, and the chart/profile pencil actions now have accessible names.
+
+An English-language check covered the edit-chart sheet at 1440px and 500px,
+settings with the main rail collapsed, arrow-key navigation to wrapped
+Aspectarium tabs, and transit controls at 200% zoom. The chart workspace now
+keeps Poloha on the right with an in-place fold button; wide areas show left
+details inline, while smaller areas expose them in a right-hand sheet over
+Poloha. These final rules are owned by
+[UI conventions](../ui-conventions/#react-container-variants).
+
+Responsive chart geometry was checked in Firefox across all four default themes
+at 500px, 768px, 1024px and 1440px, plus actual 200% zoom. Sheet-direction and
+Poloha-folding changes made after that matrix received source/type and targeted
+behavior checks, not another complete visual matrix. Export's final overlay was
+checked at wide/narrow sizes, preserving an unsaved form and selected settings
+section and restoring focus on close. The evidence inventory and explicit
+remaining automation gaps live in
+[Testing strategy](../testing-strategy/#react-interface-evidence).
+
+Validation: React type checks, 152 tests and production build passed. Repository
+lint is currently blocked by pre-existing formatting issues outside these changes
+and ESLint errors in the Svelte frontend. Changed-file formatting and React ESLint
+pass separately.
+
+Related appearance work remains open:
+
+- **Muted text contrast:** agree whether the CSV's muted text colors may change.
+  The current light-theme values are below a 4.5:1 contrast target for ordinary
+  small text against their default canvases; increasing caption size does not
+  resolve that color issue.
+- **Color validation:** normalize supported color formats and prevent invalid
+  settings from reaching CSS or light/dark detection.
+- **Selected theme persistence:** restore the selected theme on restart instead
+  of always starting with Noon.
+- **Opacity memory:** retain the custom alpha beyond the mounted settings
+  section if toggling off and on should survive navigation and restarts.
+
+Typography acceptance requires both readable text and usable layout. SVG/canvas
+label geometry is outside the HTML text migration and remains part of chart
+visual verification. No visual completion is implied by a passing build.
+
 ## Workflow and persistence gaps
 
 - Keep the external chart-import workflow aligned across both frontends. Native

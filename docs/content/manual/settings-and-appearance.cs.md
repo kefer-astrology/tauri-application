@@ -19,12 +19,12 @@ popisný, vstupem výpočtu jsou souřadnice a čas.
 **Systém domů** ukazuje systémy, které backend Rust/JPL umí vypočítat, a mění
 hroty domů. **Zdánlivý** režim používá běžné zdánlivé polohy a korekce;
 **Geometrický / pravý** používá nekorigovaný geometrický vektor. Volba jádra v
-tomto Nastavení není; viz [Efemeridy a pokrytí](../../developer/ephemeris-manager/).
+tomto Nastavení není; viz [Efemeridy a pokrytí](../../../developer/ephemeris-manager/).
 
 ## Objekty a aspekty
 
 Vyberte tělesa a body pro nové horoskopy. Úplný seznam je v [Objektech,
-aspektech a obrazcích horoskopu](../objects-aspects-and-patterns/#pozorované-objekty).
+aspektech a obrazcích horoskopu](../objects-aspects-and-patterns/#pozorovatelné-objekty).
 Výběr neinstaluje data ani nezaručuje pokrytí. Stálice lze filtrovat podle
 ekliptikální šířky, ale backend je zatím nepočítá.
 
@@ -41,8 +41,13 @@ má kruh znamení a 12 dělících čar; technické přidává stupnici 360°. *
 radixu** volí ASC nebo 0° Berana vlevo a nemění domy, polohy ani aspekty; jde o
 lokální předvolbu zařízení.
 
-Vyberte motiv **Sunrise**, **Noon**, **Twilight** nebo **Midnight**. Paleta
+Vyberte motiv **Svítání**, **Poledne**, **Soumrak** nebo **Půlnoc**. Paleta
 upravuje barvy panelů, plátna, textů, akcentu a pozadí; monochromatické
-zobrazení je pouze odbarví. **Uložit** potvrzuje paletu a barvy živlů,
+zobrazení je pouze odbarví. **Potvrdit** potvrzuje paletu a barvy živlů,
 **Zrušit** vrací neuložená pole. Vizuální předvolby se nemusí přenést na jiné
 zařízení.
+
+V Reactu je při každém spuštění vybráno Poledne; vlastní palety zůstávají
+uložené lokálně. Obnovení aktuální palety nahradí její vlastní hodnoty výchozími.
+Ve výchozích paletách je průhledné pozadí výběru jen u Svítání, pozadí při najetí
+myší u všech čtyř motivů. Formulářová pole a nabídky zůstávají neprůhledné.

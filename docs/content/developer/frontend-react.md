@@ -75,7 +75,12 @@ Cross-frontend lint, translation, and documentation commands are defined in the
   layout.
 - Secondary navigation is a sibling of the main content column. Reuse
   `SecondaryNavPanel` rather than constructing feature-local rails.
-- Use `useAppFormFieldTheme()` for themed form surfaces.
+- Use shared form, typography and container variants for appearance.
+  `useAppFormFieldTheme()` retains text and page/context-layout helpers; it
+  does not own input, select or button surfaces.
+- Export is a right-hand sheet over the active view. Opening it preserves the
+  view, selected section and unsaved form state; closing restores focus to its
+  opening control. Export generation is still a placeholder.
 - Resolve shared shell assets through `src/lib/app-shell.ts` and
   `src/ui/app-shell-icon.tsx`.
 

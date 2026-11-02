@@ -41,4 +41,4 @@ A step may activate its target before describing it. This allows each scenario t
 
 The tour must remain useful without Tauri. Browser fallbacks may demonstrate interface structure and non-native interactions, but the tour must not imply that file dialogs, durable workspace persistence, or backend-dependent calculations are available when they are not.
 
-Add new tour sequences in `apps/web-react/src/app/components/guided-tour.tsx`. Add or revise anchors in the owning application component rather than querying presentation-only class names.
+Add new tour sequences in `apps/web-react/src/app/shell/guided-tour.tsx`. Add or revise anchors in the owning application component rather than querying presentation-only class names.

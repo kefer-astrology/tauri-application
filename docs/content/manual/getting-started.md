@@ -8,7 +8,8 @@ Kefer Astrology opens on the horoscope workspace. The primary sidebar remains av
 
 ## Main areas
 
-- **New, Open, Save, and Export** manage the work you keep in a workspace.
+- **New, Open and Save** manage charts and their workspace.
+- **Export** opens an options sheet over the current view; output generation is not yet implemented.
 - **Horoscope** is the main chart dashboard.
 - **Aspectarium** presents relationships between the selected chart objects.
 - **Information** (including Spektrum) is a visual prototype for a future calculated summary; it does not yet show the selected chart's actual values.

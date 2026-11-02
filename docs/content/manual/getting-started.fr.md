@@ -8,7 +8,8 @@ Kefer Astrology s’ouvre sur l’espace de travail Thème. La barre latérale p
 
 ## Zones principales
 
-- **Nouveau, Ouvrir, Enregistrer et Exporter** gèrent le travail que vous conservez dans un espace de travail.
+- **Nouveau, Ouvrir et Enregistrer** gèrent les thèmes et leur espace de travail.
+- **Exporter** ouvre les options par-dessus la vue actuelle ; la génération du fichier n’est pas encore implémentée.
 - **Thème** est le tableau de bord principal du thème.
 - **Aspects** présente les relations entre les objets du thème sélectionnés.
 - **Informations** (y compris Spectrum) est un prototype visuel d’un futur résumé calculé ; il n’affiche pas encore les valeurs réelles du thème sélectionné.

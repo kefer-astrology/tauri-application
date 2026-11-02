@@ -13,4 +13,4 @@ weight: 20
 
 {{< appframe app="web-react" tour="radix" title="Visite des fonctionnalités Radix de Kefer Astrology" >}}
 
-La version navigateur illustre l’intégralité de la structure de l’espace de travail Radix. Les valeurs calculées dépendent des données de démonstration compatibles navigateur disponibles.
+La version navigateur présente la disposition de l’espace de travail Radix. Les calculs du backend et les opérations de fichiers natives nécessitent l’application de bureau ; la vue navigateur ne fabrique pas de résultats calculés.

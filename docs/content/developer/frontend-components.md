@@ -46,7 +46,7 @@ Each category may import only from the categories above it in this list, plus
 
 - `Theme` and `THEME_ORDER` live in `src/lib/theme.ts`.
 - `AppThemeProvider` (`app/providers/app-theme.tsx`) wraps the app and exposes
-  `useAppTheme()` → `{ theme, glyphSet }`. Components read these from the hook
+  `useAppTheme()` → `{ theme, glyphSet, dark }`. Components read these from the hook
   and never take them as props.
 - `useAppFormFieldTheme()` and `AstrologyGlyph` read the same context.
   `AstrologyGlyph` still accepts an explicit `glyphSet` for one-off overrides.
@@ -62,8 +62,9 @@ Each category may import only from the categories above it in this list, plus
 
 ## Primitives
 
-The shadcn/Radix layer in `app/components/ui/`: `Button`, `Input`, `Checkbox`,
-`ColorInput`, `Label`, `Select`, `Switch`, `Card`, `Dialog`, `Sheet`,
+The shadcn/Radix layer in `app/components/ui/`: `Text`, `Heading`, `Button`, `Input`,
+`InputGroup` / `InputGroupInput` / `InputGroupButton`, `Checkbox`,
+`ColorInput`, `Label`, `ChoiceButton`, `ChoiceLabel`, `Chip`, `Select`, `Switch`, `Surface`, `Toolbar`, `ActionBar`, `Card`, `Dialog`, `Sheet`,
 `Popover`, `Command`, `Accordion`, `Tabs`, `ScrollArea`, `Breadcrumb`, `Badge`, `SegmentedControl`,
 `SearchField` (icon + `Input` + clear button), `Combobox` (searchable single select over a
 long string list, e.g. time zones), `HighlightText`,
@@ -75,6 +76,50 @@ navigation rail styling `sidebarThemeStyles` / `sidebarNavMenuRowClassName`
 (`sidebar-theme.ts`). Primitives
 are the only place native control tags may appear
 (see [UI conventions](../ui-conventions/#component-baseline)).
+
+### Typography and form appearance
+
+`typography.tsx` defines shared text roles and preserves semantic HTML through
+`Text` and `Heading`. `Label`, card titles and overlay titles/descriptions reuse
+its recipes. Keep visual size separate from heading level. The scale, caption
+floor and chart-geometry exceptions are specified in
+[UI conventions](../ui-conventions/#react-typography).
+
+`form-variants.ts` owns form field, select/menu and action appearance. Compound
+date/time fields compose `InputGroup`; callers supply layout and data rather
+than copying surface or focus classes. `form-field-theme.ts` retains text and
+page/context-layout helpers, not input/select/button style aliases.
+
+### Choice controls and selected states
+
+`choice.tsx` composes existing Button and Label primitives into `ChoiceButton`
+and `ChoiceLabel`, and exposes `Chip` for passive content. `choice-variants.ts`
+owns common chip/row/segment/cell geometry and selected/preview/hover colors.
+Features retain their selection values, callbacks, item rendering and domain
+calculations. A separate remove action belongs inside a passive chip, not inside
+a toggle button.
+
+`SegmentedControl`, searchable suggestions, selection lists and aspect controls
+reuse these recipes. `Button` owns toolbar-action and mode-label variants;
+`TableRow` owns table selection appearance. Navigation keeps its own shared
+adapter because its text colors are separate palette fields. See
+[React choice and chart controls](../ui-conventions/#react-choice-and-chart-controls)
+for state semantics, disabled behavior and the chart-geometry boundary.
+
+### Container appearance and spacing
+
+`container.tsx` defines the shared `Surface`, `Toolbar` and `ActionBar` APIs.
+`Card` reuses the surface recipes and exposes spacing, section density and
+explicit clipping. It reads the active CSS palette directly; no theme prop or
+per-theme card class is needed. Advanced option groups and footer adapters also
+reuse these recipes.
+
+Feature code keeps layout geometry and scrolling constraints. Shared primitives
+own panel surface, padding presets, dividers, elevation and footer composition.
+See [React container variants](../ui-conventions/#react-container-variants) for
+options and focus-ring clipping rules, and the
+[styling roadmap](../development-driver/#react-styling-consolidation) for remaining
+visual acceptance work.
 
 ## Data views
 
@@ -166,14 +211,34 @@ optional leading slot. Used by: the folded-angle body picker.
 `app/views/data/secondary-nav-panel.tsx` — the secondary rail next to the main
 sidebar: a title and a list of sections (`items`, `activeId`, `onSelect`),
 styled like the main sidebar. Used by: the Settings and Transits setup
-sidebars.
+sidebars. At 1280px and above it occupies a 220px rail; below that it becomes a
+horizontal, scrollable section strip above the main content. `AppShell` owns this
+responsive composition; the native titlebar measures only the desktop rail.
 
 ### `DetailSidePanel`
 
 `app/views/data/detail-side-panel.tsx` — a right-hand sheet with a title,
 optional description and scrolling body (`open`, `onOpenChange`, `title`,
-`description`, class overrides). Used by: object, aspect and transit series
-details, the `SelectionList` selection panel, Open, and the edit-chart panel.
+`description`, class overrides, optional `onCloseAutoFocus`). Used by: object,
+aspect and transit series details, `SelectionList`, Open, chart editing and
+Export. The caller can restore focus to an external opening control through
+`onCloseAutoFocus`.
+
+### `ChartWorkspaceLayout`
+
+`app/components/chart-workspace-layout.tsx` — composes the wheel, left
+information/astrolabe rail and permanent right positions rail. Chart state stays
+in `HoroscopeDashboard`. Both rails are inline from 960px of measured workspace
+width, without panel toggle buttons. Below that, a details button opens the left
+rail's content in a shared `Sheet` sliding from the right edge over Poloha.
+Escape closes it and restores focus; widening the workspace closes the sheet
+and restores inline details automatically.
+
+Poloha remains mounted on the right. Its native heading button folds the body
+in place while keeping the title and edit action visible. Fold state lasts for
+the mounted dashboard. See [UI conventions](../ui-conventions/#react-container-variants)
+for layout dimensions and [testing strategy](../testing-strategy/#react-interface-evidence)
+for evidence and gaps.
 
 ### `TimeSeriesChart`
 
@@ -398,12 +463,18 @@ other feature uses.
 | Synastry   | Synastry (`app/features/synastry/`): two people (saved chart or hand-entered birth data) and the calculation type; form logic in `src/lib/synastryForm.ts` |
 | Revolution | Revolution (`app/features/revolution/`): return type, scope and period                                                                                     |
 | Open       | Open (`app/features/open/`): chart archive with `useChartQuery`                                                                                            |
-| Export     | Export (`app/features/export/`): format and included parts                                                                                                 |
+| Export     | Export sheet (`app/features/export/`): format and included parts                                                                                           |
 | Settings   | Settings (`app/features/settings/`): one component per section under `sections/`, a draft context for Confirm-applied colors, glyph manager                |
 
 Inputs shared by several features are not feature components: the date picker
 and time roller are primitives, and the location selector is a domain view.
 Nothing below the shell imports from `app/shell/`.
+
+Export is a shell action, not a routed screen. `AppShell` opens a right-hand
+`DetailSidePanel` over the active view and renders the existing `ExportView`
+format/include form inside it. Opening or closing Export preserves the underlying
+view, section selection and unsaved input state. Export execution remains a
+coming-soon notification.
 
 ### New horoscope
 

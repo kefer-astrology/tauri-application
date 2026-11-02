@@ -22,6 +22,15 @@ an auto-resolved place with a manually entered timezone, or the reverse.
 
 To revise an existing chart, select it from the dashboard and use its edit action. Saving the form updates that chart instead of creating another one.
 
+## Chart panels
+
+The positions panel stays on the right. Click its heading to fold or unfold its
+contents; the heading and edit action remain available. In wider chart areas,
+the chart information and astrolabe stay visible on the left. When there is less
+space, a detailed-information button opens that content in a sheet sliding from
+the right, over the positions panel. Close it with its close button or Escape.
+The left information returns automatically when the chart area becomes wider.
+
 ## Open a workspace
 
 Open **Open** and choose a workspace folder. Kefer loads the charts and workspace-level defaults stored there. Selecting a chart returns you to the horoscope dashboard.
@@ -32,4 +41,12 @@ Use **Save** to write the current collection of charts and defaults. When no wor
 
 ## Export
 
-Use **Export** for portable output intended to leave the current workspace. Saving preserves the editable workspace; exporting produces a separate representation for another purpose.
+Select **Export** from the primary sidebar while staying on the view you want
+to work from. The existing export form slides in from the right over that view;
+closing it preserves your selected section and unsaved inputs. Use the close
+button or Escape to dismiss it and return focus to Export.
+
+The form offers **Print**, **Export PDF** and **Export PNG**, plus location,
+aspects and information inclusion options. Output generation is not implemented
+yet: the Export action currently shows a coming-soon message. Use **Save** to
+persist the editable workspace.

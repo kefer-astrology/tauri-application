@@ -10,6 +10,14 @@ Otevřete **Nový** z hlavního postranního panelu. Zadejte identifikaci horosk
 
 Chcete-li upravit existující horoskop, vyberte jej na řídicím panelu a použijte akci úpravy. Uložení formuláře aktualizuje daný horoskop, místo aby vytvořilo nový.
 
+## Panely horoskopu
+
+**Poloha** zůstává vpravo. Kliknutím na nadpis sbalíte nebo rozbalíte obsah;
+nadpis a tlačítko úpravy zůstávají dostupné. V širším zobrazení jsou informace
+o horoskopu a astroláb vlevo. V menším okně je otevře tlačítko podrobných
+informací v panelu vysunutém zprava přes Polohu. Zavřete jej křížkem nebo Escape.
+Po rozšíření prostoru se informace automaticky zobrazí zase vlevo.
+
 ## Otevření pracovního prostoru
 
 Otevřete **Otevřít** a vyberte složku pracovního prostoru. Kefer načte horoskopy a výchozí nastavení pracovního prostoru uložené v této složce. Výběrem horoskopu se vrátíte na řídicí panel horoskopu.
@@ -20,4 +28,10 @@ Použijte **Uložit** k zápisu aktuální sady horoskopů a výchozích hodnot.
 
 ## Export
 
-Použijte **Export** pro přenosný výstup určený k opuštění aktuálního pracovního prostoru. Uložení zachovává editovatelný pracovní prostor; export vytváří samostatnou reprezentaci pro jiný účel.
+Zvolte **Export** v hlavním postranním panelu z aktuálního zobrazení. Formulář
+se vysune zprava přes tuto obrazovku. Po zavření zůstane vybraná sekce i neuložené
+vstupy zachované. Zavřete jej křížkem nebo klávesou Escape; fokus se vrátí na Export.
+
+Formulář nabízí tisk, PDF, PNG a zahrnutí lokace, aspektů a informací. Vytváření
+výstupu zatím není implementované: tlačítko Export zobrazí oznámení o připravované
+funkci. K uložení editovatelného pracovního prostoru slouží **Uložit**.

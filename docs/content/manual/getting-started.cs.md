@@ -8,7 +8,8 @@ Kefer Astrology se otevírá v pracovním prostoru horoskopu. Hlavní postranní
 
 ## Hlavní oblasti
 
-- **Nový, Otevřít, Uložit a Export** slouží ke správě práce uchovávané v pracovním prostoru.
+- **Nový, Otevřít a Uložit** slouží ke správě horoskopů a pracovního prostoru.
+- **Export** otevře panel možností přes aktuální zobrazení; vytváření výstupu zatím není implementované.
 - **Horoskop** je hlavní řídicí panel horoskopu.
 - **Aspektárium** zobrazuje vztahy mezi vybranými objekty horoskopu.
 - **Informace** (včetně Spektra) jsou vizuální prototyp budoucího vypočteného přehledu; zatím nezobrazují skutečné hodnoty vybraného horoskopu.
