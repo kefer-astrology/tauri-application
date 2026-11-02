@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { parseThemeColor } from './themeColors';
 
 export type ThemePaletteId = 'sunrise' | 'noon' | 'twilight' | 'midnight';
 
@@ -27,72 +28,72 @@ const STORAGE_KEY = 'kefer_theme_palettes_v1';
 
 export const DEFAULT_THEME_PALETTES: ThemePalettes = {
 	sunrise: {
-		mainSidebarStart: '#0B1220',
-		mainSidebarEnd: '#24324D',
-		secondarySidebarStart: '#1E293B',
-		secondarySidebarEnd: '#3E4C67',
-		canvasStart: '#FFFFFF',
-		canvasEnd: '#F7FAFF',
-		navTextPrimary: '#E5E7EB',
-		navTextSecondary: '#9CA3AF',
-		contentTextPrimary: '#111827',
-		contentTextSecondary: '#4B5563',
-		contentMuted: '#6B7280',
-		accent: '#2563EB',
+		mainSidebarStart: '#FFFFFF',
+		mainSidebarEnd: '#F8FAFD',
+		secondarySidebarStart: '#FFFFFF',
+		secondarySidebarEnd: '#F8FAFD',
+		canvasStart: '#F0F4F9',
+		canvasEnd: '#E9EEF6',
+		navTextPrimary: '#1F1F1F',
+		navTextSecondary: '#444746',
+		contentTextPrimary: '#1F1F1F',
+		contentTextSecondary: '#444746',
+		contentMuted: '#747775',
+		accent: '#1A73E8',
 		popupBackgroundFuzziness: 0,
-		hoverBackground: 'rgba(255,255,255,0.10)',
-		selectedBackground: 'rgba(37,99,235,0.16)'
+		hoverBackground: 'rgba(26,115,232,0.08)',
+		selectedBackground: '#d3e3fd'
 	},
 	noon: {
 		mainSidebarStart: '#FFFFFF',
-		mainSidebarEnd: '#F8FAFC',
-		secondarySidebarStart: '#F8FAFC',
-		secondarySidebarEnd: '#E5E7EB',
-		canvasStart: '#FFFFFF',
-		canvasEnd: '#F8FAFC',
-		navTextPrimary: '#111827',
-		navTextSecondary: '#4B5563',
-		contentTextPrimary: '#111827',
-		contentTextSecondary: '#4B5563',
-		contentMuted: '#6B7280',
-		accent: '#2563EB',
+		mainSidebarEnd: '#ffffff',
+		secondarySidebarStart: '#ffffff',
+		secondarySidebarEnd: '#ffffff',
+		canvasStart: '#FAFAFA',
+		canvasEnd: '#FAFAFA',
+		navTextPrimary: '#26211C',
+		navTextSecondary: '#594F45',
+		contentTextPrimary: '#26211C',
+		contentTextSecondary: '#594F45',
+		contentMuted: '#8C7F72',
+		accent: '#785dff',
 		popupBackgroundFuzziness: 0,
-		hoverBackground: 'rgba(37,99,235,0.08)',
-		selectedBackground: 'rgba(37,99,235,0.16)'
+		hoverBackground: 'rgba(140,127,114,0.1)',
+		selectedBackground: 'rgba(140,127,114,0.16)'
 	},
 	twilight: {
-		mainSidebarStart: '#1E3A8A',
-		mainSidebarEnd: '#2563EB',
-		secondarySidebarStart: '#1D4ED8',
-		secondarySidebarEnd: '#3B82F6',
-		canvasStart: '#1E293B',
-		canvasEnd: '#334155',
-		navTextPrimary: '#FFFFFF',
-		navTextSecondary: '#DBEAFE',
-		contentTextPrimary: '#FFFFFF',
-		contentTextSecondary: '#DBEAFE',
-		contentMuted: '#BFDBFE',
-		accent: '#6366F1',
+		mainSidebarStart: '#1E1F20',
+		mainSidebarEnd: '#1E1F20',
+		secondarySidebarStart: '#1E1F20',
+		secondarySidebarEnd: '#1E1F20',
+		canvasStart: '#131314',
+		canvasEnd: '#131314',
+		navTextPrimary: '#E3E3E3',
+		navTextSecondary: '#E3E3E3',
+		contentTextPrimary: '#E3E3E3',
+		contentTextSecondary: '#E3E3E3',
+		contentMuted: '#8EA0B5',
+		accent: '#38BDF8',
 		popupBackgroundFuzziness: 0,
-		hoverBackground: 'rgba(255,255,255,0.10)',
-		selectedBackground: 'rgba(99,102,241,0.28)'
+		hoverBackground: 'rgba(255,255,255,0.06)',
+		selectedBackground: '#3d3f42'
 	},
 	midnight: {
-		mainSidebarStart: '#0D1B2E',
-		mainSidebarEnd: '#0B1729',
-		secondarySidebarStart: '#0A1528',
-		secondarySidebarEnd: '#0E1A2D',
-		canvasStart: '#0D1B2E',
-		canvasEnd: '#0E1A2D',
-		navTextPrimary: '#E2E8F0',
-		navTextSecondary: '#CBD5E1',
-		contentTextPrimary: '#F8FAFC',
-		contentTextSecondary: '#CBD5E1',
-		contentMuted: '#94A3B8',
-		accent: '#6366F1',
+		mainSidebarStart: '#131314',
+		mainSidebarEnd: '#131314',
+		secondarySidebarStart: '#131314',
+		secondarySidebarEnd: '#131314',
+		canvasStart: '#1E1F20',
+		canvasEnd: '#1E1F20',
+		navTextPrimary: '#E3E3E3',
+		navTextSecondary: '#E3E3E3',
+		contentTextPrimary: '#E3E3E3',
+		contentTextSecondary: '#E3E3E3',
+		contentMuted: '#8EA0B5',
+		accent: '#8AB4F8',
 		popupBackgroundFuzziness: 0,
-		hoverBackground: 'rgba(255,255,255,0.10)',
-		selectedBackground: 'rgba(99,102,241,0.28)'
+		hoverBackground: 'rgba(255,255,255,0.06)',
+		selectedBackground: '#3d3f42'
 	}
 };
 
@@ -183,54 +184,40 @@ export function persistThemePalettes(palettes: ThemePalettes) {
 	}
 }
 
-function hexToRgb(hex: string): [number, number, number] | null {
-	const normalized = hex.trim().replace('#', '');
-	if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return null;
-	const value = Number.parseInt(normalized, 16);
-	return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+/** CSS mixing keeps derived colors connected even when settings use rgb() or other CSS colors. */
+function alpha(color: string, opacity: number): string {
+	return `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`;
 }
 
-function alpha(hex: string, opacity: number, fallback: string): string {
-	const rgb = hexToRgb(hex);
-	if (!rgb) return fallback;
-	return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${opacity})`;
-}
-
-function luminance(hex: string): number {
-	const rgb = hexToRgb(hex);
-	if (!rgb) return 1;
-	const [r, g, b] = rgb.map((channel) => {
-		const normalized = channel / 255;
-		return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+function luminance(color: string): number {
+	const { hex } = parseThemeColor(color);
+	const [r, g, b] = [1, 3, 5].map((offset) => {
+		const normalized = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+		return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
 	});
 	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+/** Choose the black/white foreground with the higher contrast against an opaque accent. */
+export function contrastingTextColor(background: string): string {
+	return luminance(background) > 0.179 ? '#000000' : '#ffffff';
+}
+
 export function isLightPalette(palette: ThemePalette): boolean {
-	return luminance(palette.canvasStart) >= 0.55;
+	return luminance(palette.canvasStart) >= 0.179;
 }
 
 export function themePaletteVars(palette: ThemePalette): CSSProperties {
 	const light = isLightPalette(palette);
-	const panelBackground = light ? 'rgba(255,255,255,0.95)' : 'rgba(15,23,42,0.82)';
-	const panelBackgroundSolid = light ? '#ffffff' : '#0f172a';
-	const panelBorder = light
-		? alpha(palette.contentTextSecondary, 0.18, 'rgba(75,85,99,0.18)')
-		: alpha(palette.navTextPrimary, 0.18, 'rgba(255,255,255,0.18)');
-	const wheelStrokeMain = light
-		? alpha(palette.contentTextPrimary, 0.6, 'rgba(0,0,0,0.6)')
-		: 'rgba(255,255,255,0.5)';
-	const wheelStrokeSoft = light
-		? alpha(palette.contentTextPrimary, 0.45, 'rgba(0,0,0,0.45)')
-		: 'rgba(255,255,255,0.4)';
-	const wheelAxis = light
-		? alpha(palette.accent, 0.75, 'rgba(37,99,235,0.75)')
-		: alpha(palette.accent, 0.85, 'rgba(96,165,250,0.85)');
-	const vizOne = alpha(palette.accent, 0.85, '#2563eb');
-	const vizTwo = alpha(palette.contentTextSecondary, 0.85, '#64748b');
-	const vizThree = alpha(palette.navTextSecondary, light ? 0.95 : 0.8, '#94a3b8');
-	const vizFour = alpha(palette.contentMuted, light ? 0.95 : 0.85, '#6b7280');
+	// Content surfaces follow the canvas, independently of the navigation colors.
+	const panel = palette.canvasEnd;
+	const panelBorder = alpha(palette.contentTextSecondary, 0.18);
+	const vizOne = alpha(palette.accent, 0.85);
+	const vizTwo = alpha(palette.contentTextSecondary, 0.85);
+	const vizThree = alpha(palette.navTextSecondary, light ? 0.95 : 0.8);
+	const vizFour = alpha(palette.contentMuted, light ? 0.95 : 0.85);
 	return {
+		colorScheme: light ? 'light' : 'dark',
 		['--theme-main-sidebar-start' as string]: palette.mainSidebarStart,
 		['--theme-main-sidebar-end' as string]: palette.mainSidebarEnd,
 		['--theme-secondary-sidebar-start' as string]: palette.secondarySidebarStart,
@@ -243,67 +230,33 @@ export function themePaletteVars(palette: ThemePalette): CSSProperties {
 		['--theme-content-secondary' as string]: palette.contentTextSecondary,
 		['--theme-content-muted' as string]: palette.contentMuted,
 		['--theme-accent' as string]: palette.accent,
+		['--theme-accent-foreground' as string]: contrastingTextColor(palette.accent),
+		['--theme-control-thumb' as string]: contrastingTextColor(palette.canvasStart),
+		['--theme-control-thumb-prominent' as string]: contrastingTextColor(palette.contentMuted),
 		['--theme-popup-backdrop-blur' as string]: `${(palette.popupBackgroundFuzziness * 0.2).toFixed(1)}px`,
 		['--theme-hover-bg' as string]: palette.hoverBackground,
 		['--theme-selected-bg' as string]: palette.selectedBackground,
-		['--theme-sidebar-border' as string]: alpha(
-			palette.navTextPrimary,
-			0.08,
-			'rgba(255,255,255,0.08)'
-		),
-		['--theme-separator' as string]: alpha(palette.navTextPrimary, 0.1, 'rgba(255,255,255,0.10)'),
-		['--theme-panel-bg' as string]: panelBackground,
-		['--theme-panel-bg-strong' as string]: light ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
-		['--theme-panel-bg-solid' as string]: panelBackgroundSolid,
+		['--theme-sidebar-border' as string]: alpha(palette.navTextPrimary, 0.08),
+		['--theme-separator' as string]: alpha(palette.navTextPrimary, 0.1),
+		['--theme-panel-bg' as string]: alpha(panel, light ? 0.95 : 0.82),
+		['--theme-panel-bg-strong' as string]: alpha(panel, 0.92),
+		['--theme-panel-bg-solid' as string]: panel,
 		['--theme-panel-border' as string]: panelBorder,
-		// Bridge generic shadcn tokens to the active user-editable palette.
-		['--primary' as string]: palette.accent,
-		['--primary-foreground' as string]: '#ffffff',
-		['--accent' as string]: palette.selectedBackground,
-		['--accent-foreground' as string]: palette.contentTextPrimary,
-		['--ring' as string]: palette.accent,
-		['--popover' as string]: panelBackgroundSolid,
-		['--popover-foreground' as string]: palette.contentTextPrimary,
-		['--border' as string]: panelBorder,
-		['--theme-soft-bg' as string]: light
-			? alpha(palette.accent, 0.06, 'rgba(37,99,235,0.06)')
-			: 'rgba(255,255,255,0.06)',
-		['--theme-soft-bg-strong' as string]: light
-			? alpha(palette.accent, 0.1, 'rgba(37,99,235,0.10)')
-			: 'rgba(255,255,255,0.10)',
-		['--theme-overlay-bg' as string]: light ? 'rgba(255,255,255,0.72)' : 'rgba(15,23,42,0.72)',
-		['--token-border-subtle' as string]: light
-			? alpha(palette.contentTextSecondary, 0.12, 'rgba(75,85,99,0.12)')
-			: alpha(palette.navTextPrimary, 0.12, 'rgba(255,255,255,0.12)'),
-		['--token-surface-subtle' as string]: light
-			? alpha(palette.contentTextPrimary, 0.04, 'rgba(17,24,39,0.04)')
-			: alpha(palette.navTextPrimary, 0.06, 'rgba(255,255,255,0.06)'),
-		['--token-hover-subtle' as string]: light
-			? alpha(palette.contentTextPrimary, 0.06, 'rgba(17,24,39,0.06)')
-			: alpha(palette.navTextPrimary, 0.1, 'rgba(255,255,255,0.10)'),
-		['--token-hover-strong' as string]: light
-			? alpha(palette.contentTextPrimary, 0.12, 'rgba(17,24,39,0.12)')
-			: alpha(palette.navTextPrimary, 0.18, 'rgba(255,255,255,0.18)'),
-		['--token-wheel-stroke-main' as string]: wheelStrokeMain,
-		['--token-wheel-stroke-soft' as string]: wheelStrokeSoft,
-		['--token-wheel-bg' as string]: light ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.03)',
+		['--theme-soft-bg' as string]: alpha(palette.contentTextPrimary, light ? 0.04 : 0.06),
+		['--theme-soft-bg-strong' as string]: alpha(palette.contentTextPrimary, 0.1),
+		['--theme-overlay-bg' as string]: alpha(palette.canvasStart, 0.72),
+		['--token-border-subtle' as string]: alpha(palette.contentTextSecondary, 0.12),
+		['--token-surface-subtle' as string]: alpha(palette.contentTextPrimary, light ? 0.04 : 0.06),
+		['--token-hover-subtle' as string]: palette.hoverBackground,
+		['--token-hover-strong' as string]: palette.hoverBackground,
+		['--token-wheel-stroke-main' as string]: alpha(palette.contentTextPrimary, light ? 0.6 : 0.5),
+		['--token-wheel-stroke-soft' as string]: alpha(palette.contentTextPrimary, light ? 0.45 : 0.4),
+		['--token-wheel-bg' as string]: alpha(panel, light ? 0.55 : 0.03),
 		['--token-wheel-glyph' as string]: palette.contentTextSecondary,
-		['--token-wheel-axis' as string]: wheelAxis,
-		['--token-wheel-overlay-primary' as string]: alpha(
-			palette.accent,
-			light ? 0.14 : 0.18,
-			'rgba(37,99,235,0.14)'
-		),
-		['--token-wheel-overlay-secondary' as string]: alpha(
-			palette.contentMuted,
-			light ? 0.16 : 0.2,
-			'rgba(244,63,94,0.16)'
-		),
-		['--token-wheel-highlight' as string]: alpha(
-			palette.accent,
-			light ? 0.34 : 0.26,
-			'rgba(250,204,21,0.30)'
-		),
+		['--token-wheel-axis' as string]: alpha(palette.accent, light ? 0.75 : 0.85),
+		['--token-wheel-overlay-primary' as string]: alpha(palette.accent, light ? 0.14 : 0.18),
+		['--token-wheel-overlay-secondary' as string]: alpha(palette.contentMuted, light ? 0.16 : 0.2),
+		['--token-wheel-highlight' as string]: alpha(palette.accent, light ? 0.34 : 0.26),
 		['--token-viz-1' as string]: vizOne,
 		['--token-viz-2' as string]: vizTwo,
 		['--token-viz-3' as string]: vizThree,
