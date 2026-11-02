@@ -1,5 +1,5 @@
 import { Heading, Text } from '@/app/components/ui/typography';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { AstrologySidebar } from '@/app/shell/astrology-sidebar';
@@ -87,10 +87,17 @@ export function AppShell() {
 		useState<SettingsSectionId>('jazyk_lokace');
 	const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 	const [editingChart, setEditingChart] = useState<AppChart | null>(null);
+	const [exportOpen, setExportOpen] = useState(false);
+	const exportTriggerRef = useRef<HTMLElement | null>(null);
 
 	const existingChartIds = new Set(charts.map((chart) => chart.id));
 
 	const handleMenuItemClick = (view: string) => {
+		if (view === 'export') {
+			exportTriggerRef.current = document.activeElement as HTMLElement | null;
+			setExportOpen(true);
+			return;
+		}
 		if (view === 'ulozit') {
 			void workspace.saveWorkspace();
 			return;
@@ -127,8 +134,6 @@ export function AppShell() {
 						}}
 					/>
 				);
-			case 'export':
-				return <ExportView />;
 			case 'informace':
 				return (
 					<InformationView
@@ -223,6 +228,22 @@ export function AppShell() {
 						</main>
 					</div>
 				</div>
+				<DetailSidePanel
+					open={exportOpen}
+					onOpenChange={setExportOpen}
+					onCloseAutoFocus={(event) => {
+						if (exportTriggerRef.current?.isConnected) {
+							event.preventDefault();
+							exportTriggerRef.current.focus();
+						}
+					}}
+					title={t('export')}
+					description={t('export_include')}
+					contentClassName="sm:max-w-md lg:w-full"
+					bodyClassName="overflow-y-auto"
+				>
+					<ExportView />
+				</DetailSidePanel>
 				<DetailSidePanel
 					open={editingChart !== null}
 					onOpenChange={(open) => {

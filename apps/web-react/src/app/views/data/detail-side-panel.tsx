@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/app/components/ui/utils';
 import {
 	Sheet,
@@ -18,6 +18,7 @@ type DetailSidePanelProps = {
 	description?: string;
 	contentClassName?: string;
 	bodyClassName?: string;
+	onCloseAutoFocus?: ComponentProps<typeof SheetContent>['onCloseAutoFocus'];
 	children: ReactNode;
 };
 
@@ -28,6 +29,7 @@ export function DetailSidePanel({
 	description,
 	contentClassName,
 	bodyClassName,
+	onCloseAutoFocus,
 	children
 }: DetailSidePanelProps) {
 	const ft = useAppFormFieldTheme();
@@ -36,6 +38,7 @@ export function DetailSidePanel({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent
 				side="right"
+				onCloseAutoFocus={onCloseAutoFocus}
 				className={cn('w-full gap-0 p-0 sm:max-w-md lg:w-[min(28rem,22vw)]', contentClassName)}
 			>
 				<div className="flex h-full min-h-0 flex-col">
