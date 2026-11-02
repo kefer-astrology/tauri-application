@@ -1,4 +1,4 @@
-import { Button } from './button';
+import { ChoiceButton } from './choice';
 import { cn } from './utils';
 
 export type SegmentedControlOption<T extends string> = { value: T; label: string };
@@ -35,17 +35,11 @@ export function SegmentedControl<T extends string>({
 			{options.map((option) => {
 				const active = option.value === value;
 				return (
-					<Button
+					<ChoiceButton
 						key={option.value}
-						type="button"
-						variant="ghost"
-						aria-pressed={active}
-						className={cn(
-							'h-7 flex-1 rounded-md px-2.5 text-xs font-medium',
-							active
-								? 'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)] hover:bg-[color:var(--theme-selected-bg)]'
-								: 'text-[color:var(--theme-content-muted)] hover:bg-[color:var(--token-hover-subtle)]'
-						)}
+						variant="segment"
+						selected={active}
+						className="flex-1"
 						onClick={() =>
 							onValueChange(
 								active && allowDeselect && emptyValue !== undefined ? emptyValue : option.value
@@ -53,7 +47,7 @@ export function SegmentedControl<T extends string>({
 						}
 					>
 						{option.label}
-					</Button>
+					</ChoiceButton>
 				);
 			})}
 		</div>

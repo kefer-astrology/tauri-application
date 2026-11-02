@@ -1,6 +1,7 @@
+import { ChoiceButton } from '@/app/components/ui/choice';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, MapPin } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
+
 import { Input } from '@/app/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/app/components/ui/popover';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
@@ -203,17 +204,15 @@ function OptionRow({
 	onSelect: () => void;
 }) {
 	return (
-		<Button
+		<ChoiceButton
+			selected={selected}
 			type="button"
-			variant="ghost"
-			className={cn(
-				'h-auto w-full justify-start gap-2 px-2 py-2 text-left text-sm whitespace-normal',
-				selected && 'bg-accent text-accent-foreground'
-			)}
+			variant="row"
+			className="gap-2 px-2"
 			onClick={onSelect}
 		>
 			<Check className={cn('h-4 w-4 shrink-0', selected ? 'opacity-100' : 'opacity-0')} />
 			<span className="min-w-0 flex-1">{children}</span>
-		</Button>
+		</ChoiceButton>
 	);
 }

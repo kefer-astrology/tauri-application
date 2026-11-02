@@ -177,15 +177,8 @@ export function DataTable<T>({
 					return (
 						<TableRow
 							key={row.id}
-							className={cn(
-								d.row,
-								interactive && 'cursor-pointer',
-								selected
-									? 'bg-[color:var(--theme-selected-bg)] hover:bg-[color:var(--theme-selected-bg)]'
-									: interactive
-										? 'hover:bg-[color:var(--token-hover-strong)]'
-										: 'hover:bg-[color:var(--token-hover-subtle)]'
-							)}
+							data-state={selected ? 'selected' : undefined}
+							className={cn(d.row, interactive && 'cursor-pointer')}
 							onClick={onRowClick ? () => onRowClick(row.original) : undefined}
 							onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row.original) : undefined}
 						>

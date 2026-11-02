@@ -1,3 +1,4 @@
+import { ChoiceButton } from '@/app/components/ui/choice';
 import { Toolbar, Surface, ActionBar } from '@/app/components/ui/container';
 import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState, type ComponentProps } from 'react';
@@ -31,20 +32,6 @@ interface InformationViewProps {
 type MicroBadgeId = 'lunar' | 'lights' | 'synodic';
 type RetroPatternId = 'all-upper' | 'all-east' | null;
 type HemiPreviewId = 'ew-east' | 'ew-west' | 'ns-north' | 'ns-south' | null;
-
-function chipStateClass(locked: boolean, hover: boolean, base: string): string {
-	if (locked)
-		return cn(
-			base,
-			'border-[color:var(--theme-accent)] bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)] shadow-sm ring-2 ring-[color:var(--theme-accent)]/25'
-		);
-	if (hover)
-		return cn(base, 'border-[color:var(--theme-accent)]/50 bg-[color:var(--theme-soft-bg)]');
-	return cn(
-		base,
-		'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] hover:bg-[color:var(--theme-hover-bg)]'
-	);
-}
 
 export function InformationView({
 	wheelStyle,
@@ -737,23 +724,22 @@ export function InformationView({
 					const locked = lockedChipId === c.id;
 					const hover = hoverChipId === c.id;
 					return (
-						<Button
+						<ChoiceButton
+							selected={locked}
+							emphasis="outline"
+							preview={hover}
 							key={c.id}
 							type="button"
-							variant="ghost"
+							variant="chip"
 							size="sm"
 							data-state={locked ? 'locked-focus' : hover ? 'hover-preview' : 'default'}
-							className={chipStateClass(
-								locked,
-								hover,
-								'h-auto shrink-0 rounded-full border px-2.5 py-1 text-xs transition-colors'
-							)}
+
 							onMouseEnter={() => setHoverChipId(c.id)}
 							onMouseLeave={() => setHoverChipId(null)}
 							onClick={() => setLockedChipId((prev) => (prev === c.id ? null : c.id))}
 						>
 							{c.label}
-						</Button>
+						</ChoiceButton>
 					);
 				})}
 			</ActionBar>

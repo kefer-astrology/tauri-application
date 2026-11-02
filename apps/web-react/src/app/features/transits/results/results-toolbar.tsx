@@ -5,8 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { ModeSwitcher } from '@/app/components/ui/mode-switcher';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { X_ZOOM_PRESET_MS, xZoomWindow, type XZoomPreset } from '@/lib/astrology/transitResults';
 import { humanizePeriodPresetId, type TimeStepUnit } from '@/lib/astrology/transitSetup';
 import { formatDateTimeRange } from '@/lib/time/format';
@@ -20,7 +19,7 @@ const ZOOM_PRESETS = Object.keys(X_ZOOM_PRESET_MS) as XZoomPreset[];
  *  (recomputes on change), and Edit setup / Reset. */
 export function ResultsToolbar() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { view, series, timelineCategories, setup, updateSetup, compute, editSetup, reset } =
 		useTransits();
 	const chartMode = view.viewMode === 'chart';
@@ -53,8 +52,6 @@ export function ResultsToolbar() {
 		void compute();
 	};
 
-	const toolButton = cn('h-8 px-2.5 text-xs', ft.bodyText);
-
 	return (
 		<Toolbar padding="default" align="between" wrap="wrap" className="gap-3">
 			<ModeSwitcher
@@ -71,10 +68,11 @@ export function ResultsToolbar() {
 				<div className="flex items-center gap-1">
 					{ZOOM_PRESETS.map((preset) => (
 						<Button
+							size="toolbar"
 							key={preset}
 							type="button"
-							variant="ghost"
-							className={toolButton}
+							variant="toolbar"
+
 							onClick={() => {
 								const window = xZoomWindow(preset, timelineCategories, view.visibleRange);
 								if (window) view.setVisibleRange(window);
@@ -87,9 +85,10 @@ export function ResultsToolbar() {
 					))}
 					{view.visibleRange && (
 						<Button
+							size="toolbar"
 							type="button"
-							variant="ghost"
-							className={toolButton}
+							variant="toolbar"
+
 							onClick={() => view.setVisibleRange(null)}
 						>
 							{t('transits_zoom_full_range', { defaultValue: 'Full range' })}
@@ -104,9 +103,10 @@ export function ResultsToolbar() {
 						{t('transits_y_zoom_label', { defaultValue: 'Orb scale' })}
 					</Text>
 					<Button
+						size="toolbar-icon"
 						type="button"
-						variant="ghost"
-						className={cn('h-8 w-8 px-0 text-xs', ft.bodyText)}
+						variant="toolbar"
+
 						onClick={() => view.setYZoomDegrees(view.yZoomDegrees - 0.1)}
 					>
 						−
@@ -126,9 +126,10 @@ export function ResultsToolbar() {
 						className="h-8 w-16 text-xs shadow-inner"
 					/>
 					<Button
+						size="toolbar-icon"
 						type="button"
-						variant="ghost"
-						className={cn('h-8 w-8 px-0 text-xs', ft.bodyText)}
+						variant="toolbar"
+
 						onClick={() => view.setYZoomDegrees(view.yZoomDegrees + 0.1)}
 					>
 						+
@@ -168,17 +169,19 @@ export function ResultsToolbar() {
 
 			<div className="flex items-center gap-1">
 				<Button
+					size="toolbar"
 					type="button"
-					variant="ghost"
-					className={cn('h-8 px-3 text-xs', ft.bodyText)}
+					variant="toolbar"
+
 					onClick={editSetup}
 				>
 					{t('transits_edit_setup', { defaultValue: 'Edit setup' })}
 				</Button>
 				<Button
+					size="toolbar"
 					type="button"
-					variant="ghost"
-					className={cn('h-8 px-3 text-xs', ft.bodyText)}
+					variant="toolbar"
+
 					onClick={reset}
 				>
 					{t('transits_reset', { defaultValue: 'Reset' })}

@@ -1,8 +1,9 @@
+import { ChoiceButton } from '@/app/components/ui/choice';
 import { Text } from './typography';
 import { useEffect, useMemo, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/app/components/ui/button';
+
 import { InputGroup, InputGroupInput, InputGroupButton } from './input-group';
 import { Label } from '@/app/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
@@ -176,15 +177,16 @@ function TimeColumn({
 					{values.map((value) => {
 						const isSelected = value === selected;
 						return (
-							<Button
+							<ChoiceButton
+								selected={isSelected}
 								key={value}
 								type="button"
-								variant={isSelected ? 'default' : 'ghost'}
-								className="h-9 w-full justify-center font-mono tabular-nums"
+								variant="row"
+								className="h-9 justify-center font-mono font-medium tabular-nums"
 								onClick={() => onSelect(value)}
 							>
 								{pad(value)}
-							</Button>
+							</ChoiceButton>
 						);
 					})}
 				</div>

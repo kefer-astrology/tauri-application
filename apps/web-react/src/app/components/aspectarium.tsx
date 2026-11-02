@@ -1,3 +1,4 @@
+import { ChoiceButton } from '@/app/components/ui/choice';
 import { Toolbar, Surface } from '@/app/components/ui/container';
 import { Text, Heading } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
@@ -6,7 +7,7 @@ import { Grid3X3, List, Target } from 'lucide-react';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { useWorkspaceCharts } from '../providers/workspace-charts';
 import { Card, CardContent } from './ui/card';
-import { Button } from './ui/button';
+
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -158,17 +159,13 @@ function AspectCellButton({
 	color: string;
 }) {
 	return (
-		<Button
+		<ChoiceButton
+			selected={isSelected}
+			emphasis="inset"
 			type="button"
 			onClick={onSelect}
-			variant="ghost"
-			className={cn(
-				'flex aspect-square min-h-14 w-full min-w-14 flex-col items-center justify-center rounded-none px-1.5 py-1 transition-colors',
-				isSelected
-					? 'bg-[color:var(--theme-selected-bg)] ring-1 ring-[color:var(--theme-accent)] ring-inset'
-					: 'bg-transparent hover:bg-[color:var(--theme-hover-bg)]'
-			)}
-			aria-pressed={isSelected}
+			variant="cell"
+			className="aspect-square min-h-14 w-full min-w-14 flex-col px-1.5 py-1"
 		>
 			<span className="text-lg leading-none" style={{ color }}>
 				<AstrologyGlyph
@@ -181,7 +178,7 @@ function AspectCellButton({
 			<Text variant="caption" as="span" tone="muted" className="mt-1">
 				{formatOrb(aspect.orb)}
 			</Text>
-		</Button>
+		</ChoiceButton>
 	);
 }
 
@@ -776,14 +773,12 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 										] ??
 										'var(--theme-accent)';
 									return (
-										<Button
+										<ChoiceButton
+											selected={selectedAspectId === entry.id}
 											key={entry.id}
 											type="button"
-											variant="ghost"
-											className={cn(
-												'h-auto w-full justify-start rounded-none border-b border-[color:var(--theme-panel-border)] px-5 py-3.5 text-left',
-												selectedAspectId === entry.id && 'bg-[color:var(--theme-selected-bg)]'
-											)}
+											variant="row"
+											className="rounded-none border-b border-[color:var(--theme-panel-border)] px-5 py-3.5"
 											onClick={() => setSelectedAspectId(entry.id)}
 										>
 											<span
@@ -808,7 +803,7 @@ export function Aspectarium({ workspaceDefaults, enabledSymbolSetIds }: Aspectar
 											<Text variant="body" as="span" tone="muted" className="shrink-0 font-mono">
 												{formatOrb(entry.aspect.orb)}
 											</Text>
-										</Button>
+										</ChoiceButton>
 									);
 								})
 							)}

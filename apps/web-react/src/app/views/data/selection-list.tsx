@@ -1,3 +1,4 @@
+import { ChoiceLabel, ChoiceButton } from '@/app/components/ui/choice';
 import { Text } from '@/app/components/ui/typography';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Sparkles, X } from 'lucide-react';
@@ -11,7 +12,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { HighlightText } from '@/app/components/ui/highlight-text';
-import { Label } from '@/app/components/ui/label';
+
 import { SearchField } from '@/app/components/ui/search-field';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
@@ -161,14 +162,13 @@ export function SelectionList<T extends SelectionListItem>({
 				}}
 				className="flex items-center gap-2"
 			>
-				<Label
+				<ChoiceLabel
+					highlighted={highlighted === item.id}
+					disabled={item.disabled}
+					selected={isChecked}
+					variant="row"
 					htmlFor={`selection-${item.id}`}
-					className={cn(
-						'flex flex-1 items-center gap-2.5 rounded-md px-1 py-1 transition-colors',
-						item.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-						highlighted === item.id && 'ring-2 ring-[color:var(--theme-accent)]',
-						isChecked && !item.disabled && 'bg-[color:var(--theme-soft-bg)]'
-					)}
+					className="flex-1 px-1 py-1"
 				>
 					<Checkbox
 						id={`selection-${item.id}`}
@@ -184,7 +184,7 @@ export function SelectionList<T extends SelectionListItem>({
 							{context.highlight(item.label)}
 						</Text>
 					)}
-				</Label>
+				</ChoiceLabel>
 				{!item.disabled && renderTrailing?.(item)}
 			</div>
 		);
@@ -211,16 +211,17 @@ export function SelectionList<T extends SelectionListItem>({
 				<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 					<div className="min-w-0">{headerStart}</div>
 					<div className="flex items-center gap-3">
-						<Button
+						<ChoiceButton
+							aria-haspopup="dialog"
+							aria-expanded={panelOpen}
 							type="button"
-							variant="outline"
+							variant="chip"
 							size="sm"
 							onClick={() => setPanelOpen(true)}
-							className="h-auto gap-2 rounded-full border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] px-3 py-1.5 text-sm text-[color:var(--theme-content-primary)]"
 						>
 							<Sparkles className="size-3.5 shrink-0" />
 							{labels.selectedCount(selectedIds.length)}
-						</Button>
+						</ChoiceButton>
 						{selectedIds.length > 0 && (
 							<Button
 								type="button"

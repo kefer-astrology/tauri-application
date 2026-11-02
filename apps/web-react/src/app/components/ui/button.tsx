@@ -10,6 +10,10 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
+				toolbar:
+					'text-[color:var(--theme-content-secondary)] hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-content-primary)]',
+				'mode-label':
+					'bg-transparent text-[color:var(--theme-content-muted)] hover:text-[color:var(--theme-content-primary)] aria-pressed:text-[color:var(--theme-accent)]',
 				'form-primary': '',
 				'form-secondary': '',
 				default: 'bg-primary text-primary-foreground hover:bg-primary/90',
@@ -22,6 +26,9 @@ const buttonVariants = cva(
 				link: 'text-primary underline-offset-4 hover:underline'
 			},
 			size: {
+				toolbar: 'h-8 px-2.5 py-1 text-xs',
+				'toolbar-icon': 'size-8 p-0 text-xs',
+				inline: 'h-auto p-0 [font:inherit]',
 				form: cn('h-9', formButtonSpacingClassName),
 				default: 'h-9 px-4 py-2 has-[>svg]:px-3',
 				sm: 'h-8 rounded-lg gap-1.5 px-3 has-[>svg]:px-2.5',

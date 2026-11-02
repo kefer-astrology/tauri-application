@@ -1,9 +1,10 @@
+import { ChoiceLabel } from '@/app/components/ui/choice';
 import { Text } from '@/app/components/ui/typography';
 import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Checkbox } from '@/app/components/ui/checkbox';
-import { Label } from '@/app/components/ui/label';
+
 import { Popover, PopoverContent, PopoverTrigger } from '@/app/components/ui/popover';
 import { SearchField } from '@/app/components/ui/search-field';
 
@@ -100,11 +101,7 @@ export function MultiSelectPopover({
 						</Text>
 					) : (
 						visible.map((item) => (
-							<Label
-								variant="default"
-								key={item.id}
-								className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 hover:bg-[color:var(--theme-hover-bg)]"
-							>
+							<ChoiceLabel selected={selected.has(item.id)} variant="row" key={item.id}>
 								<Checkbox checked={selected.has(item.id)} onCheckedChange={() => toggle(item.id)} />
 								{item.icon !== undefined && (
 									<span
@@ -115,7 +112,7 @@ export function MultiSelectPopover({
 									</span>
 								)}
 								<span className="min-w-0 truncate">{item.label}</span>
-							</Label>
+							</ChoiceLabel>
 						))
 					)}
 				</div>
