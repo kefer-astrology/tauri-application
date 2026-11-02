@@ -1,6 +1,7 @@
+import { ChartWorkspaceLayout } from './chart-workspace-layout';
 import { Surface, ActionBar } from '@/app/components/ui/container';
 import { Heading } from '@/app/components/ui/typography';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import {
 	ChevronDown,
 	ChevronRight,
@@ -92,6 +93,7 @@ export function HoroscopeDashboard({
 	const [profileCollapsed, setProfileCollapsed] = useState(false);
 	const [astrolabeCollapsed, setAstrolabeCollapsed] = useState(false);
 	const [positionsCollapsed, setPositionsCollapsed] = useState(false);
+	const positionsContentId = useId();
 	const [timeUnit, setTimeUnit] = useState<'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr'>('day');
 	const [timeAmount, setTimeAmount] = useState(1);
 	const [showPositionModal, setShowPositionModal] = useState(false);
@@ -386,250 +388,315 @@ export function HoroscopeDashboard({
 		}
 	};
 
-	return (
-		<div className="flex h-full min-h-0 flex-col overflow-hidden" data-tour="radix-workspace">
-			{/* Main Content - 3 Column Layout */}
-			<div className="grid min-h-0 flex-1 grid-cols-[288px_minmax(0,1fr)_224px] gap-6 overflow-hidden p-4">
-				{/* Left Column */}
-				<div className="flex min-h-0 min-w-0 flex-col gap-4">
-					{/* Profile Panel */}
-					<Card
-						variant="default"
-						spacing="flush"
-						clip
-						className="transition-all duration-300"
-						data-tour="radix-profile"
+	const detailsPanel = (
+		<>
+			{/* Left Column */}
+			<div className="flex min-h-0 min-w-0 flex-col gap-4">
+				{/* Profile Panel */}
+				<Card
+					variant="default"
+					spacing="flush"
+					clip
+					className="transition-all duration-300"
+					data-tour="radix-profile"
+				>
+					<div
+						className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
+						onClick={() => setProfileCollapsed(!profileCollapsed)}
 					>
-						<div
-							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
-							onClick={() => setProfileCollapsed(!profileCollapsed)}
+						<div className="flex items-center gap-2">
+							{profileCollapsed ? (
+								<ChevronRight className={`h-4 w-4 ${mutedColor}`} />
+							) : (
+								<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
+							)}
+							<Heading variant="sectionTitle" level={3} className={textColor}>
+								{selectedChart?.name ?? t('demo_chart_name')}
+							</Heading>
+						</div>
+						<Button
+							variant="ghost"
+							size="icon"
+							className={cn('rounded-lg', hoverBg)}
+							aria-label={t('edit_radix_title')}
+							disabled={!selectedChart}
+							onClick={(e) => {
+								e.stopPropagation();
+								if (selectedChart) onEdit?.(selectedChart);
+							}}
 						>
-							<div className="flex items-center gap-2">
-								{profileCollapsed ? (
-									<ChevronRight className={`h-4 w-4 ${mutedColor}`} />
-								) : (
-									<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
-								)}
-								<Heading variant="sectionTitle" level={3} className={textColor}>
-									{selectedChart?.name ?? t('demo_chart_name')}
-								</Heading>
+							<Pencil className={`h-4 w-4 ${mutedColor}`} />
+						</Button>
+					</div>
+
+					{!profileCollapsed && (
+						<div className="space-y-3 px-4 pb-4">
+							<div className={cn('space-y-1 text-sm', mutedColor)}>
+								<div>{chartTypeLabel}</div>
+								<div>{chartDateLabel}</div>
+								<div>{chartTimeLabel}</div>
+								<div>{chartLocationLabel}</div>
+								<div>{chartCoordsLabel}</div>
+								<div>{chartHouseSystemLabel}</div>
 							</div>
+
+							{chartTags.length > 0 ? (
+								<div className="flex flex-wrap gap-2 pt-2">
+									{chartTags.map((tag, index) => (
+										<Badge key={tag} variant="outline" className="gap-1.5 px-2 py-1 text-xs">
+											<span
+												className="h-2 w-2 rounded-full"
+												style={{
+													backgroundColor: tagColor(selectedChart?.tagColors, tag, index)
+												}}
+											/>
+											{tag}
+										</Badge>
+									))}
+								</div>
+							) : null}
+							{activeTransitOverlay ? (
+								<Surface
+									variant="soft"
+									padding="none"
+									className={cn(
+										'mt-3 flex items-center justify-between gap-3 px-3 py-2',
+										borderColor,
+										'bg-[color:var(--theme-soft-bg)]/50'
+									)}
+								>
+									<div className="min-w-0">
+										<div className={cn('truncate text-xs font-semibold', textColor)}>
+											{t('transit_overlay_label')}
+										</div>
+										<div className={cn('truncate text-xs', mutedColor)}>
+											{t('transits_period_to')}: {transitDateTimeLabel}
+										</div>
+									</div>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className={cn('h-7 w-7 shrink-0 rounded-lg', hoverBg)}
+										onClick={(event) => {
+											event.stopPropagation();
+											clearTransitOverlay();
+										}}
+										aria-label={t('transit_overlay_clear')}
+									>
+										<X className={cn('h-3.5 w-3.5', mutedColor)} />
+									</Button>
+								</Surface>
+							) : null}
+						</div>
+					)}
+				</Card>
+
+				{/* Astrolabe Panel */}
+				<Card
+					variant="default"
+					spacing="flush"
+					clip
+					className="@container transition-all duration-300"
+					data-tour="radix-astrolabe"
+				>
+					<div
+						className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
+						onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
+					>
+						<div className="flex items-center gap-2">
+							{astrolabeCollapsed ? (
+								<ChevronRight className={`h-4 w-4 ${mutedColor}`} />
+							) : (
+								<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
+							)}
+							<Heading variant="sectionTitle" level={3} className={textColor}>
+								{t('astrolabe')}
+							</Heading>
+						</div>
+					</div>
+
+					{!astrolabeCollapsed && (
+						<div className="space-y-3 px-4 pb-4">
+							{/* Time Stepper */}
+							<div className="grid grid-cols-2 items-center gap-2 @min-[15rem]:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto]">
+								<Button
+									variant="outline"
+									size="icon"
+									className={cn('rounded-full', borderColor, hoverBg, textColor)}
+									onClick={() => void stepChartTime(-1)}
+									disabled={isSteppingTime || !selectedChart}
+								>
+									<ChevronLeft className="h-4 w-4" />
+								</Button>
+
+								<Select
+									value={String(timeAmount)}
+									onValueChange={(value) => setTimeAmount(Number(value))}
+								>
+									<SelectTrigger variant="form" density="compact" className={timeStepSelectLayout}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent variant="form">
+										{Array.from({ length: getMaxAmount() }, (_, i) => i + 1).map((n) => (
+											<SelectItem variant="form" key={n} value={String(n)}>
+												{n}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+
+								<Select
+									value={timeUnit}
+									onValueChange={(value) =>
+										setTimeUnit(value as 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr')
+									}
+								>
+									<SelectTrigger variant="form" density="compact" className={timeStepSelectLayout}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent variant="form">
+										<SelectItem variant="form" value="sec">
+											{t('astrolabe_unit_sec')}
+										</SelectItem>
+										<SelectItem variant="form" value="min">
+											{t('astrolabe_unit_min')}
+										</SelectItem>
+										<SelectItem variant="form" value="hr">
+											{t('astrolabe_unit_hr')}
+										</SelectItem>
+										<SelectItem variant="form" value="day">
+											{t('astrolabe_unit_day')}
+										</SelectItem>
+										<SelectItem variant="form" value="month">
+											{t('astrolabe_unit_month')}
+										</SelectItem>
+										<SelectItem variant="form" value="yr">
+											{t('astrolabe_unit_yr')}
+										</SelectItem>
+									</SelectContent>
+								</Select>
+
+								<Button
+									variant="outline"
+									size="icon"
+									className={cn('rounded-full', borderColor, hoverBg, textColor)}
+									onClick={() => void stepChartTime(1)}
+									disabled={isSteppingTime || !selectedChart}
+								>
+									<ChevronRight className="h-4 w-4" />
+								</Button>
+							</div>
+
+							{/* Date Input */}
+							<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
+								<Input
+									variant="form"
+									readOnly
+									value={chartDateLabel}
+									className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
+								/>
+								<Calendar className={cn('h-4 w-4 shrink-0', mutedColor)} />
+							</Surface>
+
+							<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
+								<Input
+									variant="form"
+									readOnly
+									value={chartTimeLabel}
+									className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
+								/>
+								<Clock className={cn('h-4 w-4 shrink-0', mutedColor)} />
+							</Surface>
+
+							<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
+								<Input
+									variant="form"
+									readOnly
+									value={chartLocationLabel}
+									className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
+								/>
+								<MapPin className={cn('h-4 w-4 shrink-0', mutedColor)} />
+							</Surface>
+						</div>
+					)}
+				</Card>
+			</div>
+		</>
+	);
+	const positionsPanel = (
+		<>
+			{/* Right Column */}
+			<div className="h-full min-h-0 min-w-0">
+				<Card
+					data-tour="radix-positions"
+					variant="default"
+					spacing="flush"
+					clip
+					className={positionsCollapsed ? 'h-auto' : 'h-full'}
+				>
+					<div className="flex shrink-0 flex-wrap items-center justify-between gap-1 px-4 py-3">
+						<Heading variant="sectionTitle" level={3} className={cn('min-w-0 flex-1', textColor)}>
 							<Button
 								variant="ghost"
-								size="icon"
-								className={cn('rounded-lg', hoverBg)}
-								disabled={!selectedChart}
-								onClick={(e) => {
-									e.stopPropagation();
-									if (selectedChart) onEdit?.(selectedChart);
-								}}
+								size="inline"
+								className="w-full justify-start gap-2 text-left whitespace-normal"
+								aria-expanded={!positionsCollapsed}
+								aria-controls={positionsContentId}
+								onClick={() => setPositionsCollapsed((collapsed) => !collapsed)}
 							>
-								<Pencil className={`h-4 w-4 ${mutedColor}`} />
-							</Button>
-						</div>
-
-						{!profileCollapsed && (
-							<div className="space-y-3 px-4 pb-4">
-								<div className={cn('space-y-1 text-sm', mutedColor)}>
-									<div>{chartTypeLabel}</div>
-									<div>{chartDateLabel}</div>
-									<div>{chartTimeLabel}</div>
-									<div>{chartLocationLabel}</div>
-									<div>{chartCoordsLabel}</div>
-									<div>{chartHouseSystemLabel}</div>
-								</div>
-
-								{chartTags.length > 0 ? (
-									<div className="flex flex-wrap gap-2 pt-2">
-										{chartTags.map((tag, index) => (
-											<Badge key={tag} variant="outline" className="gap-1.5 px-2 py-1 text-xs">
-												<span
-													className="h-2 w-2 rounded-full"
-													style={{
-														backgroundColor: tagColor(selectedChart?.tagColors, tag, index)
-													}}
-												/>
-												{tag}
-											</Badge>
-										))}
-									</div>
-								) : null}
-								{activeTransitOverlay ? (
-									<Surface
-										variant="soft"
-										padding="none"
-										className={cn(
-											'mt-3 flex items-center justify-between gap-3 px-3 py-2',
-											borderColor,
-											'bg-[color:var(--theme-soft-bg)]/50'
-										)}
-									>
-										<div className="min-w-0">
-											<div className={cn('truncate text-xs font-semibold', textColor)}>
-												{t('transit_overlay_label')}
-											</div>
-											<div className={cn('truncate text-xs', mutedColor)}>
-												{t('transits_period_to')}: {transitDateTimeLabel}
-											</div>
-										</div>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											className={cn('h-7 w-7 shrink-0 rounded-lg', hoverBg)}
-											onClick={(event) => {
-												event.stopPropagation();
-												clearTransitOverlay();
-											}}
-											aria-label={t('transit_overlay_clear')}
-										>
-											<X className={cn('h-3.5 w-3.5', mutedColor)} />
-										</Button>
-									</Surface>
-								) : null}
-							</div>
-						)}
-					</Card>
-
-					{/* Astrolabe Panel */}
-					<Card
-						variant="default"
-						spacing="flush"
-						clip
-						className="transition-all duration-300"
-						data-tour="radix-astrolabe"
-					>
-						<div
-							className={`flex items-center justify-between px-4 py-3 ${hoverBg} cursor-pointer`}
-							onClick={() => setAstrolabeCollapsed(!astrolabeCollapsed)}
-						>
-							<div className="flex items-center gap-2">
-								{astrolabeCollapsed ? (
-									<ChevronRight className={`h-4 w-4 ${mutedColor}`} />
+								{positionsCollapsed ? (
+									<ChevronRight className={mutedColor} aria-hidden="true" />
 								) : (
-									<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
+									<ChevronDown className={mutedColor} aria-hidden="true" />
 								)}
-								<Heading variant="sectionTitle" level={3} className={textColor}>
-									{t('astrolabe')}
-								</Heading>
-							</div>
-						</div>
+								{t('right_panel')}
+							</Button>
+						</Heading>
+						<Button
+							variant="ghost"
+							size="icon"
+							className={cn('rounded-lg', hoverBg)}
+							aria-label={t('section_observable_objects')}
+							onClick={(e) => {
+								e.stopPropagation();
+								setPickerBodies(
+									selectedChart?.observableObjects ?? workspaceDefaults.defaultBodies
+								);
+								setShowPositionModal(true);
+							}}
+						>
+							<Pencil className={`h-4 w-4 ${mutedColor}`} />
+						</Button>
+					</div>
 
-						{!astrolabeCollapsed && (
-							<div className="space-y-3 px-4 pb-4">
-								{/* Time Stepper */}
-								<div className="flex items-center gap-2">
-									<Button
-										variant="outline"
-										size="icon"
-										className={cn('rounded-full', borderColor, hoverBg, textColor)}
-										onClick={() => void stepChartTime(-1)}
-										disabled={isSteppingTime || !selectedChart}
-									>
-										<ChevronLeft className="h-4 w-4" />
-									</Button>
+					<div
+						id={positionsContentId}
+						hidden={positionsCollapsed}
+						className="min-h-0 flex-1 overflow-auto px-4 pb-4"
+					>
+						<PositionsList
+							positions={positionRows}
+							selectedId={
+								selectedWheelObject?.layer === 'radix' ? selectedWheelObject.bodyId : null
+							}
+							onSelect={(bodyId) => handleObjectSelect({ bodyId, layer: 'radix' })}
+							emptyText={t('dashboard_no_positions')}
+						/>
+					</div>
+				</Card>
+			</div>
+		</>
+	);
 
-									<Select
-										value={String(timeAmount)}
-										onValueChange={(value) => setTimeAmount(Number(value))}
-									>
-										<SelectTrigger
-											variant="form"
-											density="compact"
-											className={timeStepSelectLayout}
-										>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent variant="form">
-											{Array.from({ length: getMaxAmount() }, (_, i) => i + 1).map((n) => (
-												<SelectItem variant="form" key={n} value={String(n)}>
-													{n}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-
-									<Select
-										value={timeUnit}
-										onValueChange={(value) =>
-											setTimeUnit(value as 'sec' | 'min' | 'hr' | 'day' | 'month' | 'yr')
-										}
-									>
-										<SelectTrigger
-											variant="form"
-											density="compact"
-											className={timeStepSelectLayout}
-										>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent variant="form">
-											<SelectItem variant="form" value="sec">
-												{t('astrolabe_unit_sec')}
-											</SelectItem>
-											<SelectItem variant="form" value="min">
-												{t('astrolabe_unit_min')}
-											</SelectItem>
-											<SelectItem variant="form" value="hr">
-												{t('astrolabe_unit_hr')}
-											</SelectItem>
-											<SelectItem variant="form" value="day">
-												{t('astrolabe_unit_day')}
-											</SelectItem>
-											<SelectItem variant="form" value="month">
-												{t('astrolabe_unit_month')}
-											</SelectItem>
-											<SelectItem variant="form" value="yr">
-												{t('astrolabe_unit_yr')}
-											</SelectItem>
-										</SelectContent>
-									</Select>
-
-									<Button
-										variant="outline"
-										size="icon"
-										className={cn('rounded-full', borderColor, hoverBg, textColor)}
-										onClick={() => void stepChartTime(1)}
-										disabled={isSteppingTime || !selectedChart}
-									>
-										<ChevronRight className="h-4 w-4" />
-									</Button>
-								</div>
-
-								{/* Date Input */}
-								<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
-									<Input
-										variant="form"
-										readOnly
-										value={chartDateLabel}
-										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
-									/>
-									<Calendar className={cn('h-4 w-4 shrink-0', mutedColor)} />
-								</Surface>
-
-								<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
-									<Input
-										variant="form"
-										readOnly
-										value={chartTimeLabel}
-										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
-									/>
-									<Clock className={cn('h-4 w-4 shrink-0', mutedColor)} />
-								</Surface>
-
-								<Surface variant="inset" className="flex items-center gap-2 px-3 py-2">
-									<Input
-										variant="form"
-										readOnly
-										value={chartLocationLabel}
-										className="flex-1 cursor-default border-0 bg-transparent px-0 py-0 text-sm shadow-none focus:ring-0"
-									/>
-									<MapPin className={cn('h-4 w-4 shrink-0', mutedColor)} />
-								</Surface>
-							</div>
-						)}
-					</Card>
-				</div>
-
+	return (
+		<>
+			<ChartWorkspaceLayout
+				details={detailsPanel}
+				positions={positionsPanel}
+				detailsLabel={t('details')}
+				positionsLabel={t('right_panel')}
+			>
 				{/* Center Column - Full middle track */}
 				<div
 					className="flex min-h-0 min-w-0 items-center justify-center overflow-hidden"
@@ -675,61 +742,7 @@ export function HoroscopeDashboard({
 						/>
 					</div>
 				</div>
-
-				{/* Right Column */}
-				<div className="min-h-0 min-w-0">
-					<Card
-						data-tour="radix-positions"
-						variant="default"
-						spacing="flush"
-						clip
-						className={cn('transition-all duration-300', !positionsCollapsed && 'h-full')}
-					>
-						<div
-							className={`flex items-center justify-between px-4 py-3 ${hoverBg} flex-shrink-0 cursor-pointer`}
-							onClick={() => setPositionsCollapsed(!positionsCollapsed)}
-						>
-							<div className="flex items-center gap-2">
-								{positionsCollapsed ? (
-									<ChevronRight className={`h-4 w-4 ${mutedColor}`} />
-								) : (
-									<ChevronDown className={`h-4 w-4 ${mutedColor}`} />
-								)}
-								<Heading variant="sectionTitle" level={3} className={textColor}>
-									{t('right_panel')}
-								</Heading>
-							</div>
-							<Button
-								variant="ghost"
-								size="icon"
-								className={cn('rounded-lg', hoverBg)}
-								onClick={(e) => {
-									e.stopPropagation();
-									setPickerBodies(
-										selectedChart?.observableObjects ?? workspaceDefaults.defaultBodies
-									);
-									setShowPositionModal(true);
-								}}
-							>
-								<Pencil className={`h-4 w-4 ${mutedColor}`} />
-							</Button>
-						</div>
-
-						{!positionsCollapsed && (
-							<div className="flex-1 overflow-y-auto px-4 pb-4">
-								<PositionsList
-									positions={positionRows}
-									selectedId={
-										selectedWheelObject?.layer === 'radix' ? selectedWheelObject.bodyId : null
-									}
-									onSelect={(bodyId) => handleObjectSelect({ bodyId, layer: 'radix' })}
-									emptyText={t('dashboard_no_positions')}
-								/>
-							</div>
-						)}
-					</Card>
-				</div>
-			</div>
+			</ChartWorkspaceLayout>
 
 			{/* First click on a body/aspect now highlights related wheel elements (see
 			    highlightAspectIndicesForObject / highlightBodiesForAspect above) instead of showing a
@@ -806,6 +819,6 @@ export function HoroscopeDashboard({
 					</ActionBar>
 				</div>
 			</DetailSidePanel>
-		</div>
+		</>
 	);
 }
