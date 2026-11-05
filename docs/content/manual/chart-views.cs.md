@@ -24,11 +24,20 @@ Prázdné buňky znamenají, že podle nastavení horoskopu a pravidel orbů neb
 vypočten žádný aspekt. Aspektárium může také zobrazit dočasný překryv tranzitu,
 ale geometrii aspektů nevypočítává v prohlížeči.
 
-## Informace
+## Spektrum
 
-Zobrazení Informace je nyní vizuální prototyp budoucího vypočteného přehledu.
-Ukázkové štítky, diagramy a konfigurace zatím nejsou svázány s vypočteným
-výsledkem vybraného horoskopu. Pro vypočtené údaje použijte Horoskop a Aspektárium.
+Spektrum je přehled vybraného horoskopu v kartách: rozložení živlů, kvalit,
+skupin domů, kvadrantů a polokoulí, extraverze a introverze, rozložení aspektů,
+konfigurace, stellia, osamocené planety, retrográdní a ohniskové planety
+(vládce horoskopu, konečný dispozitor, planety na osách a bez aspektů). Karta
+s kruhem přidává fázi Měsíce, polohu světel nad nebo pod obzorem a fáze Merkuru
+a Venuše; karta zvýraznění vybírá nejvýraznější údaje horoskopu.
+
+Najetím na položku, řádek nebo zvýraznění se její planety (a příslušná polovina
+horoskopu) ukážou v kruhu; kliknutím zůstanou zobrazené, dalším kliknutím se
+uvolní. Dokud horoskop není vypočten, karta místo hodnot ukáže krátkou poznámku.
+Stejně jako v jiných zobrazeních kartu odeberete z nabídky `⋯` a vrátíte ji
+přes **+ Přidat**.
 
 ## Revoluce a synastrie
 

@@ -12,7 +12,7 @@ Kefer Astrology se otevírá v pracovním prostoru horoskopu. Hlavní postranní
 - **Export** otevře panel možností přes aktuální zobrazení; vytváření výstupu zatím není implementované.
 - **Horoskop** je hlavní řídicí panel horoskopu.
 - **Aspektárium** zobrazuje vztahy mezi vybranými objekty horoskopu.
-- **Informace** (včetně Spektra) jsou vizuální prototyp budoucího vypočteného přehledu; zatím nezobrazují skutečné hodnoty vybraného horoskopu.
+- **Spektrum** shrnuje vybraný horoskop: rozložení živlů, kvalit, domů a polokoulí, stellia, retrográdní a ohniskové planety. Najetím na položku karty se její planety ukážou v kruhu; kliknutím zůstanou zobrazené.
 - **Tranzity a Dynamika** poskytují časová zobrazení.
 - **Revoluce a Synastrie** poskytují specializované postupy pro porovnávání.
 - **Nastavení** ovládá jazyk, vzhled, výchozí hodnoty výpočtů, objekty a aspekty.

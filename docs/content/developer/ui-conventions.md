@@ -80,8 +80,8 @@ unfinished alignment work belongs in the
 - Prefer a single outer surface for a major region, then use spacing, softer background layers, typography, and occasional separators to organize content inside it.
 - Use inner borders sparingly for true boundaries or strong interactive affordances, not as the default way to separate every subsection.
 - Focus/selected indication is a `box-shadow` ring that extends a few pixels past a control's border. Any ancestor with `overflow-hidden` and no padding buffer will clip that ring wherever a control sits flush against its edge — this bit `AccordionContent` (needed `overflow-hidden` for its collapse animation, had zero padding). Settings is built almost entirely out of accordions, so treat this as a recurring hazard, not a one-off: any `overflow-hidden` container that can host a bordered/ring-bearing child needs a small (`p-1`) padding buffer.
-- Current React baseline follows this in `Aspectarium` and `Settings`: one primary card/sheet surface, soft interior backgrounds, and `Separator` for semantic section breaks.
-- `OpenWorkspaceView` and `InformationView` should use shared `Button`/`Badge` primitives for interactive chips, toggles, and list actions instead of ad-hoc raw button styling.
+- Current React baseline follows this in `Settings`: one primary card/sheet surface, soft interior backgrounds, and `Separator` for semantic section breaks.
+- `OpenWorkspaceView` and the Spektrum widgets should use shared `Button`/`Badge` primitives for interactive chips, toggles, and list actions instead of ad-hoc raw button styling.
 
 ## Four app themes
 
@@ -244,20 +244,21 @@ for sidebar and nested panel padding. A viewport breakpoint alone does not
 guarantee enough room for a compound field or long translated label. Allow a tab
 strip to wrap when its controls exceed the available width.
 
-The horoscope dashboard uses `ChartWorkspaceLayout`. It measures the workspace,
-including the effect of the main sidebar. At least 960px shows the 288px details
-rail and 224px positions rail alongside the wheel, without panel toggle buttons.
-Below 960px only the left details move into a modal sheet, opened by a button
-that appears in this smaller layout. The sheet slides in from the right edge
-and overlays Poloha while open. Escape/close restores focus to its trigger. Resizing into inline layout closes
+The Horoskop module uses `ChartWorkspaceLayout`. It measures the workspace,
+including the effect of the main sidebar. At least 960px shows the 288px left
+region (chart profile, astrolabe) and the 224px right region (positions)
+alongside the wheel, without panel toggle buttons. Below 960px only the left
+region moves into the right panel, opened by a button that appears in this
+smaller layout. The panel slides in from the right edge and overlays Poloha
+while open. Escape/close restores focus to its trigger. Resizing into inline layout closes
 the sheet and restores the inline details automatically.
 
-Poloha (positions) always remains on the right. Its heading button folds or
-unfolds the body using `aria-expanded` and `aria-controls`; the heading and edit
-action remain visible when folded. In compact layouts its track adapts between
+Poloha (positions) always remains on the right. Like every widget, its heading
+button folds or unfolds the body using `aria-expanded` and `aria-controls`; the
+heading and edit action remain visible when folded. In compact layouts its track adapts between
 10rem and 14rem; its contents scroll independently. Do not mount duplicate panel
-content, and preserve the dashboard's chart/action state. Poloha folding lasts
-for the mounted dashboard view; it is not a persisted workspace preference.
+content, and preserve the module's chart/action state. Widget folding lasts for
+the mounted view; it is not a persisted workspace preference.
 
 `ModeSwitcherDetails surface="soft"` owns the nested surface of advanced options;
 its animation wrapper keeps the focus-ring buffer. `SheetFooter variant="actions"`

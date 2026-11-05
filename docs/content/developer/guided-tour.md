@@ -29,7 +29,7 @@ Tour targets use stable `data-tour` attributes. A tour step selects an anchor su
 - Renaming or removing an anchor requires updating every tour step that targets it.
 - Fixed pixel coordinates are not part of the contract.
 
-The primary and secondary sidebars expose their navigation destinations. The radix dashboard additionally exposes its profile, Astrolabe, wheel, positions, and chart-context strip. Transit computation exposes its period selector and calculation action.
+The primary and secondary sidebars expose their navigation destinations. The Horoskop module additionally exposes its chart profile, Astrolabe, wheel, positions, and chart-context strip. Transit computation exposes its period selector and calculation action.
 
 ## Overlay behavior
 

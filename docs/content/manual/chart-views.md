@@ -27,12 +27,21 @@ orb rules; they are not missing decorative data. The aspectarium can also show
 a temporary transit overlay when one is open, but it does not calculate
 aspect geometry in the browser.
 
-## Information
+## Spectrum
 
-Information is currently a visual prototype for a future calculated summary.
-Its example chips, diagrams, and configuration labels are not yet bound to the
-selected chart's computed result. Use the **Horoscope** view for the calculated
-wheel and object details, and the **Aspectarium** for calculated aspects.
+Spectrum is an overview of the selected chart in cards: the balance of
+elements, modalities, house groups, quadrants and hemispheres, extraversion and
+introversion, the aspect balance, configurations, stelliums, singletons,
+retrograde planets and focal planets (chart ruler, final dispositor, angular and
+unaspected planets). The wheel card adds the lunar phase, the lights above or
+below the horizon and the Mercury and Venus phases; the highlights card picks
+the chart's most notable facts.
+
+Hover an item, a row or a highlight to show its planets on the wheel (and the
+chart half it belongs to); click it to keep them shown, and click again to
+release. A card shows a short note instead of values when the chart has not
+been computed yet. As in the other views, a card's `⋯` menu removes it and
+**+ Add** brings cards back.
 
 ## Revolution and synastry
 

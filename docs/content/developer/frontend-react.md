@@ -90,7 +90,6 @@ Do not duplicate theme, glyph, translation, or shared-component policy here;
 ## Current limitations
 
 - Some secondary views remain presentational or prototype-oriented.
-- `InformationView` is not yet a complete chart-backed analysis surface.
 - React has Vitest tests for helpers, shell, and feature rendering. Automated
   React/Svelte parity and full desktop workflows remain gaps in
   [Testing strategy](../testing-strategy/).
