@@ -28,7 +28,7 @@ export function SettingSelect<T extends string>({
 	label?: ReactNode;
 	hint?: ReactNode;
 	value: T | '';
-	options: readonly { value: T; label: string }[];
+	options: readonly { value: T; label: string; disabled?: boolean }[];
 	onValueChange: (value: T) => void;
 	placeholder?: string;
 	ariaLabel?: string;
@@ -54,7 +54,12 @@ export function SettingSelect<T extends string>({
 				<SelectContent variant="form">
 					<SelectGroup>
 						{options.map((option) => (
-							<SelectItem variant="form" key={option.value} value={option.value}>
+							<SelectItem
+								variant="form"
+								key={option.value}
+								value={option.value}
+								disabled={option.disabled}
+							>
 								{option.label}
 							</SelectItem>
 						))}

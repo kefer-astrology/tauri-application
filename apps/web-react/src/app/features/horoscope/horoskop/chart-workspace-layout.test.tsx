@@ -1,6 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AppThemeProvider } from '@/app/providers/app-theme';
 import { ChartWorkspaceLayout } from './chart-workspace-layout';
 
 afterEach(() => {
@@ -33,14 +34,16 @@ async function withLayout(
 	try {
 		await act(async () =>
 			root.render(
-				<ChartWorkspaceLayout
-					detailsLabel="Details"
-					positionsLabel="Positions"
-					details={<div data-test-panel="details">Chart details</div>}
-					positions={<div data-test-panel="positions">Chart positions</div>}
-				>
-					<div data-test-wheel>Wheel</div>
-				</ChartWorkspaceLayout>
+				<AppThemeProvider theme="noon" glyphSet="default">
+					<ChartWorkspaceLayout
+						leftLabel="Details"
+						rightLabel="Positions"
+						left={<div data-test-panel="details">Chart details</div>}
+						right={<div data-test-panel="positions">Chart positions</div>}
+					>
+						<div data-test-wheel>Wheel</div>
+					</ChartWorkspaceLayout>
+				</AppThemeProvider>
 			)
 		);
 		await check(container, async (next) => {

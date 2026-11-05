@@ -1,4 +1,5 @@
-import type { ComponentProps, ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, type ComponentProps, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/app/components/ui/utils';
 import {
 	Sheet,
@@ -10,6 +11,7 @@ import {
 import { Separator } from '@/app/components/ui/separator';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { Surface } from '@/app/components/ui/container';
+import { useRightPanel } from '@/app/providers/right-panel';
 
 type DetailSidePanelProps = {
 	open: boolean;
@@ -22,7 +24,53 @@ type DetailSidePanelProps = {
 	children: ReactNode;
 };
 
-export function DetailSidePanel({
+/** A view in the app's right panel: title, optional description, scrolling body. Opened while
+ *  another view is open, it shows on top with a Back button instead of stacking a second
+ *  panel. Without a `RightPanelProvider` it opens its own sheet. */
+export function DetailSidePanel(props: DetailSidePanelProps) {
+	const panel = useRightPanel();
+	return panel ? <SharedPanelView {...props} /> : <StandaloneSidePanel {...props} />;
+}
+
+function SharedPanelView({
+	open,
+	onOpenChange,
+	title,
+	description,
+	contentClassName,
+	bodyClassName,
+	onCloseAutoFocus,
+	children
+}: DetailSidePanelProps) {
+	const panel = useRightPanel()!;
+	const { show, hide } = panel;
+	const id = useId();
+	const onOpenChangeRef = useRef(onOpenChange);
+	onOpenChangeRef.current = onOpenChange;
+
+	useLayoutEffect(() => {
+		if (!open) return;
+		show({
+			id,
+			title,
+			description,
+			contentClassName,
+			bodyClassName,
+			onCloseAutoFocus,
+			onClose: () => onOpenChangeRef.current(false)
+		});
+	}, [open, id, title, description, contentClassName, bodyClassName, onCloseAutoFocus, show]);
+
+	useLayoutEffect(() => {
+		if (!open) return;
+		return () => hide(id);
+	}, [open, id, hide]);
+
+	const container = panel.containers.get(id);
+	return open && container ? createPortal(children, container) : null;
+}
+
+function StandaloneSidePanel({
 	open,
 	onOpenChange,
 	title,

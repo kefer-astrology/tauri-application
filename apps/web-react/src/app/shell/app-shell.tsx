@@ -16,9 +16,9 @@ import {
 	TransitsView,
 	type TransitSection
 } from '@/app/features/transits/transits-view';
-import { Aspectarium } from '@/app/components/aspectarium';
-import { HoroscopeDashboard } from '@/app/components/horoscope-dashboard';
-import { InformationView } from '@/app/components/information-view';
+import { AspectariumView } from '@/app/features/horoscope/aspectarium/aspectarium-view';
+import { HoroskopView } from '@/app/features/horoscope/horoskop/horoskop-view';
+import { SpektrumView } from '@/app/features/horoscope/spektrum/spektrum-view';
 import { RevolutionView } from '@/app/features/revolution/revolution-view';
 import { SynastryView } from '@/app/features/synastry/synastry-view';
 import { SettingsView } from '@/app/features/settings/settings-view';
@@ -111,7 +111,7 @@ export function AppShell() {
 		switch (activeView) {
 			case 'horoskop':
 				return (
-					<HoroscopeDashboard
+					<HoroskopView
 						workspaceDefaults={workspace.workspaceDefaults}
 						wheelStyle={appearance.wheelStyle}
 						wheelOrientation={appearance.wheelOrientation}
@@ -136,7 +136,7 @@ export function AppShell() {
 				);
 			case 'informace':
 				return (
-					<InformationView
+					<SpektrumView
 						wheelStyle={appearance.wheelStyle}
 						elementColors={appearance.elementColors}
 						lightPlanetFill={appearance.lightPlanetFill}
@@ -157,7 +157,7 @@ export function AppShell() {
 				);
 			case 'aspektarium':
 				return (
-					<Aspectarium
+					<AspectariumView
 						workspaceDefaults={workspace.workspaceDefaults}
 						enabledSymbolSetIds={appearance.enabledSymbolSetIds}
 					/>

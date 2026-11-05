@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_ASPECT_LINE_TIER_STYLE } from '@/lib/tauri/chartPayload';
 import {
 	aspectOrbTier,
-	eastWestHemisphere,
+	horizonHalf,
+	isInChartHalf,
+	meridianHalf,
 	longitudeForAspectPoint,
 	maxOrbForAspectType,
 	midpointLongitude,
 	normalizeHouseCusps,
-	northSouthHemisphere,
 	polar,
 	resolveDeclutteredPlacements,
 	strokeDasharrayForAspectTier,
@@ -35,14 +36,19 @@ describe('wheel geometry', () => {
 		expect(normalizeHouseCusps([...cusps.slice(1), Number.NaN])).toEqual([]);
 	});
 
-	it('splits hemispheres by the chart’s own axes', () => {
-		expect(eastWestHemisphere(10, 0)).toBe('east');
-		expect(eastWestHemisphere(350, 0)).toBe('west');
-		// Same planet, different chart: the side depends on that chart's ASC.
-		expect(eastWestHemisphere(100, 90)).toBe('east');
-		expect(eastWestHemisphere(100, 120)).toBe('west');
-		expect(northSouthHemisphere(100, 90)).toBe('north');
-		expect(northSouthHemisphere(80, 90)).toBe('south');
+	it('names chart halves as the chart facts do', () => {
+		// ASC 100°, MC 10°: houses 1–6 run 100° → 280°, houses 10–3 run 10° → 190°.
+		const axis = { asc: 100, mc: 10 };
+		expect(horizonHalf(150, axis.asc)).toBe('lower');
+		expect(horizonHalf(50, axis.asc)).toBe('upper');
+		expect(meridianHalf(100, axis.mc)).toBe('east');
+		expect(meridianHalf(250, axis.mc)).toBe('west');
+		expect(isInChartHalf(150, 'lower', axis)).toBe(true);
+		expect(isInChartHalf(150, 'upper', axis)).toBe(false);
+		expect(isInChartHalf(100.5, 'east', axis)).toBe(true);
+		expect(isInChartHalf(300, 'west', axis)).toBe(true);
+		// Same planet, another chart: the half depends on that chart's axes.
+		expect(horizonHalf(100, 120)).toBe('upper');
 	});
 
 	it('fans out conjunctions and leaves lone bodies in place', () => {

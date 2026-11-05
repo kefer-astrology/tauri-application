@@ -1,25 +1,17 @@
-import {
-	eastWestHemisphere,
-	northSouthHemisphere,
-	polar,
-	type PlanetPlacement
-} from '@/lib/astrology/wheelGeometry';
+import { isInChartHalf, polar, type PlanetPlacement } from '@/lib/astrology/wheelGeometry';
 import { WHEEL, type WheelFrame, type WheelObjectLayer } from '../wheel-frame';
 import { WheelTintedGlyphImage } from '../wheel-tinted-glyph';
 import type { HemisphereOverlayKind } from './hemisphere-overlay';
 
-/** Opacity of a body for the hemisphere overlay: full on the highlighted side. */
+/** Opacity of a body for the hemisphere overlay: full in the highlighted half. */
 function hemisphereOpacity(
 	lon: number,
 	overlay: HemisphereOverlayKind,
 	ascDeg: number,
 	mcDeg: number
 ): number {
-	if (overlay === 'asc-dsc-east') return eastWestHemisphere(lon, ascDeg) === 'east' ? 1 : 0.42;
-	if (overlay === 'asc-dsc-west') return eastWestHemisphere(lon, ascDeg) === 'west' ? 1 : 0.42;
-	if (overlay === 'mc-ic-north') return northSouthHemisphere(lon, mcDeg) === 'north' ? 1 : 0.42;
-	if (overlay === 'mc-ic-south') return northSouthHemisphere(lon, mcDeg) === 'south' ? 1 : 0.42;
-	return 1;
+	if (overlay === 'off') return 1;
+	return isInChartHalf(lon, overlay, { asc: ascDeg, mc: mcDeg }) ? 1 : 0.42;
 }
 
 /** Radix bodies in the planet band (conjunctions fanned), with highlight halo, dimming, and a

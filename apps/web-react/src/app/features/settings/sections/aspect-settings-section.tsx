@@ -29,16 +29,7 @@ import {
 } from '@/lib/settings/aspectSettings';
 import { SettingSelect } from '../settings-controls';
 import { useSettingsDraft } from '../settings-draft';
-
-const ASTROLOGY_TRADITION_OPTIONS: { value: AstrologicalTraditionId; labelKey: string }[] = [
-	{ value: 'hellenistic', labelKey: 'tradition_hellenistic' },
-	{ value: 'medieval_traditional', labelKey: 'tradition_medieval_traditional' },
-	{ value: 'modern_western', labelKey: 'tradition_modern_western' },
-	{ value: 'harmonic', labelKey: 'tradition_harmonic' },
-	{ value: 'cosmobiology', labelKey: 'tradition_cosmobiology' },
-	{ value: 'uranian_hamburg', labelKey: 'tradition_uranian_hamburg' },
-	{ value: 'jyotish_parashari', labelKey: 'tradition_jyotish_parashari' }
-];
+import { ASTROLOGY_SCHOOLS, DEFAULT_SCHOOL } from '@/lib/astrology/schools';
 
 /** Numeric aspect-line tier fields: id, label key, minimum accepted value, step. */
 const TIER_FIELDS: {
@@ -306,8 +297,8 @@ export function AspectSettingsSection() {
 
 	const { workspaceDefaults, applyDefaultsPatch } = useWorkspace();
 	const { markChanged } = useSettingsDraft();
-	const [tradition, setTradition] = useState<AstrologicalTraditionId | ''>(
-		workspaceDefaults.astrologyTradition ?? ''
+	const [tradition, setTradition] = useState<AstrologicalTraditionId>(
+		workspaceDefaults.astrologyTradition ?? DEFAULT_SCHOOL
 	);
 	const [extendedObjectTypes, setExtendedObjectTypes] = useState(
 		workspaceDefaults.extendedObjectTypes
@@ -319,7 +310,7 @@ export function AspectSettingsSection() {
 	}));
 
 	useEffect(() => {
-		setTradition(workspaceDefaults.astrologyTradition ?? '');
+		setTradition(workspaceDefaults.astrologyTradition ?? DEFAULT_SCHOOL);
 		setExtendedObjectTypes(workspaceDefaults.extendedObjectTypes);
 		setObjectOrbs(workspaceDefaults.objectOrbs);
 		setRows(aspectRowsFromDefaults(workspaceDefaults));
@@ -353,11 +344,11 @@ export function AspectSettingsSection() {
 				<SettingSelect
 					label={t('settings_astrology_tradition_label')}
 					hint={t('settings_astrology_tradition_hint')}
-					placeholder={t('settings_astrology_tradition_none')}
 					value={tradition}
-					options={ASTROLOGY_TRADITION_OPTIONS.map((option) => ({
-						value: option.value,
-						label: t(option.labelKey)
+					options={ASTROLOGY_SCHOOLS.map((school) => ({
+						value: school.id,
+						label: t(school.labelKey),
+						disabled: !school.enabled
 					}))}
 					onValueChange={(next) => {
 						setTradition(next);
