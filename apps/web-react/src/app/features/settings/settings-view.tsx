@@ -29,9 +29,9 @@ const SECTIONS: Record<SettingsSectionId, () => React.ReactNode> = {
 };
 
 /**
- * Settings: the active section plus Cancel / Confirm. Sections read and change the appearance and
+ * Settings: the active section and one Confirm action. Sections read and change the appearance and
  * workspace providers directly; most changes apply at once. Element colors and the theme palette
- * are drafts applied by Confirm; Cancel discards them and any half-typed input.
+ * are drafts applied by Confirm; leaving Settings discards unconfirmed drafts and local input.
  */
 export function SettingsView({ section }: { section: SettingsSectionId }) {
 	const { t } = useTranslation();
@@ -39,8 +39,6 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 	const [changed, setChanged] = useState(false);
 	const [elementDraft, setElementDraftState] = useState<ElementColors>(elementColors);
 	const [paletteDraft, setPaletteDraftState] = useState<ThemePalette>(themePalette);
-	// Bumped by Cancel: remounting the section resets its local, not yet saved input.
-	const [resetToken, setResetToken] = useState(0);
 
 	useEffect(() => setElementDraftState(elementColors), [elementColors]);
 	useEffect(() => setPaletteDraftState(themePalette), [themePalette]);
@@ -57,12 +55,6 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 		[markChanged, elementDraft, paletteDraft]
 	);
 
-	const cancel = () => {
-		setChanged(false);
-		setElementDraftState(elementColors);
-		setPaletteDraftState(themePalette);
-		setResetToken((token) => token + 1);
-	};
 	const confirm = () => {
 		commitElementColors(elementDraft);
 		commitThemePalette(paletteDraft);
@@ -82,18 +74,9 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 							className="flex min-h-[min(70vh,520px)] min-w-0 flex-col rounded-xl p-0 shadow-none"
 						>
 							<CardContent className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
-								<Section key={`${section}-${resetToken}`} />
+								<Section key={section} />
 							</CardContent>
 							<ActionBar border="none" layout="responsive" className="md:px-8">
-								<Button
-									type="button"
-									variant="form-secondary"
-									size="form"
-									className="flex-1"
-									onClick={cancel}
-								>
-									{t('cancel')}
-								</Button>
 								<Button
 									variant="form-primary"
 									size="form"
