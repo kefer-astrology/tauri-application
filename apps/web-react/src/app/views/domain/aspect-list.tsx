@@ -1,3 +1,4 @@
+import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -131,9 +132,14 @@ export function AspectList({
 			}}
 			renderItem={(item, { highlight }) => (
 				<>
-					<Text variant="caption" as="span" tone="muted" className="w-8 shrink-0 text-center">
-						{ASPECT_GLYPHS[item.id] ?? '•'}
-					</Text>
+					<span className={cn('flex w-8 shrink-0 items-center justify-center', ft.iconColor)}>
+						<AstrologyGlyph
+							glyphId={item.id}
+							domain="aspect"
+							fallback={ASPECT_GLYPHS[item.id] ?? '•'}
+							size={18}
+						/>
+					</span>
 					<Text variant="body" as="span" tone="secondary" className="flex-1">
 						{highlight(item.label)}
 					</Text>

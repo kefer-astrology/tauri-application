@@ -8,11 +8,30 @@ export type AstrologyGlyphSetId = 'default' | 'modern';
 
 export const GLYPH_SET_KEY = 'glyph_set';
 
-/**
- * Every id `OBSERVABLE_OBJECTS` can surface is file-backed under `planets/` — derived
- * from the registry itself so this can't drift out of sync the way a hand-typed list did.
- */
-const aspectIdSet = new Set<string>(ASPECT_ROWS.map((row) => row.id));
+/** Available bundled aspect assets; some catalog harmonics have only a text-symbol fallback. */
+const aspectAssetIds = new Set([
+	'conjunction',
+	'sextile',
+	'square',
+	'trine',
+	'opposition',
+	'quincunx',
+	'semisextile',
+	'semisquare',
+	'sesquiquadrate',
+	'decile',
+	'quintile',
+	'biquintile',
+	'tridecile',
+	'septile',
+	'novile',
+	'binovile',
+	'quadrinovile'
+]);
+const aspectAssetAliases: Record<string, string> = {
+	octile: 'semisquare',
+	trioctile: 'sesquiquadrate'
+};
 
 /** Fixed stars (`star_*`, no per-star art yet) share one generic placeholder asset. */
 function planetAssetId(normalizedId: string): string {
@@ -86,8 +105,10 @@ export function getAspectGlyphSrc(setId: AstrologyGlyphSetId, aspectId: string):
 		.trim()
 		.toLowerCase()
 		.replace(/\s+/g, '_');
-	if (!aspectIdSet.has(normalized)) return null;
-	return assetUrl(`glyphs/${setId}/aspects/${normalized}.svg`);
+	if (!ASPECT_ROWS.some((row) => row.id === normalized)) return null;
+	const assetId = aspectAssetAliases[normalized] ?? normalized;
+	if (!aspectAssetIds.has(assetId)) return null;
+	return assetUrl(`glyphs/${setId}/aspects/${assetId}.svg`);
 }
 
 export function getZodiacGlyphSrc(setId: AstrologyGlyphSetId, zodiacId: string): string | null {
