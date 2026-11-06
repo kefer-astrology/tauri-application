@@ -1,3 +1,4 @@
+import { Checkbox } from '@/app/components/ui/checkbox';
 import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -151,6 +152,9 @@ export function ObservableObjectList({
 				);
 				return (
 					<div className="space-y-3">
+						<Text variant="caption" tone="muted">
+							{t('points_star_reference')}
+						</Text>
 						<div className="flex flex-wrap items-center gap-1.5">
 							<SegmentedControl
 								value={hemisphere}
@@ -196,35 +200,48 @@ export function ObservableObjectList({
 							})}
 						/>
 						<div className="grid grid-cols-2 gap-x-8 gap-y-1.5 sm:grid-cols-3">
-							{stars.map(({ id, label, definition }) => (
-								<Text
-									variant="body"
-									as="span"
-									tone="secondary"
+							{stars.map(({ id, label, definition, disabled }) => (
+								<label
 									key={id}
-									title={t('transits_body_unsupported_hint')}
-									className="cursor-not-allowed truncate opacity-50"
+									className={cn(
+										'flex items-center gap-2 text-sm',
+										disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+									)}
 								>
-									{definition.zodiacSign && (
-										<span className="mr-1" aria-hidden="true">
-											{ZODIAC_UNICODE_GLYPHS[ZODIAC_SIGN_IDS.indexOf(definition.zodiacSign)]}
-										</span>
-									)}
-									{highlight(label)}
-									{definition.altName && (
-										<Text variant="caption" as="span" tone="muted" className="ml-1 italic">
-											({definition.altName})
-										</Text>
-									)}
-									{definition.significance && definition.significance !== 'notable' && (
-										<Text variant="caption" as="span" tone="muted" className="ml-1 italic">
-											&middot;{' '}
-											{t(`settings_stars_filter_${definition.significance}`, {
-												defaultValue: definition.significance
-											})}
-										</Text>
-									)}
-								</Text>
+									<Checkbox
+										disabled={disabled}
+										checked={selectedIds.includes(id)}
+										aria-label={label}
+										onCheckedChange={() =>
+											onSelectedIdsChange(
+												selectedIds.includes(id)
+													? selectedIds.filter((existing) => existing !== id)
+													: [...selectedIds, id]
+											)
+										}
+									/>
+									<span className="min-w-0 truncate">
+										{definition.zodiacSign && (
+											<span className="mr-1" aria-hidden="true">
+												{ZODIAC_UNICODE_GLYPHS[ZODIAC_SIGN_IDS.indexOf(definition.zodiacSign)]}
+											</span>
+										)}
+										{highlight(label)}
+										{definition.altName && (
+											<Text variant="caption" as="span" tone="muted" className="ml-1 italic">
+												({definition.altName})
+											</Text>
+										)}
+										{definition.significance && definition.significance !== 'notable' && (
+											<Text variant="caption" as="span" tone="muted" className="ml-1 italic">
+												&middot;{' '}
+												{t(`settings_stars_filter_${definition.significance}`, {
+													defaultValue: definition.significance
+												})}
+											</Text>
+										)}
+									</span>
+								</label>
 							))}
 						</div>
 					</div>

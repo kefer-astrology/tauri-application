@@ -4,19 +4,19 @@ import { OBSERVABLE_OBJECTS, getObservableObjectLabel } from './observableObject
 /** Shared `t` shape used across this module — matches `useTranslation()`'s `t`. */
 export type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-const OBSERVABLE_OBJECT_MAP = new Map(OBSERVABLE_OBJECTS.map((item) => [item.id, item] as const));
+const observableObject = (id: string) => OBSERVABLE_OBJECTS.find((item) => item.id === id);
 
 /** Human label for a body/point id (planet, angle, node, asteroid, ...). Falls back to the raw
  *  id for anything not in the `OBSERVABLE_OBJECTS` registry (the single source of truth for
  *  body metadata — do not keep a second copy of this list next to a detail view). */
 export function objectLabel(id: string, t: Translate): string {
-	const item = OBSERVABLE_OBJECT_MAP.get(id);
+	const item = observableObject(id);
 	return item ? getObservableObjectLabel(item, t) : id;
 }
 
 /** Glyph fallback character for a body/point id, for when the active glyph set has no art. */
 export function objectIcon(id: string): string {
-	return OBSERVABLE_OBJECT_MAP.get(id)?.icon ?? id.slice(0, 3);
+	return observableObject(id)?.icon ?? id.slice(0, 3);
 }
 
 /** Human label for an aspect type id (`trine`, `square`, ...). */
