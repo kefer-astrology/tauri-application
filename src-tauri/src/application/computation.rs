@@ -239,6 +239,11 @@ pub(super) fn compute_positions(
     initial_warnings: &[String],
 ) -> Result<PositionCalculation, String> {
     let backend = crate::infrastructure::position_provider::backend_for_chart(chart);
+    if crate::application::compute_router::native_point_selection(requested_ids)
+        && backend.backend_id() != "jpl"
+    {
+        return Err("Selected additional points require the JPL calculation engine".into());
+    }
     let selection = crate::domain::astrology::resolve_body_selection(
         &model.body_definitions,
         requested_ids,

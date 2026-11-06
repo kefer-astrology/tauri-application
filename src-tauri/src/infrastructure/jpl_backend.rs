@@ -42,7 +42,6 @@ use anise::math::cartesian::CartesianState;
 use anise::prelude::*;
 use hifitime::Epoch;
 
-use crate::domain::astrology::day_night_parts;
 use crate::domain::houses::{
     campanus_cusps, compute_axes, equal_cusps, equatorial_ra_dec_deg, equatorial_to_ecliptic,
     equatorial_to_horizontal_deg, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
@@ -488,10 +487,26 @@ impl JplAstronomyBackend {
         let lst_deg = local_sidereal_time_deg(jd_utc_as_ut1, lon);
         let ab_corr = aberration_for_position_mode(chart.config.position_mode);
 
-        let wanted = |id: &str| {
+        let requested = |id: &str| {
             requested_objects
-                .map(|list| list.iter().any(|s| s.as_str() == id))
+                .map(|list| list.iter().any(|s| s == id))
                 .unwrap_or(true)
+        };
+        let point_library = crate::infrastructure::point_library::point_library()?;
+        let lots: Vec<_> = point_library
+            .lots
+            .iter()
+            .filter(|lot| lot.supported && requested(&lot.id))
+            .collect();
+        let needs_lots = !lots.is_empty();
+        let wanted = |id: &str| {
+            requested(id)
+                || (needs_lots
+                    && [
+                        "sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus",
+                        "neptune", "pluto",
+                    ]
+                    .contains(&id))
         };
 
         let mut positions: HashMap<String, f64> = HashMap::new();
@@ -669,7 +684,8 @@ impl JplAstronomyBackend {
         // search from targeting one). A root-finder over ordinary bodies
         // never sets any of these `wanted(...)` checks, so this is the
         // common case in practice.
-        let need_axes = matches!(tier, Tier::Full)
+        let need_axes = needs_lots
+            || matches!(tier, Tier::Full)
             || wanted("asc")
             || wanted("mc")
             || wanted("desc")
@@ -731,42 +747,66 @@ impl JplAstronomyBackend {
             }
         }
 
-        if wanted("part_of_fortune") || wanted("part_of_spirit") {
-            // Lots depend on the luminaries even when the caller requests only a Lot.
-            // Sample missing prerequisites without adding unrequested Sun/Moon rows.
-            let sun_lon = positions.get("sun").copied().map(Ok).unwrap_or_else(|| {
-                sample_tropical_longitude(&almanac, SUN_J2000, unix_secs, ab_corr)
-            });
-            let moon_lon = positions.get("moon").copied().map(Ok).unwrap_or_else(|| {
-                sample_tropical_longitude(&almanac, MOON_J2000, unix_secs, ab_corr)
-            });
-            match (sun_lon, moon_lon) {
-                (Ok(sun_lon), Ok(moon_lon)) => {
-                    let (fortune, spirit) = day_night_parts(asc, sun_lon, moon_lon);
-                    if wanted("part_of_fortune") {
-                        positions.insert("part_of_fortune".to_string(), fortune);
-                    }
-                    if wanted("part_of_spirit") {
-                        positions.insert("part_of_spirit".to_string(), spirit);
+        if needs_lots {
+            let needs_syzygy = lots
+                .iter()
+                .any(|lot| lot.add.contains("syzygy") || lot.subtract.contains("syzygy"));
+            let syzygy = if needs_syzygy {
+                match previous_syzygy(&almanac, unix_secs, ab_corr) {
+                    Ok(longitude) => Some(longitude),
+                    Err(error) => {
+                        warnings.push(format!("previous_syzygy_unavailable: {error}"));
+                        None
                     }
                 }
-                (sun_result, moon_result) => {
-                    let reason = match (sun_result.err(), moon_result.err()) {
-                        (Some(sun_error), Some(moon_error)) => {
-                            format!("requires Sun and Moon positions ({sun_error}; {moon_error})")
-                        }
-                        (Some(error), None) => format!("requires Sun position ({error})"),
-                        (None, Some(error)) => format!("requires Moon position ({error})"),
-                        (None, None) => "requires Sun and Moon positions".to_string(),
-                    };
-                    if wanted("part_of_fortune") {
-                        warnings.push(format!("part_of_fortune_unavailable: {reason}"));
+            } else {
+                None
+            };
+            let mut inputs = positions.clone();
+            inputs.extend([
+                ("asc".into(), axes.asc),
+                ("desc".into(), axes.desc),
+                ("mc".into(), axes.mc),
+                ("ic".into(), axes.ic),
+            ]);
+            let context = crate::domain::astrology::LotContext {
+                positions: &inputs,
+                asc,
+                house_cusps: &house_cusps,
+                syzygy,
+            };
+            let values: Vec<_> = lots
+                .iter()
+                .map(|lot| (lot.id.clone(), context.evaluate(lot)))
+                .collect();
+            for (id, value) in values {
+                match value {
+                    Ok(value) => {
+                        positions.insert(id, value);
                     }
-                    if wanted("part_of_spirit") {
-                        warnings.push(format!("part_of_spirit_unavailable: {reason}"));
-                    }
+                    Err(error) => warnings.push(format!("{id}_unavailable: {error}")),
                 }
             }
+        }
+        crate::infrastructure::additional_points::inject_model_points(
+            &almanac,
+            chart,
+            unix_secs,
+            &requested,
+            &mut positions,
+            &mut motion,
+            &mut right_ascension,
+            &mut declination,
+            &mut warnings,
+        )?;
+        // Dependency planets are calculation inputs, not implicitly selected chart rows.
+        if needs_lots && requested_objects.is_some() {
+            positions.retain(|id, _| requested(id));
+            motion.retain(|id, _| requested(id));
+            right_ascension.retain(|id, _| requested(id));
+            declination.retain(|id, _| requested(id));
+            altitude.retain(|id, _| requested(id));
+            azimuth.retain(|id, _| requested(id));
         }
 
         Ok(AstronomyChartData {
@@ -996,6 +1036,74 @@ mod tests {
             delta < 0.5,
             "true_lilith at J2000.0: got {apogee:.4}°, expected ~{expected:.4}° (Horizons), delta {delta:.4}°"
         );
+    }
+
+    #[test]
+    fn additional_points_resolve_without_leaking_dependencies_and_match_minimal_queries() {
+        let bsp = dev_bsp_path("de440s.bsp").unwrap();
+        let chart = j2000_chart(bsp.to_str().unwrap());
+        let backend = JplAstronomyBackend::new(vec![bsp]);
+        let requested = vec![
+            "lot_victory".into(),
+            "lot_hyleg".into(),
+            "star_sirius".into(),
+            "cupido".into(),
+            "lilith".into(),
+        ];
+        let full = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .unwrap();
+        assert_eq!(full.positions.len(), requested.len(), "{:?}", full.warnings);
+        for id in &requested {
+            assert!(full.positions[id].is_finite());
+        }
+        let minimal = backend
+            .compute_minimal(&chart, &requested, RequiredQuantities::LongitudeAndMotion)
+            .unwrap();
+        assert_eq!(full.positions, minimal.positions);
+        for id in ["star_sirius", "cupido", "lilith"] {
+            assert!(full.motion[id].speed.is_finite());
+        }
+    }
+
+    #[test]
+    fn all_curated_tnos_have_usable_local_coverage_and_consistent_motion() {
+        let paths = EphemerisManager::from_global().available_bsp_paths();
+        let chart = j2000_chart("");
+        let backend = JplAstronomyBackend::new(paths);
+        let requested: Vec<String> = [
+            "eris", "sedna", "haumea", "makemake", "quaoar", "orcus", "varuna",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+        let full = backend
+            .compute_chart_data(&chart, Some(&requested))
+            .unwrap();
+        assert_eq!(full.positions.len(), 7, "{:?}", full.warnings);
+        let minimal = backend
+            .compute_minimal(&chart, &requested, RequiredQuantities::LongitudeAndMotion)
+            .unwrap();
+        for id in &requested {
+            assert_eq!(full.positions[id], minimal.positions[id]);
+            assert!(full.motion[id].speed.is_finite());
+        }
+    }
+
+    #[test]
+    fn every_unambiguous_lot_can_be_selected_by_itself() {
+        let bsp = dev_bsp_path("de440s.bsp").unwrap();
+        let chart = j2000_chart(bsp.to_str().unwrap());
+        let backend = JplAstronomyBackend::new(vec![bsp]);
+        let selected: Vec<String> = crate::domain::astrology::lot_catalog()
+            .lots
+            .iter()
+            .filter(|l| l.supported)
+            .map(|l| l.id.clone())
+            .collect();
+        let result = backend.compute_chart_data(&chart, Some(&selected)).unwrap();
+        assert_eq!(result.positions.len(), 94, "{:?}", result.warnings);
+        assert!(!result.positions.contains_key("sun"));
     }
 
     #[test]
@@ -2005,4 +2113,43 @@ mod tests {
             println!(" {body:<12} {j:>10.6}° {s:>10.6}° {diff:>+9.6}°");
         }
     }
+}
+
+/// Longitude of the Moon at the preceding New/Full Moon. Bracket before bisecting;
+/// no extrapolation across unavailable kernel coverage.
+fn previous_syzygy(
+    almanac: &Almanac,
+    unix: f64,
+    correction: Option<Aberration>,
+) -> Result<f64, String> {
+    let elongation = |time| -> Result<(f64, f64), String> {
+        let sun = sample_tropical_longitude(almanac, SUN_J2000, time, correction)?;
+        let moon = sample_tropical_longitude(almanac, MOON_J2000, time, correction)?;
+        Ok((normalize_deg(moon - sun), moon))
+    };
+    let (now, moon) = elongation(unix)?;
+    let target = (now / 180.0).floor() * 180.0;
+    if (now - target).abs() < 1e-10 {
+        return Ok(moon);
+    }
+    let offset = |value: f64| (value - target + 180.0).rem_euclid(360.0) - 180.0;
+    let mut right = unix;
+    for day in 1..=20 {
+        let left = unix - f64::from(day) * 86400.0;
+        if offset(elongation(left)?.0) <= 0.0 {
+            let mut low = left;
+            let mut high = right;
+            for _ in 0..45 {
+                let mid = (low + high) / 2.0;
+                if offset(elongation(mid)?.0) > 0.0 {
+                    high = mid;
+                } else {
+                    low = mid;
+                }
+            }
+            return Ok(elongation((low + high) / 2.0)?.1);
+        }
+        right = left;
+    }
+    Err("previous lunation could not be bracketed within 20 days".into())
 }

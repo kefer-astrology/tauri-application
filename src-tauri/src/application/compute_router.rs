@@ -392,3 +392,71 @@ mod tests {
         );
     }
 }
+
+/// These objects have a native JPL calculation path; Auto must not send them to a sidecar
+/// that does not implement their source-versioned formulas or installed data packages.
+pub fn native_point_selection(ids: &[String]) -> bool {
+    ids.iter().any(|id| {
+        id.starts_with("lot_")
+            || id.starts_with("star_")
+            || id.starts_with("hypo_user_")
+            || id.starts_with("tno_user_")
+            || id.starts_with("minor_user_")
+            || [
+                "cupido", "hades", "zeus", "kronos", "apollon", "admetos", "vulcanus", "poseidon",
+                "eris", "sedna", "haumea", "makemake", "quaoar", "orcus", "varuna",
+            ]
+            .contains(&id.as_str())
+    })
+}
+pub fn select_chart_route_for_points(
+    backend: ComputeBackend,
+    available: bool,
+    force_python: bool,
+    ids: &[String],
+) -> Result<ComputeRoute, String> {
+    if native_point_selection(ids) {
+        if force_python || matches!(backend, ComputeBackend::Python) {
+            return Err("Selected additional points require the native JPL engine; this request requires or explicitly selects Python".into());
+        }
+        return Ok(ComputeRoute::Rust);
+    }
+    select_chart_compute_route(backend, available, force_python)
+}
+
+#[cfg(test)]
+mod additional_point_routing_tests {
+    use super::*;
+    #[test]
+    fn auto_routes_native_points_to_rust_without_silently_overriding_explicit_python() {
+        assert_eq!(
+            select_chart_route_for_points(
+                ComputeBackend::Auto,
+                true,
+                false,
+                &["star_sirius".into()]
+            )
+            .unwrap(),
+            ComputeRoute::Rust
+        );
+        assert_eq!(
+            select_chart_route_for_points(ComputeBackend::Auto, true, false, &["sun".into()])
+                .unwrap(),
+            ComputeRoute::Python
+        );
+        assert!(select_chart_route_for_points(
+            ComputeBackend::Python,
+            true,
+            false,
+            &["lot_victory".into()]
+        )
+        .is_err());
+        assert!(select_chart_route_for_points(
+            ComputeBackend::Auto,
+            true,
+            true,
+            &["cupido".into()]
+        )
+        .is_err());
+    }
+}

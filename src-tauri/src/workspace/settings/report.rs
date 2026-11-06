@@ -190,6 +190,8 @@ pub fn current_model_report_with_layers(
         &available_models,
         &mut warnings,
     );
+    let mut base_model = base_model;
+    crate::workspace::model_catalog::register_additional_points(&mut base_model);
     let mut model = merge_model_with_overrides(base_model, manifest.model_overrides.as_ref());
     if let Some(layer) = preset {
         model = merge_model_with_overrides(model, layer.model_overrides.as_ref());

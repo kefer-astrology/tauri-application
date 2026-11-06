@@ -23,7 +23,16 @@ pub async fn compute_chart_from_data(
         backend_state.availability()?,
         crate::infrastructure::python_sidecar::BackendAvailability::Available
     );
-    let route = select_chart_compute_route(backend, backend_available, force_python)?;
+    let resolved = crate::application::chart_resolution::resolve_standalone_chart(
+        &chart_json,
+        settings_overrides.as_ref(),
+    )?;
+    let route = crate::application::compute_router::select_chart_route_for_points(
+        backend,
+        backend_available,
+        force_python,
+        &resolved.settings.default_bodies,
+    )?;
     match route {
         ComputeRoute::Rust => compute_chart_from_data_rust(chart_json, settings_overrides.as_ref()),
         ComputeRoute::Python if matches!(backend, ComputeBackend::Auto) && !force_python => {
@@ -185,7 +194,18 @@ pub async fn compute_chart(
         backend_state.availability()?,
         crate::infrastructure::python_sidecar::BackendAvailability::Available
     );
-    let route = select_chart_compute_route(backend, backend_available, force_python)?;
+    let resolved = crate::application::chart_resolution::resolve_workspace_chart(
+        &workspace_path,
+        &chart_id,
+        preset_id.as_deref(),
+        settings_overrides.as_ref(),
+    )?;
+    let route = crate::application::compute_router::select_chart_route_for_points(
+        backend,
+        backend_available,
+        force_python,
+        &resolved.settings.default_bodies,
+    )?;
     let mut result = match route {
         ComputeRoute::Rust => compute_chart_rust(
             &workspace_path,

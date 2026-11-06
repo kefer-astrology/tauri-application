@@ -70,7 +70,7 @@ pub(crate) fn builtin_standard_model(name: &str) -> AstroModel {
 }
 
 fn builtin_body_definitions() -> Vec<BodyDefinition> {
-    vec![
+    let mut bodies = vec![
         body_definition(
             "sun",
             "Sun",
@@ -581,10 +581,8 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::NotYetSupported,
         ),
-        // Trans-Neptunian dwarf planets — restored from the same pre-Rust
-        // catalog. Unlike the extra minor planets above, these aren't yet
-        // claimed by any engine (no bundled/downloadable kernel is wired up
-        // for them here), so they stay a UI-only placeholder for now too.
+        // Curated TNO identities. Their JPL capability is registered below; actual
+        // availability is determined by validated local kernel coverage.
         body_definition(
             "eris",
             "Eris",
@@ -648,9 +646,8 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::NotYetSupported,
         ),
-        // The Uranian/Hamburg-school hypothetical eight — restored from the
-        // same pre-Rust catalog, always a UI-only placeholder there (these
-        // aren't real astronomical bodies with an ephemeris to compute).
+        // The Uranian/Hamburg-school hypothetical eight. The native, versioned
+        // Neely fixed-element model is registered below, separately from real SPKs.
         body_definition(
             "cupido",
             "Cupido",
@@ -723,13 +720,8 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::NotYetSupported,
         ),
-        // Fixed stars: a curated prototype catalog (~30 classically significant stars — the four
-        // Royal Stars, the Behenian fixed stars, and other well-known zodiacal/navigational stars).
-        // No engine computes star positions yet (no proper-motion/precession model is wired up),
-        // so every entry here is `NotYetSupported`, same as the other restored placeholders above.
-        // Zodiac sign/hemisphere/significance presentation metadata lives in the frontend
-        // (`FIXED_STAR_METADATA` in `observableObjects.ts`), not here — these ids only establish
-        // catalog membership, matching "Rust computes, React presents" for non-computed data.
+        // Curated stellar identities. Measured ICRS data and native SOFA astrometry
+        // are registered below; the frontend's J2000 metadata is presentation only.
         body_definition(
             "star_alpheratz",
             "Alpheratz",
@@ -1018,7 +1010,104 @@ fn builtin_body_definitions() -> Vec<BodyDefinition> {
             false,
             EngineSupport::NotYetSupported,
         ),
-    ]
+    ];
+    let library = crate::infrastructure::point_library::point_library().unwrap_or_else(|error| {
+        log::warn!("Point library unavailable: {error}");
+        std::sync::Arc::new(crate::infrastructure::point_library::PointLibrary {
+            stars: crate::domain::astrology::fixed_star_catalog().stars.clone(),
+            hypotheticals: crate::domain::astrology::hypothetical_catalog()
+                .bodies
+                .clone(),
+            lots: crate::domain::astrology::lot_catalog().lots.clone(),
+            imported_sources: vec![],
+        })
+    });
+    for body in &mut bodies {
+        if library.stars.iter().any(|s| s.id == body.id)
+            || library.hypotheticals.iter().any(|s| s.id == body.id)
+            || [
+                "eris", "sedna", "haumea", "makemake", "quaoar", "orcus", "varuna",
+            ]
+            .contains(&body.id.as_str())
+        {
+            body.computation_map
+                .insert("jpl".into(), Some(body.id.clone()));
+        }
+    }
+    for star in &library.stars {
+        if !bodies.iter().any(|body| body.id == star.id) {
+            bodies.push(body_definition(
+                &star.id,
+                &star.name,
+                "✦",
+                ObjectType::FixedStar,
+                false,
+                false,
+                EngineSupport::JplOnly,
+            ));
+        }
+    }
+    for hypothetical in &library.hypotheticals {
+        if !bodies.iter().any(|body| body.id == hypothetical.id) {
+            bodies.push(body_definition(
+                &hypothetical.id,
+                &hypothetical.name,
+                "H",
+                ObjectType::HypotheticalPlanet,
+                false,
+                false,
+                EngineSupport::JplOnly,
+            ));
+        }
+    }
+    for kernel in crate::infrastructure::ephemeris::small_body_kernels_for_bsp_paths(
+        &crate::infrastructure::ephemeris::EphemerisManager::from_global().available_bsp_paths(),
+    ) {
+        if !bodies.iter().any(|body| body.id == kernel.body_id) {
+            bodies.push(body_definition(
+                &kernel.body_id,
+                &kernel.display_name,
+                "MP",
+                if kernel.body_id.starts_with("tno_") {
+                    ObjectType::TransNeptunian
+                } else {
+                    ObjectType::Asteroid
+                },
+                false,
+                false,
+                EngineSupport::JplOnly,
+            ));
+        }
+    }
+    for lot in &library.lots {
+        if bodies.iter().any(|body| body.id == lot.id) {
+            continue;
+        }
+        let mut body = body_definition(
+            &lot.id,
+            &lot.name,
+            "Lot",
+            ObjectType::Part,
+            true,
+            lot.add.contains("house:") || lot.subtract.contains("house:"),
+            if lot.supported {
+                EngineSupport::JplOnly
+            } else {
+                EngineSupport::NotYetSupported
+            },
+        );
+        body.formula = if lot.supported {
+            format!(
+                "{} + {} - {}; night reversal: {}",
+                lot.reference, lot.add, lot.subtract, lot.reverse_at_night
+            )
+        } else {
+            lot.note.clone()
+        };
+        body.i18n.insert("cs".into(), lot.name_cs.clone());
+        bodies.push(body);
+    }
+    bodies
 }
 
 #[derive(Clone, Copy)]
@@ -1168,5 +1257,76 @@ fn sign(name: &str, glyph: &str, abbreviation: &str, element: Element) -> Sign {
         abbreviation: abbreviation.to_string(),
         element,
         i18n: HashMap::from([("en".to_string(), name.to_string())]),
+    }
+}
+
+/// Upgrade only the additional-point portion of older persisted catalogs. Preserve explicit
+/// enablement, formulas, labels and existing engine mappings on user-defined entries.
+pub(crate) fn register_additional_points(model: &mut AstroModel) {
+    for definition in builtin_body_definitions() {
+        let id = &definition.id;
+        if !(id.starts_with("lot_")
+            || id.starts_with("star_")
+            || id.starts_with("hypo_user_")
+            || id.starts_with("tno_user_")
+            || id.starts_with("minor_user_")
+            || [
+                "cupido", "hades", "zeus", "kronos", "apollon", "admetos", "vulcanus", "poseidon",
+                "eris", "sedna", "haumea", "makemake", "quaoar", "orcus", "varuna",
+            ]
+            .contains(&id.as_str()))
+        {
+            continue;
+        }
+        if let Some(existing) = model
+            .body_definitions
+            .iter_mut()
+            .find(|body| body.id == *id)
+        {
+            if existing.formula == *id && existing.computation_map.values().all(Option::is_none) {
+                existing.computation_map = definition.computation_map;
+            }
+        } else {
+            model.body_definitions.push(definition);
+        }
+    }
+}
+
+#[cfg(test)]
+mod additional_point_catalog_tests {
+    use super::*;
+    #[test]
+    fn older_catalogs_gain_points_without_reenabling_explicitly_disabled_bodies() {
+        let mut model = builtin_standard_model("old");
+        model
+            .body_definitions
+            .retain(|body| !body.id.starts_with("lot_"));
+        let star = model
+            .body_definitions
+            .iter_mut()
+            .find(|body| body.id == "star_sirius")
+            .unwrap();
+        star.enabled = false;
+        star.computation_map
+            .values_mut()
+            .for_each(|value| *value = None);
+        register_additional_points(&mut model);
+        let star = model
+            .body_definitions
+            .iter()
+            .find(|body| body.id == "star_sirius")
+            .unwrap();
+        assert!(!star.enabled);
+        assert!(star.computation_map["jpl"].is_some());
+        assert!(model
+            .body_definitions
+            .iter()
+            .any(|body| body.id == "lot_victory"));
+        let ambiguous = model
+            .body_definitions
+            .iter()
+            .find(|body| body.id == "lot_grandparents")
+            .unwrap();
+        assert!(ambiguous.computation_map.values().all(Option::is_none));
     }
 }
