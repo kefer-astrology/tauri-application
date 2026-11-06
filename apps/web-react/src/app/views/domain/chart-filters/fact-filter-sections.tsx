@@ -5,7 +5,6 @@ import { SegmentedControl } from '@/app/components/ui/segmented-control';
 import { cn } from '@/app/components/ui/utils';
 import {
 	CheckList,
-	CheckRow,
 	CountField,
 	FieldLabel,
 	OptionSelect,
@@ -15,6 +14,7 @@ import {
 	AXIS_IDS,
 	ELEMENT_IDS,
 	emptyStelliumFilter,
+	emptyAngularPlanetFilter,
 	FACT_PLANET_IDS,
 	HEMISPHERE_IDS,
 	HORIZON_OPTIONS,
@@ -279,7 +279,10 @@ export function InnerPlanetFilters({
 		<>
 			{INNER_PLANETS.map(({ body, labelKey, phases, prefix }) => (
 				<div key={body} className="space-y-1.5">
-					<FieldLabel>{t(labelKey)}</FieldLabel>
+					<div className="grid grid-cols-2 gap-2">
+						<FieldLabel>{t(labelKey)}</FieldLabel>
+						<FieldLabel>{t('open_filter_motion')}</FieldLabel>
+					</div>
 					<div className="grid grid-cols-2 gap-2">
 						<OptionSelect
 							value={values[body].phase}
@@ -288,6 +291,7 @@ export function InnerPlanetFilters({
 						/>
 						<OptionSelect
 							value={values[body].motion}
+							ariaLabel={`${t(labelKey)}: ${t('open_filter_motion')}`}
 							options={motions}
 							onValueChange={(motion) => onChange({ [body]: { ...values[body], motion } })}
 						/>
@@ -337,33 +341,58 @@ export function HorizonFilter({ value, onChange }: SliceProps<string>) {
 
 export function AngularPlanetFilter({ value, onChange }: SliceProps<FactFilters['angular']>) {
 	const { t } = useTranslation();
+	const update = (id: number, patch: Partial<FactFilters['angular'][number]>) =>
+		onChange(value.map((filter) => (filter.id === id ? { ...filter, ...patch } : filter)));
 	return (
 		<>
-			<div className="grid grid-cols-2 gap-2">
-				<div className="space-y-1">
-					<FieldLabel>{t('open_filter_planet')}</FieldLabel>
-					<OptionSelect
-						value={value.planet}
-						options={planetOptions(t)}
-						onValueChange={(planet) => onChange({ ...value, planet })}
-					/>
+			{value.map((filter) => (
+				<div key={filter.id} className="grid grid-cols-[1fr_1fr_28px] items-end gap-2">
+					<div className="space-y-1">
+						<FieldLabel>{t('open_filter_planet')}</FieldLabel>
+						<OptionSelect
+							value={filter.planet}
+							options={planetOptions(t)}
+							ariaLabel={t('open_filter_planet')}
+							onValueChange={(planet) => update(filter.id, { planet })}
+						/>
+					</div>
+					<div className="space-y-1">
+						<FieldLabel>{t('open_filter_axis')}</FieldLabel>
+						<OptionSelect
+							value={filter.axis}
+							ariaLabel={t('open_filter_axis')}
+							options={AXIS_IDS.map((id) => ({ value: id, label: t(AXIS_LABEL_KEYS[id]!) }))}
+							onValueChange={(axis) => update(filter.id, { axis })}
+						/>
+					</div>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="size-7"
+						disabled={value.length === 1}
+						aria-label={t('open_filter_remove_condition')}
+						onClick={() => onChange(value.filter((item) => item.id !== filter.id))}
+					>
+						<X className="size-3.5" />
+					</Button>
 				</div>
-				<div className="space-y-1">
-					<FieldLabel>{t('open_filter_axis')}</FieldLabel>
-					<OptionSelect
-						value={value.axis}
-						options={AXIS_IDS.map((id) => ({ value: id, label: t(AXIS_LABEL_KEYS[id]!) }))}
-						onValueChange={(axis) => onChange({ ...value, axis })}
-					/>
-				</div>
-			</div>
-			<CheckRow
-				id="angular-multiple"
-				checked={value.multiple}
-				onCheckedChange={() => onChange({ ...value, multiple: !value.multiple })}
+			))}
+			<Button
+				type="button"
+				variant="form-secondary"
+				size="sm"
+				className="h-8 flex-1 text-xs"
+				onClick={() =>
+					onChange([
+						...value,
+						emptyAngularPlanetFilter(Math.max(0, ...value.map((filter) => filter.id)) + 1)
+					])
+				}
 			>
-				{t('open_angular_multiple')}
-			</CheckRow>
+				<Plus className="size-3.5" />
+				{t('open_filter_add_condition')}
+			</Button>
 		</>
 	);
 }

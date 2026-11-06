@@ -58,6 +58,13 @@ export type StelliumFilter = {
 	house: string;
 	required: string[];
 };
+export type AngularPlanetFilter = { id: number; planet: string; axis: string };
+export const emptyAngularPlanetFilter = (id: number): AngularPlanetFilter => ({
+	id,
+	planet: '',
+	axis: ''
+});
+
 export type InnerPlanetFilter = { phase: string; motion: string };
 
 export interface FactFilters {
@@ -73,7 +80,7 @@ export interface FactFilters {
 	lunarPhases: string[];
 	orientation: string;
 	horizon: string;
-	angular: { planet: string; axis: string; multiple: boolean };
+	angular: AngularPlanetFilter[];
 	unaspected: string[];
 	ruler: { system: 'modern' | 'traditional'; planet: string; sign: string; house: string };
 	dispositorTraditional: string;
@@ -107,7 +114,7 @@ export function emptyFactFilters(): FactFilters {
 		lunarPhases: [],
 		orientation: '',
 		horizon: '',
-		angular: { planet: '', axis: '', multiple: false },
+		angular: [emptyAngularPlanetFilter(1)],
 		unaspected: [],
 		ruler: { system: 'modern', planet: '', sign: '', house: '' },
 		dispositorTraditional: '',
@@ -133,7 +140,7 @@ export function factFiltersActive(filters: FactFilters): boolean {
 		filters.lunarPhases.length > 0 ||
 		filters.orientation !== '' ||
 		filters.horizon !== '' ||
-		Boolean(filters.angular.planet || filters.angular.axis || filters.angular.multiple) ||
+		filters.angular.some((filter) => filter.planet || filter.axis) ||
 		filters.unaspected.length > 0 ||
 		Boolean(filters.ruler.planet || filters.ruler.sign || filters.ruler.house) ||
 		filters.dispositorTraditional !== '' ||
@@ -202,20 +209,12 @@ function horizonMatches(facts: ChartFacts, option: string): boolean {
 	}
 }
 
-function angularMatches(facts: ChartFacts, filter: FactFilters['angular']): boolean {
-	if (!filter.planet && !filter.axis && !filter.multiple) return true;
-	const candidates = facts.angular_planets.filter(
-		(entry) => !filter.axis || entry.axis === filter.axis
-	);
-	if (!filter.multiple) {
-		return candidates.some((entry) => !filter.planet || entry.body === filter.planet);
-	}
-	const byAxis = new Map<string, string[]>();
-	for (const entry of candidates) {
-		byAxis.set(entry.axis, [...(byAxis.get(entry.axis) ?? []), entry.body]);
-	}
-	return Array.from(byAxis.values()).some(
-		(bodies) => bodies.length >= 2 && (!filter.planet || bodies.includes(filter.planet))
+function angularMatches(facts: ChartFacts, filter: AngularPlanetFilter): boolean {
+	if (!filter.planet && !filter.axis) return true;
+	return facts.angular_planets.some(
+		(entry) =>
+			(!filter.planet || entry.body === filter.planet) &&
+			(!filter.axis || entry.axis === filter.axis)
 	);
 }
 
@@ -268,7 +267,7 @@ export function factFiltersMatch(
 			filters.lunarPhases.includes(facts.lunar_cycle_phase ?? '')) &&
 		(!filters.orientation || facts.orientation.balance === filters.orientation) &&
 		horizonMatches(facts, filters.horizon) &&
-		angularMatches(facts, filters.angular) &&
+		filters.angular.every((filter) => angularMatches(facts, filter)) &&
 		filters.unaspected.every((planet) => facts.unaspected.includes(planet)) &&
 		rulerMatches(facts, filters.ruler) &&
 		dispositorMatches(facts.final_dispositors.traditional, filters.dispositorTraditional) &&

@@ -8,6 +8,10 @@ export interface SearchAspect {
 	from: string;
 	to: string;
 	type: string;
+	applying?: boolean;
+	exact?: boolean;
+	separating?: boolean;
+	phase?: 'waxing' | 'waning';
 }
 
 export interface ChartSearchMetadata {
@@ -53,7 +57,15 @@ function parseAspect(raw: unknown): SearchAspect | null {
 	) {
 		return null;
 	}
-	return { from: value.from, to: value.to, type: value.type.toLowerCase().replaceAll('-', '_') };
+	return {
+		from: value.from,
+		to: value.to,
+		type: value.type.toLowerCase().replaceAll('-', '_'),
+		applying: value.applying === true,
+		exact: value.exact === true,
+		separating: value.separating === true,
+		phase: value.phase === 'waxing' || value.phase === 'waning' ? value.phase : undefined
+	};
 }
 
 export function chartSearchMetadata(chart: AppChart): ChartSearchMetadata {

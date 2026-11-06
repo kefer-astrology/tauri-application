@@ -149,7 +149,7 @@ export function LocationSelector({
 					if (anchorRef.current?.contains(event.target as Node)) event.preventDefault();
 				}}
 			>
-				<ScrollArea className="h-[240px] rounded-md border">
+				<ScrollArea className="h-[240px]">
 					<div className="space-y-1 p-1">
 						{visibleSearchResults.map((result) => {
 							const selected = normalize(result.display_name) === normalize(value);
