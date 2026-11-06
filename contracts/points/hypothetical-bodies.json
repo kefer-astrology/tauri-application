@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "source": "Witte/Sieggruen orbital elements refined by James Neely, Matrix Journal VII (1980)",
+  "source_url": "https://raw.githubusercontent.com/aloistr/swisseph/master/ephe/seorbel.txt",
+  "model": "kepler-neely-j1900-v1",
+  "bodies": [
+    {"id":"cupido","name":"Cupido","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":163.7409,"semimajor_axis_au":40.99837,"eccentricity":0.00460,"argument_perihelion_deg":171.4333,"ascending_node_deg":129.8325,"inclination_deg":1.0833},
+    {"id":"hades","name":"Hades","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":27.6496,"semimajor_axis_au":50.66744,"eccentricity":0.00245,"argument_perihelion_deg":148.1796,"ascending_node_deg":161.3339,"inclination_deg":1.0500},
+    {"id":"zeus","name":"Zeus","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":165.1232,"semimajor_axis_au":59.21436,"eccentricity":0.00120,"argument_perihelion_deg":299.0440,"ascending_node_deg":0.0,"inclination_deg":0.0},
+    {"id":"kronos","name":"Kronos","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":169.0193,"semimajor_axis_au":64.81690,"eccentricity":0.00305,"argument_perihelion_deg":208.8801,"ascending_node_deg":0.0,"inclination_deg":0.0},
+    {"id":"apollon","name":"Apollon","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":138.0533,"semimajor_axis_au":70.29949,"eccentricity":0.0,"argument_perihelion_deg":0.0,"ascending_node_deg":0.0,"inclination_deg":0.0},
+    {"id":"admetos","name":"Admetos","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":351.3350,"semimajor_axis_au":73.62765,"eccentricity":0.0,"argument_perihelion_deg":0.0,"ascending_node_deg":0.0,"inclination_deg":0.0},
+    {"id":"vulcanus","name":"Vulcanus","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":55.8983,"semimajor_axis_au":77.25568,"eccentricity":0.0,"argument_perihelion_deg":0.0,"ascending_node_deg":0.0,"inclination_deg":0.0},
+    {"id":"poseidon","name":"Poseidon","epoch_jd":2415020.0,"equinox_jd":2415020.0,"mean_anomaly_deg":165.5163,"semimajor_axis_au":83.66907,"eccentricity":0.0,"argument_perihelion_deg":0.0,"ascending_node_deg":0.0,"inclination_deg":0.0}
+  ]
+}
