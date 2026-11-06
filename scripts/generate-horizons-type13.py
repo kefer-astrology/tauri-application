@@ -10,6 +10,7 @@ script so its executable can be pinned by the release/build environment.
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_left
 import csv
 import hashlib
 import json
@@ -76,7 +77,7 @@ def horizons_request(
     try:
         table = result.split("$$SOE", 1)[1].split("$$EOE", 1)[0]
     except IndexError as exc:
-        raise RuntimeError("Horizons response did not contain a vector table") from exc
+        raise RuntimeError(f"Horizons response did not contain a vector table: {result[:1600]}") from exc
 
     states: list[State] = []
     for row in csv.reader(table.splitlines()):
@@ -167,15 +168,16 @@ def hermite_value_and_derivative(samples: list[tuple[float, float, float]], epoc
 
 
 def interpolation_window(states: list[State], epoch: float, state_count: int) -> list[State]:
-    insertion = 0
-    while insertion < len(states) and states[insertion].et_seconds < epoch:
-        insertion += 1
+    insertion = bisect_left(states, epoch, key=lambda state: state.et_seconds)
     start = max(0, min(insertion - state_count // 2, len(states) - state_count))
     return states[start : start + state_count]
 
 
 def validate_interpolation(source: list[State], reference: list[State], degree: int) -> dict[str, float | int | bool | str]:
     state_count = (degree + 1) // 2
+    source_epochs = {state.et_seconds for state in source}
+    if any(state.et_seconds in source_epochs for state in reference):
+        raise RuntimeError("held-out validation samples overlap interpolation knots")
     max_position = 0.0
     max_velocity = 0.0
     for expected in reference:
@@ -198,7 +200,7 @@ def validate_interpolation(source: list[State], reference: list[State], degree: 
         max_position = max(max_position, position_error)
         max_velocity = max(max_velocity, velocity_error)
     return {
-        "method": "held_out_horizons_vectors",
+        "method": "held_out_interleaved_horizons_vectors",
         "passed": True,
         "sample_count": len(reference),
         "max_position_error_km": max_position,
@@ -240,6 +242,10 @@ def write_setup(path: pathlib.Path, args: argparse.Namespace) -> None:
 
 
 def build(args: argparse.Namespace) -> None:
+    # A date truncates fractional-day timedelta offsets. Use real datetimes so even daily
+    # source knots are tested against independent noon samples instead of their own knots.
+    args.start = datetime.combine(args.start, datetime.min.time())
+    args.stop = datetime.combine(args.stop, datetime.min.time())
     if args.start >= args.stop:
         raise SystemExit("--start must be earlier than --stop")
     if args.step_days <= 0 or args.validation_stride <= 0 or args.chunk_years <= 0:
@@ -253,16 +259,18 @@ def build(args: argparse.Namespace) -> None:
     if not args.lsk.is_file():
         raise SystemExit(f"leapseconds kernel not found: {args.lsk}")
 
-    source, source_urls, source_metadata = fetch_range(
-        args.command, args.start, args.stop, args.step_days, args.chunk_years
+    # One numerical integration/solution, with interleaved rows held out from the fit.
+    # Separate Horizons integrations can have slightly different numerical histories;
+    # those differences are not the interpolation error this validation measures.
+    all_states, source_urls, source_metadata = fetch_range(
+        args.command, args.start, args.stop, args.step_days / 2.0, args.chunk_years
     )
-    validation_start = args.start + timedelta(days=args.step_days / 2.0)
-    validation_step = args.step_days * args.validation_stride
-    reference, validation_urls, validation_metadata = fetch_range(
-        args.command, validation_start, args.stop, validation_step, args.chunk_years
-    )
-    if validation_metadata != source_metadata:
-        raise RuntimeError("Horizons target/solution metadata changed between source and validation requests")
+    source = all_states[::2]
+    reference = [state for state in all_states[1::2][::args.validation_stride]
+                 if source[0].et_seconds < state.et_seconds < source[-1].et_seconds]
+    if not reference:
+        raise RuntimeError("not enough time coverage for independent validation samples")
+    validation_urls = source_urls
     validation = validate_interpolation(source, reference, args.degree)
     if validation["max_position_error_km"] > args.max_position_error_km:
         raise SystemExit(
@@ -333,6 +341,7 @@ def build(args: argparse.Namespace) -> None:
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "generator": "scripts/generate-horizons-type13.py",
             "sample_step_days": args.step_days,
+            "acquisition_step_days": args.step_days / 2.0,
             "polynomial_degree": args.degree,
             "source_sample_count": len(source),
         },
