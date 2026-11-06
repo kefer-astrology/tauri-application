@@ -407,23 +407,6 @@
     }
   }
 
-  function resetDraftsFromWorkspace() {
-    settingsChanged = false;
-    defaultLocation = layout.workspaceDefaults.locationName;
-    latitude = String(layout.workspaceDefaults.locationLatitude);
-    longitude = String(layout.workspaceDefaults.locationLongitude);
-    timezone = layout.workspaceDefaults.timezone;
-    houseSystem = layout.workspaceDefaults.houseSystem;
-    astrologyTradition = layout.workspaceDefaults.astrologyTradition ?? '';
-    selectedBodies = layout.workspaceDefaults.defaultBodies.length > 0
-      ? [...layout.workspaceDefaults.defaultBodies]
-      : [...DEFAULT_OBSERVABLE_OBJECT_IDS];
-    aspects = Object.fromEntries(
-      ASPECT_ROWS.map((aspect) => [aspect.id, aspectRowStateFromDefaults(aspect, layout.workspaceDefaults)])
-    );
-    aspectLineTiers = { ...layout.workspaceDefaults.aspectLineTierStyle };
-    elementColors = { ...getElementColors() };
-  }
 </script>
 
 <div class="h-full min-w-0 rounded-md border bg-card text-card-foreground shadow-sm p-4 flex flex-col overflow-hidden">
@@ -947,13 +930,6 @@
     {/if}
   </div>
   <div class="pt-4 mt-4 border-t border-border/60 flex-shrink-0 flex gap-2">
-    <Button
-      variant="outline"
-      class="flex-1"
-      onclick={resetDraftsFromWorkspace}
-    >
-      {t('cancel', {}, 'Cancel')}
-    </Button>
     <Button
       class="flex-1"
       onclick={async () => {
