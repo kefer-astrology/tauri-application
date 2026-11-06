@@ -15,7 +15,13 @@ import { Label } from '@/app/components/ui/label';
 import { Separator } from '@/app/components/ui/separator';
 
 import { useWorkspace } from '@/app/providers/workspace';
-import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, type AspectRow } from '@/lib/astrology/aspects';
+import {
+	ASPECT_GLYPHS,
+	ASPECT_ROWS,
+	DEFAULT_ASPECT_COLORS,
+	type AspectRow
+} from '@/lib/astrology/aspects';
+import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { OBSERVABLE_OBJECTS, getObservableObjectLabel } from '@/lib/astrology/observableObjects';
 import type { AspectLineStyleId, AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import type { AstrologicalTraditionId, ObjectTypeId } from '@/lib/tauri/types';
@@ -128,25 +134,33 @@ function AspectRowEditor({
 			className="rounded-xl border-0 bg-[color:var(--theme-soft-bg)]/45 px-4"
 		>
 			<div className="flex items-center gap-3 py-3">
-				<Label className="flex flex-1 cursor-pointer items-center gap-3">
-					<Checkbox
-						checked={row.enabled}
-						onCheckedChange={(checked) => onRowChange({ enabled: checked === true })}
-					/>
-					<Text variant="body" as="span" tone="primary">
-						{t(aspect.labelKey)}
-					</Text>
-				</Label>
+				<Checkbox
+					checked={row.enabled}
+					aria-label={t(aspect.labelKey)}
+					onCheckedChange={(checked) => onRowChange({ enabled: checked === true })}
+				/>
+				<div className="min-w-0 flex-1">
+					<AccordionTrigger className="items-center gap-3 py-0 hover:no-underline">
+						<span className="flex min-w-0 items-center gap-3">
+							<AstrologyGlyph
+								glyphId={aspect.id}
+								domain="aspect"
+								fallback={ASPECT_GLYPHS[aspect.id] ?? '•'}
+								size={18}
+								className="shrink-0"
+								style={{ color: row.color }}
+							/>
+							<Text variant="body" as="span" tone="primary">
+								{t(aspect.labelKey)}
+							</Text>
+						</span>
+					</AccordionTrigger>
+				</div>
 				<ColorInput
 					value={row.color}
 					onChange={(event) => onRowChange({ color: event.target.value })}
 					aria-label={`${t(aspect.labelKey)} ${t('color_theme')}`}
 				/>
-				<AccordionTrigger className="w-auto flex-none gap-2 py-0 text-xs hover:no-underline">
-					<Text variant="eyebrow" as="span" tone="muted" className="tabular-nums">
-						{row.orb}° {t('label_orb')}
-					</Text>
-				</AccordionTrigger>
 			</div>
 			<AccordionContent className="pt-0 pb-4">
 				<Surface variant="soft" padding="compact" className="space-y-3">
