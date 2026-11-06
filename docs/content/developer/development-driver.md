@@ -161,24 +161,67 @@ visual completion.
   an osculating-elements formula in `domain::houses`. Chiron is computed from
   the bundled Type 13 SPK; other catalog-only entries stay visibly unavailable
   rather than silently omitted.
-- TNOs (Eris, Haumea, Orcus, Quaoar, Varuna, at least) have NAIF kernels under
-  `spk/tno/`, but at 168–285MB each (multi-body system files) rather than the
-  ~1–60MB kernels used so far; evaluate before adding them as downloadable
-  catalog entries. Sedna and Makemake do not obviously appear there; confirm
-  coverage against the directory's summary file first.
+- Extend curated TNO coverage beyond the bundled 1900–2100 packages where
+  required. Eris, Sedna, Haumea, Makemake, Quaoar, Orcus and Varuna already use
+  validated local Type 13 packages; adding these seven is no longer roadmap
+  work. Keep exact usable coverage, acquisition provenance and interpolation
+  error limits visible as new ranges or objects are added.
 - Geocentric planetary nodes are a distinct technique from the implemented node
   math: geocentric north/south crossings are not exactly 180° apart, unlike the
   Moon's node. Confirm the definition before implementing; do not assume it
   reuses `true_node_tropical_deg` unchanged.
-- Uranian/Hamburg-school hypothetical bodies (Cupido, Hades, Zeus, Kronos,
-  Apollon, Admetos, Vulcanus, Poseidon) and the ~70 fixed stars in
-  `OBSERVABLE_OBJECTS` need their reference data (published mean orbital
-  elements; star catalog positions) sourced and vetted before implementation.
+- Extend independent numerical reference coverage for the eight implemented
+  Uranian/Hamburg hypothetical models and 32 measured fixed stars. Their
+  versioned orbital elements/catalog data and native JPL calculation paths are
+  already implemented; broader catalogs and additional model conventions need
+  their own sources and validation.
+- Resolve the three deliberately unavailable al-Biruni Lot readings
+  (Grandparents, the disputed Captivity variant, and Kings) by choosing and
+  naming a documented interpretation. The 97-entry catalog already exposes
+  94 calculable formulas; do not replace ambiguous source readings silently.
 - Remove or clearly label mock/fallback geometry that appears to be computed
   astrology data without backend provenance (the wheel's demo radix).
 - Add an end-to-end no-Swiss/no-sidecar smoke path.
 - Validate the optional Python environment end to end when provisioned.
 - Keep Rust/Python routing and fallback visible in result provenance.
+
+### Small-body startup kernel reuse
+
+**Status: planned.** Package validation currently constructs progressively
+larger almanacs for the base kernels plus each newly accepted small body.
+Because the almanac cache is keyed by the complete ordered kernel set, each
+new prefix reloads the common PCK/BSP files. Repeated `Loading …` messages at
+startup reflect real intermediate loads, not duplicate entries in the final
+chart kernel list. See [current behavior](../ephemeris-manager/#repeated-kernel-loading-messages-during-startup).
+
+Implementation steps:
+
+1. Measure cold discovery/validation with the primary, asteroid, Chiron and
+   seven TNO packages: per-file parse/load counts, distinct almanac sets,
+   elapsed startup time and retained memory. Record warm reuse separately.
+2. Reuse parsed base kernels while accepting candidates, for example by
+   extending a validated almanac, or another approach that preserves candidate
+   isolation. Avoid reconstructing every accepted prefix from disk.
+3. Retain SHA-256 checks, passing acquisition records, finite position/velocity
+   probes, center-chain checks, duplicate rejection and ordered SPICE
+   precedence. A bad optional package must not disable valid bodies or become
+   selectable merely to reduce load counts.
+4. Bound retention of intermediate validation sets without invalidating active
+   calculations. Invalidate discovery/path and validation caches after both
+   downloads and successful SPK imports; changed file fingerprints must trigger
+   revalidation. Imported packages should become discoverable without restart.
+5. Distinguish discovery, validation, cache hits and actual kernel loads in
+   diagnostics. Reducing log volume alone does not complete this step.
+
+Acceptance: unchanged kernels are not repeatedly parsed just because another
+candidate is being validated; warm chart/transit requests reuse the accepted
+set. Add regression coverage for cold multi-package discovery, concurrent
+callers, import/download invalidation, changed files, rejected packages and
+load-order-sensitive chains. Compare resulting positions, motion, warnings
+and usable coverage with the current implementation. Publish before/after
+measurements in [Validation and performance](../ephemeris-validation/#startup-kernel-loading-evidence)
+and close [KERNEL-001](../testing-strategy/#kernel-001-startup-kernel-reuse)
+when the new evidence exists.
 
 ## Shared core and verification
 

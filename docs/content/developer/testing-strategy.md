@@ -76,10 +76,29 @@ and traceability, not the physical test files.
 | FRONTEND-001  | Both bridges serialize the same chart calculation intent                                                                                       | Frontend bridge/parity  | React helper tests and type/build coverage; **GAP-FRONTEND-001:** shared React/Svelte payload parity cases                                                                                                                                                                                                       |
 | FRONTEND-002  | Both shells open the same workspace and apply the same effective defaults                                                                      | Workflow/parity         | Manual/structural coverage; **GAP-FRONTEND-002:** automated workflow coverage                                                                                                                                                                                                                                    |
 | STATIC-001    | Static documentation mode renders the normal shell without native services                                                                     | Smoke/workflow          | Build coverage; automated behavior coverage is a current gap                                                                                                                                                                                                                                                     |
+| KERNEL-001    | Cold small-body validation reuses parsed kernels without changing accepted bodies or results.                                                  | Performance/correctness | Gap: same-set concurrency reuse is tested; cold multi-package load counts, cross-set reuse and import invalidation are not. [Acceptance and evidence](#kernel-001-startup-kernel-reuse).                                                                                                                         |
 
 When a gap is filled, replace the gap ID and description with the test file and
 test name. Do not remove the row; the matrix is also an inventory of deliberate
 automation debt.
+
+## KERNEL-001: Startup kernel reuse
+
+Current automation: `infrastructure::jpl_backend::tests::concurrent_callers_share_one_almanac_load`
+checks that callers requesting the same kernel set share the constructed
+almanac. Existing ephemeris tests cover artifact integrity, discovery and
+load-order/center-chain behavior. These are correctness safeguards, not a test
+that the base files load once across different validation prefixes.
+
+Gap: cold discovery with several optional packages has no per-file parse-count
+budget or retained-intermediate-set assertion. Add instrumentation and tests
+for cross-set reuse, warm reuse, concurrent discovery, failed optional packages,
+file changes and import/download cache invalidation. Preserve position, motion,
+diagnostics and usable-coverage results, including precedence-sensitive chains.
+
+The [roadmap step](../development-driver/#small-body-startup-kernel-reuse)
+owns the implementation sequence. Measurements and claim limits belong to
+[startup kernel-loading evidence](../ephemeris-validation/#startup-kernel-loading-evidence).
 
 ## Transit test evidence
 

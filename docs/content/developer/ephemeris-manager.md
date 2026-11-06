@@ -48,7 +48,7 @@ infrastructure/ephemeris.rs
     └── *.bsp.json discovery          → checksummed and probe-tested small-body SPKs
 ```
 
-`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then obtains a cached or newly constructed `Almanac` through `load_almanac_from_paths()` in `infrastructure/jpl_backend.rs`.
+`JplAstronomyBackend` holds `bsp_paths: Vec<PathBuf>` (resolved at construction time from `available_bsp_paths()`), then obtains a cached or newly constructed `Almanac` through `shared_almanac()` in `infrastructure/jpl_backend.rs`. Cache misses call `load_almanac_from_paths()` in `infrastructure/ephemeris.rs`.
 
 A global `OnceLock<PathBuf>` stores the cache directory. It is initialised once during Tauri app setup from `app.path().app_data_dir()`:
 
@@ -63,7 +63,7 @@ Anywhere else in the Rust backend: `EphemerisManager::from_global()` returns a m
 
 ### Almanac reuse and cache invalidation
 
-`JplAstronomyBackend::build_almanac` keeps a process-lifetime, in-memory cache
+`JplAstronomyBackend::build_almanac` uses `shared_almanac()`, which keeps a process-lifetime, in-memory cache
 of constructed `Almanac`s (`almanac_cache` in `infrastructure/jpl_backend.rs`),
 keyed by joining every resolved path's `length:modified-time` fingerprint
 (`almanac_cache_key`). This avoids re-parsing the PCK and every chained BSP
@@ -79,12 +79,51 @@ Limitations of fingerprint-based invalidation:
   with coarse mtime resolution, or a replacement that preserves both length
   and mtime (unusual, but not impossible with some sync/restore tools), would
   not be detected as a change.
-- The cache is per-process and in-memory only; it is not persisted and does
-  not need explicit eviction — process restart clears it.
+- The cache is per-process and in-memory only. Process restart clears it, but
+  there is currently no eviction policy for intermediate validation kernel sets;
+  their entries can remain for the process lifetime.
 - It is distinct from the small-body artifact probe cache
   (`artifact_probe_cache`), which caches _validation_ results (SHA-256 +
   in-range ANISE probe) keyed the same way, not the constructed `Almanac`
   itself.
+- Discovery has a separate `bsp_paths_cache`, keyed by cache directory. Its
+  current explicit invalidation covers downloads, not SPK imports or arbitrary
+  file edits. Fingerprinting an almanac/probe does not itself force that cached
+  discovery step to run again; this limitation is included in the roadmap.
+
+### Repeated kernel-loading messages during startup
+
+ANISE's `Loading … as DAF/SPK` and `Loading … as ANISE/PCA` messages describe
+real loads into an `Almanac`. They can repeat during cold small-body discovery
+without the final chart kernel list containing duplicate entries.
+
+`resolve_small_body_bsps()` validates each candidate against the base planetary
+and asteroid kernels plus every small-body package accepted so far.
+`validate_small_body_artifact()` calls `shared_almanac()` with that ordered set:
+
+```text
+base + candidate A
+base + accepted A + candidate B
+base + accepted A + accepted B + candidate C
+```
+
+Each prefix is a different cache key. On its first use, the current loader
+constructs a new almanac and loads the PCK and the listed BSPs again. The final
+accepted set can then be reused for chart computation. The load mutex prevents
+concurrent callers from rebuilding the **same** set; it does not share parsed
+kernels across these **different** sets. The probe cache prevents repeat
+validation for an unchanged candidate/context, but does not eliminate this first
+pass over the prefixes. Intermediate almanacs also remain in the process cache.
+
+The repeated loads are therefore an avoidable startup cost, not only noisy
+logging. They do not imply repeated planetary contributions to a chart, and
+suppressing the messages would not remove the work. Package rejection, body and
+target deduplication, checksums, and usable Earth-relative probes remain required.
+
+Optimization is **planned**, not implemented: see the
+[kernel-loading roadmap step](../development-driver/#small-body-startup-kernel-reuse).
+The [validation evidence](../ephemeris-validation/#startup-kernel-loading-evidence)
+separates the observed behavior from the startup measurements still missing.
 
 ---
 
@@ -138,8 +177,10 @@ Current status:
   falls back to the explicitly bundled `de440s`.
 - After the primary and any cached `de441_part-*` files, the manager appends any resolved **asteroid** kernels in fixed order: Ceres → Pallas → Vesta → `codes_300ast`, then validated manifest-defined small-body kernels.
 - `tauri.conf.json` `bundle.resources` includes `pck11.pca`, `de440s.bsp`,
-  `codes_300ast_20100725.bsp`, and the Chiron Type 13 BSP plus manifest. The
-  standalone Ceres kernel is not bundled.
+  `codes_300ast_20100725.bsp`, the Chiron Type 13 BSP plus manifest, and
+  the seven curated TNO BSP/manifest pairs described under
+  [additional points](#additional-points-and-user-data-packages). The standalone
+  Ceres kernel is not bundled.
 
 Planetary BSP base URL (NAIF HTTPS):
 
@@ -701,8 +742,12 @@ the application cache. New body IDs use `tno_user_` or `minor_user_`; named cura
 TNO updates retain their canonical IDs. Existing cache filenames are not silently
 overwritten. The manifest is published only after the copied BSP's checksum
 passes. Discovery ignores invalid packages, and invalid duplicates cannot shadow
-a valid bundled package. Imported records refresh the selectable catalog without
-requiring an application restart.
+a valid bundled package. Definition imports refresh the selectable catalog without requiring an
+application restart. BSP discovery is separately cached per ephemeris cache
+directory; its current explicit invalidation covers `download()`, while the SPK
+package installer does not yet clear that path cache. A newly imported kernel
+can therefore require an application restart before discovery sees it. Import
+invalidation is part of the [kernel-loading roadmap step](../development-driver/#small-body-startup-kernel-reuse).
 
 Lot longitudes intentionally have no generic stationary/retrograde classification:
 sect reversal can introduce a discontinuity at sunrise/sunset. Station searches

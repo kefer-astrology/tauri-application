@@ -57,26 +57,26 @@ benchmarks so they measure runtime performance rather than debug-build overhead.
 
 ## What each test validates, and against what reference
 
-| Test | What it checks | Reference |
-| --- | --- | --- |
-| `apparent_is_default_and_geometric_disables_aberration` | `position_mode` maps to the correct ANISE `Aberration` | Internal contract, no external reference |
-| `earth_mod_transform_changes_more_than_scalar_longitude` | The MOD transform is a real 3D rotation, not a scalar offset | Internal invariant (latitude must change) |
-| `true_lilith_matches_horizons_osculating_elements_at_j2000` | True apogee (true Lilith) formula | Horizons osculating elements for the Moon (body 301) at J2000.0: `EC`, `OM`, `W` → expected apogee longitude 252.8807°, tolerance 0.5° |
-| `vertex_and_parts_resolve_and_match_direct_computation` | Vertex/antivertex/Parts of Fortune/Spirit wiring | Internal cross-check against the same formulas called directly |
-| `codes_300ast_minor_planets_resolve_from_bundled_kernels` | All 16 non-classical `codes_300ast` bodies actually resolve from the bundled kernel | Catalog-entry presence, not independent numerical accuracy per body |
-| `bundled_chiron_type13_is_discovered_and_computed` | Chiron manifest discovery and computation wiring | Internal — confirms no `chiron_*` warning and a longitude in range |
-| `bundled_chiron_type13_matches_held_out_horizons_state` | Chiron Type 13 interpolation accuracy at a held-out epoch | An independent Horizons `VECTORS` sample not used as an interpolation knot; position error < 1.0 km, velocity error < 1e-5 km/s |
-| `longitude_velocity_matches_complete_pipeline_central_differences` | Analytic motion formula vs. centred finite differences of the full pipeline | Internal — three step sizes (1 s, 10 s, 60 s) confirm the finite-difference estimate itself converges, then compares the analytic rate to it; see the [motion contract](../astronomy-coordinate-contract/#motion-contract) for the tolerances (2e-3 deg/day geometric, 1e-2 deg/day apparent) and why they differ |
-| `compute_chart_data_attaches_equatorial_and_horizontal_coordinates` | RA/Dec/alt/az wiring end-to-end through `compute_chart_data` | Skyfield/JPL reference for Mercury, 2024-04-10 12:00 Europe/Prague: RA 20.960824°, Dec 11.554670°, alt 48.889981°, az 153.520290°, tolerance 0.05° each |
-| `mercury_2024_geocentric_state_matches_independent_horizons_fixture` | Raw J2000/ICRF geocentric state for Mercury Barycenter, 23 epochs across Jan–Feb 2024 | Independently fetched JPL Horizons `VECTORS` (`VEC_CORR=NONE`), saved at `tests/fixtures/horizons/mercury_2024_geocentric.json`; observed max error ~0.035 km position, ~4.8e-8 km/s velocity (asserted bound: <1 km, <1e-5 km/s) |
-| `retrograde_flag_flips_across_a_real_stationary_point` | The `retrograde` output flag actually flips at a real Mercury station, not just `speed < 0.0` self-consistency | Internal — locates the station via `application::event_search::find_stationary_point`, samples ±6h through the public chart pipeline |
-| `longitude_wraps_through_zero_degrees_without_a_motion_discontinuity` | Longitude and analytic motion stay correct across a real 0°/360° crossing (the Moon) | Internal — locates the real crossing via `find_aspect_exact_time` (target longitude 0°), confirms no spurious ~360°/day jump |
-| `chiron_longitude_is_continuous_across_its_internal_spk_segment_boundary` | Position continuity across Chiron's two internal Type 13 segments (seam read live from `spk_summaries`, not a hardcoded date) | Internal invariant — Chiron moves ~0.03°/day, so a multi-degree jump at the segment seam would indicate a broken handoff |
-| `apparent_and_geometric_mars_positions_differ_by_a_small_physical_amount` | `apparent` vs. `geometric` Mars longitude differ by a real, bounded amount | Internal sanity bound only (0 < delta < 1°), not an independent accuracy proof |
-| `out_of_coverage_epoch_produces_explicit_local_warnings_not_an_error` | A chart dated outside loaded coverage (year 3000) produces explicit per-body `_unavailable` warnings, not an error and not any network attempt | Internal — see [offline execution](#offline-execution-verified-not-just-read-from-source) |
-| `unsupported_body_id_produces_explicit_local_warning_through_resolved_chart` | An unknown body id, through the full resolved-chart pipeline, produces an explicit local diagnostic naming it | Internal |
-| `j2000_positions_match_horizons` (ignored by default) | All ten classical bodies resolve and the Sun's longitude is sane | Loose sanity check (Sun longitude within 1° of ~280.4° at J2000.0), not a per-body Horizons table |
-| `compare_jpl_vs_swisseph_2026_04_22_1500_utc` (ignored, `swisseph` feature only) | JPL vs. Swiss Ephemeris longitude agreement | Prints a diff table; this checkout does not vendor the Swiss Ephemeris C source, so this test cannot run here and provides no result |
+| Test                                                                             | What it checks                                                                                                                                 | Reference                                                                                                                                                                                                                                                                                                         |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apparent_is_default_and_geometric_disables_aberration`                          | `position_mode` maps to the correct ANISE `Aberration`                                                                                         | Internal contract, no external reference                                                                                                                                                                                                                                                                          |
+| `earth_mod_transform_changes_more_than_scalar_longitude`                         | The MOD transform is a real 3D rotation, not a scalar offset                                                                                   | Internal invariant (latitude must change)                                                                                                                                                                                                                                                                         |
+| `true_lilith_matches_horizons_osculating_elements_at_j2000`                      | True apogee (true Lilith) formula                                                                                                              | Horizons osculating elements for the Moon (body 301) at J2000.0: `EC`, `OM`, `W` → expected apogee longitude 252.8807°, tolerance 0.5°                                                                                                                                                                            |
+| `vertex_and_parts_resolve_and_match_direct_computation`                          | Vertex/antivertex/Parts of Fortune/Spirit wiring                                                                                               | Internal cross-check against the same formulas called directly                                                                                                                                                                                                                                                    |
+| `codes_300ast_minor_planets_resolve_from_bundled_kernels`                        | All 16 non-classical `codes_300ast` bodies actually resolve from the bundled kernel                                                            | Catalog-entry presence, not independent numerical accuracy per body                                                                                                                                                                                                                                               |
+| `bundled_chiron_type13_is_discovered_and_computed`                               | Chiron manifest discovery and computation wiring                                                                                               | Internal — confirms no `chiron_*` warning and a longitude in range                                                                                                                                                                                                                                                |
+| `bundled_chiron_type13_matches_held_out_horizons_state`                          | Chiron Type 13 interpolation accuracy at a held-out epoch                                                                                      | An independent Horizons `VECTORS` sample not used as an interpolation knot; position error < 1.0 km, velocity error < 1e-5 km/s                                                                                                                                                                                   |
+| `longitude_velocity_matches_complete_pipeline_central_differences`               | Analytic motion formula vs. centred finite differences of the full pipeline                                                                    | Internal — three step sizes (1 s, 10 s, 60 s) confirm the finite-difference estimate itself converges, then compares the analytic rate to it; see the [motion contract](../astronomy-coordinate-contract/#motion-contract) for the tolerances (2e-3 deg/day geometric, 1e-2 deg/day apparent) and why they differ |
+| `compute_chart_data_attaches_equatorial_and_horizontal_coordinates`              | RA/Dec/alt/az wiring end-to-end through `compute_chart_data`                                                                                   | Skyfield/JPL reference for Mercury, 2024-04-10 12:00 Europe/Prague: RA 20.960824°, Dec 11.554670°, alt 48.889981°, az 153.520290°, tolerance 0.05° each                                                                                                                                                           |
+| `mercury_2024_geocentric_state_matches_independent_horizons_fixture`             | Raw J2000/ICRF geocentric state for Mercury Barycenter, 23 epochs across Jan–Feb 2024                                                          | Independently fetched JPL Horizons `VECTORS` (`VEC_CORR=NONE`), saved at `tests/fixtures/horizons/mercury_2024_geocentric.json`; observed max error ~0.035 km position, ~4.8e-8 km/s velocity (asserted bound: <1 km, <1e-5 km/s)                                                                                 |
+| `retrograde_flag_flips_across_a_real_stationary_point`                           | The `retrograde` output flag actually flips at a real Mercury station, not just `speed < 0.0` self-consistency                                 | Internal — locates the station via `application::event_search::find_stationary_point`, samples ±6h through the public chart pipeline                                                                                                                                                                              |
+| `longitude_wraps_through_zero_degrees_without_a_motion_discontinuity`            | Longitude and analytic motion stay correct across a real 0°/360° crossing (the Moon)                                                           | Internal — locates the real crossing via `find_aspect_exact_time` (target longitude 0°), confirms no spurious ~360°/day jump                                                                                                                                                                                      |
+| `chiron_longitude_is_continuous_across_its_internal_spk_segment_boundary`        | Position continuity across Chiron's two internal Type 13 segments (seam read live from `spk_summaries`, not a hardcoded date)                  | Internal invariant — Chiron moves ~0.03°/day, so a multi-degree jump at the segment seam would indicate a broken handoff                                                                                                                                                                                          |
+| `apparent_and_geometric_mars_positions_differ_by_a_small_physical_amount`        | `apparent` vs. `geometric` Mars longitude differ by a real, bounded amount                                                                     | Internal sanity bound only (0 < delta < 1°), not an independent accuracy proof                                                                                                                                                                                                                                    |
+| `out_of_coverage_epoch_produces_explicit_local_warnings_not_an_error`            | A chart dated outside loaded coverage (year 3000) produces explicit per-body `_unavailable` warnings, not an error and not any network attempt | Internal — see [offline execution](#offline-execution-verified-not-just-read-from-source)                                                                                                                                                                                                                         |
+| `unsupported_body_id_produces_explicit_local_warning_through_resolved_chart`     | An unknown body id, through the full resolved-chart pipeline, produces an explicit local diagnostic naming it                                  | Internal                                                                                                                                                                                                                                                                                                          |
+| `j2000_positions_match_horizons` (ignored by default)                            | All ten classical bodies resolve and the Sun's longitude is sane                                                                               | Loose sanity check (Sun longitude within 1° of ~280.4° at J2000.0), not a per-body Horizons table                                                                                                                                                                                                                 |
+| `compare_jpl_vs_swisseph_2026_04_22_1500_utc` (ignored, `swisseph` feature only) | JPL vs. Swiss Ephemeris longitude agreement                                                                                                    | Prints a diff table; this checkout does not vendor the Swiss Ephemeris C source, so this test cannot run here and provides no result                                                                                                                                                                              |
 
 `application::event_search` (stationary points and exact aspect times — see
 below) and `infrastructure::ephemeris::usable_coverage_tests` (chain-aware
@@ -132,7 +132,7 @@ sharing the same sign — i.e. a graze, not a crossing — then refines its
 time via a bounded golden-section search local to that one coarse window,
 and **checks the refinement rather than trusting it**: a candidate is only
 `confirmed: true` when the refined residual is finite, at or below
-tolerance, *and* no larger than the coarse sample that triggered the
+tolerance, _and_ no larger than the coarse sample that triggered the
 candidate in the first place. That last check exists because
 golden-section's own local-unimodality assumption can fail — two nearby
 minima of different depth inside one coarse bracket can pull the search
@@ -142,14 +142,14 @@ An unconfirmed candidate is still returned (`confirmed: false`), never
 silently dropped. Wired into `compute_transit_events` as `station`'s
 `direction_change: "tangential_no_change"` / `confirmed` and `aspect_hit`'s
 `contact: "tangential"` / `confirmed` — two independent fields: `contact`/
-`direction_change` is the contact's *geometry*, `confirmed` is detection
-*confidence*, never conflated. **Stated limitation, explicit in the module
+`direction_change` is the contact's _geometry_, `confirmed` is detection
+_confidence_, never conflated. **Stated limitation, explicit in the module
 doc comment:** a genuine tangential contact (where the derivative is also
 exactly zero at the graze instant) is measure-zero for real orbital motion;
-this detects a *near*-tangential local extremum resolvable at the chosen
+this detects a _near_-tangential local extremum resolvable at the chosen
 discovery step, not a formally proven exhaustive search — a coarser step
 can miss a narrow graze entirely, or conflate it with a separate nearby
-dip. The confirmation check closes a *different* gap (a refinement that
+dip. The confirmation check closes a _different_ gap (a refinement that
 converged to the wrong answer or didn't converge at all); it does not make
 detection itself exhaustive.
 
@@ -160,7 +160,7 @@ bracket narrows to "under a microsecond for the default 6-hour discovery
 step" — **wrong by roughly three orders of magnitude**, caught on review,
 not by this project's own testing at the time. Two separate mistakes
 compounded: a units/exponent slip (`21600 * 0.618^40` is ~94
-*microseconds*, not nanoseconds), and conflating the discovery step with
+_microseconds_, not nanoseconds), and conflating the discovery step with
 the bracket width golden-section actually receives — `find_tangential_contacts`
 passes its 3-point window's first-to-last sample, which spans **two**
 coarse steps, not one, so the real bracket for a 6-hour discovery step is
@@ -169,7 +169,7 @@ coarse steps, not one, so the real bracket for a 6-hour discovery step is
 The corrected, verified facts: each golden-section iteration narrows
 `[lo, hi]` by a factor of ~0.618 unconditionally (pure interpolation
 arithmetic, independent of `f`'s shape) — this part was always true — but
-the *absolute* achieved width depends on the caller-controlled initial
+the _absolute_ achieved width depends on the caller-controlled initial
 bracket, which this project did not previously compute or expose. It now
 does: `TangentialContact::bracket_width_seconds` is the measured final
 width, and `confirmed` additionally requires it to be at or below an
@@ -196,8 +196,8 @@ is exactly how the original error happened: **bracket width** (a pure
 numerical-convergence property, now computed and exposed, not assumed);
 **`DateTime<Utc>`'s own nanosecond storage resolution** (far finer than any
 realistic bracket width, and therefore never the binding constraint —
-supporting nanosecond-precision *storage* does not imply nanosecond-precision
-*results*, a distinction the original "under a microsecond" claim blurred);
+supporting nanosecond-precision _storage_ does not imply nanosecond-precision
+_results_, a distinction the original "under a microsecond" claim blurred);
 **minimizer correctness under the local-unimodality assumption** (a narrow,
 time-converged bracket can still sit on the wrong local extremum if `|f|`
 isn't unimodal within it — caught by the separate residual-regression
@@ -209,7 +209,7 @@ the documented UT1-approximated-as-UTC sidereal-time caveat, etc.). Writing
 the tightened time-convergence test also caught a second, independent bug:
 its first version built the synthetic oracle from `DateTime::timestamp()`
 truncated to whole seconds, which gave the test function itself a
-one-second-wide *plateau* at the minimum rather than a true point minimum —
+one-second-wide _plateau_ at the minimum rather than a true point minimum —
 any time in that plateau would have passed a loose assertion without
 proving anything. The production position functions this module calls were
 never affected (`jpl_backend`'s `compute_chart_data_impl` already uses full
@@ -218,7 +218,7 @@ a test-oracle precision gap, not a production one.
 
 **React UI distinguishes `confirmed: false` from a verified event.** The
 event-search list badges a tangential-kind event "tangential" regardless of
-confirmation status (the contact *geometry*), and separately badges it
+confirmation status (the contact _geometry_), and separately badges it
 "unconfirmed" (amber, with an explanatory hint) only when `confirmed` is
 `false` — the two are independent, never conflated into one label. No other
 frontend code consumes individual `TransitEvent`s (confirmed by a repo-wide
@@ -226,7 +226,7 @@ search): there is no summary count, export, or aggregate calculation that
 could silently treat an unconfirmed candidate as a verified one.
 
 **Orb-interval search** (`find_all_orb_intervals_against_fixed_point` /
-`find_all_orb_intervals_mutual`) finds the time *interval* during which an
+`find_all_orb_intervals_mutual`) finds the time _interval_ during which an
 aspect stays within its allowed orb, by reusing `discover_roots` unmodified
 against a different function — `g(t) = allowed_orb - |offset(t)|` — rather
 than a new root-finder. `allowed_orb - |offset(t)|` is continuous wherever
@@ -253,7 +253,7 @@ an explicit regression test
 ## Multi-body configuration search
 
 `application::configuration_search` (`src-tauri/src/application/configuration_search.rs`)
-finds the time *interval* during which a role-assignment of bodies
+finds the time _interval_ during which a role-assignment of bodies
 simultaneously satisfies a configuration pattern's required pairwise
 aspects (Grand Trine, T-square, Yod, Grand Cross — see
 `domain::configuration_topology` for the four data-driven definitions and the
@@ -272,9 +272,9 @@ recombination of them into a different output shape:
   every exact-aspect, station, and configuration search `compute_transit_events`
   performs in one call. It builds the position-provider backend exactly
   once per request (previously rebuilt — including a directory scan and
-  per-path metadata/manifest reads — on *every single probe*, confirmed by
+  per-path metadata/manifest reads — on _every single probe_, confirmed by
   direct tracing) and caches each body's position/motion by `(body id,
-  exact epoch)`, so two edges whose independent `discover_roots` coarse
+exact epoch)`, so two edges whose independent `discover_roots` coarse
   scans share the same `[start, end]`/`discovery_step` grid (they always do,
   within one request) reuse a body's already-computed value instead of
   recomputing it. Backend calls for a longitude-only or longitude+motion
@@ -283,7 +283,7 @@ recombination of them into a different output shape:
   unchanged `Full` path every ordinary chart command still uses). Bounded at
   2,000,000 entries, sized with a wide (>20x) margin above the 91,661-entry
   true working set this benchmark measures below once eviction isn't
-  thrashing it (see "A methodology note" below for how an *initial, too-small*
+  thrashing it (see "A methodology note" below for how an _initial, too-small_
   bound was caught — not assumed correct — by measuring a 0.1% hit rate).
   At the measured ~234-236 bytes/entry (`measures_real_per_entry_memory_cost`,
   a real `/proc/self/status` RSS-delta measurement, not a hand estimate),
@@ -311,7 +311,7 @@ recombination of them into a different output shape:
 - **Two independent, explicit combinatorial caps**, both reported as
   `complete: false` with a named warning rather than silently truncated:
   `MAX_CONFIGURATION_ROLE_ASSIGNMENTS` (5,000 — bounds role-assignment
-  *enumeration* itself, checked via the candidate-pool-size product before
+  _enumeration_ itself, checked via the candidate-pool-size product before
   any search runs) and `MAX_BEST_FIT_REFINEMENTS` (200 — bounds how many
   matches get a refined best-fit instant; a fast-moving candidate can
   recur in and out of a pattern's orb many times over a long requested
@@ -328,11 +328,11 @@ recombination of them into a different output shape:
 Mars-Jupiter-Saturn Grand Trine interval was located empirically (around
 late October 2025 — found via independent pairwise orb-interval searches,
 not assumed) and is cross-checked two ways: (1) at an interior time, the
-*existing, untouched* single-instant classifier
+_existing, untouched_ single-instant classifier
 (`domain::astrology::detect_chart_configurations`) independently confirms
 `"grand_trine"` is present from its own from-scratch position/aspect
 computation; (2) a moment before the found `entry` confirms the classifier
-does *not* yet report it. (3) Re-running the same search at a 6x finer
+does _not_ yet report it. (3) Re-running the same search at a 6x finer
 discovery step agrees with the original on match count and on every
 entry/exit boundary within an hour, demonstrating discovery-resolution
 independence for this validated case — the same property
@@ -366,7 +366,7 @@ upgrades=0, entries=91661, approx_bytes=8799456
 percentile method is `samples.sort_unstable()` then index
 `floor(n * pct / 100)` (clamped to the last index): for `n=10` this makes
 `p50` the 6th-smallest sample (index 5, the upper-median of an even-sized
-set) and `p95` index `floor(10*95/100)=9` — the *last* index, i.e. for this
+set) and `p95` index `floor(10*95/100)=9` — the _last_ index, i.e. for this
 sample size "p95" is mathematically identical to the plain sample maximum,
 not a distinct higher percentile (this floor-based formula only produces an
 index below the maximum once `n > 20`). Reported as "p95" only for
@@ -391,10 +391,10 @@ that skips the unused quantities.
 
 **Reading `cache_stats()` precisely — accesses, misses, and the true
 working set are three different numbers, not one:** `hits + misses =
-705,566` total position *lookups* this search performs — an invariant of
+705,566` total position _lookups_ this search performs — an invariant of
 the search algorithm (which edges/epochs it probes), independent of cache
 size. `entries = misses = 91,661` (with `upgrades=0`) is the actual number
-of *distinct* `(body, epoch)` pairs ever computed — the true working set,
+of _distinct_ `(body, epoch)` pairs ever computed — the true working set,
 confirmed by the fact that `entries` and `misses` land on exactly the same
 number with zero further growth once the cache is large enough not to
 evict. 613,905 of the 705,566 total lookups (87%) were therefore served
@@ -409,7 +409,7 @@ benchmark measured a 0.1% hit rate: `hits=666, misses=704,900,
 entries=20,000` (pinned at that old cap). Read naively, 704,900 misses
 looks like "the working set is ~700,000 entries" — it is not. Re-running
 with the corrected, much larger cap (so eviction never triggers) measured
-the *same* search's true working set at 91,661 distinct entries. The old
+the _same_ search's true working set at 91,661 distinct entries. The old
 cap was so far under that true working set that popular entries (bodies
 shared across several edges) were evicted and recomputed repeatedly before
 they could ever be reused — on average, each of the 91,661 distinct pairs
@@ -433,7 +433,7 @@ page keeps them distinct rather than treating "coverage" as one concept:
    `apparent: false`.
 3. **Apparent-query coverage requiring retarded epochs** — the same chain
    question, but probed with `Aberration::CN_S` so a failure to converge the
-   light-time iteration at the *retarded* epoch is also caught. This is
+   light-time iteration at the _retarded_ epoch is also caught. This is
    `get_usable_coverage` with `apparent: true`.
 4. **Numerical validation coverage** — the separate, much narrower claim of
    which specific target/epoch/quantity/correction combinations have been
@@ -445,18 +445,18 @@ page keeps them distinct rather than treating "coverage" as one concept:
 `Almanac::transform` and `Almanac::ephemeris_path_to_root` — not a
 reimplementation of SPICE precedence rules, and not a "global intersection of
 unrelated segment intervals." An earlier version of this function discovered
-only the *target's* ascent chain and filled in the Earth side from a
+only the _target's_ ascent chain and filled in the Earth side from a
 hardcoded anchor list (`[0, 10, 3, 399]`); that was replaced with discovery
-from loaded segment metadata on *both* sides (the target's own ascent and
+from loaded segment metadata on _both_ sides (the target's own ascent and
 Earth's own ascent, each via `ephemeris_path_to_root`), because the
 hardcoded list was carrying weight the discovery step wasn't actually doing —
 see `discover_ascent_chain_ids` in `infrastructure/ephemeris.rs`.
 
 ### Structural analysis, sampled validation, and `Unknown`
 
-A reported interval's *endpoints* come from real segment boundaries — that
+A reported interval's _endpoints_ come from real segment boundaries — that
 part is exact structural analysis, since a Chebyshev segment is valid-or-not
-strictly by its declared window. Whether `transform` succeeds *throughout*
+strictly by its declared window. Whether `transform` succeeds _throughout_
 the interval rests on a single midpoint probe per sub-interval, not an
 exhaustive scan — a finite successful probe does not prove availability at
 every instant, particularly for apparent mode, where light-time convergence
@@ -483,7 +483,7 @@ Tests: `missing_center_link_reports_unknown_not_a_confident_unavailable`,
 chains, missing links, gaps, alternate chains, and overlap/precedence —
 including scenarios no bundled or realistically downloadable kernel can be
 made to exhibit on demand, built from a hand-crafted synthetic SPK (real
-summary *metadata* — target id, center id, start/end epoch — no Chebyshev
+summary _metadata_ — target id, center id, start/end epoch — no Chebyshev
 coefficient data; see `synthetic_spk` in the test module):
 
 - a **complete chain** with real kernels (Ceres through Sun→SSB→EMB→Earth,
@@ -548,7 +548,7 @@ documentation.
 
 **Also discovered while building these tests — real stored BSP coverage
 differs from the catalog's documentation-facing date-range labels, for the
-*specific* targets and files checked (not generalized further):**
+_specific_ targets and files checked (not generalized further):**
 `de440s.bsp`'s Sun/Earth/EMB segments are actually stored from
 **1849-12-26 through 2150-01-21** (not "1900–2050"), and `codes_300ast.bsp`'s
 **Ceres segment specifically** is stored from **1799-12-30 through
@@ -645,11 +645,11 @@ documentation pass).
 is close to the sample maximum too. Three consecutive runs; run-to-run noise
 is visible:
 
-| Run | cold | position_only_31 p50 / p95 | warm_one p50 / p95 | warm_all p50 / p95 | dense_8 | samples/s |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | 92.4 ms | 677 µs / 710 µs | 27.5 µs / 47.0 µs | 743 µs / 760 µs | 226 µs | 35 474 |
-| 2 | 85.2 ms | 637 µs / 689 µs | 27.3 µs / 36.5 µs | 664 µs / 712 µs | 225 µs | 35 606 |
-| 3 | 96.1 ms | 853 µs / 917 µs | 34.3 µs / 69.6 µs | 894 µs / 1000 µs | 272 µs | 29 417 |
+| Run | cold    | position_only_31 p50 / p95 | warm_one p50 / p95 | warm_all p50 / p95 | dense_8 | samples/s |
+| --- | ------- | -------------------------- | ------------------ | ------------------ | ------- | --------- |
+| 1   | 92.4 ms | 677 µs / 710 µs            | 27.5 µs / 47.0 µs  | 743 µs / 760 µs    | 226 µs  | 35 474    |
+| 2   | 85.2 ms | 637 µs / 689 µs            | 27.3 µs / 36.5 µs  | 664 µs / 712 µs    | 225 µs  | 35 606    |
+| 3   | 96.1 ms | 853 µs / 917 µs            | 34.3 µs / 69.6 µs  | 894 µs / 1000 µs   | 272 µs  | 29 417    |
 
 **`dense_8` remains a smoke-level timing check, not a representative
 dense-series benchmark** — eight single-body samples at daily steps. The two
@@ -724,7 +724,7 @@ p50=1.687235425s, p95=1.874918971s
 Noticeably slower than the lower-level `stationary-point search` /
 `aspect-exact-time search` numbers above for a comparable single-body,
 single-window case — expected, since this is the orchestration layer's
-*combined* cost (one station search plus one aspect-hit search per call, each
+_combined_ cost (one station search plus one aspect-hit search per call, each
 independently running its own coarse scan over the full year) rather than
 either search measured in isolation.
 
@@ -742,7 +742,7 @@ which exercise the identical `search_configuration`/`find_all_orb_intervals_*`
 code path the `configuration_search_benchmark` release benchmark times;
 the benchmark itself (an `--ignored` diagnostic, ~11 minutes for its full
 10-repetition run — see below) was not separately re-run inside the
-namespace for this pass. Source inspection independently confirms *why*
+namespace for this pass. Source inspection independently confirms _why_
 offline execution holds generally: no `reqwest`/HTTP code exists anywhere in
 `jpl_backend.rs`,
 `application/computation.rs`, `application/transit.rs`,
@@ -770,7 +770,7 @@ without it. Source inspection of `infrastructure/python_sidecar.rs` shows its
 HTTP client only ever targets `http://127.0.0.1:{port}` (a locally reserved
 port, never a remote host) and that the sidecar process is spawned locally
 via `std::process::Command`, never fetched from the network — but this is
-*source-level* confirmation only, explicitly distinguished from the
+_source-level_ confirmation only, explicitly distinguished from the
 namespace-executed proof above, because no Python backend exists here to
 actually run.
 
@@ -783,7 +783,7 @@ only, see above), and `infrastructure::ephemeris`'s `EphemerisManager::download`
 the `download_ephemeris` Tauri command, confirmed by `grep` for its only
 call site). Running `fetch_candidates` (the geocoding HTTP call) inside the
 same no-network namespace fails in 24 ms with an explicit
-`"error sending request"` message — demonstrating the *same* reqwest/DNS
+`"error sending request"` message — demonstrating the _same_ reqwest/DNS
 mechanism the ephemeris downloader and geocoding both use fails fast and
 explicitly, not via a hang, even though this was exercised through geocoding
 specifically rather than through `download_ephemeris` itself (which needs a
@@ -801,11 +801,43 @@ has been compared against a pre-optimization baseline on the same machine (no
 prior numbers were recorded in the repository to diff against before this
 documentation pass).
 
+## Startup kernel-loading evidence
+
+On 2026-11-06, the native application log showed repeated loads of `pck11.pca`,
+`de440s.bsp` and `codes_300ast_20100725.bsp` while progressively adding Chiron
+and the seven curated TNO packages. Source inspection explains the sequence:
+`resolve_small_body_bsps()` probes each candidate with the base plus accepted
+packages; `validate_small_body_artifact()` asks `shared_almanac()` for that
+ordered set. Each distinct prefix causes a separate cold cache miss and load.
+
+This establishes repeated startup loading. It does **not** establish duplicate
+entries in the final chart set, duplicate calculations, a steady-state leak,
+or a measured amount of excess memory/time. The existing
+`concurrent_callers_share_one_almanac_load` test verifies same-set reuse under
+concurrency; it does not verify cross-set reuse during multi-package discovery.
+The per-file fingerprint/probe caches likewise do not prove that the common
+base is parsed once over the complete cold startup sequence.
+
+Missing evidence: per-file parse counts, cold-versus-warm discovery timings,
+retained memory for intermediate almanacs, and scaling as candidates are added.
+Record build mode, machine, loaded file set, cache/process state and repetition
+method with those measurements. Existing chart/transit benchmark results must
+not be presented as measurements of this separate startup cost.
+
+The [roadmap](../development-driver/#small-body-startup-kernel-reuse) specifies
+optimization and correctness criteria. [KERNEL-001](../testing-strategy/#kernel-001-startup-kernel-reuse)
+tracks the missing regression coverage. No startup optimization or quantified
+performance improvement is claimed by this documentation update.
+
 ## Known validation gaps
+
+- Cold multi-package kernel discovery has observed repeated base loads, but no
+  automated per-file load-count or retained-memory budget. See
+  [startup kernel-loading evidence](#startup-kernel-loading-evidence).
 
 - No per-body Horizons accuracy table exists for the 15 `codes_300ast` bodies
   other than Ceres/Pallas/Juno/Vesta-class coverage implied by the catalog;
-  only kernel *resolution* is tested for them. Mercury is the only body
+  only kernel _resolution_ is tested for them. Mercury is the only body
   checked against an independently fetched Horizons vector fixture; the Sun,
   Moon, and the other eight classical planets are not.
 - No automated Rust/Swiss-Ephemeris parity run in this checkout (the
