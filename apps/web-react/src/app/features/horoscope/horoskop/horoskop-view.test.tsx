@@ -1,7 +1,9 @@
-import { act } from 'react';
+import { act, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import i18n from '@/lib/i18n/i18n';
+import { useWorkspaceCharts } from '@/app/providers/workspace-charts';
+import type { AppChart } from '@/lib/tauri/chartPayload';
 import { DEFAULT_WORKSPACE_DEFAULTS } from '@/lib/tauri/chartPayload';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -22,8 +24,16 @@ afterEach(() => {
 	toastMock.mockClear();
 });
 
+function SeedChart({ chart }: { chart?: AppChart }) {
+	const { addChart } = useWorkspaceCharts();
+	useEffect(() => {
+		if (chart) addChart(chart);
+	}, [chart, addChart]);
+	return null;
+}
+
 /** Render the module at a measured width (the layout goes compact below 960px). */
-async function renderAt(width: number) {
+async function renderAt(width: number, chart?: AppChart) {
 	vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
 		() => ({ width }) as DOMRect
 	);
@@ -46,6 +56,7 @@ async function renderAt(width: number) {
 		root.render(
 			<AppearanceProvider>
 				<WorkspaceProvider>
+					<SeedChart chart={chart} />
 					<WidgetWorkspaceProvider>
 						<RightPanelProvider>
 							<HoroskopView
@@ -95,6 +106,64 @@ describe('HoroskopView', () => {
 		expect(container.querySelector('button[aria-label="Step forward"]')).not.toBeNull();
 		await cleanup();
 	}, 10_000);
+
+	it.each(['object', 'aspect'] as const)(
+		'switches an open %s panel in place and dismisses it on empty canvas',
+		async (kind) => {
+			const { container, cleanup } = await renderAt(1200, {
+				id: 'selection-test',
+				name: 'Selection test',
+				chartType: 'NATAL',
+				dateTime: '2000-01-01T12:00:00Z',
+				location: 'Prague',
+				tags: [],
+				observableObjects: ['sun', 'moon', 'mars'],
+				computed: {
+					positions: { sun: 10, moon: 120, mars: 280 },
+					aspects: [
+						{ from: 'sun', to: 'moon', type: 'trine', orb: 1 },
+						{ from: 'sun', to: 'mars', type: 'square', orb: 0 }
+					]
+				}
+			});
+			try {
+				const object = (id: string) => container.querySelector(`[data-handoff="Planet_${id}"]`)!;
+				const first = () =>
+					kind === 'object' ? object('sun') : container.querySelector('[data-wheel-aspect="0"]')!;
+				const second = () =>
+					kind === 'object'
+						? object('moon').querySelector('circle')!
+						: container.querySelector('[data-wheel-aspect="1"]')!;
+				const click = async (element: Element) => {
+					await act(async () => {
+						element.dispatchEvent(
+							new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 })
+						);
+					});
+					await act(async () => element.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+				};
+				await click(first());
+				expect(document.querySelector('[role="dialog"]')).toBeNull();
+				await click(first());
+				const panel = document.querySelector('[role="dialog"]')!;
+				expect(panel).not.toBeNull();
+				const sunTitle = panel.querySelector('h2')!.textContent;
+				expect(document.querySelector('[data-slot="sheet-overlay"]')).toBeNull();
+				await click(second());
+				expect(document.querySelector('[role="dialog"]')).toBe(panel);
+				expect(panel.querySelector('h2')!.textContent).not.toBe(sunTitle);
+				if (kind === 'object')
+					expect(container.querySelector('[data-handoff="Trailer_moon"]')).not.toBeNull();
+				await click(container.querySelector('[data-tour="radix-wheel"] svg')!);
+				expect(document.querySelector('[role="dialog"]')).toBeNull();
+				await click(first());
+				expect(document.querySelector('[role="dialog"]')).toBeNull();
+			} finally {
+				await cleanup();
+			}
+		},
+		10_000
+	);
 
 	it('keeps the positions beside the wheel and moves the left widgets behind a button when narrow', async () => {
 		const { container, cleanup } = await renderAt(500);

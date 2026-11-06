@@ -15,6 +15,8 @@ import { useRightPanel } from '@/app/providers/right-panel';
 
 type DetailSidePanelProps = {
 	open: boolean;
+	modal?: boolean;
+	onInteractOutside?: ComponentProps<typeof SheetContent>['onInteractOutside'];
 	onOpenChange: (open: boolean) => void;
 	title: string;
 	description?: string;
@@ -34,6 +36,8 @@ export function DetailSidePanel(props: DetailSidePanelProps) {
 
 function SharedPanelView({
 	open,
+	modal,
+	onInteractOutside,
 	onOpenChange,
 	title,
 	description,
@@ -52,6 +56,8 @@ function SharedPanelView({
 		if (!open) return;
 		show({
 			id,
+			modal,
+			onInteractOutside,
 			title,
 			description,
 			contentClassName,
@@ -59,7 +65,18 @@ function SharedPanelView({
 			onCloseAutoFocus,
 			onClose: () => onOpenChangeRef.current(false)
 		});
-	}, [open, id, title, description, contentClassName, bodyClassName, onCloseAutoFocus, show]);
+	}, [
+		open,
+		id,
+		modal,
+		onInteractOutside,
+		title,
+		description,
+		contentClassName,
+		bodyClassName,
+		onCloseAutoFocus,
+		show
+	]);
 
 	useLayoutEffect(() => {
 		if (!open) return;
@@ -72,6 +89,8 @@ function SharedPanelView({
 
 function StandaloneSidePanel({
 	open,
+	modal,
+	onInteractOutside,
 	onOpenChange,
 	title,
 	description,
@@ -83,9 +102,10 @@ function StandaloneSidePanel({
 	const ft = useAppFormFieldTheme();
 
 	return (
-		<Sheet open={open} onOpenChange={onOpenChange}>
+		<Sheet open={open} modal={modal} onOpenChange={onOpenChange}>
 			<SheetContent
 				side="right"
+				onInteractOutside={onInteractOutside}
 				onCloseAutoFocus={onCloseAutoFocus}
 				className={cn('w-full gap-0 p-0 sm:max-w-md lg:w-[min(28rem,22vw)]', contentClassName)}
 			>

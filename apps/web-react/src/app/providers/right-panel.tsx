@@ -26,6 +26,8 @@ import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 /** One view shown in the right panel; registered by `DetailSidePanel` while it is open. */
 export interface RightPanelEntry {
 	id: string;
+	modal?: boolean;
+	onInteractOutside?: ComponentProps<typeof SheetContent>['onInteractOutside'];
 	title: string;
 	description?: string;
 	contentClassName?: string;
@@ -108,6 +110,7 @@ export function RightPanelProvider({ children }: { children: ReactNode }) {
 			{children}
 			<Sheet
 				open={entries.length > 0}
+				modal={top?.modal ?? true}
 				onOpenChange={(open) => {
 					if (!open) closeAll();
 				}}
@@ -115,6 +118,7 @@ export function RightPanelProvider({ children }: { children: ReactNode }) {
 				<SheetContent
 					side="right"
 					onCloseAutoFocus={top?.onCloseAutoFocus}
+					onInteractOutside={top?.onInteractOutside}
 					onEscapeKeyDown={(event) => {
 						if (entries.length > 1) {
 							event.preventDefault();

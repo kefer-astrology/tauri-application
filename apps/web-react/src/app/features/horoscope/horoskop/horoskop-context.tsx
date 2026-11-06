@@ -43,7 +43,7 @@ export interface HoroskopValue extends HoroskopOptions {
 	selectedAspect: HoroscopeWheelAspectInteraction | null;
 	/** Which detail is open in the right panel. */
 	detailKind: 'object' | 'aspect' | null;
-	/** First click selects (highlights), a second click on the same object opens its details. */
+	/** First click selects (highlights), a second click opens details; an open object panel follows subsequent selections. */
 	selectObject: (interaction: HoroscopeWheelObjectInteraction) => void;
 	selectAspect: (interaction: HoroscopeWheelAspectInteraction) => void;
 	clearSelection: () => void;
@@ -172,13 +172,13 @@ export function HoroskopProvider({
 				selectedObject?.bodyId === interaction.bodyId && selectedObject.layer === interaction.layer;
 			setSelectedObject(interaction);
 			setSelectedAspect(null);
-			setDetailKind(again ? 'object' : null);
+			setDetailKind(again || detailKind === 'object' ? 'object' : null);
 		},
 		selectAspect: (interaction) => {
 			const again = selectedAspect?.index === interaction.index;
 			setSelectedAspect(interaction);
 			setSelectedObject(null);
-			setDetailKind(again ? 'aspect' : null);
+			setDetailKind(again || detailKind === 'aspect' ? 'aspect' : null);
 		},
 		clearSelection: () => {
 			setSelectedObject(null);

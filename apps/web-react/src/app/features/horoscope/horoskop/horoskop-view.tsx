@@ -112,6 +112,16 @@ function HoroskopLayout({
 			{/* A first click on a body or aspect highlights it; the second opens these details. */}
 			<DetailSidePanel
 				open={horoskop.detailKind !== null}
+				modal={false}
+				onInteractOutside={(event) => {
+					const target = event.target;
+					if (
+						target instanceof Element &&
+						target.closest('[data-wheel-object], [data-wheel-aspect]')
+					) {
+						event.preventDefault();
+					}
+				}}
 				onOpenChange={(open) => {
 					if (!open) horoskop.closeDetail();
 				}}

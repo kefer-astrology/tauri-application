@@ -45,6 +45,7 @@ export function TransitRing({
 						key={`transit-${key}`}
 						data-handoff={`TransitPlanet_${key}`}
 						style={{ cursor: 'pointer' }}
+						data-wheel-object=""
 						onClick={(event) => frame.emitObjectClick(event, key, 'transit')}
 					>
 						<circle cx={p.x} cy={p.y} r="20" fill="transparent" />

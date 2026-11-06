@@ -96,6 +96,7 @@ export function PlanetGlyphs({
 						data-handoff={`Planet_${key}`}
 						opacity={dim}
 						style={{ cursor: 'pointer', transition: 'opacity 0.2s ease' }}
+						data-wheel-object=""
 						onClick={(event) => frame.emitObjectClick(event, key, 'radix')}
 					>
 						<circle cx={p.x} cy={p.y} r="22" fill="transparent" />
