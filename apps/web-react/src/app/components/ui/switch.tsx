@@ -22,7 +22,10 @@ function Switch({ className, variant = 'default', ...props }: SwitchProps) {
 		>
 			<SwitchPrimitive.Thumb
 				data-slot="switch-thumb"
-				className="pointer-events-none block size-[18px] rounded-full bg-white shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-[18px] data-[state=unchecked]:translate-x-0"
+				className={cn(
+					'data-[state=checked]:bg-primary-foreground pointer-events-none block size-[18px] rounded-full bg-[color:var(--theme-control-thumb)] shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-[18px] data-[state=unchecked]:translate-x-0',
+					variant === 'prominent' && 'bg-[color:var(--theme-control-thumb-prominent)]'
+				)}
 			/>
 		</SwitchPrimitive.Root>
 	);

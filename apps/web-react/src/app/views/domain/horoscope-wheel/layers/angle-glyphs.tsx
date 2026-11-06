@@ -30,6 +30,7 @@ export function AngleGlyphs({
 						key={key}
 						data-handoff={`Angle_${key}`}
 						style={{ cursor: 'pointer' }}
+						data-wheel-object=""
 						onClick={(event) => frame.emitObjectClick(event, angleId, 'radix')}
 					>
 						<circle cx={p.x} cy={p.y} r="18" fill="transparent" />

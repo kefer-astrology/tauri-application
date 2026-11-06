@@ -6,12 +6,15 @@ export function ObjectGlyph({
 	id,
 	size = 16,
 	className,
-	title
+	title,
+	color
 }: {
 	id: string;
 	size?: number;
 	className?: string;
 	title?: string;
+	/** Glyph color (e.g. the object's configured color). */
+	color?: string;
 }) {
 	return (
 		<AstrologyGlyph
@@ -20,6 +23,7 @@ export function ObjectGlyph({
 			size={size}
 			className={className}
 			title={title}
+			style={color ? { color } : undefined}
 		/>
 	);
 }

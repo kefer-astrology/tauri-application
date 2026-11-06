@@ -1,3 +1,5 @@
+import { Surface } from '@/app/components/ui/container';
+import { Text } from '@/app/components/ui/typography';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,10 +13,15 @@ import { ColorInput } from '@/app/components/ui/color-input';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Separator } from '@/app/components/ui/separator';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { useWorkspace } from '@/app/providers/workspace';
-import { ASPECT_ROWS, DEFAULT_ASPECT_COLORS, type AspectRow } from '@/lib/astrology/aspects';
+import {
+	ASPECT_GLYPHS,
+	ASPECT_ROWS,
+	DEFAULT_ASPECT_COLORS,
+	type AspectRow
+} from '@/lib/astrology/aspects';
+import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { OBSERVABLE_OBJECTS, getObservableObjectLabel } from '@/lib/astrology/observableObjects';
 import type { AspectLineStyleId, AspectLineTierStyleState } from '@/lib/tauri/chartPayload';
 import type { AstrologicalTraditionId, ObjectTypeId } from '@/lib/tauri/types';
@@ -28,16 +35,7 @@ import {
 } from '@/lib/settings/aspectSettings';
 import { SettingSelect } from '../settings-controls';
 import { useSettingsDraft } from '../settings-draft';
-
-const ASTROLOGY_TRADITION_OPTIONS: { value: AstrologicalTraditionId; labelKey: string }[] = [
-	{ value: 'hellenistic', labelKey: 'tradition_hellenistic' },
-	{ value: 'medieval_traditional', labelKey: 'tradition_medieval_traditional' },
-	{ value: 'modern_western', labelKey: 'tradition_modern_western' },
-	{ value: 'harmonic', labelKey: 'tradition_harmonic' },
-	{ value: 'cosmobiology', labelKey: 'tradition_cosmobiology' },
-	{ value: 'uranian_hamburg', labelKey: 'tradition_uranian_hamburg' },
-	{ value: 'jyotish_parashari', labelKey: 'tradition_jyotish_parashari' }
-];
+import { ASTROLOGY_SCHOOLS, DEFAULT_SCHOOL } from '@/lib/astrology/schools';
 
 /** Numeric aspect-line tier fields: id, label key, minimum accepted value, step. */
 const TIER_FIELDS: {
@@ -71,13 +69,16 @@ function ObjectOrbInput({
 	value: number;
 	onChange: (orb: number) => void;
 }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<div className="flex items-center justify-between gap-2">
-			<span className={cn('truncate text-xs', ft.muted)}>{label}</span>
+			<Text variant="caption" as="span" tone="muted" className="truncate">
+				{label}
+			</Text>
 			<Input
+				variant="form"
+				density="compact"
 				type="number"
-				className={cn(ft.inputCompact, 'h-8 w-16')}
+				className="h-8 w-16"
 				value={value}
 				min={0}
 				step={0.5}
@@ -91,11 +92,14 @@ function ObjectOrbInput({
 }
 
 function CaptionedGrid({ caption, children }: { caption: string; children: React.ReactNode }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<div className="space-y-1.5">
-			<p className={cn('text-[0.65rem] tracking-wide uppercase', ft.muted)}>{caption}</p>
-			<div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">{children}</div>
+			<Text variant="eyebrow" tone="muted">
+				{caption}
+			</Text>
+			<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-x-3 gap-y-1.5">
+				{children}
+			</div>
 		</div>
 	);
 }
@@ -120,7 +124,7 @@ function AspectRowEditor({
 	onObjectOrbChange: (id: string, orb: number) => void;
 }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const planets = OBSERVABLE_OBJECTS.filter(
 		(item) => item.objectType === 'planet' && item.status === 'available'
 	);
@@ -130,34 +134,46 @@ function AspectRowEditor({
 			className="rounded-xl border-0 bg-[color:var(--theme-soft-bg)]/45 px-4"
 		>
 			<div className="flex items-center gap-3 py-3">
-				<Label className="flex flex-1 cursor-pointer items-center gap-3">
-					<Checkbox
-						checked={row.enabled}
-						onCheckedChange={(checked) => onRowChange({ enabled: checked === true })}
-					/>
-					<span className={cn('text-sm', ft.title)}>{t(aspect.labelKey)}</span>
-				</Label>
+				<Checkbox
+					checked={row.enabled}
+					aria-label={t(aspect.labelKey)}
+					onCheckedChange={(checked) => onRowChange({ enabled: checked === true })}
+				/>
+				<div className="min-w-0 flex-1">
+					<AccordionTrigger className="items-center gap-3 py-0 hover:no-underline">
+						<span className="flex min-w-0 items-center gap-3">
+							<AstrologyGlyph
+								glyphId={aspect.id}
+								domain="aspect"
+								fallback={ASPECT_GLYPHS[aspect.id] ?? '•'}
+								size={18}
+								className="shrink-0"
+								style={{ color: row.color }}
+							/>
+							<Text variant="body" as="span" tone="primary">
+								{t(aspect.labelKey)}
+							</Text>
+						</span>
+					</AccordionTrigger>
+				</div>
 				<ColorInput
 					value={row.color}
 					onChange={(event) => onRowChange({ color: event.target.value })}
 					aria-label={`${t(aspect.labelKey)} ${t('color_theme')}`}
 				/>
-				<AccordionTrigger className="w-auto flex-none gap-2 py-0 text-xs hover:no-underline">
-					<span className={cn('tracking-wide uppercase tabular-nums', ft.muted)}>
-						{row.orb}° {t('label_orb')}
-					</span>
-				</AccordionTrigger>
 			</div>
 			<AccordionContent className="pt-0 pb-4">
-				<div className="space-y-3 rounded-lg bg-black/10 p-3 dark:bg-white/5">
+				<Surface variant="soft" padding="compact" className="space-y-3">
 					<div className="grid grid-cols-[1fr_auto] items-center gap-3">
-						<Label className={cn('text-xs', ft.muted)} htmlFor={`${aspect.id}-orb`}>
+						<Label variant="compact" tone="muted" htmlFor={`${aspect.id}-orb`}>
 							{t('label_orb')}
 						</Label>
 						<Input
+							variant="form"
+							density="compact"
 							id={`${aspect.id}-orb`}
 							type="number"
-							className={cn(ft.inputCompact, 'h-9 w-20')}
+							className="h-9 w-20"
 							value={row.orb}
 							min={0}
 							max={30}
@@ -210,7 +226,7 @@ function AspectRowEditor({
 							})}
 						</div>
 					)}
-				</div>
+				</Surface>
 			</AccordionContent>
 		</AccordionItem>
 	);
@@ -228,19 +244,29 @@ function AspectLineTiersEditor({
 	onCommit: (patch: Partial<AspectLineTierStyleState>) => void;
 }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { markChanged } = useSettingsDraft();
 	return (
-		<div className="space-y-3 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
-			<p className={ft.label}>{t('settings_radix_aspect_lines_title')}</p>
-			<p className={cn('text-xs', ft.muted)}>{t('settings_radix_aspect_lines_hint')}</p>
+		<Surface
+			variant="soft"
+			padding="none"
+			className="space-y-3 bg-[color:var(--theme-soft-bg)]/45 px-4 py-4"
+		>
+			<Text variant="label" tone="secondary">
+				{t('settings_radix_aspect_lines_title')}
+			</Text>
+			<Text variant="caption" tone="muted">
+				{t('settings_radix_aspect_lines_hint')}
+			</Text>
 			<div className="grid gap-3 sm:grid-cols-2">
 				{TIER_FIELDS.map((field) => (
 					<div key={field.id} className="space-y-1">
-						<Label className="text-xs">{t(field.labelKey)}</Label>
+						<Label variant="compact">{t(field.labelKey)}</Label>
 						<Input
+							variant="form"
+							density="compact"
 							type="number"
-							className={cn(ft.inputCompact, 'h-9')}
+							className="h-9"
 							min={field.min}
 							step={field.step}
 							value={tiers[field.id]}
@@ -261,7 +287,7 @@ function AspectLineTiersEditor({
 					</div>
 				))}
 				<div className="space-y-1">
-					<Label className="text-xs">{t('settings_aspect_line_outer_style')}</Label>
+					<Label variant="compact">{t('settings_aspect_line_outer_style')}</Label>
 					<SettingSelect
 						value={tiers.outerLineStyle}
 						options={OUTER_LINE_STYLES}
@@ -274,7 +300,7 @@ function AspectLineTiersEditor({
 					/>
 				</div>
 			</div>
-		</div>
+		</Surface>
 	);
 }
 
@@ -282,11 +308,11 @@ function AspectLineTiersEditor({
  *  colors, per-object orbs, and radix aspect-line tiers. Everything applies immediately. */
 export function AspectSettingsSection() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { workspaceDefaults, applyDefaultsPatch } = useWorkspace();
 	const { markChanged } = useSettingsDraft();
-	const [tradition, setTradition] = useState<AstrologicalTraditionId | ''>(
-		workspaceDefaults.astrologyTradition ?? ''
+	const [tradition, setTradition] = useState<AstrologicalTraditionId>(
+		workspaceDefaults.astrologyTradition ?? DEFAULT_SCHOOL
 	);
 	const [extendedObjectTypes, setExtendedObjectTypes] = useState(
 		workspaceDefaults.extendedObjectTypes
@@ -298,7 +324,7 @@ export function AspectSettingsSection() {
 	}));
 
 	useEffect(() => {
-		setTradition(workspaceDefaults.astrologyTradition ?? '');
+		setTradition(workspaceDefaults.astrologyTradition ?? DEFAULT_SCHOOL);
 		setExtendedObjectTypes(workspaceDefaults.extendedObjectTypes);
 		setObjectOrbs(workspaceDefaults.objectOrbs);
 		setRows(aspectRowsFromDefaults(workspaceDefaults));
@@ -324,15 +350,19 @@ export function AspectSettingsSection() {
 
 	return (
 		<div className="space-y-4">
-			<div className="rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
+			<Surface
+				variant="soft"
+				padding="none"
+				className="bg-[color:var(--theme-soft-bg)]/45 px-4 py-4"
+			>
 				<SettingSelect
 					label={t('settings_astrology_tradition_label')}
 					hint={t('settings_astrology_tradition_hint')}
-					placeholder={t('settings_astrology_tradition_none')}
 					value={tradition}
-					options={ASTROLOGY_TRADITION_OPTIONS.map((option) => ({
-						value: option.value,
-						label: t(option.labelKey)
+					options={ASTROLOGY_SCHOOLS.map((school) => ({
+						value: school.id,
+						label: t(school.labelKey),
+						disabled: !school.enabled
 					}))}
 					onValueChange={(next) => {
 						setTradition(next);
@@ -340,13 +370,25 @@ export function AspectSettingsSection() {
 						void applyDefaultsPatch({ astrologyTradition: next });
 					}}
 				/>
-			</div>
-			<div className="space-y-2 rounded-xl bg-[color:var(--theme-soft-bg)]/45 px-4 py-4">
-				<p className={ft.label}>{t('settings_aspect_scope_extended_categories')}</p>
-				<p className={cn('text-xs', ft.muted)}>{t('settings_aspect_scope_extended_shared_hint')}</p>
-				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+			</Surface>
+			<Surface
+				variant="soft"
+				padding="none"
+				className="space-y-2 bg-[color:var(--theme-soft-bg)]/45 px-4 py-4"
+			>
+				<Text variant="label" tone="secondary">
+					{t('settings_aspect_scope_extended_categories')}
+				</Text>
+				<Text variant="caption" tone="muted">
+					{t('settings_aspect_scope_extended_shared_hint')}
+				</Text>
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
 					{EXTENDED_OBJECT_TYPE_OPTIONS.map((option) => (
-						<Label key={option.labelKey} className="flex cursor-pointer items-center gap-2 text-sm">
+						<Label
+							variant="default"
+							key={option.labelKey}
+							className="flex cursor-pointer items-center gap-2"
+						>
 							<Checkbox
 								checked={option.types.some((type) => extendedObjectTypes.includes(type))}
 								onCheckedChange={(checked) => {
@@ -365,9 +407,11 @@ export function AspectSettingsSection() {
 						</Label>
 					))}
 				</div>
-			</div>
+			</Surface>
 			<div className="space-y-2">
-				<p className={ft.label}>{t('default_aspects')}</p>
+				<Text variant="label" tone="secondary">
+					{t('default_aspects')}
+				</Text>
 				<Accordion type="multiple" className="space-y-3">
 					{ASPECT_ROWS.map((aspect) => {
 						const row = rows[aspect.id] ?? {

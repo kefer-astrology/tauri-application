@@ -187,7 +187,18 @@ pub async fn compute_transit_series(
         crate::infrastructure::python_sidecar::BackendAvailability::Available
     );
 
-    let route = select_transit_compute_route(backend, backend_available)?;
+    let mut requested = transiting_objects.clone();
+    requested.extend(transited_objects.clone());
+    let route = if crate::application::compute_router::native_point_selection(&requested) {
+        crate::application::compute_router::select_chart_route_for_points(
+            backend,
+            backend_available,
+            false,
+            &requested,
+        )?
+    } else {
+        select_transit_compute_route(backend, backend_available)?
+    };
     match route {
         ComputeRoute::Rust => compute_transit_series_rust(
             &workspace_path,

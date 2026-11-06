@@ -3,6 +3,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from './command';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { cn } from './utils';
+import { formSelectTriggerVariants, formSelectItemClassName } from './form-variants';
 
 /**
  * Searchable single select over a long list of strings: a select-like trigger opening a
@@ -17,7 +18,8 @@ export function Combobox({
 	limit = 120,
 	triggerClassName,
 	contentClassName,
-	itemClassName
+	itemClassName,
+	variant = 'default'
 }: {
 	value: string;
 	onValueChange: (value: string) => void;
@@ -29,6 +31,7 @@ export function Combobox({
 	triggerClassName?: string;
 	contentClassName?: string;
 	itemClassName?: string;
+	variant?: 'default' | 'form';
 }) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState('');
@@ -50,6 +53,7 @@ export function Combobox({
 					aria-expanded={open}
 					className={cn(
 						'flex h-auto min-h-10 w-full items-center justify-between gap-2 text-left',
+						variant === 'form' && formSelectTriggerVariants(),
 						triggerClassName
 					)}
 				>
@@ -58,6 +62,7 @@ export function Combobox({
 				</button>
 			</PopoverTrigger>
 			<PopoverContent
+				variant={variant}
 				className={cn('w-[var(--radix-popover-trigger-width)] p-0', contentClassName)}
 				align="end"
 			>
@@ -80,7 +85,8 @@ export function Combobox({
 									setSearch('');
 								}}
 								className={cn(
-									'data-[selected=true]:bg-[color:var(--theme-soft-bg)] data-[selected=true]:text-[color:var(--theme-content-primary)]',
+									'data-[selected=true]:bg-[color:var(--theme-selected-bg)] data-[selected=true]:text-[color:var(--theme-content-primary)]',
+									variant === 'form' && formSelectItemClassName,
 									itemClassName
 								)}
 							>

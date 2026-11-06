@@ -35,7 +35,7 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 			className="gap-3"
 		>
 			<div className="flex flex-col gap-2">
-				<Label className={cn('mb-1.5 block', ft.label)}>{t('new_time_system')}</Label>
+				<Label className="mb-1.5 block">{t('new_time_system')}</Label>
 				<FormSelect
 					value={state.timeSystem}
 					onValueChange={form.setTimeSystem}
@@ -49,7 +49,12 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 						state.timeSystem === 'julian_day' && 'md:col-span-2'
 					)}
 				>
-					<Label htmlFor="new-chart-date" className={cn('mb-1.5 block', ft.label)}>
+					<Label
+						variant="default"
+						tone="secondary"
+						htmlFor="new-chart-date"
+						className="mb-1.5 block"
+					>
 						{state.timeSystem === 'julian_day'
 							? t('new_julian_day')
 							: state.timeSystem === 'julian_calendar'
@@ -58,23 +63,23 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 					</Label>
 					{state.timeSystem === 'julian_day' ? (
 						<Input
+							variant="form"
 							id="new-chart-date"
 							type="text"
 							inputMode="decimal"
 							value={state.julianDay}
 							onChange={(event) => form.update({ julianDay: event.target.value })}
 							placeholder="2451545.0"
-							className={cn(ft.input, 'shadow-inner')}
 						/>
 					) : state.timeSystem === 'julian_calendar' ? (
 						<Input
+							variant="form"
 							id="new-chart-date"
 							type="text"
 							inputMode="numeric"
 							value={state.julianCalendarDate}
 							onChange={(event) => form.update({ julianCalendarDate: event.target.value })}
 							placeholder="YYYY-MM-DD"
-							className={cn(ft.input, 'shadow-inner')}
 						/>
 					) : (
 						<DatePickerInput
@@ -85,7 +90,6 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 							locale={locale}
 							showLabel={false}
 							iconClassName={ft.iconColor}
-							panelClassName={ft.datePicker}
 						/>
 					)}
 				</div>
@@ -98,13 +102,14 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 						onValueChange={(dateTime) => form.update({ dateTime })}
 						labelClassName={ft.label}
 						iconClassName={ft.iconColor}
-						panelClassName={ft.selectContent}
 					/>
 				</div>
 			</div>
 
 			<div className="flex items-center justify-between gap-3">
-				<Label className={ft.label}>{t('new_time_regime')}</Label>
+				<Label variant="default" tone="secondary">
+					{t('new_time_regime')}
+				</Label>
 				<ModeSwitcher
 					value={state.timeRegime}
 					onValueChange={(timeRegime) => form.update({ timeRegime })}
@@ -114,8 +119,9 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 			</div>
 
 			<ModeSwitcherDetails
+				surface="soft"
 				open={state.timeRegime === 'manual'}
-				contentClassName={cn('space-y-3', ft.advancedPanel)}
+				contentClassName={'space-y-3'}
 			>
 				<FormField label={t('new_timezone_region')}>
 					<FormSelect
@@ -126,14 +132,13 @@ export function TimeSection({ form }: { form: NewHoroscopeForm }) {
 				</FormField>
 				<FormField label={t('new_timezone')}>
 					<Combobox
+						variant="form"
 						value={state.timezone}
 						onValueChange={(timezone) => form.update({ timezone })}
 						options={zones}
 						placeholder={t('new_timezone_placeholder')}
 						emptyLabel={t('new_timezone_no_results')}
-						triggerClassName={cn(ft.selectTrigger, 'shadow-inner px-4 py-2.5')}
-						contentClassName={ft.selectContent}
-						itemClassName={ft.selectItem}
+						triggerClassName="shadow-inner px-4 py-2.5"
 					/>
 				</FormField>
 				<FormField label={t('new_utc_offset')}>

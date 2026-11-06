@@ -33,7 +33,7 @@ export function useChartQuery(charts: AppChart[]) {
 
 /** Which filter groups are shown, persisted as the hidden set so new groups start visible. */
 export function useFilterGroupVisibility(allGroupIds: readonly string[]) {
-	const [hidden, setHidden] = useState<string[]>(readStoredHiddenFilterGroups);
+	const [hidden, setHidden] = useState<string[]>(() => readStoredHiddenFilterGroups(allGroupIds));
 	useEffect(() => persistHiddenFilterGroups(hidden), [hidden]);
 	const visible = useMemo(
 		() => allGroupIds.filter((id) => !hidden.includes(id)),

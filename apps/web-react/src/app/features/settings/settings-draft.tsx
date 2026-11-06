@@ -4,8 +4,8 @@ import type { ThemePalette } from '@/lib/themePalettes';
 
 /**
  * Settings state shared by the sections. Most settings apply immediately; element colors and the
- * theme palette are drafts applied by Confirm. `markChanged` enables Confirm; Cancel discards the
- * drafts and remounts the sections, dropping any half-typed input.
+ * theme palette are drafts applied by Confirm. `markChanged` enables Confirm; leaving Settings
+ * unmounts the view and discards unconfirmed drafts and local input.
  */
 export interface SettingsDraftValue {
 	markChanged: () => void;

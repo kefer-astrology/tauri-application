@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ChartFacts } from '@/lib/tauri/types';
-import { countMatches, emptyFactFilters, factFiltersMatch, type FactFilters } from './factFilters';
+import {
+	countMatches,
+	emptyFactFilters,
+	emptyAngularPlanetFilter,
+	factFiltersActive,
+	factFiltersMatch,
+	type FactFilters
+} from './factFilters';
 
 const facts = {
 	bodies: {
@@ -72,11 +79,57 @@ describe('factFiltersMatch', () => {
 	});
 
 	it('angular planets, chart ruler, dispositors', () => {
-		expect(matches({ angular: { planet: 'mars', axis: '', multiple: true } })).toBe(true);
-		expect(matches({ angular: { planet: '', axis: 'mc', multiple: false } })).toBe(false);
+		expect(matches({ angular: [{ id: 1, planet: 'mars', axis: '' }] })).toBe(true);
+		expect(matches({ angular: [{ id: 1, planet: '', axis: 'mc' }] })).toBe(false);
 		expect(matches({ ruler: { system: 'modern', planet: 'mars', sign: '4', house: '5' } })).toBe(
 			true
 		);
 		expect(matches({ dispositorTraditional: 'none', dispositorModern: 'sun' })).toBe(true);
+	});
+});
+
+describe('angular planet conditions', () => {
+	it('requires every selected planet and axis pair', () => {
+		const angular = [
+			{ id: 1, planet: 'mars', axis: 'asc' },
+			{ id: 2, planet: 'sun', axis: 'asc' }
+		];
+		expect(matches({ angular })).toBe(true);
+		expect(matches({ angular: [...angular, { id: 3, planet: 'moon', axis: 'asc' }] })).toBe(false);
+	});
+
+	it('allows separate axes while keeping each planet paired with its own axis', () => {
+		const source = {
+			...facts,
+			angular_planets: [
+				{ body: 'mars', axis: 'asc', orb: 2 },
+				{ body: 'sun', axis: 'mc', orb: 3 }
+			]
+		};
+		const angular = [
+			{ id: 1, planet: 'mars', axis: 'asc' },
+			{ id: 2, planet: 'sun', axis: 'mc' }
+		];
+		expect(factFiltersMatch(source, { ...emptyFactFilters(), angular })).toBe(true);
+		expect(
+			factFiltersMatch(source, {
+				...emptyFactFilters(),
+				angular: [{ id: 1, planet: 'mars', axis: 'mc' }]
+			})
+		).toBe(false);
+	});
+
+	it('treats empty rows as inactive and supports partial conditions', () => {
+		expect(
+			factFiltersActive({
+				...emptyFactFilters(),
+				angular: [emptyAngularPlanetFilter(1), emptyAngularPlanetFilter(2)]
+			})
+		).toBe(false);
+		expect(
+			matches({ angular: [{ id: 1, planet: 'sun', axis: '' }, emptyAngularPlanetFilter(2)] })
+		).toBe(true);
+		expect(matches({ angular: [{ id: 1, planet: '', axis: 'asc' }] })).toBe(true);
+		expect(emptyFactFilters().angular).toEqual([emptyAngularPlanetFilter(1)]);
 	});
 });

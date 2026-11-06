@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { Heading, Text } from '@/app/components/ui/typography';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { AstrologySidebar } from '@/app/shell/astrology-sidebar';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { NewHoroscope } from '@/app/features/horoscope/new-horoscope/new-horoscope';
 import {
 	SettingsSecondarySidebar,
@@ -16,9 +16,9 @@ import {
 	TransitsView,
 	type TransitSection
 } from '@/app/features/transits/transits-view';
-import { Aspectarium } from '@/app/components/aspectarium';
-import { HoroscopeDashboard } from '@/app/components/horoscope-dashboard';
-import { InformationView } from '@/app/components/information-view';
+import { AspectariumView } from '@/app/features/horoscope/aspectarium/aspectarium-view';
+import { HoroskopView } from '@/app/features/horoscope/horoskop/horoskop-view';
+import { SpektrumView } from '@/app/features/horoscope/spektrum/spektrum-view';
 import { RevolutionView } from '@/app/features/revolution/revolution-view';
 import { SynastryView } from '@/app/features/synastry/synastry-view';
 import { SettingsView } from '@/app/features/settings/settings-view';
@@ -51,15 +51,21 @@ const SECONDARY_SIDEBAR_VIEWS = new Set(['otevrit', 'tranzity', 'dynamika', 'nas
 
 function PlaceholderView() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	return (
 		<AppMainContentRoot>
 			<AppMainContentContainer width="standard">
-				<Card variant="ghost" className="gap-0 p-0">
+				<Card spacing="flush" variant="ghost" className="p-0">
 					<CardContent className="space-y-3 p-6 md:p-8">
-						<h1 className={cn('text-xl font-semibold', ft.title)}>{t('placeholder_view_title')}</h1>
-						<p className={cn('text-sm', ft.muted)}>{t('placeholder_view_subtitle')}</p>
-						<p className={cn('text-sm leading-relaxed', ft.muted)}>{t('placeholder_view_body')}</p>
+						<Heading variant="pageTitle" level={1}>
+							{t('placeholder_view_title')}
+						</Heading>
+						<Text variant="body" tone="muted">
+							{t('placeholder_view_subtitle')}
+						</Text>
+						<Text variant="body" tone="muted">
+							{t('placeholder_view_body')}
+						</Text>
 					</CardContent>
 				</Card>
 			</AppMainContentContainer>
@@ -81,10 +87,17 @@ export function AppShell() {
 		useState<SettingsSectionId>('jazyk_lokace');
 	const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 	const [editingChart, setEditingChart] = useState<AppChart | null>(null);
+	const [exportOpen, setExportOpen] = useState(false);
+	const exportTriggerRef = useRef<HTMLElement | null>(null);
 
 	const existingChartIds = new Set(charts.map((chart) => chart.id));
 
 	const handleMenuItemClick = (view: string) => {
+		if (view === 'export') {
+			exportTriggerRef.current = document.activeElement as HTMLElement | null;
+			setExportOpen(true);
+			return;
+		}
 		if (view === 'ulozit') {
 			void workspace.saveWorkspace();
 			return;
@@ -98,7 +111,7 @@ export function AppShell() {
 		switch (activeView) {
 			case 'horoskop':
 				return (
-					<HoroscopeDashboard
+					<HoroskopView
 						workspaceDefaults={workspace.workspaceDefaults}
 						wheelStyle={appearance.wheelStyle}
 						wheelOrientation={appearance.wheelOrientation}
@@ -121,11 +134,9 @@ export function AppShell() {
 						}}
 					/>
 				);
-			case 'export':
-				return <ExportView />;
 			case 'informace':
 				return (
-					<InformationView
+					<SpektrumView
 						wheelStyle={appearance.wheelStyle}
 						elementColors={appearance.elementColors}
 						lightPlanetFill={appearance.lightPlanetFill}
@@ -146,7 +157,7 @@ export function AppShell() {
 				);
 			case 'aspektarium':
 				return (
-					<Aspectarium
+					<AspectariumView
 						workspaceDefaults={workspace.workspaceDefaults}
 						enabledSymbolSetIds={appearance.enabledSymbolSetIds}
 					/>
@@ -189,32 +200,50 @@ export function AppShell() {
 						onExpandedChange={setIsSidebarExpanded}
 					/>
 
-					{(activeView === 'tranzity' || activeView === 'dynamika') && (
-						<TransitsSidebar
-							activeSection={activeTransitSection}
-							onSectionChange={setActiveTransitSection}
-							dynamic={activeView === 'dynamika'}
-						/>
-					)}
-					{activeView === 'nastaveni' && (
-						<SettingsSecondarySidebar
-							activeSection={activeSettingsSection}
-							onSectionChange={setActiveSettingsSection}
-						/>
-					)}
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col xl:flex-row">
+						{(activeView === 'tranzity' || activeView === 'dynamika') && (
+							<TransitsSidebar
+								activeSection={activeTransitSection}
+								onSectionChange={setActiveTransitSection}
+								dynamic={activeView === 'dynamika'}
+							/>
+						)}
+						{activeView === 'nastaveni' && (
+							<SettingsSecondarySidebar
+								activeSection={activeSettingsSection}
+								onSectionChange={setActiveSettingsSection}
+							/>
+						)}
 
-					<main className="flex min-h-0 flex-1 flex-col overflow-hidden text-[color:var(--theme-content-primary)] transition-colors duration-500">
-						<div
-							className={cn(
-								'min-h-0 flex-1',
-								activeView === 'horoskop' ? 'overflow-hidden' : 'overflow-auto'
-							)}
-						>
-							{renderView()}
-						</div>
-						{CHART_CONTEXT_VIEWS.has(activeView) && <HoroscopeContextTabs />}
-					</main>
+						<main className="flex min-h-0 flex-1 flex-col overflow-hidden text-[color:var(--theme-content-primary)] transition-colors duration-500">
+							<div
+								className={cn(
+									'min-h-0 flex-1',
+									activeView === 'horoskop' ? 'overflow-hidden' : 'overflow-auto'
+								)}
+							>
+								{renderView()}
+							</div>
+							{CHART_CONTEXT_VIEWS.has(activeView) && <HoroscopeContextTabs />}
+						</main>
+					</div>
 				</div>
+				<DetailSidePanel
+					open={exportOpen}
+					onOpenChange={setExportOpen}
+					onCloseAutoFocus={(event) => {
+						if (exportTriggerRef.current?.isConnected) {
+							event.preventDefault();
+							exportTriggerRef.current.focus();
+						}
+					}}
+					title={t('export')}
+					description={t('export_include')}
+					contentClassName="sm:max-w-md lg:w-full"
+					bodyClassName="overflow-y-auto"
+				>
+					<ExportView />
+				</DetailSidePanel>
 				<DetailSidePanel
 					open={editingChart !== null}
 					onOpenChange={(open) => {

@@ -18,9 +18,19 @@ import {
 
 export type PlanetFilter = { sign: string; degree: string; house: string; motion: string };
 export type HouseFilter = { sign: string; degree: string };
-export type AspectFilter = { id: number; left: string; aspect: string; right: string };
+export type AspectFilter = {
+	id: number;
+	left: string;
+	aspect: string;
+	right: string;
+	dynamics: '' | 'applying' | 'exact' | 'separating';
+	phase: '' | 'waxing' | 'waning';
+};
 export const DATE_PART_IDS = ['day', 'month', 'year', 'hour', 'minute', 'second'] as const;
 export type DatePartId = (typeof DATE_PART_IDS)[number];
+export type DateParts = Record<DatePartId, string>;
+const emptyDateParts = (): DateParts =>
+	Object.fromEntries(DATE_PART_IDS.map((id) => [id, ''])) as DateParts;
 
 export interface ChartQuery {
 	/** Chart type ids (see `CHART_TYPE_OPTIONS`); base and derived ids may be mixed. */
@@ -28,7 +38,9 @@ export interface ChartQuery {
 	text: string;
 	tag: string;
 	location: string;
-	date: Record<DatePartId, string>;
+	date: DateParts;
+	dateMode: 'fixed' | 'range';
+	dateEnd: DateParts;
 	planets: Record<FactPlanetId, PlanetFilter>;
 	aspects: AspectFilter[];
 	houses: Record<number, HouseFilter>;
@@ -48,7 +60,9 @@ export const emptyAspectFilter = (id: number): AspectFilter => ({
 	id,
 	left: '',
 	aspect: '',
-	right: ''
+	right: '',
+	dynamics: '',
+	phase: ''
 });
 
 export function emptyChartQuery(): ChartQuery {
@@ -57,7 +71,9 @@ export function emptyChartQuery(): ChartQuery {
 		text: '',
 		tag: '',
 		location: '',
-		date: Object.fromEntries(DATE_PART_IDS.map((id) => [id, ''])) as Record<DatePartId, string>,
+		date: emptyDateParts(),
+		dateMode: 'fixed',
+		dateEnd: emptyDateParts(),
 		planets: Object.fromEntries(FACT_PLANET_IDS.map((id) => [id, emptyPlanetFilter()])) as Record<
 			FactPlanetId,
 			PlanetFilter
@@ -76,14 +92,19 @@ const isAnyRecord = (record: Record<string, string>) => Object.values(record).ev
 
 export function metadataQueryActive(query: ChartQuery): boolean {
 	return Boolean(
-		query.text.trim() || query.tag.trim() || query.location.trim() || !isAnyRecord(query.date)
+		query.text.trim() ||
+		splitListQuery(query.tag).length ||
+		splitListQuery(query.location).length ||
+		dateQueryActive(query)
 	);
 }
 
 export function astrologyQueryActive(query: ChartQuery): boolean {
 	return (
 		Object.values(query.planets).some((filter) => !isAnyRecord(filter)) ||
-		query.aspects.some((filter) => filter.left || filter.aspect || filter.right) ||
+		query.aspects.some(
+			(filter) => filter.left || filter.aspect || filter.right || filter.dynamics || filter.phase
+		) ||
 		Object.values(query.houses).some((filter) => !isAnyRecord(filter)) ||
 		query.shapes.length > 0 ||
 		query.configurations.length > 0 ||
@@ -91,8 +112,51 @@ export function astrologyQueryActive(query: ChartQuery): boolean {
 	);
 }
 
-const includesFolded = (value: string | undefined, query: string) =>
-	(value ?? '').toLocaleLowerCase().includes(query);
+/** Nonempty comma-separated terms, preserving the user's spelling. */
+export function splitListQuery(query: string): string[] {
+	return query
+		.split(',')
+		.map((term) => term.trim())
+		.filter(Boolean);
+}
+
+export function toggleTagInQuery(query: string, tag: string): string {
+	const terms = splitListQuery(query);
+	const same = (term: string) => term.toLocaleLowerCase() === tag.toLocaleLowerCase();
+	return (terms.some(same) ? terms.filter((term) => !same(term)) : [...terms, tag]).join(', ');
+}
+
+function dateQueryActive(query: ChartQuery): boolean {
+	return query.dateMode === 'range'
+		? Boolean(query.date.year || query.dateEnd.year)
+		: !isAnyRecord(query.date);
+}
+
+// Compare wall-clock fields in UTC so the device's zone and DST never affect the range.
+function wallTimestamp(parts: Record<DatePartId, number>): number {
+	const date = new Date(0);
+	date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+	date.setUTCHours(parts.hour, parts.minute, parts.second, 0);
+	return date.getTime();
+}
+
+function dateBound(parts: DateParts, edge: 'start' | 'end'): number | null {
+	if (!parts.year) return null;
+	const end = edge === 'end';
+	const year = Number(parts.year);
+	const month = parts.month ? Number(parts.month) : end ? 12 : 1;
+	const last = new Date(0);
+	last.setUTCFullYear(year, month, 0);
+	const lastDay = last.getUTCDate();
+	return wallTimestamp({
+		year,
+		month,
+		day: parts.day ? Math.min(Number(parts.day), lastDay) : end ? lastDay : 1,
+		hour: parts.hour ? Number(parts.hour) : end ? 23 : 0,
+		minute: parts.minute ? Number(parts.minute) : end ? 59 : 0,
+		second: parts.second ? Number(parts.second) : end ? 59 : 0
+	});
+}
 
 /** Archive metadata (full text, tags, location, date): applies to every chart. */
 export function chartMetadataMatches(
@@ -100,11 +164,20 @@ export function chartMetadataMatches(
 	query: ChartQuery,
 	typeLabel: (chart: AppChart) => string
 ): boolean {
-	const tag = query.tag.trim().toLocaleLowerCase();
-	if (tag && !(chart.tags ?? []).some((value) => value.toLocaleLowerCase().includes(tag)))
+	const tags = splitListQuery(query.tag).map((term) => term.toLocaleLowerCase());
+	if (
+		tags.length &&
+		!(chart.tags ?? []).some((value) =>
+			tags.some((term) => value.toLocaleLowerCase().includes(term))
+		)
+	)
 		return false;
-	const location = query.location.trim().toLocaleLowerCase();
-	if (location && !includesFolded(chart.location, location)) return false;
+	const locations = splitListQuery(query.location).map((term) => term.toLocaleLowerCase());
+	if (
+		locations.length &&
+		!locations.some((term) => (chart.location ?? '').toLocaleLowerCase().includes(term))
+	)
+		return false;
 	const text = query.text.trim().toLocaleLowerCase();
 	if (text) {
 		const searchable = [
@@ -118,7 +191,7 @@ export function chartMetadataMatches(
 			.toLocaleLowerCase();
 		if (!searchable.includes(text)) return false;
 	}
-	if (!isAnyRecord(query.date)) {
+	if (dateQueryActive(query)) {
 		// Compared as local time at the event's place.
 		const local = chartLocalParts(chart.dateTime, chartTimeZone(chart));
 		if (!local) return false;
@@ -130,16 +203,24 @@ export function chartMetadataMatches(
 			minute: local.minute,
 			second: local.second
 		};
-		if (DATE_PART_IDS.some((id) => query.date[id] && actual[id] !== Number(query.date[id])))
+		if (query.dateMode === 'range') {
+			const timestamp = wallTimestamp(actual);
+			const from = dateBound(query.date, 'start');
+			const to = dateBound(query.dateEnd, 'end');
+			if ((from !== null && timestamp < from) || (to !== null && timestamp > to)) return false;
+		} else if (DATE_PART_IDS.some((id) => query.date[id] && actual[id] !== Number(query.date[id])))
 			return false;
 	}
 	return true;
 }
 
 function aspectFilterMatches(metadata: ChartSearchMetadata, filter: AspectFilter): boolean {
-	if (!filter.left && !filter.aspect && !filter.right) return true;
+	if (!filter.left && !filter.aspect && !filter.right && !filter.dynamics && !filter.phase)
+		return true;
 	return metadata.aspects.some((aspect) => {
 		if (filter.aspect && aspect.type !== filter.aspect) return false;
+		if (filter.dynamics && aspect[filter.dynamics] !== true) return false;
+		if (filter.phase && aspect.phase !== filter.phase) return false;
 		const direct =
 			(!filter.left || aspect.from === filter.left) &&
 			(!filter.right || aspect.to === filter.right);
@@ -199,7 +280,7 @@ export interface ChartTreeFilterResult {
 
 /**
  * Filter a chart forest:
- * - astrological filters and base types select parent (base) charts;
+ * - astrological filters select parent (base) charts; base and derived types form a union;
  * - derived types and metadata filters select children — only matching children are shown and
  *   their parents are opened; a parent whose own metadata matches keeps all children, closed;
  * - derived charts whose parents are missing are listed at the top level, metadata only.
@@ -227,14 +308,19 @@ export function filterChartTree(
 	const autoExpanded: Record<string, boolean> = {};
 	for (const root of forest.roots) {
 		if (!isBaseChart(root)) {
-			if (!astrologyActive && baseTypes.length === 0 && childMatches(root))
+			if (
+				!astrologyActive &&
+				(baseTypes.length === 0 || derivedTypes.length > 0) &&
+				childMatches(root)
+			)
 				rows.push({ key: root.id, chart: root });
 			continue;
 		}
-		if (baseTypes.length > 0 && !baseTypes.includes(chartTypeId(root) ?? '')) continue;
+		const baseTypeMatches = baseTypes.includes(chartTypeId(root) ?? '');
+		if (baseTypes.length > 0 && derivedTypes.length === 0 && !baseTypeMatches) continue;
 		if (astrologyActive && !chartAstrologyMatches(root, options.metadataFor(root), query)) continue;
 		const children = forest.childrenByParent.get(root.id) ?? [];
-		if (derivedTypes.length === 0 && !metadataActive) {
+		if ((derivedTypes.length === 0 || baseTypeMatches) && !metadataActive) {
 			rows.push({ key: root.id, chart: root, children: childRows(root, children) });
 			continue;
 		}
@@ -242,7 +328,7 @@ export function filterChartTree(
 		if (matching.length > 0) {
 			rows.push({ key: root.id, chart: root, children: childRows(root, matching) });
 			autoExpanded[root.id] = true;
-		} else if (derivedTypes.length === 0 && metadataOk(root)) {
+		} else if ((derivedTypes.length === 0 || baseTypeMatches) && metadataOk(root)) {
 			rows.push({ key: root.id, chart: root, children: childRows(root, children) });
 		}
 	}

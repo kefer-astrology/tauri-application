@@ -1,6 +1,8 @@
+import { typographyVariants } from '@/app/components/ui/typography';
+import { Surface } from '@/app/components/ui/container';
+import { Text, Heading } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 import { objectIcon, objectLabel } from '@/lib/astrology/objectLabels';
 import type { ConfigurationMatch } from '@/lib/tauri/types';
 import { formatDateTime } from '@/lib/time/format';
@@ -29,7 +31,6 @@ export function ConfigurationMatchesPanel({
 	onOpenInstant: (datetime: string) => void;
 }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
 
 	if (matches.length === 0) return null;
 
@@ -43,22 +44,29 @@ export function ConfigurationMatchesPanel({
 		<div className="flex flex-wrap items-center gap-2">
 			<span className="whitespace-nowrap tabular-nums">
 				{label}: {iso ? formatDateTime(iso) : '—'}
-				{clipped && <span className={cn('ml-1 text-[10px]', ft.muted)}>({clipped})</span>}
+				{clipped && (
+					<Text variant="caption" as="span" tone="muted" className="ml-1">
+						({clipped})
+					</Text>
+				)}
 			</span>
 			{iso && <OpenChartButton onClick={() => onOpenInstant(iso)} />}
 		</div>
 	);
 
 	return (
-		<div className="shrink-0 border-t border-[color:var(--theme-panel-border)] p-4">
-			<h3 className={cn('mb-2 text-xs font-semibold tracking-wide uppercase', ft.bodyText)}>
+		<Surface variant="plain" divider="top" padding="default" className="shrink-0">
+			<Heading variant="eyebrow" level={3} tone="secondary" className="mb-2">
 				{t('transits_configuration_matches_title', { defaultValue: 'Multi-body configurations' })}
-			</h3>
+			</Heading>
 			<ul className="max-h-64 space-y-2 overflow-auto">
 				{matches.map((match, index) => (
-					<li
+					<Surface
+						padding="compact"
+						variant="inset"
+						as="li"
 						key={index}
-						className={cn('rounded border p-2 text-xs', ft.bodyText, ft.footerBorder)}
+						className={cn(typographyVariants({ variant: 'caption', tone: 'secondary' }), '')}
 					>
 						<div className="mb-1 flex flex-wrap items-center gap-2">
 							<span className="font-medium">
@@ -76,13 +84,13 @@ export function ConfigurationMatchesPanel({
 									/>
 								))}
 							</span>
-							<span className={cn('text-[10px]', ft.muted)}>
+							<Text variant="caption" as="span" tone="muted">
 								{match.participants
 									.map(
 										(p) => `${p.role}=${objectLabel(p.body_id, t)}${p.is_fixed ? ' (fixed)' : ''}`
 									)
 									.join(', ')}
-							</span>
+							</Text>
 						</div>
 						{instantRow(
 							t('transits_configuration_entry', { defaultValue: 'Entry' }),
@@ -99,9 +107,9 @@ export function ConfigurationMatchesPanel({
 							match.exit,
 							clippedLabel(match.exit_clipped)
 						)}
-					</li>
+					</Surface>
 				))}
 			</ul>
-		</div>
+		</Surface>
 	);
 }

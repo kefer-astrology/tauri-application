@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import type { ReactNode } from 'react';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/app/components/ui/accordion';
 import { Label } from '@/app/components/ui/label';
@@ -27,7 +28,7 @@ export function SettingSelect<T extends string>({
 	label?: ReactNode;
 	hint?: ReactNode;
 	value: T | '';
-	options: readonly { value: T; label: string }[];
+	options: readonly { value: T; label: string; disabled?: boolean }[];
 	onValueChange: (value: T) => void;
 	placeholder?: string;
 	ariaLabel?: string;
@@ -35,33 +36,41 @@ export function SettingSelect<T extends string>({
 	narrow?: boolean;
 	triggerClassName?: string;
 }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<div className="space-y-2">
-			{label && <Label className={ft.label}>{label}</Label>}
+			{label && (
+				<Label variant="default" tone="secondary">
+					{label}
+				</Label>
+			)}
 			<Select value={value} onValueChange={(next) => onValueChange(next as T)}>
 				<SelectTrigger
+					variant="form"
 					aria-label={ariaLabel}
-					className={cn(
-						ft.selectTrigger,
-						'shadow-inner',
-						narrow && 'max-w-[280px]',
-						triggerClassName
-					)}
+					className={cn(narrow && 'max-w-[280px]', triggerClassName)}
 				>
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
-				<SelectContent className={ft.selectContent}>
+				<SelectContent variant="form">
 					<SelectGroup>
 						{options.map((option) => (
-							<SelectItem key={option.value} value={option.value} className={ft.selectItem}>
+							<SelectItem
+								variant="form"
+								key={option.value}
+								value={option.value}
+								disabled={option.disabled}
+							>
 								{option.label}
 							</SelectItem>
 						))}
 					</SelectGroup>
 				</SelectContent>
 			</Select>
-			{hint && <p className={cn('text-xs', ft.muted)}>{hint}</p>}
+			{hint && (
+				<Text variant="caption" tone="muted">
+					{hint}
+				</Text>
+			)}
 		</div>
 	);
 }

@@ -1,7 +1,7 @@
+import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { AspectList } from '@/app/views/domain/aspect-list';
 import { ObservableObjectList } from '@/app/views/domain/observable-object-list';
 import { useTransits } from '../transits-provider';
@@ -12,7 +12,7 @@ import type { TransitSection } from './transits-setup-sidebar';
  *  transited bodies are held at the chart's moment. */
 export function TransitsSetupView({ section }: { section: TransitSection }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { setup, updateSetup } = useTransits();
 
 	return (
@@ -35,7 +35,9 @@ export function TransitsSetupView({ section }: { section: TransitSection }) {
 				)}
 				{section === 'aspects' && (
 					<div className="space-y-6">
-						<p className={cn('text-sm', ft.muted)}>{t('transits_aspects_subtitle')}</p>
+						<Text variant="body" tone="muted">
+							{t('transits_aspects_subtitle')}
+						</Text>
 						<AspectList
 							selectedIds={setup.selectedAspects}
 							onSelectedIdsChange={(selectedAspects) => updateSetup({ selectedAspects })}

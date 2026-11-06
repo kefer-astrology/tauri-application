@@ -2,7 +2,6 @@ import {
 	createContext,
 	useCallback,
 	useContext,
-	useEffect,
 	useLayoutEffect,
 	useMemo,
 	useState,
@@ -39,6 +38,7 @@ import {
 } from '@/lib/astrology/wheelStyle';
 import { persistMonochrome, readStoredMonochrome } from '@/lib/appLayoutPreferences';
 import {
+	isLightPalette,
 	persistThemePalettes,
 	readStoredThemePalettes,
 	themePaletteVars,
@@ -68,7 +68,7 @@ export interface AppearanceValue {
 	commitElementColors: (value: ElementColors) => void;
 	monochrome: boolean;
 	setMonochrome: (value: boolean) => void;
-	/** Dark shadcn variant for the twilight / midnight themes. */
+	/** Dark component variant, determined by the active canvas color. */
 	dark: boolean;
 	/** Fill for planet glyphs drawn on light surfaces (the palette's primary content color). */
 	lightPlanetFill: string;
@@ -97,7 +97,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 	const [monochrome, setMonochromeState] = useState<boolean>(readStoredMonochrome);
 
 	const themePalette = themePalettes[theme];
-	const dark = theme === 'twilight' || theme === 'midnight';
+	const dark = !isLightPalette(themePalette);
 
 	const commitThemePalette = useCallback(
 		(palette: ThemePalette) =>
@@ -143,10 +143,10 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 	}, [dark]);
 
 	const themeVars = useMemo(() => themePaletteVars(themePalette), [themePalette]);
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const root = document.documentElement;
 		for (const [key, value] of Object.entries(themeVars)) {
-			root.style.setProperty(key, value as string);
+			root.style.setProperty(key === 'colorScheme' ? 'color-scheme' : key, value as string);
 		}
 	}, [themeVars]);
 
@@ -208,7 +208,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 
 	return (
 		<AppearanceContext.Provider value={value}>
-			<AppThemeProvider theme={theme} glyphSet={glyphSet}>
+			<AppThemeProvider theme={theme} glyphSet={glyphSet} dark={dark}>
 				{children}
 			</AppThemeProvider>
 		</AppearanceContext.Provider>

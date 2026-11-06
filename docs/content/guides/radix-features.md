@@ -13,4 +13,4 @@ weight: 20
 
 {{< appframe app="web-react" tour="radix" title="Kefer Astrology radix features tour" >}}
 
-The browser build demonstrates the full radix workspace structure. Calculated values depend on the available browser-safe demonstration data.
+The browser build demonstrates the radix workspace layout. Backend calculations and native file actions require the desktop application; the browser view does not fabricate calculated chart results.

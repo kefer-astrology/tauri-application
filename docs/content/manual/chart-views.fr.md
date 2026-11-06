@@ -24,11 +24,21 @@ Les cellules vides signifient qu’aucun aspect n’a été calculé avec les r�
 et orbes du thème. L’Aspectarium peut afficher une superposition temporaire de
 transit, mais ne calcule pas lui-même la géométrie dans le navigateur.
 
-## Informations
+## Spectre
 
-Informations est actuellement un prototype visuel d’un futur résumé calculé.
-Ses étiquettes, diagrammes et configurations d’exemple ne sont pas encore liés
-au résultat du thème sélectionné. Utilisez Thème et Aspectarium pour les données calculées.
+Spectre présente le thème sélectionné en cartes : équilibre des éléments, des
+modes, des groupes de maisons, des quadrants et des hémisphères, extraversion
+et introversion, équilibre des aspects, configurations, stelliums, planètes
+isolées, rétrogrades et focales (maître du thème, dispositeur final, planètes
+angulaires et sans aspect). La carte de la roue ajoute la phase lunaire, les
+luminaires au-dessus ou au-dessous de l’horizon et les phases de Mercure et
+Vénus ; la carte des points forts retient les faits les plus marquants.
+
+Survolez un élément, une ligne ou un point fort pour montrer ses planètes sur
+la roue (et la moitié du thème concernée) ; cliquez pour les garder affichées,
+cliquez à nouveau pour les libérer. Tant que le thème n’est pas calculé, une
+carte affiche une courte note au lieu de valeurs. Comme ailleurs, le menu `⋯`
+retire une carte et **+ Ajouter** la remet.
 
 ## Révolution et synastrie
 

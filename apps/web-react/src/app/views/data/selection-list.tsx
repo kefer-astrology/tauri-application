@@ -1,3 +1,5 @@
+import { ChoiceLabel, ChoiceButton } from '@/app/components/ui/choice';
+import { Text } from '@/app/components/ui/typography';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import {
@@ -10,7 +12,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { HighlightText } from '@/app/components/ui/highlight-text';
-import { Label } from '@/app/components/ui/label';
+
 import { SearchField } from '@/app/components/ui/search-field';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
@@ -160,14 +162,13 @@ export function SelectionList<T extends SelectionListItem>({
 				}}
 				className="flex items-center gap-2"
 			>
-				<Label
+				<ChoiceLabel
+					highlighted={highlighted === item.id}
+					disabled={item.disabled}
+					selected={isChecked}
+					variant="row"
 					htmlFor={`selection-${item.id}`}
-					className={cn(
-						'flex flex-1 items-center gap-2.5 rounded-md px-1 py-1 transition-colors',
-						item.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-						highlighted === item.id && 'ring-2 ring-[color:var(--theme-accent)]',
-						isChecked && !item.disabled && 'bg-[color:var(--theme-soft-bg)]'
-					)}
+					className="flex-1 px-1 py-1"
 				>
 					<Checkbox
 						id={`selection-${item.id}`}
@@ -179,9 +180,11 @@ export function SelectionList<T extends SelectionListItem>({
 					{renderItem ? (
 						renderItem(item, context)
 					) : (
-						<span className={cn('text-sm', ft.bodyText)}>{context.highlight(item.label)}</span>
+						<Text variant="body" as="span" tone="secondary">
+							{context.highlight(item.label)}
+						</Text>
 					)}
-				</Label>
+				</ChoiceLabel>
 				{!item.disabled && renderTrailing?.(item)}
 			</div>
 		);
@@ -208,16 +211,17 @@ export function SelectionList<T extends SelectionListItem>({
 				<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 					<div className="min-w-0">{headerStart}</div>
 					<div className="flex items-center gap-3">
-						<Button
+						<ChoiceButton
+							aria-haspopup="dialog"
+							aria-expanded={panelOpen}
 							type="button"
-							variant="outline"
+							variant="chip"
 							size="sm"
 							onClick={() => setPanelOpen(true)}
-							className="h-auto gap-2 rounded-full border-[color:var(--theme-panel-border)] bg-[color:var(--theme-soft-bg)] px-3 py-1.5 text-sm text-[color:var(--theme-content-primary)]"
 						>
 							<Sparkles className="size-3.5 shrink-0" />
 							{labels.selectedCount(selectedIds.length)}
-						</Button>
+						</ChoiceButton>
 						{selectedIds.length > 0 && (
 							<Button
 								type="button"
@@ -244,7 +248,9 @@ export function SelectionList<T extends SelectionListItem>({
 				/>
 
 				{visibleGroups.length === 0 ? (
-					<p className={cn('py-8 text-center text-sm', ft.muted)}>{labels.noResults}</p>
+					<Text variant="body" tone="muted" className="py-8 text-center">
+						{labels.noResults}
+					</Text>
 				) : layout === 'accordion' ? (
 					<Accordion
 						type="multiple"
@@ -273,10 +279,17 @@ export function SelectionList<T extends SelectionListItem>({
 											className={cn('h-4 w-4 shrink-0 rounded', ft.checkboxAccent)}
 										/>
 										<AccordionTrigger className="flex-1 py-3 hover:no-underline">
-											<span className={cn('text-sm font-semibold', ft.title)}>{group.label}</span>
-											<span className={cn('ml-auto text-xs tabular-nums', ft.muted)}>
+											<Text variant="body" as="span" tone="primary" className="font-semibold">
+												{group.label}
+											</Text>
+											<Text
+												variant="caption"
+												as="span"
+												tone="muted"
+												className="ml-auto tabular-nums"
+											>
 												{selectedCount}/{group.items.length}
-											</span>
+											</Text>
 										</AccordionTrigger>
 									</div>
 									<AccordionContent className="pl-6">{groupBody(group, visible)}</AccordionContent>
@@ -289,10 +302,7 @@ export function SelectionList<T extends SelectionListItem>({
 						{visibleGroups.map(({ group, visible }) => (
 							<div key={group.id}>
 								<div
-									className={cn(
-										'mb-2 text-[11px] font-semibold tracking-widest uppercase',
-										ft.muted
-									)}
+									className={cn('mb-2 text-xs font-semibold tracking-widest uppercase', ft.muted)}
 								>
 									{group.label}
 								</div>
@@ -324,9 +334,13 @@ export function SelectionList<T extends SelectionListItem>({
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						{panelGroups.length === 0 ? (
 							<div className="flex flex-col items-center justify-center gap-1.5 py-12 text-center">
-								<p className={cn('text-sm font-medium', ft.title)}>{labels.panelEmpty}</p>
+								<Text variant="label" tone="primary">
+									{labels.panelEmpty}
+								</Text>
 								{labels.panelEmptyHint && (
-									<p className={cn('max-w-[220px] text-xs', ft.muted)}>{labels.panelEmptyHint}</p>
+									<Text variant="caption" tone="muted" className="max-w-[220px]">
+										{labels.panelEmptyHint}
+									</Text>
 								)}
 							</div>
 						) : (
@@ -334,7 +348,7 @@ export function SelectionList<T extends SelectionListItem>({
 								<div key={group.id} className="mb-4">
 									<div
 										className={cn(
-											'mb-1.5 text-[10px] font-semibold tracking-widest uppercase',
+											'mb-1.5 text-xs font-semibold tracking-widest uppercase',
 											ft.muted
 										)}
 									>
@@ -355,9 +369,14 @@ export function SelectionList<T extends SelectionListItem>({
 												{item.label}
 											</Button>
 											{renderPanelMeta && (
-												<span className={cn('shrink-0 text-xs tabular-nums', ft.muted)}>
+												<Text
+													variant="caption"
+													as="span"
+													tone="muted"
+													className="shrink-0 tabular-nums"
+												>
 													{renderPanelMeta(item)}
-												</span>
+												</Text>
 											)}
 											<Button
 												type="button"

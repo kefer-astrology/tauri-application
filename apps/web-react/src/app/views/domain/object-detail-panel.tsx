@@ -1,3 +1,5 @@
+import { Surface } from '@/app/components/ui/container';
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { AstrologyGlyph } from '@/ui/astrology-glyph';
 import { ASPECT_GLYPHS } from '@/lib/astrology/aspects';
@@ -42,7 +44,9 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 		<Accordion type="multiple" defaultValue={['details']}>
 			<AccordionItem value="details" className="border-0">
 				<AccordionTrigger className="py-2 hover:no-underline">
-					<h4 className={cn('text-sm font-semibold', textColor)}>{t('details')}</h4>
+					<Heading variant="panelTitle" level={4} className={textColor}>
+						{t('details')}
+					</Heading>
 				</AccordionTrigger>
 				<AccordionContent className="pt-1">
 					<div className="space-y-2 text-sm">
@@ -138,15 +142,19 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 			{data.symbols.length > 0 && (
 				<AccordionItem value="symbols" className="border-0">
 					<AccordionTrigger className="py-2 hover:no-underline">
-						<h4 className={cn('text-sm font-semibold', textColor)}>{t('detail_symbols')}</h4>
+						<Heading variant="panelTitle" level={4} className={textColor}>
+							{t('detail_symbols')}
+						</Heading>
 					</AccordionTrigger>
 					<AccordionContent className="space-y-3 pt-1">
 						{data.symbols.map((symbol) => (
 							<div key={symbol.systemId} className="space-y-1">
-								<p className={cn('text-xs font-semibold tracking-wide uppercase', mutedColor)}>
+								<Text variant="eyebrow" className={cn('font-semibold', mutedColor)}>
 									{symbol.label}
-								</p>
-								<p className={cn('text-sm italic', textColor)}>{symbol.text}</p>
+								</Text>
+								<Text variant="body" className={cn('italic', textColor)}>
+									{symbol.text}
+								</Text>
 							</div>
 						))}
 					</AccordionContent>
@@ -156,14 +164,16 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 			{hasShapesOrConfigurations && (
 				<AccordionItem value="shapes" className="border-0">
 					<AccordionTrigger className="py-2 hover:no-underline">
-						<h4 className={cn('text-sm font-semibold', textColor)}>{t('detail_shapes')}</h4>
+						<Heading variant="panelTitle" level={4} className={textColor}>
+							{t('detail_shapes')}
+						</Heading>
 					</AccordionTrigger>
 					<AccordionContent className="space-y-3 pt-1">
 						{data.chartShapeIds.length > 0 && (
 							<div className="space-y-1.5">
-								<p className={cn('text-xs font-semibold tracking-wide uppercase', mutedColor)}>
+								<Text variant="eyebrow" className={cn('font-semibold', mutedColor)}>
 									{t('open_filter_chart_shape')}
-								</p>
+								</Text>
 								<div className="flex flex-wrap gap-1.5">
 									{data.chartShapeIds.map((id) => (
 										<Badge key={id} variant="outline" className="px-2 py-1 text-xs">
@@ -175,9 +185,9 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 						)}
 						{data.chartConfigurationIds.length > 0 && (
 							<div className="space-y-1.5">
-								<p className={cn('text-xs font-semibold tracking-wide uppercase', mutedColor)}>
+								<Text variant="eyebrow" className={cn('font-semibold', mutedColor)}>
 									{t('info_planetary_configuration')}
-								</p>
+								</Text>
 								<div className="flex flex-wrap gap-1.5">
 									{data.chartConfigurationIds.map((id) => (
 										<Badge key={id} variant="outline" className="px-2 py-1 text-xs">
@@ -193,9 +203,9 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 
 			<AccordionItem value="aspects" className="border-0">
 				<AccordionTrigger className="py-2 hover:no-underline">
-					<h4 className={cn('text-sm font-semibold', textColor)}>
+					<Heading variant="panelTitle" level={4} className={textColor}>
 						{t('aspects')} ({data.aspects.length})
-					</h4>
+					</Heading>
 				</AccordionTrigger>
 				<AccordionContent className="pt-1">
 					{data.aspects.length > 0 ? (
@@ -203,9 +213,11 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 							{data.aspects.map((aspect, index) => {
 								const otherId = aspect.from === data.bodyId ? aspect.to : aspect.from;
 								return (
-									<div
+									<Surface
+										variant="soft"
+										padding="none"
 										key={`${aspect.from}-${aspect.to}-${aspect.type}-${index}`}
-										className="rounded-lg bg-[color:var(--theme-soft-bg)] px-3 py-2"
+										className="px-3 py-2"
 									>
 										<div className="flex items-center justify-between gap-3 text-sm">
 											<span className={cn('flex items-center gap-1.5', textColor)}>
@@ -231,12 +243,14 @@ export function ObjectDetailSections({ data }: ObjectDetailSectionsProps) {
 										>
 											{t('label_orb')}: {aspect.orb.toFixed(2)}°
 										</div>
-									</div>
+									</Surface>
 								);
 							})}
 						</div>
 					) : (
-						<p className={cn('text-sm', mutedColor)}>{t('aspectarium_no_aspects')}</p>
+						<Text variant="body" className={mutedColor}>
+							{t('aspectarium_no_aspects')}
+						</Text>
 					)}
 				</AccordionContent>
 			</AccordionItem>

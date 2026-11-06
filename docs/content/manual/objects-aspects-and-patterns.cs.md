@@ -104,8 +104,7 @@ Není omezen na těchto sedm tradic a automaticky neslučuje nastavení z `exten
 
 ## Tvary a konfigurace horoskopu
 
-Vypočtené obrazce může uvádět Aspektárium. Informace, včetně prototypu Spektrum,
-zatím nepoužívají vypočtený výsledek vybraného horoskopu. Obrazce popisují
+Vypočtené obrazce uvádějí Aspektárium a Spektrum. Obrazce popisují
 horoskop ve vypočteném okamžiku, nejde o další objekty ani volby výpočtu.
 
 **Distribuční tvary:** Svazek, Mísa, Lokomotiva, Vědro, Houpačka, Rozstřik,

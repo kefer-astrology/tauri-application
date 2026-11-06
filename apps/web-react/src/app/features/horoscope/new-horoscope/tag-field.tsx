@@ -1,3 +1,5 @@
+import { Chip } from '@/app/components/ui/choice';
+import { InputGroup, InputGroupButton } from '@/app/components/ui/input-group';
 import { useState } from 'react';
 import { Pencil, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -38,22 +40,10 @@ export function TagField({
 	};
 
 	return (
-		<div
-			className={cn(
-				'relative flex min-h-10 w-full items-stretch rounded-xl border text-base shadow-inner transition-all md:text-sm',
-				'focus-within:border-ring focus-within:ring-ring/50 focus-within:z-[80] focus-within:ring-[3px]',
-				'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] backdrop-blur-sm'
-			)}
-		>
+		<InputGroup className="relative overflow-visible focus-within:z-[80]">
 			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 px-3 py-2">
 				{tags.map((tag, index) => (
-					<span
-						key={tag}
-						className={cn(
-							'flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium',
-							'bg-[color:var(--theme-selected-bg)] text-[color:var(--theme-content-primary)]'
-						)}
-					>
+					<Chip selected key={tag} className="border-0 py-0.5 text-sm">
 						<span
 							className="h-2.5 w-2.5 rounded-full"
 							style={{ backgroundColor: tagColor(tagColors, tag, index) }}
@@ -72,9 +62,10 @@ export function TagField({
 						>
 							<X className="size-3" />
 						</Button>
-					</span>
+					</Chip>
 				))}
 				<TagSuggestionInput
+					embedded
 					value={input}
 					onValueChange={setInput}
 					onCommit={commit}
@@ -85,22 +76,17 @@ export function TagField({
 					}}
 					placeholder={tags.length === 0 ? placeholder : undefined}
 					className="min-w-[8rem] flex-1"
-					inputClassName={cn(
-						'h-auto rounded-none border-0 bg-transparent px-0 py-0 text-base shadow-none md:text-sm',
-						'focus:ring-0 dark:bg-transparent',
-						'text-[color:var(--theme-content-primary)] placeholder:text-[color:var(--theme-content-muted)]'
-					)}
+					inputClassName="h-auto px-0 py-0 text-base md:text-sm"
 				/>
 			</div>
-			<Button
+			<InputGroupButton
 				type="button"
-				variant="ghost"
 				onClick={onOpenEditor}
-				className="h-auto min-h-10 self-stretch rounded-l-none rounded-r-xl border-l border-[color:var(--theme-panel-border)] px-3 shadow-none hover:bg-[color:var(--theme-soft-bg)]"
+				className="h-auto min-h-10 self-stretch rounded-r-xl"
 				aria-label={editorLabel}
 			>
 				<Pencil className={cn('h-4 w-4 shrink-0', iconClassName)} />
-			</Button>
-		</div>
+			</InputGroupButton>
+		</InputGroup>
 	);
 }

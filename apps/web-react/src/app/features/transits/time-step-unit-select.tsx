@@ -6,8 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '@/app/components/ui/select';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { TIME_STEP_UNITS, type TimeStepUnit } from '@/lib/astrology/transitSetup';
 
 const UNIT_LABELS: Record<TimeStepUnit, { key: string; fallback: string }> = {
@@ -30,19 +29,19 @@ export function TimeStepUnitSelect({
 	triggerClassName?: string;
 }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	return (
 		<Select
 			value={value}
 			onValueChange={(next) => onValueChange(next as TimeStepUnit)}
 			disabled={disabled}
 		>
-			<SelectTrigger className={cn(ft.selectTrigger, triggerClassName)}>
+			<SelectTrigger variant="form" className={triggerClassName}>
 				<SelectValue />
 			</SelectTrigger>
-			<SelectContent className={ft.selectContent}>
+			<SelectContent variant="form">
 				{TIME_STEP_UNITS.map((unit) => (
-					<SelectItem key={unit} value={unit} className={ft.selectItem}>
+					<SelectItem variant="form" key={unit} value={unit}>
 						{t(UNIT_LABELS[unit].key, { defaultValue: UNIT_LABELS[unit].fallback })}
 					</SelectItem>
 				))}

@@ -1,10 +1,11 @@
+import { Toolbar } from '@/app/components/ui/container';
+import { Text } from '@/app/components/ui/typography';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { ModeSwitcher } from '@/app/components/ui/mode-switcher';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { X_ZOOM_PRESET_MS, xZoomWindow, type XZoomPreset } from '@/lib/astrology/transitResults';
 import { humanizePeriodPresetId, type TimeStepUnit } from '@/lib/astrology/transitSetup';
 import { formatDateTimeRange } from '@/lib/time/format';
@@ -18,7 +19,7 @@ const ZOOM_PRESETS = Object.keys(X_ZOOM_PRESET_MS) as XZoomPreset[];
  *  (recomputes on change), and Edit setup / Reset. */
 export function ResultsToolbar() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { view, series, timelineCategories, setup, updateSetup, compute, editSetup, reset } =
 		useTransits();
 	const chartMode = view.viewMode === 'chart';
@@ -51,15 +52,8 @@ export function ResultsToolbar() {
 		void compute();
 	};
 
-	const toolButton = cn('h-8 px-2.5 text-xs', ft.bodyText);
-
 	return (
-		<div
-			className={cn(
-				'flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3',
-				'border-[color:var(--theme-panel-border)]'
-			)}
-		>
+		<Toolbar padding="default" align="between" wrap="wrap" className="gap-3">
 			<ModeSwitcher
 				value={view.viewMode}
 				onValueChange={(mode: TransitsResultsViewMode) => view.setViewMode(mode)}
@@ -74,10 +68,11 @@ export function ResultsToolbar() {
 				<div className="flex items-center gap-1">
 					{ZOOM_PRESETS.map((preset) => (
 						<Button
+							size="toolbar"
 							key={preset}
 							type="button"
-							variant="ghost"
-							className={toolButton}
+							variant="toolbar"
+
 							onClick={() => {
 								const window = xZoomWindow(preset, timelineCategories, view.visibleRange);
 								if (window) view.setVisibleRange(window);
@@ -90,9 +85,10 @@ export function ResultsToolbar() {
 					))}
 					{view.visibleRange && (
 						<Button
+							size="toolbar"
 							type="button"
-							variant="ghost"
-							className={toolButton}
+							variant="toolbar"
+
 							onClick={() => view.setVisibleRange(null)}
 						>
 							{t('transits_zoom_full_range', { defaultValue: 'Full range' })}
@@ -103,18 +99,21 @@ export function ResultsToolbar() {
 
 			{chartMode && (
 				<div className="flex items-center gap-1.5">
-					<span className={cn('text-xs', ft.muted)}>
+					<Text variant="caption" as="span" tone="muted">
 						{t('transits_y_zoom_label', { defaultValue: 'Orb scale' })}
-					</span>
+					</Text>
 					<Button
+						size="toolbar-icon"
 						type="button"
-						variant="ghost"
-						className={cn('h-8 w-8 px-0 text-xs', ft.bodyText)}
+						variant="toolbar"
+
 						onClick={() => view.setYZoomDegrees(view.yZoomDegrees - 0.1)}
 					>
 						−
 					</Button>
 					<Input
+						variant="form"
+						density="compact"
 						type="number"
 						min={0.5}
 						max={6}
@@ -124,12 +123,13 @@ export function ResultsToolbar() {
 							const n = Number(event.target.value);
 							if (Number.isFinite(n)) view.setYZoomDegrees(n);
 						}}
-						className={cn(ft.inputCompact, 'h-8 w-16 text-xs shadow-inner')}
+						className="h-8 w-16 text-xs shadow-inner"
 					/>
 					<Button
+						size="toolbar-icon"
 						type="button"
-						variant="ghost"
-						className={cn('h-8 w-8 px-0 text-xs', ft.bodyText)}
+						variant="toolbar"
+
 						onClick={() => view.setYZoomDegrees(view.yZoomDegrees + 0.1)}
 					>
 						+
@@ -137,15 +137,16 @@ export function ResultsToolbar() {
 				</div>
 			)}
 
-			<span className={cn('text-xs tabular-nums', ft.muted)}>
+			<Text variant="caption" as="span" tone="muted" className="tabular-nums">
 				{t('transit_results_count').replace('{count}', String(series.length))} · {periodSummary}
-			</span>
+			</Text>
 
 			<div className="flex items-center gap-2">
-				<span className={cn('text-xs', ft.muted)}>
+				<Text variant="caption" as="span" tone="muted">
 					{t('transits_label_graph_sampling_interval', { defaultValue: 'Graph sampling interval' })}
-				</span>
+				</Text>
 				<Input
+					variant="form"
 					type="number"
 					min={1}
 					step={1}
@@ -156,41 +157,36 @@ export function ResultsToolbar() {
 						if (event.key === 'Enter') commitStep();
 					}}
 					disabled={!setup.sampledGraphOutput}
-					className={cn(
-						ft.input,
-						'h-8 w-16 py-1 text-xs shadow-inner',
-						!setup.sampledGraphOutput && ft.inputDisabled
-					)}
+					className="h-8 w-16 py-1 text-xs shadow-inner"
 				/>
 				<TimeStepUnitSelect
 					value={setup.timeStepUnit}
 					onValueChange={changeUnit}
 					disabled={!setup.sampledGraphOutput}
-					triggerClassName={cn(
-						'h-8 w-28 text-xs shadow-inner',
-						!setup.sampledGraphOutput && ft.inputDisabled
-					)}
+					triggerClassName="h-8 w-28 text-xs shadow-inner"
 				/>
 			</div>
 
 			<div className="flex items-center gap-1">
 				<Button
+					size="toolbar"
 					type="button"
-					variant="ghost"
-					className={cn('h-8 px-3 text-xs', ft.bodyText)}
+					variant="toolbar"
+
 					onClick={editSetup}
 				>
 					{t('transits_edit_setup', { defaultValue: 'Edit setup' })}
 				</Button>
 				<Button
+					size="toolbar"
 					type="button"
-					variant="ghost"
-					className={cn('h-8 px-3 text-xs', ft.bodyText)}
+					variant="toolbar"
+
 					onClick={reset}
 				>
 					{t('transits_reset', { defaultValue: 'Reset' })}
 				</Button>
 			</div>
-		</div>
+		</Toolbar>
 	);
 }

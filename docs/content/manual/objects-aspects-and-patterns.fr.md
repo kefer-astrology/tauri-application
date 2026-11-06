@@ -108,8 +108,7 @@ automatiquement les réglages d’une relation `extends`.
 
 ## Formes et configurations du thème
 
-Aspectarium peut signaler ces figures calculées. Informations, y compris son
-prototype Spectrum, n’utilise pas encore le résultat calculé du thème sélectionné.
+Aspectarium et Spectre signalent ces figures calculées.
 Elles décrivent un thème à son instant calculé, non des objets supplémentaires.
 
 **Formes de distribution :** Faisceau, Bol, Locomotive, Seau, Bascule,

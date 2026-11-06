@@ -25,9 +25,11 @@ mod aspect_dynamics;
 mod body_selection;
 mod facts;
 mod geometry;
+mod lots;
 mod midpoint_contacts;
 mod parts;
 mod patterns;
+mod point_models;
 
 #[cfg(test)]
 mod tests;
@@ -39,6 +41,7 @@ pub use aspect_computation::{
 pub use aspect_dynamics::annotate_aspect_dynamics;
 pub use body_selection::{object_type_map, resolve_body_selection, BodySelection};
 pub use facts::{compute_chart_facts, ChartFacts, ChartFactsInput, CHART_FACTS_VERSION};
+pub use lots::{lot_catalog, LotCatalog, LotContext, LotDefinition};
 pub use midpoint_contacts::{
     compute_midpoint_contacts, MidpointContact, MidpointContactPoint, MIDPOINT_CONTACT_ASPECT_IDS,
 };
@@ -46,4 +49,8 @@ pub use parts::{arabic_part, day_night_parts, is_day_chart};
 pub use patterns::{
     detect_chart_configurations, detect_chart_shapes,
     inject_shapes_and_configurations_into_chart_map,
+};
+pub use point_models::{
+    fixed_star_catalog, hypothetical_catalog, hypothetical_heliocentric, validate_hypothetical,
+    validate_star, FixedStar, FixedStarCatalog, HypotheticalBody, HypotheticalCatalog,
 };

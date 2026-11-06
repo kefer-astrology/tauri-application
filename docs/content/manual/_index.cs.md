@@ -13,7 +13,7 @@ Manuál popisuje aplikaci Kefer Astrology z pohledu uživatele. Není třeba zn�
 
 ## Prozkoumání horoskopu
 
-- **[Zobrazení horoskopu](./chart-views/)** — přepínejte mezi zobrazeními Horoskop, Aspektárium, Informace, Revoluce a Synastrie.
+- **[Zobrazení horoskopu](./chart-views/)** — přepínejte mezi zobrazeními Horoskop, Aspektárium, Spektrum, Revoluce a Synastrie.
 - **[Objekty, aspekty a obrazce horoskopu](./objects-aspects-and-patterns/)** — projděte si vestavěný katalog a podmínky jeho dostupnosti.
 - **[Tranzity a čas](./transits-and-time/)** — prozkoumejte konkrétní okamžik, procházejte časem a pracujte se zobrazeními tranzitů.
 

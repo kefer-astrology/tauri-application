@@ -11,7 +11,7 @@ use crate::infrastructure::compute_cache;
 use crate::workspace::models::{ChartInstance, WorkspaceManifest};
 
 /// Bumped when the serialized calculation layout changes.
-const CALCULATION_CACHE_FORMAT: u32 = 1;
+const CALCULATION_CACHE_FORMAT: u32 = 2;
 
 pub enum ChartComputeOutcome {
     /// Serialized `ChartCalculation`.
@@ -40,7 +40,15 @@ pub fn compute_workspace_charts(
         crate::infrastructure::ephemeris::EphemerisManager::from_global()
             .available_bsp_paths()
             .iter()
-            .map(|path| path.to_string_lossy().into_owned())
+            .map(|path| {
+                let metadata = std::fs::metadata(path).ok();
+                format!(
+                    "{}:{}:{:?}",
+                    path.display(),
+                    metadata.as_ref().map(|m| m.len()).unwrap_or(0),
+                    metadata.and_then(|m| m.modified().ok())
+                )
+            })
             .collect();
 
     let workers = std::thread::available_parallelism()
@@ -102,6 +110,7 @@ fn compute_cached(
         "model": resolved.model,
         "settings": resolved.settings,
         "ephemerides": ephemerides,
+        "point_library": crate::infrastructure::point_library::point_library().ok().as_deref(),
     }));
     if let Some(cached) = compute_cache::get(&key) {
         return ChartComputeOutcome::Computed(cached);

@@ -52,34 +52,53 @@ and traceability, not the physical test files.
 
 ## Traceability matrix
 
-| ID | Required behavior | Level | Current automation |
-| --- | --- | --- | --- |
-| TIME-001 | Offset-aware input preserves the represented instant | Contract parity | `contracts/event-time.json`; Rust `event_time` test; Python contract-parity tests |
-| MODEL-001 | A school selects its default model | Domain/contract | Rust workspace settings tests; workspace fixture |
-| MODEL-002 | Settings resolve fallback → model → workspace → preset → chart → operation | Contract fixture | `contracts/settings-resolution.json`; Rust fixture test; optional Python parity when provisioned |
-| MODEL-003 | Model definitions and overrides affect aspect calculation | Domain | Rust astrology/settings tests; optional Python parity when provisioned |
-| WORKSPACE-001 | A complete workspace round-trips without losing portable fields | Integration | Rust workspace command tests and shared workspace fixture; optional Python interoperability when provisioned |
-| WORKSPACE-002 | Referenced paths cannot escape the workspace root | Integration/security | Rust loader enforces this; **GAP-WORKSPACE-002:** add direct absolute-path and traversal test cases |
-| CATALOG-001 | Built-in and effective runtime catalogs cover model entries and emitted shapes/configurations | Domain/bridge | Rust catalog tests; frontend type/build coverage; **GAP-CATALOG-001:** automated React/Svelte refresh and fallback behavior |
-| COMPUTE-001 | A radix result exposes the required backend-neutral fields | Command contract | Rust command/application tests; optional Python contract parity when provisioned |
-| TRANSIT-001 | Transit ranges reject invalid order and non-positive step | Command contract | Rust transit command tests; optional Python parity when provisioned |
-| TRANSIT-002 | Exact aspects and stations are independent of sampling; confirmation and incomplete searches remain explicit. | Domain/command | [Evidence and gaps](#transit-002-event-and-station-search) |
-| TRANSIT-003 | Configuration intervals respect orbs, pattern symmetries, and reported search limits. | Domain/command | [Evidence and gaps](#transit-003-configuration-search) |
-| TRANSIT-004 | Disabling sampled output preserves events, provenance, and response shape. | Command | [Evidence and gaps](#transit-004-events-only-responses) |
-| TRANSIT-005 | Searches share a bounded request-scoped cache without changing numerical results. | Performance/correctness | [Evidence and gaps](#transit-005-shared-evaluation-cache) |
-| ROUTE-001 | Auto routing uses Rust when Python is unavailable | Integration | Rust route-selection tests |
-| ROUTE-002 | Forced Python fails clearly when unavailable | Integration | Rust route-selection tests |
-| ROUTE-003 | A per-chart `override_ephemeris` JPL kernel does not force Python; only Jyotish/Custom engines do | Integration | `application::compute_router::tests` (Rust-only mode, auto mode with/without Python) and `infrastructure::jpl_backend::tests` (invalid override path, missing auxiliary kernel, partial body coverage) |
-| PROVIDER-002 | Chart, series, event, and configuration computation work offline | Provider/integration | Recorded network-isolated runs and scope limits: [offline evidence](../ephemeris-validation/#offline-execution-verified-not-just-read-from-source). Python is not covered. |
-| COVERAGE-001 | Usable-coverage chain discovery and precedence match the pinned ANISE evaluator's actual behavior, including cases real kernels cannot exhibit | Provider | `infrastructure::ephemeris::usable_coverage_tests` (synthetic-SPK missing link, alternate chain, depth-limit, and different-center-overlap-narrows-coverage cases, alongside real-kernel complete-chain/overlap cases) — see [ephemeris validation](../ephemeris-validation/#usable-coverage-raw-vs-chain-aware) |
-| PROVIDER-001 | Provider numerical output matches a named reference within tolerance | Provider | Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources — see [ephemeris validation](../ephemeris-validation/) for the current per-test reference list and known gaps |
-| FRONTEND-001 | Both bridges serialize the same chart calculation intent | Frontend bridge/parity | React helper tests and type/build coverage; **GAP-FRONTEND-001:** shared React/Svelte payload parity cases |
-| FRONTEND-002 | Both shells open the same workspace and apply the same effective defaults | Workflow/parity | Manual/structural coverage; **GAP-FRONTEND-002:** automated workflow coverage |
-| STATIC-001 | Static documentation mode renders the normal shell without native services | Smoke/workflow | Build coverage; automated behavior coverage is a current gap |
+| ID            | Required behavior                                                                                                                              | Level                   | Current automation                                                                                                                                                                                                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TIME-001      | Offset-aware input preserves the represented instant                                                                                           | Contract parity         | `contracts/event-time.json`; Rust `event_time` test; Python contract-parity tests                                                                                                                                                                                                                                |
+| MODEL-001     | A school selects its default model                                                                                                             | Domain/contract         | Rust workspace settings tests; workspace fixture                                                                                                                                                                                                                                                                 |
+| MODEL-002     | Settings resolve fallback → model → workspace → preset → chart → operation                                                                     | Contract fixture        | `contracts/settings-resolution.json`; Rust fixture test; optional Python parity when provisioned                                                                                                                                                                                                                 |
+| MODEL-003     | Model definitions and overrides affect aspect calculation                                                                                      | Domain                  | Rust astrology/settings tests; optional Python parity when provisioned                                                                                                                                                                                                                                           |
+| WORKSPACE-001 | A complete workspace round-trips without losing portable fields                                                                                | Integration             | Rust workspace command tests and shared workspace fixture; optional Python interoperability when provisioned                                                                                                                                                                                                     |
+| WORKSPACE-002 | Referenced paths cannot escape the workspace root                                                                                              | Integration/security    | Rust loader enforces this; **GAP-WORKSPACE-002:** add direct absolute-path and traversal test cases                                                                                                                                                                                                              |
+| CATALOG-001   | Built-in and effective runtime catalogs cover model entries and emitted shapes/configurations                                                  | Domain/bridge           | Rust catalog tests; frontend type/build coverage; **GAP-CATALOG-001:** automated React/Svelte refresh and fallback behavior                                                                                                                                                                                      |
+| COMPUTE-001   | A radix result exposes the required backend-neutral fields                                                                                     | Command contract        | Rust command/application tests; optional Python contract parity when provisioned                                                                                                                                                                                                                                 |
+| TRANSIT-001   | Transit ranges reject invalid order and non-positive step                                                                                      | Command contract        | Rust transit command tests; optional Python parity when provisioned                                                                                                                                                                                                                                              |
+| TRANSIT-002   | Exact aspects and stations are independent of sampling; confirmation and incomplete searches remain explicit.                                  | Domain/command          | [Evidence and gaps](#transit-002-event-and-station-search)                                                                                                                                                                                                                                                       |
+| TRANSIT-003   | Configuration intervals respect orbs, pattern symmetries, and reported search limits.                                                          | Domain/command          | [Evidence and gaps](#transit-003-configuration-search)                                                                                                                                                                                                                                                           |
+| TRANSIT-004   | Disabling sampled output preserves events, provenance, and response shape.                                                                     | Command                 | [Evidence and gaps](#transit-004-events-only-responses)                                                                                                                                                                                                                                                          |
+| TRANSIT-005   | Searches share a bounded request-scoped cache without changing numerical results.                                                              | Performance/correctness | [Evidence and gaps](#transit-005-shared-evaluation-cache)                                                                                                                                                                                                                                                        |
+| ROUTE-001     | Auto routing uses Rust when Python is unavailable                                                                                              | Integration             | Rust route-selection tests                                                                                                                                                                                                                                                                                       |
+| ROUTE-002     | Forced Python fails clearly when unavailable                                                                                                   | Integration             | Rust route-selection tests                                                                                                                                                                                                                                                                                       |
+| ROUTE-003     | A per-chart `override_ephemeris` JPL kernel does not force Python; only Jyotish/Custom engines do                                              | Integration             | `application::compute_router::tests` (Rust-only mode, auto mode with/without Python) and `infrastructure::jpl_backend::tests` (invalid override path, missing auxiliary kernel, partial body coverage)                                                                                                           |
+| PROVIDER-002  | Chart, series, event, and configuration computation work offline                                                                               | Provider/integration    | Recorded network-isolated runs and scope limits: [offline evidence](../ephemeris-validation/#offline-execution-verified-not-just-read-from-source). Python is not covered.                                                                                                                                       |
+| COVERAGE-001  | Usable-coverage chain discovery and precedence match the pinned ANISE evaluator's actual behavior, including cases real kernels cannot exhibit | Provider                | `infrastructure::ephemeris::usable_coverage_tests` (synthetic-SPK missing link, alternate chain, depth-limit, and different-center-overlap-narrows-coverage cases, alongside real-kernel complete-chain/overlap cases) — see [ephemeris validation](../ephemeris-validation/#usable-coverage-raw-vs-chain-aware) |
+| PROVIDER-001  | Provider numerical output matches a named reference within tolerance                                                                           | Provider                | Rust JPL reference tests; optional Python comparison when provisioned; some cases require BSP resources — see [ephemeris validation](../ephemeris-validation/) for the current per-test reference list and known gaps                                                                                            |
+| FRONTEND-001  | Both bridges serialize the same chart calculation intent                                                                                       | Frontend bridge/parity  | React helper tests and type/build coverage; **GAP-FRONTEND-001:** shared React/Svelte payload parity cases                                                                                                                                                                                                       |
+| FRONTEND-002  | Both shells open the same workspace and apply the same effective defaults                                                                      | Workflow/parity         | Manual/structural coverage; **GAP-FRONTEND-002:** automated workflow coverage                                                                                                                                                                                                                                    |
+| STATIC-001    | Static documentation mode renders the normal shell without native services                                                                     | Smoke/workflow          | Build coverage; automated behavior coverage is a current gap                                                                                                                                                                                                                                                     |
+| KERNEL-001    | Cold small-body validation reuses parsed kernels without changing accepted bodies or results.                                                  | Performance/correctness | Gap: same-set concurrency reuse is tested; cold multi-package load counts, cross-set reuse and import invalidation are not. [Acceptance and evidence](#kernel-001-startup-kernel-reuse).                                                                                                                         |
 
 When a gap is filled, replace the gap ID and description with the test file and
 test name. Do not remove the row; the matrix is also an inventory of deliberate
 automation debt.
+
+## KERNEL-001: Startup kernel reuse
+
+Current automation: `infrastructure::jpl_backend::tests::concurrent_callers_share_one_almanac_load`
+checks that callers requesting the same kernel set share the constructed
+almanac. Existing ephemeris tests cover artifact integrity, discovery and
+load-order/center-chain behavior. These are correctness safeguards, not a test
+that the base files load once across different validation prefixes.
+
+Gap: cold discovery with several optional packages has no per-file parse-count
+budget or retained-intermediate-set assertion. Add instrumentation and tests
+for cross-set reuse, warm reuse, concurrent discovery, failed optional packages,
+file changes and import/download cache invalidation. Preserve position, motion,
+diagnostics and usable-coverage results, including precedence-sensitive chains.
+
+The [roadmap step](../development-driver/#small-body-startup-kernel-reuse)
+owns the implementation sequence. Measurements and claim limits belong to
+[startup kernel-loading evidence](../ephemeris-validation/#startup-kernel-loading-evidence).
 
 ## Transit test evidence
 
@@ -230,6 +249,28 @@ conversion, shell composition, and feature rendering. These do not establish
 full desktop workflow or React/Svelte parity coverage. Svelte currently provides
 a type check but no dedicated behavioral test command.
 
+## React interface evidence
+
+The interface rules live in [UI conventions](../ui-conventions/). This inventory
+records automated coverage separately from browser observations and remaining
+acceptance work.
+
+| ID             | Required behavior                                                                                                                                    | Current evidence and gap                                                                                                                                                                                                                                                                                                     |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI-THEME-001   | Palette tokens reach component surfaces, native color scheme and chart light/dark context; default selected transparency is limited to Sunrise.      | `lib/themePalettes.test.ts` and `app/providers/appearance.test.tsx`. Custom palette validation and muted-text contrast remain open in the roadmap.                                                                                                                                                                           |
+| UI-CONTROL-001 | Shared choices preserve selection/deselection, checkbox-label activation, disabled behavior and separate chip removal.                               | `app/components/ui/choice.test.tsx`; compound-picker opening/disabled behavior in `app/components/ui/input-group.test.tsx`. Physical touch and comprehensive keyboard coverage remain gaps.                                                                                                                                  |
+| UI-PANEL-001   | Both rails are inline in a wide chart area; compact mode hides only left details, keeps positions mounted, and restores inline details when resized. | `app/components/chart-workspace-layout.test.tsx`. **GAP-UI-PANEL-001:** automated Poloha folding, final sheet-direction geometry and native populated-chart acceptance.                                                                                                                                                      |
+| UI-EXPORT-001  | Export opens over the current view and closes without discarding its section or unsaved inputs; focus returns to the opening control.                | Form rendering in `app/features/feature-screens.test.tsx`; Firefox checks preserved an unsaved New-chart field and the selected settings section at 1440px/500px, including Escape/focus return. **GAP-UI-EXPORT-001:** committed automated shell-workflow regression coverage. Export output generation is not implemented. |
+
+The recorded Firefox review covered all four default themes, narrow layouts and
+actual 200% page zoom. Later chart-sheet direction/folding adjustments received
+source/type and targeted behavior checks; do not infer a fresh full visual matrix
+for every revision. The latest Export sheet also received wide/narrow screenshots
+and DOM-identity/value checks. Native 480px windows, populated charts, custom
+palettes and physical touch remain outside that review. See the
+[styling roadmap](../development-driver/#react-styling-consolidation) for remaining
+work rather than treating the browser session as full accessibility acceptance.
+
 ## Commands available today
 
 From the repository root:
@@ -242,10 +283,11 @@ npm run check:svelte
 npm run docs:build
 ```
 
-`npm run test` runs the React unit tests (Vitest, `apps/web-react/src/**/*.test.ts`,
-`happy-dom` environment). They cover the pure `lib` modules — chart query and
-tree filtering, fact filters, zodiac positions, date formatting. Component
-rendering and interaction are not covered yet.
+`npm test` runs Vitest in `happy-dom`, including both `src/**/*.test.ts` and
+`src/**/*.test.tsx` in `apps/web-react/`. Coverage includes pure helpers,
+provider behavior, component rendering and selected interactions. Browser
+layout, full desktop workflows and React/Svelte parity require additional
+verification; passing component tests does not establish those outcomes.
 
 If the optional Python sidecar source is present in the checkout:
 

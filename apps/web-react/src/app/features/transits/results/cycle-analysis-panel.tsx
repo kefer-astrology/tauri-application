@@ -1,3 +1,4 @@
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import type { TransitSeriesEntry } from '@/lib/tauri/types';
 import type { AspectTimelineSeries } from '@/lib/astrology/aspectTimeline';
@@ -39,16 +40,16 @@ export function CycleAnalysisPanel({ series, entries, colorByKey }: CycleAnalysi
 				'border-[color:var(--theme-panel-border)]'
 			)}
 		>
-			<h3 className={cn('text-sm font-semibold', ft.title)}>
+			<Heading variant="panelTitle" level={3}>
 				{t('cycle_analysis_title', { defaultValue: 'Cycle analysis' })}
-			</h3>
+			</Heading>
 
 			{ranked.length === 0 ? (
-				<p className={cn('text-xs', ft.muted)}>
+				<Text variant="caption" tone="muted">
 					{t('cycle_analysis_empty', {
 						defaultValue: 'Select a pair or compute a transit series to see its cycle.'
 					})}
-				</p>
+				</Text>
 			) : (
 				<div className="space-y-4">
 					{ranked.map((s) => {
@@ -143,7 +144,7 @@ export function CycleAnalysisPanel({ series, entries, colorByKey }: CycleAnalysi
 
 			<div
 				className={cn(
-					'mt-auto space-y-1.5 border-t pt-3 text-[11px]',
+					'mt-auto space-y-1.5 border-t pt-3 text-xs',
 					'border-[color:var(--theme-panel-border)]',
 					ft.muted
 				)}

@@ -88,6 +88,7 @@ export function AspectLines({
 								cursor: 'pointer',
 								pointerEvents: 'stroke'
 							}}
+							data-wheel-aspect={idx}
 							onClick={(event) => {
 								event.stopPropagation();
 								onAspectClick?.({ aspect, index: idx });

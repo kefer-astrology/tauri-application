@@ -24,11 +24,21 @@ Las celdas vacías significan que no se calculó un aspecto con los ajustes y
 orbes de la carta. El aspectario puede mostrar una superposición temporal de
 tránsito, pero no calcula la geometría de aspectos en el navegador.
 
-## Información
+## Espectro
 
-Información es actualmente un prototipo visual de un futuro resumen calculado.
-Sus etiquetas, diagramas y configuraciones de ejemplo aún no se vinculan al
-resultado de la carta seleccionada. Use Carta natal y Aspectos para datos calculados.
+Espectro muestra la carta seleccionada en tarjetas: equilibrio de elementos,
+modalidades, grupos de casas, cuadrantes y hemisferios, extraversión e
+introversión, equilibrio de aspectos, configuraciones, stelliums, planetas
+solitarios, retrógrados y focales (regente de la carta, dispositor final,
+planetas angulares y sin aspectos). La tarjeta de la rueda añade la fase lunar,
+las luminarias sobre o bajo el horizonte y las fases de Mercurio y Venus; la
+tarjeta de destacados recoge los datos más notables.
+
+Pase el cursor por un elemento, una fila o un destacado para mostrar sus
+planetas en la rueda (y la mitad de la carta a la que pertenece); haga clic
+para mantenerlos y otra vez para soltarlos. Mientras la carta no esté
+calculada, una tarjeta muestra una breve nota en lugar de valores. Como en las
+demás vistas, el menú `⋯` quita una tarjeta y **+ Añadir** la devuelve.
 
 ## Revolución y sinastría
 

@@ -54,13 +54,29 @@ export function persistChartFavorites(ids: string[]) {
 
 /** Filter groups the user hid in the Open view. Stored as the hidden set so groups added in
  *  later versions start visible. */
-export function readStoredHiddenFilterGroups(): string[] {
+export function readStoredHiddenFilterGroups(allGroupIds: readonly string[] = []): string[] {
 	try {
 		const raw = localStorage.getItem(HIDDEN_FILTER_GROUPS_KEY);
-		if (!raw) return [];
+		if (!raw) {
+			const legacyRaw = localStorage.getItem('open_chart_list_visible_filter_groups');
+			if (!legacyRaw) return [];
+			const visible: unknown = JSON.parse(legacyRaw);
+			if (!Array.isArray(visible) || !visible.every((id): id is string => typeof id === 'string'))
+				return [];
+			const migrated = visible.flatMap((id) =>
+				id === 'chart-type' ? ['chart-type-base', 'chart-type-derived'] : [id]
+			);
+			return allGroupIds.filter((id) => !migrated.includes(id));
+		}
 		const parsed: unknown = JSON.parse(raw);
 		if (Array.isArray(parsed) && parsed.every((id): id is string => typeof id === 'string'))
-			return parsed;
+			return [
+				...new Set(
+					parsed.flatMap((id) =>
+						id === 'chart-type' ? ['chart-type-base', 'chart-type-derived'] : [id]
+					)
+				)
+			];
 	} catch {
 		/* ignore */
 	}

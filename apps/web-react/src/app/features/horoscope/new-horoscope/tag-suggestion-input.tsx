@@ -1,8 +1,11 @@
+import { ChoiceButton } from '@/app/components/ui/choice';
 import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
+
 import { Input } from '@/app/components/ui/input';
+import { InputGroupInput } from '@/app/components/ui/input-group';
 import { cn } from '@/app/components/ui/utils';
+import { formSelectContentClassName } from '@/app/components/ui/form-variants';
 import { tagDefaultColor } from '@/lib/chartTags';
 import type { WorkspaceTagDefinition } from '@/lib/tauri/types';
 
@@ -18,7 +21,8 @@ export function TagSuggestionInput({
 	placeholder,
 	className,
 	inputClassName,
-	onBackspaceEmpty
+	onBackspaceEmpty,
+	embedded = false
 }: {
 	id?: string;
 	value: string;
@@ -30,7 +34,9 @@ export function TagSuggestionInput({
 	className?: string;
 	inputClassName?: string;
 	onBackspaceEmpty?: () => void;
+	embedded?: boolean;
 }) {
+	const Field = embedded ? InputGroupInput : Input;
 	const [focused, setFocused] = useState(false);
 	const [activeIndex, setActiveIndex] = useState(0);
 	const normalizedQuery = value.trim().toLocaleLowerCase();
@@ -51,7 +57,8 @@ export function TagSuggestionInput({
 
 	return (
 		<div className={cn('relative min-w-0', focused && 'z-[80]', className)}>
-			<Input
+			<Field
+				variant={embedded ? 'default' : 'form'}
 				id={id}
 				value={value}
 				onChange={(event) => {
@@ -102,27 +109,22 @@ export function TagSuggestionInput({
 				<div
 					role="listbox"
 					className={cn(
-						'absolute top-full right-0 left-0 z-[90] mt-1 max-h-52 overflow-y-auto rounded-xl border p-1 opacity-100 shadow-2xl ring-1 ring-black/10',
-						'border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] text-[color:var(--theme-content-primary)]'
+						formSelectContentClassName,
+						'absolute top-full right-0 left-0 z-[90] mt-1 max-h-52 overflow-y-auto p-1 opacity-100'
 					)}
 				>
 					{options.map((suggestion, index) => (
-						<Button
+						<ChoiceButton
+							selected={index === activeIndex}
 							key={suggestion.name}
 							type="button"
-							variant="ghost"
+							variant="row"
 							role="option"
-							aria-selected={index === activeIndex}
+
 							onMouseDown={(event) => event.preventDefault()}
 							onMouseEnter={() => setActiveIndex(index)}
 							onClick={() => selectSuggestion(suggestion.name)}
-							className={cn(
-								'h-auto w-full justify-start gap-2 rounded-lg px-3 py-2 text-left text-sm font-normal transition-colors',
-								'hover:text-[color:var(--theme-content-primary)]',
-								index === activeIndex
-									? 'bg-[color:var(--theme-selected-bg)] hover:bg-[color:var(--theme-selected-bg)]'
-									: 'hover:bg-[color:var(--theme-soft-bg)]'
-							)}
+							className="gap-2 px-3"
 						>
 							<span
 								className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -135,7 +137,7 @@ export function TagSuggestionInput({
 									index === activeIndex ? 'opacity-100' : 'opacity-0'
 								)}
 							/>
-						</Button>
+						</ChoiceButton>
 					))}
 				</div>
 			)}

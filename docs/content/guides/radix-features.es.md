@@ -13,4 +13,4 @@ weight: 20
 
 {{< appframe app="web-react" tour="radix" title="Recorrido de funciones de Radix de Kefer Astrology" >}}
 
-La compilación de navegador demuestra la estructura completa del espacio de trabajo de Radix. Los valores calculados dependen de los datos de demostración disponibles y seguros para navegador.
+La versión de navegador muestra el diseño del espacio de trabajo Radix. Los cálculos del backend y las operaciones nativas de archivos requieren la aplicación de escritorio; la vista de navegador no inventa resultados calculados.

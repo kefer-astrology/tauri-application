@@ -1,3 +1,5 @@
+import { Surface } from '@/app/components/ui/container';
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
@@ -19,39 +21,39 @@ export function EventSearchPanel({
 	onOpenInstant: (datetime: string) => void;
 }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { events, complete, warnings } = eventSearch;
 
 	if (events.length === 0 && complete && warnings.length === 0) return null;
 
 	return (
-		<div className="shrink-0 border-t border-[color:var(--theme-panel-border)] p-4">
-			<h3 className={cn('mb-2 text-xs font-semibold tracking-wide uppercase', ft.bodyText)}>
+		<Surface variant="plain" divider="top" padding="default" className="shrink-0">
+			<Heading variant="eyebrow" level={3} tone="secondary" className="mb-2">
 				{t('transits_event_search_title', { defaultValue: 'Exact events' })}
-			</h3>
+			</Heading>
 
 			{!complete && (
 				<div className="mb-2 space-y-1">
-					<p className="text-destructive text-xs">
+					<Text variant="caption" className="text-destructive">
 						{t('transits_event_search_complete_false', {
 							defaultValue:
 								'One or more searches could not complete — the events below may be partial.'
 						})}
-					</p>
+					</Text>
 					{warnings.map((warning, index) => (
-						<p key={index} className={cn('text-xs', ft.muted)}>
+						<Text variant="caption" tone="muted" key={index}>
 							{warning}
-						</p>
+						</Text>
 					))}
 				</div>
 			)}
 
 			{events.length === 0 ? (
-				<p className={cn('text-xs', ft.muted)}>
+				<Text variant="caption" tone="muted">
 					{t('transits_event_search_empty', {
 						defaultValue: 'No exact events found in the selected interval.'
 					})}
-				</p>
+				</Text>
 			) : (
 				<ul className="max-h-48 space-y-1 overflow-auto">
 					{events.map((event, index) => (
@@ -59,7 +61,7 @@ export function EventSearchPanel({
 					))}
 				</ul>
 			)}
-		</div>
+		</Surface>
 	);
 }
 
@@ -77,13 +79,13 @@ function EventRow({
 		const motion = event.motion?.[bodyId];
 		if (!motion) return null;
 		return (
-			<span className={cn('ml-1 text-[10px]', ft.muted)}>
+			<Text variant="caption" as="span" tone="muted" className="ml-1">
 				({formatSignedDms(motion.speed)}
 				{motion.retrograde
 					? ` ${t('transits_event_search_retrograde', { defaultValue: 'retrograde' })}`
 					: ''}
 				)
-			</span>
+			</Text>
 		);
 	};
 	const tangential =
@@ -117,9 +119,9 @@ function EventRow({
 				</>
 			) : (
 				<>
-					<span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', ft.muted)}>
+					<Text variant="compactLabel" as="span" tone="muted" className="rounded px-1.5 py-0.5">
 						{t('transits_event_search_kind_station', { defaultValue: 'Station' })}
-					</span>
+					</Text>
 					<span className="inline-flex items-center gap-1">
 						<AstrologyGlyph glyphId={event.body} fallback={objectIcon(event.body)} size={14} />
 						{objectLabel(event.body, t)}
@@ -128,20 +130,22 @@ function EventRow({
 				</>
 			)}
 			{tangential && (
-				<span className={cn('rounded px-1 py-0.5 text-[10px]', ft.muted)}>
+				<Text variant="caption" as="span" tone="muted" className="rounded px-1 py-0.5">
 					{t('transits_event_search_tangential', { defaultValue: 'tangential' })}
-				</span>
+				</Text>
 			)}
 			{unconfirmed && (
-				<span
-					className="rounded px-1 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+				<Text
+					variant="compactLabel"
+					as="span"
+					className="text-warning rounded px-1 py-0.5"
 					title={t('transits_event_search_unconfirmed_hint', {
 						defaultValue:
 							'Refinement did not converge within tolerance -- a heuristic candidate, not a verified event.'
 					})}
 				>
 					{t('transits_event_search_unconfirmed', { defaultValue: 'unconfirmed' })}
-				</span>
+				</Text>
 			)}
 			<OpenChartButton className="ml-auto" onClick={() => onOpenInstant(event.datetime)} />
 		</li>

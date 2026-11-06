@@ -1,6 +1,7 @@
+import { ChoiceButton } from '@/app/components/ui/choice';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, MapPin } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
+
 import { Input } from '@/app/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/app/components/ui/popover';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
@@ -118,6 +119,7 @@ export function LocationSelector({
 						)}
 					/>
 					<Input
+						variant="form"
 						id={id}
 						value={value}
 						onChange={(event) => onValueChange(event.target.value)}
@@ -136,7 +138,8 @@ export function LocationSelector({
 				</div>
 			</PopoverAnchor>
 			<PopoverContent
-				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg)] p-2 text-[color:var(--theme-content-primary)] backdrop-blur-sm"
+				variant="form"
+				className="w-[max(var(--radix-popover-trigger-width),22rem)] max-w-[min(32rem,calc(100vw-2rem))] p-2"
 				align="start"
 				sideOffset={6}
 				onOpenAutoFocus={(event) => event.preventDefault()}
@@ -146,7 +149,7 @@ export function LocationSelector({
 					if (anchorRef.current?.contains(event.target as Node)) event.preventDefault();
 				}}
 			>
-				<ScrollArea className="h-[240px] rounded-md border">
+				<ScrollArea className="h-[240px]">
 					<div className="space-y-1 p-1">
 						{visibleSearchResults.map((result) => {
 							const selected = normalize(result.display_name) === normalize(value);
@@ -201,17 +204,15 @@ function OptionRow({
 	onSelect: () => void;
 }) {
 	return (
-		<Button
+		<ChoiceButton
+			selected={selected}
 			type="button"
-			variant="ghost"
-			className={cn(
-				'h-auto w-full justify-start gap-2 px-2 py-2 text-left text-sm whitespace-normal',
-				selected && 'bg-accent text-accent-foreground'
-			)}
+			variant="row"
+			className="gap-2 px-2"
 			onClick={onSelect}
 		>
 			<Check className={cn('h-4 w-4 shrink-0', selected ? 'opacity-100' : 'opacity-0')} />
 			<span className="min-w-0 flex-1">{children}</span>
-		</Button>
+		</ChoiceButton>
 	);
 }

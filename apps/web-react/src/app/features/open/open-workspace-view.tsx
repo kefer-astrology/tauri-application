@@ -1,3 +1,5 @@
+import { Surface } from '@/app/components/ui/container';
+import { Text } from '@/app/components/ui/typography';
 import {
 	useCallback,
 	useEffect,
@@ -194,7 +196,7 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 							aria-label={t('open_resize_filters')}
 							title={t('open_resize_filters')}
 						/>
-						<div className={cn('shrink-0 border-b px-4 sm:px-6', ft.footerBorder)}>
+						<Surface variant="plain" divider="bottom" className="shrink-0 px-4 sm:px-6">
 							<div className="flex min-h-16 items-center">
 								{[
 									{ id: 'my_radixes', label: t('open_mode_my_radixes') },
@@ -220,9 +222,11 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 									</Button>
 								))}
 							</div>
-						</div>
+						</Surface>
 						<div className="flex items-center gap-2 px-4 pt-3 pb-1 sm:px-6">
 							<Input
+								variant="form"
+								density="compact"
 								type="search"
 								value={query.text}
 								onChange={(event) => {
@@ -230,7 +234,6 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 									setQuery((current) => ({ ...current, text }));
 								}}
 								placeholder={t('open_filter_content_search')}
-								className={ft.inputCompact}
 							/>
 							<Button
 								type="button"
@@ -260,18 +263,18 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 						>
 							<Button
 								type="button"
-								variant="ghost"
+								variant="form-primary"
 								size="sm"
-								className={cn('h-9 w-full text-xs', ft.footerPrimary)}
+								className="h-9 w-full flex-1 text-xs"
 								onClick={resetQuery}
 							>
 								{t('open_clear_filters')}
 							</Button>
 							<Button
 								type="button"
-								variant="ghost"
+								variant="form-primary"
 								size="sm"
-								className={cn('h-9 w-full text-xs', ft.footerPrimary)}
+								className="h-9 w-full flex-1 text-xs"
 								onClick={() => void importHoroscope()}
 								disabled={isImporting}
 							>
@@ -289,12 +292,11 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 						<div className="flex flex-col gap-1">
 							{CHART_FILTER_GROUPS.map((group) => (
 								<Label
+									variant="default"
+									tone="secondary"
 									key={group.id}
 									htmlFor={`filter-group-${group.id}`}
-									className={cn(
-										'flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1.5 text-sm',
-										ft.bodyText
-									)}
+									className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1.5"
 								>
 									<Checkbox
 										id={`filter-group-${group.id}`}
@@ -312,7 +314,9 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 							{openMode === 'database' ? (
 								<div className="flex min-h-full flex-col items-center justify-center gap-2 p-8 text-center">
 									<p className={cn('text-lg font-medium', ft.title)}>{t('open_mode_database')}</p>
-									<p className={cn('max-w-md text-sm', ft.muted)}>{t('database_placeholder')}</p>
+									<Text variant="body" tone="muted" className="max-w-md">
+										{t('database_placeholder')}
+									</Text>
 								</div>
 							) : (
 								<ChartTreeTable
@@ -331,9 +335,9 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 									onToggleFavorite={toggleFavorite}
 									empty={
 										<div className="flex min-h-full items-center justify-center p-8 text-center">
-											<p className={cn('max-w-md text-sm', ft.muted)}>
+											<Text variant="body" tone="muted" className="max-w-md">
 												{charts.length === 0 ? t('open_table_empty') : t('open_search_no_results')}
-											</p>
+											</Text>
 										</div>
 									}
 								/>
@@ -342,9 +346,9 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 						<div className="absolute right-3 bottom-3 z-20 flex gap-1.5 rounded-xl border border-[color:var(--theme-panel-border)] bg-[color:var(--theme-panel-bg-solid)] p-1.5 shadow-lg">
 							<Button
 								type="button"
-								variant="outline"
+								variant="form-secondary"
 								size="icon"
-								className={cn('size-8', ft.footerCancel)}
+								className="size-8 flex-1"
 								onClick={() => void onOpenWorkspace()}
 								aria-label={t('open_workspace')}
 								title={t('open_workspace')}
@@ -353,9 +357,9 @@ export function OpenWorkspaceView({ onOpenWorkspace, onActivateChart }: OpenWork
 							</Button>
 							<Button
 								type="button"
-								variant="outline"
+								variant="form-secondary"
 								size="icon"
-								className={cn('size-8', ft.footerCancel)}
+								className="size-8 flex-1"
 								disabled={!focusedChartId}
 								onClick={() => focusedChartId && onActivateChart(focusedChartId)}
 								aria-label={t('button_open_chart')}

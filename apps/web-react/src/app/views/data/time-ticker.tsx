@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/app/components/ui/utils';
 import { formatDateTime } from '@/lib/time/format';
@@ -81,9 +82,9 @@ export function TimeTicker({
 	return (
 		<div className={cn('shrink-0', className)}>
 			{title && (
-				<p className="px-1 pb-1.5 text-[0.65rem] font-semibold tracking-wide text-[color:var(--theme-content-muted)] uppercase">
+				<Text variant="eyebrow" tone="muted" className="px-1 pb-1.5 font-semibold">
 					{title}
-				</p>
+				</Text>
 			)}
 			<div
 				ref={containerRef}

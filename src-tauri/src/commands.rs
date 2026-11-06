@@ -8,3 +8,5 @@ pub mod location;
 pub mod storage;
 pub mod transits;
 pub mod workspace;
+
+pub mod points;

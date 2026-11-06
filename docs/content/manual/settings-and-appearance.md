@@ -118,17 +118,20 @@ device-local display preference, so it does not travel with a workspace.
 
 Choose one of four base themes: **Sunrise**, **Noon**, **Twilight**, or
 **Midnight**. The compact control at the bottom of the primary sidebar changes
-that base theme quickly.
+that base theme quickly. The React app currently starts in **Noon** on each
+launch. Saved custom palettes are retained locally.
 
 The full **Theme palette** editor lets you adjust the two colors of the main
 sidebar, secondary sidebar, and canvas; primary, secondary, and muted text;
 the accent; and hover and selected backgrounds. Hover and selected backgrounds
-can retain transparency, while **Popup background fuzziness** controls their
-softness. **Reset current** restores the built-in palette for the selected base
-theme. The **Monochromatic view** switch desaturates the whole application on
+can retain transparency when customized. In the built-in palettes, only
+**Sunrise** has a translucent selected background; hover backgrounds are
+translucent in all four themes. Form fields and menus remain opaque.
+**Popup background fuzziness** controls the blur behind overlays.
+**Reset current** restores the built-in palette for the selected base theme. The **Monochromatic view** switch desaturates the whole application on
 top of the chosen theme and palette; it does not discard those colors.
 
-Use **Save** to commit palette and element-color edits, or **Cancel** to return
+Use **Confirm** to commit palette and element-color edits, or **Cancel** to return
 the unsaved fields in this screen to their current values. Several small
 display choices and the interface language are stored locally by the frontend;
 workspace calculation defaults are stored with the workspace. Do not rely on a

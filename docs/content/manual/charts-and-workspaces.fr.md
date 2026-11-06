@@ -10,6 +10,15 @@ Ouvrez **Nouveau** depuis la barre latérale principale. Saisissez l’identité
 
 Pour réviser un thème existant, sélectionnez-le depuis le tableau de bord et utilisez son action de modification. Enregistrer le formulaire met à jour ce thème au lieu d’en créer un autre.
 
+## Panneaux du thème
+
+Le panneau des positions reste à droite. Cliquez sur son titre pour replier ou
+déplier son contenu ; le titre et l’action de modification restent disponibles.
+Dans une zone de thème large, les informations et l’astrolabe restent à gauche.
+Quand l’espace diminue, un bouton ouvre ces informations dans un panneau qui
+glisse depuis la droite par-dessus les positions. Fermez-le avec la croix ou
+Échap. Les informations reviennent automatiquement à gauche quand la zone s’élargit.
+
 ## Ouvrir un espace de travail
 
 Ouvrez **Ouvrir** et choisissez un dossier d’espace de travail. Kefer charge les thèmes et les valeurs par défaut de l’espace de travail qui y sont stockés. Sélectionner un thème vous ramène au tableau de bord du thème.
@@ -20,4 +29,12 @@ Utilisez **Enregistrer** pour écrire la collection actuelle de thèmes et de va
 
 ## Exporter
 
-Utilisez **Exporter** pour une sortie portable destinée à quitter l’espace de travail actuel. Enregistrer préserve l’espace de travail modifiable ; exporter produit une représentation distincte destinée à un autre usage.
+Choisissez **Exporter** dans la barre principale depuis la vue actuelle. Le
+formulaire s’ouvre en glissant depuis la droite, par-dessus cette vue. Sa fermeture
+préserve la section sélectionnée et les champs non enregistrés. Fermez-le avec
+la croix ou Échap ; le focus revient au bouton Exporter.
+
+Le formulaire propose l’impression, le PDF, le PNG et l’inclusion du lieu, des
+aspects et des informations. La génération du fichier n’est pas encore
+implémentée : l’action affiche un message annonçant une fonction à venir.
+Utilisez **Enregistrer** pour conserver l’espace de travail modifiable.

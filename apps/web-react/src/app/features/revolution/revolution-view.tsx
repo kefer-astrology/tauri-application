@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -58,16 +59,16 @@ export function RevolutionView() {
 					}}
 				>
 					<section>
-						<Label className={cn('mb-3 text-xs tracking-[0.08em] uppercase', ft.muted)}>
+						<Label variant="eyebrow" tone="muted" className="mb-3">
 							{t('revolution_kind_label')}
 						</Label>
 						<Select value={kind} onValueChange={(value) => setKind(value as RevolutionKind)}>
-							<SelectTrigger className={cn(ft.selectTrigger, 'rounded-full')}>
+							<SelectTrigger variant="form" className="rounded-full">
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent className={ft.selectContent}>
+							<SelectContent variant="form">
 								{REVOLUTION_KINDS.map((option) => (
-									<SelectItem key={option} value={option} className={ft.selectItem}>
+									<SelectItem variant="form" key={option} value={option}>
 										{t(`revolution_kind_${option}`)}
 									</SelectItem>
 								))}
@@ -78,7 +79,7 @@ export function RevolutionView() {
 					<Separator className="my-6 bg-[color:var(--theme-panel-border)]" />
 
 					<section className="flex items-center justify-between gap-4">
-						<Label htmlFor="trans-revolution" className={cn('text-sm', ft.title)}>
+						<Label variant="default" tone="primary" htmlFor="trans-revolution">
 							{t('revolution_trans_return')}
 						</Label>
 						<Switch
@@ -104,27 +105,36 @@ export function RevolutionView() {
 							{REVOLUTION_SCOPES.map((option) => (
 								<label key={option} className="flex cursor-pointer items-center gap-3">
 									<RadioGroupItem value={option} />
-									<span className={cn('text-sm', scope === option ? ft.title : ft.muted)}>
+									<Text
+										variant="body"
+										as="span"
+										tone="muted"
+										className={scope === option ? ft.title : ft.muted}
+									>
 										{t(`revolution_scope_${option}`)}
-									</span>
+									</Text>
 									{option === 'fraction' ? (
-										<span
+										<Text
+											variant="body"
+											as="span"
 											className={cn(
-												'ml-1 flex items-center gap-1.5 text-sm transition-opacity',
+												'ml-1 flex items-center gap-1.5 transition-opacity',
 												scope !== 'fraction' && 'pointer-events-none opacity-35'
 											)}
 										>
 											<span>1</span>
 											<span className={ft.muted}>/</span>
 											<Input
+												variant="form"
+												density="compact"
 												aria-label={t('revolution_fraction_denominator')}
 												inputMode="numeric"
 												value={fraction}
 												onChange={(event) => setFraction(event.target.value.replace(/\D/g, ''))}
 												disabled={scope !== 'fraction'}
-												className={cn(ft.inputCompact, 'w-12 px-1 text-center')}
+												className="w-12 px-1 text-center"
 											/>
-										</span>
+										</Text>
 									) : null}
 								</label>
 							))}
@@ -135,7 +145,9 @@ export function RevolutionView() {
 
 					<section className="mb-9">
 						<div className="flex items-center justify-between gap-4">
-							<Label className={cn('text-sm', ft.title)}>{t('revolution_set_period')}</Label>
+							<Label variant="default" tone="primary">
+								{t('revolution_set_period')}
+							</Label>
 							<ModeSwitcher
 								value={customPeriod ? 'custom' : 'current'}
 								onValueChange={(value) => setCustomPeriod(value === 'custom')}
@@ -158,7 +170,6 @@ export function RevolutionView() {
 								locale={locale}
 								labelClassName={cn('mb-2 text-xs uppercase', ft.muted)}
 								iconClassName={ft.iconColor}
-								panelClassName={ft.datePicker}
 							/>
 							<DatePickerInput
 								id="revolution-date-to"
@@ -168,12 +179,11 @@ export function RevolutionView() {
 								locale={locale}
 								labelClassName={cn('mb-2 text-xs uppercase', ft.muted)}
 								iconClassName={ft.iconColor}
-								panelClassName={ft.datePicker}
 							/>
 						</ModeSwitcherDetails>
 					</section>
 
-					<Button type="submit" className={cn(ft.footerPrimary, 'w-full')}>
+					<Button variant="form-primary" size="form" type="submit" className="w-full flex-1">
 						{t('revolution_calculate')}
 					</Button>
 				</form>

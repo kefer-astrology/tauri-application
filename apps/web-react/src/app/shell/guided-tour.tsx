@@ -1,3 +1,4 @@
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/app/components/ui/button';
 
@@ -272,7 +273,7 @@ export function GuidedTour() {
 		<div className="pointer-events-none fixed inset-0 z-[100]" aria-live="polite">
 			{targetRect && (
 				<div
-					className="fixed rounded-lg border-2 border-white shadow-[0_0_0_9999px_rgba(11,9,8,0.62)] transition-all duration-200"
+					className="fixed rounded-lg border-2 border-[color:var(--theme-accent)] shadow-[0_0_0_9999px_var(--theme-tour-scrim)] transition-all duration-200"
 					style={{
 						left: targetRect.left - 5,
 						top: targetRect.top - 5,
@@ -284,19 +285,27 @@ export function GuidedTour() {
 			<section
 				role="dialog"
 				aria-label={`${scenario.label} guided tour`}
-				className="pointer-events-auto fixed rounded-xl border border-white/20 bg-neutral-950 p-5 text-white shadow-2xl"
+				className="border-border bg-popover text-popover-foreground pointer-events-auto fixed rounded-xl border p-5 shadow-2xl"
 				style={cardPosition}
 			>
-				<div className="mb-3 flex items-center justify-between gap-4 text-xs text-neutral-400">
+				<div className="text-muted-foreground mb-3 flex items-center justify-between gap-4 text-xs">
 					<span>{scenario.label.toUpperCase()}</span>
 					<span>
 						{stepIndex + 1} / {steps.length}
 					</span>
 				</div>
-				<h2 className="mb-2 text-lg font-semibold">{step.title}</h2>
-				<p className="text-sm leading-6 text-neutral-300">{step.body}</p>
+				<Heading variant="sectionTitle" level={2} className="mb-2">
+					{step.title}
+				</Heading>
+				<Text variant="body" tone="secondary">
+					{step.body}
+				</Text>
 				<div className="mt-5 flex items-center justify-between gap-3">
-					<Button variant="ghost" onClick={closeTour} className="text-neutral-300 hover:text-white">
+					<Button
+						variant="ghost"
+						onClick={closeTour}
+						className="hover:text-foreground text-[color:var(--theme-content-secondary)]"
+					>
 						Exit
 					</Button>
 					<div className="flex gap-2">

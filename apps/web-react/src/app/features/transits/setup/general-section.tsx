@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent } from '@/app/components/ui/card';
@@ -5,8 +6,7 @@ import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { ModeSwitcherDetails } from '@/app/components/ui/mode-switcher';
 import { Separator } from '@/app/components/ui/separator';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+
 import { useWorkspaceCharts } from '@/app/providers/workspace-charts';
 import {
 	humanizePeriodPresetId,
@@ -43,7 +43,7 @@ const separator = <Separator className="bg-[color:var(--theme-panel-border)]" />
 /** What to compute: type, period, chart, options, event searches, configurations, sampling. */
 export function GeneralSection() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { charts } = useWorkspaceCharts();
 	const { setup, updateSetup, sourceChartId, setSourceChartId, loading, error, compute } =
 		useTransits();
@@ -57,8 +57,10 @@ export function GeneralSection() {
 
 	return (
 		<Card variant="ghost" className="w-full rounded-xl">
-			<CardContent className="flex flex-col space-y-6 p-6 md:p-8">
-				<p className={cn('text-sm', ft.muted)}>{t('transits_subtitle_general')}</p>
+			<CardContent density="compact" className="flex flex-col space-y-6 py-6 sm:px-6 md:p-8">
+				<Text variant="body" tone="muted">
+					{t('transits_subtitle_general')}
+				</Text>
 
 				<SetupSelect
 					label={t('transits_label_type')}
@@ -97,7 +99,7 @@ export function GeneralSection() {
 					}
 				/>
 
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
 					{PLANNED_OPTIONS.map((column, index) => (
 						<div key={index} className="space-y-3">
 							{column.map((option) => (
@@ -117,7 +119,7 @@ export function GeneralSection() {
 
 				{separator}
 
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
 					<CheckOption
 						label={t('transits_exact_hits_label')}
 						hint={t('transits_exact_hits_hint')}
@@ -145,22 +147,22 @@ export function GeneralSection() {
 				/>
 
 				<div className="space-y-2">
-					<Label className={cn('block', ft.label)}>
+					<Label className="block">
 						{t('transits_configuration_label', { defaultValue: 'Multi-body configurations' })}
 					</Label>
-					<p className={cn('text-xs', ft.muted)}>
+					<Text variant="caption" tone="muted">
 						{t('transits_configuration_hint', {
 							defaultValue:
 								'Finds the time interval during which Grand Trine, T-square, Yod, or Grand Cross is simultaneously in orb, independent of graph sampling.'
 						})}
-					</p>
+					</Text>
 					<ConfigurationSelector
 						searches={setup.configurationSearches}
 						onSearchesChange={(configurationSearches) => updateSetup({ configurationSearches })}
 					/>
 				</div>
 
-				<ModeSwitcherDetails open contentClassName={cn('space-y-4', ft.advancedPanel)}>
+				<ModeSwitcherDetails surface="soft" open contentClassName={'space-y-4'}>
 					<PeriodBoundFields
 						label={t('transits_period_from')}
 						value={setup.fromDateTime}
@@ -180,9 +182,11 @@ export function GeneralSection() {
 
 				<div className="pt-6">
 					<Button
+						variant="form-primary"
+						size="form"
 						data-tour="transits-calculate"
 						type="button"
-						className={cn(ft.footerPrimary, 'w-full')}
+						className="w-full flex-1"
 						onClick={() => void compute()}
 						disabled={loading}
 					>
@@ -197,16 +201,17 @@ export function GeneralSection() {
 /** Graph sampling step with the expected sample count. */
 function SamplingInterval() {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
+
 	const { setup, updateSetup, estimatedSampleCount } = useTransits();
 
 	return (
 		<div>
-			<Label className={cn('mb-2 block', ft.label)}>
+			<Label className="mb-2 block">
 				{t('transits_label_graph_sampling_interval', { defaultValue: 'Graph sampling interval' })}
 			</Label>
 			<div className="flex items-center gap-3">
 				<Input
+					variant="form"
 					type="number"
 					min={1}
 					step={1}
@@ -215,7 +220,7 @@ function SamplingInterval() {
 						const next = Number.parseInt(event.target.value, 10);
 						updateSetup({ timeStepValue: Number.isFinite(next) && next > 0 ? next : 1 });
 					}}
-					className={cn(ft.input, 'h-10 w-24 py-2 text-sm shadow-inner')}
+					className="h-10 w-24 py-2 text-sm shadow-inner"
 				/>
 				<TimeStepUnitSelect
 					value={setup.timeStepUnit}
@@ -223,19 +228,19 @@ function SamplingInterval() {
 					triggerClassName="w-40 shadow-inner"
 				/>
 			</div>
-			<p className={cn('mt-2 text-xs', ft.muted)}>
+			<Text variant="caption" tone="muted" className="mt-2">
 				{t('transits_granularity_estimate', {
 					count: estimatedSampleCount,
 					defaultValue: `~${estimatedSampleCount} samples over the selected period`
 				})}
-			</p>
+			</Text>
 			{estimatedSampleCount > 20000 && (
-				<p className="text-destructive mt-1 text-xs">
+				<Text variant="caption" className="text-destructive mt-1">
 					{t('transits_granularity_warning', {
 						defaultValue:
 							'That many samples may take a while to compute and render. Consider a coarser step.'
 					})}
-				</p>
+				</Text>
 			)}
 		</div>
 	);

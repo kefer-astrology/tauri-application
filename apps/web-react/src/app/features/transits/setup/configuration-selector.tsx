@@ -1,3 +1,5 @@
+import { Surface } from '@/app/components/ui/container';
+import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
 import { Checkbox } from '@/app/components/ui/checkbox';
@@ -57,12 +59,12 @@ function RoleToggle({
 				onCheckedChange={(checked) => onChange(toggleFixedRole(entry, role, checked === true))}
 				className={cn('size-3.5', ft.checkboxAccent)}
 			/>
-			<span className={cn('text-xs', ft.muted)}>
+			<Text variant="caption" as="span" tone="muted">
 				{role}:{' '}
 				{fixed
 					? t('transits_configuration_role_fixed', { defaultValue: 'fixed (natal)' })
 					: t('transits_configuration_role_moving', { defaultValue: 'moving' })}
-			</span>
+			</Text>
 		</Label>
 	);
 }
@@ -91,7 +93,7 @@ export function ConfigurationSelector({ searches, onSearchesChange }: Configurat
 			{searches.map((entry, index) => {
 				const pattern = configurationPattern(entry.configurationId);
 				return (
-					<div key={index} className={cn('space-y-2 rounded-lg border p-3', ft.advancedPanel)}>
+					<Surface variant="soft" padding="default" key={index} className="space-y-2">
 						<div className="flex items-center justify-between gap-2">
 							<Select
 								value={entry.configurationId}
@@ -102,12 +104,12 @@ export function ConfigurationSelector({ searches, onSearchesChange }: Configurat
 									})
 								}
 							>
-								<SelectTrigger className={cn(ft.selectTrigger, 'h-8 w-48 text-xs shadow-inner')}>
+								<SelectTrigger variant="form" className="h-8 w-48 text-xs shadow-inner">
 									<SelectValue />
 								</SelectTrigger>
-								<SelectContent className={ft.selectContent}>
+								<SelectContent variant="form">
 									{CONFIGURATION_PATTERNS.map((candidate) => (
-										<SelectItem key={candidate.id} value={candidate.id} className={ft.selectItem}>
+										<SelectItem variant="form" key={candidate.id} value={candidate.id}>
 											{t(candidate.labelKey, { defaultValue: candidate.id })}
 										</SelectItem>
 									))}
@@ -135,7 +137,7 @@ export function ConfigurationSelector({ searches, onSearchesChange }: Configurat
 								))}
 							</div>
 						)}
-					</div>
+					</Surface>
 				);
 			})}
 			<Button

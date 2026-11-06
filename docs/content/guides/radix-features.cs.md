@@ -13,4 +13,4 @@ weight: 20
 
 {{< appframe app="web-react" tour="radix" title="Prohlídka aplikace Kefer Astrology – Funkce Radixu" >}}
 
-Sestavení pro prohlížeč demonstruje kompletní strukturu pracovního prostoru radixu. Vypočtené hodnoty závisí na dostupných demonstračních datech bezpečných pro prohlížeč.
+Sestavení pro prohlížeč ukazuje rozvržení pracovního prostoru radixu. Výpočty backendu a nativní souborové operace vyžadují desktopovou aplikaci; prohlížeč nevytváří smyšlené výsledky výpočtu.

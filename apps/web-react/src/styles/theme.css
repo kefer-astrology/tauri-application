@@ -2,82 +2,78 @@
 
 :root {
 	--font-size: 16px;
-	--background: #ffffff;
-	--foreground: oklch(0.145 0 0);
-	--card: #ffffff;
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: #030213;
-	--primary-foreground: oklch(1 0 0);
-	--secondary: oklch(0.95 0.0058 264.53);
-	--secondary-foreground: #030213;
-	--muted: #ececf0;
-	--muted-foreground: #717182;
-	--accent: #e9ebef;
-	--accent-foreground: #030213;
-	--destructive: #d4183d;
+	/* Fallback to Noon before the appearance provider applies the active palette. */
+	--theme-canvas-start: #fafafa;
+	--theme-canvas-end: #fafafa;
+	--theme-content-primary: #26211c;
+	--theme-content-secondary: #594f45;
+	--theme-content-muted: #8c7f72;
+	--theme-accent: #785dff;
+	--theme-accent-foreground: #ffffff;
+	--theme-hover-bg: rgba(140, 127, 114, 0.1);
+	--theme-selected-bg: #d3e3fd;
+	--theme-main-sidebar-start: #ffffff;
+	--theme-nav-text-primary: #26211c;
+	--theme-nav-text-secondary: #594f45;
+	--theme-panel-bg-solid: var(--theme-canvas-end);
+	--theme-panel-bg: var(--theme-panel-bg-solid);
+	--theme-panel-border: color-mix(in srgb, var(--theme-content-secondary) 18%, transparent);
+	--theme-sidebar-border: color-mix(in srgb, var(--theme-nav-text-primary) 8%, transparent);
+	--theme-soft-bg: color-mix(in srgb, var(--theme-content-primary) 4%, transparent);
+	--theme-soft-bg-strong: color-mix(in srgb, var(--theme-content-primary) 10%, transparent);
+	--theme-overlay-bg: color-mix(in srgb, var(--theme-canvas-start) 72%, transparent);
+	/* Shadows and the tour scrim are neutral effects, independent of palette hue. */
+	--theme-shadow-color: rgb(0 0 0);
+	--theme-loader-shadow: color-mix(in srgb, var(--theme-shadow-color) 8%, transparent);
+	--theme-control-thumb: var(--theme-content-primary);
+	--theme-control-thumb-prominent: var(--theme-content-primary);
+	--theme-tour-scrim: color-mix(in srgb, var(--theme-shadow-color) 62%, transparent);
+	/* Semantic component aliases: the palette is the source of interface colors. */
+	--background: var(--theme-canvas-start);
+	--foreground: var(--theme-content-primary);
+	--card: var(--theme-panel-bg-solid);
+	--card-foreground: var(--theme-content-primary);
+	--popover: var(--theme-panel-bg-solid);
+	--popover-foreground: var(--theme-content-primary);
+	--primary: var(--theme-accent);
+	--primary-foreground: var(--theme-accent-foreground);
+	--secondary: var(--theme-soft-bg-strong);
+	--secondary-foreground: var(--theme-content-secondary);
+	--muted: var(--theme-soft-bg);
+	--muted-foreground: var(--theme-content-muted);
+	--accent: var(--theme-selected-bg);
+	--accent-foreground: var(--theme-content-primary);
+	--border: var(--theme-panel-border);
+	--input: var(--theme-panel-border);
+	--input-background: var(--theme-panel-bg-solid);
+	--switch-background: var(--theme-content-muted);
+	--ring: var(--theme-accent);
+	--chart-1: var(--token-viz-1);
+	--chart-2: var(--token-viz-2);
+	--chart-3: var(--token-viz-3);
+	--chart-4: var(--token-viz-4);
+	--chart-5: var(--theme-accent);
+	--sidebar: var(--theme-main-sidebar-start);
+	--sidebar-foreground: var(--theme-nav-text-primary);
+	--sidebar-primary: var(--theme-accent);
+	--sidebar-primary-foreground: var(--theme-accent-foreground);
+	--sidebar-accent: var(--theme-selected-bg);
+	--sidebar-accent-foreground: var(--theme-nav-text-primary);
+	--sidebar-border: var(--theme-sidebar-border);
+	--sidebar-ring: var(--theme-accent);
+	/* Status colors retain their meaning across palettes. */
+	--destructive: #b91c1c;
 	--destructive-foreground: #ffffff;
-	--border: rgba(0, 0, 0, 0.1);
-	--input: transparent;
-	/* Match card/surface: crisp white fields on light themes (shadcn default #f3f3f5 reads muddy). */
-	--input-background: #ffffff;
-	--switch-background: #cbced4;
+	--warning: #b45309;
 	--font-weight-medium: 500;
 	--font-weight-normal: 400;
-	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.646 0.222 41.116);
-	--chart-2: oklch(0.6 0.118 184.704);
-	--chart-3: oklch(0.398 0.07 227.392);
-	--chart-4: oklch(0.828 0.189 84.429);
-	--chart-5: oklch(0.769 0.188 70.08);
-	/* Base radius for shadcn `rounded-md`/`rounded-lg` tokens — softer UI-wide corners */
 	--radius: 0.875rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: #030213;
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.145 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.985 0 0);
-	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.396 0.141 25.723);
-	--destructive-foreground: oklch(0.637 0.237 25.331);
-	--border: oklch(0.269 0 0);
-	--input: oklch(0.269 0 0);
-	--ring: oklch(0.439 0 0);
-	--font-weight-medium: 500;
-	--font-weight-normal: 400;
-	--chart-1: oklch(0.488 0.243 264.376);
-	--chart-2: oklch(0.696 0.17 162.48);
-	--chart-3: oklch(0.769 0.188 70.08);
-	--chart-4: oklch(0.627 0.265 303.9);
-	--chart-5: oklch(0.645 0.246 16.439);
-	--sidebar: oklch(0.205 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(0.269 0 0);
-	--sidebar-ring: oklch(0.439 0 0);
+	--destructive: #f87171;
+	--destructive-foreground: #000000;
+	--warning: #fbbf24;
 }
 
 @theme inline {
@@ -96,6 +92,7 @@
 	--color-accent: var(--accent);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-destructive: var(--destructive);
+	--color-warning: var(--warning);
 	--color-destructive-foreground: var(--destructive-foreground);
 	--color-border: var(--border);
 	--color-input: var(--input);
@@ -187,25 +184,5 @@
 		background-color: transparent;
 		-webkit-backdrop-filter: blur(var(--theme-popup-backdrop-blur, 0px));
 		backdrop-filter: blur(var(--theme-popup-backdrop-blur, 0px));
-	}
-
-	.kefer-twilight-bg {
-		background-image:
-			radial-gradient(circle at 20% 18%, rgba(244, 114, 182, 0.18) 0, rgba(244, 114, 182, 0) 22%),
-			radial-gradient(circle at 78% 24%, rgba(96, 165, 250, 0.22) 0, rgba(96, 165, 250, 0) 26%),
-			radial-gradient(circle at 50% 72%, rgba(129, 140, 248, 0.18) 0, rgba(129, 140, 248, 0) 30%),
-			linear-gradient(
-				180deg,
-				#2f4b8f 0%,
-				#345aa5 24%,
-				#4f67af 44%,
-				#6f6aa8 60%,
-				#8d6999 76%,
-				#b47a87 100%
-			);
-		background-size: cover;
-		background-position: center;
-		background-repeat: no-repeat;
-		background-attachment: fixed;
 	}
 }

@@ -55,7 +55,7 @@ Source of truth for accepted enum names:
 
 Frontend settings expose the same list in:
 
-- `apps/web-react/src/app/components/settings-view.tsx`
+- `apps/web-react/src/app/features/settings/sections/house-system-section.tsx`
 - `apps/web-svelte/src/lib/components/SettingsView.svelte`
 
 Swiss Ephemeris maps the accepted list through:

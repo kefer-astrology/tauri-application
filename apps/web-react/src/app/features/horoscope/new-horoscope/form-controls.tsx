@@ -7,8 +7,6 @@ import {
 	SelectTrigger,
 	SelectValue
 } from '@/app/components/ui/select';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 
 /** A form field: label above its control. */
 export function FormField({
@@ -22,10 +20,9 @@ export function FormField({
 	className?: string;
 	children: ReactNode;
 }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<div className={className}>
-			<Label htmlFor={htmlFor} className={cn('mb-1.5 block', ft.label)}>
+			<Label htmlFor={htmlFor} className="mb-1.5 block">
 				{label}
 			</Label>
 			{children}
@@ -49,15 +46,14 @@ export function FormSelect<T extends string>({
 	placeholder?: string;
 	triggerClassName?: string;
 }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<Select value={value} onValueChange={(next) => onValueChange(next as T)}>
-			<SelectTrigger id={id} className={cn(ft.selectTrigger, 'shadow-inner', triggerClassName)}>
+			<SelectTrigger variant="form" id={id} className={triggerClassName}>
 				<SelectValue placeholder={placeholder} />
 			</SelectTrigger>
-			<SelectContent className={ft.selectContent}>
+			<SelectContent variant="form">
 				{options.map((option) => (
-					<SelectItem key={option.value} value={option.value} className={ft.selectItem}>
+					<SelectItem variant="form" key={option.value} value={option.value}>
 						{option.label}
 					</SelectItem>
 				))}

@@ -36,14 +36,29 @@ export function normalizeHouseCusps(cusps?: readonly number[]): number[] {
 	return normalized.every((cusp): cusp is number => cusp !== null) ? normalized : [];
 }
 
-/** Side of the ASC–DSC line a longitude falls on (`east` = the half after the ASC). */
-export function eastWestHemisphere(eclipticDeg: number, ascDeg: number): 'east' | 'west' {
-	return Math.sin(((eclipticDeg - ascDeg) * Math.PI) / 180) > 0 ? 'east' : 'west';
+/** A half of the chart, as in the chart facts: `east` = houses 10–3, `west` = 4–9,
+ *  `upper` = 7–12, `lower` = 1–6. */
+export type ChartHalf = 'east' | 'west' | 'upper' | 'lower';
+
+/** Half of the horizon (ASC–DSC line) a longitude falls in: houses 1–6 follow the ASC. */
+export function horizonHalf(eclipticDeg: number, ascDeg: number): 'upper' | 'lower' {
+	return Math.sin(((eclipticDeg - ascDeg) * Math.PI) / 180) > 0 ? 'lower' : 'upper';
 }
 
-/** Side of the MC–IC line a longitude falls on (`north` = the half after the MC). */
-export function northSouthHemisphere(eclipticDeg: number, mcDeg: number): 'north' | 'south' {
-	return Math.sin(((eclipticDeg - mcDeg) * Math.PI) / 180) > 0 ? 'north' : 'south';
+/** Half of the meridian (MC–IC line) a longitude falls in: houses 10–3 follow the MC. */
+export function meridianHalf(eclipticDeg: number, mcDeg: number): 'east' | 'west' {
+	return Math.sin(((eclipticDeg - mcDeg) * Math.PI) / 180) > 0 ? 'east' : 'west';
+}
+
+/** Whether a longitude lies in `half` of a chart with these axes. */
+export function isInChartHalf(
+	eclipticDeg: number,
+	half: ChartHalf,
+	axis: { asc: number; mc: number }
+): boolean {
+	return half === 'east' || half === 'west'
+		? meridianHalf(eclipticDeg, axis.mc) === half
+		: horizonHalf(eclipticDeg, axis.asc) === half;
 }
 
 /** Longitude gap below which two glyphs are treated as overlapping and fanned apart. */

@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/app/components/ui/utils';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
@@ -73,9 +74,13 @@ export function PositionsList({
 						</span>
 						<span className="w-10 text-right">{position.minutes}'</span>
 						<span className="w-10 text-right">{position.seconds}"</span>
-						<span className="w-6 text-center text-[10px] font-semibold text-[color:var(--theme-accent)] uppercase">
+						<Text
+							variant="eyebrow"
+							as="span"
+							className="w-6 text-center font-semibold text-[color:var(--theme-accent)]"
+						>
 							{retrograde ? 'R' : ''}
-						</span>
+						</Text>
 					</div>
 				);
 			})}

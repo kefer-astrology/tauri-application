@@ -30,8 +30,7 @@ export function setAspectDefinitions(
 			id: definition.id,
 			labelKey: `aspect_${definition.id}`,
 			fallbackLabel: definition.i18n.en ?? humanizeId(definition.id),
-			glyph:
-				definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3),
+			glyph: textGlyphForDefinition(definition),
 			color: definition.color || DEFAULT_ASPECT_COLORS[definition.id] || colorForId(definition.id),
 			angle: definition.angle,
 			harmonic: definition.harmonic,
@@ -45,14 +44,25 @@ export function setAspectDefinitions(
 	for (const key of Object.keys(DEFAULT_ASPECT_ORBS)) delete DEFAULT_ASPECT_ORBS[key];
 	for (const row of ASPECT_ROWS) DEFAULT_ASPECT_ORBS[row.id] = row.defaultOrb;
 	for (const definition of definitions) {
-		ASPECT_GLYPHS[definition.id] =
-			definition.glyph || ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3);
+		ASPECT_GLYPHS[definition.id] = textGlyphForDefinition(definition);
 		DEFAULT_ASPECT_COLORS[definition.id] =
 			definition.color || DEFAULT_ASPECT_COLORS[definition.id] || colorForId(definition.id);
 	}
 	if (defaultAspectIds) {
 		DEFAULT_ENABLED_ASPECT_IDS.splice(0, DEFAULT_ENABLED_ASPECT_IDS.length, ...defaultAspectIds);
 	}
+}
+
+/** Built-in Rust catalogs use the English name as glyph metadata; keep that name in
+ *  the label column and use the established symbol/abbreviation as a text fallback. */
+function textGlyphForDefinition(definition: AspectDefinitionDto): string {
+	const glyph = definition.glyph?.trim();
+	const name = definition.i18n.en ?? humanizeId(definition.id);
+	return glyph &&
+		glyph.toLocaleLowerCase() !== name.toLocaleLowerCase() &&
+		glyph.toLocaleLowerCase() !== definition.id.toLocaleLowerCase()
+		? glyph
+		: ASPECT_GLYPHS[definition.id] || humanizeId(definition.id).slice(0, 3);
 }
 
 function humanizeId(id: string): string {

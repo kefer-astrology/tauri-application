@@ -1,3 +1,4 @@
+import { Heading, Text } from '@/app/components/ui/typography';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Checkbox } from '@/app/components/ui/checkbox';
@@ -36,26 +37,27 @@ export function TransitLayersPanel() {
 			}}
 		>
 			<div className="shrink-0 px-3 py-4">
-				<h2 className={cn('text-sm font-semibold tracking-wide uppercase', st.text)}>
+				<Heading variant="eyebrow" level={2} className={st.text}>
 					{t('transit_layers_panel_title', { defaultValue: 'Layers' })}
-				</h2>
+				</Heading>
 			</div>
 			<nav
 				className="scrollbar-hide flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pb-3"
 				aria-label={t('transits_menu_transiting')}
 			>
 				{layers.length === 0 ? (
-					<p className={cn('px-2 py-3 text-xs', st.text)}>
+					<Text variant="caption" className={cn('px-2 py-3', st.text)}>
 						{t('transit_layers_panel_empty', { defaultValue: 'No aspects in this series.' })}
-					</p>
+					</Text>
 				) : (
 					layers.map((group) => {
 						const checked = layerVisibility(group.keys, view.hiddenSeriesKeys);
 						return (
 							<Label
+								variant="compact"
 								key={group.from}
 								className={cn(
-									'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium',
+									'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5',
 									st.text
 								)}
 							>
@@ -65,7 +67,9 @@ export function TransitLayersPanel() {
 									className="h-3.5 w-3.5 shrink-0"
 								/>
 								<span className="truncate">{objectLabel(group.from, t)}</span>
-								<span className="ml-auto text-[0.65rem] opacity-60">{group.keys.length}</span>
+								<Text variant="caption" as="span" className="ml-auto opacity-60">
+									{group.keys.length}
+								</Text>
 							</Label>
 						);
 					})

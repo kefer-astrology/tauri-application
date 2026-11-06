@@ -1,3 +1,4 @@
+import { ActionBar } from '@/app/components/ui/container';
 import { Fragment } from 'react';
 import {
 	Breadcrumb,
@@ -26,7 +27,14 @@ export function HoroscopeContextTabs() {
 	const ft = useAppFormFieldTheme();
 
 	return (
-		<div className={ft.contextRail} data-tour="radix-chart-tabs">
+		<ActionBar
+			padding="compact"
+			align="center"
+			wrap="nowrap"
+			surface="panel"
+			className="min-h-11 overflow-x-auto overflow-y-hidden"
+			data-tour="radix-chart-tabs"
+		>
 			<Breadcrumb className="min-w-0">
 				<BreadcrumbList className={cn('flex-nowrap items-center gap-0.5 sm:gap-1', ft.muted)}>
 					{charts.map((chart, i) => {
@@ -65,6 +73,6 @@ export function HoroscopeContextTabs() {
 					})}
 				</BreadcrumbList>
 			</Breadcrumb>
-		</div>
+		</ActionBar>
 	);
 }

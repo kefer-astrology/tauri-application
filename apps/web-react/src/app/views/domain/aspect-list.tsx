@@ -1,3 +1,5 @@
+import { AstrologyGlyph } from '@/ui/astrology-glyph';
+import { Text } from '@/app/components/ui/typography';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -103,9 +105,9 @@ export function AspectList({
 			layout={viewMode === 'type' ? 'sections' : 'accordion'}
 			headerStart={
 				<div className="flex items-center gap-3">
-					<span className={cn('text-xs font-medium', ft.muted)}>
+					<Text variant="compactLabel" as="span" tone="muted">
 						{t('transits_aspects_view_label')}
-					</span>
+					</Text>
 					<SegmentedControl
 						value={viewMode}
 						options={[
@@ -130,17 +132,29 @@ export function AspectList({
 			}}
 			renderItem={(item, { highlight }) => (
 				<>
-					<span className={cn('w-8 shrink-0 text-center text-xs', ft.muted)}>
-						{ASPECT_GLYPHS[item.id] ?? '•'}
+					<span className={cn('flex w-8 shrink-0 items-center justify-center', ft.iconColor)}>
+						<AstrologyGlyph
+							glyphId={item.id}
+							domain="aspect"
+							fallback={ASPECT_GLYPHS[item.id] ?? '•'}
+							size={18}
+						/>
 					</span>
-					<span className={cn('flex-1 text-sm', ft.bodyText)}>{highlight(item.label)}</span>
-					<span className={cn('w-16 shrink-0 text-right text-xs tabular-nums', ft.muted)}>
+					<Text variant="body" as="span" tone="secondary" className="flex-1">
+						{highlight(item.label)}
+					</Text>
+					<Text
+						variant="caption"
+						as="span"
+						tone="muted"
+						className="w-16 shrink-0 text-right tabular-nums"
+					>
 						{formatAspectAngle(item.row.angle)}
-					</span>
+					</Text>
 					{item.row.type === 'minor' && (
-						<span className={cn('w-32 shrink-0 text-right text-xs', ft.muted)}>
+						<Text variant="caption" as="span" tone="muted" className="w-32 shrink-0 text-right">
 							{t('transits_aspects_harmonic_series', { n: item.row.harmonic })}
-						</span>
+						</Text>
 					)}
 				</>
 			)}
@@ -153,9 +167,9 @@ export function AspectList({
 				>
 					<AccordionItem value="presets" className="border-0">
 						<AccordionTrigger className="py-2.5 hover:no-underline">
-							<span className={cn('text-sm font-semibold', ft.title)}>
+							<Text variant="body" as="span" tone="primary" className="font-semibold">
 								{t('transits_aspects_presets_title')}
-							</span>
+							</Text>
 						</AccordionTrigger>
 						<AccordionContent>
 							<div className="divide-y divide-[color:var(--theme-panel-border)]">

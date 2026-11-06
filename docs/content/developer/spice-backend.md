@@ -107,7 +107,7 @@ in-range ANISE state before appending the kernel to the ordinary almanac. The
 bundled Chiron artifact uses this path because native Horizons SPKs currently use
 unsupported Type 21 segments. A successful DAF load alone is never treated as
 proof that a target is queryable. Per-chart Horizons calls remain outside this
-architecture. [Ephemerides and coverage](../ephemeris-manager/#manifest-defined-small-body-spks)
+architecture. [Ephemerides and coverage](../ephemeris-manager/#4--manifest-defined-small-body-spks)
 owns the artifact schema, acceptance checks, and measured Chiron interpolation
 evidence.
 

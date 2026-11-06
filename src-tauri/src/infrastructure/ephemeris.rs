@@ -318,6 +318,7 @@ pub struct SmallBodyValidation {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SmallBodyKernel {
     pub body_id: String,
+    pub display_name: String,
     pub frame: Frame,
     pub path: PathBuf,
 }
@@ -330,6 +331,16 @@ fn valid_body_id(value: &str) -> bool {
 }
 
 fn reserved_body_id(value: &str) -> bool {
+    if value.starts_with("lot_")
+        || value.starts_with("star_")
+        || value.starts_with("hypo_")
+        || crate::domain::astrology::hypothetical_catalog()
+            .bodies
+            .iter()
+            .any(|body| body.id == value)
+    {
+        return true;
+    }
     DE_PLANETS.contains(&value)
         || CODES_300AST_MAJOR_BODIES.contains(&value)
         || [
@@ -439,6 +450,7 @@ fn small_body_kernel_for_path(path: &Path) -> Option<SmallBodyKernel> {
     }
     Some(SmallBodyKernel {
         body_id: manifest.body_id,
+        display_name: manifest.display_name,
         frame: Frame::from_ephem_j2000(manifest.naif_target_id),
         path: path.to_path_buf(),
     })
@@ -1021,8 +1033,7 @@ impl EphemerisManager {
                     continue;
                 }
             };
-            if !body_ids.insert(manifest.body_id.clone())
-                || !target_ids.insert(manifest.naif_target_id)
+            if body_ids.contains(&manifest.body_id) || target_ids.contains(&manifest.naif_target_id)
             {
                 log::warn!(
                     "ephemeris: ignoring duplicate small-body manifest {}",
@@ -1071,6 +1082,8 @@ impl EphemerisManager {
                 manifest.naif_target_id,
                 bsp_path.display()
             );
+            body_ids.insert(manifest.body_id.clone());
+            target_ids.insert(manifest.naif_target_id);
             accepted.push(bsp_path);
         }
         accepted
@@ -1812,4 +1825,98 @@ mod usable_coverage_tests {
             report.determination
         );
     }
+}
+
+/// Shared application data location for user-installed point definitions and SPK packages.
+pub(crate) fn point_data_dir() -> PathBuf {
+    resolved_cache_dir()
+}
+
+/// Install a manifest and its adjacent BSP only after the same integrity and evaluator checks
+/// used by discovery. Arbitrary paths inside a manifest are never followed.
+pub fn install_small_body_package(source_manifest: &Path) -> Result<String, String> {
+    static INSTALL_LOCK: Mutex<()> = Mutex::new(());
+    let _guard = INSTALL_LOCK
+        .lock()
+        .map_err(|_| "ephemeris package installation lock poisoned")?;
+    if std::fs::metadata(source_manifest)
+        .map_err(|e| e.to_string())?
+        .len()
+        > 1024 * 1024
+    {
+        return Err("SPK manifest exceeds 1 MiB".into());
+    }
+    let manifest = read_small_body_manifest(source_manifest)?;
+    if manifest.body_id.starts_with("lot_")
+        || manifest.body_id.starts_with("star_")
+        || manifest.body_id.starts_with("hypo_")
+    {
+        return Err("This body ID belongs to a formula or catalog point, not an SPK".into());
+    }
+    if ![
+        "eris", "sedna", "haumea", "makemake", "quaoar", "orcus", "varuna", "chiron",
+    ]
+    .contains(&manifest.body_id.as_str())
+        && !manifest.body_id.starts_with("tno_user_")
+        && !manifest.body_id.starts_with("minor_user_")
+    {
+        return Err(
+            "Additional imported ephemeris IDs must start with tno_user_ or minor_user_".into(),
+        );
+    }
+    let source_bsp = source_manifest
+        .parent()
+        .ok_or("manifest has no parent directory")?
+        .join(&manifest.filename);
+    if std::fs::metadata(&source_bsp)
+        .map_err(|e| format!("missing adjacent BSP: {e}"))?
+        .len()
+        > 512 * 1024 * 1024
+    {
+        return Err("Small-body package exceeds 512 MiB".into());
+    }
+    let manager = EphemerisManager::from_global();
+    let available = manager.available_bsp_paths();
+    if small_body_kernels_for_bsp_paths(&available)
+        .iter()
+        .any(|kernel| {
+            kernel.frame.ephemeris_id == manifest.naif_target_id
+                && kernel.body_id != manifest.body_id
+        })
+    {
+        return Err("This ephemeris target is already registered under another body ID".into());
+    }
+    let existing: Vec<_> = available
+        .into_iter()
+        .filter(|path| {
+            small_body_kernel_for_path(path).is_none_or(|k| k.body_id != manifest.body_id)
+        })
+        .collect();
+    validate_small_body_artifact(source_manifest, &source_bsp, &manifest, &existing)?;
+    let destination = point_data_dir();
+    std::fs::create_dir_all(&destination).map_err(|e| e.to_string())?;
+    let bsp = destination.join(&manifest.filename);
+    let json = manifest_path_for_bsp(&bsp);
+    if bsp.exists() || json.exists() {
+        return Err("A package with this filename is already installed".into());
+    }
+    let pending = bsp.with_extension("bsp.partial");
+    std::fs::copy(&source_bsp, &pending).map_err(|e| e.to_string())?;
+    if sha256_file(&pending)? != manifest.sha256.to_lowercase() {
+        let _ = std::fs::remove_file(&pending);
+        return Err("Package changed during import".into());
+    }
+    std::fs::rename(&pending, &bsp).map_err(|e| e.to_string())?;
+    let pending_json = json.with_extension("json.partial");
+    if let Err(error) = std::fs::write(
+        &pending_json,
+        serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?,
+    )
+    .and_then(|_| std::fs::rename(&pending_json, &json))
+    {
+        let _ = std::fs::remove_file(&bsp);
+        let _ = std::fs::remove_file(&pending_json);
+        return Err(error.to_string());
+    }
+    Ok(manifest.body_id)
 }

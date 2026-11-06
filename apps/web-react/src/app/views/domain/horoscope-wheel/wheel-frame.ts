@@ -87,8 +87,7 @@ export function useWheelFrame({
 	lightPlanetFill: string;
 	onObjectClick?: (interaction: { bodyId: string; layer: WheelObjectLayer }) => void;
 }): WheelFrame {
-	const { theme, glyphSet } = useAppTheme();
-	const isDark = theme === 'midnight' || theme === 'twilight';
+	const { dark: isDark, glyphSet } = useAppTheme();
 	const customGlyphOverrides = useCustomGlyphOverrides();
 	const filterUid = useId().replace(/:/g, '');
 	const planetLightFilterId = `${filterUid}-pl`;

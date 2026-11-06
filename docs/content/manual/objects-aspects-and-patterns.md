@@ -117,8 +117,7 @@ need the visible School preset; see **Settings** for its current effect.
 
 ## Chart shapes and configurations
 
-Aspectarium can report these calculated patterns. Information, including its
-Spektrum prototype, does not yet use the selected chart's computed result.
+Aspectarium and Spectrum report these calculated patterns.
 Patterns are descriptions of a chart at its computed instant, not extra objects
 or additional calculations to configure.
 

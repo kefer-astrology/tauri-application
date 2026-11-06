@@ -1,10 +1,11 @@
-import { polar, type WheelAxis } from '@/lib/astrology/wheelGeometry';
+import { polar, type ChartHalf, type WheelAxis } from '@/lib/astrology/wheelGeometry';
 import { WHEEL, type WheelFrame } from '../wheel-frame';
 
-export type HemisphereOverlayKind =
-	'off' | 'asc-dsc-east' | 'asc-dsc-west' | 'mc-ic-north' | 'mc-ic-south';
+/** The chart half to tint, named as in the chart facts, or `off`. */
+export type HemisphereOverlayKind = 'off' | ChartHalf;
 
-/** Tinted half of the wheel along the ASC–DSC or MC–IC line. */
+/** Tinted half of the wheel: `upper` / `lower` across the ASC–DSC line, `east` / `west` across
+ *  the MC–IC line. */
 export function HemisphereOverlay({
 	frame,
 	axis,
@@ -24,13 +25,13 @@ export function HemisphereOverlay({
 	};
 
 	const path =
-		kind === 'asc-dsc-east'
+		kind === 'lower'
 			? arcWedge(axis.dsc, axis.asc, 1)
-			: kind === 'asc-dsc-west'
+			: kind === 'upper'
 				? arcWedge(axis.dsc, axis.asc, 0)
-				: kind === 'mc-ic-north'
+				: kind === 'east'
 					? arcWedge(axis.ic, axis.mc, 1)
-					: kind === 'mc-ic-south'
+					: kind === 'west'
 						? arcWedge(axis.ic, axis.mc, 0)
 						: null;
 
@@ -40,7 +41,7 @@ export function HemisphereOverlay({
 				<path
 					d={path}
 					fill={
-						kind.startsWith('mc-ic')
+						kind === 'east' || kind === 'west'
 							? 'var(--token-wheel-overlay-secondary)'
 							: 'var(--token-wheel-overlay-primary)'
 					}

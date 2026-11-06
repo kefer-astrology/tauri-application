@@ -7,7 +7,6 @@ import {
 	type AppMainContentWidth
 } from '@/app/components/ui/app-main-content';
 import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
-import { useAppTheme } from '@/app/providers/app-theme';
 import { ChartBasicsSection } from './sections/chart-basics-section';
 import { LocationSection } from './sections/location-section';
 import { RodenRatingSection } from './sections/roden-rating-section';
@@ -32,18 +31,13 @@ export function NewHoroscope({
 	...options
 }: NewHoroscopeProps) {
 	const { t } = useTranslation();
-	const { theme } = useAppTheme();
 	const ft = useAppFormFieldTheme();
 	const form = useNewHoroscopeForm(options);
 	const { isEditMode, isResolvingLocation } = form;
 
 	return (
 		<AppMainContentRoot
-			className={cn(
-				presentation === 'panel'
-					? 'bg-transparent px-5 py-4'
-					: cn(ft.formPageBg, theme === 'twilight' && 'kefer-twilight-bg')
-			)}
+			className={cn(presentation === 'panel' ? 'bg-transparent px-5 py-4' : ft.formPageBg)}
 		>
 			<AppMainContentContainer width={presentation === 'panel' ? 'full' : pageWidth}>
 				<div className="space-y-4">
@@ -57,8 +51,9 @@ export function NewHoroscope({
 						{isEditMode && (
 							<Button
 								type="button"
-								variant="ghost"
-								className={ft.footerCancel}
+								variant="form-secondary"
+								size="form"
+								className="flex-1"
 								onClick={() => onBack?.()}
 							>
 								{t('new_back')}
@@ -66,8 +61,9 @@ export function NewHoroscope({
 						)}
 						<Button
 							type="button"
-							variant="ghost"
-							className={cn(ft.footerPrimary, !isEditMode && 'flex-1')}
+							variant="form-primary"
+							size="form"
+							className="flex-1"
 							disabled={isResolvingLocation}
 							onClick={() => void form.submit()}
 						>

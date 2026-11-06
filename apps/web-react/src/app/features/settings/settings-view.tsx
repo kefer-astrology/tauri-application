@@ -1,10 +1,9 @@
+import { ActionBar } from '@/app/components/ui/container';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppMainContentContainer, AppMainContentRoot } from '@/app/components/ui/app-main-content';
 import { Button } from '@/app/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
-import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
+import { Card, CardContent } from '@/app/components/ui/card';
 import { useAppearance } from '@/app/providers/appearance';
 import type { ElementColors } from '@/lib/astrology/elementColors';
 import type { ThemePalette } from '@/lib/themePalettes';
@@ -30,19 +29,16 @@ const SECTIONS: Record<SettingsSectionId, () => React.ReactNode> = {
 };
 
 /**
- * Settings: the active section plus Cancel / Confirm. Sections read and change the appearance and
+ * Settings: the active section and one Confirm action. Sections read and change the appearance and
  * workspace providers directly; most changes apply at once. Element colors and the theme palette
- * are drafts applied by Confirm; Cancel discards them and any half-typed input.
+ * are drafts applied by Confirm; leaving Settings discards unconfirmed drafts and local input.
  */
 export function SettingsView({ section }: { section: SettingsSectionId }) {
 	const { t } = useTranslation();
-	const ft = useAppFormFieldTheme();
 	const { elementColors, commitElementColors, themePalette, commitThemePalette } = useAppearance();
 	const [changed, setChanged] = useState(false);
 	const [elementDraft, setElementDraftState] = useState<ElementColors>(elementColors);
 	const [paletteDraft, setPaletteDraftState] = useState<ThemePalette>(themePalette);
-	// Bumped by Cancel: remounting the section resets its local, not yet saved input.
-	const [resetToken, setResetToken] = useState(0);
 
 	useEffect(() => setElementDraftState(elementColors), [elementColors]);
 	useEffect(() => setPaletteDraftState(themePalette), [themePalette]);
@@ -59,12 +55,6 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 		[markChanged, elementDraft, paletteDraft]
 	);
 
-	const cancel = () => {
-		setChanged(false);
-		setElementDraftState(elementColors);
-		setPaletteDraftState(themePalette);
-		setResetToken((token) => token + 1);
-	};
 	const confirm = () => {
 		commitElementColors(elementDraft);
 		commitThemePalette(paletteDraft);
@@ -79,30 +69,25 @@ export function SettingsView({ section }: { section: SettingsSectionId }) {
 				<AppMainContentContainer width="wide">
 					<div className="flex min-h-0 w-full min-w-0 flex-col space-y-6">
 						<Card
+							spacing="flush"
 							variant="ghost"
-							className="flex min-h-[min(70vh,520px)] min-w-0 flex-col gap-0 rounded-xl p-0 shadow-none"
+							className="flex min-h-[min(70vh,520px)] min-w-0 flex-col rounded-xl p-0 shadow-none"
 						>
 							<CardContent className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
-								<Section key={`${section}-${resetToken}`} />
+								<Section key={section} />
 							</CardContent>
-							<CardFooter className="shrink-0 flex-col gap-2 border-0 bg-transparent px-6 py-4 sm:flex-row md:px-8">
+							<ActionBar border="none" layout="responsive" className="md:px-8">
 								<Button
+									variant="form-primary"
+									size="form"
 									type="button"
-									variant="outline"
-									className={ft.footerCancel}
-									onClick={cancel}
-								>
-									{t('cancel')}
-								</Button>
-								<Button
-									type="button"
-									className={cn(ft.footerPrimary)}
+									className="flex-1"
 									onClick={confirm}
 									disabled={!changed}
 								>
 									{t('confirm')}
 								</Button>
-							</CardFooter>
+							</ActionBar>
 						</Card>
 					</div>
 				</AppMainContentContainer>

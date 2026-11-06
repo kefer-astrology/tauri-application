@@ -36,7 +36,21 @@
 			"resources/de440s.bsp",
 			"resources/codes_300ast_20100725.bsp",
 			"resources/chiron_1900_2100_type13.bsp",
-			"resources/chiron_1900_2100_type13.bsp.json"
+			"resources/chiron_1900_2100_type13.bsp.json",
+			"resources/eris_1900_2100_type13.bsp",
+			"resources/eris_1900_2100_type13.bsp.json",
+			"resources/sedna_1900_2100_type13.bsp",
+			"resources/sedna_1900_2100_type13.bsp.json",
+			"resources/haumea_1900_2100_type13.bsp",
+			"resources/haumea_1900_2100_type13.bsp.json",
+			"resources/makemake_1900_2100_type13.bsp",
+			"resources/makemake_1900_2100_type13.bsp.json",
+			"resources/quaoar_1900_2100_type13.bsp",
+			"resources/quaoar_1900_2100_type13.bsp.json",
+			"resources/orcus_1900_2100_type13.bsp",
+			"resources/orcus_1900_2100_type13.bsp.json",
+			"resources/varuna_1900_2100_type13.bsp",
+			"resources/varuna_1900_2100_type13.bsp.json"
 		],
 		"windows": {
 			"certificateThumbprint": null,

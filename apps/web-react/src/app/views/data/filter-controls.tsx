@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import type { ReactNode } from 'react';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/app/components/ui/accordion';
 import { Checkbox } from '@/app/components/ui/checkbox';
@@ -10,7 +11,6 @@ import {
 	SelectValue
 } from '@/app/components/ui/select';
 import { cn } from '@/app/components/ui/utils';
-import { useAppFormFieldTheme } from '@/app/components/form-field-theme';
 
 /** Building blocks for filter panels: collapsible sections and compact "any"-able fields. Every
  *  value is a string; `''` means "any". Copy comes from the caller. */
@@ -40,8 +40,11 @@ export function FilterSection({
 }
 
 export function FieldLabel({ children, className }: { children: ReactNode; className?: string }) {
-	const ft = useAppFormFieldTheme();
-	return <Label className={cn('text-xs font-medium', ft.muted, className)}>{children}</Label>;
+	return (
+		<Label variant="compact" tone="muted" className={className}>
+			{children}
+		</Label>
+	);
 }
 
 const ANY = '__any__';
@@ -62,21 +65,22 @@ export function OptionSelect({
 	ariaLabel?: string;
 	className?: string;
 }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<Select value={value || ANY} onValueChange={(next) => onValueChange(next === ANY ? '' : next)}>
 			<SelectTrigger
+				variant="form"
+				density="compact"
 				aria-label={ariaLabel}
-				className={cn(ft.inputCompact, 'w-full min-w-0 px-2 text-xs', className)}
+				className={cn('w-full min-w-0 px-2 text-xs', className)}
 			>
 				<SelectValue />
 			</SelectTrigger>
-			<SelectContent className={ft.selectContent}>
-				<SelectItem value={ANY} className={ft.selectItem}>
+			<SelectContent variant="form">
+				<SelectItem variant="form" value={ANY}>
 					{anyLabel}
 				</SelectItem>
 				{options.map((option) => (
-					<SelectItem key={option.value} value={option.value} className={ft.selectItem}>
+					<SelectItem variant="form" key={option.value} value={option.value}>
 						{option.label}
 					</SelectItem>
 				))}
@@ -98,11 +102,10 @@ export function CheckRow({
 	children: ReactNode;
 	indent?: number;
 }) {
-	const ft = useAppFormFieldTheme();
 	return (
 		<div className="flex items-center gap-2" style={{ paddingLeft: `${indent * 16}px` }}>
 			<Checkbox id={id} checked={checked} onCheckedChange={onCheckedChange} />
-			<Label htmlFor={id} className={cn('cursor-pointer text-sm', ft.bodyText)}>
+			<Label htmlFor={id} className="cursor-pointer">
 				{children}
 			</Label>
 		</div>
@@ -125,7 +128,6 @@ export function CheckList({
 	onSelectedChange: (selected: string[]) => void;
 	columns?: 1 | 2;
 }) {
-	const ft = useAppFormFieldTheme();
 	const toggle = (value: string) =>
 		onSelectedChange(
 			selected.includes(value) ? selected.filter((id) => id !== value) : [...selected, value]
@@ -134,13 +136,15 @@ export function CheckList({
 		<div className={cn(columns === 2 ? 'grid grid-cols-2 gap-1.5' : 'space-y-2')}>
 			{items.map((item) =>
 				item.heading ? (
-					<p
+					<Text
+						variant="compactLabel"
+						tone="muted"
 						key={item.value}
-						className={cn('pt-1 text-xs font-medium', ft.muted)}
+						className="pt-1"
 						style={{ paddingLeft: `${(item.indent ?? 0) * 16}px` }}
 					>
 						{item.label}
-					</p>
+					</Text>
 				) : (
 					<CheckRow
 						key={item.value}
@@ -179,14 +183,15 @@ export function CountField({
 	max?: number;
 	extraOptions?: readonly FilterOption[];
 }) {
-	const ft = useAppFormFieldTheme();
 	const options: FilterOption[] = [
 		...extraOptions,
 		...Array.from({ length: max + 1 }, (_, n) => ({ value: String(n), label: String(n) }))
 	];
 	return (
 		<div className="grid grid-cols-[minmax(0,1fr)_5.5rem_auto] items-center gap-2">
-			<span className={cn('truncate text-sm', ft.bodyText)}>{label}</span>
+			<Text variant="body" as="span" tone="secondary" className="truncate">
+				{label}
+			</Text>
 			<OptionSelect
 				value={value.value}
 				options={options}
@@ -198,7 +203,9 @@ export function CountField({
 				checked={value.orMore}
 				onCheckedChange={() => onValueChange({ ...value, orMore: !value.orMore })}
 			>
-				<span className="text-xs">{orMoreLabel}</span>
+				<Text variant="caption" as="span">
+					{orMoreLabel}
+				</Text>
 			</CheckRow>
 		</div>
 	);

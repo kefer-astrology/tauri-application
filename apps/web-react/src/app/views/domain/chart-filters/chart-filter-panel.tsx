@@ -49,14 +49,18 @@ type ChartFilterGroup = {
 
 /** Every chart filter group, in display order. Ids are stable (persisted as hidden groups). */
 export const CHART_FILTER_GROUPS: readonly ChartFilterGroup[] = [
-	{
-		id: 'chart-type',
-		labelKey: 'open_filter_chart_type',
+	...(['base', 'derived'] as const).map((section) => ({
+		id: `chart-type-${section}`,
+		labelKey: `open_filter_chart_type_${section}`,
 		className: 'space-y-2',
-		render: ({ query, set }) => (
-			<ChartTypeFilter value={query.types} onChange={(types) => set('types', types)} />
+		render: ({ query, set }: GroupContext) => (
+			<ChartTypeFilter
+				section={section}
+				value={query.types}
+				onChange={(types) => set('types', types)}
+			/>
 		)
-	},
+	})),
 	{
 		id: 'tags',
 		labelKey: 'new_tags',
@@ -72,7 +76,14 @@ export const CHART_FILTER_GROUPS: readonly ChartFilterGroup[] = [
 		id: 'date',
 		labelKey: 'new_date',
 		render: ({ query, set }) => (
-			<DateFilter value={query.date} onChange={(date) => set('date', date)} />
+			<DateFilter
+				value={query.date}
+				onChange={(date) => set('date', date)}
+				mode={query.dateMode}
+				onModeChange={(mode) => set('dateMode', mode)}
+				end={query.dateEnd}
+				onEndChange={(end) => set('dateEnd', end)}
+			/>
 		)
 	},
 	{

@@ -23,6 +23,7 @@ use commands::ephemeris::{
     list_ephemeris_catalog,
 };
 use commands::location::{resolve_location, resolve_timezone, search_locations};
+use commands::points::{get_point_library, import_point_package, import_small_body_package};
 use commands::storage::{
     compute_aspects, init_storage, query_aspects, query_positions, query_radix_relative,
     query_timestamps, store_positions, store_relation,
@@ -93,6 +94,9 @@ pub fn run() {
             read,
             write,
             list_ephemeris_catalog,
+            get_point_library,
+            import_point_package,
+            import_small_body_package,
             download_ephemeris,
             get_available_bodies,
             get_loaded_spk_coverage,

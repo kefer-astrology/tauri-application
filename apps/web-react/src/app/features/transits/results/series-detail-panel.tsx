@@ -1,3 +1,4 @@
+import { Text } from '@/app/components/ui/typography';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/app/components/ui/button';
 import { cn } from '@/app/components/ui/utils';
@@ -32,15 +33,15 @@ export function SeriesDetailPanel({
 		>
 			{series && (
 				<div className="flex flex-col gap-2">
-					<p className={cn('text-xs', ft.muted)}>
+					<Text variant="caption" tone="muted">
 						{t('transit_detail_hits_title', { defaultValue: 'Exact crossings in this series' })}
-					</p>
+					</Text>
 					{series.hits.length === 0 ? (
-						<p className={cn('text-xs', ft.muted)}>
+						<Text variant="caption" tone="muted">
 							{t('transit_detail_hits_empty', {
 								defaultValue: 'No exact alignment within this computed period.'
 							})}
-						</p>
+						</Text>
 					) : (
 						<ul className="flex flex-col gap-1">
 							{series.hits.map((hit) => (
@@ -51,7 +52,7 @@ export function SeriesDetailPanel({
 										onClick={() => onOpenInstant(new Date(hit.timestampMs).toISOString())}
 										className={cn(
 											'h-auto w-full justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-normal transition-colors',
-											'hover:bg-[color:var(--theme-soft-bg)] hover:text-[color:var(--theme-content-primary)]',
+											'hover:bg-[color:var(--theme-hover-bg)] hover:text-[color:var(--theme-content-primary)]',
 											ft.bodyText
 										)}
 									>

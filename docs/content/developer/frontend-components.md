@@ -46,7 +46,7 @@ Each category may import only from the categories above it in this list, plus
 
 - `Theme` and `THEME_ORDER` live in `src/lib/theme.ts`.
 - `AppThemeProvider` (`app/providers/app-theme.tsx`) wraps the app and exposes
-  `useAppTheme()` → `{ theme, glyphSet }`. Components read these from the hook
+  `useAppTheme()` → `{ theme, glyphSet, dark }`. Components read these from the hook
   and never take them as props.
 - `useAppFormFieldTheme()` and `AstrologyGlyph` read the same context.
   `AstrologyGlyph` still accepts an explicit `glyphSet` for one-off overrides.
@@ -59,22 +59,74 @@ Each category may import only from the categories above it in this list, plus
   and actions) are the app-wide providers; `useWorkspaceCharts()` exposes the
   chart list and selection. Features read these instead of receiving the state
   from the shell.
+- `RightPanelProvider` (`app/providers/right-panel.tsx`) owns the app's single
+  right-hand panel; `DetailSidePanel` registers its views there (see below).
+- `WidgetWorkspaceProvider` (`app/providers/widget-workspace.tsx`) holds the
+  open workspace's widget profiles: the school's built-in profiles, the one in
+  use (`activePreset`), and this session's changes (remove with Undo, add,
+  highlight). Changes are not saved yet.
 
 ## Primitives
 
-The shadcn/Radix layer in `app/components/ui/`: `Button`, `Input`, `Checkbox`,
-`ColorInput`, `Label`, `Select`, `Switch`, `Card`, `Dialog`, `Sheet`,
+The shadcn/Radix layer in `app/components/ui/`: `Text`, `Heading`, `Button`, `Input`,
+`InputGroup` / `InputGroupInput` / `InputGroupButton`, `Checkbox`,
+`ColorInput`, `Label`, `ChoiceButton`, `ChoiceLabel`, `Chip`, `Select`, `Switch`, `Surface`, `Toolbar`, `ActionBar`, `Card`, `Dialog`, `Sheet`,
 `Popover`, `Command`, `Accordion`, `Tabs`, `ScrollArea`, `Breadcrumb`, `Badge`, `SegmentedControl`,
 `SearchField` (icon + `Input` + clear button), `Combobox` (searchable single select over a
 long string list, e.g. time zones), `HighlightText`,
 `Separator`, `Table`, `Calendar`, `ModeSwitcher`, `RadioGroup` / `RadioGroupItem`
-(native radios sharing a name), `KeferLoader`, the page containers
+(native radios sharing a name), `OverflowMenu` (the `⋯` click menu: items with
+arrow-key movement, closes after a choice; no right-click menus), `KeferLoader`, the page containers
 `AppMainContentRoot` / `AppMainContentContainer` (`app-main-content.tsx`), the
 date and time inputs `DatePickerInput` and `TimeRollerPicker`, and the
 navigation rail styling `sidebarThemeStyles` / `sidebarNavMenuRowClassName`
 (`sidebar-theme.ts`). Primitives
 are the only place native control tags may appear
 (see [UI conventions](../ui-conventions/#component-baseline)).
+
+### Typography and form appearance
+
+`typography.tsx` defines shared text roles and preserves semantic HTML through
+`Text` and `Heading`. `Label`, card titles and overlay titles/descriptions reuse
+its recipes. Keep visual size separate from heading level. The scale, caption
+floor and chart-geometry exceptions are specified in
+[UI conventions](../ui-conventions/#react-typography).
+
+`form-variants.ts` owns form field, select/menu and action appearance. Compound
+date/time fields compose `InputGroup`; callers supply layout and data rather
+than copying surface or focus classes. `form-field-theme.ts` retains text and
+page/context-layout helpers, not input/select/button style aliases.
+
+### Choice controls and selected states
+
+`choice.tsx` composes existing Button and Label primitives into `ChoiceButton`
+and `ChoiceLabel`, and exposes `Chip` for passive content. `choice-variants.ts`
+owns common chip/row/segment/cell geometry and selected/preview/hover colors.
+Features retain their selection values, callbacks, item rendering and domain
+calculations. A separate remove action belongs inside a passive chip, not inside
+a toggle button.
+
+`SegmentedControl`, searchable suggestions, selection lists and aspect controls
+reuse these recipes. `Button` owns toolbar-action and mode-label variants;
+`TableRow` owns table selection appearance. Navigation keeps its own shared
+adapter because its text colors are separate palette fields. See
+[React choice and chart controls](../ui-conventions/#react-choice-and-chart-controls)
+for state semantics, disabled behavior and the chart-geometry boundary.
+
+### Container appearance and spacing
+
+`container.tsx` defines the shared `Surface`, `Toolbar` and `ActionBar` APIs.
+`Card` reuses the surface recipes and exposes spacing, section density and
+explicit clipping. It reads the active CSS palette directly; no theme prop or
+per-theme card class is needed. Advanced option groups and footer adapters also
+reuse these recipes.
+
+Feature code keeps layout geometry and scrolling constraints. Shared primitives
+own panel surface, padding presets, dividers, elevation and footer composition.
+See [React container variants](../ui-conventions/#react-container-variants) for
+options and focus-ring clipping rules, and the
+[styling roadmap](../development-driver/#react-styling-consolidation) for remaining
+visual acceptance work.
 
 ## Data views
 
@@ -109,9 +161,8 @@ The table owns the sticky header, the sort toggle and its icon, header and row
 theme tokens, and hover and selected states. Scrolling is the caller's
 container.
 
-Used by: the workspace chart list (as a parent/child tree) and the transit hits
-table. Planned: the
-aspectarium aspect and midpoint tables and the folded-angle sample table.
+Used by: the workspace chart list (as a parent/child tree), the transit hits
+table and the midpoint tables. Planned: the folded-angle sample table.
 
 ### Filter controls
 
@@ -166,14 +217,58 @@ optional leading slot. Used by: the folded-angle body picker.
 `app/views/data/secondary-nav-panel.tsx` — the secondary rail next to the main
 sidebar: a title and a list of sections (`items`, `activeId`, `onSelect`),
 styled like the main sidebar. Used by: the Settings and Transits setup
-sidebars.
+sidebars. At 1280px and above it occupies a 220px rail; below that it becomes a
+horizontal, scrollable section strip above the main content. `AppShell` owns this
+responsive composition; the native titlebar measures only the desktop rail.
 
 ### `DetailSidePanel`
 
-`app/views/data/detail-side-panel.tsx` — a right-hand sheet with a title,
-optional description and scrolling body (`open`, `onOpenChange`, `title`,
-`description`, class overrides). Used by: object, aspect and transit series
-details, the `SelectionList` selection panel, Open, and the edit-chart panel.
+`app/views/data/detail-side-panel.tsx` — a view in the app's single right
+panel: title, optional description and scrolling body (`open`, `onOpenChange`,
+`title`, `description`, class overrides, optional `onCloseAutoFocus`). Panels
+never stack: a view opened while another is open shows on top of it with a
+Back button, and the views underneath stay mounted, so unsaved input survives.
+Escape goes back one view; the close button or a click outside closes them all.
+A view without its own width keeps the width of the view it opened from.
+Without a `RightPanelProvider` (isolated renders) it opens its own sheet. Used
+by: object, aspect and transit series details, `SelectionList`, Open, chart
+editing and its tag editor, the chart workspace details, and Export. The caller
+can restore focus to an external opening control through `onCloseAutoFocus`.
+
+### `WidgetGrid`
+
+`app/views/data/widget-grid.tsx` — the free widget grid of the grid modules:
+12 columns on desktop, 6 on tablet and 1 on mobile, chosen from the container's
+own width (`breakpointForWidth`: desktop from 1024px, tablet from 640px). It
+takes the items of every screen size (`{ key, placement }`) and places the
+current size's items by their grid placement; rows grow with their content and
+the page scrolls vertically. Used by: Spektrum and the Aspectarium.
+
+### `WidgetFrame`
+
+`app/views/data/widget-frame.tsx` — the frame every widget is drawn in: a
+header whose title is a real collapse button (`aria-expanded`,
+`aria-controls`), optional header `actions` (a pencil only where it edits
+content), the `⋯` `menu`, and the body, which stays mounted while collapsed.
+`fill` stretches it to its region's height; `highlighted` briefly rings it (just
+added, or found from the catalog); `instanceId` marks it for the catalog;
+`dataTour` sets a guided-tour anchor. Collapsed state lasts for the mounted
+view.
+
+Used by: the widgets of every module.
+
+### Share charts
+
+`app/views/data/share-charts.tsx` — counted categories (`ShareItem`: id,
+label, count, share of the whole, color) drawn as `ShareColumns` (vertical,
+an empty category outlined), `StackedShareBar` (one bar with a legend),
+`ShareDonut` (a ring with its items beside it) and `ShareRows` (horizontal
+bars); plus `HeatGrid` (cells shaded by value) and `BalanceBar` (two shares
+as one bar). Items are buttons (`ShareInteraction`): hover and keyboard focus
+preview one (`onItemHover`), a click selects it (`onItemSelect`), and
+`activeId` marks it with `aria-pressed`.
+
+Used by: the Spektrum widgets.
 
 ### `TimeSeriesChart`
 
@@ -312,8 +407,35 @@ Used by: Open.
 ### `ObjectGlyph`
 
 `app/views/domain/object-glyph.tsx` — an observable object's glyph with the
-catalog's text fallback (`objectIcon`). Views do not keep their own planet
-glyph tables.
+catalog's text fallback (`objectIcon`) and an optional `color`. Views do not
+keep their own planet glyph tables.
+
+### `ZodiacPosition`
+
+`app/views/domain/zodiac-position.tsx` — a longitude as sign glyph plus degrees
+and minutes within the sign.
+
+### `AspectMatrix`
+
+`app/views/domain/aspect-matrix.tsx` — the aspect matrix: bodies on both axes,
+one aspect cell (glyph and orb) per pair. The radix matrix is a triangle with
+each body on the diagonal; with a transit overlay, transiting rows meet radix
+columns under a corner label. Data comes from `aspectariumData`
+(`src/lib/astrology/aspectarium.ts`: body filters, aspect types, orb presets,
+cell keys, `matrixCell`); names, colors and longitudes are callbacks. A cell
+click reports the aspect entry.
+
+### `AspectEntryList`
+
+`app/views/domain/aspect-entry-list.tsx` — aspects as rows (glyph, bodies,
+aspect name, orb) with an empty text; a row click reports the entry.
+
+### Midpoint tables
+
+`app/views/domain/midpoint-tables.tsx` — `MidpointTable` (pair, midpoint,
+opposite, an "ambiguous" note for pairs ~180° apart) and
+`MidpointContactTable` (contacting object, pair, aspect, orb), both on
+`DataTable` and sortable; copy comes from the caller.
 
 ### `ObservableObjectList`
 
@@ -328,7 +450,7 @@ hemisphere, sign and significance filters.
 | `subtitle`                           | Hint shown above the search.             |
 | `colors`, `onColorChange`            | Pass both for a color picker per object. |
 
-Used by: Settings (observable objects), the horoscope dashboard position
+Used by: Settings (observable objects), the Horoskop positions
 picker, and the transiting / transited bodies setup.
 
 ### `AspectList`
@@ -346,7 +468,7 @@ Used by: the transit aspects setup.
 (`{ id, longitude, retrograde }`): object glyph, degrees, sign glyph, minutes,
 seconds and `R`, from `signPosition`. `selectedId`, `onSelect`, `emptyText`.
 
-Used by: the horoscope dashboard.
+Used by: the Horoskop positions widget.
 
 ### `HoroscopeWheel`
 
@@ -355,8 +477,12 @@ houses, axes, aspect lines, bodies, an optional transit ring and hemisphere
 overlays. Its render rules are defined in the
 [Radix render contract](../radix-render-contract/). The geometry is pure and
 tested in `src/lib/astrology/wheelGeometry.ts`: longitude to screen position,
-house cusps, conjunction fanning (also across 0°), hemispheres split by the
-chart's own ASC and MC, and aspect line weight by orb tier. Without computed
+house cusps, conjunction fanning (also across 0°), the chart halves split by
+the chart's own ASC and MC, and aspect line weight by orb tier.
+`hemisphereOverlay` tints one half and dims the bodies outside it; the halves
+are named as in the [chart facts](../chart-facts-contract/): `upper` (houses
+7–12) and `lower` (1–6) across the ASC–DSC line, `east` (10–3) and `west`
+(4–9) across the MC–IC line. Without computed
 data the wheel draws a demo radix (`wheel-demo-data.ts`).
 
 `HoroscopeWheel` composes one component per layer under `layers/`, in drawing
@@ -366,7 +492,24 @@ order: `WheelFilters` (glyph tint filters), `TransitRing`, `ZodiacRing`,
 in `WHEEL`, plus the theme, rotation, glyph sources and filter ids of the
 render), built once by `useWheelFrame` in the wheel itself.
 
-Used by: the horoscope dashboard and the information view.
+Used by: the Horoskop module and the Spektrum wheel.
+
+### `ChartContextCard`
+
+`app/views/domain/chart-context-card.tsx` — who and when a chart is: identity
+`lines` (type, date, time, place, coordinates, zodiac / house system), colored
+`tags`, and an optional active `transit` overlay with its clear action.
+
+Used by: the Horoskop chart profile widget.
+
+### `TimeNavigator`
+
+`app/views/domain/time-navigator.tsx` — steps a chart's moment back or forward
+by an `amount` of a `unit` (seconds to years; the amount list follows
+`astrolabeMaxAmount`), with read-only date, time and place below. The step
+buttons have accessible names.
+
+Used by: the Horoskop astrolabe widget.
 
 ### Detail panels
 
@@ -391,19 +534,25 @@ Used by: new horoscope, synastry, and the default location in Settings.
 Each feature folder contains its screens, its provider, and any components no
 other feature uses.
 
-| Feature    | Screens                                                                                                                                                    |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Horoscope  | Horoscope dashboard, new horoscope (`app/features/horoscope/new-horoscope/`), aspectarium, information                                                     |
-| Transits   | Transits (`app/features/transits/`): setup, results, transit layers, cycle analysis                                                                        |
-| Synastry   | Synastry (`app/features/synastry/`): two people (saved chart or hand-entered birth data) and the calculation type; form logic in `src/lib/synastryForm.ts` |
-| Revolution | Revolution (`app/features/revolution/`): return type, scope and period                                                                                     |
-| Open       | Open (`app/features/open/`): chart archive with `useChartQuery`                                                                                            |
-| Export     | Export (`app/features/export/`): format and included parts                                                                                                 |
-| Settings   | Settings (`app/features/settings/`): one component per section under `sections/`, a draft context for Confirm-applied colors, glyph manager                |
+| Feature    | Screens                                                                                                                                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Horoscope  | Horoskop (`app/features/horoscope/horoskop/`), Aspectarium (`app/features/horoscope/aspectarium/`), new horoscope (`app/features/horoscope/new-horoscope/`), Spektrum (`app/features/horoscope/spektrum/`) |
+| Transits   | Transits (`app/features/transits/`): setup, results, transit layers, cycle analysis                                                                                                                        |
+| Synastry   | Synastry (`app/features/synastry/`): two people (saved chart or hand-entered birth data) and the calculation type; form logic in `src/lib/synastryForm.ts`                                                 |
+| Revolution | Revolution (`app/features/revolution/`): return type, scope and period                                                                                                                                     |
+| Open       | Open (`app/features/open/`): chart archive with `useChartQuery`                                                                                                                                            |
+| Export     | Export sheet (`app/features/export/`): format and included parts                                                                                                                                           |
+| Settings   | Settings (`app/features/settings/`): one component per section under `sections/`, a draft context for Confirm-applied colors, glyph manager                                                                |
 
 Inputs shared by several features are not feature components: the date picker
 and time roller are primitives, and the location selector is a domain view.
 Nothing below the shell imports from `app/shell/`.
+
+Export is a shell action, not a routed screen. `AppShell` opens a right-hand
+`DetailSidePanel` over the active view and renders the existing `ExportView`
+format/include form inside it. Opening or closing Export preserves the underlying
+view, section selection and unsaved input state. Export execution remains a
+coming-soon notification.
 
 ### New horoscope
 
@@ -466,6 +615,105 @@ edit panel; `App` composes it under the providers), `AstrologySidebar`,
 `WindowTitlebar`, `HoroscopeContextTabs` and `GuidedTour`. Feature-specific
 secondary sidebars belong to their feature and are built on
 `SecondaryNavPanel`.
+
+## Horoskop module
+
+`app/features/horoscope/horoskop/` — the chart workspace (sidebar Horoskop).
+
+- `HoroskopView` (mounted by the shell) resolves the workspace school's first
+  profile (`defaultPresetForSchool`) and places that profile's widgets into the
+  regions of `ChartWorkspaceLayout` (`regionInstances`), around the protected
+  wheel in the centre. The object or aspect details open in the right panel.
+- `ChartWorkspaceLayout` is the region host: `left` and `right` widget columns
+  around the wheel, both inline from 960px of measured width. Below that, a
+  button opens the left region in the right panel; the right region stays in
+  place. See [UI conventions](../ui-conventions/#react-container-variants) for
+  dimensions.
+- `HoroskopProvider` / `useHoroskop()` hold the selected chart's view data
+  (`chartViewData` in `src/lib/astrology/chartView.ts`), its labels in local
+  time at the chart's place, and the selection the wheel and positions share: a
+  first click selects and highlights, a second click on the same body or aspect
+  opens its details.
+- Widgets (`widgets.ts`, `widgets/`): `chart-profile` (`ChartContextCard`; the
+  pencil edits the chart), `astrolabe` (`TimeNavigator`) and `positions`
+  (`PositionsList`, repeatable; the pencil picks the shown objects). Each has a
+  manifest (with the region new instances go to) and draws itself for its
+  instance in a `WidgetFrame` with its guided-tour anchor (`radix-profile`,
+  `radix-astrolabe`, `radix-positions`; the wheel is `radix-wheel`, the layout
+  `radix-workspace`). `useWidgetChrome` gives every instance its `⋯` menu
+  (remove from the workspace, with Undo) and highlight.
+- The toolbar (`WorkspaceToolbar`) switches between the school's profiles and
+  opens the widget catalog (`WidgetCatalog`) in the right panel: "+ Add" for a
+  repeatable widget or one not on the workspace (added at the end of its region
+  and highlighted), "On the workspace · Find" for a unique one already there.
+
+## Aspectarium module
+
+`app/features/horoscope/aspectarium/` — the aspect overview (sidebar
+Aspektárium), built from widgets on a `WidgetGrid`.
+
+- `AspectariumView` (mounted by the shell) places the active profile's
+  Aspectarium widgets by their grid placements. Its toolbar holds the shared
+  filters (`AspectariumFilters`: bodies, aspect types, orb preset; they start
+  from the workspace defaults) and the workspace controls (profile, catalog).
+  The opened aspect's details show in the right panel (`useAspectDetail`).
+- `AspectariumProvider` / `useAspectarium()` hold the filters, the chart's
+  `aspectariumData` (radix, or the chart's transit overlay) and the opened
+  aspect; a click on a cell or row opens it.
+- Widgets (`widgets.ts`): `aspect-matrix` (`AspectMatrix`), `aspect-list`
+  (`AspectEntryList`) and `midpoints` (the backend's midpoints and contacts of
+  the filtered bodies, by the chosen contact aspects).
+
+## Spektrum module
+
+`app/features/horoscope/spektrum/` — the chart's analytic overview (sidebar
+Spektrum), built from widgets on a `WidgetGrid`. Every card reads the selected
+chart's [facts](../chart-facts-contract/) through
+`src/lib/astrology/informationView.ts` (element, modality, house-group,
+quadrant and hemisphere rows with their bodies; singletons, retrograde
+summary, focal planets, Ptolemaic aspect counts, headline highlights) and
+shows an empty state when the chart has no facts.
+
+- `SpektrumView` (mounted by the shell) places the active profile's Spektrum
+  widgets; its toolbar holds the workspace controls (profile, catalog).
+- `SpektrumProvider` / `useSpektrum()` hold the chart, its facts, its wheel
+  data and the focus: hovering an item previews its bodies (and chart half)
+  on the wheel, a click locks it until clicked again or the chart changes.
+  `SpektrumWidget` frames a card and renders its body from the facts;
+  `FocusRow` is a list row that previews and locks like a chart item.
+- Widgets (`widgets.ts`): balances of elements, modalities, house groups,
+  quadrants, hemispheres and orientation; the wheel with the lunar phase,
+  lights' horizon and Mercury / Venus phases; highlights; aspect balance,
+  configurations, stelliums, singletons, retrograde planets and focal
+  planets.
+
+The workspace controls shared by the modules live in
+`app/features/horoscope/workspace/`: `WorkspaceToolbar` (profile switch and
+catalog button for a module), `WidgetCatalog` (a module's widgets: "+ Add" at
+the end of a Horoskop region or below everything on a grid, "On the workspace ·
+Find" for a unique one already placed), `useWidgetChrome` and the
+`WidgetDefinition` type.
+
+## Widget model
+
+`src/lib/widgets/` holds the pure model of the widget workspace (plan:
+`WIDGET-PLAN.md` at the repository root). `types.ts`: widget manifests,
+instances with their data context (active, pinned or compared charts),
+Horoskop region placements and grid placements for the grid modules
+(`GRID_MODULES`: Spektrum, Aspectarium) per screen size, profiles and
+workspace overrides. `profiles.ts`: the read-only presets, each belonging to a
+school (Basic and Modern: Modern western; Traditional and Kabbalistic:
+Medieval / traditional), `resolveProfile` (a preset with a workspace override
+applied section by section, dropping orphaned placements and unknown widgets),
+`presetsForSchool` and `defaultPresetForSchool` (the workspace's school decides
+which profiles are offered; a profile never changes calculation settings), and
+the instance operations `regionInstances`, `gridItems`, `addHoroskopInstance`,
+`addGridInstance` (below everything, capped to each size's columns),
+`removeInstance` / `restoreInstance` (exact Undo), `moduleInstanceIds` and
+`instanceCount`.
+The schools and which are available live in `src/lib/astrology/schools.ts`
+(`ASTROLOGY_SCHOOLS`, `effectiveSchool`); Settings lists the unavailable ones
+disabled and offers no "no school".
 
 ## Adding a component
 

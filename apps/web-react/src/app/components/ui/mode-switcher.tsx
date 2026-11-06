@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Switch } from './switch';
+import { Button } from './button';
 import { cn } from './utils';
+import { Surface } from './container';
 
 export type ModeSwitcherOption<T extends string> = {
 	value: T;
@@ -20,6 +22,7 @@ type ModeSwitcherDetailsProps = {
 	children: ReactNode;
 	className?: string;
 	contentClassName?: string;
+	surface?: 'plain' | 'soft';
 };
 
 export function ModeSwitcher<T extends string>({
@@ -43,19 +46,15 @@ export function ModeSwitcher<T extends string>({
 				className
 			)}
 		>
-			<button
+			<Button
 				type="button"
-				className={cn(
-					'whitespace-nowrap transition-colors [font:inherit] hover:text-[color:var(--theme-content-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--theme-accent)]/45 focus-visible:outline-none',
-					!isSecondOption
-						? 'text-[color:var(--theme-accent)]'
-						: 'text-[color:var(--theme-content-muted)]'
-				)}
+				variant="mode-label"
+				size="inline"
 				onClick={() => onValueChange(firstOption.value)}
 				aria-pressed={!isSecondOption}
 			>
 				{firstOption.label}
-			</button>
+			</Button>
 			<Switch
 				variant="prominent"
 				checked={isSecondOption}
@@ -64,19 +63,15 @@ export function ModeSwitcher<T extends string>({
 				}
 				aria-label={ariaLabel}
 			/>
-			<button
+			<Button
 				type="button"
-				className={cn(
-					'whitespace-nowrap transition-colors [font:inherit] hover:text-[color:var(--theme-content-primary)] focus-visible:ring-2 focus-visible:ring-[color:var(--theme-accent)]/45 focus-visible:outline-none',
-					isSecondOption
-						? 'text-[color:var(--theme-accent)]'
-						: 'text-[color:var(--theme-content-muted)]'
-				)}
+				variant="mode-label"
+				size="inline"
 				onClick={() => onValueChange(secondOption.value)}
 				aria-pressed={isSecondOption}
 			>
 				{secondOption.label}
-			</button>
+			</Button>
 		</div>
 	);
 }
@@ -85,7 +80,8 @@ export function ModeSwitcherDetails({
 	open,
 	children,
 	className,
-	contentClassName
+	contentClassName,
+	surface = 'plain'
 }: ModeSwitcherDetailsProps) {
 	return (
 		<div
@@ -100,7 +96,13 @@ export function ModeSwitcherDetails({
 			{...(!open ? { inert: '' } : {})}
 		>
 			<div className="min-h-0 overflow-hidden p-1">
-				<div className={contentClassName}>{children}</div>
+				<Surface
+					variant={surface}
+					padding={surface === 'soft' ? 'default' : 'none'}
+					className={contentClassName}
+				>
+					{children}
+				</Surface>
 			</div>
 		</div>
 	);

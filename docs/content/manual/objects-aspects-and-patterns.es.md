@@ -107,8 +107,7 @@ automáticamente ajustes de una relación `extends`.
 
 ## Formas y configuraciones de carta
 
-Aspectario puede informar estos patrones calculados. Información, incluido su
-prototipo Espectro, todavía no usa el resultado calculado de la carta seleccionada.
+Aspectario y Espectro informan estos patrones calculados.
 Los patrones describen una carta en su instante calculado, no objetos adicionales ni opciones de cálculo.
 
 **Formas de distribución:** Haz, Cuenco, Locomotora, Cubo, Balancín,

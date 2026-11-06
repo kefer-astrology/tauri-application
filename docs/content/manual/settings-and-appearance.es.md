@@ -10,7 +10,7 @@ Abra **Ajustes** al final de la barra principal. Incluye idioma y ubicación, si
 
 Estos valores sirven a cartas nuevas y vistas sin elección propia; no modifican una carta guardada. La interfaz permite **Čeština**, **English**, **Français** y **Español**. Busque el lugar predeterminado o introduzca coordenadas; **Zona horaria** es el valor inicial de una carta nueva. El nombre del lugar es descriptivo: coordenadas y hora son las entradas de cálculo.
 
-**Sistema de casas** muestra sistemas que el backend Rust/JPL puede calcular y cambia las cúspides. **Aparente** usa posiciones aparentes y correcciones; **Geométrica / verdadera** usa el vector sin corregir. Esta pantalla no tiene selector de motor; vea [Efemérides y cobertura](../../developer/ephemeris-manager/).
+**Sistema de casas** muestra sistemas que el backend Rust/JPL puede calcular y cambia las cúspides. **Aparente** usa posiciones aparentes y correcciones; **Geométrica / verdadera** usa el vector sin corregir. Esta pantalla no tiene selector de motor; vea [Efemérides y cobertura](../../../developer/ephemeris-manager/).
 
 ## Objetos y aspectos
 
@@ -22,4 +22,10 @@ Seleccione cuerpos y puntos para cartas nuevas. La lista está en [Objetos, aspe
 
 Elija glifos predeterminados/modernos, iconos predeterminados/alternativos, conjuntos de texto de grados disponibles, colores de elementos y ajustes en el gestor de glifos. La rueda minimalista tiene anillo zodiacal y 12 divisores; la técnica añade escala de 360°. **Borde izquierdo del radix** sitúa ASC o 0° de Aries a la izquierda sin cambiar casas, posiciones ni aspectos; es local al dispositivo.
 
-Elija **Sunrise**, **Noon**, **Twilight** o **Midnight**. La paleta ajusta paneles, lienzo, textos, acento y fondos; la vista monocromática solo desatura. **Guardar** confirma paleta y colores de elementos y **Cancelar** restaura los campos no guardados. Las preferencias visuales pueden no viajar a otro equipo.
+Elija **Amanecer**, **Mediodía**, **Crepúsculo** o **Medianoche**. La paleta ajusta paneles, lienzo, textos, acento y fondos; la vista monocromática solo desatura. **Confirmar** confirma paleta y colores de elementos y **Cancelar** restaura los campos no guardados. Las preferencias visuales pueden no viajar a otro equipo.
+
+En React se selecciona Mediodía en cada inicio; las paletas personalizadas
+siguen guardadas localmente. Restablecer la paleta actual sustituye sus valores
+personalizados por los predeterminados. En las paletas predeterminadas, solo
+Amanecer tiene un fondo de selección translúcido; el fondo al pasar el puntero
+es translúcido en los cuatro temas. Los campos y menús siguen siendo opacos.
