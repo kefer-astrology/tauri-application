@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "horizons-sampled-spk",
+  "body_id": "eris",
+  "display_name": "Eris",
+  "filename": "eris_1900_2100_type13.bsp",
+  "naif_target_id": 20136199,
+  "naif_center_id": 10,
+  "reference_frame": "J2000",
+  "spk_type": 13,
+  "coverage": {
+    "start": "1900-01-01T00:00:00",
+    "stop": "2100-01-01T00:00:00",
+    "start_et_seconds": -3155716800.0,
+    "stop_et_seconds": 3155630400.0
+  },
+  "source": {
+    "service": "NASA/JPL Horizons API",
+    "endpoint": "https://ssd.jpl.nasa.gov/api/horizons.api",
+    "command": "136199;",
+    "center": "500@10",
+    "reference_system": "ICRF",
+    "reference_plane": "FRAME",
+    "vector_corrections": "NONE",
+    "units": "KM-S",
+    "resolved_target": "136199 Eris (2003 UB313)        {source: JPL#103}",
+    "resolved_center": "Sun (10)                        {source: DE441}",
+    "solution_record": "Rec #:  136199 (+COV) Soln.date: 2026-Jun-06_21:06:42   # obs: 4064 (1954-2026)",
+    "request_urls": [
+      "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27136199%3B%27&EPHEM_TYPE=VECTORS&CENTER=%27500%4010%27&START_TIME=%271900-01-01T00%3A00%3A00%27&STOP_TIME=%272100-01-01T00%3A00%3A00%27&STEP_SIZE=%272+d%27&VEC_TABLE=2&REF_SYSTEM=ICRF&REF_PLANE=FRAME&OUT_UNITS=KM-S&VEC_CORR=NONE&CSV_FORMAT=YES"
+    ]
+  },
+  "generation": {
+    "generated_at": "2026-11-06T20:34:44.932792+00:00",
+    "generator": "scripts/generate-horizons-type13.py",
+    "sample_step_days": 4.0,
+    "acquisition_step_days": 2.0,
+    "polynomial_degree": 7,
+    "source_sample_count": 18263
+  },
+  "sha256": "6db25610135129c388fdfb241dc6b65a18cb8d8faa730edcd66d6bb7d4c5a966",
+  "validation": {
+    "method": "held_out_interleaved_horizons_vectors",
+    "passed": true,
+    "sample_count": 2283,
+    "max_position_error_km": 1.3512781809665638e-05,
+    "max_velocity_error_km_s": 6.113295065959459e-11,
+    "probe_et_seconds": -907200.0,
+    "max_allowed_position_error_km": 1.0,
+    "max_allowed_velocity_error_km_s": 1e-05,
+    "request_urls": [
+      "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27136199%3B%27&EPHEM_TYPE=VECTORS&CENTER=%27500%4010%27&START_TIME=%271900-01-01T00%3A00%3A00%27&STOP_TIME=%272100-01-01T00%3A00%3A00%27&STEP_SIZE=%272+d%27&VEC_TABLE=2&REF_SYSTEM=ICRF&REF_PLANE=FRAME&OUT_UNITS=KM-S&VEC_CORR=NONE&CSV_FORMAT=YES"
+    ]
+  }
+}
