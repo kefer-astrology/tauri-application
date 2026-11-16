@@ -1,0 +1,51 @@
+name: 'rust-tests'
+
+# The tauri-react / tauri-svelte workflows only build bundles; nothing ran
+# `cargo test`, so the Rust half of the shared Rust/Python contract tests
+# (contracts/*.json via include_str!) and every other Rust unit test never
+# executed in CI. This job runs the library test suite on Linux.
+# Default features only: the `swisseph` feature needs vendored AGPL sources
+# that are intentionally absent from this repository.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src-tauri/**'
+      - 'contracts/**'
+      - '.github/workflows/rust-tests.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src-tauri/**'
+      - 'contracts/**'
+      - '.github/workflows/rust-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Run Rust library tests
+        working-directory: src-tauri
+        run: cargo test --locked --lib
