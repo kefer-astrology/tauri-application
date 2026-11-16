@@ -118,6 +118,116 @@ mod tests {
         }
     }
 
+    /// D4: built-in aspects are the shared contract catalog (canonical ids
+    /// and the Rust default orbs that no-sidecar users have always seen).
+    #[test]
+    fn builtin_aspects_match_shared_contract_catalog() {
+        let model = builtin_standard_model("builtin");
+        let catalog = crate::domain::astrology::aspect_catalog();
+        assert_eq!(catalog.catalog_version, "1.0.0");
+        assert_eq!(model.aspect_definitions.len(), catalog.aspects.len());
+        for (definition, entry) in model.aspect_definitions.iter().zip(&catalog.aspects) {
+            assert_eq!(definition.id, entry.id);
+            assert_eq!(
+                definition.angle.to_bits(),
+                entry.angle.to_bits(),
+                "{}",
+                entry.id
+            );
+            assert_eq!(definition.harmonic, entry.harmonic);
+            assert_eq!(definition.default_orb, entry.default_orb);
+            assert_eq!(definition.aspect_type, entry.aspect_type);
+        }
+        // Spot-check values that previously diverged from Python.
+        let orb = |id: &str| {
+            model
+                .aspect_definitions
+                .iter()
+                .find(|a| a.id == id)
+                .unwrap()
+                .default_orb
+        };
+        assert_eq!(
+            (orb("square"), orb("trine"), orb("sextile")),
+            (6.0, 6.0, 5.0)
+        );
+        assert_eq!(
+            (orb("octile"), orb("trioctile"), orb("quincunx")),
+            (1.5, 1.5, 2.0)
+        );
+        assert!(model
+            .aspect_definitions
+            .iter()
+            .all(|a| a.id != "semisquare"));
+    }
+
+    /// D4 regression: a workspace saved by the Python sidecar with legacy ids
+    /// must keep selecting the same aspects and orbs, with no diagnostics.
+    #[test]
+    fn legacy_aspect_aliases_resolve_to_canonical_ids_in_every_layer() {
+        let mut manifest = empty_manifest();
+        manifest.default.default_aspects =
+            Some(vec!["semisquare".to_string(), "trine".to_string()]);
+        manifest.default.default_aspect_orbs =
+            Some(HashMap::from([("sesquiquadrate".to_string(), 2.5)]));
+        let mut config = chart_config();
+        config.model = None;
+        config.engine = None;
+        config.selected_aspects = Some(vec!["Semisquare".to_string(), "octile".to_string()]);
+        config.aspect_orbs = HashMap::from([("semisquare".to_string(), 0.75)]);
+
+        let report = current_model_report(&manifest, Some(&config));
+        let settings = &report.effective_settings;
+        assert_eq!(settings.default_aspects, vec!["octile".to_string()]);
+        assert_eq!(settings.aspect_orbs.get("octile"), Some(&0.75));
+        assert_eq!(settings.aspect_orbs.get("trioctile"), Some(&2.5));
+        assert!(!settings.aspect_orbs.contains_key("semisquare"));
+        assert!(!settings.aspect_orbs.contains_key("sesquiquadrate"));
+        assert_eq!(
+            settings.sources.aspect_orbs.get("octile"),
+            Some(&SettingSource::Chart)
+        );
+        assert!(
+            report
+                .diagnostics
+                .iter()
+                .all(|d| !d.code.contains("aspect")),
+            "{:?}",
+            report.diagnostics
+        );
+    }
+
+    #[test]
+    fn workspace_model_with_legacy_aspect_id_is_canonicalized() {
+        let mut manifest = empty_manifest();
+        let mut model = builtin_standard_model("legacy");
+        model.aspect_definitions.retain(|a| a.id != "octile");
+        let mut legacy = builtin_standard_model("x")
+            .aspect_definitions
+            .into_iter()
+            .find(|a| a.id == "octile")
+            .unwrap();
+        legacy.id = "semisquare".to_string();
+        legacy.default_orb = 2.0;
+        model.aspect_definitions.push(legacy);
+        manifest.models.insert("legacy".to_string(), model);
+        manifest.active_model = Some("legacy".to_string());
+
+        let report = current_model_report(&manifest, None);
+        let octile = report
+            .model
+            .aspect_definitions
+            .iter()
+            .find(|a| a.id == "octile")
+            .expect("legacy semisquare definition is exposed as octile");
+        assert_eq!(octile.default_orb, 2.0);
+        assert!(report
+            .model
+            .aspect_definitions
+            .iter()
+            .all(|a| a.id != "semisquare"));
+    }
+
     #[test]
     fn report_synthesizes_builtin_shape_for_empty_workspace_models() {
         let report = current_model_report(&empty_manifest(), None);

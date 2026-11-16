@@ -1169,33 +1169,23 @@ fn body_definition(
 /// per-aspect "usual application" (planets-only vs. planets+angles) and the opt-in extended
 /// orb are workspace-level choices applied in `settings::apply_workspace_aspect_scope_defaults`,
 /// not a silent change to every existing chart's aspect grid.
+/// Built-in aspects come from `contracts/catalogs/aspects.json`, shared with
+/// the Python sidecar (canonical ids, angles, harmonics and default orbs).
 fn builtin_aspect_definitions() -> Vec<AspectDefinition> {
-    vec![
-        aspect_definition("conjunction", "Conjunction", 0.0, 1, 8.0),
-        aspect_definition("semisextile", "Semisextile", 30.0, 12, 1.0),
-        aspect_definition("undecile", "Undecile", 360.0 / 11.0, 11, 0.5),
-        aspect_definition("decile", "Decile", 36.0, 10, 1.0),
-        aspect_definition("novile", "Novile", 40.0, 9, 1.0),
-        aspect_definition("octile", "Octile", 45.0, 8, 1.5),
-        aspect_definition("septile", "Septile", 360.0 / 7.0, 7, 1.0),
-        aspect_definition("sextile", "Sextile", 60.0, 6, 5.0),
-        aspect_definition("biundecile", "Biundecile", 720.0 / 11.0, 11, 0.5),
-        aspect_definition("quintile", "Quintile", 72.0, 5, 1.0),
-        aspect_definition("binovile", "Binovile", 80.0, 9, 1.0),
-        aspect_definition("triundecile", "Triundecile", 1080.0 / 11.0, 11, 0.5),
-        aspect_definition("square", "Square", 90.0, 4, 6.0),
-        aspect_definition("biseptile", "Biseptile", 720.0 / 7.0, 7, 1.0),
-        aspect_definition("tridecile", "Tridecile", 108.0, 10, 1.0),
-        aspect_definition("trine", "Trine", 120.0, 3, 6.0),
-        aspect_definition("quadriundecile", "Quadriundecile", 1440.0 / 11.0, 11, 0.5),
-        aspect_definition("trioctile", "Trioctile", 135.0, 8, 1.5),
-        aspect_definition("biquintile", "Biquintile", 144.0, 5, 1.0),
-        aspect_definition("quincunx", "Quincunx", 150.0, 12, 2.0),
-        aspect_definition("triseptile", "Triseptile", 1080.0 / 7.0, 7, 1.0),
-        aspect_definition("quadrinovile", "Quadrinovile", 160.0, 9, 1.0),
-        aspect_definition("quinundecile", "Quinundecile", 1800.0 / 11.0, 11, 0.5),
-        aspect_definition("opposition", "Opposition", 180.0, 2, 8.0),
-    ]
+    crate::domain::astrology::aspect_catalog()
+        .aspects
+        .iter()
+        .map(|entry| {
+            aspect_definition(
+                &entry.id,
+                &entry.label,
+                entry.angle,
+                entry.harmonic,
+                entry.default_orb,
+                &entry.aspect_type,
+            )
+        })
+        .collect()
 }
 
 fn aspect_definition(
@@ -1204,17 +1194,11 @@ fn aspect_definition(
     angle: f64,
     harmonic: u32,
     default_orb: f64,
+    aspect_type: &str,
 ) -> AspectDefinition {
     AspectDefinition {
         id: id.to_string(),
-        aspect_type: if matches!(
-            id,
-            "conjunction" | "sextile" | "square" | "trine" | "opposition"
-        ) {
-            "major".to_string()
-        } else {
-            "minor".to_string()
-        },
+        aspect_type: aspect_type.to_string(),
         enabled: true,
         glyph: label.to_string(),
         angle,

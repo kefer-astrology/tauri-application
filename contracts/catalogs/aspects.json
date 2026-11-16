@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "catalog_version": "1.0.0",
+  "description": "Canonical built-in aspect catalog shared by the Rust app and the Python sidecar. IDs and default orbs are the Rust values (Phase 0 decision D4). Workspace, preset, chart and operation orbs still override these defaults.",
+  "aliases": {
+    "semisquare": "octile",
+    "sesquiquadrate": "trioctile"
+  },
+  "alias_policy": "Aliases are accepted wherever an aspect id is read (selections, orb keys, model definitions, overrides, request aspect_types) and are resolved to the canonical id; writers emit canonical ids.",
+  "aspects": [
+    {
+      "id": "conjunction",
+      "label": "Conjunction",
+      "angle": 0.0,
+      "angle_expression": "0.0",
+      "harmonic": 1,
+      "default_orb": 8.0,
+      "aspect_type": "major"
+    },
+    {
+      "id": "semisextile",
+      "label": "Semisextile",
+      "angle": 30.0,
+      "angle_expression": "30.0",
+      "harmonic": 12,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "undecile",
+      "label": "Undecile",
+      "angle": 32.72727272727273,
+      "angle_expression": "360.0 / 11.0",
+      "harmonic": 11,
+      "default_orb": 0.5,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "decile",
+      "label": "Decile",
+      "angle": 36.0,
+      "angle_expression": "36.0",
+      "harmonic": 10,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "novile",
+      "label": "Novile",
+      "angle": 40.0,
+      "angle_expression": "40.0",
+      "harmonic": 9,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "octile",
+      "label": "Octile",
+      "angle": 45.0,
+      "angle_expression": "45.0",
+      "harmonic": 8,
+      "default_orb": 1.5,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "septile",
+      "label": "Septile",
+      "angle": 51.42857142857143,
+      "angle_expression": "360.0 / 7.0",
+      "harmonic": 7,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "sextile",
+      "label": "Sextile",
+      "angle": 60.0,
+      "angle_expression": "60.0",
+      "harmonic": 6,
+      "default_orb": 5.0,
+      "aspect_type": "major"
+    },
+    {
+      "id": "biundecile",
+      "label": "Biundecile",
+      "angle": 65.45454545454545,
+      "angle_expression": "720.0 / 11.0",
+      "harmonic": 11,
+      "default_orb": 0.5,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "quintile",
+      "label": "Quintile",
+      "angle": 72.0,
+      "angle_expression": "72.0",
+      "harmonic": 5,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "binovile",
+      "label": "Binovile",
+      "angle": 80.0,
+      "angle_expression": "80.0",
+      "harmonic": 9,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "triundecile",
+      "label": "Triundecile",
+      "angle": 98.18181818181819,
+      "angle_expression": "1080.0 / 11.0",
+      "harmonic": 11,
+      "default_orb": 0.5,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "square",
+      "label": "Square",
+      "angle": 90.0,
+      "angle_expression": "90.0",
+      "harmonic": 4,
+      "default_orb": 6.0,
+      "aspect_type": "major"
+    },
+    {
+      "id": "biseptile",
+      "label": "Biseptile",
+      "angle": 102.85714285714286,
+      "angle_expression": "720.0 / 7.0",
+      "harmonic": 7,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "tridecile",
+      "label": "Tridecile",
+      "angle": 108.0,
+      "angle_expression": "108.0",
+      "harmonic": 10,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "trine",
+      "label": "Trine",
+      "angle": 120.0,
+      "angle_expression": "120.0",
+      "harmonic": 3,
+      "default_orb": 6.0,
+      "aspect_type": "major"
+    },
+    {
+      "id": "quadriundecile",
+      "label": "Quadriundecile",
+      "angle": 130.9090909090909,
+      "angle_expression": "1440.0 / 11.0",
+      "harmonic": 11,
+      "default_orb": 0.5,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "trioctile",
+      "label": "Trioctile",
+      "angle": 135.0,
+      "angle_expression": "135.0",
+      "harmonic": 8,
+      "default_orb": 1.5,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "biquintile",
+      "label": "Biquintile",
+      "angle": 144.0,
+      "angle_expression": "144.0",
+      "harmonic": 5,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "quincunx",
+      "label": "Quincunx",
+      "angle": 150.0,
+      "angle_expression": "150.0",
+      "harmonic": 12,
+      "default_orb": 2.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "triseptile",
+      "label": "Triseptile",
+      "angle": 154.28571428571428,
+      "angle_expression": "1080.0 / 7.0",
+      "harmonic": 7,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "quadrinovile",
+      "label": "Quadrinovile",
+      "angle": 160.0,
+      "angle_expression": "160.0",
+      "harmonic": 9,
+      "default_orb": 1.0,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "quinundecile",
+      "label": "Quinundecile",
+      "angle": 163.63636363636363,
+      "angle_expression": "1800.0 / 11.0",
+      "harmonic": 11,
+      "default_orb": 0.5,
+      "aspect_type": "minor"
+    },
+    {
+      "id": "opposition",
+      "label": "Opposition",
+      "angle": 180.0,
+      "angle_expression": "180.0",
+      "harmonic": 2,
+      "default_orb": 8.0,
+      "aspect_type": "major"
+    }
+  ]
+}

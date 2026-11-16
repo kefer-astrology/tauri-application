@@ -672,3 +672,47 @@ fn detect_chart_configurations_flags_grand_trine() {
     assert!(configurations.contains(&"grand_trine".to_string()));
     assert!(configurations.contains(&"grand_trine_fire".to_string()));
 }
+
+/// D4 regression: request-level `aspect_types` using the legacy Python ids
+/// (`semisquare`/`sesquiquadrate`) select the canonical octile/trioctile.
+#[test]
+fn legacy_alias_selection_detects_canonical_aspect() {
+    let definitions = crate::workspace::builtin_standard_model("builtin").aspect_definitions;
+    let positions = HashMap::from([
+        ("sun".to_string(), 0.0),
+        ("mars".to_string(), 45.2),
+        ("saturn".to_string(), 135.1),
+    ]);
+    let selected = vec!["semisquare".to_string(), "SESQUIQUADRATE".to_string()];
+    let aspects = compute_chart_aspects(
+        &positions,
+        &definitions,
+        &HashMap::new(),
+        Some(&selected),
+        &HashMap::new(),
+        &HashMap::new(),
+    );
+    let mut found: Vec<(String, String, String)> = aspects
+        .iter()
+        .map(|a| (a.from.clone(), a.to.clone(), a.aspect_type.clone()))
+        .collect();
+    found.sort();
+    assert!(found.iter().any(|(_, _, t)| t == "octile"), "{found:?}");
+    assert!(found.iter().any(|(_, _, t)| t == "trioctile"), "{found:?}");
+    assert!(found
+        .iter()
+        .all(|(_, _, t)| t == "octile" || t == "trioctile"));
+
+    let canonical = eligible_aspect_angle_and_orb(
+        &definitions,
+        &HashMap::new(),
+        "semisquare",
+        AspectContext::Chart,
+        "sun",
+        "mars",
+        None,
+        None,
+        &HashMap::new(),
+    );
+    assert_eq!(canonical, Some((45.0, 1.5)));
+}

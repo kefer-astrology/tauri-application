@@ -222,12 +222,21 @@ pub(super) fn effective_model_settings(
         );
     }
 
+    // Resolve aspect aliases once for every layer (model, workspace, preset,
+    // chart, operation) so downstream code only ever sees canonical ids.
+    use crate::domain::astrology::{canonical_aspect_ids, canonical_aspect_map};
+    let aspects = canonical_aspect_ids(&aspects);
+    let aspect_orbs = canonical_aspect_map(&aspect_orbs);
+    let aspect_orb_sources = canonical_aspect_map(&aspect_orb_sources);
+    let canonical_opt =
+        |ids: &Option<Vec<String>>| ids.as_ref().map(|ids| canonical_aspect_ids(ids));
+
     EffectiveModelSettings {
         default_house_system: house_system,
         default_bodies: bodies,
         default_aspects: aspects,
-        default_transit_aspects: model_settings.default_transit_aspects.clone(),
-        default_direction_aspects: model_settings.default_direction_aspects.clone(),
+        default_transit_aspects: canonical_opt(&model_settings.default_transit_aspects),
+        default_direction_aspects: canonical_opt(&model_settings.default_direction_aspects),
         default_transit_bodies: model_settings.default_transit_bodies.clone(),
         default_direction_bodies: model_settings.default_direction_bodies.clone(),
         aspect_orbs,
