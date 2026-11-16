@@ -136,3 +136,9 @@ Unsigned Windows builds are often flagged (“unknown publisher”). Options:
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file.
+
+Copyright (c) 2026 Kube Kubow and Kefer Astrology contributors. The project
+started from the MIT-licensed `tauri2-svelte5-shadcn` template, whose notice
+is retained in `LICENSE`. Third-party software and data are listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (regenerate with
+`python scripts/generate-third-party-notices.py`).
