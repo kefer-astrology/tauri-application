@@ -250,6 +250,15 @@ pub(super) fn compute_positions(
         backend.backend_id(),
     );
     let mut warnings = initial_warnings.to_vec();
+    extend_unique(
+        &mut warnings,
+        crate::infrastructure::position_provider::engine_substitution_warning(
+            chart.config.engine.as_ref(),
+            backend.backend_id(),
+        )
+        .into_iter()
+        .collect(),
+    );
     extend_unique(&mut warnings, selection.warnings);
     let computed = backend.compute_chart_data(chart, Some(&selection.ids))?;
     extend_unique(&mut warnings, computed.warnings);
@@ -322,6 +331,49 @@ mod tests {
         );
         assert_eq!(inherited_or_override(&inherited, None), inherited);
         assert_eq!(inherited_or_override(&inherited, Some(&[])), inherited);
+    }
+
+    fn engine_chart(engine: &str) -> ChartInstance {
+        serde_json::from_value(serde_json::json!({
+            "id": "engine_test",
+            "subject": {
+                "id": "engine_test",
+                "name": "Engine test",
+                "event_time": "2000-01-01T12:00:00Z",
+                "location": { "name": "Greenwich", "latitude": 51.4779, "longitude": 0.0, "timezone": "UTC" }
+            },
+            "config": {
+                "definition": { "kind": "base", "purpose": "natal" },
+                "zodiac_type": "Tropical",
+                "aspect_orbs": {},
+                "engine": engine
+            },
+            "tags": []
+        }))
+        .expect("valid chart JSON")
+    }
+
+    /// Regression (Phase 0 D2): a jyotish/custom chart is computed by the JPL
+    /// backend, and the result must say so instead of passing as "jyotish".
+    #[test]
+    fn unimplemented_engine_is_computed_with_explicit_warning() {
+        let model = crate::workspace::builtin_standard_model("builtin");
+        for engine in ["jyotish", "custom"] {
+            let computed =
+                compute_positions(&engine_chart(engine), &model, &["sun".to_string()], &[])
+                    .expect("bundled kernels compute the chart");
+            assert_eq!(computed.backend_used, "jpl");
+            assert!(computed.positions.contains_key("sun"));
+            let expected = format!("engine_{engine}_not_implemented: jpl_used");
+            assert!(
+                computed.warnings.contains(&expected),
+                "{:?}",
+                computed.warnings
+            );
+        }
+        let jpl = compute_positions(&engine_chart("jpl"), &model, &["sun".to_string()], &[])
+            .expect("jpl chart computes");
+        assert!(!jpl.warnings.iter().any(|w| w.starts_with("engine_")));
     }
 
     #[test]

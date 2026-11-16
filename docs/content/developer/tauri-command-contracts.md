@@ -224,8 +224,9 @@ Acceptance criteria:
 - `KEFER_COMPUTE_BACKEND=Python`: Python only.
 - `KEFER_COMPUTE_BACKEND=Rust`: Rust only.
 - The contract should make backend provenance observable to callers.
-- Only a `jyotish`/`custom` engine is force-routed to Python regardless of
-  backend selection (no Rust implementation exists). A per-chart
+- No engine is force-routed to Python (`PYTHON_ONLY_ENGINES` is empty);
+  `jyotish`/`custom` compute with JPL on either route and carry an
+  `engine_<e>_not_implemented` warning. A per-chart
   `override_ephemeris` kernel does **not** force Python — the Rust JPL
   backend implements it natively — see
   [Architecture](../architecture/#calculation-and-persistence) for the fixed

@@ -43,10 +43,10 @@ use anise::prelude::*;
 use hifitime::Epoch;
 
 use crate::domain::houses::{
-    campanus_cusps, compute_axes, equal_cusps, equatorial_ra_dec_deg, equatorial_to_ecliptic,
-    equatorial_to_horizontal_deg, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
-    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, porphyry_cusps,
-    true_apogee_tropical_deg, true_node_tropical_deg, vertex_lon, whole_sign_cusps,
+    compute_axes, equatorial_ra_dec_deg, equatorial_to_ecliptic, equatorial_to_horizontal_deg,
+    house_cusps_for_system, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
+    mean_node_motion, mean_obliquity_deg, normalize_deg, true_apogee_tropical_deg,
+    true_node_tropical_deg, vertex_lon,
 };
 use crate::infrastructure::ephemeris::{
     load_almanac_from_paths, small_body_kernels_for_bsp_paths, EphemerisManager, ASTRAEA_J2000,
@@ -58,7 +58,21 @@ use crate::infrastructure::position_provider::{
     AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion, MinimalChartData,
     RequiredQuantities,
 };
-use crate::workspace::models::{ChartInstance, HouseSystem, PositionMode};
+use crate::workspace::models::{ChartInstance, PositionMode, ZodiacType};
+
+/// Warning code emitted when a chart requests the sidereal zodiac on this
+/// backend. The ANISE/JPL path has no ayanamsa implementation, so positions,
+/// axes, and cusps stay tropical; callers must be told rather than receive
+/// tropical values under a sidereal chart configuration.
+pub const SIDEREAL_UNSUPPORTED_WARNING: &str =
+    "zodiac_sidereal_not_supported: tropical_positions_returned";
+
+/// `Some(warning)` when the chart's zodiac setting cannot be honored by the
+/// JPL backend (currently: any sidereal chart).
+pub fn unsupported_zodiac_warning(chart: &ChartInstance) -> Option<String> {
+    matches!(chart.config.zodiac_type, ZodiacType::Sidereal)
+        .then(|| SIDEREAL_UNSUPPORTED_WARNING.to_string())
+}
 
 // ─── Body table ──────────────────────────────────────────────────────────────
 
@@ -517,6 +531,9 @@ impl JplAstronomyBackend {
         let mut azimuth: HashMap<String, f64> = HashMap::new();
         let mut warnings: Vec<String> = Vec::new();
         warnings.push("ut1_approximated_from_utc: no EOP/ΔUT1 data loaded; sidereal quantities are approximate".to_string());
+        if let Some(warning) = unsupported_zodiac_warning(chart) {
+            warnings.push(warning);
+        }
 
         // A minimal-path caller never needs motion for a pure longitude/orb
         // search, and never needs RA/Dec/Alt/Az at all (only the full path
@@ -702,22 +719,14 @@ impl JplAstronomyBackend {
                     positions.insert(id.to_string(), longitude);
                 }
             }
-            let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
-                Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
-                Some(HouseSystem::Placidus) => placidus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
-                Some(HouseSystem::Campanus) => campanus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
-                Some(HouseSystem::Equal) => (equal_cusps(asc), vec![]),
-                Some(HouseSystem::Porphyry) => (porphyry_cusps(asc, mc), vec![]),
-                Some(other) => {
-                    let name = format!("{other:?}").to_lowercase();
-                    (
-                        whole_sign_cusps(asc),
-                        vec![format!(
-                            "house_system_{name}_not_yet_supported: whole_sign_used"
-                        )],
-                    )
-                }
-            };
+            let (house_cusps, house_warnings) = house_cusps_for_system(
+                chart.config.house_system.as_ref(),
+                jd_utc_as_ut1,
+                lat,
+                lon,
+                asc,
+                mc,
+            );
             warnings.extend(house_warnings);
             (asc, axes, house_cusps)
         } else {
@@ -1288,6 +1297,37 @@ mod tests {
         assert!(
             velocity_error < 1e-5,
             "velocity error {velocity_error} km/s"
+        );
+    }
+
+    #[test]
+    fn tropical_chart_has_no_zodiac_warning() {
+        let chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        assert_eq!(unsupported_zodiac_warning(&chart), None);
+    }
+
+    /// Regression: a sidereal chart used to come back from the default (non-swisseph)
+    /// Rust route as tropical longitudes with no diagnostic at all.
+    #[test]
+    fn sidereal_chart_reports_unsupported_zodiac_instead_of_silent_tropical() {
+        let mut chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        chart.config.zodiac_type = ZodiacType::Sidereal;
+        chart.config.ayanamsa = Some(crate::workspace::models::Ayanamsa::Lahiri);
+        assert_eq!(
+            unsupported_zodiac_warning(&chart).as_deref(),
+            Some(SIDEREAL_UNSUPPORTED_WARNING)
+        );
+
+        let backend = jpl_backend_for_chart(&chart).expect("catalog fallback should resolve");
+        let data = backend
+            .compute_chart_data(&chart, Some(&vec!["sun".to_string()]))
+            .expect("bundled kernels should compute");
+        assert!(
+            data.warnings
+                .iter()
+                .any(|w| w == SIDEREAL_UNSUPPORTED_WARNING),
+            "expected sidereal warning, got: {:?}",
+            data.warnings
         );
     }
 

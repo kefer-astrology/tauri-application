@@ -288,13 +288,8 @@ pub async fn load_workspace_charts(
     );
     tauri::async_runtime::spawn_blocking(move || {
         let defer = |chart: &crate::workspace::models::ChartInstance| {
-            let force_python = matches!(
-                chart.config.engine,
-                Some(
-                    crate::workspace::models::EngineType::Jyotish
-                        | crate::workspace::models::EngineType::Custom
-                )
-            );
+            let force_python =
+                crate::application::compute_router::chart_engine_requires_python(chart);
             !matches!(
                 select_chart_compute_route(backend, backend_available, force_python),
                 Ok(ComputeRoute::Rust)

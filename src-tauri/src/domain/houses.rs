@@ -6,6 +6,7 @@
 use std::f64::consts::PI;
 
 use crate::infrastructure::position_provider::AstronomyMotion;
+use crate::workspace::models::HouseSystem;
 
 // ─── time helpers ────────────────────────────────────────────────────────────
 
@@ -330,6 +331,51 @@ pub fn porphyry_cusps(asc_lon_deg: f64, mc_lon_deg: f64) -> Vec<f64> {
     ]
 }
 
+/// House systems with a native implementation in this module. Any other
+/// system is substituted by Whole Sign *with a warning* by
+/// [`house_cusps_for_system`]; this list also drives the domain catalog's
+/// `computation_supported` flag so the UI can label the substitution.
+pub const NATIVE_HOUSE_SYSTEMS: [&str; 5] =
+    ["Placidus", "Whole Sign", "Campanus", "Equal", "Porphyry"];
+
+/// Warning code for a house system that is substituted by Whole Sign.
+/// Shared with the Python implementation through `contracts/houses/cusps.json`.
+pub fn house_system_substitution_warning(system: &HouseSystem) -> String {
+    format!(
+        "house_system_{}_not_yet_supported: whole_sign_used",
+        system.label().to_lowercase().replace(' ', "_")
+    )
+}
+
+/// House cusps for a configured system. `None` means Whole Sign. Unsupported
+/// systems never substitute silently: they return Whole Sign cusps plus
+/// [`house_system_substitution_warning`]. Placidus/Campanus may additionally
+/// fall back at extreme latitudes with their own warnings.
+pub fn house_cusps_for_system(
+    system: Option<&HouseSystem>,
+    jd_ut: f64,
+    geo_lat_deg: f64,
+    geo_lon_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
+    match system {
+        Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc_lon_deg), vec![]),
+        Some(HouseSystem::Placidus) => {
+            placidus_cusps(jd_ut, geo_lat_deg, geo_lon_deg, asc_lon_deg, mc_lon_deg)
+        }
+        Some(HouseSystem::Campanus) => {
+            campanus_cusps(jd_ut, geo_lat_deg, geo_lon_deg, asc_lon_deg, mc_lon_deg)
+        }
+        Some(HouseSystem::Equal) => (equal_cusps(asc_lon_deg), vec![]),
+        Some(HouseSystem::Porphyry) => (porphyry_cusps(asc_lon_deg, mc_lon_deg), vec![]),
+        Some(other) => (
+            whole_sign_cusps(asc_lon_deg),
+            vec![house_system_substitution_warning(other)],
+        ),
+    }
+}
+
 /// Intersection of the ecliptic with a great circle. `equator_crossing_deg` is
 /// the great circle's ascending-node-like crossing on the equator; `pole_height_deg`
 /// is the circle pole's height above the equator.
@@ -622,6 +668,72 @@ pub fn normalize_deg(deg: f64) -> f64 {
 }
 
 // ─── tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+
+    /// Shared Rust/Python parity fixture: axes, cusps and substitution
+    /// warnings for every catalog house system.
+    #[test]
+    fn house_cusps_match_shared_contract_fixture() {
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../contracts/houses/cusps.json"))
+                .expect("valid houses fixture");
+        let tol = fixture["tolerance_deg"].as_f64().unwrap();
+        let close = |a: f64, b: f64| {
+            let d = (a - b).rem_euclid(360.0);
+            d.min(360.0 - d) <= tol
+        };
+        for case in fixture["cases"].as_array().unwrap() {
+            let id = case["id"].as_str().unwrap();
+            let jd = case["jd_ut"].as_f64().unwrap();
+            let lat = case["latitude"].as_f64().unwrap();
+            let lon = case["longitude"].as_f64().unwrap();
+            let (asc, mc, desc, ic) = compute_axes(jd, lat, lon).unwrap();
+            for (name, value) in [("asc", asc), ("mc", mc), ("desc", desc), ("ic", ic)] {
+                assert!(
+                    close(value, case["axes"][name].as_f64().unwrap()),
+                    "{id} {name}"
+                );
+            }
+            for (system_name, expected) in case["systems"].as_object().unwrap() {
+                let system: HouseSystem =
+                    serde_json::from_value(serde_json::json!(system_name)).unwrap();
+                let (cusps, warnings) =
+                    house_cusps_for_system(Some(&system), jd, lat, lon, asc, mc);
+                let expected_cusps = expected["cusps"].as_array().unwrap();
+                assert_eq!(cusps.len(), expected_cusps.len(), "{id} {system_name}");
+                for (i, (got, want)) in cusps.iter().zip(expected_cusps).enumerate() {
+                    assert!(
+                        close(*got, want.as_f64().unwrap()),
+                        "{id} {system_name} cusp {}",
+                        i + 1
+                    );
+                }
+                let expected_warnings: Vec<String> =
+                    serde_json::from_value(expected["warnings"].clone()).unwrap();
+                assert_eq!(warnings, expected_warnings, "{id} {system_name}");
+            }
+        }
+    }
+
+    #[test]
+    fn unsupported_house_systems_never_substitute_silently() {
+        for system in [
+            HouseSystem::Koch,
+            HouseSystem::Regiomontanus,
+            HouseSystem::Vehlow,
+            HouseSystem::Alcabitius,
+        ] {
+            let (cusps, warnings) =
+                house_cusps_for_system(Some(&system), 2451545.0, 50.0, 14.0, 100.0, 10.0);
+            assert_eq!(cusps, whole_sign_cusps(100.0));
+            assert_eq!(warnings, vec![house_system_substitution_warning(&system)]);
+            assert!(!NATIVE_HOUSE_SYSTEMS.contains(&system.label()));
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

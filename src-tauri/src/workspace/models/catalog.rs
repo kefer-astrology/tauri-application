@@ -99,7 +99,11 @@ pub struct DomainCatalog {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HouseSystemDefinition {
     pub id: String,
+    /// True only when the default build computes this system natively.
     pub computation_supported: bool,
+    /// System actually used when `computation_supported` is false.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub substitute: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
