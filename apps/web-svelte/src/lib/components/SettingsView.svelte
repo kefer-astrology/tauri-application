@@ -63,7 +63,7 @@
   } from '$lib/tauri/workspace';
   import type { ResolvedLocation } from '$lib/tauri/types';
   import LocateFixed from '@lucide/svelte/icons/locate-fixed';
-  import { catalogHouseSystems } from '$lib/astrology/domainCatalog';
+  import { catalogHouseSystems, houseSystemSubstitute } from '$lib/astrology/domainCatalog';
 
   let {
     section
@@ -538,7 +538,11 @@
             <Select.Content>
               <Select.Group>
                 {#each catalogHouseSystems() as system}
-                  <Select.Item value={system} label={system}>{system}</Select.Item>
+                  {@const substitute = houseSystemSubstitute(system)}
+                  {@const label = substitute
+                    ? t('house_system_substituted', { name: system, substitute }, `${system} (computed as ${substitute})`)
+                    : system}
+                  <Select.Item value={system} {label}>{label}</Select.Item>
                 {/each}
               </Select.Group>
             </Select.Content>

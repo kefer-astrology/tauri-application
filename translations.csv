@@ -163,6 +163,7 @@ internal_name,czech,english,french,spanish
 "house_system","Systém domů","House System","Système de Maisons","Sistema de Casas"
 "house_system_equal","Ekvální","Equal","Égal","Igual"
 "house_system_whole_sign","Celoznamenný","Whole Sign","Signe entier","Signo entero"
+"house_system_substituted","{{name}} (počítáno jako {{substitute}})","{{name}} (computed as {{substitute}})","{{name}} (calculé en {{substitute}})","{{name}} (calculado como {{substitute}})"
 "info","Info","Info","Info","Info"
 "info_angular_planet","Rohová planeta","Angular planet","Planète angulaire","Planeta angular"
 "info_aspect_conjunction","Konjunkce","Conjunction","Conjonction","Conjunción"

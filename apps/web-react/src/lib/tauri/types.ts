@@ -344,7 +344,10 @@ export interface DomainDefinitionDto {
 
 export interface HouseSystemDefinitionDto {
 	id: string;
+	/** True only when the backend computes this system natively. */
 	computation_supported: boolean;
+	/** System actually computed (with a warning) when not natively supported. */
+	substitute?: string | null;
 }
 
 export interface DomainCatalogDto {

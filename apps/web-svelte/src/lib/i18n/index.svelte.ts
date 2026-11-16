@@ -39,10 +39,15 @@ export function t(key: string, vars?: Record<string, any>, fallback?: string) {
   return fallback ?? key;
 }
 
-// minimal template interpolation: "Hello {name}" -> vars.name
-function interpolate(template: string, vars?: Record<string, any>) {
+// minimal template interpolation: "Hello {{name}}" or "Hello {name}" -> vars.name.
+// translations.csv is shared with the React app and uses i18next's {{name}};
+// matching only {name} used to leave stray braces ("{{count}}" -> "{3}").
+export function interpolate(template: string, vars?: Record<string, any>) {
   if (!template || !vars) return template;
-  return template.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? String(vars[k]) : `{${k}}`));
+  return template.replace(/\{\{\s*(\w+)\s*\}\}|\{(\w+)\}/g, (match, double, single) => {
+    const k = double ?? single;
+    return k in vars ? String(vars[k]) : match;
+  });
 }
 
 export type Lang = keyof typeof i18n.dicts;
