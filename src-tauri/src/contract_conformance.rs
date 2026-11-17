@@ -165,7 +165,7 @@ fn declared_capabilities_match_the_implementation() {
     let conventions: Vec<String> = serde_json::from_value(caps["conventions"].clone()).unwrap();
     assert_eq!(
         conventions,
-        vec![crate::application::computation::CALCULATION_CONVENTION.to_string()]
+        crate::domain::conventions::IMPLEMENTED.to_vec()
     );
     let catalog = crate::workspace::builtin_domain_catalog();
     let substituted: Vec<String> =
@@ -340,4 +340,133 @@ fn chart_result_has_every_field_required_by_the_api_schema() {
             );
         }
     }
+}
+
+fn chart_with_convention(utc: &str, convention: Option<&str>) -> ChartInstance {
+    let mut chart = chart_at(utc);
+    chart.config.calculation_convention = convention.map(str::to_string);
+    chart
+}
+
+const TRUE_EQUINOX: &str = crate::domain::conventions::TRUE_EQUINOX;
+
+/// kefer-positions/1-true-equinox against JPL Horizons true-equinox longitudes
+/// directly (independent reference, nothing subtracted).
+#[test]
+fn true_equinox_positions_match_jpl_horizons() {
+    let horizons = load("reference/positions-horizons.json");
+    let tol = &load("reference/tolerances.json")["positions_true_equinox_arcsec"];
+    let bodies: Vec<String> =
+        serde_json::from_value(rust_capabilities()["ephemeris_grade_bodies"].clone()).unwrap();
+    for (i, epoch) in horizons["epochs_utc"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .enumerate()
+    {
+        let chart = chart_with_convention(epoch.as_str().unwrap(), Some(TRUE_EQUINOX));
+        let data = jpl_backend_for_chart(&chart)
+            .unwrap()
+            .compute_chart_data(&chart, Some(&bodies))
+            .unwrap();
+        for body in &bodies {
+            let reference = horizons["positions"][body][i]["lon_true_deg"]
+                .as_f64()
+                .unwrap();
+            let limit = tol
+                .get(body.as_str())
+                .and_then(Value::as_f64)
+                .unwrap_or(tol["default"].as_f64().unwrap());
+            let err = arcsec_diff(data.positions[body], reference);
+            assert!(err.abs() <= limit, "{epoch} {body}: {err:.2}\" > {limit}\"");
+        }
+    }
+}
+
+#[test]
+fn true_equinox_axes_match_erfa_gast_and_true_obliquity() {
+    let erfa = load("reference/earth-orientation-erfa.json");
+    let limit = load("reference/tolerances.json")["axes_true_convention_arcsec"]
+        .as_f64()
+        .unwrap();
+    for epoch in erfa["epochs"].as_array().unwrap() {
+        let chart = chart_with_convention(epoch["utc"].as_str().unwrap(), Some(TRUE_EQUINOX));
+        let data = jpl_backend_for_chart(&chart)
+            .unwrap()
+            .compute_chart_data(&chart, Some(&vec!["asc".into(), "mc".into()]))
+            .unwrap();
+        let ramc = (epoch["gast_deg"].as_f64().unwrap() + PRAGUE.1).to_radians();
+        let eps = epoch["true_obliquity_deg"].as_f64().unwrap().to_radians();
+        let lat = PRAGUE.0.to_radians();
+        let mc = f64::atan2(ramc.sin(), ramc.cos() * eps.cos()).to_degrees();
+        let asc = f64::atan2(-ramc.cos(), eps.sin() * lat.tan() + eps.cos() * ramc.sin())
+            .to_degrees()
+            + 180.0;
+        assert!(arcsec_diff(data.axes.mc, mc).abs() <= limit, "{epoch}: mc");
+        assert!(
+            arcsec_diff(data.axes.asc, asc).abs() <= limit,
+            "{epoch}: asc"
+        );
+    }
+}
+
+#[test]
+fn true_equinox_house_fixture_parity() {
+    use crate::domain::houses::{compute_axes_with, house_cusps_for_system_with};
+    use crate::workspace::models::HouseSystem;
+    let fixture = load("houses/cusps-true-equinox.json");
+    let tol = fixture["tolerance_deg"].as_f64().unwrap();
+    for case in fixture["cases"].as_array().unwrap() {
+        let (jd_ut, jd_tt) = (
+            case["jd_ut"].as_f64().unwrap(),
+            case["jd_tt"].as_f64().unwrap(),
+        );
+        let (lat, lon) = (
+            case["latitude"].as_f64().unwrap(),
+            case["longitude"].as_f64().unwrap(),
+        );
+        let (_dpsi, deps, ee) = crate::domain::conventions::nutation_deg(jd_tt);
+        let ramc = crate::domain::houses::normalize_deg(
+            crate::domain::houses::local_sidereal_time_deg(jd_ut, lon) + ee,
+        );
+        let eps = crate::domain::houses::mean_obliquity_deg(jd_ut) + deps;
+        assert!((ramc - case["ramc_deg"].as_f64().unwrap()).abs() <= tol);
+        assert!((eps - case["obliquity_deg"].as_f64().unwrap()).abs() <= tol);
+        let (asc, mc, _, _) = compute_axes_with(ramc, eps, lat).unwrap();
+        for (system, expected) in case["systems"].as_object().unwrap() {
+            let sys: HouseSystem = serde_json::from_value(serde_json::json!(system)).unwrap();
+            let (cusps, warnings) =
+                house_cusps_for_system_with(Some(&sys), ramc, eps, lat, asc, mc);
+            for (got, want) in cusps.iter().zip(expected["cusps"].as_array().unwrap()) {
+                assert!(arcsec_diff(*got, want.as_f64().unwrap()).abs() / 3600.0 <= tol);
+            }
+            let want: Vec<String> = serde_json::from_value(expected["warnings"].clone()).unwrap();
+            assert_eq!(warnings, want, "{} {system}", case["id"]);
+        }
+    }
+}
+
+#[test]
+fn chart_results_report_the_convention_used_and_never_switch_silently() {
+    use crate::application::computation::{compute_chart, ChartComputeRequest, ResolvedChart};
+    let run = |convention: Option<&str>| {
+        let chart = chart_with_convention("2024-01-01T12:00:00Z", convention);
+        let report = crate::workspace::settings::standalone_model_report(&chart.config);
+        compute_chart(ChartComputeRequest::for_resolved_chart(
+            ResolvedChart::from_report(chart, report),
+        ))
+        .unwrap()
+    };
+    let default = run(None);
+    assert_eq!(default.calculation_convention, "kefer-positions/1");
+    let true_eq = run(Some(TRUE_EQUINOX));
+    assert_eq!(true_eq.calculation_convention, TRUE_EQUINOX);
+    assert_ne!(default.positions["sun"], true_eq.positions["sun"]);
+    let unknown = run(Some("kefer-positions/9"));
+    assert_eq!(unknown.calculation_convention, "kefer-positions/1");
+    assert_eq!(unknown.positions["sun"], default.positions["sun"]);
+    assert!(unknown.warnings.contains(
+        &"calculation_convention_unsupported: kefer-positions/9; kefer-positions/1_used"
+            .to_string()
+    ));
 }

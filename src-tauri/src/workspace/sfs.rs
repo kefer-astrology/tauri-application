@@ -101,6 +101,7 @@ pub fn parse_sfs_bytes(bytes: &[u8], source_name: Option<&str>) -> Result<ChartI
             ayanamsa: None,
             observable_objects: None,
             time_system: Some(TimeSystem::Gregorian),
+            calculation_convention: None,
         },
         tags,
         tag_colors: HashMap::new(),

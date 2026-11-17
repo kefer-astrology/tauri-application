@@ -115,6 +115,7 @@ mod tests {
             ayanamsa: Some(Ayanamsa::Lahiri),
             observable_objects: Some(vec!["moon".to_string()]),
             time_system: Some(TimeSystem::Gregorian),
+            calculation_convention: None,
         }
     }
 

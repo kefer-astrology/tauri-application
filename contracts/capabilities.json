@@ -5,7 +5,8 @@
     "rust": {
       "repository": "kefer-astrology/tauri-application",
       "conventions": [
-        "kefer-positions/1"
+        "kefer-positions/1",
+        "kefer-positions/1-true-equinox"
       ],
       "house_systems_native": [
         "Placidus",
@@ -74,7 +75,8 @@
     "python": {
       "repository": "kefer-astrology/function-wrapper",
       "conventions": [
-        "kefer-positions/1"
+        "kefer-positions/1",
+        "kefer-positions/1-true-equinox"
       ],
       "house_systems_native": [
         "Placidus",

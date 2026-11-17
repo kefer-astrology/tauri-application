@@ -43,8 +43,8 @@ use anise::prelude::*;
 use hifitime::Epoch;
 
 use crate::domain::houses::{
-    compute_axes, equatorial_ra_dec_deg, equatorial_to_ecliptic, equatorial_to_horizontal_deg,
-    house_cusps_for_system, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
+    compute_axes_with, equatorial_ra_dec_deg, equatorial_to_ecliptic, equatorial_to_horizontal_deg,
+    house_cusps_for_system_with, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
     mean_node_motion, mean_obliquity_deg, normalize_deg, true_apogee_tropical_deg,
     true_node_tropical_deg, vertex_lon,
 };
@@ -528,6 +528,35 @@ impl JplAstronomyBackend {
         let lst_deg = local_sidereal_time_deg(jd_utc_as_ut1, lon);
         let ab_corr = aberration_for_position_mode(chart.config.position_mode);
 
+        // Calculation convention (kefer-contracts conventions.json). The mean
+        // equinox path is unchanged; the true-equinox variant adds IAU 2000A
+        // nutation to exactly the same inputs: +dpsi to ecliptic longitudes,
+        // + equation of the equinoxes to RAMC, + deps to the obliquity.
+        let convention =
+            crate::domain::conventions::resolve(chart.config.calculation_convention.as_deref());
+        let (equinox_shift, sidereal_ramc, axes_obliquity, vertex_obliquity) =
+            match convention.equinox {
+                crate::domain::conventions::Equinox::Mean => {
+                    (0.0, lst_deg, mean_obliquity_deg(jd_utc_as_ut1), obliquity)
+                }
+                crate::domain::conventions::Equinox::True => {
+                    let (dpsi, deps, ee) = crate::domain::conventions::nutation_deg(jd_tt);
+                    (
+                        dpsi,
+                        normalize_deg(lst_deg + ee),
+                        mean_obliquity_deg(jd_utc_as_ut1) + deps,
+                        obliquity + deps,
+                    )
+                }
+            };
+        let of_date = |longitude: f64| {
+            if equinox_shift == 0.0 {
+                longitude
+            } else {
+                normalize_deg(longitude + equinox_shift)
+            }
+        };
+
         let requested = |id: &str| {
             requested_objects
                 .map(|list| list.iter().any(|s| s == id))
@@ -584,7 +613,7 @@ impl JplAstronomyBackend {
             }
             match sample_state(&almanac, frame, unix_secs, ab_corr) {
                 Ok(state) => {
-                    let longitude = longitude_from_state(&state, jd_tt);
+                    let longitude = of_date(longitude_from_state(&state, jd_tt));
                     positions.insert(id.to_string(), longitude);
                     if want_motion {
                         if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
@@ -623,7 +652,7 @@ impl JplAstronomyBackend {
                     {
                         warnings.push(warning);
                     }
-                    let longitude = longitude_from_state(&state, jd_tt);
+                    let longitude = of_date(longitude_from_state(&state, jd_tt));
                     positions.insert(id.to_string(), longitude);
                     if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
                         motion.insert(id.to_string(), body_motion);
@@ -661,7 +690,7 @@ impl JplAstronomyBackend {
             );
             match sampled {
                 Ok(state) => {
-                    let longitude = longitude_from_state(&state, jd_tt);
+                    let longitude = of_date(longitude_from_state(&state, jd_tt));
                     positions.insert(id.clone(), longitude);
                     if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
                         motion.insert(id.clone(), body_motion);
@@ -673,7 +702,7 @@ impl JplAstronomyBackend {
 
         // ── Lunar nodes ───────────────────────────────────────────────────
         // These secular lunar expressions are TT quantities, unlike sidereal time above.
-        let mean_node = mean_node_lon(jd_tt);
+        let mean_node = of_date(mean_node_lon(jd_tt));
         let mean_motion = mean_node_motion(jd_tt);
         if wanted("north_node") || wanted("mean_node") {
             let key = if wanted("north_node") {
@@ -701,6 +730,7 @@ impl JplAstronomyBackend {
             // Earth–Moon state, not a retarded/apparent line of sight.
             match true_node_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_nn) => {
+                    let true_nn = of_date(true_nn);
                     let true_motion = true_node_motion(&almanac, unix_secs, Aberration::NONE).ok();
                     if want_true_nn {
                         positions.insert("true_north_node".to_string(), true_nn);
@@ -731,7 +761,7 @@ impl JplAstronomyBackend {
         if wanted("true_lilith") {
             match true_apogee_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_apogee) => {
-                    positions.insert("true_lilith".to_string(), true_apogee);
+                    positions.insert("true_lilith".to_string(), of_date(true_apogee));
                     if let Ok(apogee_motion) =
                         true_apogee_motion(&almanac, unix_secs, Aberration::NONE)
                     {
@@ -767,7 +797,7 @@ impl JplAstronomyBackend {
             || wanted("part_of_spirit");
 
         let (asc, axes, house_cusps) = if need_axes {
-            let (asc, mc, desc, ic) = compute_axes(jd_utc_as_ut1, lat, lon)
+            let (asc, mc, desc, ic) = compute_axes_with(sidereal_ramc, axes_obliquity, lat)
                 .map_err(|e| format!("Failed to compute axes: {e}"))?;
             let axes = AstronomyAxes { asc, desc, mc, ic };
             for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
@@ -775,11 +805,11 @@ impl JplAstronomyBackend {
                     positions.insert(id.to_string(), longitude);
                 }
             }
-            let (house_cusps, house_warnings) = house_cusps_for_system(
+            let (house_cusps, house_warnings) = house_cusps_for_system_with(
                 chart.config.house_system.as_ref(),
-                jd_utc_as_ut1,
+                sidereal_ramc,
+                axes_obliquity,
                 lat,
-                lon,
                 asc,
                 mc,
             );
@@ -791,8 +821,7 @@ impl JplAstronomyBackend {
 
         if wanted("vertex") || wanted("antivertex") {
             // RAMC (right ascension of the midheaven) is the same quantity as local sidereal time.
-            let ramc = lst_deg;
-            match vertex_lon(ramc, obliquity, lat) {
+            match vertex_lon(sidereal_ramc, vertex_obliquity, lat) {
                 Ok(vertex) => {
                     if wanted("vertex") {
                         positions.insert("vertex".to_string(), vertex);
@@ -818,7 +847,7 @@ impl JplAstronomyBackend {
                 .any(|lot| lot.add.contains("syzygy") || lot.subtract.contains("syzygy"));
             let syzygy = if needs_syzygy {
                 match previous_syzygy(&almanac, unix_secs, ab_corr) {
-                    Ok(longitude) => Some(longitude),
+                    Ok(longitude) => Some(of_date(longitude)),
                     Err(error) => {
                         warnings.push(format!("previous_syzygy_unavailable: {error}"));
                         None
@@ -853,6 +882,7 @@ impl JplAstronomyBackend {
                 }
             }
         }
+        let before_points: std::collections::HashSet<String> = positions.keys().cloned().collect();
         crate::infrastructure::additional_points::inject_model_points(
             &almanac,
             chart,
@@ -864,6 +894,17 @@ impl JplAstronomyBackend {
             &mut declination,
             &mut warnings,
         )?;
+        // Stars and hypotheticals are computed on the mean ecliptic of date (ecm06).
+        if equinox_shift != 0.0 {
+            for (id, longitude) in positions.iter_mut() {
+                if !before_points.contains(id) {
+                    *longitude = of_date(*longitude);
+                }
+            }
+        }
+        if let Some(warning) = convention.warning.clone() {
+            warnings.push(warning);
+        }
         // Dependency planets are calculation inputs, not implicitly selected chart rows.
         if needs_lots && requested_objects.is_some() {
             positions.retain(|id, _| requested(id));

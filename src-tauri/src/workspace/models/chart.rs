@@ -179,6 +179,10 @@ pub struct ChartConfig {
     pub observable_objects: Option<Vec<String>>,
     #[serde(default)]
     pub time_system: Option<TimeSystem>,
+    /// kefer-contracts calculation convention id; `None` = `kefer-positions/1`
+    /// (mean equinox). Omitted from YAML when unset (backward compatible).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub calculation_convention: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

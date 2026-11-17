@@ -105,13 +105,25 @@ pub fn vertex_lon(ramc_deg: f64, obliquity_deg: f64, geo_lat_deg: f64) -> Result
 }
 
 /// Compute all four cardinal axes (asc, mc, desc, ic) in degrees.
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
 pub fn compute_axes(
     jd_ut: f64,
     geo_lat_deg: f64,
     geo_lon_deg: f64,
 ) -> Result<(f64, f64, f64, f64), String> {
-    let eps = mean_obliquity_deg(jd_ut);
-    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
+    compute_axes_with(
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+    )
+}
+
+/// Axes for an explicit RAMC and obliquity (degrees).
+pub fn compute_axes_with(
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+) -> Result<(f64, f64, f64, f64), String> {
     let mc = midheaven_lon(ramc, eps);
     let asc = ascendant_lon(ramc, eps, geo_lat_deg)?;
     let desc = normalize_deg(asc + 180.0);
@@ -135,6 +147,7 @@ pub fn whole_sign_cusps(asc_lon_deg: f64) -> Vec<f64> {
 ///
 /// Returns 12 values in order (house 1 through 12). Houses 1, 4, 7, and 10 are
 /// the ascendant, IC, descendant, and MC respectively.
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
 pub fn campanus_cusps(
     jd_ut: f64,
     geo_lat_deg: f64,
@@ -142,9 +155,24 @@ pub fn campanus_cusps(
     asc_lon_deg: f64,
     mc_lon_deg: f64,
 ) -> (Vec<f64>, Vec<String>) {
-    let eps = mean_obliquity_deg(jd_ut);
-    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
+    campanus_cusps_with(
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+        asc_lon_deg,
+        mc_lon_deg,
+    )
+}
 
+/// Same as [`campanus_cusps`] for an explicit RAMC and obliquity (degrees), so a
+/// calculation convention can supply apparent sidereal time / true obliquity.
+pub fn campanus_cusps_with(
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
     let lat = geo_lat_deg.to_radians();
     let sin_lat = lat.sin();
     let cos_lat = lat.cos();
@@ -188,6 +216,7 @@ pub fn campanus_cusps(
 /// Placidus house cusps (houses 2–5, 8–11 computed iteratively; 1, 4, 7, 10 are the angles).
 /// Returns 12 values in order (house 1 through 12).
 /// Falls back to Whole Sign with a warning when Placidus is undefined (high latitudes).
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
 pub fn placidus_cusps(
     jd_ut: f64,
     geo_lat_deg: f64,
@@ -195,8 +224,24 @@ pub fn placidus_cusps(
     asc_lon_deg: f64,
     mc_lon_deg: f64,
 ) -> (Vec<f64>, Vec<String>) {
-    let eps = mean_obliquity_deg(jd_ut);
-    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
+    placidus_cusps_with(
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+        asc_lon_deg,
+        mc_lon_deg,
+    )
+}
+
+/// Same as [`placidus_cusps`] for an explicit RAMC and obliquity (degrees), so a
+/// calculation convention can supply apparent sidereal time / true obliquity.
+pub fn placidus_cusps_with(
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
     let lat = geo_lat_deg.to_radians();
 
     // Placidus is undefined inside the polar circle.
@@ -351,6 +396,7 @@ pub fn house_system_substitution_warning(system: &HouseSystem) -> String {
 /// systems never substitute silently: they return Whole Sign cusps plus
 /// [`house_system_substitution_warning`]. Placidus/Campanus may additionally
 /// fall back at extreme latitudes with their own warnings.
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
 pub fn house_cusps_for_system(
     system: Option<&HouseSystem>,
     jd_ut: f64,
@@ -359,13 +405,32 @@ pub fn house_cusps_for_system(
     asc_lon_deg: f64,
     mc_lon_deg: f64,
 ) -> (Vec<f64>, Vec<String>) {
+    house_cusps_for_system_with(
+        system,
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+        asc_lon_deg,
+        mc_lon_deg,
+    )
+}
+
+/// [`house_cusps_for_system`] for an explicit RAMC and obliquity (degrees).
+pub fn house_cusps_for_system_with(
+    system: Option<&HouseSystem>,
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
     match system {
         Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc_lon_deg), vec![]),
         Some(HouseSystem::Placidus) => {
-            placidus_cusps(jd_ut, geo_lat_deg, geo_lon_deg, asc_lon_deg, mc_lon_deg)
+            placidus_cusps_with(ramc, eps, geo_lat_deg, asc_lon_deg, mc_lon_deg)
         }
         Some(HouseSystem::Campanus) => {
-            campanus_cusps(jd_ut, geo_lat_deg, geo_lon_deg, asc_lon_deg, mc_lon_deg)
+            campanus_cusps_with(ramc, eps, geo_lat_deg, asc_lon_deg, mc_lon_deg)
         }
         Some(HouseSystem::Equal) => (equal_cusps(asc_lon_deg), vec![]),
         Some(HouseSystem::Porphyry) => (porphyry_cusps(asc_lon_deg, mc_lon_deg), vec![]),

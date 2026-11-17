@@ -695,6 +695,7 @@ mod tests {
             ayanamsa: None,
             observable_objects: None,
             time_system: None,
+            calculation_convention: None,
         };
         let report = crate::workspace::settings::standalone_model_report(&config);
         let model = report.model;
