@@ -233,6 +233,33 @@ fn sample_state(
         .map_err(|e| e.to_string())
 }
 
+/// NAIF frame id of `ECLIPJ2000_DE405`, used by every segment of the bundled
+/// `codes_300ast_20100725.bsp` (see the kernel's comment area).
+const ECLIPJ2000_DE405_FRAME_ID: i32 = 1_900_017;
+
+/// Known defect (Phase 1 audit): ANISE SPK translation applies no rotation for
+/// a segment's own frame, so an `ECLIPJ2000_DE405` segment is combined with
+/// equatorial vectors as if it were equatorial. Against JPL Horizons this puts
+/// Ceres up to ~3 deg off. Until the kernels are regenerated in J2000, the
+/// affected bodies are still returned but never silently: this warning names
+/// them whenever such a segment serves the requested epoch.
+fn unrotated_segment_frame_warning(
+    almanac: &Almanac,
+    id: &str,
+    frame: Frame,
+    epoch: Epoch,
+) -> Option<String> {
+    let (summary, ..) = almanac
+        .spk_summary_at_epoch(frame.ephemeris_id, epoch.to_et_seconds())
+        .ok()?;
+    (summary.frame_id == ECLIPJ2000_DE405_FRAME_ID).then(|| {
+        format!(
+            "{id}_position_unreliable: segment frame ECLIPJ2000_DE405 is not rotated \
+             (error up to ~3 deg; see kefer-contracts known issues)"
+        )
+    })
+}
+
 fn longitude_from_state(state: &CartesianState, jd_tt: f64) -> f64 {
     let obliquity = mean_obliquity_deg(jd_tt);
     let (lon, _lat) = equatorial_to_ecliptic(
@@ -586,6 +613,11 @@ impl JplAstronomyBackend {
             }
             match sample_state(&almanac, frame, unix_secs, ab_corr) {
                 Ok(state) => {
+                    if let Some(warning) =
+                        unrotated_segment_frame_warning(&almanac, id, frame, epoch)
+                    {
+                        warnings.push(warning);
+                    }
                     let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.to_string(), longitude);
                     if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
@@ -1298,6 +1330,60 @@ mod tests {
             velocity_error < 1e-5,
             "velocity error {velocity_error} km/s"
         );
+    }
+
+    /// Regression: with real ephemerides the osculating true node stays within
+    /// ~2 deg of the mean node; the former flip put it ~180 deg away about half
+    /// of the time (e.g. 2024-10-17T18:00Z).
+    #[test]
+    fn true_node_tracks_mean_node_over_two_years() {
+        let mut chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        let backend = jpl_backend_for_chart(&chart).expect("catalog fallback should resolve");
+        let ids = vec!["north_node".to_string(), "true_north_node".to_string()];
+        let start = chrono::DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap();
+        for step in 0..73 {
+            chart.subject.event_time = Some((start + chrono::Duration::days(step * 10)).into());
+            let data = backend.compute_chart_data(&chart, Some(&ids)).unwrap();
+            let diff = (data.positions["true_north_node"] - data.positions["north_node"] + 540.0)
+                % 360.0
+                - 180.0;
+            assert!(
+                diff.abs() < 2.0,
+                "{:?}: true-mean = {diff}",
+                chart.subject.event_time
+            );
+        }
+    }
+
+    /// Known-defect disclosure: Ceres from the bundled codes_300ast kernel is
+    /// served by an unrotated ECLIPJ2000_DE405 segment and must carry a warning.
+    #[test]
+    fn codes_300ast_asteroids_disclose_unrotated_frame() {
+        let mut chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        chart.subject.event_time = Some(
+            chrono::DateTime::parse_from_rfc3339("2024-01-01T12:00:00Z")
+                .unwrap()
+                .into(),
+        );
+        let backend = jpl_backend_for_chart(&chart).expect("catalog fallback should resolve");
+        let data = backend
+            .compute_chart_data(
+                &chart,
+                Some(&vec!["ceres".to_string(), "chiron".to_string()]),
+            )
+            .unwrap();
+        assert!(data.positions.contains_key("ceres"));
+        assert!(
+            data.warnings
+                .iter()
+                .any(|w| w.starts_with("ceres_position_unreliable")),
+            "{:?}",
+            data.warnings
+        );
+        assert!(!data
+            .warnings
+            .iter()
+            .any(|w| w.starts_with("chiron_position_unreliable")));
     }
 
     #[test]

@@ -532,17 +532,13 @@ pub fn true_node_tropical_deg(
     let nys = ny / n_norm;
     let nzs = nz / n_norm;
 
-    let mut tropical = ecliptic_longitude_deg_from_equatorial_xyz(nxs, nys, nzs, eps_deg);
-
-    // Resolve ascending vs descending along the line of nodes: use Moon ecliptic latitude rate.
-    let (_, _, mz_e) = equatorial_xyz_to_ecliptic_xyz(rx, ry, rz, eps_deg);
-    let (_, _, vz_e) = equatorial_xyz_to_ecliptic_xyz(vx, vy, vz, eps_deg);
-    let ascending = mz_e * vz_e < 0.0 || (mz_e.abs() < 1e-9 && vz_e > 0.0);
-    if !ascending {
-        tropical = normalize_deg(tropical + 180.0);
-    }
-
-    Some(tropical)
+    // K × h is the ascending-node direction for any inclination. A former
+    // "ascending vs descending" flip keyed on the sign of z·ż (whether the Moon
+    // is approaching or leaving the ecliptic) returned the descending node about
+    // half of the time; verified against the mean node and the Python sidecar.
+    Some(ecliptic_longitude_deg_from_equatorial_xyz(
+        nxs, nys, nzs, eps_deg,
+    ))
 }
 
 /// Combined Earth+Moon gravitational parameter (GM), km³/s², for the *reduced*
@@ -715,6 +711,41 @@ mod contract_tests {
                     serde_json::from_value(expected["warnings"].clone()).unwrap();
                 assert_eq!(warnings, expected_warnings, "{id} {system_name}");
             }
+        }
+    }
+
+    /// Regression: the true node must be the *ascending* node at every orbit
+    /// phase. A synthetic circular orbit inclined 5 deg with its ascending node
+    /// at ecliptic longitude 40 deg is sampled at four phases; the removed
+    /// z·ż flip returned 220 deg at two of them.
+    #[test]
+    fn true_node_is_ascending_at_every_orbit_phase() {
+        let jd_tt = 2451545.0;
+        let eps = mean_obliquity_deg(jd_tt).to_radians();
+        let (node, inc) = (40f64.to_radians(), 5f64.to_radians());
+        let ecl_to_eq = |x: f64, y: f64, z: f64| {
+            (
+                x,
+                y * eps.cos() - z * eps.sin(),
+                y * eps.sin() + z * eps.cos(),
+            )
+        };
+        for phase_deg in [10.0f64, 100.0, 190.0, 280.0] {
+            let u = phase_deg.to_radians(); // argument of latitude
+            let pos = |u: f64| {
+                (
+                    node.cos() * u.cos() - node.sin() * u.sin() * inc.cos(),
+                    node.sin() * u.cos() + node.cos() * u.sin() * inc.cos(),
+                    u.sin() * inc.sin(),
+                )
+            };
+            let (rx, ry, rz) = pos(u);
+            let (dx, dy, dz) = pos(u + std::f64::consts::FRAC_PI_2); // velocity direction
+            let r = ecl_to_eq(rx * 384_400.0, ry * 384_400.0, rz * 384_400.0);
+            let v = ecl_to_eq(dx, dy, dz);
+            let got = true_node_tropical_deg(r.0, r.1, r.2, v.0, v.1, v.2, jd_tt).unwrap();
+            let err = (got - 40.0 + 540.0) % 360.0 - 180.0;
+            assert!(err.abs() < 1e-6, "phase {phase_deg}: got {got}");
         }
     }
 
