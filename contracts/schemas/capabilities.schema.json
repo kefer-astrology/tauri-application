@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/capabilities.schema.json",
+  "title": "Implementation capabilities",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "implementations"
+  ],
+  "properties": {
+    "implementations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "conventions",
+          "house_systems_native",
+          "house_systems_substituted",
+          "engines",
+          "zodiac",
+          "ephemeris_grade_bodies",
+          "aspect_dynamics",
+          "event_search",
+          "tradition_presets"
+        ]
+      }
+    }
+  }
+}

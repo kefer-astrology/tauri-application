@@ -61,8 +61,14 @@ pub struct ChartAxes {
     pub ic: f64,
 }
 
+/// Calculation convention id (kefer-contracts `conventions.json`) every chart
+/// result is computed with. A different convention gets a new id.
+pub const CALCULATION_CONVENTION: &str = "kefer-positions/1";
+
 #[derive(Debug, Clone, Serialize)]
 pub struct ChartCalculation {
+    /// See [`CALCULATION_CONVENTION`].
+    pub calculation_convention: &'static str,
     pub positions: HashMap<String, f64>,
     pub motion: HashMap<String, AstronomyMotion>,
     pub right_ascension: HashMap<String, f64>,
@@ -134,6 +140,7 @@ pub fn compute_chart(request: ChartComputeRequest) -> Result<ChartCalculation, S
         crate::domain::astrology::detect_chart_configurations(&computed.positions, &aspects);
 
     Ok(ChartCalculation {
+        calculation_convention: CALCULATION_CONVENTION,
         positions: computed.positions,
         motion: computed.motion,
         right_ascension: computed.right_ascension,

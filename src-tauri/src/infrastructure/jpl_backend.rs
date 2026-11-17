@@ -611,6 +611,11 @@ impl JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
+            // A verified per-body Horizons kernel (manifest-defined, J2000) takes
+            // precedence; codes_300ast is only a fallback outside its coverage.
+            if self.small_body_frames.iter().any(|(body, _)| body == id) {
+                continue;
+            }
             match sample_state(&almanac, frame, unix_secs, ab_corr) {
                 Ok(state) => {
                     if let Some(warning) =
@@ -635,7 +640,26 @@ impl JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_state(&almanac, *frame, unix_secs, ab_corr) {
+            let sampled = sample_state(&almanac, *frame, unix_secs, ab_corr).or_else(
+                |error: String| -> Result<CartesianState, String> {
+                    // Outside the verified kernel's coverage: fall back to the legacy
+                    // codes_300ast frame for this body, if any, never silently.
+                    let fallback = asteroid_body_frames()
+                        .iter()
+                        .find(|(body, _)| body == id)
+                        .map(|&(_, legacy)| legacy)
+                        .ok_or_else(|| error.clone())?;
+                    let state =
+                        sample_state(&almanac, fallback, unix_secs, ab_corr).map_err(|_| error)?;
+                    if let Some(warning) =
+                        unrotated_segment_frame_warning(&almanac, id, fallback, epoch)
+                    {
+                        warnings.push(warning);
+                    }
+                    Ok(state)
+                },
+            );
+            match sampled {
                 Ok(state) => {
                     let longitude = longitude_from_state(&state, jd_tt);
                     positions.insert(id.clone(), longitude);
@@ -1355,13 +1379,14 @@ mod tests {
         }
     }
 
-    /// Known-defect disclosure: Ceres from the bundled codes_300ast kernel is
-    /// served by an unrotated ECLIPJ2000_DE405 segment and must carry a warning.
+    /// Known-defect disclosure: outside the verified per-body kernels'
+    /// coverage, Ceres comes from the unrotated ECLIPJ2000_DE405 codes_300ast
+    /// segment and must carry a warning.
     #[test]
     fn codes_300ast_asteroids_disclose_unrotated_frame() {
         let mut chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
         chart.subject.event_time = Some(
-            chrono::DateTime::parse_from_rfc3339("2024-01-01T12:00:00Z")
+            chrono::DateTime::parse_from_rfc3339("1850-01-01T12:00:00Z")
                 .unwrap()
                 .into(),
         );

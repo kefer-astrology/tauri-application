@@ -15,7 +15,8 @@
     "backend_used",
     "fallback_used",
     "ephemeris_source",
-    "warnings"
+    "warnings",
+    "calculation_convention"
   ],
   "properties": {
     "positions": {
@@ -142,6 +143,10 @@
       "items": {
         "type": "string"
       }
+    },
+    "calculation_convention": {
+      "type": "string",
+      "description": "Id from conventions.json the result was computed with (since 0.2.0)."
     }
   }
 }

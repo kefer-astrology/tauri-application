@@ -79,14 +79,18 @@ fn vendored_contracts_match_manifest() {
     }
 }
 
+fn rust_capabilities() -> Value {
+    load("capabilities.json")["implementations"]["rust"].clone()
+}
+
 #[test]
 fn positions_match_jpl_horizons_on_the_mean_equinox() {
     let horizons = load("reference/positions-horizons.json");
     let erfa = load("reference/earth-orientation-erfa.json");
-    let tolerances = load("reference/tolerances.json");
-    let tol = &tolerances["positions_mean_equinox_arcsec"];
+    let tol = &load("reference/tolerances.json")["positions_mean_equinox_arcsec"];
     let bodies: Vec<String> =
-        serde_json::from_value(tolerances["ephemeris_grade_bodies"].clone()).unwrap();
+        serde_json::from_value(rust_capabilities()["ephemeris_grade_bodies"].clone()).unwrap();
+    let mut worst: (f64, String) = (0.0, String::new());
     for (i, epoch) in horizons["epochs_utc"]
         .as_array()
         .unwrap()
@@ -95,9 +99,7 @@ fn positions_match_jpl_horizons_on_the_mean_equinox() {
     {
         let chart = chart_at(epoch.as_str().unwrap());
         let backend = jpl_backend_for_chart(&chart).unwrap();
-        let mut ids = bodies.clone();
-        ids.push("ceres".into());
-        let data = backend.compute_chart_data(&chart, Some(&ids)).unwrap();
+        let data = backend.compute_chart_data(&chart, Some(&bodies)).unwrap();
         let dpsi = erfa["epochs"][i]["nutation_longitude_deg"]
             .as_f64()
             .unwrap();
@@ -110,15 +112,76 @@ fn positions_match_jpl_horizons_on_the_mean_equinox() {
                 .get(body.as_str())
                 .and_then(Value::as_f64)
                 .unwrap_or(tol["default"].as_f64().unwrap());
-            let err = arcsec_diff(data.positions[body], reference);
+            let got = *data
+                .positions
+                .get(body)
+                .unwrap_or_else(|| panic!("{epoch} {body} missing: {:?}", data.warnings));
+            let err = arcsec_diff(got, reference);
+            if err.abs() > worst.0 {
+                worst = (err.abs(), format!("{epoch} {body}"));
+            }
             assert!(err.abs() <= limit, "{epoch} {body}: {err:.2}\" > {limit}\"");
         }
-        // Not ephemeris grade (KC-1): must be disclosed, never silent.
-        assert!(data
-            .warnings
-            .iter()
-            .any(|w| w.starts_with("ceres_position_unreliable")));
+        // Within verified coverage nothing may come from the unrotated legacy kernel (KC-1).
+        assert!(
+            !data
+                .warnings
+                .iter()
+                .any(|w| w.contains("_position_unreliable")),
+            "{epoch}: {:?}",
+            data.warnings
+        );
     }
+    eprintln!(
+        "worst position error vs Horizons: {:.3}\" ({})",
+        worst.0, worst.1
+    );
+}
+
+/// KC-1 fallback: outside the verified kernels' 1900-2100 coverage the legacy
+/// codes_300ast segment is still used, and must be disclosed.
+#[test]
+fn asteroid_outside_verified_coverage_falls_back_with_warning() {
+    let chart = chart_at("1850-06-15T12:00:00Z");
+    let data = jpl_backend_for_chart(&chart)
+        .unwrap()
+        .compute_chart_data(&chart, Some(&vec!["ceres".into()]))
+        .unwrap();
+    assert!(data.positions.contains_key("ceres"), "{:?}", data.warnings);
+    assert!(
+        data.warnings
+            .iter()
+            .any(|w| w.starts_with("ceres_position_unreliable")),
+        "{:?}",
+        data.warnings
+    );
+}
+
+#[test]
+fn declared_capabilities_match_the_implementation() {
+    let caps = rust_capabilities();
+    let native: Vec<String> = serde_json::from_value(caps["house_systems_native"].clone()).unwrap();
+    assert_eq!(native, crate::domain::houses::NATIVE_HOUSE_SYSTEMS.to_vec());
+    let conventions: Vec<String> = serde_json::from_value(caps["conventions"].clone()).unwrap();
+    assert_eq!(
+        conventions,
+        vec![crate::application::computation::CALCULATION_CONVENTION.to_string()]
+    );
+    let catalog = crate::workspace::builtin_domain_catalog();
+    let substituted: Vec<String> =
+        serde_json::from_value(caps["house_systems_substituted"].clone()).unwrap();
+    for system in &catalog.house_systems {
+        assert_eq!(
+            !system.computation_supported,
+            substituted.contains(&system.id),
+            "{}",
+            system.id
+        );
+    }
+    assert_eq!(
+        load("conventions.json")["default"],
+        crate::application::computation::CALCULATION_CONVENTION
+    );
 }
 
 #[test]

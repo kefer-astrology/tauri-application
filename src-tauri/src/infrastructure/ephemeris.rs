@@ -341,8 +341,11 @@ fn reserved_body_id(value: &str) -> bool {
     {
         return true;
     }
+    // The 20 numbered asteroids are no longer reserved: verified Horizons Type 13
+    // manifests (bundled since Phase 2, same checks as Chiron) supersede the
+    // unrotated codes_300ast segments (KC-1), which remain only a disclosed
+    // fallback outside the manifests' coverage.
     DE_PLANETS.contains(&value)
-        || CODES_300AST_MAJOR_BODIES.contains(&value)
         || [
             "asc",
             "desc",

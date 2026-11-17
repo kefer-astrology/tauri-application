@@ -1,27 +1,10 @@
 {
   "schema_version": 1,
-  "description": "Comparison tolerances for contracts/reference fixtures. Values are derived from the Phase 1 measurements of both implementations (see CHANGELOG 0.1.0), with headroom.",
+  "description": "Comparison tolerances for contracts/reference fixtures. Values are derived from the Phase 1 measurements of both implementations (see CHANGELOG), with headroom.",
   "positions_mean_equinox_arcsec": {
     "default": 1.5,
     "moon": 8.0,
-    "note": "Moon includes pre-1972 Delta-T handling differences (1950 epoch). Mean-equinox longitude = Horizons true-equinox longitude - nutation_longitude_deg."
-  },
-  "ephemeris_grade_bodies": [
-    "sun",
-    "moon",
-    "mercury",
-    "venus",
-    "mars",
-    "jupiter",
-    "saturn",
-    "uranus",
-    "neptune",
-    "pluto",
-    "chiron"
-  ],
-  "non_ephemeris_grade": {
-    "ceres": "Rust: bundled codes_300ast segment in ECLIPJ2000_DE405 is not rotated (known issue KC-1, must warn). Python: two-body MPC elements (must warn outside 5 years of the element epoch).",
-    "chiron_python": "Python computes Chiron from two-body MPC elements; Rust uses a Horizons-sampled Type 13 SPK."
+    "note": "Moon includes pre-1972 Delta-T handling differences (1950 epoch). Mean-equinox longitude = Horizons true-equinox longitude - nutation_longitude_deg. Bodies each implementation must meet these for: capabilities.json ephemeris_grade_bodies (within ephemeris_grade_coverage_utc)."
   },
   "axes_mean_convention_arcsec": 0.5,
   "house_cusps_parity_deg": 1e-09,

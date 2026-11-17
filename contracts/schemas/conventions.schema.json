@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/conventions.schema.json",
+  "title": "Calculation conventions",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "default",
+    "conventions",
+    "rules"
+  ],
+  "properties": {
+    "conventions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "status",
+          "observer",
+          "equinox",
+          "sidereal_time",
+          "obliquity",
+          "implemented_by"
+        ],
+        "properties": {
+          "equinox": {
+            "enum": [
+              "mean",
+              "true"
+            ]
+          },
+          "implemented_by": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "rust",
+                "python"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
