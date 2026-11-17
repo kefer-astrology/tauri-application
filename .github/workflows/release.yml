@@ -130,8 +130,33 @@ jobs:
           name: tauri-${{ matrix.frontend }}-${{ matrix.platform }}
           path: src-tauri/target/release/bundle
 
+  release-content:
+    # Licensing compliance of what the release ships (licence.md §9).
+    # Audit mode by default: the verification record is kept with the release
+    # but does not block. Set the repository variable
+    # KEFER_RELEASE_CONTENT_ENFORCE=true once unresolved rights are cleared to
+    # make unsettled resources block publishing.
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check release content against the licensing registers
+        env:
+          ENFORCE: ${{ vars.KEFER_RELEASE_CONTENT_ENFORCE }}
+        run: |
+          mode="--audit"
+          if [ "$ENFORCE" = "true" ]; then mode=""; fi
+          python3 scripts/check-release-content.py $mode --report "release-content-v${{ needs.check-version.outputs.version }}.json"
+      - name: Keep the verification record
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-content-v${{ needs.check-version.outputs.version }}
+          path: release-content-v${{ needs.check-version.outputs.version }}.json
+
   publish:
-    needs: [check-version, build]
+    needs: [check-version, build, release-content]
     if: needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:

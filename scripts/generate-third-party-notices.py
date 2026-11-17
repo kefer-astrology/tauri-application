@@ -92,7 +92,9 @@ DATA_NOTICES = """\
 | Degree symbols: Charubel | `static/astrology-symbols/charubel*.json` | Charubel (John Thomas), *The Degrees of the Zodiac Symbolised* (1898) | Public domain |
 | Degree symbols: Sabian | `static/astrology-symbols/sabian*.json` | Marc Edmund Jones / Elsie Wheeler (1925), incl. Dane Rudhyar's rephrasing (1973); taken from a third-party program's data files | **UNRESOLVED - redistribution rights not established** (see `catalog.json` `licenseNote`) |
 | Degree symbols: Kefer | `static/astrology-symbols/kefer*.json` | Original work of the Kefer project | Project license (labelled `proprietary-original` in `catalog.json`; to be reconciled) |
-| Glyph sets | `static/glyphs/` | Kefer project designs (`graphical-sources/Glyphs.pen`) | Project license |
+| Glyph sets | `static/glyphs/` | Kefer project designs (sources in the private `graphical-sources` repository) | **Asset licence pending** (decision L3; see `licensing/approved-assets.json`) — not covered by the code's MIT licence automatically |
+| App-shell icons (16 of 41) | `static/app-shell/icons/**` marked `class="lucide …"` | [Lucide](https://lucide.dev) icons via `lucide-static`. ISC License, Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT); all other copyright (c) for Lucide are held by Lucide Contributors 2022 | ISC (notice required) |
+| App-shell logos and remaining icons (25 of 41) | `static/app-shell/` | Kefer project designs | **Asset licence pending** (decision L3) |
 """
 
 

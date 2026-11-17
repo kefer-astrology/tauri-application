@@ -1,0 +1,40 @@
+name: 'release-content-audit'
+
+# Non-blocking licensing audit of the files a release would ship
+# (scripts/check-release-content.py --audit). Shows what is still unsettled on
+# every change; enforcement happens only in release.yml when the repository
+# variable KEFER_RELEASE_CONTENT_ENFORCE is "true".
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Unit tests of the check
+        run: python3 -m unittest discover -s scripts -p "test_check_release_content.py" -v
+      - name: Audit release inputs
+        run: python3 scripts/check-release-content.py --audit --report release-content-audit.json
+      - name: Summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          r = json.load(open("release-content-audit.json"))
+          print(f"## Release content audit\n\nBlocking if enforced: **{r['blocking']}** ({len(r['findings'])} files)\n")
+          for label, count in r["summary"].items():
+              print(f"- {label}: {count}")
+          PY
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: release-content-audit
+          path: release-content-audit.json
