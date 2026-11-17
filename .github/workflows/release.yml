@@ -35,12 +35,17 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Check whether a release tag already exists
+      - name: Check whether a release tag or draft already exists
         id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null 2>&1; then
             echo "Tag v$VERSION already exists — skipping release."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          elif gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Draft release v$VERSION already exists — skipping (publish or delete it first)."
             echo "should_release=false" >> "$GITHUB_OUTPUT"
           else
             echo "Tag v$VERSION not found — this push is a new release."
@@ -202,5 +207,9 @@ jobs:
           tag_name: v${{ needs.check-version.outputs.version }}
           name: v${{ needs.check-version.outputs.version }}
           generate_release_notes: true
+          # Drafts only: a maintainer reviews the assets and the
+          # release-content record, sets the edition title (e.g. "Kefer 0.1 —
+          # Modern Astrology (application v0.1.2)") and publishes by hand.
+          draft: true
           fail_on_unmatched_files: true
           files: release-assets/*
