@@ -95,9 +95,11 @@ pub(super) fn apply_orbs(
     source: SettingSource,
 ) {
     if let Some(overrides) = overrides {
-        for (id, orb) in overrides {
-            values.insert(id.clone(), *orb);
-            sources.insert(id.clone(), source);
+        // Canonicalize per layer so a later layer's alias key (`semisquare`)
+        // still overrides an earlier layer's canonical key (`octile`).
+        for (id, orb) in crate::domain::astrology::canonical_aspect_map(overrides) {
+            values.insert(id.clone(), orb);
+            sources.insert(id, source);
         }
     }
 }

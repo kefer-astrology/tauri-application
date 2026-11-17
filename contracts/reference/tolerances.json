@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "description": "Comparison tolerances for contracts/reference fixtures. Values are derived from the Phase 1 measurements of both implementations (see CHANGELOG), with headroom.",
+  "positions_mean_equinox_arcsec": {
+    "default": 1.5,
+    "moon": 8.0,
+    "note": "Moon includes pre-1972 Delta-T handling differences (1950 epoch). Mean-equinox longitude = Horizons true-equinox longitude - nutation_longitude_deg. Bodies each implementation must meet these for: capabilities.json ephemeris_grade_bodies (within ephemeris_grade_coverage_utc)."
+  },
+  "axes_mean_convention_arcsec": 0.5,
+  "house_cusps_parity_deg": 1e-09,
+  "moon_phase_elongation_arcsec": 20.0,
+  "moon_phase_note": "USNO rounds phase times to the minute (|dt| <= 30 s); Moon-Sun elongation changes ~0.51 arcsec/s.",
+  "positions_true_equinox_arcsec": {
+    "default": 1.5,
+    "moon": 8.0,
+    "note": "kefer-positions/1-true-equinox compared directly with Horizons lon_true_deg (no nutation subtracted)."
+  },
+  "axes_true_convention_arcsec": 0.5,
+  "axes_true_note": "Compared with ERFA gast_deg / true_obliquity_deg; the residual is the GMST-formula difference (<= 0.15 arcsec)."
+}

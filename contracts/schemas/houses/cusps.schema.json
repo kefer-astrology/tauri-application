@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/houses/cusps.schema.json",
+  "title": "House cusp parity fixture",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "tolerance_deg",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "tolerance_deg": {
+      "type": "number"
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "jd_ut",
+          "latitude",
+          "longitude",
+          "axes",
+          "systems"
+        ],
+        "properties": {
+          "axes": {
+            "type": "object",
+            "required": [
+              "asc",
+              "mc",
+              "desc",
+              "ic"
+            ]
+          },
+          "systems": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "cusps",
+                "warnings"
+              ],
+              "properties": {
+                "cusps": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 12,
+                  "maxItems": 12
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

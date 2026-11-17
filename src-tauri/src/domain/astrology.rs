@@ -20,6 +20,7 @@
 //! `workspace/models.rs` and `workspace/settings.rs`) — hence the blanket allow.
 #![allow(unused_imports)]
 
+mod aspect_catalog;
 mod aspect_computation;
 mod aspect_dynamics;
 mod body_selection;
@@ -34,6 +35,10 @@ mod point_models;
 #[cfg(test)]
 mod tests;
 
+pub use aspect_catalog::{
+    aspect_catalog, canonical_aspect_id, canonical_aspect_ids, canonical_aspect_map, AspectCatalog,
+    AspectCatalogEntry,
+};
 pub use aspect_computation::{
     compute_chart_aspects, compute_cross_aspects, eligible_aspect_angle_and_orb,
     eligible_aspects_for_pair, is_structurally_locked_aspect_pair, ComputedAspect,

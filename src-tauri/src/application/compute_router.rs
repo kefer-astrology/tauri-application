@@ -102,20 +102,33 @@ pub fn select_transit_compute_route(
     }
 }
 
-/// Only Jyotish and Custom require Python; JPL (including a per-chart
-/// `override_ephemeris` kernel) and Swisseph can run through Rust.
-/// `JplAstronomyBackend`/`jpl_backend_for_chart` (`infrastructure/jpl_backend.rs`)
-/// implement `override_ephemeris` natively, so it is not a Python-only capability —
-/// see the "Per-chart override" section of the ephemeris-manager documentation
-/// for the history of this (former) discrepancy.
-pub fn chart_json_requires_python_precision(chart_json: &serde_json::Value) -> bool {
-    let cfg = chart_json.get("config").and_then(|v| v.as_object());
-    let engine = cfg
-        .and_then(|c| c.get("engine"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.trim().to_ascii_lowercase());
+/// Engines whose semantics exist *only* in the Python sidecar, so a chart
+/// using them must be routed there (and fail clearly without a sidecar).
+///
+/// Empty on purpose. `jyotish`/`custom` used to be listed, but no backend
+/// implements them: Python silently ran the same JPL computation, while a
+/// missing sidecar turned those charts into a hard error. Both routes now
+/// compute with JPL and attach `engine_<e>_not_implemented: <backend>_used`
+/// (see `position_provider::engine_substitution_warning`). Add an engine here
+/// only together with a real Python-side implementation.
+pub const PYTHON_ONLY_ENGINES: &[&str] = &[];
 
-    matches!(engine.as_deref(), Some("jyotish" | "custom"))
+pub fn engine_requires_python(engine: Option<&str>) -> bool {
+    engine
+        .map(|value| value.trim().to_ascii_lowercase())
+        .is_some_and(|value| PYTHON_ONLY_ENGINES.contains(&value.as_str()))
+}
+
+/// JPL (including a per-chart `override_ephemeris` kernel) and Swisseph run
+/// through Rust; `override_ephemeris` is implemented natively by
+/// `jpl_backend_for_chart`, so it is not a Python-only capability either.
+pub fn chart_json_requires_python_precision(chart_json: &serde_json::Value) -> bool {
+    engine_requires_python(
+        chart_json
+            .get("config")
+            .and_then(|config| config.get("engine"))
+            .and_then(|engine| engine.as_str()),
+    )
 }
 
 pub fn chart_requires_python_precision(
@@ -127,19 +140,19 @@ pub fn chart_requires_python_precision(
     let chart_rel = crate::workspace::loader::find_chart_ref_by_id(base, &manifest, chart_id)?
         .ok_or_else(|| format!("Chart {} not found", chart_id))?;
     let chart = crate::workspace::loader::load_chart(base, &chart_rel)?;
+    Ok(chart_engine_requires_python(&chart))
+}
 
-    // Only Jyotish and Custom require Python; JPL (including a per-chart
-    // override_ephemeris kernel) and Swisseph can use Rust — see
-    // chart_json_requires_python_precision above.
-    let requires = matches!(
-        chart.config.engine,
-        Some(
-            crate::workspace::models::EngineType::Jyotish
-                | crate::workspace::models::EngineType::Custom
-        )
-    );
-
-    Ok(requires)
+pub fn chart_engine_requires_python(chart: &crate::workspace::models::ChartInstance) -> bool {
+    engine_requires_python(
+        chart
+            .config
+            .engine
+            .as_ref()
+            .and_then(|engine| serde_json::to_value(engine).ok())
+            .as_ref()
+            .and_then(|value| value.as_str()),
+    )
 }
 
 pub fn merge_chart_warnings(
@@ -277,17 +290,34 @@ mod tests {
         assert!(!chart_json_requires_python_precision(&no_engine));
     }
 
+    /// Regression (Phase 0 D2): jyotish/custom were force-routed to a sidecar
+    /// that has no implementation for them either, and failed outright with no
+    /// sidecar. They now take the normal route and carry an explicit warning.
     #[test]
-    fn jyotish_and_custom_engines_force_python_precision_regardless_of_override() {
-        for engine in ["jyotish", "custom"] {
+    fn no_engine_forces_python_because_none_is_python_only() {
+        for engine in ["jyotish", "custom", "swisseph", "jpl", " JYOTISH "] {
             let with_override = serde_json::json!({
                 "config": { "engine": engine, "override_ephemeris": "/some/path.bsp" }
             });
-            assert!(chart_json_requires_python_precision(&with_override));
-
+            assert!(
+                !chart_json_requires_python_precision(&with_override),
+                "{engine}"
+            );
             let without_override = serde_json::json!({ "config": { "engine": engine } });
-            assert!(chart_json_requires_python_precision(&without_override));
+            assert!(
+                !chart_json_requires_python_precision(&without_override),
+                "{engine}"
+            );
         }
+        let route = select_chart_compute_route(
+            ComputeBackend::Auto,
+            false,
+            chart_json_requires_python_precision(
+                &serde_json::json!({ "config": { "engine": "jyotish" } }),
+            ),
+        )
+        .expect("a jyotish chart must compute without a sidecar");
+        assert_eq!(route, ComputeRoute::Rust);
     }
 
     #[test]

@@ -141,6 +141,7 @@ pub fn parse_morinus_bytes(
             } else {
                 TimeSystem::Gregorian
             }),
+            calculation_convention: None,
         },
         tags,
         tag_colors: HashMap::new(),

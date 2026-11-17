@@ -1,0 +1,2145 @@
+{
+  "schema_version": 1,
+  "description": "Graphical exports approved for distribution. Sources stay in the private graphical-sources repository; only files listed here (with matching SHA-256) may ship. Approval statuses follow resource-inventory.json; 'decision-needed' entries ship today but block an enforced release.",
+  "asset_directories": [
+    "static/glyphs",
+    "static/app-shell"
+  ],
+  "assets": [
+    {
+      "path": "static/glyphs/default/aspects/binovile.svg",
+      "sha256": "6f2fa1448ec4336d73a7aac0d3dce0d40de607ae0a3039fab684450cbd4bb304",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/biquintile.svg",
+      "sha256": "2c088478a88efacd306549968ae3ffa0fe785af6516d7112cb1d02fb07c41f0d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/conjunction.svg",
+      "sha256": "6e5ff711e83a62aca46545fe1efd38f122d3baf506494443f334e0b64d327131",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/decile.svg",
+      "sha256": "e63b235dbb335b07f8cc627b20abbb99a550e28ce8fa9f88355745751eccc3d6",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/novile.svg",
+      "sha256": "b3c7ffe960ad0470781d92f8ca851449ae92e55c774b7c4145115868b691342c",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/opposition.svg",
+      "sha256": "f8236e80ed099dd1ccd751e91766f07c67016053c4ff03b56f1399a2c5b480e2",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/quadrinovile.svg",
+      "sha256": "2566283170ab49b9cb33ba9deae2f03b3db197da8d380d3d0f211b0222aa702a",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/quincunx.svg",
+      "sha256": "045568b4c7875598697450dab35daa5c4ed5eaab4e20233c5a76774bf5bb02d7",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/quintile.svg",
+      "sha256": "becf6f01df828653e4fb317bc49108e25334e70f7d3944d744306f013a6f90e9",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/semisextile.svg",
+      "sha256": "39dd04c662893334ca9853823c78c14a77bc516962a0dfaa9eeba09bb0d34391",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/semisquare.svg",
+      "sha256": "8ee94f41ff23c0c1495c6a29227ad3706668af71c86a475d22f6556f3d0e87fd",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/septile.svg",
+      "sha256": "68e9e692795a9e6a003780f29506a2dc6524d48d11b09ed4236ed1132d046188",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/sesquiquadrate.svg",
+      "sha256": "66109e80621e8f37040efbd40efe6d44b115ebef530c92d61b8fbb665086bee3",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/sextile.svg",
+      "sha256": "cc71bc22106071ae520e777b48c7656d168baebc54db8893b7bd72a0b6bd8fbe",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/square.svg",
+      "sha256": "c69fd4a6b8e349b1edf0f06407a76df8b7c68b6f84975ae993d58beff635de79",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/tridecile.svg",
+      "sha256": "034d9f3471d438b5ac14496c8e7d4e9c3052193091909bbe5bf730c1db13ee6d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/aspects/trine.svg",
+      "sha256": "4ce0c993a0a22d4770f174da90cd5028900864cdbc68492aaf20815c3de60e65",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/admetos.svg",
+      "sha256": "09aea97e158cd0863bd90e0ed19dc1181c72a4ac0244ee7e3bbc5e7ab48a5c74",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/antivertex.svg",
+      "sha256": "ebf5f24cfcb6f077fb67fb411a522cdd9fe890dc5586e32d9860bf217699a992",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/apollon.svg",
+      "sha256": "905bc822ca8f876133c09228b1973f181ed38fe34434c2f065e1853067550bab",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/asc.svg",
+      "sha256": "3a15abba728c8672a91697602a9ffe7452e4d5386dfc6607b90db321c29d9237",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/astraea.svg",
+      "sha256": "faa2cb8e78430cd4a369da2924d1be504f211e1c615b4586c0a55cca19e10ebc",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/ceres.svg",
+      "sha256": "a7f696aab8c2ae8e167c7579a4b0541ae6c25ba7128a907a444f87b390e85efc",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/chiron.svg",
+      "sha256": "8dafac312a7d6003c4a1e67804c816998fd89e6dca7d9e7ee716f4007e5a8395",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/cupido.svg",
+      "sha256": "d8d1e4b5cbe039c93a104595d0e04e88ca0807226fe21afd627912f8a2a6323d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/desc.svg",
+      "sha256": "151d732dd333092198bec5dd146bfe3a8e1e288f596c4e11256b616cc7d09508",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/egeria.svg",
+      "sha256": "45268101b1459af5f95e451ead2c3b8cb6c6e8aa037906d034fd200d0c858393",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/eris.svg",
+      "sha256": "6cdc7bb94efe95ea88b92b79140812bf52e697c68646805a838fe494cdc36ecf",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/eunomia.svg",
+      "sha256": "3bf5851548a2d84d122733b049f337122948b63c5380482e672a3e4265460487",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/fixed_star_generic.svg",
+      "sha256": "149851305dd73f31676f3c62f909ded101182dd4e95c7217e15547fa36584f56",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/flora.svg",
+      "sha256": "5a4fc9d45b6b12c8de08b90cf8efe954eb49841502c90a53662f2687069241d6",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/fortuna.svg",
+      "sha256": "1cea5827caba245be87cef34f38be6b7f4c0795abe477837c1c4994ea8c95ea1",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_jupiter.svg",
+      "sha256": "a81f1d678b1746e4b0db186512cb4f25452fda41a1d43ec19d787e2aed34ed91",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_mars.svg",
+      "sha256": "2af839e23dfb4503d04caf14daa36cd8fd02a99b4013aa3c1d1b5038ddb47396",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_mercury.svg",
+      "sha256": "9b757c9223149602cae91baf6b60ef3fe2a7135c7028d304574b3235b691ed29",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_neptune.svg",
+      "sha256": "e531fe331428e234e8c53773fd20265c452ab5764ecbdf515af24c0ae5b5eecc",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_pluto.svg",
+      "sha256": "d8a00f33020236889d99bf427d999d5edf3331ff387b377625fed70ac8e0c3b4",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_saturn.svg",
+      "sha256": "c002549ac4742c2f5296df681a4e66619b37dd68e075821dd5afbae28ecf37b2",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_uranus.svg",
+      "sha256": "020124c1ddf45aed40a9c7309da1978a9ac93af2b324d7852f83fe51c2269307",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/geo_node_venus.svg",
+      "sha256": "059c01abe99e63df3192cecae4ec14386dbb11a1cc646a618ff28944239f93c6",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/hades.svg",
+      "sha256": "41d58a3e9f7ca1b05d203d8a3dfd71d0ce8b03ce6a672f744299cacd51e66124",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/haumea.svg",
+      "sha256": "489e1c205097c1a1914d11f5b8ae9e1c85f499a22f4b2d7fb7bddfc36ea49c81",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/hebe.svg",
+      "sha256": "02d225e31b4b31b1d0e722c7f5035ed0321e2e4762ac02a30fb59fff339fb37b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/hygiea.svg",
+      "sha256": "51044ffa0349c75c9a06aaa9b8fa78b65d2ec956da081360b51501f20e327549",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/ic.svg",
+      "sha256": "eb1f4390d45cfb073c4b30acb3fbda67ff6cde8e1410397fd9d6597682a1a149",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/irene.svg",
+      "sha256": "084109e63e677c3595e1c16b0697140d43c3373692b08e7b5dfcbdfc47c4579f",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/iris.svg",
+      "sha256": "decc97fd08c611c4e474e788137de1695ed4a52f1ea186ce4c0de97b4759c3fb",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/juno.svg",
+      "sha256": "cc58aebc336c02b87dc5228fdbdef4ad3870791f2782304e9b4c1cdb28943d0d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/jupiter.svg",
+      "sha256": "c36acd42a7217f0e58eb549e01dad8c23bccdafc6976debed98fcf835cde1ba4",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/kronos.svg",
+      "sha256": "c57636b15f222e6f56f6f196e49b89fc9404d741bf90945ad573080541266bca",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/lilith.svg",
+      "sha256": "ba1bc2eda6a5d833e51d5e641563a37cc5658dd7ae3462d3831da16dab4fe367",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/lilith_oscu.svg",
+      "sha256": "ba1bc2eda6a5d833e51d5e641563a37cc5658dd7ae3462d3831da16dab4fe367",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/lilith_true.svg",
+      "sha256": "ba1bc2eda6a5d833e51d5e641563a37cc5658dd7ae3462d3831da16dab4fe367",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/makemake.svg",
+      "sha256": "20393743a010ba61790437f60ef017e4a24b4a1f9937c24e332f49e68094deb6",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/mars.svg",
+      "sha256": "da29089068f2d43bb5f641c1a83c23251a2500a453edb478ced4e7f869564bbd",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/massalia.svg",
+      "sha256": "87c32d5a68adf2f5bc70488da7db1d43e0029e81ed36888d7cd54aa5d1180e8d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/mc.svg",
+      "sha256": "11cfecebe30b7793ce050e7f43b360e70eada919686a893a76009c8d7220e8aa",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/melpomene.svg",
+      "sha256": "24f52526be3a06d4516a3c6ece849d6a1cca31f37312f37f194a661879cc48a9",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/mercury.svg",
+      "sha256": "abaa0509b7eb87b1064459a3a263c9f6c674c4696aa05e5911d253ce4c69ac69",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/metis.svg",
+      "sha256": "04ae1caf2f53d4ef230c29dfe9290457d47958008c784ff9b7093fee3edcdc63",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/moon.svg",
+      "sha256": "16ea79389ccad55de33e8f0d75a2728576c40e26ed9bc9af482f0b0665496e25",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/neptune.svg",
+      "sha256": "8bd0db9d578a8886f8ee8ed41bb3bc6ca0db2af9e790f164f70b292df8beae01",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/north_node.svg",
+      "sha256": "ba9d15f0bedede8f44bf86e847948d39e3c0f9caf03dc7f18de9e063a197f4c2",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/orcus.svg",
+      "sha256": "c13112bcfe7f4f967ea661a5ffed39fc1eb74a8914b34f014f5d4937f82ed44d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/pallas.svg",
+      "sha256": "880a116198482f4cf2f9be80ac01978a4e96fc3b4c00739f96d462d1e38240a6",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/part_of_fortune.svg",
+      "sha256": "7d538cdc2599f926515f626597a2cb7bb390544093677255af6e6b39792a8ba6",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/part_of_spirit.svg",
+      "sha256": "ab9c5173524f45010f09c93b6ed43f08d200688f9882723d4274f09772df0d7b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/parthenope.svg",
+      "sha256": "11aff024881446f495733100ca3f76ab29a1fd650dd60f1b7dccdb40d3ee81b3",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/pluto.svg",
+      "sha256": "7dd12df1a6fbda9cc49601ba5002b439278fbe916639a1c610e1a170bc6fa272",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/poseidon.svg",
+      "sha256": "4855a726290fa3101d298fa0492b5dfdb0bccb0734c9d26abfb9503ef43504af",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/psyche.svg",
+      "sha256": "617e36250fb57a72b4006ec3c0a9558419fffbca53a0fddb607efd17676cc086",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/quaoar.svg",
+      "sha256": "781c7ae30ed31b8d4c9dfdca2428266c8d720fe051e379a2df5a5d8f6b95d149",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/saturn.svg",
+      "sha256": "f462e57f7c56c0c80447b08bfb1007bff854d4a6b1ae11e9c4711651655ce925",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/sedna.svg",
+      "sha256": "62d6c2bb07633401bcef58add99a04c2b5e3544a4dfe76c6a795c235c747e551",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/south_node.svg",
+      "sha256": "dc05e20b2b5c89cf36af1912808983b7a58c8d827c5146eb08d249ceef24e204",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/sun.svg",
+      "sha256": "f3e40d2456b5997f8c43fc471f59e023a92b9ef38186ede94e5584673836667d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/thetis.svg",
+      "sha256": "2018916eef793b8886079556f0e4a0d1158022129cb0ca4f99d1ea694fd67894",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/true_north_node.svg",
+      "sha256": "ba9d15f0bedede8f44bf86e847948d39e3c0f9caf03dc7f18de9e063a197f4c2",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/true_south_node.svg",
+      "sha256": "dc05e20b2b5c89cf36af1912808983b7a58c8d827c5146eb08d249ceef24e204",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/uranus.svg",
+      "sha256": "74913c73d79f40b1858a2ac7927d17f943615630f57fe9d962eedf9a847ba0c9",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/varuna.svg",
+      "sha256": "5489bf7c24b6f6cec481cbea3549eed051ce557f38e71a2ca9f92b5957a82482",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/venus.svg",
+      "sha256": "7cbc7690dde376484f27b8409449a5e6bcf3b008c3b6a19d5b1505377aec6075",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/vertex.svg",
+      "sha256": "423644e07a14ffb5f2520fa76341a04499b8d7e60206f8d17071f3ea0483e142",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/vesta.svg",
+      "sha256": "4962ca4ffebdfad069a3f1a4ff3f1dc6c3b2f820cfb73b82fd480071464cec56",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/victoria.svg",
+      "sha256": "e3a14511054e4f1f313d0e8bc4cd878173740d9b143574da727eaaa21ad526b5",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/vulcanus.svg",
+      "sha256": "e4e8eeb76b2b72d6117f6e3628a4a0ccefba4017204f2f759020e13de394d941",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/planets/zeus.svg",
+      "sha256": "6893ee2b237cb1dd2e931c9eb8e562fcb1d746cf587491ea08847b707be649dc",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/aquarius.svg",
+      "sha256": "7ae67c142fbbeca2d397760ff68b7178cab8cd7089e511da38a8559209877653",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/aries.svg",
+      "sha256": "e39a6639c82e59d71bdd4d247059460eb9ee39a7c9bbffd86c7a36cd7093c7ca",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/cancer.svg",
+      "sha256": "5abc9f2b521bae103d2ee7fb0dccb9b26edba8f5fec2780ceb8624adf33c3e5f",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/capricorn.svg",
+      "sha256": "ab0e1cf05bf2888c31350061370bd942f5625be965ec64af509825ed38319373",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/gemini.svg",
+      "sha256": "adfcb146a7bee1e77276facf1fea9c43cb9eb2370ca388f6159acce83da88d60",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/leo.svg",
+      "sha256": "5cef889a33f435a6a0bf7f1a670a1a54e4c6d902d121cb0183fdef2b7f37388a",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/libra.svg",
+      "sha256": "71e5c00ea331c1927c6a60f023588a3bafa0a3f5b8096ffe6b164a06c393491c",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/pisces.svg",
+      "sha256": "a6b456949786ab70a0379e079b4870dbb6c26422234ba12cdbb3cf9b2c8fa839",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/sagittarius.svg",
+      "sha256": "dfcd74fc02d3dc493724feab76b451f1a06cd4659517da0340ac00ef1003d13e",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/scorpio.svg",
+      "sha256": "0ef6fed2c28573d10d4c9a542a58f9464e47deef1fe8ceb09cf82af6922f4a10",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/taurus.svg",
+      "sha256": "61a169f81269c18ee9abc3201c80cdd110956f7286e1da7dad29e2ae7ce2e4fd",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/default/zodiac/virgo.svg",
+      "sha256": "56b1542d74d6b679e53a610278b833f9d324a794ce897f3503700b397c16ef6b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/binovile.svg",
+      "sha256": "d53fc0f2aa868977c627efd530f02aa521f195ebf3c5890c5f49283683dea2ba",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/biquintile.svg",
+      "sha256": "237030bd935d98df781ac6ec892ef1f902e894f21cbb5ed6898409d86a35e909",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/conjunction.svg",
+      "sha256": "c503da03101d6f9e7a335114f21e0d2c6ce2e7d5b1fe560a7ac1b124dfaefa44",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/decile.svg",
+      "sha256": "0de74b32cfcbffa8c5d01596cd7de6c7242f40befd8578f51a3a0c18b02399a7",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/novile.svg",
+      "sha256": "6986d94761f507e8efe5e323c546fb1a9f667f33cd7126fc6c065dee9dbb262a",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/opposition.svg",
+      "sha256": "566745aeba789687819e1102aa29f6f7f404f124df552c39b4845e6e306a5261",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/quadrinovile.svg",
+      "sha256": "445b4f959fd7a0e16e615ae1fef912652f7d47ebc01784ca750f22af865c9616",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/quincunx.svg",
+      "sha256": "2fb57daa5c0407a827a98a53f94f88f879cbc594c74efa3dc14a6c83adccaada",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/quintile.svg",
+      "sha256": "f04f2923553ed449617c05c131a1e5235728373226693493672e63357f94024e",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/semisextile.svg",
+      "sha256": "b94504c349771814ed5da112510a1aba7bad78c4023abf08267275e448f88f2c",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/semisquare.svg",
+      "sha256": "cd75442732a48a8d3b87368408d1cfa623c4682e73460618cff7025a11c98162",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/septile.svg",
+      "sha256": "2d7a6e40862a25f5dd96a74839582df14b85bec2c9ffc28bbe991972915227ac",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/sesquiquadrate.svg",
+      "sha256": "105f7562eedabc29e4e70fd3a1cbdef855e62da02ae5c8aa51856430c5eaefad",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/sextile.svg",
+      "sha256": "8205319fb46fecf575e0e998d059fa5dcad35d384d13b289511dafb533200359",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/square.svg",
+      "sha256": "5edd1502cd54567a9bea069ce80e792ab836c0bdf64a61fe7db9aaa7aba7cbca",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/tridecile.svg",
+      "sha256": "7e9ec463d55b19be544e7b26159fea8acea2259e08626ff8d20b3c55f209cb67",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/aspects/trine.svg",
+      "sha256": "0785a25aaa829773fd4f8696aadece7bba3d6203e6cc92dfdc9bde8a176936ed",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/admetos.svg",
+      "sha256": "5fc3c7a48f80441352385582fb6c814ceedb4ab9602503a7b8796e60c8bd3d0c",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/antivertex.svg",
+      "sha256": "8f14ddeb79b93cf099ff6e9b9b258bb52d198ee6bdf8947a338eb66e6fd46e91",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/apollon.svg",
+      "sha256": "946f69d8ab92899764933680f9cd69998ae416b3b489582c9b32cf1e0f321ee8",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/asc.svg",
+      "sha256": "52eb33f080be4d47402ed4dcffbda90f2ea4dee062fe91e90deb346d4adcf8ba",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/astraea.svg",
+      "sha256": "ac38f104f52fd711b30bc2d62c74e95f028a67fb31b57c1c93cc99b4a507e2c6",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/ceres.svg",
+      "sha256": "63156f83ccf25dfcbfa181bec4d7a3d92c33ba298b1af63021f971c49333883f",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/chiron.svg",
+      "sha256": "3bf80d70cd5894fe278faae8811ee8cdef597967bae47941cad3ab5632238b5a",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/cupido.svg",
+      "sha256": "359868dd21f65862a97f8a0697649a638917a4176ac535e8e5b71efffcc3cee8",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/desc.svg",
+      "sha256": "963c06872aeeb8e586752c3419ffd120e7302399852845a8320933364bb65d3b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/egeria.svg",
+      "sha256": "d3d6e5b9e5a2ffd0c17c70a0ce7a5669f6b1cb6ea1d0774f5c97f30420dbb1a1",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/eris.svg",
+      "sha256": "5ae1e7ac782e7581719c89fe26edb8dba86ebe25f2b1f559b8c0d311677e69f4",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/eunomia.svg",
+      "sha256": "84affe3cf2222a9d27f44e6b57dd4cb38c054bca81cf636de52df8d52cb57740",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/fixed_star_generic.svg",
+      "sha256": "9e614340f149b701f1bb4b05c4d20e7fca0512fdb568e4b5cdd655a6ef475823",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/flora.svg",
+      "sha256": "725738ca82fe05d2338073b304fe5bf68338a5021ed2d8fa8002af6af77be962",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/fortuna.svg",
+      "sha256": "17ed6249843e7a85a276bc2e467fc22ae82d5bcb9b5141b5fa3ee8bc3c1b1599",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_jupiter.svg",
+      "sha256": "a1fb2393946a3742f6b9c53b0048504903c32d40883a376dbf502e4788f36ab8",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_mars.svg",
+      "sha256": "d56d181cdefa80615da2703e5fe4a96630c7fb26770c9e4b5bbcf7438f6e5923",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_mercury.svg",
+      "sha256": "a8bfd990533fe7443ea4d7b853fb8de2457e7b0a1ddbb7541ed81ef50dc3f58b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_neptune.svg",
+      "sha256": "e96aa51cbb40eaf0c080bf9104bca5d22d6ad4350c3a0f8f75b506f65b42d120",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_pluto.svg",
+      "sha256": "0ad80a9cb232168556294b5aad6a581ade8a74722024cf8a217622c849ebe56d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_saturn.svg",
+      "sha256": "5a357494c1e35a910123403e3668db17222af00b8889c9ad687a26a14f9767cb",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_uranus.svg",
+      "sha256": "9f85c7da5d1ca7c389abb82284d1922bfed1b67c0e62c0df3ba9bec263577563",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/geo_node_venus.svg",
+      "sha256": "4ac1826062fd244e77ec1be0753269f7671f7d35095127223aad1297f26f7e1b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/hades.svg",
+      "sha256": "5c50e16c7adf26fc18f16c6b3789b1e8bb43948a67b41416e3582aabd91a91c0",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/haumea.svg",
+      "sha256": "58aee863e4cb91c30a98a5920830228b53145d5defb16934ac4a262a901c6be2",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/hebe.svg",
+      "sha256": "cc449dffd2a8faf7553e2813f3b309aaf2b527048aaf7a8efd58f882948e6e7c",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/hygiea.svg",
+      "sha256": "cefa08d479c150fd66d3c417808e5b7219f1c9e7cc72a7a6cefec5cdb06189b5",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/ic.svg",
+      "sha256": "3411e8b0e89f508d8d794feaa4229b9b7cfc7c342611dd9a525ede5a68f84f28",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/irene.svg",
+      "sha256": "8cd20a07eb0924bb2255d0ea9a9dcc4b739bddd364fd1c793034a5c285ecdf08",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/iris.svg",
+      "sha256": "d497d2e7462fe02be5f63a7e8358f672b336ac5739c6e73e37124fb477f6b9a5",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/juno.svg",
+      "sha256": "bc46757c70adef9791216aef23447085b38e11bf4db37b1400e05c59d2bb1baf",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/jupiter.svg",
+      "sha256": "55a73e27844710d579aed8ce5514536b79b610f60aac39d7a0ddd5532628917f",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/kronos.svg",
+      "sha256": "4a4415e5ec8413d81e166930df902b5a326c99cca651923e4e3b3f3ed0f11805",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/lilith.svg",
+      "sha256": "017e800eac07622161afb9d3b11e26c1f2722a2416a878300184d53a5cdff491",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/lilith_oscu.svg",
+      "sha256": "017e800eac07622161afb9d3b11e26c1f2722a2416a878300184d53a5cdff491",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/lilith_true.svg",
+      "sha256": "017e800eac07622161afb9d3b11e26c1f2722a2416a878300184d53a5cdff491",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/makemake.svg",
+      "sha256": "ef248a4f7f10122ccf5e134aa915615e069b748cd3550c260f6e2565c592c421",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/mars.svg",
+      "sha256": "bd5ec0b42b4c9ffe04a588951d7909377e211eb3a144dc35b79bdde41c7d68a7",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/massalia.svg",
+      "sha256": "43298f045431475475c9715812063e8730f81188015950976d0db20e3e59b815",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/mc.svg",
+      "sha256": "e99dabbbc229f017802eee4a11440c8986ada50bfa2629540dac5423fa1d8a30",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/melpomene.svg",
+      "sha256": "c92cabee4c463e72abd85d91ae4c643f171daf4c451cf358e8dcce2d6b7cfd81",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/mercury.svg",
+      "sha256": "ce4c2c22a72a62c2134ea6df61dc9465cf9e67fc2aa44831651314c45c8b991b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/metis.svg",
+      "sha256": "1b74acad2e99d38004683c0662dc8d2d4fabc39c8c59fba8891d4e55310f46e7",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/moon.svg",
+      "sha256": "d0b1853d5ff8c9df984cd0da005c14c91fb57190f33c918811958429c57ee6b9",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/neptune.svg",
+      "sha256": "7bab12edceed9db5c8c074631feef4424383f60c66f6f6a872adbe7d0fac4f28",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/north_node.svg",
+      "sha256": "3d7b22ac503dcb2a612afe9b132ea9aaedbf062919474813dfa39c80e1482367",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/orcus.svg",
+      "sha256": "299408657a60086de97b4259e9cc3f52864cb1b4954b202fc640a4d3f48537db",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/pallas.svg",
+      "sha256": "94da5acdcecff9486efb0fd3ca44d5ac5eb8d87867b940afea4b58826a072b9b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/part_of_fortune.svg",
+      "sha256": "b5d1dfaea8539d39790b2c872a41c4d96bc96dba601a7619213b5c5c0b3f1858",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/part_of_spirit.svg",
+      "sha256": "b8d768c1b1171cb85269478b9e77ef10aa73ffa0d5d947555c61d25793da7991",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/parthenope.svg",
+      "sha256": "cac083557294c26613f4b3469bdd04b27ba871b6845baec20e5b557ae2fcdd09",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/pluto.svg",
+      "sha256": "6eacbc410879a217be7342a948776bfc020e1eef3a45e182511fb32e144a3f86",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/poseidon.svg",
+      "sha256": "3eb6caeea49fc3d57ff7c0b3e3e9d0d780afb4b80645e2a2a13818b2da1bbedc",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/psyche.svg",
+      "sha256": "c542fe56438522904a575ef78027837aa15f373926eb8b039e199d3bde04ac3b",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/quaoar.svg",
+      "sha256": "4d54d7d94bff62931060f4146cf0d59984ed9c894ab9498e7e4cd0f32cfd0c29",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/saturn.svg",
+      "sha256": "743504f0a58b6b988922e7a5b45f140e12aa9595965733d24e331a00af349bf5",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/sedna.svg",
+      "sha256": "5099eaa31ca0c9d252addf53406b25c0ceb6eeafed28ddf22d70ce89476c63fa",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/south_node.svg",
+      "sha256": "09dd56442d2f24b7867c195f406d4251912b86ab4f0a9fdf026b308ec40bb131",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/sun.svg",
+      "sha256": "881a602326bbca7240a4ce0a80e6ee1a8ea6f63c58706a924cec4b28ab56a0b3",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/thetis.svg",
+      "sha256": "1f7ebc009f76ed795beee730920bda688a056c8f5426fb90580307cdfe671d84",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/true_north_node.svg",
+      "sha256": "3d7b22ac503dcb2a612afe9b132ea9aaedbf062919474813dfa39c80e1482367",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/true_south_node.svg",
+      "sha256": "09dd56442d2f24b7867c195f406d4251912b86ab4f0a9fdf026b308ec40bb131",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/uranus.svg",
+      "sha256": "677bea3065f0f29468d0404f419d606945a84abc79a62c98366478d612af51f4",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/varuna.svg",
+      "sha256": "661f7cc3273d768445d89577097e7f3f904c35c80c94c88665dfc43077b0578f",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/venus.svg",
+      "sha256": "2075cbd9f02081c5e19207c27d8294e0c305412a4e4f77e618fcc26af0b7ff5f",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/vertex.svg",
+      "sha256": "852e6eb4ace26408e84337123bf52350d6a1e1cee3735cf285f818a73ee686d8",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/vesta.svg",
+      "sha256": "99b4f07b84ab2df4850948c86b7faac0bb47e2b822be8205b399ae664c9a7bfd",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/victoria.svg",
+      "sha256": "4c980c91fdb4de6e442f51b73691b86c23f4f3271cb02c039bc53ec7d77f3790",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/vulcanus.svg",
+      "sha256": "651dc97b1a9ba93f17e6c0ea6283f2deb90b8661c141fe14407339f62722814d",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/planets/zeus.svg",
+      "sha256": "a5911c9e13ef737be30b7db6c2c18edcfcba20fefafa048d2d834eb62650064f",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/aquarius.svg",
+      "sha256": "76eae204f31cda38ba54ad6f1a7e7b9c789b8b8fc1fb77d2cc02adef0e8ca1aa",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/aries.svg",
+      "sha256": "1e890889122229f49a9183ffd8b33e6672272885ac680b13cb88402a8fcfaa98",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/cancer.svg",
+      "sha256": "722cf983915909a2f11af4930b91edc3d7b8bfdb597f38345cc444d5c45df7a9",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/capricorn.svg",
+      "sha256": "fa0dbb7970dbd45464566dda6f02d87b9b911023057e6d97ca8a66172e1777f8",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/gemini.svg",
+      "sha256": "c94ccd924137f381d439c177df19d5f3332d084617a4bd0905f8c8e8f2a655a0",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/leo.svg",
+      "sha256": "3909a01e214ea881f950f8b3e7b656ac39e1e8fd37de8510556a419065be46ae",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/libra.svg",
+      "sha256": "7acadc64224177c5937553f7582274d59baa38fb36f91b153da681322ee80f0c",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/pisces.svg",
+      "sha256": "19ca24bb404ad5e66359f14eda1e4a1bdd043a6e22d225254286d558a280f799",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/sagittarius.svg",
+      "sha256": "2a4c0950da33ce8f28af1771c3372d71f4501ea59fbd0336d12d24075b663950",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/scorpio.svg",
+      "sha256": "91aa4ca448567fc4194069f2579fdc72df9820f353c6fabdffc9e695d231e2f3",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/taurus.svg",
+      "sha256": "f3265a5c1e59cff98814bc65f0a6d050f6f7490ec8b7b029fd460ab9b729b864",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/glyphs/modern/zodiac/virgo.svg",
+      "sha256": "ded742235ef12075eea0675009e48135a56bc0fc552e76d342c1adaf7a1ca309",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icon.svg",
+      "sha256": "6a7f45c2cf95c1e4566e5f640facc583798d9c2772c2427d79a3c34b1d9a7b74",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/aspects.svg",
+      "sha256": "183100e2a07cb13c93cfff16ed9c69297864ee9fccc89d4e8edb4f5c2eede182",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/dynamics.svg",
+      "sha256": "262cfa2f610ef158432744e6a2caee7ebcaa3b14e2e112971b582e9dc808c35c",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/export.svg",
+      "sha256": "7432c41a241a3e873aac10cfc9cce24700705144f2cb2cebe91695f615953931",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/favorite.svg",
+      "sha256": "773843750417f11a873dbb78f4e01a5bf652bcd1d47973dcc6e3d32249b39c85",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/horoscope.svg",
+      "sha256": "8e25ebd51f6a7829d443dc0557e80a731d66633c8b9adffd550ed5ab31cdce26",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/information.svg",
+      "sha256": "820914b9a7fea3c87b4d99b3becbbe2bde6c3b1bb847039ab3adbe6b88190eb9",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/menu.svg",
+      "sha256": "d5cb35affb338dcb28df643d1a7712c0e12ab0d7a0a507b21cdeff8c46c2ca04",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/new.svg",
+      "sha256": "7b3f7d706c6855b277883e707ca318aca3317165f660263fe314c95ebdb59198",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/open.svg",
+      "sha256": "fe44702f2e4d6c2920d14e463d65e0a2aaf1175cb865d3a98bb8b35f2b0ebf47",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/revolution.svg",
+      "sha256": "ea3db09276d1a62dd97575e17f2225e819dd3591e013f86f56a23497df393eca",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/save.svg",
+      "sha256": "80203e132c81f874796b63c10cbe42ce9300441b539f4883924b6353f685bc3e",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/settings.svg",
+      "sha256": "abcf6d449fd8d854d20983004f16a129e6e8513c92ee7ab4e9e4e3445ab87cc0",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/synastry.svg",
+      "sha256": "a602c7b1654a23811c2e7ac6954bea14330210c0c0cecf3837aa92a95b4016b0",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/theme-midnight.svg",
+      "sha256": "6665cd5d2026a31162d3b5999a43176ceae4582e99f71feddf7f6e20394114aa",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/theme-noon.svg",
+      "sha256": "7211e82ef0f26b8db4b73b73f5672a9a59798f21119f804186f98a04eeb14db7",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/theme-sunrise.svg",
+      "sha256": "c68f40d43fafe8e547b702337d99320fdc877f0a00dca47fe815b1058401ae04",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/theme-twilight.svg",
+      "sha256": "e3f2b95c5f476e572d4a25690e348180e41a320716f8120eaf4fa62ef51ba945",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/default/transits.svg",
+      "sha256": "d657a70daae4b12d05857bab232954e7313d282557eb92e04e78a105a3a37ed2",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/modern/aspects.svg",
+      "sha256": "921237f4d752a65d09745339fb0dfc40860e8f11b5458ad2d72c157fe706a2b2",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/dynamics.svg",
+      "sha256": "6744d647a43b6f51882f1a3127e0cfa0ea1a79c04c1de5ce00c6b59aab74eec5",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/export.svg",
+      "sha256": "e558f31c5bc490033e2762369654e31bea65b21d10a7486b9fcd3d058f397f9f",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/favorite.svg",
+      "sha256": "a4b32dd74b9e699159992c570ce74d9fc2c2a0952f70343fa8ccd4b83491a411",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/horoscope.svg",
+      "sha256": "e2eaa0f759a131997792d0cd29b4ec730c392f23273a860595e1635cdedcc916",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/icons/modern/information.svg",
+      "sha256": "5637399ae4a3ebe667783d06e612f9efdfbd118aa27a97d5d6c42c355d3c7a39",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/menu.svg",
+      "sha256": "9401c76cdd5c703a56ee9a1db36e4842e7e74e4ebdcdeb8ec5d6bd67618c39cf",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/new.svg",
+      "sha256": "5099bbf6e5dfc4fd03b8246ca2652eb51b9552faae3729b9ac1200e05b25fef1",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/open.svg",
+      "sha256": "7aad085302bb865dbb8ea6772ac71fb05434e39cd537d523623b5cdda6cb0577",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/revolution.svg",
+      "sha256": "9b288745ca16fdce3c2a2cda4fcbf2e6db456596a2bc7cee0c4fbcbd95128204",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/save.svg",
+      "sha256": "8d38fd74fd212f18d7c90f901e015e6ea96f71371aab042031d6bc779b61ac32",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/settings.svg",
+      "sha256": "f9f1e21fb2533c96dca7195786d8d6cc16cf3675b505c28ed714e4c1e2c714f3",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/synastry.svg",
+      "sha256": "e0cc5c44e7c818b918eccd5167e4859fc307d5c22722f5a8ad9bcfde7bb5f876",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/theme-midnight.svg",
+      "sha256": "cce5aa79f1bc89f382bf891e27d72679ec32b492980e7da3bd08ac415468e92b",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/theme-noon.svg",
+      "sha256": "5c6b46b54ff756a7315577b72ba9a6a59db39f153ea1af195a0f443e60d8b142",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/theme-sunrise.svg",
+      "sha256": "27f4e1d91e61dc8d9daf07a6675b24124e7da676765c6c57c1ea1a83ade91700",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/theme-twilight.svg",
+      "sha256": "f1e10ff82b7146b9a7eab5f6fb79f2c463f2122b7d4eaf4ed65f472c72f4b25e",
+      "origin": "lucide-static (Lucide icons)",
+      "license": "ISC, Copyright (c) Lucide Contributors (portions MIT, Feather)",
+      "approval": "third-party-open",
+      "note": "third-party icon; keep the Lucide license notice"
+    },
+    {
+      "path": "static/app-shell/icons/modern/transits.svg",
+      "sha256": "2ef98c8fa555c33110bb79128d4db671b1d9111294cb5aaa7a9a3950d8a84ecf",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/logo-full-default.svg",
+      "sha256": "361d203a89496bcbe7ac0be2b67cf3a1a69b68fb46dcaa153dde8e822104bc51",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/logo-full-modern.svg",
+      "sha256": "4b60919ce50daad954f758cccac7ba98b1ed3529fd3edfce227b0fcc7f5f0467",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/logo-mark-default.svg",
+      "sha256": "c6cae7b87f1543a5402865f36611091baaf6cd610d34a4027081a2f258a7f462",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    },
+    {
+      "path": "static/app-shell/logo-mark-modern.svg",
+      "sha256": "6c7e20158c3df4d42601edad96bb0690c96de07d355576ad1476dec7fbf303bd",
+      "origin": "graphical-sources export (project design)",
+      "license": "to be decided (asset licence, decision L3)",
+      "approval": "decision-needed",
+      "decision": "L3",
+      "note": "published in the public repo before the asset policy (since 2026-04-09); licence not yet chosen"
+    }
+  ]
+}

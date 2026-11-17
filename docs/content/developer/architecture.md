@@ -79,11 +79,13 @@ lunar details, or transit-series results. Transit *setup* is persisted. The
 legacy computed-data storage commands are explicit no-ops.
 
 In `auto` mode, a reachable Python sidecar is preferred; otherwise supported
-work uses Rust. A forced Python route fails if it is unavailable. Jyotish and
-Custom engine charts require Python and have no Rust implementation — this is
-the *only* condition `chart_requires_python_precision` /
-`chart_json_requires_python_precision` (`application/compute_router.rs`) force
-onto the Python route.
+work uses Rust. A forced Python route fails if it is unavailable. No engine is
+currently Python-only (`PYTHON_ONLY_ENGINES` in `application/compute_router.rs`
+is empty): `jyotish`/`custom` have no implementation in either backend, so both
+routes compute them with JPL and attach `engine_<e>_not_implemented:
+<backend>_used`. Unsupported house systems and the sidereal zodiac on the JPL
+backend are likewise reported, never substituted silently — see
+`contracts/substitution-warnings.json` and `contracts/houses/cusps.json`.
 
 A per-chart `override_ephemeris` kernel is supported natively by
 `JplAstronomyBackend` and does not force Python. Both Rust-only mode and auto

@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "description": "No calculation is ever substituted silently. When the configured engine, house system, or zodiac cannot be honored, the result carries one of these warning codes. Both implementations must emit exactly these strings.",
+  "engine": [
+    {
+      "engine": null,
+      "backend": "jpl",
+      "warning": null
+    },
+    {
+      "engine": "jpl",
+      "backend": "jpl",
+      "warning": null
+    },
+    {
+      "engine": "swisseph",
+      "backend": "swisseph",
+      "warning": null
+    },
+    {
+      "engine": "swisseph",
+      "backend": "jpl",
+      "warning": "engine_swisseph_not_available: jpl_used"
+    },
+    {
+      "engine": "jpl",
+      "backend": "swisseph",
+      "warning": "engine_jpl_not_available: swisseph_used"
+    },
+    {
+      "engine": "jyotish",
+      "backend": "jpl",
+      "warning": "engine_jyotish_not_implemented: jpl_used"
+    },
+    {
+      "engine": "jyotish",
+      "backend": "swisseph",
+      "warning": "engine_jyotish_not_implemented: swisseph_used"
+    },
+    {
+      "engine": "custom",
+      "backend": "jpl",
+      "warning": "engine_custom_not_implemented: jpl_used"
+    }
+  ],
+  "house_system": "See contracts/houses/cusps.json: unsupported systems return Whole Sign cusps plus 'house_system_<id>_not_yet_supported: whole_sign_used'.",
+  "zodiac": {
+    "rust_jpl_sidereal": "zodiac_sidereal_not_supported: tropical_positions_returned",
+    "python_sidereal_applied": "ayanamsa_approximate: linear_precession_model",
+    "python_sidereal_failed": "zodiac_sidereal_not_applied: tropical_positions_returned",
+    "ayanamsa_unspecified": "ayanamsa_unspecified: fagan_bradley_used",
+    "ayanamsa_unsupported_template": "ayanamsa_<id>_not_supported: fagan_bradley_used"
+  },
+  "calculation_convention": {
+    "unsupported_template": "calculation_convention_unsupported: <id>; kefer-positions/1_used",
+    "example": {
+      "requested": "kefer-positions/9",
+      "warning": "calculation_convention_unsupported: kefer-positions/9; kefer-positions/1_used"
+    }
+  }
+}

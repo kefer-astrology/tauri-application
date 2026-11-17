@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "description": "What each implementation supports. Each implementation tests that its declaration matches its code. Anything not supported must be rejected or answered with a documented warning (CONVENTIONS.md section 5).",
+  "implementations": {
+    "rust": {
+      "repository": "kefer-astrology/tauri-application",
+      "conventions": [
+        "kefer-positions/1",
+        "kefer-positions/1-true-equinox"
+      ],
+      "house_systems_native": [
+        "Placidus",
+        "Whole Sign",
+        "Campanus",
+        "Equal",
+        "Porphyry"
+      ],
+      "house_systems_substituted": [
+        "Koch",
+        "Regiomontanus",
+        "Vehlow",
+        "Alcabitius"
+      ],
+      "engines": {
+        "jpl": "native",
+        "swisseph": "optional build feature",
+        "jyotish": "not implemented",
+        "custom": "not implemented"
+      },
+      "zodiac": {
+        "tropical": "supported",
+        "sidereal": "not supported on the JPL backend (warning); swisseph feature only"
+      },
+      "ephemeris_grade_bodies": [
+        "sun",
+        "moon",
+        "mercury",
+        "venus",
+        "mars",
+        "jupiter",
+        "saturn",
+        "uranus",
+        "neptune",
+        "pluto",
+        "chiron",
+        "ceres",
+        "pallas",
+        "juno",
+        "vesta",
+        "astraea",
+        "hebe",
+        "iris",
+        "flora",
+        "metis",
+        "hygiea",
+        "parthenope",
+        "victoria",
+        "egeria",
+        "irene",
+        "eunomia",
+        "psyche",
+        "thetis",
+        "melpomene",
+        "fortuna",
+        "massalia"
+      ],
+      "ephemeris_grade_coverage_utc": [
+        "1900-01-01",
+        "2100-01-01"
+      ],
+      "aspect_dynamics": true,
+      "event_search": true,
+      "tradition_presets": true
+    },
+    "python": {
+      "repository": "kefer-astrology/function-wrapper",
+      "conventions": [
+        "kefer-positions/1",
+        "kefer-positions/1-true-equinox"
+      ],
+      "house_systems_native": [
+        "Placidus",
+        "Whole Sign",
+        "Campanus",
+        "Equal",
+        "Porphyry"
+      ],
+      "house_systems_substituted": [
+        "Koch",
+        "Regiomontanus",
+        "Vehlow",
+        "Alcabitius"
+      ],
+      "engines": {
+        "jpl": "native",
+        "swisseph": "not available (warning)",
+        "jyotish": "not implemented",
+        "custom": "not implemented"
+      },
+      "zodiac": {
+        "tropical": "supported",
+        "sidereal": "approximate (linear ayanamsa, warning)"
+      },
+      "ephemeris_grade_bodies": [
+        "sun",
+        "moon",
+        "mercury",
+        "venus",
+        "mars",
+        "jupiter",
+        "saturn",
+        "uranus",
+        "neptune",
+        "pluto"
+      ],
+      "approximate_bodies": {
+        "ceres": "two-body MPC elements (warning beyond 5 years of the element epoch)",
+        "pallas": "two-body MPC elements (warning beyond 5 years of the element epoch)",
+        "juno": "two-body MPC elements (warning beyond 5 years of the element epoch)",
+        "vesta": "two-body MPC elements (warning beyond 5 years of the element epoch)",
+        "chiron": "two-body MPC elements (warning beyond 5 years of the element epoch)"
+      },
+      "aspect_dynamics": false,
+      "event_search": false,
+      "tradition_presets": false
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "description": "Licensing status of non-code resources shipped in, or vendored into, this repository. Blocking statuses (unresolved, decision-needed, permission-scope-pending) are reported by scripts/check-release-content.py; graphical exports are additionally governed by approved-assets.json. Nothing listed here has been removed.",
+  "statuses": {
+    "project-mit": "Project work under the repository MIT license",
+    "third-party-open": "Third-party data/code with terms compatible with redistribution (see THIRD_PARTY_NOTICES.md)",
+    "decision-needed": "Project work whose intended license differs from the repository license; owner decision required",
+    "unresolved": "Redistribution rights not established",
+    "permission-scope-pending": "Permission exists but its exact scope, grantor authority or coverage of this file is not yet verified"
+  },
+  "entries": [
+    {
+      "glob": "static/astrology-symbols/sabian.json",
+      "status": "permission-scope-pending",
+      "item": "Sabian symbols (English symbol phrases)",
+      "source": "Jones/Wheeler 1925 symbols as rephrased by Rudhyar 1973; taken from a third-party program's data",
+      "public_since": "2026-09-26",
+      "decision": "L2",
+      "reason": "An e-mail permission to use the symbol names exists (licence.md §3) but is not archived; grantor authority and scope (app, web, GitHub, redistribution, commercial use, modification) are unverified, and it does not extend to interpretations"
+    },
+    {
+      "glob": "static/astrology-symbols/sabian.cs.json",
+      "status": "unresolved",
+      "item": "Sabian symbols (Czech translation)",
+      "source": "translation of the symbol phrases; translator not recorded",
+      "public_since": "2026-09-26",
+      "decision": "L2",
+      "reason": "a translation is a separate work: needs the original rights holder's permission for translation and the translator's rights; the e-mail permission is not known to cover it"
+    },
+    {
+      "glob": "static/astrology-symbols/kefer*.json",
+      "status": "decision-needed",
+      "item": "Kefer degree symbols (original)",
+      "source": "project",
+      "note": "labelled proprietary-original in catalog.json",
+      "decision": "L4",
+      "reason": "original project work labelled proprietary-original inside the MIT repository"
+    },
+    {
+      "glob": "static/glyphs/**",
+      "status": "decision-needed",
+      "item": "Glyph exports from private graphical-sources",
+      "source": "project (private design repo)",
+      "public_since": "2026-04-09",
+      "decision": "L3",
+      "reason": "project designs published before the asset policy; asset licence not chosen (see approved-assets.json)"
+    },
+    {
+      "glob": "src-tauri/resources/third-party/hypothetical-bodies.json",
+      "status": "unresolved",
+      "item": "Uranian orbital elements",
+      "source": "copied from Swiss Ephemeris seorbel.txt (AGPL/commercial distribution); values from Neely 1980",
+      "decision": "L8",
+      "reason": "values copied from Swiss Ephemeris seorbel.txt (AGPL/commercial distribution); no independent primary source verified yet"
+    },
+    {
+      "glob": "contracts/points/fixed-stars.json",
+      "status": "third-party-open",
+      "item": "Fixed stars",
+      "source": "SIMBAD/CDS (acknowledgement required)"
+    },
+    {
+      "glob": "contracts/points/arabic-lots.json",
+      "status": "third-party-open",
+      "item": "Lots formulas",
+      "source": "al-Biruni (1029) facts"
+    },
+    {
+      "glob": "static/astrology-symbols/sepharial*.json",
+      "status": "third-party-open",
+      "item": "Sepharial degree symbols",
+      "source": "public domain (1898)"
+    },
+    {
+      "glob": "static/astrology-symbols/charubel*.json",
+      "status": "third-party-open",
+      "item": "Charubel degree symbols",
+      "source": "public domain (1898)"
+    },
+    {
+      "glob": "src-tauri/resources/*.bsp",
+      "status": "third-party-open",
+      "item": "JPL/NAIF/Horizons ephemerides",
+      "source": "U.S. Government / NAIF"
+    },
+    {
+      "glob": "src-tauri/resources/*.bsp.json",
+      "status": "project-mit",
+      "item": "Kernel provenance manifests",
+      "source": "project"
+    },
+    {
+      "glob": "src-tauri/resources/pck11.pca",
+      "status": "third-party-open",
+      "item": "Planetary constants (ANISE-converted)",
+      "source": "NAIF PCK via ANISE; conversion source to confirm"
+    },
+    {
+      "glob": "static/favicon.png",
+      "status": "decision-needed",
+      "item": "Favicon (Kefer logo mark)",
+      "source": "project logo",
+      "decision": "L3",
+      "reason": "logo: asset licence and trademark use not yet defined (TRADEMARKS.md draft)"
+    }
+  ]
+}

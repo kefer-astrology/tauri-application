@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/substitution-warnings.schema.json",
+  "title": "Substitution warning codes",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "engine",
+    "zodiac"
+  ],
+  "properties": {
+    "engine": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "engine",
+          "backend",
+          "warning"
+        ],
+        "properties": {
+          "engine": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "backend": {
+            "type": "string"
+          },
+          "warning": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/api/chart-result.schema.json",
+  "title": "Chart calculation result (Rust command + Python sidecar)",
+  "description": "Fields both implementations return for a computed chart. Implementations may add fields (e.g. Rust: shapes, configurations, facts, right_ascension); shared fields keep the meaning defined in CONVENTIONS.md.",
+  "type": "object",
+  "required": [
+    "positions",
+    "motion",
+    "aspects",
+    "axes",
+    "house_cusps",
+    "moon_details",
+    "chart_id",
+    "backend_used",
+    "fallback_used",
+    "ephemeris_source",
+    "warnings",
+    "calculation_convention"
+  ],
+  "properties": {
+    "positions": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "object",
+            "required": [
+              "longitude"
+            ]
+          }
+        ]
+      }
+    },
+    "motion": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "speed",
+          "retrograde"
+        ],
+        "properties": {
+          "speed": {
+            "type": "number"
+          },
+          "retrograde": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "aspects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "type",
+          "angle",
+          "orb",
+          "exact_angle"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "angle": {
+            "type": "number"
+          },
+          "orb": {
+            "type": "number"
+          },
+          "exact_angle": {
+            "type": "number"
+          },
+          "applying": {
+            "type": "boolean",
+            "description": "Rust computes it; the Python sidecar currently always returns false (known gap)."
+          },
+          "separating": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "axes": {
+      "type": "object",
+      "properties": {
+        "asc": {
+          "type": "number"
+        },
+        "mc": {
+          "type": "number"
+        },
+        "desc": {
+          "type": "number"
+        },
+        "ic": {
+          "type": "number"
+        }
+      }
+    },
+    "house_cusps": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "moon_details": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "chart_id": {
+      "type": "string"
+    },
+    "backend_used": {
+      "type": "string"
+    },
+    "fallback_used": {
+      "type": "boolean"
+    },
+    "ephemeris_source": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "calculation_convention": {
+      "type": "string",
+      "description": "Id from conventions.json the result was computed with."
+    }
+  }
+}

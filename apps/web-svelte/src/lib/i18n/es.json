@@ -163,6 +163,7 @@
 	"house_system": "Sistema de Casas",
 	"house_system_equal": "Igual",
 	"house_system_whole_sign": "Signo entero",
+	"house_system_substituted": "{{name}} (calculado como {{substitute}})",
 	"info": "Info",
 	"info_angular_planet": "Planeta angular",
 	"info_aspect_conjunction": "Conjunción",

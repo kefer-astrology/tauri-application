@@ -200,6 +200,34 @@ impl AstronomyBackend for JplViaSwissAstronomyBackend {
     }
 }
 
+/// Warning when the configured engine is not what computed the chart.
+///
+/// No engine is ever substituted silently: `jyotish`/`custom` have no
+/// implementation in any backend (`engine_<e>_not_implemented`), and an
+/// engine that exists but is not compiled/available here (e.g. `swisseph`
+/// without the feature) reports `engine_<e>_not_available`. The codes are
+/// shared with the Python sidecar via `contracts/substitution-warnings.json`.
+pub fn engine_substitution_warning(
+    engine: Option<&EngineType>,
+    backend_id: &str,
+) -> Option<String> {
+    let (name, implemented) = match engine? {
+        EngineType::Jpl => ("jpl", true),
+        EngineType::Swisseph => ("swisseph", true),
+        EngineType::Jyotish => ("jyotish", false),
+        EngineType::Custom => ("custom", false),
+    };
+    if implemented && name == backend_id {
+        return None;
+    }
+    let reason = if implemented {
+        "not_available"
+    } else {
+        "not_implemented"
+    };
+    Some(format!("engine_{name}_{reason}: {backend_id}_used"))
+}
+
 /// Select the provider for a chart based on its engine configuration.
 pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Send + Sync> {
     if matches!(chart.config.engine, Some(EngineType::Jpl)) {
@@ -221,5 +249,32 @@ pub fn backend_for_chart(chart: &ChartInstance) -> Box<dyn AstronomyBackend + Se
                 )
             }),
         )
+    }
+}
+
+#[cfg(test)]
+mod substitution_contract_tests {
+    use super::*;
+
+    #[test]
+    fn engine_substitution_warnings_match_shared_contract() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../contracts/substitution-warnings.json"
+        ))
+        .expect("valid substitution fixture");
+        for case in fixture["engine"].as_array().unwrap() {
+            let engine: Option<EngineType> =
+                serde_json::from_value(case["engine"].clone()).expect("known engine");
+            let backend = case["backend"].as_str().unwrap();
+            assert_eq!(
+                engine_substitution_warning(engine.as_ref(), backend).as_deref(),
+                case["warning"].as_str(),
+                "{case}"
+            );
+        }
+        assert_eq!(
+            fixture["zodiac"]["rust_jpl_sidereal"].as_str(),
+            Some(crate::infrastructure::jpl_backend::SIDEREAL_UNSUPPORTED_WARNING)
+        );
     }
 }

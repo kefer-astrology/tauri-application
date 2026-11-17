@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/points/hypothetical-bodies.schema.json",
+  "title": "Hypothetical-body element catalog (data pack format)",
+  "description": "Format of a fixed-element Keplerian catalog for hypothetical bodies (e.g. the Uranian/Hamburg School points). The element values are not part of kefer-contracts: each implementation ships or loads its own data pack, whose provenance and licence are recorded with the pack. `model` identifies the element set; a different set must use a different model id.",
+  "type": "object",
+  "required": ["schema_version", "source", "source_url", "model", "bodies"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source": {"type": "string", "minLength": 1},
+    "source_url": {"type": "string"},
+    "model": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"},
+    "bodies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "epoch_jd", "equinox_jd", "mean_anomaly_deg", "semimajor_axis_au",
+                     "eccentricity", "argument_perihelion_deg", "ascending_node_deg", "inclination_deg"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "name": {"type": "string", "minLength": 1},
+          "epoch_jd": {"type": "number"},
+          "equinox_jd": {"type": "number"},
+          "mean_anomaly_deg": {"type": "number"},
+          "semimajor_axis_au": {"type": "number", "minimum": 0.001, "maximum": 1000000},
+          "eccentricity": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+          "argument_perihelion_deg": {"type": "number"},
+          "ascending_node_deg": {"type": "number"},
+          "inclination_deg": {"type": "number", "minimum": 0, "maximum": 180}
+        }
+      }
+    }
+  }
+}

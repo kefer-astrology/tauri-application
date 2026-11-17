@@ -30,21 +30,29 @@ pub fn domain_catalog_for_model(model: models::AstroModel) -> DomainCatalog {
             sign.id = sign.name.to_ascii_lowercase().replace(' ', "_");
         }
     }
-    let house_systems = vec![
-        ("Placidus", true),
-        ("Whole Sign", true),
-        ("Campanus", true),
-        ("Koch", true),
-        ("Equal", true),
-        ("Regiomontanus", true),
-        ("Vehlow", true),
-        ("Porphyry", true),
-        ("Alcabitius", true),
+    // Every system stays listed (persisted charts keep their value), but the
+    // flag is truthful: systems without a native implementation are computed
+    // as Whole Sign with a `house_system_*_not_yet_supported` warning, and the
+    // catalog says so explicitly instead of claiming support.
+    let house_systems = [
+        "Placidus",
+        "Whole Sign",
+        "Campanus",
+        "Koch",
+        "Equal",
+        "Regiomontanus",
+        "Vehlow",
+        "Porphyry",
+        "Alcabitius",
     ]
     .into_iter()
-    .map(|(id, computation_supported)| HouseSystemDefinition {
-        id: id.to_string(),
-        computation_supported,
+    .map(|id| {
+        let computation_supported = crate::domain::houses::NATIVE_HOUSE_SYSTEMS.contains(&id);
+        HouseSystemDefinition {
+            id: id.to_string(),
+            computation_supported,
+            substitute: (!computation_supported).then(|| "Whole Sign".to_string()),
+        }
     })
     .collect();
     let mut shapes: Vec<DomainDefinition> = vec![
@@ -185,6 +193,31 @@ pub use validation::WorkspaceValidationReport;
 #[cfg(test)]
 mod catalog_tests {
     use super::*;
+
+    /// Regression: every house system used to be advertised as
+    /// `computation_supported`, while Koch/Regiomontanus/Vehlow/Alcabitius
+    /// were computed as Whole Sign by the default build.
+    #[test]
+    fn house_system_support_flags_match_native_implementations() {
+        let catalog = builtin_domain_catalog();
+        assert_eq!(catalog.house_systems.len(), 9, "all systems stay listed");
+        for system in &catalog.house_systems {
+            let native = crate::domain::houses::NATIVE_HOUSE_SYSTEMS.contains(&system.id.as_str());
+            assert_eq!(system.computation_supported, native, "{}", system.id);
+            assert_eq!(
+                system.substitute.as_deref(),
+                (!native).then_some("Whole Sign"),
+                "{}",
+                system.id
+            );
+        }
+        for id in ["Koch", "Regiomontanus", "Vehlow", "Alcabitius"] {
+            assert!(catalog
+                .house_systems
+                .iter()
+                .any(|s| s.id == id && !s.computation_supported));
+        }
+    }
 
     #[test]
     fn builtin_catalog_covers_every_emitted_shape_and_configuration_id() {

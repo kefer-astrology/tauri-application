@@ -163,6 +163,7 @@
 	"house_system": "Systém domů",
 	"house_system_equal": "Ekvální",
 	"house_system_whole_sign": "Celoznamenný",
+	"house_system_substituted": "{{name}} (počítáno jako {{substitute}})",
 	"info": "Info",
 	"info_angular_planet": "Rohová planeta",
 	"info_aspect_conjunction": "Konjunkce",

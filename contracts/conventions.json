@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "description": "Versioned calculation conventions. Every chart result reports the convention it was computed with (`calculation_convention`). A convention id never changes meaning; a change of rules is a new id.",
+  "default": "kefer-positions/1",
+  "conventions": {
+    "kefer-positions/1": {
+      "status": "implemented",
+      "observer": "geocentric",
+      "corrections": "apparent (light-time, deflection, aberration); geometric on request",
+      "longitude_frame": "ecliptic of date",
+      "equinox": "mean",
+      "nutation": "excluded (longitude = true-equinox longitude - IAU 2000A nutation in longitude)",
+      "sidereal_time": "GMST, classic UT-based polynomial; UT1 = UTC",
+      "obliquity": "IAU 2006 mean obliquity",
+      "houses_and_axes": "RAMC = GMST + east longitude; mean obliquity",
+      "implemented_by": [
+        "rust",
+        "python"
+      ],
+      "selection": "default when `calculation_convention` is absent"
+    },
+    "kefer-positions/1-true-equinox": {
+      "status": "implemented",
+      "observer": "geocentric",
+      "corrections": "apparent; geometric on request",
+      "longitude_frame": "ecliptic of date",
+      "equinox": "true",
+      "nutation": "included: IAU 2000A (Rust sofars nut06a, Python Skyfield iau2000a; agree to micro-arcseconds)",
+      "sidereal_time": "GMST (classic UT-based polynomial) + equation of the equinoxes (Rust ee06a, Python Skyfield GAST-GMST); UT1 = UTC",
+      "obliquity": "IAU 2006 mean obliquity + nutation in obliquity",
+      "houses_and_axes": "RAMC = GAST + east longitude; true obliquity",
+      "difference_from_default": "longitudes + nutation in longitude (|dpsi| <= ~17.2 arcsec); ASC/MC differ by up to ~32 arcsec at the reference epochs",
+      "implemented_by": [
+        "rust",
+        "python"
+      ],
+      "selection": "chart config field `calculation_convention`; absent means the default",
+      "equatorial_outputs": "right_ascension/declination stay on the mean equator of date in both conventions (Rust); see capabilities"
+    }
+  },
+  "rules": [
+    "An implementation must never compute a convention it does not implement by silently using another; it must reject the request or attach a warning naming both conventions.",
+    "Changing the default convention is a breaking change: new minor version before 1.0, major after.",
+    "Results report the convention actually used in `calculation_convention`; an unknown id yields the warning `calculation_convention_unsupported: <id>; kefer-positions/1_used`."
+  ]
+}

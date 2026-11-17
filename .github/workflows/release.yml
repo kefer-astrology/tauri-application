@@ -35,12 +35,17 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Check whether a release tag already exists
+      - name: Check whether a release tag or draft already exists
         id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null 2>&1; then
             echo "Tag v$VERSION already exists — skipping release."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          elif gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Draft release v$VERSION already exists — skipping (publish or delete it first)."
             echo "should_release=false" >> "$GITHUB_OUTPUT"
           else
             echo "Tag v$VERSION not found — this push is a new release."
@@ -124,14 +129,56 @@ jobs:
               mv "$f" "$dir/${{ matrix.frontend }}-$base"
             '
 
+      - name: Release-content gate for bundle artifacts
+        # Bundles are built on every run (coverage), but uploaded as workflow
+        # artifacts only when no shipped resource has unsettled licensing:
+        # artifacts of a public repository are downloadable by any signed-in
+        # GitHub user. See licensing/resource-inventory.json.
+        id: content
+        shell: bash
+        run: |
+          if python scripts/check-release-content.py > release-content.txt 2>&1; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+            tail -n 1 release-content.txt
+            echo "::notice title=Bundles not uploaded::Built successfully; upload skipped because licensing of shipped resources is unsettled (release-content check)."
+          fi
+
       - name: Upload bundle artifact
+        if: steps.content.outputs.clean == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: tauri-${{ matrix.frontend }}-${{ matrix.platform }}
           path: src-tauri/target/release/bundle
 
+  release-content:
+    # Licensing compliance of what the release ships (licence.md §9).
+    # Audit mode by default: the verification record is kept with the release
+    # but does not block. Set the repository variable
+    # KEFER_RELEASE_CONTENT_ENFORCE=true once unresolved rights are cleared to
+    # make unsettled resources block publishing.
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check release content against the licensing registers
+        env:
+          ENFORCE: ${{ vars.KEFER_RELEASE_CONTENT_ENFORCE }}
+        run: |
+          mode="--audit"
+          if [ "$ENFORCE" = "true" ]; then mode=""; fi
+          python3 scripts/check-release-content.py $mode --report "release-content-v${{ needs.check-version.outputs.version }}.json"
+      - name: Keep the verification record
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-content-v${{ needs.check-version.outputs.version }}
+          path: release-content-v${{ needs.check-version.outputs.version }}.json
+
   publish:
-    needs: [check-version, build]
+    needs: [check-version, build, release-content]
     if: needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -177,5 +224,9 @@ jobs:
           tag_name: v${{ needs.check-version.outputs.version }}
           name: v${{ needs.check-version.outputs.version }}
           generate_release_notes: true
+          # Drafts only: a maintainer reviews the assets and the
+          # release-content record, sets the edition title (e.g. "Kefer 0.1 —
+          # Modern Astrology (application v0.1.2)") and publishes by hand.
+          draft: true
           fail_on_unmatched_files: true
           files: release-assets/*

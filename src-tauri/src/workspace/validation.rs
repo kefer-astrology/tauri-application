@@ -123,7 +123,7 @@ pub fn validate_model(model: &AstroModel, path: &str) -> Vec<Diagnostic> {
         &format!("{path}.body_definitions"),
         &mut diagnostics,
     );
-    let aspect_ids = validate_unique_ids(
+    let aspect_ids = with_aspect_aliases(validate_unique_ids(
         model
             .aspect_definitions
             .iter()
@@ -132,7 +132,7 @@ pub fn validate_model(model: &AstroModel, path: &str) -> Vec<Diagnostic> {
         "aspect",
         &format!("{path}.aspect_definitions"),
         &mut diagnostics,
-    );
+    ));
     let mut sign_names = HashSet::new();
     let mut sign_abbreviations = HashSet::new();
 
@@ -328,12 +328,12 @@ pub fn validate_effective_settings(
     path: &str,
 ) -> Vec<Diagnostic> {
     let body_ids = normalized_set(model.body_definitions.iter().map(|body| body.id.as_str()));
-    let aspect_ids = normalized_set(
+    let aspect_ids = with_aspect_aliases(normalized_set(
         model
             .aspect_definitions
             .iter()
             .map(|aspect| aspect.id.as_str()),
-    );
+    ));
     let mut diagnostics = Vec::new();
     validate_selection(
         &settings.default_bodies,
@@ -465,12 +465,12 @@ fn validate_model_overrides(
         return;
     };
     let body_ids = normalized_set(model.body_definitions.iter().map(|body| body.id.as_str()));
-    let aspect_ids = normalized_set(
+    let aspect_ids = with_aspect_aliases(normalized_set(
         model
             .aspect_definitions
             .iter()
             .map(|aspect| aspect.id.as_str()),
-    );
+    ));
     for entry in &overrides.points {
         if !body_ids.contains(&normalize_id(&entry.id)) {
             diagnostics.push(Diagnostic::error(
@@ -526,12 +526,12 @@ pub fn validate_chart_config(
     path: &str,
 ) -> Vec<Diagnostic> {
     let body_ids = normalized_set(model.body_definitions.iter().map(|body| body.id.as_str()));
-    let aspect_ids = normalized_set(
+    let aspect_ids = with_aspect_aliases(normalized_set(
         model
             .aspect_definitions
             .iter()
             .map(|aspect| aspect.id.as_str()),
-    );
+    ));
     let mut diagnostics = Vec::new();
     validate_model_overrides(config.model_overrides.as_ref(), model, &mut diagnostics);
     if let Some(bodies) = &config.observable_objects {
@@ -636,6 +636,17 @@ fn normalize_id(value: &str) -> String {
     value.trim().to_ascii_lowercase()
 }
 
+/// Known aspect ids plus every alias whose canonical target is known, so a
+/// legacy `semisquare` selection/orb validates against a model with `octile`.
+fn with_aspect_aliases(mut ids: HashSet<String>) -> HashSet<String> {
+    for (alias, canonical) in &crate::domain::astrology::aspect_catalog().aliases {
+        if ids.contains(&normalize_id(canonical)) {
+            ids.insert(normalize_id(alias));
+        }
+    }
+    ids
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -684,6 +695,7 @@ mod tests {
             ayanamsa: None,
             observable_objects: None,
             time_system: None,
+            calculation_convention: None,
         };
         let report = crate::workspace::settings::standalone_model_report(&config);
         let model = report.model;

@@ -6,6 +6,7 @@
 use std::f64::consts::PI;
 
 use crate::infrastructure::position_provider::AstronomyMotion;
+use crate::workspace::models::HouseSystem;
 
 // ─── time helpers ────────────────────────────────────────────────────────────
 
@@ -104,13 +105,25 @@ pub fn vertex_lon(ramc_deg: f64, obliquity_deg: f64, geo_lat_deg: f64) -> Result
 }
 
 /// Compute all four cardinal axes (asc, mc, desc, ic) in degrees.
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
 pub fn compute_axes(
     jd_ut: f64,
     geo_lat_deg: f64,
     geo_lon_deg: f64,
 ) -> Result<(f64, f64, f64, f64), String> {
-    let eps = mean_obliquity_deg(jd_ut);
-    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
+    compute_axes_with(
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+    )
+}
+
+/// Axes for an explicit RAMC and obliquity (degrees).
+pub fn compute_axes_with(
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+) -> Result<(f64, f64, f64, f64), String> {
     let mc = midheaven_lon(ramc, eps);
     let asc = ascendant_lon(ramc, eps, geo_lat_deg)?;
     let desc = normalize_deg(asc + 180.0);
@@ -134,6 +147,7 @@ pub fn whole_sign_cusps(asc_lon_deg: f64) -> Vec<f64> {
 ///
 /// Returns 12 values in order (house 1 through 12). Houses 1, 4, 7, and 10 are
 /// the ascendant, IC, descendant, and MC respectively.
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
 pub fn campanus_cusps(
     jd_ut: f64,
     geo_lat_deg: f64,
@@ -141,9 +155,24 @@ pub fn campanus_cusps(
     asc_lon_deg: f64,
     mc_lon_deg: f64,
 ) -> (Vec<f64>, Vec<String>) {
-    let eps = mean_obliquity_deg(jd_ut);
-    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
+    campanus_cusps_with(
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+        asc_lon_deg,
+        mc_lon_deg,
+    )
+}
 
+/// Same as [`campanus_cusps`] for an explicit RAMC and obliquity (degrees), so a
+/// calculation convention can supply apparent sidereal time / true obliquity.
+pub fn campanus_cusps_with(
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
     let lat = geo_lat_deg.to_radians();
     let sin_lat = lat.sin();
     let cos_lat = lat.cos();
@@ -187,6 +216,7 @@ pub fn campanus_cusps(
 /// Placidus house cusps (houses 2–5, 8–11 computed iteratively; 1, 4, 7, 10 are the angles).
 /// Returns 12 values in order (house 1 through 12).
 /// Falls back to Whole Sign with a warning when Placidus is undefined (high latitudes).
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
 pub fn placidus_cusps(
     jd_ut: f64,
     geo_lat_deg: f64,
@@ -194,8 +224,24 @@ pub fn placidus_cusps(
     asc_lon_deg: f64,
     mc_lon_deg: f64,
 ) -> (Vec<f64>, Vec<String>) {
-    let eps = mean_obliquity_deg(jd_ut);
-    let ramc = local_sidereal_time_deg(jd_ut, geo_lon_deg);
+    placidus_cusps_with(
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+        asc_lon_deg,
+        mc_lon_deg,
+    )
+}
+
+/// Same as [`placidus_cusps`] for an explicit RAMC and obliquity (degrees), so a
+/// calculation convention can supply apparent sidereal time / true obliquity.
+pub fn placidus_cusps_with(
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
     let lat = geo_lat_deg.to_radians();
 
     // Placidus is undefined inside the polar circle.
@@ -328,6 +374,71 @@ pub fn porphyry_cusps(asc_lon_deg: f64, mc_lon_deg: f64) -> Vec<f64> {
         h11,
         h12,
     ]
+}
+
+/// House systems with a native implementation in this module. Any other
+/// system is substituted by Whole Sign *with a warning* by
+/// [`house_cusps_for_system`]; this list also drives the domain catalog's
+/// `computation_supported` flag so the UI can label the substitution.
+pub const NATIVE_HOUSE_SYSTEMS: [&str; 5] =
+    ["Placidus", "Whole Sign", "Campanus", "Equal", "Porphyry"];
+
+/// Warning code for a house system that is substituted by Whole Sign.
+/// Shared with the Python implementation through `contracts/houses/cusps.json`.
+pub fn house_system_substitution_warning(system: &HouseSystem) -> String {
+    format!(
+        "house_system_{}_not_yet_supported: whole_sign_used",
+        system.label().to_lowercase().replace(' ', "_")
+    )
+}
+
+/// House cusps for a configured system. `None` means Whole Sign. Unsupported
+/// systems never substitute silently: they return Whole Sign cusps plus
+/// [`house_system_substitution_warning`]. Placidus/Campanus may additionally
+/// fall back at extreme latitudes with their own warnings.
+#[cfg_attr(not(test), allow(dead_code))] // JD-based wrapper; production code passes RAMC/obliquity
+pub fn house_cusps_for_system(
+    system: Option<&HouseSystem>,
+    jd_ut: f64,
+    geo_lat_deg: f64,
+    geo_lon_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
+    house_cusps_for_system_with(
+        system,
+        local_sidereal_time_deg(jd_ut, geo_lon_deg),
+        mean_obliquity_deg(jd_ut),
+        geo_lat_deg,
+        asc_lon_deg,
+        mc_lon_deg,
+    )
+}
+
+/// [`house_cusps_for_system`] for an explicit RAMC and obliquity (degrees).
+pub fn house_cusps_for_system_with(
+    system: Option<&HouseSystem>,
+    ramc: f64,
+    eps: f64,
+    geo_lat_deg: f64,
+    asc_lon_deg: f64,
+    mc_lon_deg: f64,
+) -> (Vec<f64>, Vec<String>) {
+    match system {
+        Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc_lon_deg), vec![]),
+        Some(HouseSystem::Placidus) => {
+            placidus_cusps_with(ramc, eps, geo_lat_deg, asc_lon_deg, mc_lon_deg)
+        }
+        Some(HouseSystem::Campanus) => {
+            campanus_cusps_with(ramc, eps, geo_lat_deg, asc_lon_deg, mc_lon_deg)
+        }
+        Some(HouseSystem::Equal) => (equal_cusps(asc_lon_deg), vec![]),
+        Some(HouseSystem::Porphyry) => (porphyry_cusps(asc_lon_deg, mc_lon_deg), vec![]),
+        Some(other) => (
+            whole_sign_cusps(asc_lon_deg),
+            vec![house_system_substitution_warning(other)],
+        ),
+    }
 }
 
 /// Intersection of the ecliptic with a great circle. `equator_crossing_deg` is
@@ -486,17 +597,13 @@ pub fn true_node_tropical_deg(
     let nys = ny / n_norm;
     let nzs = nz / n_norm;
 
-    let mut tropical = ecliptic_longitude_deg_from_equatorial_xyz(nxs, nys, nzs, eps_deg);
-
-    // Resolve ascending vs descending along the line of nodes: use Moon ecliptic latitude rate.
-    let (_, _, mz_e) = equatorial_xyz_to_ecliptic_xyz(rx, ry, rz, eps_deg);
-    let (_, _, vz_e) = equatorial_xyz_to_ecliptic_xyz(vx, vy, vz, eps_deg);
-    let ascending = mz_e * vz_e < 0.0 || (mz_e.abs() < 1e-9 && vz_e > 0.0);
-    if !ascending {
-        tropical = normalize_deg(tropical + 180.0);
-    }
-
-    Some(tropical)
+    // K × h is the ascending-node direction for any inclination. A former
+    // "ascending vs descending" flip keyed on the sign of z·ż (whether the Moon
+    // is approaching or leaving the ecliptic) returned the descending node about
+    // half of the time; verified against the mean node and the Python sidecar.
+    Some(ecliptic_longitude_deg_from_equatorial_xyz(
+        nxs, nys, nzs, eps_deg,
+    ))
 }
 
 /// Combined Earth+Moon gravitational parameter (GM), km³/s², for the *reduced*
@@ -622,6 +729,107 @@ pub fn normalize_deg(deg: f64) -> f64 {
 }
 
 // ─── tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+
+    /// Shared Rust/Python parity fixture: axes, cusps and substitution
+    /// warnings for every catalog house system.
+    #[test]
+    fn house_cusps_match_shared_contract_fixture() {
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../contracts/houses/cusps.json"))
+                .expect("valid houses fixture");
+        let tol = fixture["tolerance_deg"].as_f64().unwrap();
+        let close = |a: f64, b: f64| {
+            let d = (a - b).rem_euclid(360.0);
+            d.min(360.0 - d) <= tol
+        };
+        for case in fixture["cases"].as_array().unwrap() {
+            let id = case["id"].as_str().unwrap();
+            let jd = case["jd_ut"].as_f64().unwrap();
+            let lat = case["latitude"].as_f64().unwrap();
+            let lon = case["longitude"].as_f64().unwrap();
+            let (asc, mc, desc, ic) = compute_axes(jd, lat, lon).unwrap();
+            for (name, value) in [("asc", asc), ("mc", mc), ("desc", desc), ("ic", ic)] {
+                assert!(
+                    close(value, case["axes"][name].as_f64().unwrap()),
+                    "{id} {name}"
+                );
+            }
+            for (system_name, expected) in case["systems"].as_object().unwrap() {
+                let system: HouseSystem =
+                    serde_json::from_value(serde_json::json!(system_name)).unwrap();
+                let (cusps, warnings) =
+                    house_cusps_for_system(Some(&system), jd, lat, lon, asc, mc);
+                let expected_cusps = expected["cusps"].as_array().unwrap();
+                assert_eq!(cusps.len(), expected_cusps.len(), "{id} {system_name}");
+                for (i, (got, want)) in cusps.iter().zip(expected_cusps).enumerate() {
+                    assert!(
+                        close(*got, want.as_f64().unwrap()),
+                        "{id} {system_name} cusp {}",
+                        i + 1
+                    );
+                }
+                let expected_warnings: Vec<String> =
+                    serde_json::from_value(expected["warnings"].clone()).unwrap();
+                assert_eq!(warnings, expected_warnings, "{id} {system_name}");
+            }
+        }
+    }
+
+    /// Regression: the true node must be the *ascending* node at every orbit
+    /// phase. A synthetic circular orbit inclined 5 deg with its ascending node
+    /// at ecliptic longitude 40 deg is sampled at four phases; the removed
+    /// z·ż flip returned 220 deg at two of them.
+    #[test]
+    fn true_node_is_ascending_at_every_orbit_phase() {
+        let jd_tt = 2451545.0;
+        let eps = mean_obliquity_deg(jd_tt).to_radians();
+        let (node, inc) = (40f64.to_radians(), 5f64.to_radians());
+        let ecl_to_eq = |x: f64, y: f64, z: f64| {
+            (
+                x,
+                y * eps.cos() - z * eps.sin(),
+                y * eps.sin() + z * eps.cos(),
+            )
+        };
+        for phase_deg in [10.0f64, 100.0, 190.0, 280.0] {
+            let u = phase_deg.to_radians(); // argument of latitude
+            let pos = |u: f64| {
+                (
+                    node.cos() * u.cos() - node.sin() * u.sin() * inc.cos(),
+                    node.sin() * u.cos() + node.cos() * u.sin() * inc.cos(),
+                    u.sin() * inc.sin(),
+                )
+            };
+            let (rx, ry, rz) = pos(u);
+            let (dx, dy, dz) = pos(u + std::f64::consts::FRAC_PI_2); // velocity direction
+            let r = ecl_to_eq(rx * 384_400.0, ry * 384_400.0, rz * 384_400.0);
+            let v = ecl_to_eq(dx, dy, dz);
+            let got = true_node_tropical_deg(r.0, r.1, r.2, v.0, v.1, v.2, jd_tt).unwrap();
+            let err = (got - 40.0 + 540.0) % 360.0 - 180.0;
+            assert!(err.abs() < 1e-6, "phase {phase_deg}: got {got}");
+        }
+    }
+
+    #[test]
+    fn unsupported_house_systems_never_substitute_silently() {
+        for system in [
+            HouseSystem::Koch,
+            HouseSystem::Regiomontanus,
+            HouseSystem::Vehlow,
+            HouseSystem::Alcabitius,
+        ] {
+            let (cusps, warnings) =
+                house_cusps_for_system(Some(&system), 2451545.0, 50.0, 14.0, 100.0, 10.0);
+            assert_eq!(cusps, whole_sign_cusps(100.0));
+            assert_eq!(warnings, vec![house_system_substitution_warning(&system)]);
+            assert!(!NATIVE_HOUSE_SYSTEMS.contains(&system.label()));
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

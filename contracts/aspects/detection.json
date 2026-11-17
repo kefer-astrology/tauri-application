@@ -1,0 +1,702 @@
+{
+  "schema_version": 1,
+  "catalog": "catalogs/aspects.json",
+  "description": "Expected aspects for the documented detection rule (CONVENTIONS.md, 'Aspects'). Compare as sets of (unordered pair for 'chart', ordered pair for 'cross', type); orb to 1e-6 deg.",
+  "generated_by": "tools/generate_aspect_fixture.py",
+  "cases": [
+    {
+      "id": "chart-2024-01-01-all-aspects",
+      "kind": "chart",
+      "positions": {
+        "sun": 280.5499746,
+        "moon": 161.9085249,
+        "mercury": 262.2135054,
+        "venus": 243.2219128,
+        "mars": 267.6806382,
+        "jupiter": 35.5858429,
+        "saturn": 333.2894,
+        "uranus": 49.374548,
+        "neptune": 355.0849885,
+        "pluto": 299.374669,
+        "asc": 120.0,
+        "desc": 300.0,
+        "mc": 30.0,
+        "ic": 210.0,
+        "north_node": 15.0,
+        "south_node": 195.0
+      },
+      "aspect_orbs": {},
+      "expected": [
+        {
+          "from": "asc",
+          "to": "ic",
+          "type": "square",
+          "orb": 0.0
+        },
+        {
+          "from": "asc",
+          "to": "jupiter",
+          "type": "square",
+          "orb": 5.5858429
+        },
+        {
+          "from": "asc",
+          "to": "mc",
+          "type": "square",
+          "orb": 0.0
+        },
+        {
+          "from": "asc",
+          "to": "neptune",
+          "type": "trine",
+          "orb": 4.9150115
+        },
+        {
+          "from": "asc",
+          "to": "pluto",
+          "type": "opposition",
+          "orb": 0.625331
+        },
+        {
+          "from": "asc",
+          "to": "sun",
+          "type": "quadrinovile",
+          "orb": 0.5499746
+        },
+        {
+          "from": "asc",
+          "to": "venus",
+          "type": "trine",
+          "orb": 3.2219128
+        },
+        {
+          "from": "desc",
+          "to": "ic",
+          "type": "square",
+          "orb": 0.0
+        },
+        {
+          "from": "desc",
+          "to": "jupiter",
+          "type": "square",
+          "orb": 5.5858429
+        },
+        {
+          "from": "desc",
+          "to": "mars",
+          "type": "undecile",
+          "orb": 0.407910927
+        },
+        {
+          "from": "desc",
+          "to": "mc",
+          "type": "square",
+          "orb": 0.0
+        },
+        {
+          "from": "desc",
+          "to": "neptune",
+          "type": "sextile",
+          "orb": 4.9150115
+        },
+        {
+          "from": "desc",
+          "to": "pluto",
+          "type": "conjunction",
+          "orb": 0.625331
+        },
+        {
+          "from": "desc",
+          "to": "venus",
+          "type": "sextile",
+          "orb": 3.2219128
+        },
+        {
+          "from": "ic",
+          "to": "jupiter",
+          "type": "opposition",
+          "orb": 5.5858429
+        },
+        {
+          "from": "ic",
+          "to": "mars",
+          "type": "sextile",
+          "orb": 2.3193618
+        },
+        {
+          "from": "ic",
+          "to": "mercury",
+          "type": "septile",
+          "orb": 0.784933971
+        },
+        {
+          "from": "ic",
+          "to": "pluto",
+          "type": "square",
+          "orb": 0.625331
+        },
+        {
+          "from": "ic",
+          "to": "saturn",
+          "type": "trine",
+          "orb": 3.2894
+        },
+        {
+          "from": "ic",
+          "to": "uranus",
+          "type": "quadrinovile",
+          "orb": 0.625452
+        },
+        {
+          "from": "ic",
+          "to": "venus",
+          "type": "undecile",
+          "orb": 0.494640073
+        },
+        {
+          "from": "jupiter",
+          "to": "mc",
+          "type": "conjunction",
+          "orb": 5.5858429
+        },
+        {
+          "from": "jupiter",
+          "to": "neptune",
+          "type": "novile",
+          "orb": 0.5008544
+        },
+        {
+          "from": "jupiter",
+          "to": "saturn",
+          "type": "sextile",
+          "orb": 2.2964429
+        },
+        {
+          "from": "jupiter",
+          "to": "south_node",
+          "type": "quadrinovile",
+          "orb": 0.5858429
+        },
+        {
+          "from": "jupiter",
+          "to": "sun",
+          "type": "trine",
+          "orb": 4.9641317
+        },
+        {
+          "from": "mars",
+          "to": "mc",
+          "type": "trine",
+          "orb": 2.3193618
+        },
+        {
+          "from": "mars",
+          "to": "mercury",
+          "type": "conjunction",
+          "orb": 5.4671328
+        },
+        {
+          "from": "mars",
+          "to": "neptune",
+          "type": "square",
+          "orb": 2.5956497
+        },
+        {
+          "from": "mars",
+          "to": "north_node",
+          "type": "tridecile",
+          "orb": 0.6806382
+        },
+        {
+          "from": "mars",
+          "to": "saturn",
+          "type": "biundecile",
+          "orb": 0.154216345
+        },
+        {
+          "from": "mars",
+          "to": "south_node",
+          "type": "quintile",
+          "orb": 0.6806382
+        },
+        {
+          "from": "mc",
+          "to": "pluto",
+          "type": "square",
+          "orb": 0.625331
+        },
+        {
+          "from": "mc",
+          "to": "saturn",
+          "type": "sextile",
+          "orb": 3.2894
+        },
+        {
+          "from": "mercury",
+          "to": "neptune",
+          "type": "square",
+          "orb": 2.8714831
+        },
+        {
+          "from": "mercury",
+          "to": "saturn",
+          "type": "quintile",
+          "orb": 0.9241054
+        },
+        {
+          "from": "moon",
+          "to": "south_node",
+          "type": "undecile",
+          "orb": 0.364202373
+        },
+        {
+          "from": "moon",
+          "to": "sun",
+          "type": "trine",
+          "orb": 1.3585503
+        },
+        {
+          "from": "neptune",
+          "to": "pluto",
+          "type": "sextile",
+          "orb": 4.2896805
+        },
+        {
+          "from": "neptune",
+          "to": "south_node",
+          "type": "quadrinovile",
+          "orb": 0.0849885
+        },
+        {
+          "from": "north_node",
+          "to": "sun",
+          "type": "square",
+          "orb": 4.4500254
+        },
+        {
+          "from": "pluto",
+          "to": "venus",
+          "type": "sextile",
+          "orb": 3.8472438
+        },
+        {
+          "from": "saturn",
+          "to": "venus",
+          "type": "square",
+          "orb": 0.0674872
+        },
+        {
+          "from": "south_node",
+          "to": "sun",
+          "type": "square",
+          "orb": 4.4500254
+        }
+      ]
+    },
+    {
+      "id": "chart-orb-boundary",
+      "kind": "chart",
+      "positions": {
+        "a": 0.0,
+        "b": 96.0,
+        "c": 216.0000001
+      },
+      "aspect_orbs": {},
+      "expected": [
+        {
+          "from": "a",
+          "to": "b",
+          "type": "square",
+          "orb": 6.0
+        },
+        {
+          "from": "a",
+          "to": "c",
+          "type": "biquintile",
+          "orb": 1e-07
+        },
+        {
+          "from": "b",
+          "to": "c",
+          "type": "trine",
+          "orb": 1e-07
+        }
+      ]
+    },
+    {
+      "id": "chart-orb-override",
+      "kind": "chart",
+      "positions": {
+        "a": 0.0,
+        "b": 96.0,
+        "c": 216.0000001
+      },
+      "aspect_orbs": {
+        "square": 5.0
+      },
+      "expected": [
+        {
+          "from": "a",
+          "to": "c",
+          "type": "biquintile",
+          "orb": 1e-07
+        },
+        {
+          "from": "b",
+          "to": "c",
+          "type": "trine",
+          "orb": 1e-07
+        }
+      ]
+    },
+    {
+      "id": "cross-2024-10-17-over-2024-01-01",
+      "kind": "cross",
+      "transiting": {
+        "sun": 204.8560787,
+        "moon": 28.7386731,
+        "mercury": 216.2405804,
+        "venus": 239.9266183,
+        "mars": 113.042025,
+        "jupiter": 81.2186077,
+        "saturn": 343.3983202,
+        "uranus": 56.4246055,
+        "neptune": 357.8096885,
+        "pluto": 299.6503574
+      },
+      "transited": {
+        "sun": 280.5499746,
+        "moon": 161.9085249,
+        "mercury": 262.2135054,
+        "venus": 243.2219128,
+        "mars": 267.6806382,
+        "jupiter": 35.5858429,
+        "saturn": 333.2894,
+        "uranus": 49.374548,
+        "neptune": 355.0849885,
+        "pluto": 299.374669
+      },
+      "aspect_orbs": {},
+      "expected": [
+        {
+          "from": "jupiter",
+          "to": "jupiter",
+          "type": "octile",
+          "orb": 0.6327648
+        },
+        {
+          "from": "jupiter",
+          "to": "mars",
+          "type": "opposition",
+          "orb": 6.4620305
+        },
+        {
+          "from": "jupiter",
+          "to": "mercury",
+          "type": "opposition",
+          "orb": 0.9948977
+        },
+        {
+          "from": "jupiter",
+          "to": "moon",
+          "type": "binovile",
+          "orb": 0.6899172
+        },
+        {
+          "from": "jupiter",
+          "to": "neptune",
+          "type": "square",
+          "orb": 3.8663808
+        },
+        {
+          "from": "jupiter",
+          "to": "saturn",
+          "type": "tridecile",
+          "orb": 0.0707923
+        },
+        {
+          "from": "jupiter",
+          "to": "sun",
+          "type": "quadrinovile",
+          "orb": 0.6686331
+        },
+        {
+          "from": "mars",
+          "to": "mars",
+          "type": "triseptile",
+          "orb": 0.352898914
+        },
+        {
+          "from": "mars",
+          "to": "mercury",
+          "type": "quincunx",
+          "orb": 0.8285196
+        },
+        {
+          "from": "mars",
+          "to": "neptune",
+          "type": "trine",
+          "orb": 2.0429635
+        },
+        {
+          "from": "mars",
+          "to": "pluto",
+          "type": "opposition",
+          "orb": 6.332644
+        },
+        {
+          "from": "mars",
+          "to": "uranus",
+          "type": "sextile",
+          "orb": 3.667477
+        },
+        {
+          "from": "mercury",
+          "to": "jupiter",
+          "type": "opposition",
+          "orb": 0.6547375
+        },
+        {
+          "from": "mercury",
+          "to": "mars",
+          "type": "septile",
+          "orb": 0.011486371
+        },
+        {
+          "from": "mercury",
+          "to": "mercury",
+          "type": "octile",
+          "orb": 0.972925
+        },
+        {
+          "from": "mercury",
+          "to": "saturn",
+          "type": "trine",
+          "orb": 2.9511804
+        },
+        {
+          "from": "mercury",
+          "to": "sun",
+          "type": "sextile",
+          "orb": 4.3093942
+        },
+        {
+          "from": "moon",
+          "to": "jupiter",
+          "type": "conjunction",
+          "orb": 6.8471698
+        },
+        {
+          "from": "moon",
+          "to": "mars",
+          "type": "trine",
+          "orb": 1.0580349
+        },
+        {
+          "from": "moon",
+          "to": "pluto",
+          "type": "square",
+          "orb": 0.6359959
+        },
+        {
+          "from": "moon",
+          "to": "saturn",
+          "type": "sextile",
+          "orb": 4.5507269
+        },
+        {
+          "from": "moon",
+          "to": "sun",
+          "type": "tridecile",
+          "orb": 0.1886985
+        },
+        {
+          "from": "neptune",
+          "to": "mars",
+          "type": "square",
+          "orb": 0.1290503
+        },
+        {
+          "from": "neptune",
+          "to": "mercury",
+          "type": "square",
+          "orb": 5.5961831
+        },
+        {
+          "from": "neptune",
+          "to": "moon",
+          "type": "quinundecile",
+          "orb": 0.462472764
+        },
+        {
+          "from": "neptune",
+          "to": "neptune",
+          "type": "conjunction",
+          "orb": 2.7247
+        },
+        {
+          "from": "neptune",
+          "to": "pluto",
+          "type": "sextile",
+          "orb": 1.5649805
+        },
+        {
+          "from": "neptune",
+          "to": "uranus",
+          "type": "septile",
+          "orb": 0.136288071
+        },
+        {
+          "from": "neptune",
+          "to": "venus",
+          "type": "trine",
+          "orb": 5.4122243
+        },
+        {
+          "from": "pluto",
+          "to": "jupiter",
+          "type": "square",
+          "orb": 5.9354855
+        },
+        {
+          "from": "pluto",
+          "to": "neptune",
+          "type": "sextile",
+          "orb": 4.5653689
+        },
+        {
+          "from": "pluto",
+          "to": "pluto",
+          "type": "conjunction",
+          "orb": 0.2756884
+        },
+        {
+          "from": "pluto",
+          "to": "venus",
+          "type": "sextile",
+          "orb": 3.5715554
+        },
+        {
+          "from": "saturn",
+          "to": "jupiter",
+          "type": "septile",
+          "orb": 0.758951271
+        },
+        {
+          "from": "saturn",
+          "to": "moon",
+          "type": "opposition",
+          "orb": 1.4897953
+        },
+        {
+          "from": "saturn",
+          "to": "pluto",
+          "type": "octile",
+          "orb": 0.9763488
+        },
+        {
+          "from": "saturn",
+          "to": "sun",
+          "type": "sextile",
+          "orb": 2.8483456
+        },
+        {
+          "from": "sun",
+          "to": "mars",
+          "type": "sextile",
+          "orb": 2.8245595
+        },
+        {
+          "from": "sun",
+          "to": "mercury",
+          "type": "sextile",
+          "orb": 2.6425733
+        },
+        {
+          "from": "sun",
+          "to": "neptune",
+          "type": "quincunx",
+          "orb": 0.2289098
+        },
+        {
+          "from": "sun",
+          "to": "pluto",
+          "type": "square",
+          "orb": 4.5185903
+        },
+        {
+          "from": "uranus",
+          "to": "mars",
+          "type": "quincunx",
+          "orb": 1.2560327
+        },
+        {
+          "from": "uranus",
+          "to": "mercury",
+          "type": "triseptile",
+          "orb": 0.074614186
+        },
+        {
+          "from": "uranus",
+          "to": "neptune",
+          "type": "sextile",
+          "orb": 1.339617
+        },
+        {
+          "from": "uranus",
+          "to": "pluto",
+          "type": "trine",
+          "orb": 2.9500635
+        },
+        {
+          "from": "uranus",
+          "to": "sun",
+          "type": "trioctile",
+          "orb": 0.8746309
+        },
+        {
+          "from": "uranus",
+          "to": "uranus",
+          "type": "conjunction",
+          "orb": 7.0500575
+        },
+        {
+          "from": "uranus",
+          "to": "venus",
+          "type": "opposition",
+          "orb": 6.7973073
+        },
+        {
+          "from": "venus",
+          "to": "neptune",
+          "type": "trine",
+          "orb": 4.8416298
+        },
+        {
+          "from": "venus",
+          "to": "pluto",
+          "type": "sextile",
+          "orb": 0.5519493
+        },
+        {
+          "from": "venus",
+          "to": "saturn",
+          "type": "square",
+          "orb": 3.3627817
+        },
+        {
+          "from": "venus",
+          "to": "sun",
+          "type": "novile",
+          "orb": 0.6233563
+        },
+        {
+          "from": "venus",
+          "to": "venus",
+          "type": "conjunction",
+          "orb": 3.2952945
+        }
+      ]
+    }
+  ]
+}

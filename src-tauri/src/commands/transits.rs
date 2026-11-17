@@ -771,6 +771,18 @@ mod tests {
         assert!(result.get("ephemeris_source").is_some());
         let mut expected_warnings =
             crate::workspace::current_model_report(&manifest, Some(&chart.config)).warnings;
+        // Phase 0 D2: a configured engine that is not the backend that ran is
+        // disclosed (this fixture chart asks for swisseph; default builds run JPL).
+        let backend_id = result
+            .get("backend_used")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        expected_warnings.extend(
+            crate::infrastructure::position_provider::engine_substitution_warning(
+                chart.config.engine.as_ref(),
+                backend_id,
+            ),
+        );
         // The Rust JPL backend always discloses its UT1-as-UTC sidereal-time
         // approximation (no bundled EOP/ΔUT1 table); `extend_unique` folds the
         // identical warning from the radix and every transit step into one

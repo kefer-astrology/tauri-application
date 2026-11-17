@@ -2,7 +2,10 @@
 name = "app"
 version = "0.1.1"
 description = "Kefer astrology desktop application (Tauri 2, React UI, Python sidecar)."
-authors = ["Alysonhower Veras Vieira"]
+authors = [
+    "Kube Kubow and Kefer Astrology contributors",
+    "Alysonhower Veras Vieira (tauri2-svelte5-shadcn template)",
+]
 license = "MIT"
 repository = "https://github.com/kefer-astrology/tauri-application"
 edition = "2021"

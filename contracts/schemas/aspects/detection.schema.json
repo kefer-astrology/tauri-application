@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/aspects/detection.schema.json",
+  "title": "Aspect detection fixture",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "catalog",
+    "cases"
+  ],
+  "properties": {
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "aspect_orbs",
+          "expected"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "chart",
+              "cross"
+            ]
+          },
+          "expected": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "from",
+                "to",
+                "type",
+                "orb"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -60,7 +60,7 @@ pub fn hypothetical_catalog() -> &'static HypotheticalCatalog {
     static CATALOG: OnceLock<HypotheticalCatalog> = OnceLock::new();
     CATALOG.get_or_init(|| {
         serde_json::from_str(include_str!(
-            "../../../../contracts/points/hypothetical-bodies.json"
+            "../../../resources/third-party/hypothetical-bodies.json"
         ))
         .expect("validated hypothetical catalog")
     })

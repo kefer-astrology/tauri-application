@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/reference/tolerances.schema.json",
+  "title": "Reference comparison tolerances",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "positions_mean_equinox_arcsec",
+    "axes_mean_convention_arcsec",
+    "house_cusps_parity_deg",
+    "moon_phase_elongation_arcsec"
+  ]
+}

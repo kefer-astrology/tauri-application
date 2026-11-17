@@ -262,9 +262,10 @@ pub fn eligible_aspect_angle_and_orb(
     to_type: Option<&ObjectType>,
     object_orbs: &HashMap<String, f64>,
 ) -> Option<(f64, f64)> {
+    let aspect_id = super::aspect_catalog::canonical_aspect_id(aspect_id);
     let spec = selected_aspects(aspect_definitions, aspect_orbs, None, context)
         .into_iter()
-        .find(|spec| spec.id == aspect_id)?;
+        .find(|spec| super::aspect_catalog::canonical_aspect_id(&spec.id) == aspect_id)?;
     if !pair_allowed(spec.object_type_rule, from_type, to_type) {
         return None;
     }
@@ -294,10 +295,17 @@ fn selected_aspects<'a>(
     selected_types: Option<&[String]>,
     context: AspectContext,
 ) -> Vec<AspectSpec<'a>> {
+    // Aliases (e.g. `semisquare`) resolve to canonical ids on both sides, so a
+    // request or legacy workspace using the old Python names still selects.
+    let normalize = |id: &str| {
+        super::aspect_catalog::canonical_aspect_id(id)
+            .trim()
+            .to_ascii_lowercase()
+    };
     let selected: Option<HashSet<String>> = selected_types.map(|types| {
         types
             .iter()
-            .map(|aspect_type| aspect_type.trim().to_ascii_lowercase())
+            .map(|aspect_type| normalize(aspect_type))
             .collect()
     });
 
@@ -316,7 +324,7 @@ fn selected_aspects<'a>(
             }
             let id = definition.id.clone();
             if let Some(filter) = &selected {
-                if !filter.contains(&id.trim().to_ascii_lowercase()) {
+                if !filter.contains(&normalize(&id)) {
                     return None;
                 }
             }

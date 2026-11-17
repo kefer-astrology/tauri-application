@@ -3,8 +3,14 @@
 
 Horizons remains an acquisition-time source.  The produced BSP and its adjacent
 ``.bsp.json`` manifest are the only artifacts consumed by the application.
-NAIF's ``mkspk`` utility is required and is intentionally not downloaded by this
-script so its executable can be pinned by the release/build environment.
+Two writers produce the SPK:
+
+* ``--mkspk PATH --lsk PATH``: NAIF's ``mkspk`` utility (pinned by the build
+  environment; intentionally not downloaded by this script);
+* ``--writer python`` (default when ``--mkspk`` is omitted): a dependency-free
+  writer of the same DAF/SPK Type 13 layout (``write_type13_spk``), checked
+  against an ``mkspk``-built kernel by ``scripts/test_generate_horizons_type13.py``.
+  Horizons already reports TDB epochs, so no leapseconds kernel is needed.
 """
 
 from __future__ import annotations
@@ -18,6 +24,7 @@ import math
 import os
 import pathlib
 import shutil
+import struct
 import subprocess
 import tempfile
 import urllib.parse
@@ -217,6 +224,107 @@ def sha256(path: pathlib.Path) -> str:
     return digest.hexdigest()
 
 
+# ── Dependency-free DAF/SPK Type 13 writer ────────────────────────────────────
+# Layout per NAIF "DAF Required Reading" and "SPK Required Reading" (Type 13:
+# Hermite interpolation, unequal time steps), matching mkspk's output:
+#   segment = N states (x y z vx vy vz) | N epochs | (N-1)//100 epoch directory
+#             | window size - 1 | N
+#   one summary record (ND=2 doubles, NI=6 ints) and one name record, comment
+#   area records between the file record and the summary record.
+DAF_RECORD_BYTES = 1024
+DAF_RECORD_WORDS = 128
+DAF_FTPSTR = b"FTPSTR:\r:\n:\r\n:\r\x00:\x81:\x10\xce:ENDFTP"
+SPK_TYPE13_MAX_STATES = 10_000
+
+
+def _comment_records(comment: str) -> list[bytes]:
+    text = comment.encode("ascii", "replace").replace(b"\n", b"\x00") + b"\x04"
+    return [text[i:i + 1000].ljust(DAF_RECORD_BYTES, b"\x00") for i in range(0, len(text), 1000)] if comment else []
+
+
+def _type13_segment(states: list[State], window_size: int) -> list[float]:
+    n = len(states)
+    epochs = [state.et_seconds for state in states]
+    data: list[float] = []
+    for state in states:
+        data.extend(state.values)
+    data.extend(epochs)
+    data.extend(epochs[(i + 1) * 100 - 1] for i in range((n - 1) // 100))
+    data.extend((float(window_size - 1), float(n)))
+    return data
+
+
+def write_type13_spk(
+    path: pathlib.Path,
+    states: list[State],
+    *,
+    target: int,
+    center: int,
+    frame: int,
+    degree: int,
+    segment_name: str,
+    internal_name: str,
+    comment: str = "",
+) -> None:
+    """Write `states` (TDB, km, km/s) as an SPK Type 13 file in little-endian IEEE format.
+
+    Segments are split and overlapped exactly as mkspk does (see below).
+    """
+    if len(states) < (degree + 1) // 2:
+        raise ValueError("not enough states for the requested Hermite degree")
+    window_size = (degree + 1) // 2
+    # Segment split as mkspk does it: each segment holds at most
+    # SPK_TYPE13_MAX_STATES states, and neighbouring segments overlap so that
+    # every coverage boundary has a full interpolation window on both sides
+    # (pad = window_size - 1 states beyond the declared coverage).
+    pad = window_size - 1
+    chunks: list[tuple[list[State], float, float]] = []
+    first, coverage_start = 0, states[0].et_seconds
+    while True:
+        last = min(first + SPK_TYPE13_MAX_STATES, len(states)) - 1
+        if last == len(states) - 1:
+            chunks.append((states[first:last + 1], coverage_start, states[last].et_seconds))
+            break
+        coverage_end_index = last - pad
+        chunks.append((states[first:last + 1], coverage_start, states[coverage_end_index].et_seconds))
+        coverage_start = states[coverage_end_index].et_seconds
+        first = coverage_end_index - pad
+    if len(chunks) > 25:
+        raise ValueError("more segments than one summary record holds")
+
+    comments = _comment_records(comment)
+    fward = 2 + len(comments)
+    address = (fward + 1) * DAF_RECORD_WORDS + 1  # first word after summary + name records
+    summaries, payload = [], []
+    for chunk, begin_et, end_et in chunks:
+        data = _type13_segment(chunk, window_size)
+        first, last = address, address + len(data) - 1
+        ints = struct.pack("<6i", target, center, frame, 13, first, last)
+        summaries.append(struct.pack("<2d", begin_et, end_et) + ints)
+        payload.extend(data)
+        address = last + 1
+    free = address
+
+    file_record = (
+        b"DAF/SPK "
+        + struct.pack("<2i", 2, 6)
+        + internal_name.encode("ascii")[:60].ljust(60)
+        + struct.pack("<3i", fward, fward, free)
+        + b"LTL-IEEE"
+        + b"\x00" * 603
+        + DAF_FTPSTR
+        + b"\x00" * 297
+    )
+    assert len(file_record) == DAF_RECORD_BYTES
+    summary_record = struct.pack("<3d", 0.0, 0.0, float(len(summaries))) + b"".join(summaries)
+    summary_record = summary_record.ljust(DAF_RECORD_BYTES, b"\x00")
+    name_record = b"".join(segment_name.encode("ascii")[:40].ljust(40) for _ in summaries)
+    name_record = name_record.ljust(DAF_RECORD_BYTES, b" ")
+    data_bytes = struct.pack(f"<{len(payload)}d", *payload)
+    data_bytes = data_bytes.ljust(-(-len(data_bytes) // DAF_RECORD_BYTES) * DAF_RECORD_BYTES, b"\x00")
+    path.write_bytes(file_record + b"".join(comments) + summary_record + name_record + data_bytes)
+
+
 def write_setup(path: pathlib.Path, args: argparse.Namespace) -> None:
     path.write_text(
         "\\begindata\n"
@@ -254,9 +362,10 @@ def build(args: argparse.Namespace) -> None:
         raise SystemExit("--degree must be 3 mod 4 (3, 7, 11, ...)")
     if args.output.exists() and not args.force:
         raise SystemExit(f"output already exists: {args.output} (use --force to replace it)")
-    if not args.mkspk.is_file() or not os.access(args.mkspk, os.X_OK):
+    use_mkspk = args.mkspk is not None
+    if use_mkspk and (not args.mkspk.is_file() or not os.access(args.mkspk, os.X_OK)):
         raise SystemExit(f"mkspk is not executable: {args.mkspk}")
-    if not args.lsk.is_file():
+    if use_mkspk and (args.lsk is None or not args.lsk.is_file()):
         raise SystemExit(f"leapseconds kernel not found: {args.lsk}")
 
     # One numerical integration/solution, with interleaved rows held out from the fit.
@@ -293,15 +402,35 @@ def build(args: argparse.Namespace) -> None:
             for state in source:
                 fields = (state.et_seconds, *state.values)
                 handle.write(" ".join(f"{value:.16e}" for value in fields) + "\n")
-        write_setup(setup_path, args)
-        completed = subprocess.run(
-            [str(args.mkspk.resolve()), "-setup", str(setup_path), "-input", str(states_path), "-output", str(output_path)],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        if completed.returncode != 0 or not output_path.exists():
-            raise RuntimeError(f"mkspk failed:\n{completed.stdout}\n{completed.stderr}")
+        if use_mkspk:
+            write_setup(setup_path, args)
+            completed = subprocess.run(
+                [str(args.mkspk.resolve()), "-setup", str(setup_path), "-input", str(states_path), "-output", str(output_path)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            if completed.returncode != 0 or not output_path.exists():
+                raise RuntimeError(f"mkspk failed:\n{completed.stdout}\n{completed.stderr}")
+        else:
+            write_type13_spk(
+                output_path,
+                source,
+                target=args.naif_target_id,
+                center=10,
+                frame=1,  # J2000 (ICRF): Horizons REF_SYSTEM=ICRF, REF_PLANE=FRAME
+                degree=args.degree,
+                segment_name=f"KEFER {args.name.upper()} HORIZONS TYPE 13",
+                internal_name="SPK",
+                comment=(
+                    f"Kefer Astrology: {args.name} heliocentric states from the NASA/JPL "
+                    f"Horizons API (COMMAND={args.command}, CENTER=500@10, ICRF), "
+                    f"{args.start.date()} to {args.stop.date()}, sampled every "
+                    f"{args.step_days:g} d, Hermite degree {args.degree}.\n"
+                    "Written by scripts/generate-horizons-type13.py (python writer). "
+                    "Provenance and validation: adjacent .bsp.json manifest.\n"
+                ),
+            )
         # Temporary directories may be on another filesystem than the workspace.
         # Copy to an adjacent partial file, then atomically publish on the target FS.
         partial_output = args.output.with_suffix(args.output.suffix + ".partial")
@@ -340,6 +469,7 @@ def build(args: argparse.Namespace) -> None:
         "generation": {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "generator": "scripts/generate-horizons-type13.py",
+            "writer": "mkspk" if use_mkspk else "python",
             "sample_step_days": args.step_days,
             "acquisition_step_days": args.step_days / 2.0,
             "polynomial_degree": args.degree,
@@ -379,8 +509,10 @@ def main() -> None:
     parser.add_argument("--degree", type=int, default=7)
     parser.add_argument("--max-position-error-km", type=float, default=1.0)
     parser.add_argument("--max-velocity-error-km-s", type=float, default=1e-5)
-    parser.add_argument("--mkspk", type=pathlib.Path, required=True)
-    parser.add_argument("--lsk", type=pathlib.Path, required=True)
+    parser.add_argument("--mkspk", type=pathlib.Path, default=None,
+                        help="NAIF mkspk executable; omit to use the built-in python writer")
+    parser.add_argument("--lsk", type=pathlib.Path, default=None,
+                        help="leapseconds kernel (required with --mkspk)")
     parser.add_argument("--output", type=pathlib.Path, required=True)
     parser.add_argument("--force", action="store_true")
     build(parser.parse_args())

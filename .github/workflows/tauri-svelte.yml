@@ -77,7 +77,24 @@ jobs:
           retry_wait_seconds: 15
           command: npm run tauri:build:svelte
 
+      - name: Release-content gate for bundle artifacts
+        # Bundles are built on every run (coverage), but uploaded as workflow
+        # artifacts only when no shipped resource has unsettled licensing:
+        # artifacts of a public repository are downloadable by any signed-in
+        # GitHub user. See licensing/resource-inventory.json.
+        id: content
+        shell: bash
+        run: |
+          if python scripts/check-release-content.py > release-content.txt 2>&1; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+            tail -n 1 release-content.txt
+            echo "::notice title=Bundles not uploaded::Built successfully; upload skipped because licensing of shipped resources is unsettled (release-content check)."
+          fi
+
       - name: Upload Svelte bundles
+        if: steps.content.outputs.clean == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: tauri-svelte-${{ matrix.platform }}

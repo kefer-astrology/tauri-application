@@ -1,5 +1,7 @@
 mod application;
 mod commands;
+#[cfg(test)]
+mod contract_conformance;
 mod domain;
 mod event_time;
 mod infrastructure;

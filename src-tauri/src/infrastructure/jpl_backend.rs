@@ -43,10 +43,10 @@ use anise::prelude::*;
 use hifitime::Epoch;
 
 use crate::domain::houses::{
-    campanus_cusps, compute_axes, equal_cusps, equatorial_ra_dec_deg, equatorial_to_ecliptic,
-    equatorial_to_horizontal_deg, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
-    mean_node_motion, mean_obliquity_deg, normalize_deg, placidus_cusps, porphyry_cusps,
-    true_apogee_tropical_deg, true_node_tropical_deg, vertex_lon, whole_sign_cusps,
+    compute_axes_with, equatorial_ra_dec_deg, equatorial_to_ecliptic, equatorial_to_horizontal_deg,
+    house_cusps_for_system_with, julian_day_from_unix, local_sidereal_time_deg, mean_node_lon,
+    mean_node_motion, mean_obliquity_deg, normalize_deg, true_apogee_tropical_deg,
+    true_node_tropical_deg, vertex_lon,
 };
 use crate::infrastructure::ephemeris::{
     load_almanac_from_paths, small_body_kernels_for_bsp_paths, EphemerisManager, ASTRAEA_J2000,
@@ -58,7 +58,21 @@ use crate::infrastructure::position_provider::{
     AstronomyAxes, AstronomyBackend, AstronomyChartData, AstronomyMotion, MinimalChartData,
     RequiredQuantities,
 };
-use crate::workspace::models::{ChartInstance, HouseSystem, PositionMode};
+use crate::workspace::models::{ChartInstance, PositionMode, ZodiacType};
+
+/// Warning code emitted when a chart requests the sidereal zodiac on this
+/// backend. The ANISE/JPL path has no ayanamsa implementation, so positions,
+/// axes, and cusps stay tropical; callers must be told rather than receive
+/// tropical values under a sidereal chart configuration.
+pub const SIDEREAL_UNSUPPORTED_WARNING: &str =
+    "zodiac_sidereal_not_supported: tropical_positions_returned";
+
+/// `Some(warning)` when the chart's zodiac setting cannot be honored by the
+/// JPL backend (currently: any sidereal chart).
+pub fn unsupported_zodiac_warning(chart: &ChartInstance) -> Option<String> {
+    matches!(chart.config.zodiac_type, ZodiacType::Sidereal)
+        .then(|| SIDEREAL_UNSUPPORTED_WARNING.to_string())
+}
 
 // ─── Body table ──────────────────────────────────────────────────────────────
 
@@ -217,6 +231,33 @@ fn sample_state(
     almanac
         .transform(frame, EARTH_MOD_FRAME, epoch, ab_corr)
         .map_err(|e| e.to_string())
+}
+
+/// NAIF frame id of `ECLIPJ2000_DE405`, used by every segment of the bundled
+/// `codes_300ast_20100725.bsp` (see the kernel's comment area).
+const ECLIPJ2000_DE405_FRAME_ID: i32 = 1_900_017;
+
+/// Known defect (Phase 1 audit): ANISE SPK translation applies no rotation for
+/// a segment's own frame, so an `ECLIPJ2000_DE405` segment is combined with
+/// equatorial vectors as if it were equatorial. Against JPL Horizons this puts
+/// Ceres up to ~3 deg off. Until the kernels are regenerated in J2000, the
+/// affected bodies are still returned but never silently: this warning names
+/// them whenever such a segment serves the requested epoch.
+fn unrotated_segment_frame_warning(
+    almanac: &Almanac,
+    id: &str,
+    frame: Frame,
+    epoch: Epoch,
+) -> Option<String> {
+    let (summary, ..) = almanac
+        .spk_summary_at_epoch(frame.ephemeris_id, epoch.to_et_seconds())
+        .ok()?;
+    (summary.frame_id == ECLIPJ2000_DE405_FRAME_ID).then(|| {
+        format!(
+            "{id}_position_unreliable: segment frame ECLIPJ2000_DE405 is not rotated \
+             (error up to ~3 deg; see kefer-contracts known issues)"
+        )
+    })
 }
 
 fn longitude_from_state(state: &CartesianState, jd_tt: f64) -> f64 {
@@ -487,6 +528,35 @@ impl JplAstronomyBackend {
         let lst_deg = local_sidereal_time_deg(jd_utc_as_ut1, lon);
         let ab_corr = aberration_for_position_mode(chart.config.position_mode);
 
+        // Calculation convention (kefer-contracts conventions.json). The mean
+        // equinox path is unchanged; the true-equinox variant adds IAU 2000A
+        // nutation to exactly the same inputs: +dpsi to ecliptic longitudes,
+        // + equation of the equinoxes to RAMC, + deps to the obliquity.
+        let convention =
+            crate::domain::conventions::resolve(chart.config.calculation_convention.as_deref());
+        let (equinox_shift, sidereal_ramc, axes_obliquity, vertex_obliquity) =
+            match convention.equinox {
+                crate::domain::conventions::Equinox::Mean => {
+                    (0.0, lst_deg, mean_obliquity_deg(jd_utc_as_ut1), obliquity)
+                }
+                crate::domain::conventions::Equinox::True => {
+                    let (dpsi, deps, ee) = crate::domain::conventions::nutation_deg(jd_tt);
+                    (
+                        dpsi,
+                        normalize_deg(lst_deg + ee),
+                        mean_obliquity_deg(jd_utc_as_ut1) + deps,
+                        obliquity + deps,
+                    )
+                }
+            };
+        let of_date = |longitude: f64| {
+            if equinox_shift == 0.0 {
+                longitude
+            } else {
+                normalize_deg(longitude + equinox_shift)
+            }
+        };
+
         let requested = |id: &str| {
             requested_objects
                 .map(|list| list.iter().any(|s| s == id))
@@ -517,6 +587,9 @@ impl JplAstronomyBackend {
         let mut azimuth: HashMap<String, f64> = HashMap::new();
         let mut warnings: Vec<String> = Vec::new();
         warnings.push("ut1_approximated_from_utc: no EOP/ΔUT1 data loaded; sidereal quantities are approximate".to_string());
+        if let Some(warning) = unsupported_zodiac_warning(chart) {
+            warnings.push(warning);
+        }
 
         // A minimal-path caller never needs motion for a pure longitude/orb
         // search, and never needs RA/Dec/Alt/Az at all (only the full path
@@ -540,7 +613,7 @@ impl JplAstronomyBackend {
             }
             match sample_state(&almanac, frame, unix_secs, ab_corr) {
                 Ok(state) => {
-                    let longitude = longitude_from_state(&state, jd_tt);
+                    let longitude = of_date(longitude_from_state(&state, jd_tt));
                     positions.insert(id.to_string(), longitude);
                     if want_motion {
                         if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
@@ -567,9 +640,19 @@ impl JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
+            // A verified per-body Horizons kernel (manifest-defined, J2000) takes
+            // precedence; codes_300ast is only a fallback outside its coverage.
+            if self.small_body_frames.iter().any(|(body, _)| body == id) {
+                continue;
+            }
             match sample_state(&almanac, frame, unix_secs, ab_corr) {
                 Ok(state) => {
-                    let longitude = longitude_from_state(&state, jd_tt);
+                    if let Some(warning) =
+                        unrotated_segment_frame_warning(&almanac, id, frame, epoch)
+                    {
+                        warnings.push(warning);
+                    }
+                    let longitude = of_date(longitude_from_state(&state, jd_tt));
                     positions.insert(id.to_string(), longitude);
                     if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
                         motion.insert(id.to_string(), body_motion);
@@ -586,9 +669,28 @@ impl JplAstronomyBackend {
             if !wanted(id) {
                 continue;
             }
-            match sample_state(&almanac, *frame, unix_secs, ab_corr) {
+            let sampled = sample_state(&almanac, *frame, unix_secs, ab_corr).or_else(
+                |error: String| -> Result<CartesianState, String> {
+                    // Outside the verified kernel's coverage: fall back to the legacy
+                    // codes_300ast frame for this body, if any, never silently.
+                    let fallback = asteroid_body_frames()
+                        .iter()
+                        .find(|(body, _)| body == id)
+                        .map(|&(_, legacy)| legacy)
+                        .ok_or_else(|| error.clone())?;
+                    let state =
+                        sample_state(&almanac, fallback, unix_secs, ab_corr).map_err(|_| error)?;
+                    if let Some(warning) =
+                        unrotated_segment_frame_warning(&almanac, id, fallback, epoch)
+                    {
+                        warnings.push(warning);
+                    }
+                    Ok(state)
+                },
+            );
+            match sampled {
                 Ok(state) => {
-                    let longitude = longitude_from_state(&state, jd_tt);
+                    let longitude = of_date(longitude_from_state(&state, jd_tt));
                     positions.insert(id.clone(), longitude);
                     if let Ok(body_motion) = motion_from_state(&state, jd_tt) {
                         motion.insert(id.clone(), body_motion);
@@ -600,7 +702,7 @@ impl JplAstronomyBackend {
 
         // ── Lunar nodes ───────────────────────────────────────────────────
         // These secular lunar expressions are TT quantities, unlike sidereal time above.
-        let mean_node = mean_node_lon(jd_tt);
+        let mean_node = of_date(mean_node_lon(jd_tt));
         let mean_motion = mean_node_motion(jd_tt);
         if wanted("north_node") || wanted("mean_node") {
             let key = if wanted("north_node") {
@@ -628,6 +730,7 @@ impl JplAstronomyBackend {
             // Earth–Moon state, not a retarded/apparent line of sight.
             match true_node_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_nn) => {
+                    let true_nn = of_date(true_nn);
                     let true_motion = true_node_motion(&almanac, unix_secs, Aberration::NONE).ok();
                     if want_true_nn {
                         positions.insert("true_north_node".to_string(), true_nn);
@@ -658,7 +761,7 @@ impl JplAstronomyBackend {
         if wanted("true_lilith") {
             match true_apogee_tropical_at_unix(&almanac, unix_secs, Aberration::NONE) {
                 Ok(true_apogee) => {
-                    positions.insert("true_lilith".to_string(), true_apogee);
+                    positions.insert("true_lilith".to_string(), of_date(true_apogee));
                     if let Ok(apogee_motion) =
                         true_apogee_motion(&almanac, unix_secs, Aberration::NONE)
                     {
@@ -694,7 +797,7 @@ impl JplAstronomyBackend {
             || wanted("part_of_spirit");
 
         let (asc, axes, house_cusps) = if need_axes {
-            let (asc, mc, desc, ic) = compute_axes(jd_utc_as_ut1, lat, lon)
+            let (asc, mc, desc, ic) = compute_axes_with(sidereal_ramc, axes_obliquity, lat)
                 .map_err(|e| format!("Failed to compute axes: {e}"))?;
             let axes = AstronomyAxes { asc, desc, mc, ic };
             for (id, longitude) in [("asc", asc), ("desc", desc), ("mc", mc), ("ic", ic)] {
@@ -702,22 +805,14 @@ impl JplAstronomyBackend {
                     positions.insert(id.to_string(), longitude);
                 }
             }
-            let (house_cusps, house_warnings) = match chart.config.house_system.clone() {
-                Some(HouseSystem::WholeSign) | None => (whole_sign_cusps(asc), vec![]),
-                Some(HouseSystem::Placidus) => placidus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
-                Some(HouseSystem::Campanus) => campanus_cusps(jd_utc_as_ut1, lat, lon, asc, mc),
-                Some(HouseSystem::Equal) => (equal_cusps(asc), vec![]),
-                Some(HouseSystem::Porphyry) => (porphyry_cusps(asc, mc), vec![]),
-                Some(other) => {
-                    let name = format!("{other:?}").to_lowercase();
-                    (
-                        whole_sign_cusps(asc),
-                        vec![format!(
-                            "house_system_{name}_not_yet_supported: whole_sign_used"
-                        )],
-                    )
-                }
-            };
+            let (house_cusps, house_warnings) = house_cusps_for_system_with(
+                chart.config.house_system.as_ref(),
+                sidereal_ramc,
+                axes_obliquity,
+                lat,
+                asc,
+                mc,
+            );
             warnings.extend(house_warnings);
             (asc, axes, house_cusps)
         } else {
@@ -726,8 +821,7 @@ impl JplAstronomyBackend {
 
         if wanted("vertex") || wanted("antivertex") {
             // RAMC (right ascension of the midheaven) is the same quantity as local sidereal time.
-            let ramc = lst_deg;
-            match vertex_lon(ramc, obliquity, lat) {
+            match vertex_lon(sidereal_ramc, vertex_obliquity, lat) {
                 Ok(vertex) => {
                     if wanted("vertex") {
                         positions.insert("vertex".to_string(), vertex);
@@ -753,7 +847,7 @@ impl JplAstronomyBackend {
                 .any(|lot| lot.add.contains("syzygy") || lot.subtract.contains("syzygy"));
             let syzygy = if needs_syzygy {
                 match previous_syzygy(&almanac, unix_secs, ab_corr) {
-                    Ok(longitude) => Some(longitude),
+                    Ok(longitude) => Some(of_date(longitude)),
                     Err(error) => {
                         warnings.push(format!("previous_syzygy_unavailable: {error}"));
                         None
@@ -788,6 +882,7 @@ impl JplAstronomyBackend {
                 }
             }
         }
+        let before_points: std::collections::HashSet<String> = positions.keys().cloned().collect();
         crate::infrastructure::additional_points::inject_model_points(
             &almanac,
             chart,
@@ -799,6 +894,17 @@ impl JplAstronomyBackend {
             &mut declination,
             &mut warnings,
         )?;
+        // Stars and hypotheticals are computed on the mean ecliptic of date (ecm06).
+        if equinox_shift != 0.0 {
+            for (id, longitude) in positions.iter_mut() {
+                if !before_points.contains(id) {
+                    *longitude = of_date(*longitude);
+                }
+            }
+        }
+        if let Some(warning) = convention.warning.clone() {
+            warnings.push(warning);
+        }
         // Dependency planets are calculation inputs, not implicitly selected chart rows.
         if needs_lots && requested_objects.is_some() {
             positions.retain(|id, _| requested(id));
@@ -1288,6 +1394,92 @@ mod tests {
         assert!(
             velocity_error < 1e-5,
             "velocity error {velocity_error} km/s"
+        );
+    }
+
+    /// Regression: with real ephemerides the osculating true node stays within
+    /// ~2 deg of the mean node; the former flip put it ~180 deg away about half
+    /// of the time (e.g. 2024-10-17T18:00Z).
+    #[test]
+    fn true_node_tracks_mean_node_over_two_years() {
+        let mut chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        let backend = jpl_backend_for_chart(&chart).expect("catalog fallback should resolve");
+        let ids = vec!["north_node".to_string(), "true_north_node".to_string()];
+        let start = chrono::DateTime::parse_from_rfc3339("2024-01-01T00:00:00Z").unwrap();
+        for step in 0..73 {
+            chart.subject.event_time = Some((start + chrono::Duration::days(step * 10)).into());
+            let data = backend.compute_chart_data(&chart, Some(&ids)).unwrap();
+            let diff = (data.positions["true_north_node"] - data.positions["north_node"] + 540.0)
+                % 360.0
+                - 180.0;
+            assert!(
+                diff.abs() < 2.0,
+                "{:?}: true-mean = {diff}",
+                chart.subject.event_time
+            );
+        }
+    }
+
+    /// Known-defect disclosure: outside the verified per-body kernels'
+    /// coverage, Ceres comes from the unrotated ECLIPJ2000_DE405 codes_300ast
+    /// segment and must carry a warning.
+    #[test]
+    fn codes_300ast_asteroids_disclose_unrotated_frame() {
+        let mut chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        chart.subject.event_time = Some(
+            chrono::DateTime::parse_from_rfc3339("1850-01-01T12:00:00Z")
+                .unwrap()
+                .into(),
+        );
+        let backend = jpl_backend_for_chart(&chart).expect("catalog fallback should resolve");
+        let data = backend
+            .compute_chart_data(
+                &chart,
+                Some(&vec!["ceres".to_string(), "chiron".to_string()]),
+            )
+            .unwrap();
+        assert!(data.positions.contains_key("ceres"));
+        assert!(
+            data.warnings
+                .iter()
+                .any(|w| w.starts_with("ceres_position_unreliable")),
+            "{:?}",
+            data.warnings
+        );
+        assert!(!data
+            .warnings
+            .iter()
+            .any(|w| w.starts_with("chiron_position_unreliable")));
+    }
+
+    #[test]
+    fn tropical_chart_has_no_zodiac_warning() {
+        let chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        assert_eq!(unsupported_zodiac_warning(&chart), None);
+    }
+
+    /// Regression: a sidereal chart used to come back from the default (non-swisseph)
+    /// Rust route as tropical longitudes with no diagnostic at all.
+    #[test]
+    fn sidereal_chart_reports_unsupported_zodiac_instead_of_silent_tropical() {
+        let mut chart = j2000_chart("/nonexistent/path/does-not-exist.bsp");
+        chart.config.zodiac_type = ZodiacType::Sidereal;
+        chart.config.ayanamsa = Some(crate::workspace::models::Ayanamsa::Lahiri);
+        assert_eq!(
+            unsupported_zodiac_warning(&chart).as_deref(),
+            Some(SIDEREAL_UNSUPPORTED_WARNING)
+        );
+
+        let backend = jpl_backend_for_chart(&chart).expect("catalog fallback should resolve");
+        let data = backend
+            .compute_chart_data(&chart, Some(&vec!["sun".to_string()]))
+            .expect("bundled kernels should compute");
+        assert!(
+            data.warnings
+                .iter()
+                .any(|w| w == SIDEREAL_UNSUPPORTED_WARNING),
+            "expected sidereal warning, got: {:?}",
+            data.warnings
         );
     }
 

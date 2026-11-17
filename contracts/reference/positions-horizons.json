@@ -1,0 +1,1135 @@
+{
+  "schema_version": 1,
+  "description": "Independent reference positions from JPL Horizons: geocentric apparent ecliptic longitude/latitude of date (observer table quantity 31, CENTER=500@399), referred to the TRUE equinox of date. Subtract earth-orientation-erfa.json nutation_longitude_deg to obtain the mean-equinox longitude used by the Kefer convention.",
+  "source": "NASA/JPL Horizons API (https://ssd.jpl.nasa.gov/api/horizons.api); solution DE441 for planets; small bodies per provenance.target",
+  "retrieved_at": "2026-11-17",
+  "time_scale": "UT input (TIME_TYPE=UT); Kefer implementations take UT1 = UTC",
+  "epochs_utc": [
+    "1950-06-15T12:00:00Z",
+    "1985-03-21T06:30:00Z",
+    "2000-01-01T12:00:00Z",
+    "2024-01-01T12:00:00Z",
+    "2024-10-17T18:00:00Z",
+    "2049-12-24T03:15:00Z"
+  ],
+  "positions": {
+    "sun": [
+      {
+        "lon_true_deg": 83.8097777,
+        "lat_deg": 0.0002122,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 0.5907166,
+        "lat_deg": -0.0001603,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 280.3689092,
+        "lat_deg": 0.0002381,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 280.548482,
+        "lat_deg": 0.0001588,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 204.8552506,
+        "lat_deg": 8.95e-05,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 272.732882,
+        "lat_deg": 7.3e-05,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "moon": [
+      {
+        "lon_true_deg": 81.9990719,
+        "lat_deg": 4.895734,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 358.0887969,
+        "lat_deg": -3.9829329,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 223.323786,
+        "lat_deg": 5.1707422,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 161.9070323,
+        "lat_deg": 3.18254,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 28.737845,
+        "lat_deg": 1.9884324,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 264.4115016,
+        "lat_deg": 2.1565336,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "mercury": [
+      {
+        "lon_true_deg": 61.0969426,
+        "lat_deg": -2.9282137,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 17.8429526,
+        "lat_deg": 2.9043978,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 271.8892699,
+        "lat_deg": -0.994819,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 262.2120128,
+        "lat_deg": 3.0349378,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 216.2397523,
+        "lat_deg": -0.5176608,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 279.9233798,
+        "lat_deg": 1.430018,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "venus": [
+      {
+        "lon_true_deg": 46.0408863,
+        "lat_deg": -2.0943764,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 21.1392787,
+        "lat_deg": 7.9062196,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 241.5657794,
+        "lat_deg": 2.0663548,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 243.2204202,
+        "lat_deg": 1.9348911,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 239.9257902,
+        "lat_deg": -1.1195491,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 271.349032,
+        "lat_deg": -0.3089568,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "mars": [
+      {
+        "lon_true_deg": 181.3738619,
+        "lat_deg": 0.3729058,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 34.3914284,
+        "lat_deg": 0.1481164,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 327.9632921,
+        "lat_deg": -1.0677752,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 267.6791456,
+        "lat_deg": -0.5553654,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 113.0411969,
+        "lat_deg": 0.9614677,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 222.7138664,
+        "lat_deg": 0.8278388,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "jupiter": [
+      {
+        "lon_true_deg": 337.2401187,
+        "lat_deg": -1.0196688,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 309.0274393,
+        "lat_deg": -0.4013393,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 25.2530685,
+        "lat_deg": -1.2621868,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 35.5843503,
+        "lat_deg": -1.1829179,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 81.2177796,
+        "lat_deg": -0.7187457,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 122.561676,
+        "lat_deg": 0.4356119,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "saturn": [
+      {
+        "lon_true_deg": 163.4033739,
+        "lat_deg": 2.0424726,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 237.9675398,
+        "lat_deg": 2.2942838,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 40.3956366,
+        "lat_deg": -2.4448533,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 333.2879074,
+        "lat_deg": -1.6335215,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 343.3974921,
+        "lat_deg": -2.1696261,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 296.6772948,
+        "lat_deg": -0.1949442,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "uranus": [
+      {
+        "lon_true_deg": 94.4786668,
+        "lat_deg": 0.2662564,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 257.9847448,
+        "lat_deg": -0.0147235,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 314.809168,
+        "lat_deg": -0.658324,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 49.3730554,
+        "lat_deg": -0.3059403,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 56.4237774,
+        "lat_deg": -0.2664193,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 170.7499902,
+        "lat_deg": 0.7811244,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "neptune": [
+      {
+        "lon_true_deg": 194.6074834,
+        "lat_deg": 1.6308632,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 273.5557108,
+        "lat_deg": 1.1360051,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 303.1930007,
+        "lat_deg": 0.2350026,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 355.0834959,
+        "lat_deg": -1.2369645,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 357.8088604,
+        "lat_deg": -1.3244354,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 53.7519551,
+        "lat_deg": -1.7687846,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "pluto": [
+      {
+        "lon_true_deg": 136.2842816,
+        "lat_deg": 8.0881929,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 214.2326725,
+        "lat_deg": 17.1981435,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 251.4547644,
+        "lat_deg": 10.8552605,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 299.3731764,
+        "lat_deg": -2.7678371,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 299.6495293,
+        "lat_deg": -3.2632429,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 337.4113742,
+        "lat_deg": -12.721927,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "ceres": [
+      {
+        "lon_true_deg": 250.2626562,
+        "lat_deg": 1.6210649,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 57.9679146,
+        "lat_deg": -0.726653,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 184.4530625,
+        "lat_deg": 11.8375968,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 255.6469746,
+        "lat_deg": 1.9120606,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 284.5297341,
+        "lat_deg": -7.308823,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 108.3831169,
+        "lat_deg": 6.3248968,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "chiron": [
+      {
+        "lon_true_deg": 258.2846891,
+        "lat_deg": 5.8979838,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 64.1524885,
+        "lat_deg": -4.2093346,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 251.617609,
+        "lat_deg": 4.0717061,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 15.4649112,
+        "lat_deg": 1.3563821,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 21.0735524,
+        "lat_deg": 1.0718029,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 245.6695419,
+        "lat_deg": 3.4739613,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "pallas": [
+      {
+        "lon_true_deg": 211.6576142,
+        "lat_deg": 40.1805649,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 9.4208179,
+        "lat_deg": -9.688847,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 134.043348,
+        "lat_deg": -48.3508336,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 227.7604193,
+        "lat_deg": 18.8954563,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 253.0761944,
+        "lat_deg": 29.8345014,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 2.1669984,
+        "lat_deg": -21.9044347,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "juno": [
+      {
+        "lon_true_deg": 172.3441197,
+        "lat_deg": 5.0462995,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 186.1505674,
+        "lat_deg": 4.7831655,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 277.9960713,
+        "lat_deg": 9.4510491,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 171.3616748,
+        "lat_deg": -5.8073169,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 204.1459888,
+        "lat_deg": 5.5573338,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 152.7454935,
+        "lat_deg": -11.5573155,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "vesta": [
+      {
+        "lon_true_deg": 28.8491132,
+        "lat_deg": -6.0316882,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 214.4566876,
+        "lat_deg": 11.853138,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 245.9719858,
+        "lat_deg": 4.2520361,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 86.8730024,
+        "lat_deg": -2.3824071,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 175.5003997,
+        "lat_deg": 4.5696919,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 165.5351493,
+        "lat_deg": 5.553642,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "astraea": [
+      {
+        "lon_true_deg": 179.885553,
+        "lat_deg": 5.6264146,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 335.1743822,
+        "lat_deg": -0.4034277,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 218.6519545,
+        "lat_deg": 3.85482,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 94.7833642,
+        "lat_deg": -6.7873374,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 198.6963122,
+        "lat_deg": 3.0190077,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 243.5229699,
+        "lat_deg": 4.0410345,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "hebe": [
+      {
+        "lon_true_deg": 43.0661694,
+        "lat_deg": -9.9541232,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 94.2217573,
+        "lat_deg": -5.8952906,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 71.5224191,
+        "lat_deg": -20.7776726,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 211.5687513,
+        "lat_deg": 11.2154257,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 236.6585821,
+        "lat_deg": 10.766905,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 183.042914,
+        "lat_deg": 6.2982968,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "iris": [
+      {
+        "lon_true_deg": 283.2140026,
+        "lat_deg": 2.426809,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 90.0281219,
+        "lat_deg": -3.8442223,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 139.8470799,
+        "lat_deg": -6.2403688,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 268.1920584,
+        "lat_deg": 0.2837806,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 309.8527041,
+        "lat_deg": 7.0741274,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 275.8003263,
+        "lat_deg": 1.180961,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "flora": [
+      {
+        "lon_true_deg": 181.1750159,
+        "lat_deg": 6.780935,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 59.4900347,
+        "lat_deg": -2.1858726,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 259.2722799,
+        "lat_deg": 2.7860498,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 353.3811432,
+        "lat_deg": -5.7748736,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 153.7021347,
+        "lat_deg": 1.7908515,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 334.0946856,
+        "lat_deg": -4.8597763,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "metis": [
+      {
+        "lon_true_deg": 106.0197375,
+        "lat_deg": 2.9022089,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 282.2786615,
+        "lat_deg": -1.1469173,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 268.0994944,
+        "lat_deg": -1.0410593,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 88.4662016,
+        "lat_deg": 4.3716255,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 188.2303553,
+        "lat_deg": 3.7283918,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 131.6774704,
+        "lat_deg": 6.6332241,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "hygiea": [
+      {
+        "lon_true_deg": 255.2413441,
+        "lat_deg": -2.6882608,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 354.0333536,
+        "lat_deg": 2.7363082,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 227.8826287,
+        "lat_deg": -3.1123792,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 329.6832663,
+        "lat_deg": 2.8180115,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 30.0568564,
+        "lat_deg": 5.2032785,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 210.6299518,
+        "lat_deg": -3.4813076,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "parthenope": [
+      {
+        "lon_true_deg": 247.2846411,
+        "lat_deg": 6.2666087,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 299.7402289,
+        "lat_deg": 1.9383459,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 235.1298898,
+        "lat_deg": 3.725709,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 307.0379713,
+        "lat_deg": -0.7383839,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 57.9921451,
+        "lat_deg": -7.2929551,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 236.062035,
+        "lat_deg": 3.5746743,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "victoria": [
+      {
+        "lon_true_deg": 11.7281603,
+        "lat_deg": 7.9204887,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 231.759304,
+        "lat_deg": -5.2153965,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 279.3153574,
+        "lat_deg": 3.7569877,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 193.6500875,
+        "lat_deg": -7.9729636,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 237.8026821,
+        "lat_deg": 1.8976318,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 281.384417,
+        "lat_deg": 4.2302528,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "egeria": [
+      {
+        "lon_true_deg": 72.2350086,
+        "lat_deg": 4.8866219,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 253.4482834,
+        "lat_deg": -3.1856324,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 40.574247,
+        "lat_deg": 6.9307427,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 335.1964162,
+        "lat_deg": -11.1239739,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 78.4926718,
+        "lat_deg": 6.5722732,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 96.7729958,
+        "lat_deg": 21.9376287,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "irene": [
+      {
+        "lon_true_deg": 124.476943,
+        "lat_deg": 5.7936782,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 311.8319314,
+        "lat_deg": -3.6836277,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 96.4268486,
+        "lat_deg": 3.0294376,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 7.3389877,
+        "lat_deg": -8.1914424,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 106.7097873,
+        "lat_deg": -0.3631271,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 107.9980943,
+        "lat_deg": 4.0058477,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "eunomia": [
+      {
+        "lon_true_deg": 299.5645777,
+        "lat_deg": -2.1806007,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 331.7126687,
+        "lat_deg": 3.9768075,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 175.3214826,
+        "lat_deg": -9.3160645,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 315.132608,
+        "lat_deg": 5.2691961,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 89.0513229,
+        "lat_deg": 12.3673781,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 328.5536439,
+        "lat_deg": 8.3967394,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "psyche": [
+      {
+        "lon_true_deg": 43.452504,
+        "lat_deg": -2.0586882,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 6.0244439,
+        "lat_deg": -1.3638535,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 330.3347029,
+        "lat_deg": -0.7505719,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 272.4538327,
+        "lat_deg": 2.0371384,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 309.7196381,
+        "lat_deg": -0.0517921,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 331.4806827,
+        "lat_deg": -0.9400747,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "thetis": [
+      {
+        "lon_true_deg": 331.78784,
+        "lat_deg": -0.1637506,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 310.2856234,
+        "lat_deg": 1.2570754,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 222.996786,
+        "lat_deg": 4.6528945,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 283.6871071,
+        "lat_deg": 1.3650585,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 357.4794535,
+        "lat_deg": -7.8065774,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 173.6984109,
+        "lat_deg": 2.792259,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "melpomene": [
+      {
+        "lon_true_deg": 17.5977298,
+        "lat_deg": -2.71709,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 349.9381765,
+        "lat_deg": -1.5884104,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 120.9787373,
+        "lat_deg": -11.0920058,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 40.5421236,
+        "lat_deg": -15.7190152,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 166.7121235,
+        "lat_deg": 0.3125821,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 227.0858322,
+        "lat_deg": 7.3427946,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "fortuna": [
+      {
+        "lon_true_deg": 193.7375863,
+        "lat_deg": 0.0647371,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 264.7661277,
+        "lat_deg": 0.9295414,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 226.2069834,
+        "lat_deg": -0.0388476,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 290.3409889,
+        "lat_deg": 1.1185235,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 24.5671707,
+        "lat_deg": 0.3574874,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 245.007122,
+        "lat_deg": 0.4902974,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ],
+    "massalia": [
+      {
+        "lon_true_deg": 66.3298307,
+        "lat_deg": -0.2541015,
+        "horizons_date_ut": "1950-Jun-15 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 203.7606104,
+        "lat_deg": -0.2555201,
+        "horizons_date_ut": "1985-Mar-21 06:30:00.000"
+      },
+      {
+        "lon_true_deg": 201.4103058,
+        "lat_deg": -0.3604936,
+        "horizons_date_ut": "2000-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 298.6263942,
+        "lat_deg": 0.5225739,
+        "horizons_date_ut": "2024-Jan-01 12:00:00.000"
+      },
+      {
+        "lon_true_deg": 2.7038983,
+        "lat_deg": 0.2986512,
+        "horizons_date_ut": "2024-Oct-17 18:00:00.000"
+      },
+      {
+        "lon_true_deg": 286.8200626,
+        "lat_deg": 0.526224,
+        "horizons_date_ut": "2049-Dec-24 03:15:00.000"
+      }
+    ]
+  },
+  "provenance": {
+    "sun": {
+      "target": "Target body name: Sun (10)                        {source: DE441}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "moon": {
+      "target": "Target body name: Moon (301)                      {source: DE441}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27301%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "mercury": {
+      "target": "Target body name: Mercury (199)                   {source: DE441}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27199%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "venus": {
+      "target": "Target body name: Venus (299)                     {source: DE441}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27299%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "mars": {
+      "target": "Target body name: Mars (499)                      {source: mar099}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27499%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "jupiter": {
+      "target": "Target body name: Jupiter (599)                   {source: jup365_merged}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27599%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "saturn": {
+      "target": "Target body name: Saturn (699)                    {source: sat441l}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27699%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "uranus": {
+      "target": "Target body name: Uranus (799)                    {source: ura184_merged}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27799%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "neptune": {
+      "target": "Target body name: Neptune (899)                   {source: nep098_merged}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27899%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "pluto": {
+      "target": "Target body name: Pluto (999)                     {source: plu060_merged}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27999%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "ceres": {
+      "target": "Target body name: 1 Ceres (A801 AA)               {source: JPL#48}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%271%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "chiron": {
+      "target": "Target body name: 2060 Chiron (1977 UB)           {source: JPL#171}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%272060%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "pallas": {
+      "target": "Target body name: 2 Pallas (A802 FA)              {source: JPL#74}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%272%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "juno": {
+      "target": "Target body name: 3 Juno (A804 RA)                {source: JPL#144}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%273%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "vesta": {
+      "target": "Target body name: 4 Vesta (A807 FA)               {source: JPL#36}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%274%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "astraea": {
+      "target": "Target body name: 5 Astraea (A845 XA)             {source: JPL#147}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%275%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "hebe": {
+      "target": "Target body name: 6 Hebe (A847 NA)                {source: JPL#121}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%276%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "iris": {
+      "target": "Target body name: 7 Iris (A847 PA)                {source: JPL#144}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%277%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "flora": {
+      "target": "Target body name: 8 Flora (A847 UA)               {source: JPL#152}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%278%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "metis": {
+      "target": "Target body name: 9 Metis (A848 HA)               {source: JPL#148}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%279%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "hygiea": {
+      "target": "Target body name: 10 Hygiea (A849 GA)             {source: JPL#129}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2710%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "parthenope": {
+      "target": "Target body name: 11 Parthenope (A850 JA)         {source: JPL#143}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2711%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "victoria": {
+      "target": "Target body name: 12 Victoria (A850 RA)           {source: JPL#160}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2712%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "egeria": {
+      "target": "Target body name: 13 Egeria (A850 VA)             {source: JPL#131}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2713%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "irene": {
+      "target": "Target body name: 14 Irene (A851 KA)              {source: JPL#118}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2714%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "eunomia": {
+      "target": "Target body name: 15 Eunomia (A851 OA)            {source: JPL#109}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2715%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "psyche": {
+      "target": "Target body name: 16 Psyche (A852 FA)             {source: JPL#92}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2716%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "thetis": {
+      "target": "Target body name: 17 Thetis (A852 HA)             {source: JPL#155}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2717%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "melpomene": {
+      "target": "Target body name: 18 Melpomene (A852 MA)          {source: JPL#140}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2718%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "fortuna": {
+      "target": "Target body name: 19 Fortuna (A852 QA)            {source: JPL#170}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2719%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    },
+    "massalia": {
+      "target": "Target body name: 20 Massalia (A852 SA)           {source: JPL#144}",
+      "request_url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%2720%3B%27&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=OBSERVER&CENTER=%27500%40399%27&TLIST=2433448.000000000+2446145.770833333+2451545.000000000+2460311.000000000+2460601.250000000+2469799.635416667&TIME_TYPE=UT&QUANTITIES=%2731%27&ANG_FORMAT=DEG&EXTRA_PREC=YES&CSV_FORMAT=YES"
+    }
+  }
+}

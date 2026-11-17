@@ -24,10 +24,6 @@ def venv_python() -> Path:
     return VENV_DIR / ("Scripts/python.exe" if is_windows() else "bin/python")
 
 
-def venv_pyinstaller() -> Path:
-    return VENV_DIR / ("Scripts/pyinstaller.exe" if is_windows() else "bin/pyinstaller")
-
-
 def sidecar_name() -> str:
     return "kefer-backend.exe" if is_windows() else "kefer-backend"
 
@@ -42,34 +38,26 @@ def main() -> int:
 
     run([sys.executable, "-m", "venv", str(VENV_DIR)])
     run([str(venv_python()), "-m", "pip", "install", "--upgrade", "pip"])
-    run([str(venv_python()), "-m", "pip", "install", '-e', '.[api]', "pyinstaller"], cwd=BACKEND_DIR)
-
+    # backend-python/ is a checkout of kefer-astrology/function-wrapper. Install the
+    # locked sidecar dependencies and use its verified build script (bundles the
+    # ephemeris data; no Kerykeion). The previous inline command used
+    # `pyinstaller -m module.api`, which PyInstaller does not support, and
+    # `--collect-all kerykeion`, an AGPL package no longer used.
+    lock = BACKEND_DIR / "requirements" / "api.txt"
+    build_script = BACKEND_DIR / "devtools" / "build_sidecar.py"
+    if not lock.is_file() or not build_script.is_file():
+        raise SystemExit(
+            "backend-python/ must be a function-wrapper checkout with requirements/api.txt "
+            "and devtools/build_sidecar.py (Phase 2 or later)"
+        )
+    run([str(venv_python()), "-m", "pip", "install", "-r", str(lock), "-e", ".", "pyinstaller"], cwd=BACKEND_DIR)
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
     if BUILD_DIR.exists():
         shutil.rmtree(BUILD_DIR)
     if SPEC_FILE.exists():
         SPEC_FILE.unlink()
-
-    run(
-        [
-            str(venv_pyinstaller()),
-            "--noconfirm",
-            "--clean",
-            "--name",
-            "kefer-backend",
-            "--onefile",
-            "--collect-all",
-            "kerykeion",
-            "--hidden-import",
-            "module.api.app",
-            "--hidden-import",
-            "module.api.schemas",
-            "-m",
-            "module.api",
-        ],
-        cwd=BACKEND_DIR,
-    )
+    run([str(venv_python()), "-m", "devtools.build_sidecar"], cwd=BACKEND_DIR)
 
     built_binary = DIST_DIR / sidecar_name()
     if not built_binary.exists():

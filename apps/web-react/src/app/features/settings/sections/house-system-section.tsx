@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWorkspace } from '@/app/providers/workspace';
-import { catalogHouseSystems } from '@/lib/astrology/domainCatalog';
+import { catalogHouseSystems, houseSystemSubstitute } from '@/lib/astrology/domainCatalog';
 import { SettingSelect } from '../settings-controls';
 import { useSettingsDraft } from '../settings-draft';
 
@@ -24,15 +24,27 @@ export function HouseSystemSection() {
 			<SettingSelect
 				label={t('house_system')}
 				hint={t('settings_house_system_hint', {
-					defaultValue: 'Shown options are computed by the current Rust JPL backend.'
+					defaultValue: 'Default house system for new horoscopes.'
 				})}
 				value={houseSystem}
-				options={catalogHouseSystems().map((name) => ({
-					value: name,
-					label: HOUSE_SYSTEM_LABEL_KEYS[name]
+				options={catalogHouseSystems().map((name) => {
+					const label = HOUSE_SYSTEM_LABEL_KEYS[name]
 						? t(HOUSE_SYSTEM_LABEL_KEYS[name]!, { defaultValue: name })
-						: name
-				}))}
+						: name;
+					const substitute = houseSystemSubstitute(name);
+					return {
+						value: name,
+						// Never hide a substitution: the backend computes these as
+						// `substitute` and reports a warning with the result.
+						label: substitute
+							? t('house_system_substituted', {
+									name: label,
+									substitute,
+									defaultValue: `${label} (computed as ${substitute})`
+								})
+							: label
+					};
+				})}
 				onValueChange={(value) => {
 					setHouseSystem(value);
 					markChanged();

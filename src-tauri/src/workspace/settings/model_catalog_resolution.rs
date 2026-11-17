@@ -43,6 +43,28 @@ pub(super) fn resolve_model_catalog(
     )
 }
 
+/// Rename aliased aspect definitions (e.g. a workspace model still using the
+/// legacy `semisquare`) to canonical ids. If a model defines both an alias and
+/// its canonical id, the canonically named definition is kept.
+pub(super) fn canonicalize_model_aspect_ids(model: &mut AstroModel) {
+    use crate::domain::astrology::canonical_aspect_id;
+    let explicit: std::collections::HashSet<String> = model
+        .aspect_definitions
+        .iter()
+        .filter(|aspect| canonical_aspect_id(&aspect.id) == aspect.id)
+        .map(|aspect| aspect.id.clone())
+        .collect();
+    model.aspect_definitions.retain(|aspect| {
+        let canonical = canonical_aspect_id(&aspect.id);
+        canonical == aspect.id || !explicit.contains(&canonical)
+    });
+    let mut seen = std::collections::HashSet::new();
+    model.aspect_definitions.retain_mut(|aspect| {
+        aspect.id = canonical_aspect_id(&aspect.id);
+        seen.insert(aspect.id.clone())
+    });
+}
+
 pub(super) fn merge_model_with_overrides(
     model: AstroModel,
     overrides: Option<&crate::workspace::models::ModelOverrides>,
@@ -77,11 +99,10 @@ pub(super) fn merge_model_with_overrides(
         if !override_applies(override_entry, &merged) {
             continue;
         }
-        if let Some(aspect) = merged
-            .aspect_definitions
-            .iter_mut()
-            .find(|aspect| aspect.id == override_entry.id)
-        {
+        if let Some(aspect) = merged.aspect_definitions.iter_mut().find(|aspect| {
+            crate::domain::astrology::canonical_aspect_id(&aspect.id)
+                == crate::domain::astrology::canonical_aspect_id(&override_entry.id)
+        }) {
             if let Some(glyph) = &override_entry.glyph {
                 aspect.glyph = glyph.clone();
             }
