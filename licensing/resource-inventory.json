@@ -46,7 +46,7 @@
       "reason": "project designs published before the asset policy; asset licence not chosen (see approved-assets.json)"
     },
     {
-      "glob": "contracts/points/hypothetical-bodies.json",
+      "glob": "src-tauri/resources/third-party/hypothetical-bodies.json",
       "status": "unresolved",
       "item": "Uranian orbital elements",
       "source": "copied from Swiss Ephemeris seorbel.txt (AGPL/commercial distribution); values from Neely 1980",

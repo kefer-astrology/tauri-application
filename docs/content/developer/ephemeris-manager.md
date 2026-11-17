@@ -679,7 +679,9 @@ The native JPL path now includes the following offline extensions:
   equatorial coordinates use the mean equinox of date, matching the existing
   native chart convention. The frontend's sign/significance metadata remains
   reference metadata, not a replacement for the calculated star position.
-- `contracts/points/hypothetical-bodies.json`: the eight Witte/Sieggrün bodies
+- `src-tauri/resources/third-party/hypothetical-bodies.json` (format:
+  kefer-contracts `schemas/points/hypothetical-bodies.schema.json`; not MIT,
+  provenance unresolved, see the `NOTICE.md` beside it): the eight Witte/Sieggrün bodies
   using the Neely orbital elements. `kepler-neely-j1900-v1` explicitly identifies
   the fixed-element model and source equinox; these are hypothetical models,
   not observed SPK objects. Apparent mode iterates light time and applies

@@ -470,3 +470,46 @@ fn chart_results_report_the_convention_used_and_never_switch_silently() {
             .to_string()
     ));
 }
+
+#[test]
+fn bundled_hypothetical_pack_conforms_to_the_contract_format() {
+    // kefer-contracts ships only the format; the element values are this
+    // application's own (non-MIT, provenance-unresolved) data pack.
+    assert!(!contracts_dir()
+        .join("points/hypothetical-bodies.json")
+        .exists());
+    let schema = load("schemas/points/hypothetical-bodies.schema.json");
+    let pack: Value = serde_json::from_str(include_str!(
+        "../resources/third-party/hypothetical-bodies.json"
+    ))
+    .expect("hypothetical data pack");
+    for key in schema["required"].as_array().unwrap() {
+        assert!(
+            pack.get(key.as_str().unwrap()).is_some(),
+            "pack lacks {key}"
+        );
+    }
+    let item = &schema["properties"]["bodies"]["items"];
+    let allowed: Vec<&str> = item["properties"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    let bodies = pack["bodies"].as_array().unwrap();
+    assert!(!bodies.is_empty());
+    for body in bodies {
+        let fields = body.as_object().unwrap();
+        for key in item["required"].as_array().unwrap() {
+            assert!(fields.contains_key(key.as_str().unwrap()), "{body}");
+        }
+        for key in fields.keys() {
+            assert!(allowed.contains(&key.as_str()), "unexpected field {key}");
+        }
+    }
+    let catalog = crate::domain::astrology::hypothetical_catalog();
+    assert_eq!(catalog.model, pack["model"].as_str().unwrap());
+    for body in &catalog.bodies {
+        crate::domain::astrology::validate_hypothetical(body).expect("valid elements");
+    }
+}
