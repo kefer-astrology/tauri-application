@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "description": "Licensing status of non-code resources shipped in, or vendored into, this repository. 'unresolved' and 'decision-needed' entries must not ship in a public release until resolved (scripts/check-release-content.py). Nothing listed here has been removed.",
+  "statuses": {
+    "project-mit": "Project work under the repository MIT license",
+    "third-party-open": "Third-party data/code with terms compatible with redistribution (see THIRD_PARTY_NOTICES.md)",
+    "decision-needed": "Project work whose intended license differs from the repository license; owner decision required",
+    "unresolved": "Redistribution rights not established"
+  },
+  "entries": [
+    {"glob": "static/astrology-symbols/sabian*.json", "status": "unresolved", "item": "Sabian symbols (Jones/Wheeler 1925, Rudhyar 1973 rephrasing)", "source": "third-party program's data files", "public_since": "2026-09-26", "decision": "L2"},
+    {"glob": "static/astrology-symbols/kefer*.json", "status": "decision-needed", "item": "Kefer degree symbols (original)", "source": "project", "note": "labelled proprietary-original in catalog.json", "decision": "L4"},
+    {"glob": "static/glyphs/**", "status": "decision-needed", "item": "Glyph exports from private graphical-sources", "source": "project (private design repo)", "public_since": "2026-04-09", "decision": "L3"},
+    {"glob": "contracts/points/hypothetical-bodies.json", "status": "unresolved", "item": "Uranian orbital elements", "source": "copied from Swiss Ephemeris seorbel.txt (AGPL/commercial distribution); values from Neely 1980", "decision": "L8"},
+    {"glob": "contracts/points/fixed-stars.json", "status": "third-party-open", "item": "Fixed stars", "source": "SIMBAD/CDS (acknowledgement required)"},
+    {"glob": "contracts/points/arabic-lots.json", "status": "third-party-open", "item": "Lots formulas", "source": "al-Biruni (1029) facts"},
+    {"glob": "static/astrology-symbols/sepharial*.json", "status": "third-party-open", "item": "Sepharial degree symbols", "source": "public domain (1898)"},
+    {"glob": "static/astrology-symbols/charubel*.json", "status": "third-party-open", "item": "Charubel degree symbols", "source": "public domain (1898)"},
+    {"glob": "src-tauri/resources/*.bsp", "status": "third-party-open", "item": "JPL/NAIF/Horizons ephemerides", "source": "U.S. Government / NAIF"},
+    {"glob": "src-tauri/resources/*.bsp.json", "status": "project-mit", "item": "Kernel provenance manifests", "source": "project"},
+    {"glob": "src-tauri/resources/pck11.pca", "status": "third-party-open", "item": "Planetary constants (ANISE-converted)", "source": "NAIF PCK via ANISE; conversion source to confirm"}
+  ]
+}
