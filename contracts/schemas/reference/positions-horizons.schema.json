@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/reference/positions-horizons.schema.json",
+  "title": "Horizons reference positions",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "epochs_utc",
+    "positions",
+    "provenance"
+  ],
+  "properties": {
+    "epochs_utc": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "positions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "lon_true_deg",
+            "lat_deg"
+          ]
+        }
+      }
+    }
+  }
+}

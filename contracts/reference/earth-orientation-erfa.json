@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "description": "Earth orientation at the reference epochs computed with ERFA (BSD-3-Clause; IAU SOFA algorithms): IAU 2006 GMST/GAST, IAU 2006 mean obliquity, IAU 2000A nutation. UT1 is taken equal to UTC, matching both implementations; TT from UTC with leap seconds (ERFA flags 1950 and 2049 as 'dubious year').",
+  "source": "pyerfa 2.0.1.5",
+  "epochs": [
+    {
+      "utc": "1950-06-15T12:00:00Z",
+      "jd_utc": 2433448.0,
+      "jd_tt": 2433448.0003725,
+      "gmst_deg": 83.20036758791615,
+      "gast_deg": 83.2000353508789,
+      "mean_obliquity_deg": 23.445725519794756,
+      "true_obliquity_deg": 23.448071445935234,
+      "nutation_longitude_deg": -0.00036218608518740576
+    },
+    {
+      "utc": "1985-03-21T06:30:00Z",
+      "jd_utc": 2446145.7708333335,
+      "jd_tt": 2446145.771460463,
+      "gmst_deg": 276.22463409738384,
+      "gast_deg": 276.2213294361741,
+      "mean_obliquity_deg": 23.441202648014087,
+      "true_obliquity_deg": 23.44300710888328,
+      "nutation_longitude_deg": -0.00360257203253057
+    },
+    {
+      "utc": "2000-01-01T12:00:00Z",
+      "jd_utc": 2451545.0,
+      "jd_tt": 2451545.0007428704,
+      "gmst_deg": 280.4606224305415,
+      "gast_deg": 280.45707236053676,
+      "mean_obliquity_deg": 23.439279444179835,
+      "true_obliquity_deg": 23.437676829365177,
+      "nutation_longitude_deg": -0.003869999279056249
+    },
+    {
+      "utc": "2024-01-01T12:00:00Z",
+      "jd_utc": 2460311.0,
+      "jd_tt": 2460311.000800741,
+      "gmst_deg": 280.6454391761329,
+      "gast_deg": 280.6440700185012,
+      "mean_obliquity_deg": 23.436156997655473,
+      "true_obliquity_deg": 23.43840388540859,
+      "nutation_longitude_deg": -0.0014925580066764356
+    },
+    {
+      "utc": "2024-10-17T18:00:00Z",
+      "jd_utc": 2460601.25,
+      "jd_tt": 2460601.250800741,
+      "gmst_deg": 296.7295881307613,
+      "gast_deg": 296.7288284583575,
+      "mean_obliquity_deg": 23.436053611129505,
+      "true_obliquity_deg": 23.43869613015171,
+      "nutation_longitude_deg": -0.0008280628244112386
+    },
+    {
+      "utc": "2049-12-24T03:15:00Z",
+      "jd_utc": 2469799.6354166665,
+      "jd_tt": 2469799.6362174074,
+      "gmst_deg": 141.84400164992513,
+      "gast_deg": 141.84779731697193,
+      "mean_obliquity_deg": 23.432777195478092,
+      "true_obliquity_deg": 23.431260498196142,
+      "nutation_longitude_deg": 0.004137506753689006
+    }
+  ]
+}

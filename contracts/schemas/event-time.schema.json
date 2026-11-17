@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kefer-astrology/kefer-contracts/contracts/schemas/event-time.schema.json",
+  "title": "Event-time grammar fixture",
+  "type": "object",
+  "required": [
+    "accepted",
+    "rejected"
+  ],
+  "properties": {
+    "accepted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "input",
+          "utc",
+          "legacy"
+        ]
+      }
+    },
+    "rejected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
