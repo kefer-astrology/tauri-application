@@ -1,6 +1,6 @@
 {
   "name": "kefer-contracts",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "files": {
     "aspects/detection.json": "4e39ed830010a3414b8e275753e2729672aa2b8cd1f7aed44ec0f6e3dbfd66e5",
     "capabilities.json": "883b811d12e4a02266e391b95e81caca6f36bc3d621f43f7cdecf07e22cc5918",
@@ -17,7 +17,7 @@
     "reference/moon-phases-usno-2024.json": "3d5ef4318166f5785204afce25cff6361c6985a7b5c6a2574b829a171bfa8f9f",
     "reference/positions-horizons.json": "7edc1a6c4e66426069ad47f65caaa5216084e5f3f0ee241b5224fdf1aee52f27",
     "reference/tolerances.json": "0e0d200f0d0368fd52684106a3e6c6abc9afff44009260a3703157c0db280db6",
-    "schemas/api/chart-result.schema.json": "324dde372141c114d9698c5eec82da66e78f4d7c257ef5235334aa112c3a0756",
+    "schemas/api/chart-result.schema.json": "89b68dbf2a753051a4befb32c4bf23fc7dcbb3916fe4c485ac5679441d24336a",
     "schemas/aspects/detection.schema.json": "072ac1e952f9142a993d6c490fd0681b3dd65f0998492a985eb5e7b0ffddcb98",
     "schemas/capabilities.schema.json": "44be4a6ef4867d0d3567609c6539f2a01f86a6c35959b201d3c7d30d734137b4",
     "schemas/catalogs/aspects.schema.json": "56157190467394ae985dd990a7725e1c34462ec2152f97d4710426fe0c3c5dbd",

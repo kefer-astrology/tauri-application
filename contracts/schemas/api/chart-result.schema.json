@@ -146,7 +146,7 @@
     },
     "calculation_convention": {
       "type": "string",
-      "description": "Id from conventions.json the result was computed with (since 0.2.0)."
+      "description": "Id from conventions.json the result was computed with."
     }
   }
 }
